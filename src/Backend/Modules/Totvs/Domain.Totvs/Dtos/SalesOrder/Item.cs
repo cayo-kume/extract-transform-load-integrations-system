@@ -1,0 +1,75 @@
+﻿namespace Domain.Totvs.Dtos.SalesOrder
+{
+    public class Item
+    {
+        public string branchCode { get; set; }
+        public string orderCode { get; set; }
+        public string orderId { get; set; }
+        public string customerOrderCode { get; set; }
+        public string insertDate { get; set; }
+        public string integrationCode { get; set; }
+        public string guideCode { get; set; }
+        public string guideCpfCnpj { get; set; }
+        public string sellerCode { get; set; }
+        public string sellerCpfCnpj { get; set; }
+        public string orderDate { get; set; }
+        public string maxChangeFilterDate { get; set; }
+        public string arrivalDate { get; set; }
+        public string customerCode { get; set; }
+        public string customerCpfCnpj { get; set; }
+        public string customerName { get; set; }
+        public string representativeCode { get; set; }
+        public string representativeCpfCnpj { get; set; }
+        public string representativeName { get; set; }
+        public string operationCode { get; set; }
+        public string operationName { get; set; }
+        public string paymentConditionCode { get; set; }
+        public string paymentConditionName { get; set; }
+        public string quantity { get; set; }
+        public string grossValue { get; set; }
+        public string discountValue { get; set; }
+        public string netValue { get; set; }
+        public string freightType { get; set; }
+        public string freightValue { get; set; }
+        public string shippingCompanyCode { get; set; }
+        public string shippingCompanyCpfCnpj { get; set; }
+        public string shippingCompanyName { get; set; }
+        public string redispatchingFreightType { get; set; }
+        public string redispatchingShippingCompanyCode { get; set; }
+        public string redispatchingShippingCompanyCpfCnpj { get; set; }
+        public string redispatchingShippingCompanyName { get; set; }
+        public string totalAmountOrder { get; set; }
+        public string statusOrder { get; set; }
+        public string reasonBlockingCode { get; set; }
+        public string reasonBlockingDescription { get; set; }
+        public string reasonCancellationCode { get; set; }
+        public string reasonCancellationDescription { get; set; }
+        public string omniSiteId { get; set; }
+        public string additionalValue { get; set; }
+        public string experienceType { get; set; }
+        public string hasPdvTransaction { get; set; }
+        public string hasFinancialProcessed { get; set; }
+        public string priceTableCode { get; set; }
+        public string shippingService { get; set; }
+        public string shippingServiceName { get; set; }
+        public string cancellationLimitDate { get; set; }
+        public string billingForecastDate { get; set; }
+        public string billingLimitDate { get; set; }
+        public string lastBillingDate { get; set; }
+        public string paymentBaseDate { get; set; }
+        public string batchOrder { get; set; }
+        public string rollMeasureCode { get; set; }
+        public string rollMeasureDescription { get; set; }
+        public string ecommerceStage { get; set; }
+        public List<Product> items { get; set; }
+        public List<Invoice> invoices { get; set; }
+        public ShippingAddress shippingAddress { get; set; }
+        public List<Observation> observations { get; set; }
+        public List<InvoiceObservation> invoiceObservations { get; set; }
+        public List<RepresentativeObservation> representativeObservations { get; set; }
+        public List<Classification> classifications { get; set; }
+        public List<Discount> discounts { get; set; }
+        public List<Commissioned> commissioneds { get; set; }
+        public List<Count> counts { get; set; }
+    }
+}

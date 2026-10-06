@@ -1,0 +1,194 @@
+{
+    "success": true,
+    "data": {
+		"integreated_or_updated_at": "2026-06-19T14:06:53.000000Z",
+        "id": 0,
+        "type": "string",
+        "action": "string",
+        "bonus_amount": 0,
+        "bonus_amount_percent": 0,
+        "requested_shipping_amount": 0,
+        "shipping_method": "string",
+        "added_taxes_amount": 0,
+        "requested_raw_amount": 0,
+        "requested_amount": 0,
+        "requested_total_amount": 0,
+        "received_amount": 0,
+        "received_raw_amount": 0,
+        "total_amount": 0,
+        "free_shipping": false,
+        "created_at": "2026-06-19T14:06:53.000000Z",
+        "updated_at": "2026-06-19T14:10:06.000000Z",
+        "customer_id": 0,
+        "customer_first_name": "string",
+        "customer_last_name": "string",
+        "customer_email": "string",
+        "customer_document": "string",
+        "status_id": 0,
+        "status_name": "string",
+        "status_description": "string",
+        "seller_info": "string",
+		"cashback_account": "string",
+        "voucher_redemption_code": "string",
+        "voucher_giftcard_id": "string",
+        "voucher_expiring_date": "string",
+        "should_ask_voucher_code": true,
+		"reverse_updated_at": "2026-06-19 15:16:33",
+		"reverse_reverse_type": "string",
+		"reverse_status_id": 0,
+		"reverse_status_service_code": "string",
+		"reverse_status_name": "string",
+		"reverse_status_description": "string",
+		"reverse_id": 0,
+		"reverse_created_at": "2026-06-19 14:06:53",
+		"reverse_refunds_count": 0,
+		"reverse_ecommerce_id": 0,
+		"reverse_ecommerce_order_id": "string",
+		"reverse_ecommerce_order_seller_invoice_number": "string",
+		"reverse_ecommerce_order_seller_invoice_url": "string",
+        "product_price_type_type": "string",
+        "product_price_type_label": "string",
+        "refunded_shipping_type": "string",
+        "can_edit_wire_transfer": false,
+        "can_edit_email": false,
+        "has_wire_transfer_account": false,
+        "customer_retention_method_id": "string",
+        "external_order_url": "string",
+        "comments_count": 0,
+        "insurance_amount": 0,
+        "enable_payment": true,
+		
+		"order_payment_methods": [
+			{
+				"integreated_or_updated_at": "2026-06-19T14:06:53.000000Z",
+				"refund_id": 0,
+				"id": 0, //gerar com incremental c-sharp
+				"payment_method": "string"
+			}
+        ],
+		
+		"products": [
+            {
+				"integreated_or_updated_at": "2026-06-19T14:06:53.000000Z",
+                "refund_id": 0,
+                "id": 0,
+                "reverse_id": 0,
+                "motive_id": 0,
+                "reason_id": 0,
+                "reason_ecommerce_id": 0,
+                "reason_description": "string",
+                "reason_action": "string",
+                "reason_should_approve": false,
+                "reason_upload_image": "string",
+                "reason_show_product_grid": false,
+                "reason_ord": 0,
+                "reason_created_at": "2022-11-18T19:11:16.000000Z",
+                "reason_updated_at": "2026-01-12T13:13:19.000000Z",
+                "reason_deleted_at": "2026-01-12T13:13:19.000000Z",
+                "subreason_id": 0,
+                "subreason_reason_id": 0,
+                "subreason_description": "string",
+                "subreason_created_at": "2026-01-12T13:09:30.000000Z",
+                "subreason_updated_at": "2026-01-12T13:09:30.000000Z",
+                "subreason_deleted_at": "2026-01-12T13:13:19.000000Z",
+                "ecommerce_order_product_id": 0,
+                "qty": 0,
+                "requested_qty": 0,
+                "received_qty": 0,
+                "product_received_comment": "string",
+                "comments": "string",
+                "reverse_action": "string",
+                "protocol": "string",
+                "product_id": "string",
+                "hash": "string",
+                "name": "string",
+                "sku": "string",
+                "reference": "string",
+                "price": 0,
+                "selling_price": 0,
+                "shipping_price": 0,
+                "weight": "string",
+                "order_id": 0,
+                "returned_invoice": "string",
+                "returned_invoice_url": "string",
+                "returned_invoice_url_xml": "string",
+                "invoice": "string",
+                "original_qty": 0,
+                "brand": "string",
+                "is_included_by_admin": false,
+                "situation": "string",
+                "bundle_hash": "string",
+                "is_bundle": false,
+                "customer_retention_method_id": 0,
+				
+			    "images": [
+                    {
+						"integreated_or_updated_at": "2026-06-19T14:06:53.000000Z",
+                        "id": 0,
+                        "refund_id": 0,
+                        "product_id": "string",
+                        "image_path": "string",
+                        "image_url": "string"
+                    }
+                ],
+				
+				"image_url": [
+                    {
+						"integreated_or_updated_at": "2026-06-19T14:06:53.000000Z",
+                        "refund_id": 0,
+						"product_id": "string",
+                        "id": 0,
+                        "url": "string"
+                    }
+                ],
+            }
+        ],
+		
+		"could_change_status_for": [
+            {
+				"integreated_or_updated_at": "2026-06-19T14:06:53.000000Z",
+				"refund_id": 0,
+				"id": 0, //gerar com incremental no c-sharp
+				"description": "string"
+			}
+        ],
+		
+		"status_histories": [
+            {
+				"integreated_or_updated_at": "2026-06-19T14:06:53.000000Z",
+                "refund_id": 0,
+                "status_id": 0,
+                "status_service_code": "string",
+                "status_name": "string",
+                "status_description": "string",
+                "date": "2026-06-19T14:06:53.000000Z",
+                "user_id": 0,
+                "user_name": "string",
+                "user_first_name": "string",
+                "user_last_name": "string",
+                "user_email": "string",
+                "user_mobile_phone": "string",
+                "user_phone": "string",
+                "user_document": "string",
+                "user_wallet": "string",
+                "comments": "string"
+            }
+        ],
+        
+		"total_amount_histories": [
+            {
+				"integreated_or_updated_at": "2026-06-19T14:06:53.000000Z",
+                "refund_id": 0,
+                "id": 0,
+                "user_id": 0,
+                "user_first_name": "string",
+                "user_last_name": "string",
+                "total_amount": "string",
+                "date": "2026-06-19T14:06:53.000000Z",
+                "type_id": 0,
+                "type_name": "string",
+                "type_description": "string"
+            }
+        ]
+    }
+}

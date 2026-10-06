@@ -1,0 +1,6 @@
+/* Botão "Ver Todos" do cabeçalho de aplicações monitoradas (exclusivo da Home) */
+::deep .ver-todos-button {
+    border: 1px solid #7e6fff;
+    border-radius: 24px;
+    padding: 6px 15px;
+}

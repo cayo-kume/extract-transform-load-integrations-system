@@ -1,0 +1,8 @@
+{
+    "Type": {
+        "integreated_or_updated_at": "2026-06-19T14:06:53.000000Z",
+        "id": 0, //gerar com incremental no c-sharp
+        "name": "string",
+        "description": "string"
+    }
+}

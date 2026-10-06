@@ -1,0 +1,44 @@
+﻿@page "/"
+@layout BlankLayout
+@inject NavigationManager Navigation
+
+<PageTitle>Login</PageTitle>
+
+@* 
+<AuthorizeView>
+    <Authorized>
+        Usuário já autenticado, redireciona para seleção de empresa
+    </Authorized>
+    <NotAuthorized> *@
+        <div class="login-container">
+            <div class="login-background"></div>
+            <div class="login-form-container align-self-center">
+        <MudImage ObjectFit="ObjectFit.Cover" Height="150" Width="300" Src="/images/logos/logo_200x200.png" Style="margin-bottom: 2rem" />
+                <MudButton OnClick="BeginSignIn" StartIcon="@Icons.Custom.Brands.MicrosoftWindows" IconSize="Size.Large" Variant="Variant.Filled" Color="Color.Dark" Size="Size.Large" FullWidth="true">Entrar</MudButton>
+            </div>
+        </div>
+@*     
+    </NotAuthorized>
+</AuthorizeView> *@
+
+@code {
+    // [CascadingParameter]
+    // private Task<AuthenticationState>? AuthState { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // if (AuthState is not null)
+        // {
+        //     var state = await AuthState;
+        //     if (state.User.Identity?.IsAuthenticated == true)
+        //     {
+        //        Navigation.NavigateTo("/Empresas");
+        //     }
+        // }
+    }
+
+    private void BeginSignIn()
+    {
+        Navigation.NavigateTo("/home", forceLoad: true);
+    }
+}

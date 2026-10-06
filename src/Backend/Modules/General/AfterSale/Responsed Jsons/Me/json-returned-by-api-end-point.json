@@ -1,0 +1,1821 @@
+{
+    "success": true,
+    "data": {
+        "id": 1367,
+        "uuid": "25700212-a6a0-48ed-8553-2701d9c343f3",
+        "ecommerce_group_id": null,
+        "hubspot_code": null,
+        "company_name": "Open Era (Grupo Newbloomers)",
+        "trade_name": "Open Era (Grupo Newbloomers)",
+        "display_name": "Open Era (Grupo Newbloomers)",
+        "url": "https://openera.troquefacil.com.br",
+        "is_active": true,
+        "phone": "(11) 93230-0384",
+        "email": "everton.manoel@newbloomers.com.br",
+        "document": "42.538.267/0002-68",
+        "address_id": 6232,
+        "maintenance_mode_global": false,
+        "last_order_report_date": "2026-04-09T23:59:59.000000Z",
+        "is_test": false,
+        "segment": null,
+        "oauth_client_id": null,
+        "provider_id": null,
+        "registration_origin": null,
+        "brand_id": null,
+        "app_name": "Troque Fácil",
+		"theme": "theme-default",
+		"logo": "https://send4.blob.core.windows.net/send4public/ecommerces/CxcFLBvvOhK1Za4UNOlqBJDnRBdQZFEUgWWxAryS.png?v=1669126786",
+        "deny_search_index": false,
+        "terms": "https://www.openera.com.br/duvidas-frequentes?page-open-era-duvidas-frequentes-open-era-troca-e-devolucao",
+        "limit_value_collect": "0",
+        "collect_enabled": false,
+        "has_ecommerce_integration": true,
+        "has_info_by_customer_enabled": true,
+        "field_order_id_label": "Pedido",
+        "field_order_id_placeholder": "Digite o número do pedido",
+        "field_product_comment_label": null,
+        "field_product_comment_placeholder": null,
+        "field_confirmation_label_email": "E-mail",
+        "field_confirmation_placeholder_email": "Confirme seu e-mail",
+        "field_confirmation_label_document": "CPF ou CNPJ utilizado na compra",
+        "field_confirmation_placeholder_document": "Confirme seu CPF ou CNPJ",
+        "field_confirmation_type": "email",
+        "hotjar_enabled": false,
+        "hotjar_id": null,
+        "retention_method": "default",
+        "retention_free_shipping": false,
+        "show_quick_selection": false,
+        "maintenance_mode": false,
+        "enable_price_visibility": false,
+        "retention_layout_version": "v2",
+        "shipping_address_change_enabled": true,
+        "request_evaluation_enabled": true,
+        "request_evaluation_method": "after_create_reverse",
+		"enable_transportation_priority_by_preferences": false,
+        "force_courier_show_when_postage_block_by_pickup_in_use": false,
+        "bank_agency_max_length": null,
+        "refund_pix_enabled": false,
+        "allow_refund_for_third_parties_by_pix": false,
+        "could_be_retained": true,
+        "cashback_allow_third_party": false,
+        "request_pix_key_by_customer_interface": true,
+        "correios_checklist_enabled": false,
+        "correios_checklist_default_type": null,
+        "request_customer_invoice_xml_enabled": false,
+        "split_reverses_by_seller": false,
+        "group_products_with_unregistered_sellers": false,
+        "care_plus_enabled": false,
+        "hide_courier_enabled": false,
+        "show_product_images": true,
+        "messages": {
+            "pages": {
+                "introduction": {
+                    "title": "Bem-vindo ao {{app_name}}",
+                    "description": "Com o {{app_name}} suas trocas se tornam mais simples. Em apenas alguns passos sua solicitação estará pronta. Vamos lá?"
+                },
+                "select_source": {
+                    "title": "Onde você comprou os seus produtos?",
+                    "description": "Antes de continuarmos, selecione a forma com que deseja prosseguir."
+                },
+                "order": {
+                    "title": "Buscar Pedido",
+                    "description": "Insira o número do pedido da compra efetuada em nossa loja para que possamos identificar os produtos para qual deseja solicitar a troca."
+                },
+                "products": {
+                    "title": "Lista de produtos",
+                    "description": "<p>{{customer_name}} aqui está toda a lista de produtos que você adquiriu nesse pedido.</p>",
+                    "label_commentary": "Como podemos resolver?",
+                    "description_commentary": "Conte com detalhes o motivo da troca ou devolução para que possamos te ajudar da melhor forma.",
+                    "required_commentary": true,
+                    "image_upload_title": "Imagem",
+                    "image_upload_description": "<p>Anexe fotos do produto recebido, detalhando possíveis defeitos, avarias e tudo o que possa justificar o motivo da solicitação.</p>"
+                },
+                "insurance_checklist": {
+                    "title": "Confirme alguns itens da solicitação",
+                    "description": "<p>Você selecionou alguns itens iguais, porém com números de IMEI diferentes.</p><br><p>Revise a lista e selecione quais dos itens deseja incluir na sua solicitação.</p>"
+                },
+                "cancellation_insurance": {
+                    "title": "Informações sobre seu seguro",
+                    "description": "Os itens abaixo estão cobertos pelo seguro Samsung Care+. Ao continuar com a solicitação, o seguro vinculado a esses itens será cancelado.",
+                    "checkbox": "Estou ciente de que, ao continuar com esta solicitação, o seguro dos itens listados será cancelado."
+                },
+                "deadline_for_insurance_cancellation_expired": {
+                    "title": "Informações sobre seu seguro",
+                    "description": "Os itens abaixo estão cobertos pelo seguro Samsung Care+. Para solicitar o cancelamento do seguro, é necessário entrar em contato com a Central de Atendimento do Care+: 0800 842 0202.",
+                    "checkbox": "Estou ciente de que, para cancelar o seguro dos itens listados, preciso entrar em contato com a central de atendimento."
+                },
+                "insurance_loading_failure": {
+                    "title": "Não foi possível exibir as informações",
+                    "description": "Houve um problema ao carregar as informações. Por favor, tente novamente."
+                },
+                "shipping": {
+                    "title": "Selecione o método de devolução",
+                    "description": "Escolha a forma com que deseja enviar seu(s) produto(s)."
+                },
+                "resume": {
+                    "title": "Quase lá!",
+                    "description": "Confirme se está tudo certo com sua solicitação."
+                },
+                "finish": {
+                    "title": "Sua solicitação {{reverse_id}} foi realizada com sucesso!",
+                    "description": "Esta foi apenas a primeira etapa. Fique atento ao seu e-mail para dar continuidade ao seu atendimento. Enquanto isso, avalie sua experiência até aqui ;)",
+                    "label_commentary": "Qual o motivo desta sua avaliação?",
+                    "description_commentary": "Escreva seu feedback aqui."
+                },
+                "finish_thank": {
+                    "title": "Sua avaliação foi enviada!🎉",
+                    "description": "Muito obrigado por nos contar como foi a experiência de solicitar a troca e/ou devolução para você, {{customer_name}}. Sua avaliação vai contribuir para a nossa melhoria e deixar consumidores, como você, mais felizes!"
+                },
+                "customer": {
+                    "title": "Dados do cliente",
+                    "description": "Para prosseguir com sua solicitação, nós precisamos saber um pouco mais sobre você para que possamos lhe identificar."
+                },
+                "customer_products": {
+                    "title": "Lista de Produtos",
+                    "description": "{{customer_name}}, precisamos que você nos forneça quais produtos você adquiriu."
+                },
+                "seller": {
+                    "title": "Dados do vendedor",
+                    "description": "Cliente, para identificar onde foi realizada sua compra, precisamos de algumas informações do vendedor.",
+                    "required_invoice_number": true,
+                    "required_invoice_file": true
+                },
+                "email_by_customer": {
+                    "title": "Falta um detalhe",
+                    "description": "{{customer_name}}, por favor informe o(s) dado(s) abaixo para completar sua solicitação."
+                },
+                "retention": {
+                    "title": "Que tal um vale-compras?",
+                    "description": "Receba um vale-compras para gastar com o que quiser! É muito mais rápido e prático!",
+                    "deny_action": "Não quero essa comodidade",
+                    "observation": "* O valor corresponde aos itens selecionados e pode demorar no mínimo 30 dias, a depender da forma de pagamento utilizada na compra, para ser estornado.",
+                    "enabled_observations": true
+                },
+                "retention_voucher": {
+                    "title": "Oferta exclusiva!",
+                    "description": "Aproveite antes que acabe!",
+                    "deny_action": "Continuar sem a oferta",
+                    "observation": "* Valor total dos produtos selecionados para devolução + {{percentValue}}% de bônus para gastar como quiser",
+                    "enabled_observations": true
+                },
+                "retention_freight": {
+                    "title": "Oferta exclusiva!",
+                    "description": "Aproveite antes que acabe!",
+                    "deny_action": "Continuar sem a oferta",
+                    "observation": "* Valor total dos produtos selecionados para devolução + frete grátis para gastar como quiser",
+                    "enabled_observations": true
+                },
+                "bank_account_details": {
+                    "title": "Detalhes bancários",
+                    "description": "Precisamos apenas que você nos informe os seus dados bancários.",
+                    "request_pix_key_disabled": "O reembolso será realizado pela mesma chave PIX utilizada no pagamento do seu pedido."
+                },
+                "existing_request_post": {
+                    "title": "Já existe uma solicitação para esse pedido",
+                    "description": "Você já tem uma solicitação em andamento para o pedido {{order_id}} e já pode fazer a postagem dos itens a serem devolvidos através do código de postagem: {{authorization_code}}. Caso deseje cancelar a solicitação em andamento e abrir uma nova, clique no botão abaixo"
+                },
+                "existing_request_collect": {
+                    "title": "Já existe uma solicitação para esse pedido",
+                    "description": "Você já tem uma solicitação em andamento para o pedido {{order_id}}. O código de identificação da coleta é {{authorization_code}}. Caso deseje cancelar a solicitação em andamento e abrir uma nova, clique no botão abaixo"
+                },
+                "existing_request": {
+                    "title": "Já existe uma solicitação para esse pedido",
+                    "description": "Você já tem uma solicitação em andamento para o pedido {{order_id}}. Caso deseje cancelar a solicitação em andamento e abrir uma nova, clique no botão abaixo"
+                },
+                "request_follow_up": {
+                    "title": "Solicitação {{reverse_id}}",
+                    "description": "<p>Aqui você verifica todas as etapas da sua solicitação de troca ou devolução. Fique atento ao seu e-mail para mais informações sobre o seu atendimento.</p>"
+                },
+                "refund_nps": {
+                    "title": "{{customer_name}}, avalie a resolução da sua solicitação",
+                    "description_commentary": "Sinta-se a vontade para abrir seu coração, queremos muito te ouvir",
+                    "label_commentary": "Conta pra gente o principal motivo da sua nota?",
+                    "required_commentary": false
+                },
+                "refund_nps_confirmation": {
+                    "title": "Sua avaliação foi enviada!",
+                    "description": "Muito obrigada por nos ajudar a entender como foi a experiência de pós-compra para você, {{customer_name}}. Sua avaliação vai contribuir para a nossa melhoria e deixar consumidores, como você, mais felizes!"
+                }
+            },
+            "mails": {
+                "greeting": {
+                    "content": "<h1 style=\"font-family: sans-serif !important; font-size: 20px; font-weight: 700; line-height: 25pt; color: #686868; text-transform: uppercase;\">\n    Olá, {{customer_name}}. tudo bem?\n</h1>\n",
+                    "advancedEmailEnabled": false
+                },
+                "footer": {
+                    "content": "<p style=\"margin: 0px;\"> Obrigado.</p>\n<p style=\"margin: 0px;\">Equipe {{ecommerce_name}}</p>\n",
+                    "advancedEmailEnabled": false
+                },
+                "reverse": {
+                    "invalid_courier_contract": {
+                        "content": "<div style=\"margin-bottom: 24px; font-size: 14px;\">\n    <h1 style=\"font-style: normal;\n                                font-weight: bold;\n                                font-size: 20px;\n                                line-height: 27px;\n                                text-transform: capitalize;\n                                margin-top: 0;\n                                margin-bottom: 24px;\">\n\n        Olá, time de CS.\n    </h1>\n    <p>\n        Viemos informar que o ecommerce :ecommerce_name está apresentando problemas\n                                 com o registro da transportadora &lt;span style=&quot;text-transform:capitalize&quot;&gt;:courier&lt;/span&gt; que está ocasionando o não processamento\n                                 das reversas e, com isso, elas estão parando no status “Problemas no transporte”.\n    </p>\n    <p>\n         Já foi informado aos usuários administradores por e-mail e\n                                  através de um banner na tela inicial do admin para que atualizem os\n                                  dados nas configurações.\n    </p>\n    <p style=\"margin-bottom:24px;\">\n        De qualquer forma, sugerimos que fiquem atentos caso o problema persista.\n    </p>\n</div>\n",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "awaiting_with_freight_by_customer": {
+                        "subject": "Informações para a troca do seu produto! | {{ecommerce_name}}",
+                        "content": "<table cellpadding=\"10\" align=\"left\" >\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            Sua solicitação {{reverse}} foi revisada e autorizada.<br/>Confira os produtos que você deve devolver abaixo:<br/>\n        </td>\n    </tr>\n    <tr>\n        <td>\n            {{refund_requested}}\n        </td>\n    </tr>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            Vá até uma agência do Correios para enviar seus produtos<br/>\n        </td>\n    </tr>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            Atenção, você precisará pagar pela postagem no balcão<br/>\n            Endereço para postagem:<br/>\n            {{store_details}}\n        </td>\n    </tr>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            Após o envio, informe o código de rastreio de postagem disponível em seu comprovante aqui: <br/> {{reverse_set_tracking_url}} <br/> Este passo é essencial para garantir que seu atendimento seja realizado com sucesso.<br/>\n        </td>\n    </tr>\n    <tr>\n        <td>\n            <div style=\"text-align: left; margin: 10px 0;\">\n                <strong>Veja abaixo os detalhes da sua solicitação:</strong>\n                <span>{{reverse}}</span><br/>\n                <strong>Ticket do atendimento:</strong>\n                <span>{{order_number}}</span>\n            </div>\n        </td>\n    </tr>\n    <tr>\n        <td>\n            {{partially_received_warning}}\n        </td>\n    </tr>\n    <tr>\n        <td>\n            <div style=\"text-align: left; margin: 10px 0;\">\n                <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n                    Você tem até o dia {{expire_date}} para fazer o envio da mercadoria e informar o código de rastreio de postagem.\n                </p>\n            </div>\n        </td>\n    </tr>\n</table>\n",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "pending": {
+                        "subject": "Solicitação de Reversa em Análise | {{ecommerce_name}}",
+                        "content": "<div style=\"text-align: left; margin: 10px 0;\">\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Sua solicitação {{reverse}} foi recebida com sucesso<br />\n        <br />\n        Estamos analisando a necessidade de devolução dos itens abaixo.<br />\n        {{refund_requested}}<br />\n        Por favor, aguarde instruções para a postagem dos itens.\n    </p>\n</div>\n",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "send4_code_generated": {
+                        "subject": "Informações para a devolução do seu produto! | {{ecommerce_name}}",
+                        "content": "<table>\n        <tr>\n            <td>\n                <div style=\"text-align: left; margin: 10px 0;\">\n                    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n                        Você escolheu fazer a devolução do seu produto pela aftersale!\n                    </p>\n\n                    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n                        Queremos tornar esse processo rápido e fácil para você, por isso garanta que a sua mercadoria está dentro dos requisitos abaixo:\n                    </p>\n\n                    {{reverse_checklist}}\n\n                    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n                        Se sim, é só ir até o ponto escolhido, levar o seu código e entregar seu produto!\n                    </p>\n                </div>\n            </td>\n        </tr>\n        <tr>\n            <td>\n                <p>\n                    {{order_code_highlighted}}\n                </p>\n                <p>\n                    {{refund_requested}}\n                </p>\n                <div style=\"width: 100%; display: table; border-top: solid 1px #eee; border-bottom: solid 1px #eee; padding-top: 10px; padding-bottom: 20px;\">\n                    <div style=\"width: 100%; display: block; margin: 10px 0;\">\n                        <p style=\"font-family: sans-serif; font-size: 12pt; color: #707070;\">\n                            O ponto <strong>aftersale</strong> escolhido é:\n                        </p>\n                    </div>\n                    {{dot_details}}\n                </div>\n            </td>\n        </tr>\n        <tr>\n            <td>\n                <div style=\"text-align: left; margin: 10px 0;\">\n                    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n                        Você tem até o dia {{expire_date}} para comparecer até o local e entregar a mercadoria.\n                    </p>\n                    {{dot_promotion}}\n                    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n                        Caso o produto apresente alguma característica que não condiz com os requisitos listados, entre em contato com o SAC e siga as instruções apontadas pelo atendente.\n                    </p>\n                    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n                        SAC: {{ecommerce_phone}}\n                    </p>\n                </div>\n            </td>\n        </tr>\n</table>\n",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "correio_code_generated": {
+                        "subject": "Código para a postagem do produto! | {{ecommerce_name}}",
+                        "content": "<p>Sua solicitação {{reverse}} foi revisada e autorizada.</p><p>Confira os produtos que você deve devolver abaixo: {{refund_requested}} Para fazer a postagem do seu produto, vá até os Correios e informe o código:</p><p><br></p><p>{{authorization_code_highlighted}} {{partially_received_warning}} Dicas para postar o seu produto nos Correios:</p><p><br></p><ul><li>Embale seu produto na mesma embalagem recebida ou em alguma outra adequada que preferir;</li><li>Anexe a nota fiscal, caso tenha descartado a nota fiscal que vem anexado na embalagem, imprima a 2ª via que você recebeu por e-mail;</li><li>Confira se todos os itens informados para devolução estão dentro da caixa;</li><li>Lacre a caixa;</li></ul><p><br></p><p>Você pode efetuar a postagem até {{expire_date}}</p>",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "manual_modal_change_correio_code_generated": {
+                        "subject": "{{ecommerce_name}} Reversa {{reverse}} - Modo de devolução de produtos alterado",
+                        "content": "<table cellpadding=\"10\" align=\"left\">\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            Olá {{customer_name}}, tudo bem?<br/>Sua solicitação {{reverse}} foi revisada e teve o modo de devolução alterado para postagem.<br/>Confira os produtos que você deve devolver abaixo:\n        </td>\n    </tr>\n    <tr>\n        <td>\n            {{refund_requested}}\n        </td>\n    </tr>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            Para fazer a postagem do seu produto, dirija-se a uma agência de Correios mais próxima e informe o código:<br/><br />\n        </td>\n    </tr>\n    <tr>\n        <td>\n            {{authorization_code_highlighted}}\n        </td>\n    </tr>\n    <tr>\n        <td>\n            {{partially_received_warning}}\n        </td>\n    </tr>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            Dicas para postar o seu produto nos Correios:\n                            <ul>\n                                <li>Confira se apenas os itens indicados estão dentro da caixa.</li>\n                                <li>Embale seu produto corretamente</li>\n                                <li>Anexe a nota fiscal</li>\n                            </ul>\n        </td>\n    </tr>\n    <tr>\n        <td>Você pode efetuar a postagem até {{expire_date}}</td>\n    </tr>\n</table>\n",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "manual_modal_change_correio_code_generated_collect": {
+                        "subject": "{{ecommerce_name}} Reversa {{reverse}} - Modo de devolução de produtos alterado",
+                        "content": "<table cellpadding=\"10\" align=\"left\">\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            Olá {{customer_name}}, tudo bem?<br/>Sua solicitação {{reverse}} foi revisada e teve o modo de devolução alterado para coleta.<br/>Confira os produtos que você deve devolver abaixo:\n        </td>\n    </tr>\n    <tr>\n        <td>\n            {{refund_requested}}\n        </td>\n    </tr>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            O código de autorização da coleta é:<br />\n        </td>\n    </tr>\n    <tr>\n        <td>\n            {{authorization_code_highlighted}}\n        </td>\n    </tr>\n    <tr>\n        <td>\n            {{partially_received_warning}}\n        </td>\n    </tr>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            Confira todas as instruções para enviar o seu produto pela transportadora:\n                            <ul>\n                               <li>Confira se apenas os itens indicados estão dentro da caixa.</li>\n                               <li>Embale seu produto corretamente</li>\n                                <li>Anexe a nota fiscal</li>\n                            </ul>\n        </td>\n    </tr>\n    <tr>\n        <td>A coleta será realizada no endereço informado na compra: {{customer_address}}<br/></td>\n    </tr>\n</table>\n",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "estafeta_post_code_generated": {
+                        "subject": "Código para a postagem do produto! | {{ecommerce_name}}",
+                        "content": "<table cellpadding=\"10\" align=\"left\" >\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            Sua solicitação {{reverse}} foi revisada e autorizada.<br/>Confira os produtos que você deve devolver abaixo:\n        </td>\n    </tr>\n    <tr>\n        <td>\n            {{refund_requested}}\n        </td>\n    </tr>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            Para fazer a postagem do seu produto, vá até os Estafeta e informe o código:<br/><br/>\n        </td>\n    </tr>\n    <tr>\n        <td>\n            {{authorization_code_highlighted}}\n        </td>\n    </tr>\n    <tr>\n        <td>\n            {{partially_received_warning}}\n        </td>\n    </tr>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            Dicas para postar o seu produto nos Estafeta:\n                            <ul>\n                                <li>Confira se apenas os itens indicados estão dentro da caixa.</li>\n                                <li>Embale seu produto corretamente</li>\n                                <li>Anexe a nota fiscal</li>\n                            </ul>\n        </td>\n    </tr>\n    <tr>\n        <td></td>\n    </tr>\n</table>\n",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "courier_collect_code_generated": {
+                        "subject": "Coleta agendada! | {{ecommerce_name}}",
+                        "content": "<p>Sua solicitação {{reverse}} foi revisada e autorizada.</p><p>Confira os produtos que você deve devolver abaixo: {{refund_requested}} A transportadora já foi informada para passar no endereço informado na compra: {{customer_address}} O código de autorização da coleta é:</p><p>{{authorization_code_highlighted}} {{partially_received_warning}} Dicas para enviar o seu produto pela transportadora.</p><p><br></p><ul><li>Embale seu produto na mesma embalagem recebida ou em alguma outra adequada que preferir;</li><li>Anexe a nota fiscal, caso tenha descartado a nota fiscal que vem anexado na embalagem, imprima a 2ª via que você recebeu por e-mail;</li><li>Confira se todos os itens informados para devolução estão dentro da caixa;</li><li>Lacre a caixa;</li></ul><p><br></p><p>{{tracking_link}}</p>",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "courier_collect_scheduling": {
+                        "subject": "Agendamento de Coleta | {{ecommerce_name}}",
+                        "content": "<table align=\"left\">\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 15px; color: #686868;padding: 10px 0px;\">\n            Sua solicitação {{reverse}} foi revisada e autorizada.\n        </td>\n    </tr>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 15px; color: #686868;padding: 10px 0px;\">\n            Para finalizar a sua solicitação, você precisa agendar a melhor data e horário para a transportadora coletar o produto no seu endereço.\n        </td>\n    </tr>\n    <tr>\n        <td style=\"\n        display: flex;\n        justify-content: center;padding: 10px 0px;\n        \">\n            <a href=\"{{scheduling_link}}\" style=\"\n            display: flex;\n            justify-content: center;\n            align-items: center;\n            text-transform: uppercase;\n            text-decoration: none;\n            width: 100%;\n            max-width: 470px;\n            height: 36px;\n            background: #7041EE;\n            color: #FFFFFF;\n            border-radius: 30px;\n            font-weight: bold;\n            font-size: 14px;\n            line-height: 14pt;\n            gap: 16px;\">\n                Clique aqui e agende a sua coleta agora mesmo\n                <img src=\"https://api.send4.com.br/svg/external_link_icon.svg\">\n            </a>\n        </td>\n    </tr>\n    <tr>\n        <td style=\"\n        font-family: sans-serif;\n        color: #686868;\n        height: 30px;\n        font-weight: normal;\n        font-size: 12px;\n        line-height: 15px;\n        text-align: center;padding: 10px 0px;\">\n            Caso não consiga ver o botão, copie e cole o link a seguir no seu navegador: {{scheduling_link}}<br />\n        </td>\n    </tr>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 15px; color: #686868;padding: 10px 0px;\">\n            Após agendar a sua coleta, você receberá um e-mail com o código de postagem para entregar o seu produto a transportadora.<br />\n        </td>\n    </tr>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 15px; color: #686868;padding: 10px 0px;\">\n            Fique atento ao seu e-mail e até logo!<br />\n        </td>\n    </tr>\n    <tr style=\"\n    display: flex;\n    justify-content: center;\">\n        <td style=\"\n        font-family: sans-serif;\n        color: #686868;\n        font-size: 12px;\n        line-height: 16px;\n        text-align: center;\n        display: flex;\n        align-items: center;\n        justify-content: center;\n        background: #F5F6FA;\n        border-radius: 5px;\n        padding: 8px;\n        max-width: 326px;padding: 10px 0px;\">\n            Não se esqueça de realizar o agendamento! Ele é essencial para que você consiga finalizar a sua solicitação.<br />\n        </td>\n    </tr>\n</table>\n",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "generic_courier_collect_requested_date_changed_code_generated": {
+                        "subject": "Atualizações sobre a coleta da sua reversa!",
+                        "content": "<div style=\"text-align: left; margin: 10px 0;\">\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Sua solicitação {{reverse}}, possui atualizações sobre a coleta dos produtos abaixo a serem devolvidos:\n    </p>\n\n    {{refund_requested}}\n\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        As suas informações de coleta atualizadas são as seguintes:\n    </p>\n\n    <p style=\"padding-top: 10px; line-height: 0.3; font-family: sans-serif; font-size: 11pt; color: #707070;\">\n        <b>Nome da transportadora: {{courier_name}}</b>\n    </p>\n\n    <p style=\"line-height: 0.3; font-family: sans-serif; font-size: 11pt; color: #707070;\">\n        <b>Código da Coleta: {{authorization_code}}</b>\n    </p>\n    <p style=\"line-height: 0.3; font-family: sans-serif; font-size: 11pt; color: #707070;\">\n        <b>Data da Coleta: {{collect_date}}</b>\n    </p>\n<b>\n    <p style=\"line-height: 0.3; font-family: sans-serif; font-size: 11pt; color: #707070;\">\n        <b>Link para rastreio: </b>\n        <a href={{tracking_link}} style=\"color: #007bff; text-decoration: underline;\">{{tracking_link}}</a>\n    </p>\n</div>\n",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "locker_post_code_generated": {
+                        "subject": "Código para a postagem do produto! | {{ecommerce_name}}",
+                        "content": "<table cellpadding=\"10\" align=\"center\">\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            Sua solicitação {{reverse}} foi revisada e autorizada. Sua mercadoria já pode ser devolvida até {{expire_date}} no estabelecimento {{locker_display_name}}\n        </td>\n    </tr>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            Endereço: {{locker_address}}\n        </td>\n    </tr>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            <a href=\"{{locker_localization_url}}\">Clique aqui para ver esse endereço no Google Maps</a>\n        </td>\n    </tr>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            Confira os produtos que você deve devolver abaixo:\n        </td>\n    </tr>\n    <tr>\n        <td>\n            {{refund_requested}}\n        </td>\n    </tr>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            Para devolver sua mercadoria, leve-a <b>embalada</b> e informe o código de devolução no estabelecimento:\n        </td>\n    </tr>\n    <tr>\n        <td>\n            {{authorization_code_highlighted}}\n        </td>\n    </tr>\n    <tr>\n        <td>\n            {{partially_received_warning}}\n        </td>\n    </tr>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070; font-weight: bold;\">\n            Horários de funcionamento:\n        </td>\n    </tr>\n    <tr>\n        <td>\n            {{locker_schedule}}\n        </td>\n    </tr>\n</table>\n",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "correio_code_expiring": {
+                        "subject": "O prazo para postagem está acabando! | {{ecommerce_name}}",
+                        "content": "<div style=\"text-align: left; margin: 10px 0;\">\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Lembramos que você tem até dia <strong>{{expire_date}}</strong> para postar o seu produto nos Correios utilizando o código abaixo:\n    </p>\n</div>\n\n{{authorization_code_highlighted}}\n\n<div style=\"text-align: left; margin: 10px 0;\">\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Dicas para postar o seu produto nos Correios.\n    </p>\n\n    <ul>\n                        <li>Embale seu produto corretamente</li>\n                        <li>Anexe a nota fiscal</li>\n                        <li>Confira se todos os itens informados para devolução estão dentro da caixa</li>\n                    </ul>\n\n    <p style=\"padding-top: 10px; line-height: 1.4; font-family: sans-serif; font-size: 10pt; color: #707070;\">\n        Se você já efetuou a postagem, por favor desconsidere esta mensagem.\n    </p>\n</div>",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "correio_collect_change_to_post": {
+                        "subject": "Código para a postagem do produto! | {{ecommerce_name}}",
+                        "content": "<table cellpadding=\"10\" align=\"left\" >\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            Sua coleta não pode ser processada.<br/>Infelizmente seu CEP não está dentro da área atendida.<br/>\n        </td>\n    </tr>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            Por favor, dirija-se a uma agência de Correios mais próxima e informe o código:<br/>\n        </td>\n    </tr>\n    <tr>\n        <td>\n            {{authorization_code_highlighted}}\n        </td>\n    </tr>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            Confira os produtos que você deve devolver abaixo:<br/>\n        </td>\n    </tr>\n    <tr>\n        <td>\n            {{refund_requested}}\n        </td>\n    </tr>\n    <tr>\n        <td>\n            {{partially_received_warning}}\n        </td>\n    </tr>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            Dicas para postar o seu produto nos Correios:\n                            <ul>\n                                <li>Confira se apenas os itens indicados estão dentro da caixa.</li>\n                                <li>Embale seu produto corretamente</li>\n                                <li>Anexe a nota fiscal</li>\n                            </ul>\n        </td>\n    </tr>\n    <tr>\n        <td>Você pode efetuar a postagem até {{expire_date}}</td>\n    </tr>\n</table>\n",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "correio_tracking_posted": {
+                        "subject": "O pacote já está à caminho... | {{ecommerce_name}}",
+                        "content": "<div style=\"text-align: left; margin: 10px 0;\">\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Identificamos que o seu pacote já está à caminho e a partir de agora você pode acompanhar o envio.\n    </p>\n</div>\n\n<p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n    Para acompanhar, acesse <a href=\"{{tracking_link}}\">{{tracking_link}}</a> e informe o código abaixo:\n</p>\n\n{{tracking_code_highlighted}}\n",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "correio_tracking_delivered": {
+                        "subject": "O pacote foi recebido! | {{ecommerce_name}}",
+                        "content": "<div style=\"text-align: left; margin: 10px 0;\">\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        O pacote já chegou ao destino. Por favor, aguarde novas instruções.\n    </p>\n</div>",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "ecommerce_store_reverse": {
+                        "subject": "Informações para a troca do seu produto! | {{ecommerce_name}}",
+                        "content": "<table cellpadding=\"10\" align=\"left\" >\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            Sua solicitação {{reverse}} foi revisada e autorizada.<br/>Confira os produtos que você deve devolver abaixo:<br/>\n        </td>\n    </tr>\n    <tr>\n        <td>\n            {{refund_requested}}\n        </td>\n    </tr>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            Você escolheu fazer a troca do seu produto em uma loja {{ecommerce_name}}!<br/>\n        </td>\n    </tr>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            Não se esqueça de levar contigo a nota fiscal da compra.<br/>\n        </td>\n    </tr>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            Veja abaixo os detalhes da sua solicitação:<br/>\n        </td>\n    </tr>\n    <tr>\n        <td>\n            <div style=\"text-align: left; margin: 10px 0;\">\n                <strong>Ticket do atendimento:</strong>\n                <span>{{reverse}}</span><br/>\n                <strong>Número do pedido:</strong>\n                <span>{{order_number}}</span>\n            </div>\n        </td>\n    </tr>\n    <tr>\n        <td>\n            <div style=\"width: 100%; display: table; border-top: solid 1px #eee; border-bottom: solid 1px #eee; padding-top: 10px; padding-bottom: 20px;\">\n                <div style=\"width: 100%; display: block; margin: 10px 0;\">\n                    <p style=\"font-family: sans-serif; font-size: 12pt; color: #707070;\">\n                        Loja escolhida:\n                    </p>\n                </div>\n                {{store_details}}\n            </div>\n        </td>\n    </tr>\n    <tr>\n        <td>\n            {{partially_received_warning}}\n        </td>\n    </tr>\n    <tr>\n        <td>\n            <div style=\"text-align: left; margin: 10px 0;\">\n                <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n                    Você tem até o dia {{expire_date}} para comparecer até o local e entregar a mercadoria.\n                </p>\n            </div>\n        </td>\n    </tr>\n</table>",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "products_received": {
+                        "subject": "Produtos recebidos | {{ecommerce_name}}",
+                        "content": "<div style=\"text-align: left; margin: 10px 0;\">\n    <div style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        <p>Confira abaixo o status de recebimento de cada produto da sua solicitação:</p>\n        {{products_list}}\n        <table style=\"margin-top: 10px;\">{{partially_received_warning}}</table>\n        {{new_products_include_info}}\n    </div>\n</div>\n",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "reverse_refused": {
+                        "subject": "Reversa recusada | {{ecommerce_name}}",
+                        "content": "<div style=\"text-align: left; margin: 10px 0;\">\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Sua solicitação foi revisada.\n    </p>\n\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Não será necessário fazer a devolução de nenhum dos itens do seu pedido.\n    </p>\n\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Por favor, verifique as orientações de atendimento a seguir:\n    </p>\n\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        {{refuse_comment}}\n    </p>\n</div>",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "reverse_canceled": {
+                        "subject": "Sua solicitação de troca foi atualizada | {{ecommerce_name}}",
+                        "content": "<div style=\"text-align: left; margin: 10px 0;\">\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Sua solicitação de troca e devolução número {{ticket}} feita na {{ecommerce_name}} foi cancelada.\n    </p>\n\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Por favor, verifique abaixo o motivo\n    </p>\n\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        {{refuse_comment}}\n    </p>\n\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Caso necessário, siga as orientações de atendimento ou, em caso de dúvidas, entre em contato com a central de atendimento.\n    </p>\n\n</div>\n\n",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "reverse_reopened": {
+                        "subject": "Sua solicitação foi reaberta | {{ecommerce_name}}",
+                        "content": "<div style=\"text-align: left; margin: 10px 0;\">\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Sua solicitação {{reverse}} foi reaberta.\n    </p>\n\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Por favor, verifique abaixo o motivo:\n    </p>\n\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        {{reopen_comment}}\n    </p>\n\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Assim que seu pacote for recebido pela nossa equipe, será dado continuidade ao seu atendimento.\n    </p>\n\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Em caso de dúvidas, entre em contato através da central de atendimento.\n    </p>\n\n</div>\n\n",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "reverse_returned_invoice_solicitation": {
+                        "subject": "Solicitação requer emissão de NFD | {{ecommerce_name}}",
+                        "content": "<table cellpadding=\"10\" align=\"left\" >\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; font-weight:bold; color: #707070;\">\n            {{refuse_comment}}\n        </td>\n    </tr>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            Sua solicitação {{reverse}} será atendida mediante a emissão da Nota Fiscal de Devolução.\n        </td>\n    </tr>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            Atenção! <br/> Confira a lista dos produtos que poderão ser faturados e enviados a seguir\n        </td>\n    </tr>\n\n    <tr>\n        <td>\n            {{refund_requested}}\n        </td>\n    </tr>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            Por favor, acesse o link {{returned_invoice_solicitation_link}} e envie a NFD em PDF para prosseguir com a reversa.\n        </td>\n    </tr>\n</table>\n",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "reverse_returned_invoice_solicitation_partially_missing": {
+                        "subject": "Solicitação requer emissão de NFD | {{ecommerce_name}}",
+                        "content": "<table cellpadding=\"10\" align=\"left\" >\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; font-weight:bold; color: #707070;\">\n            {{refuse_comment}}\n        </td>\n    </tr>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            Sua solicitação {{reverse}} será atendida mediante a emissão da Nota Fiscal de Devolução (NFD).\n        </td>\n    </tr>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            Atenção: Já foi enviada uma NFD referente à alguns produtos da solicitação, entretanto para prosseguir com o atendimento é necessário faturar e enviar o arquivo da nota fiscal referente ao(s) produto(s) a seguir:\n        </td>\n    </tr>\n\n    <tr>\n        <td>\n            {{refund_requested}}\n        </td>\n    </tr>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            Para enviar a NFD faltante, {{returned_invoice_solicitation_link}}\n        </td>\n    </tr>\n</table>\n",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "awaiting_without_process": {
+                        "subject": "Solicitação revisada | {{ecommerce_name}}",
+                        "content": "<div style=\"text-align: left; margin: 10px 0;\">\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Sua solicitação {{reverse}} será atendida sem que precise realizar a devolução dos produtos.\n    </p>\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Em breve, você receberá o reembolso dos produtos abaixo:\n    </p>\n</div>\n\n{{refund_requested}}\n\n<div style=\"text-align: left; margin: 10px 0;\">\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        {{refuse_comment}}\n    </p>\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Por favor, faça uma doação dos itens não desejados ou realize o descarte correto e ajude a protejer a natureza.\n    </p>\n</div>\n",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "reverse_with_manual_processing": {
+                        "subject": "Solicitação recebida com sucesso | {{ecommerce_name}}",
+                        "content": "<table cellpadding=\"10\" align=\"left\" >\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            Sua solicitação {{reverse}} foi recebida com sucesso.<br/>\n        </td>\n    </tr>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            Confira os itens a serem devolvidos:<br/>\n        </td>\n    </tr>\n    <tr>\n        <td>\n            {{refund_requested}}\n        </td>\n    </tr>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            Você receberá atualizações da sua solicitação nos próximos e-mails.<br/>\n        </td>\n    </tr>\n</table>\n",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "generic_courier_collect_info": {
+                        "subject": "Atualizações sobre a coleta da sua reversa!",
+                        "content": "<table cellpadding=\"10\" align=\"left\" >\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            <br/>\n            Sua solicitação {{reverse}}, possui atualizações sobre a coleta dos produtos abaixo a serem devolvidos:<br/>\n        </td>\n    </tr>\n    <tr>\n        <td>\n            {{refund_requested}}\n        </td>\n    </tr>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            As suas informações de coleta atualizadas são as seguintes:<br/>\n        </td>\n    </tr>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            Nome da transportadora: {{courier_name}}<br/>\n        </td>\n    </tr>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            Código da Coleta: {{collect_code}}<br/>\n        </td>\n    </tr>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            Data da Coleta: {{collect_date}}<br/>\n        </td>\n    </tr>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            Link para rastreio: <a href=\"{{tracking_link}}\">{{tracking_link}}</a><br/>\n        </td>\n    </tr>\n</table>\n",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "return_point_code_generated": {
+                        "subject": "Código para devolução de produtos no ponto escolhido! | {{ecommerce_name}}",
+                        "content": "<table cellpadding=\"10\" align=\"left\">\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            <br />\n            Sua solicitação {{reverse}} foi revisada e autorizada.<br />\n        </td>\n    </tr>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            Confira o(s) produto(s) que você deve devolver abaixo:<br />\n        </td>\n    </tr>\n    <tr>\n        <td>\n            {{refund_requested}}\n        </td>\n    </tr>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            <strong>Para devolver o(s) produto(s) acima, siga as orientações abaixo:</strong><br />\n            <ol style=\"padding-left: 20px; margin: 0; list-style-type: decimal; color: #707070;\">\n                <li>Separe o(s) produto(s) que deseja devolver;</li>\n                <li>Embale o(s) produto(s) em uma única caixa ou pacote, garantindo que estejam bem protegidos;</li>\n                <li>Leve o pacote ao ponto de devolução Jadlog selecionado;</li>\n                <li>Apresente o QRCode anexado neste e-mail ou informe este código alfanumérico:{{authorization_code}}</li>\n            </ol>\n        </td>\n    </tr>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            Endereço: {{locker_address}}<br />\n            <br />\n            <a href=\"{{locker_localization_url}}\">Clique aqui para ver esse endereço no Google Maps</a><br />\n            <br />\n        </td>\n    </tr>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            <strong>Importante:</strong> Você tem até o dia <strong>Importante:</strong> para realizar a devolução. Após essa data, a autorização de devolução expirará.<br />\n            <br />\n        </td>\n    </tr>\n</table>",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "return_point_code_expiring": {
+                        "subject": "O prazo para devolução de produtos está acabando! | {{ecommerce_name}}",
+                        "content": "<table cellpadding=\"10\" align=\"left\">\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            <br />\n            Lembramos que você tem até dia {{expire_date}} para devolver o(s) produto(s) no Ponto de Devolução {{courier_name}} escolhido.<br />\n        </td>\n    </tr>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            <strong>Para devolver o(s) produto(s), siga as orientações abaixo:</strong><br />\n            <ol style=\"padding-left: 20px; margin: 0; list-style-type: decimal; color: #707070;\">\n                <li>Separe o(s) produto(s) que deseja devolver;</li>\n                <li>Embale o(s) produto(s) em uma única caixa ou pacote, garantindo que estejam bem protegidos;</li>\n                <li>Leve o pacote ao ponto de devolução Jadlog selecionado;</li>\n                <li>Apresente o QRCode anexado neste e-mail ou informe este código alfanumérico:{{authorization_code}}</li>\n            </ol>\n        </td>\n    </tr>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            Se você já realizou a devolução dos produtos no ponto escolhido, por favor desconsidere esta mensagem.<br />\n        </td>\n    </tr>\n</table>\n",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "awaiting_collect_scheduling": {
+                        "subject": "{{ecommerce_name}} - Agendamento de Coleta Disponível {{reverse}}",
+                        "content": "<div style=\"text-align: left; margin: 10px 0;\">\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Sua solicitação de devolução foi aprovada e agora você pode agendar a coleta dos itens do pedido {{order_id}}\n    </p>\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Para garantir o melhor atendimento, clique no link abaixo para escolher a data mais conveniente para a coleta. Lembre-se, o link da coleta estará disponível por apenas {{collect_scheduling_link_expires_in_days}} dias, após isso sua solicitação será cancelada:\n    </p>\n\n    <div style=\"text-align: center; padding-top: 16px;\">\n        <a href=\"{{collect_scheduling_link}}\" style=\"\n            display: inline-flex;\n            justify-content: center;\n            align-items: center;\n            text-transform: uppercase;\n            text-decoration: none;\n            width: 100%;\n            max-width: 380px;\n            height: 36px;\n            background: #5c159b;\n            color: #ffffff;\n            border-radius: 30px;\n            font-weight: bold;\n            font-size: 14px;\n            line-height: 14pt;\n            gap: 16px;\n        \">\n            Agendar Coleta\n            <img src=\"https://api.send4.com.br/svg/external_link_icon.svg\">\n        </a>\n    </div>\n\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Itens a serem coletados:\n    </p>\n\n    {{refund_requested}}\n</div>\n",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "awaiting_collect_scheduling_reminder": {
+                        "subject": "{{ecommerce_name}} Lembrete - Selecione a data para agendamento da sua coleta.",
+                        "content": "<div style=\"text-align: left; margin: 10px 0;\">\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Estamos entrando em contato para lembrá-lo de que a sua solicitação de reversa foi aprovada e você ainda precisa escolher o desejo de uma data para o agendamento da coleta do seu pedido.\n    </p>\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Por favor, acesse o link abaixo para selecionar a data de sua preferência dentro da janela disponível para o agendamento.\n    </p>\n\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Prazo para escolha da data: O link estará disponível até o dia {{collect_scheduling_link_expiration_date}}.\n    </p>\n\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Link para agendamento: \n        <a href={{collect_scheduling_link}} style=\"color: #007bff; text-decoration: underline;\">{{collect_scheduling_link}}</a>\n    </p>\n</div>\n",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    }
+                },
+                "refund": {
+                    "approved": {
+                        "subject": "Valor aprovado! | {{ecommerce_name}}",
+                        "content": "<div style=\"text-align: left; margin: 10px 0;\">\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Sua solicitação será atendida por {{refund_action}} e o valor total aprovado é de {{total_amount}}.\n    </p>\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Você será notificado assim que o pagamento for realizado.\n    </p>\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Por favor, aguarde.\n    </p>\n</div>",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "paid_refund": {
+                        "subject": "{{refund_action}} pago! | {{ecommerce_name}}",
+                        "content": "<p>O {{refund_action}} solicitado no valor total de {{total_amount}} foi realizado com sucesso.</p><p>O prazo para liberação do crédito varia de acordo com a sua operadora de cartão de crédito.</p><p>Dentro de 2 dias úteis, será possível consultar diretamente pelo telefone de contato disponível no verso do seu cartão, informando o protocolo:</p><p>{{payment_comment}}</p><p>{{refund_attachment}}</p>",
+                        "enabled": false,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "refund_nps": {
+                        "subject": "Avalie a resolução da sua troca/devolução | {{ecommerce_name}}",
+                        "content": "<div style=\"text-align: left; margin: 0px 0px 32px 0px;\">\n    <p style=\"margin: 0px;\n        font-weight: normal;\n        font-size: 15px;\n        line-height: 20px;\n        color: #686868;\n        font-family: sans-serif;\">\n        Ficamos muito felizes em ver que você escolheu a {{ecommerce_name}}.\n    </p>\n    <p style=\"margin: 24px 0px;\n        font-weight: normal;\n        font-size: 15px;\n        line-height: 20px;\n        color: #686868;\n        font-family: sans-serif;\">\n        Você tem 1 minutinho para nos ajudar? Nós queremos aproveitar para entender como foi sua experiência de pós-compra. É bem rápido pra você e muito importante para nós, para podermos melhorar cada vez mais.\n    </p>\n    <p style=\"margin: 0px;\n        font-weight: normal;\n        font-size: 15px;\n        line-height: 20px;\n        color: #686868;\n        font-family: sans-serif;\">\n        Bora abrir seu coração?\n    </p>\n</div>\n\n\n",
+                        "enabled": false,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "paid_wire_transfer": {
+                        "subject": "{{refund_action}} realizada! | {{ecommerce_name}}",
+                        "content": "<div style=\"text-align: left; margin: 10px 0;\">\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        A {{refund_action}} solicitada no valor total de {{total_amount}} foi realizada com sucesso.\n    </p>\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        {{payment_comment}}\n    </p>\n\n    {{refund_attachment}}\n</div>\n",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "paid_product": {
+                        "subject": "Troca realizada! | {{ecommerce_name}}",
+                        "content": "<div style=\"text-align: left; margin: 10px 0;\">\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        A sua troca acabou der ser realizada.\n    </p>\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Seu novo pedido {{rebuy_order}} poderá ser acompanhado normalmente pela sua área do cliente.\n    </p>\n\n    {{refund_attachment}}\n</div>\n",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "paid_voucher": {
+                        "subject": "{{refund_action}} disponível! | {{ecommerce_name}}",
+                        "content": "<div style=\"text-align: left; margin: 10px 0;\">\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        O {{refund_action}} solicitado no valor total de {{total_amount}} encontra-se disponível.\n    </p>\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        {{payment_comment}}\n    </p>\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Confira abaixo o código de resgate:\n    </p>\n\n</div>\n\n{{redemption_code_highlighted}}\n\n{{refund_attachment}}\n",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "paid_credit": {
+                        "subject": "{{refund_action}} disponível! | {{ecommerce_name}}",
+                        "content": "<div style=\"text-align: left; margin: 10px 0;\">\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        O {{refund_action}} solicitado no valor total de {{total_amount}} encontra-se disponível.\n    </p>\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        {{payment_comment}}\n    </p>\n\n    {{refund_attachment}}\n</div>\n",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "ask_wire_transfer_data": {
+                        "subject": "Precisamos de ajuda para finalizar sua solicitação | {{ecommerce_name}}",
+                        "content": "<div style=\"text-align: left; margin: 10px 0;\">\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Falta pouco para resolvermos sua solicitação!\n    </p>\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Precisamos que informe os dados bancários para o ticket {{reverse}} referente ao pedido: {{order_number}}\n    </p>\n</div>\n\n{{link_button}}",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "paid_hard_retention": {
+                        "subject": "{{ecommerce_name}} | Seu {{ticket_type}} está liberado!",
+                        "content": "<div style=\"text-align: left; margin: 10px 0;\">\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        O pagamento da sua solicitação {{reverse}} está sendo tratado neste momento.\n    </p>\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Em breve, você receberá uma nova atualização sobre o reembolso:\n    </p>\n\n    {{refund_requested}}\n\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Por favor, aguarde.\n    </p>\n</div>\n",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "ask_wire_transfer_data_update": {
+                        "subject": "Precisamos da sua ajuda para concluir sua solicitação | {{ecommerce_name}}",
+                        "content": "<div style=\"text-align: left; margin: 10px 0;\">\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Não conseguimos completar a transferência porque seus dados bancários estão com alguma divergência.\n    </p>\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Por favor, informe os dados bancários para o ticket {{reverse}} referente ao pedido: {{order_number}} , clicando no botão abaixo.\n    </p>\n</div>\n\n{{link_button}}\n",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "review": {
+                        "subject": "Solicitação em análise | {{ecommerce_name}}",
+                        "content": "<div style=\"text-align: left; margin: 10px 0;\">\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        O pagamento da sua solicitação {{reverse}} está sendo tratado neste momento.\n    </p>\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Em breve, você receberá uma nova atualização sobre o reembolso:\n    </p>\n\n    {{refund_requested}}\n\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Por favor, aguarde.\n    </p>\n</div>\n",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    }
+                },
+                "retention": {
+                    "retention_disabled": {
+                        "subject": "Aviso de desativação de retenção | {{ecommerce_name}}",
+                        "content": "<div style=\"text-align: left; margin: 10px 0;\">\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Olá, time de CS aftersale.\n    </p>\n\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Por gentileza, fazer o acompanhamento do e-commerce {{ecommerce_name}}, pois o usuário {{user_name}} desativou a retenção {{retention_type}} em {{date_time}}\n    </p>\n\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        {{retention_disable_reason}}, {{comment}}\n    </p>\n\n</div>\n\n",
+                        "enabled": true,
+                        "advancedEmailEnabled": true,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    }
+                },
+                "partials": {
+                    "partially_received_warning": {
+                        "content": "<table>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            Os demais itens não deverão ser devolvidos.<br/>Por favor, verifique as orientações de atendimento a seguir:\n        </td>\n    </tr>\n    <tr>\n        <td>\n            {{refuse_comment}}\n        </td>\n    </tr>\n</table>\n",
+                        "advancedEmailEnabled": false
+                    },
+                    "new_products_include_info": {
+                        "content": "<table>\n    <tr>\n        <td style=\"line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n            Estes itens foram adicionados durante o recebimento da sua reversa:\n        </td>\n    </tr>\n    <p>\n        {{new_products_list}}\n    </p>\n</table>\n",
+                        "advancedEmailEnabled": false
+                    }
+                },
+                "occurrence": {
+                    "awaiting_customer": {
+                        "subject": "{{ecommerce_name}} - Houve uma ocorrência na entrega da sua compra",
+                        "content": "<div style=\"text-align: left; margin: 10px 0\">\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070\">\n        Houve uma ocorrência durante o transporte do seu pacote {{tracking_code}}, pertencente ao pedido {{external_order_id}}, e a entrega não poderá ser concluída.\n    </p>\n\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070\">\n        Por favor, clique no botão abaixo, verifique as informações do seu pacote e escolha sua preferência de reembolso.\n    </p>\n\n    <table width=\"100%\" style=\"max-width: 1024px; padding-top: 16px\" cellpadding=\"0\" cellspacing=\"0\">\n      <tr align=\"center\">\n        <td style=\"\n            display: flex;\n            justify-content: center;\n            padding: 10px 0px;\n        \">\n            <a href=\"{{occurrence_link}}\" style=\"\n                display: flex;\n                justify-content: center;\n                align-items: center;\n                text-transform: uppercase;\n                text-decoration: none;\n                width: 100%;\n                max-width: 380px;\n                height: 36px;\n                background: #5c159b;\n                color: #ffffff;\n                border-radius: 30px;\n                font-weight: bold;\n                font-size: 14px;\n                line-height: 14pt;\n                gap: 16px;\n            \">\n                ESCOLHER MODO DE REEMBOLSO\n                <img src=\"https://api.send4.com.br/svg/external_link_icon.svg\">\n            </a>\n        </td>\n      </tr>\n\n      <tr align=\"center\">\n        <td>\n          <p style=\"font-size: 11pt; color: #707070\">(link válido por {{deadline_days}} dias)</p>\n        </td>\n      </tr>\n    </table>\n  </div>\n",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "awaiting_customer_remind_deadline": {
+                        "subject": "{{ecommerce_name}} - LEMBRETE: Houve uma ocorrência na entrega da sua compra",
+                        "content": "<div style=\"text-align: left; margin: 10px 0\">\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070\">\n        O tempo para escolher sua preferência está acabando!\n    </p>\n\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070\">\n        Houve uma ocorrência durante o transporte do seu pacote {{tracking_code}}, pertencente ao pedido {{external_order_id}}, e a entrega não poderá ser concluída.\n    </p>\n\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070\">\n        Por favor, clique no botão abaixo, verifique as informações do seu pacote e escolha sua preferência de reembolso.\n    </p>\n    <table width=\"100%\" style=\"max-width: 1024px; padding-top: 16px\" cellpadding=\"0\" cellspacing=\"0\">\n      <tr align=\"center\">\n        <td style=\"\n            display: flex;\n            justify-content: center;\n            padding: 10px 0px;\n        \">\n            <a href=\"{{occurrence_link}}\" style=\"\n                display: flex;\n                justify-content: center;\n                align-items: center;\n                text-transform: uppercase;\n                text-decoration: none;\n                width: 100%;\n                max-width: 380px;\n                height: 36px;\n                background: #5c159b;\n                color: #ffffff;\n                border-radius: 30px;\n                font-weight: bold;\n                font-size: 14px;\n                line-height: 14pt;\n                gap: 16px;\n            \">\n                ESCOLHER MODO DE REEMBOLSO\n                <img src=\"https://api.send4.com.br/svg/external_link_icon.svg\">\n            </a>\n        </td>\n      </tr>\n\n      <tr align=\"center\">\n        <td>\n          <p style=\"font-size: 11pt; color: #707070\">(link válido por 2 dias)</p>\n        </td>\n      </tr>\n    </table>\n  </div>\n",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "created": {
+                        "subject": "{{ecommerce_name}} - Ocorrência na entrega da sua compra",
+                        "content": "<div style=\"text-align: left; margin: 10px 0\">\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070\">\n        Houve uma ocorrência durante o transporte do seu pacote {{tracking_code}}, pertencente ao pedido {{external_order_id}}, e a entrega não poderá ser concluída.\n    </p>\n\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070\">\n        Estamos seguindo com o cancelamento da sua compra e restituição dos valores pagos no mesmo método de pagamento do pedido.\n    </p>\n\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070\">\n        Caso tenha recebido seu pacote, por favor entre em contato conosco através do canal onde a compra foi efetuada.\n    </p>\n\n  </div>\n",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    }
+                },
+                "cancellation": {
+                    "failed": {
+                        "subject": "{{ecommerce_name}} - Solicitação de cancelamento recusada {{solicitation_id}}",
+                        "content": "<div style=\"text-align: left; margin: 10px 0;\">\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        A análise da sua solicitação de cancelamento {{solicitation_id}} foi concluída.\n    </p>\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Nesse momento não foi possível prosseguir com o cancelamento do seu pedido.\n    </p>\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        O pedido seguirá o fluxo de entrega e caso você não deseje ficar com o produto, orientamos que recuse o pacote no ato da entrega ou solicite a devolução em até 7 dias corridos.\n    </p>\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Você pode obter mais informações clicando no botão abaixo:\n    </p>\n</div>\n\n<div style=\"text-align: center; padding-top: 16px;\">\n    <a href=\"{{timeline_link}}\" style=\"\n        display: inline-flex;\n        justify-content: center;\n        align-items: center;\n        text-transform: uppercase;\n        text-decoration: none;\n        width: 100%;\n        max-width: 380px;\n        height: 36px;\n        background: #5c159b;\n        color: #ffffff;\n        border-radius: 30px;\n        font-weight: bold;\n        font-size: 14px;\n        line-height: 14pt;\n        gap: 16px;\n    \">\n        Acompanhar Minha Solicitação\n        <img src=\"https://api.send4.com.br/svg/external_link_icon.svg\">\n    </a>\n</div>",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "fully": {
+                        "accepted": {
+                            "subject": "{{ecommerce_name}} - Solicitação de cancelamento aprovada {{solicitation_id}}",
+                            "content": "<div style=\"text-align: left; margin: 10px 0;\">\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        A análise da sua solicitação de cancelamento {{solicitation_id}} foi concluída, e o cancelamento foi aprovado.\n    </p>\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Os itens abaixo foram cancelados com sucesso:\n    </p>\n\n    {{list_accepted_products}}\n\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        O reembolso do valor correspondente está sendo processado e será creditado no mesmo método de pagamento escolhido ao realizar seu pedido.\n    </p>\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        A partir de agora, comunicamos a operadora do seu cartão de crédito para efetuar o estorno em até 72h úteis. O valor será creditado em sua fatura em no máximo 60 dias ou em até duas faturas, para PIX o reembolso acontecerá em até 5 dias úteis na conta que originou o pagamento.\n    </p>\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Você pode acompanhar o andamento da sua solicitação clicando no botão abaixo:\n    </p>\n</div>\n\n<div style=\"text-align: center; padding-top: 16px;\">\n    <a href=\"{{timeline_link}}\" style=\"\n        display: inline-flex;\n        justify-content: center;\n        align-items: center;\n        text-transform: uppercase;\n        text-decoration: none;\n        width: 100%;\n        max-width: 380px;\n        height: 36px;\n        background: #5c159b;\n        color: #ffffff;\n        border-radius: 30px;\n        font-weight: bold;\n        font-size: 14px;\n        line-height: 14pt;\n        gap: 16px;\n    \">\n        Acompanhar Minha Solicitação\n        <img src=\"https://api.send4.com.br/svg/external_link_icon.svg\">\n    </a>\n</div>\n",
+                            "enabled": true,
+                            "advancedEmailEnabled": false,
+                            "fromCustomerOriginEnabled": true,
+                            "fromAgentOriginEnabled": true
+                        }
+                    },
+                    "partially": {
+                        "accepted": {
+                            "subject": "{{ecommerce_name}} - Solicitação de cancelamento aprovada parcialmente {{solicitation_id}}",
+                            "content": "<div style=\"text-align: left; margin: 10px 0;\">\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        A análise da sua solicitação de cancelamento {{solicitation_id}} foi concluída.\n    </p>\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Informamos que alguns dos itens foram cancelados com sucesso, porém, outros não podem ser cancelados, pois a nota fiscal já foi emitida. Os detalhes estão abaixo:\n    </p>\n\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Itens cancelados:\n    </p>\n\n    {{list_accepted_products}}\n\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Itens não cancelados:\n    </p>\n\n    {{list_refused_products}}\n\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        O reembolso do valor correspondente aos itens cancelados está sendo processado e será creditado no mesmo método de pagamento escolhido ao realizar seu pedido.\n    </p>\n\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        A partir de agora, comunicamos a operadora do seu cartão de crédito para efetuar o estorno em até 72h úteis. O valor será creditado em sua fatura em no máximo 60 dias ou em até duas faturas, para PIX o reembolso acontecerá em até 5 dias úteis na conta que originou o pagamento.\n    </p>\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Você pode acompanhar o andamento da sua solicitação clicando no botão abaixo:\n    </p>\n</div>\n\n<div style=\"text-align: center; padding-top: 16px;\">\n    <a href=\"{{timeline_link}}\" style=\"\n        display: inline-flex;\n        justify-content: center;\n        align-items: center;\n        text-transform: uppercase;\n        text-decoration: none;\n        width: 100%;\n        max-width: 380px;\n        height: 36px;\n        background: #5c159b;\n        color: #ffffff;\n        border-radius: 30px;\n        font-weight: bold;\n        font-size: 14px;\n        line-height: 14pt;\n        gap: 16px;\n    \">\n        Acompanhar Minha Solicitação\n        <img src=\"https://api.send4.com.br/svg/external_link_icon.svg\">\n    </a>\n</div>\n",
+                            "enabled": true,
+                            "advancedEmailEnabled": false,
+                            "fromCustomerOriginEnabled": true,
+                            "fromAgentOriginEnabled": true
+                        }
+                    },
+                    "refused": {
+                        "subject": "{{ecommerce_name}} - Solicitação de cancelamento recusada {{solicitation_id}}",
+                        "content": "<div style=\"text-align: left; margin: 10px 0;\">\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        A análise da sua solicitação de cancelamento {{solicitation_id}} foi concluída.\n    </p>\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Nesse momento não foi possível prosseguir com o cancelamento do seu pedido.\n    </p>\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        O pedido seguirá o fluxo de entrega e caso você não deseje ficar com o produto, orientamos que recuse o pacote no ato da entrega ou solicite a devolução em até 7 dias corridos.\n    </p>\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Você pode obter mais informações clicando no botão abaixo:\n    </p>\n</div>\n\n<div style=\"text-align: center; padding-top: 16px;\">\n    <a href=\"{{timeline_link}}\" style=\"\n        display: inline-flex;\n        justify-content: center;\n        align-items: center;\n        text-transform: uppercase;\n        text-decoration: none;\n        width: 100%;\n        max-width: 380px;\n        height: 36px;\n        background: #5c159b;\n        color: #ffffff;\n        border-radius: 30px;\n        font-weight: bold;\n        font-size: 14px;\n        line-height: 14pt;\n        gap: 16px;\n    \">\n        Acompanhar Minha Solicitação\n        <img src=\"https://api.send4.com.br/svg/external_link_icon.svg\">\n    </a>\n</div>\n",
+                        "enabled": true,
+                        "advancedEmailEnabled": false,
+                        "fromCustomerOriginEnabled": true,
+                        "fromAgentOriginEnabled": true
+                    },
+                    "created": {
+                        "customer": {
+                            "subject": "{{ecommerce_name}} - Solicitação de cancelamento criada {{solicitation_id}}",
+                            "content": "<div style=\"text-align: left; margin: 10px 0;\">\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Recebemos sua solicitação de cancelamento referente ao pedido {{external_order_id}}.\n    </p>\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Estamos revisando os itens abaixo para prosseguir com o cancelamento:\n    </p>\n\n    {{requested_products}}\n\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Você pode acompanhar o andamento da sua solicitação clicando no botão abaixo:\n    </p>\n\n    <div style=\"text-align: center; padding-top: 16px;\">\n        <a href=\"{{timeline_link}}\" style=\"\n            display: inline-flex;\n            justify-content: center;\n            align-items: center;\n            text-transform: uppercase;\n            text-decoration: none;\n            width: 100%;\n            max-width: 380px;\n            height: 36px;\n            background: #5c159b;\n            color: #ffffff;\n            border-radius: 30px;\n            font-weight: bold;\n            font-size: 14px;\n            line-height: 14pt;\n            gap: 16px;\n        \">\n            Acompanhar Minha Solicitação\n            <img src=\"https://api.send4.com.br/svg/external_link_icon.svg\">\n        </a>\n    </div>\n</div>\n",
+                            "enabled": true,
+                            "advancedEmailEnabled": false,
+                            "fromCustomerOriginEnabled": true,
+                            "fromAgentOriginEnabled": true
+                        },
+                        "agent": {
+                            "subject": "{{ecommerce_name}} - Solicitação de cancelamento criada {{solicitation_id}}",
+                            "content": "<div style=\"text-align: left; margin: 10px 0;\">\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Não foi possível prosseguir com o seu pedido {{external_order_id}}, e, por isso, os itens relacionados a sua compra estão em processo de cancelamento. Essa medida foi tomada para garantir que qualquer inconveniente seja resolvido de forma rápida e eficiente.\n    </p>\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Os itens em cancelamento são:\n    </p>\n\n    {{requested_products}}\n\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Notificaremos você sobre o processo de reembolso dos itens cancelados. Caso prefira, acompanhe o status do reembolso clicando no botão abaixo:\n    </p>\n\n    <div style=\"text-align: center; padding-top: 16px;\">\n        <a href=\"{{timeline_link}}\" style=\"\n            display: inline-flex;\n            justify-content: center;\n            align-items: center;\n            text-transform: uppercase;\n            text-decoration: none;\n            width: 100%;\n            max-width: 380px;\n            height: 36px;\n            background: #5c159b;\n            color: #ffffff;\n            border-radius: 30px;\n            font-weight: bold;\n            font-size: 14px;\n            line-height: 14pt;\n            gap: 16px;\n        \">\n            Acompanhar Minha Solicitação\n            <img src=\"https://api.send4.com.br/svg/external_link_icon.svg\">\n        </a>\n    </div>\n</div>\n",
+                            "enabled": true,
+                            "advancedEmailEnabled": false,
+                            "fromCustomerOriginEnabled": true,
+                            "fromAgentOriginEnabled": true
+                        },
+                        "customer_by_agent": {
+                            "subject": "{{ecommerce_name}} - Solicitação de cancelamento criada {{solicitation_id}}",
+                            "content": "<div style=\"text-align: left; margin: 10px 0;\">\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Recebemos sua solicitação de cancelamento referente ao pedido {{external_order_id}}.\n    </p>\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Estamos revisando os itens abaixo para prosseguir com o cancelamento:\n    </p>\n\n    {{requested_products}}\n\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Você pode acompanhar o andamento da sua solicitação clicando no botão abaixo:\n    </p>\n\n    <div style=\"text-align: center; padding-top: 16px;\">\n        <a href=\"{{timeline_link}}\" style=\"\n            display: inline-flex;\n            justify-content: center;\n            align-items: center;\n            text-transform: uppercase;\n            text-decoration: none;\n            width: 100%;\n            max-width: 380px;\n            height: 36px;\n            background: #5c159b;\n            color: #ffffff;\n            border-radius: 30px;\n            font-weight: bold;\n            font-size: 14px;\n            line-height: 14pt;\n            gap: 16px;\n        \">\n            Acompanhar Minha Solicitação\n            <img src=\"https://api.send4.com.br/svg/external_link_icon.svg\">\n        </a>\n    </div>\n</div>\n",
+                            "enabled": true,
+                            "advancedEmailEnabled": false,
+                            "fromCustomerOriginEnabled": true,
+                            "fromAgentOriginEnabled": true
+                        }
+                    }
+                },
+                "solicitation": {
+                    "partials": {
+                        "requested_products": {
+                            "ref_id": "ID de referencia: :ref_id",
+                            "sku": "SKU: :sku",
+                            "unity": "unidad",
+                            "unity_plural": "unidades"
+                        }
+                    }
+                },
+                "compensation": {
+                    "payment": {
+                        "cancellation": {
+                            "gift_card": {
+                                "subject": "Cancelamento de pedido reembolsado com vale-compras",
+                                "content": "<div style=\"text-align: left; margin: 10px 0\">\n  <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070\">\n    O cancelamento de pedido número {{solicitation_id}} foi reembolsado através da geração e disponibilização do vale-compras abaixo:\n  </p>\n\n  <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070\">\n    {{redemption_code}}\n  </p>\n\n  <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070\">\n    Em caso de dúvidas, entre em contato com o nosso serviço de atendimento ao consumidor.\n  </p>\n</div>",
+                                "enabled": true,
+                                "advancedEmailEnabled": false,
+                                "fromCustomerOriginEnabled": true,
+                                "fromAgentOriginEnabled": true
+                            },
+                            "refund": {
+                                "subject": "Cancelamento de pedido reembolsado com estorno",
+                                "content": "<div style=\"text-align: left; margin: 10px 0\">\n  <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070\">\n    O cancelamento de pedido número {{solicitation_id}} será reembolsado através da devolução do seu dinheiro de volta, a ser efetivado por meio de estorno conforme método de pagamento que utilizou na compra.\n  </p>\n\n  <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070\">\n    O prazo de estorno é definido pela adquirente utilizada na compra.\n  </p>\n\n  <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070\">\n    Em caso de dúvidas, entre em contato com o nosso serviço de atendimento ao consumidor.\n  </p>\n</div>",
+                                "enabled": true,
+                                "advancedEmailEnabled": false,
+                                "fromCustomerOriginEnabled": true,
+                                "fromAgentOriginEnabled": true
+                            },
+                            "wire_transfer": {
+                                "subject": "Cancelamento de pedido reembolsado com transferência",
+                                "content": "<div style=\"text-align: left; margin: 10px 0\">\n  <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070\">\n    O cancelamento de pedido número {{solicitation_id}} será reembolsado através da devolução do seu dinheiro de volta, a ser efetivado por meio de transferência de dinheiro para a conta bancária fornecida por você.\n  </p>\n\n  <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070\">\n    O prazo de efetivação da transferência é definido de acordo com o seu banco.\n  </p>\n\n  <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070\">\n    Em caso de dúvidas, entre em contato com o nosso serviço de atendimento ao consumidor.\n  </p>\n</div>",
+                                "enabled": true,
+                                "advancedEmailEnabled": false,
+                                "fromCustomerOriginEnabled": true,
+                                "fromAgentOriginEnabled": true
+                            }
+                        },
+                        "occurrence": {
+                            "gift_card": {
+                                "subject": "Ocorrência reembolsada com vale-compras",
+                                "content": "<div style=\"text-align: left; margin: 10px 0\">\n  <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070\">\n    A ocorrência número {{solicitation_id}} sobre o pacote {{tracking_code}} foi reembolsada através da geração e disponibilização do vale-compras abaixo:\n  </p>\n\n  <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070\">\n    {{redemption_code}}\n  </p>\n\n  <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070\">\n    Em caso de dúvidas, entre em contato com o nosso serviço de atendimento ao consumidor.\n  </p>\n</div>",
+                                "enabled": true,
+                                "advancedEmailEnabled": false,
+                                "fromCustomerOriginEnabled": true,
+                                "fromAgentOriginEnabled": true
+                            },
+                            "refund": {
+                                "subject": "Ocorrência reembolsada com estorno",
+                                "content": "<div style=\"text-align: left; margin: 10px 0\">\n  <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070\">\n    A ocorrência número {{solicitation_id}} sobre o pacote {{tracking_code}} será reembolsada através da devolução do seu dinheiro de volta, a ser efetivado por meio de estorno conforme método de pagamento que utilizou na compra.\n  </p>\n\n  <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070\">\n    O prazo de estorno é definido pela adquirente utilizada na compra.\n  </p>\n\n  <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070\">\n    Em caso de dúvidas, entre em contato com o nosso serviço de atendimento ao consumidor.\n  </p>\n</div>",
+                                "enabled": true,
+                                "advancedEmailEnabled": false,
+                                "fromCustomerOriginEnabled": true,
+                                "fromAgentOriginEnabled": true
+                            },
+                            "wire_transfer": {
+                                "subject": "Ocorrência reembolsada com transferência",
+                                "content": "<div style=\"text-align: left; margin: 10px 0\">\n  <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070\">\n    A ocorrência número {{solicitation_id}} sobre o pacote {{tracking_code}} será reembolsada através da devolução do seu dinheiro de volta, a ser efetivado por meio de transferência de dinheiro para a conta bancária fornecida por você.\n  </p>\n\n  <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070\">\n    O prazo de efetivação da transferência é definido de acordo com o seu banco.\n  </p>\n\n  <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070\">\n    Em caso de dúvidas, entre em contato com o nosso serviço de atendimento ao consumidor.\n  </p>\n</div>",
+                                "enabled": true,
+                                "advancedEmailEnabled": false,
+                                "fromCustomerOriginEnabled": true,
+                                "fromAgentOriginEnabled": true
+                            }
+                        }
+                    },
+                    "wire_transfer": {
+                        "ask_transfer_bank_account_info": {
+                            "subject": "Precisamos de ajuda para finalizar sua solicitação | {{ecommerce_name}}",
+                            "content": "<div style=\"text-align: left; margin: 10px 0;\">\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Falta pouco para resolvermos sua solicitação!\n    </p>\n    <p style=\"padding-top: 10px; line-height: 1.6; font-family: sans-serif; font-size: 12pt; color: #707070;\">\n        Precisamos que informe os dados bancários para a solicitação {{solicitation}} referente ao pedido: {{order_number}}\n    </p>\n</div>\n\n{{link_button}}",
+                            "enabled": true,
+                            "advancedEmailEnabled": false,
+                            "fromCustomerOriginEnabled": true,
+                            "fromAgentOriginEnabled": true
+                        }
+                    }
+                }
+            }
+        },
+        "shortcodes": {
+            "app_name": "Troque Fácil",
+            "ecommerce_name": "Open Era (Grupo Newbloomers)",
+            "ecommerce_phone": "(11) 93230-0384",
+            "ecommerce_url": "https://openera.troquefacil.com.br",
+            "ecommerce_logo_url": "https://send4.blob.core.windows.net/send4public/ecommerces/CxcFLBvvOhK1Za4UNOlqBJDnRBdQZFEUgWWxAryS.png?v=1669126786",
+            "ecommerce_logo_email_url": "https://send4.blob.core.windows.net/send4public/ecommerces/email-logos/8MtisX8FC8Fwo2WB9HhNOffT5gtVfN39d2ICsfIw.png?v=1669126787",
+            "ecommerce_display_name": "Open Era (Grupo Newbloomers)"
+        },
+        "stylesheet": {
+            "background": {
+                "primary": "#ffffff"
+            },
+            "table": {
+                "primary": "#f9f9f9"
+            },
+            "text": {
+                "primary": "#000"
+            },
+            "button": {
+                "primary": "#4a4a4a",
+                "text": "#ffffff",
+                "borderradius": "0"
+            },
+            "input": {
+                "text": "#333333",
+                "border": "#dddddd",
+                "background": "#ffffff",
+                "borderradius": "0"
+            },
+            "paragraph": {
+                "primary": "#000"
+            },
+            "label": {
+                "primary": "#7c7c7c"
+            },
+            "whitebox": {
+                "primary": "#ffffff",
+                "boxshadow": "0 4px 24px rgba(0, 0, 0, 0.1)"
+            }
+        },
+        "reverse_actions_customization": {
+            "online": {
+                "exchange": true,
+                "return": true
+            },
+            "offline": {
+                "exchange": true,
+                "return": false
+            }
+        },
+        "reverse_actions_customization_labels": {
+            "online": {
+                "exchange": "Trocar",
+                "return": "Devolver"
+            },
+            "offline": {
+                "exchange": "Troca",
+                "return": "Devolução"
+            }
+        },
+        "transportation_modal_priority_order": [],
+        "refund_exchange_options": [
+            "voucher"
+        ],
+        "correios_checklist_content_categories": [
+        ],
+        "correios_checklist_phone_categories": [
+        ],
+        "correios_checklist_eletronic_categories": [
+        ],
+        "modules": {
+            "app": [
+                "public-api"
+            ],
+            "beta": [
+                "new-dashboard",
+                "new-dashboard-export"
+            ],
+            "care": [
+                "manual-approval",
+                "reason-limit",
+                "payment-blocking",
+                "skip-process-step",
+                "freight-by-customer"
+            ],
+            "fiscal": [
+            ],
+            "insurance": [
+            ],
+            "logistic": [
+                "couriers"
+            ],
+            "loyalty": [
+                "whitelist",
+                "grid",
+                "request_evaluation",
+                "reverse-opening-by-admin",
+                "reverse-timeline"
+            ],
+            "money": [
+                "refund-transaction",
+                "refund-attachment",
+                "show-credit-card-transaction-data"
+            ],
+            "omnichannel": [
+                "store",
+                "manage-stores"
+            ],
+            "order-cancellation": [
+            ],
+            "retention": [
+                "setup",
+                "blacklist",
+                "chain",
+                "free-shipping",
+                "hard-retention",
+                "retention-customization"
+            ],
+            "security": [
+            ],
+            "whitelabel": [
+            ]
+        },
+        "enabled_reverse_types": [
+            "store",
+            "correios"
+        ],
+        "localization": {
+            "language": "pt-BR",
+            "timezone": "America/Sao_Paulo",
+            "currency": "BRL"
+        },
+        "reasons": [
+            {
+                "id": 20145,
+                "ecommerce_id": 1367,
+                "description": "Arrependimento",
+                "action": "RTN",
+                "should_approve": false,
+                "upload_image": "none",
+                "show_product_grid": false,
+                "ord": 0,
+                "created_at": "2022-11-18T19:11:16.000000Z",
+                "updated_at": "2026-01-12T13:17:35.000000Z",
+                "deleted_at": null,
+                "subreasons": [
+                    {
+                        "id": 2019,
+                        "reason_id": 20145,
+                        "description": "Não gostei do produto",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:19:03.000000Z",
+                        "updated_at": "2026-01-12T13:19:03.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2020,
+                        "reason_id": 20145,
+                        "description": "Não gostei da cor ao vivo",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:19:03.000000Z",
+                        "updated_at": "2026-01-12T13:19:03.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2021,
+                        "reason_id": 20145,
+                        "description": "Mudei de ideia",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:19:03.000000Z",
+                        "updated_at": "2026-01-12T13:19:03.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2022,
+                        "reason_id": 20145,
+                        "description": "Preferi outro modelo",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:19:03.000000Z",
+                        "updated_at": "2026-01-12T13:19:03.000000Z",
+                        "deleted_at": null
+                    }
+                ]
+            },
+            {
+                "id": 21548,
+                "ecommerce_id": 1367,
+                "description": "Arrependimento",
+                "action": "EXG",
+                "should_approve": false,
+                "upload_image": "none",
+                "show_product_grid": false,
+                "ord": 0,
+                "created_at": "2023-04-18T13:55:19.000000Z",
+                "updated_at": "2026-01-12T13:11:55.000000Z",
+                "deleted_at": null,
+                "subreasons": [
+                    {
+                        "id": 1981,
+                        "reason_id": 21548,
+                        "description": "Não gostei do produto",
+                        "ord": null,
+                        "created_at": "2026-01-12T12:58:25.000000Z",
+                        "updated_at": "2026-01-12T12:58:25.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 1982,
+                        "reason_id": 21548,
+                        "description": "Não gostei da cor ao vivo",
+                        "ord": null,
+                        "created_at": "2026-01-12T12:58:25.000000Z",
+                        "updated_at": "2026-01-12T12:58:25.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 1983,
+                        "reason_id": 21548,
+                        "description": "Mudei de ideia",
+                        "ord": null,
+                        "created_at": "2026-01-12T12:58:25.000000Z",
+                        "updated_at": "2026-01-12T12:58:25.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 1984,
+                        "reason_id": 21548,
+                        "description": "Preferi outro modelo",
+                        "ord": null,
+                        "created_at": "2026-01-12T12:58:25.000000Z",
+                        "updated_at": "2026-01-12T12:58:25.000000Z",
+                        "deleted_at": null
+                    }
+                ]
+            },
+            {
+                "id": 20142,
+                "ecommerce_id": 1367,
+                "description": "Produto com Defeito",
+                "action": "EXG",
+                "should_approve": false,
+                "upload_image": "none",
+                "show_product_grid": false,
+                "ord": 1,
+                "created_at": "2022-11-18T19:11:16.000000Z",
+                "updated_at": "2026-01-12T13:11:55.000000Z",
+                "deleted_at": null,
+                "subreasons": [
+                    {
+                        "id": 2003,
+                        "reason_id": 20142,
+                        "description": "Costura com defeito",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:08:12.000000Z",
+                        "updated_at": "2026-01-12T13:08:12.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2004,
+                        "reason_id": 20142,
+                        "description": "Zíper com defeito",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:08:12.000000Z",
+                        "updated_at": "2026-01-12T13:08:12.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2005,
+                        "reason_id": 20142,
+                        "description": "Manchas no tecido",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:08:12.000000Z",
+                        "updated_at": "2026-01-12T13:08:12.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2006,
+                        "reason_id": 20142,
+                        "description": "Furinhos no tecido",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:08:12.000000Z",
+                        "updated_at": "2026-01-12T13:08:12.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2007,
+                        "reason_id": 20142,
+                        "description": "Detalhes com problema (ilhós, elástico, etc.)",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:08:12.000000Z",
+                        "updated_at": "2026-01-12T13:08:12.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2008,
+                        "reason_id": 20142,
+                        "description": "Defeito após lavagem (uso correto)",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:08:12.000000Z",
+                        "updated_at": "2026-01-12T13:08:12.000000Z",
+                        "deleted_at": null
+                    }
+                ]
+            },
+            {
+                "id": 32563,
+                "ecommerce_id": 1367,
+                "description": "Produto com Defeito",
+                "action": "RTN",
+                "should_approve": false,
+                "upload_image": "none",
+                "show_product_grid": false,
+                "ord": 1,
+                "created_at": "2026-01-12T13:20:52.000000Z",
+                "updated_at": "2026-01-12T13:21:00.000000Z",
+                "deleted_at": null,
+                "subreasons": [
+                    {
+                        "id": 2023,
+                        "reason_id": 32563,
+                        "description": "Costura com defeito",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:20:52.000000Z",
+                        "updated_at": "2026-01-12T13:20:52.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2024,
+                        "reason_id": 32563,
+                        "description": "Zíper com defeito",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:20:52.000000Z",
+                        "updated_at": "2026-01-12T13:20:52.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2025,
+                        "reason_id": 32563,
+                        "description": "Manchas no tecido",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:20:52.000000Z",
+                        "updated_at": "2026-01-12T13:20:52.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2026,
+                        "reason_id": 32563,
+                        "description": "Furinhos no tecido",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:20:52.000000Z",
+                        "updated_at": "2026-01-12T13:20:52.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2027,
+                        "reason_id": 32563,
+                        "description": "Detalhes com problema (ilhós, elástico, etc.)",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:20:52.000000Z",
+                        "updated_at": "2026-01-12T13:20:52.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2028,
+                        "reason_id": 32563,
+                        "description": "Defeito após lavagem (uso correto)",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:20:52.000000Z",
+                        "updated_at": "2026-01-12T13:20:52.000000Z",
+                        "deleted_at": null
+                    }
+                ]
+            },
+            {
+                "id": 21235,
+                "ecommerce_id": 1367,
+                "description": "Tamanho/ Vestibilidade",
+                "action": "EXG",
+                "should_approve": false,
+                "upload_image": "none",
+                "show_product_grid": false,
+                "ord": 2,
+                "created_at": "2023-03-16T14:48:57.000000Z",
+                "updated_at": "2026-01-12T13:11:55.000000Z",
+                "deleted_at": null,
+                "subreasons": [
+                    {
+                        "id": 1985,
+                        "reason_id": 21235,
+                        "description": "Ficou pequeno",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:01:01.000000Z",
+                        "updated_at": "2026-01-12T13:01:01.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 1986,
+                        "reason_id": 21235,
+                        "description": "Ficou grande",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:01:01.000000Z",
+                        "updated_at": "2026-01-12T13:01:01.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 1987,
+                        "reason_id": 21235,
+                        "description": "Forma menor que o esperado",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:01:01.000000Z",
+                        "updated_at": "2026-01-12T13:01:01.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 1988,
+                        "reason_id": 21235,
+                        "description": "Forma maior que o esperado",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:01:01.000000Z",
+                        "updated_at": "2026-01-12T13:01:01.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 1989,
+                        "reason_id": 21235,
+                        "description": "Compressão excessiva",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:01:01.000000Z",
+                        "updated_at": "2026-01-12T13:01:01.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 1990,
+                        "reason_id": 21235,
+                        "description": "Falta de sustentação",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:01:01.000000Z",
+                        "updated_at": "2026-01-12T13:01:01.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 1991,
+                        "reason_id": 21235,
+                        "description": "Não vestiu bem / não valorizou o corpo",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:01:01.000000Z",
+                        "updated_at": "2026-01-12T13:01:01.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2037,
+                        "reason_id": 21235,
+                        "description": "Apertou em alguma região (coxa, quadril, cintura/cós, busto)",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:23:12.000000Z",
+                        "updated_at": "2026-01-12T13:23:12.000000Z",
+                        "deleted_at": null
+                    }
+                ]
+            },
+            {
+                "id": 22277,
+                "ecommerce_id": 1367,
+                "description": "Tamanho/ Vestibilidade",
+                "action": "RTN",
+                "should_approve": false,
+                "upload_image": "none",
+                "show_product_grid": false,
+                "ord": 2,
+                "created_at": "2023-07-12T20:24:46.000000Z",
+                "updated_at": "2026-01-12T13:22:50.000000Z",
+                "deleted_at": null,
+                "subreasons": [
+                    {
+                        "id": 2029,
+                        "reason_id": 22277,
+                        "description": "Ficou pequeno",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:22:50.000000Z",
+                        "updated_at": "2026-01-12T13:22:50.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2030,
+                        "reason_id": 22277,
+                        "description": "Ficou grande",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:22:50.000000Z",
+                        "updated_at": "2026-01-12T13:22:50.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2031,
+                        "reason_id": 22277,
+                        "description": "Forma menor que o esperado",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:22:50.000000Z",
+                        "updated_at": "2026-01-12T13:22:50.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2032,
+                        "reason_id": 22277,
+                        "description": "Forma maior que o esperado",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:22:50.000000Z",
+                        "updated_at": "2026-01-12T13:22:50.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2033,
+                        "reason_id": 22277,
+                        "description": "Apertou em alguma região (coxa, quadril, cintura/cós, busto)",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:22:50.000000Z",
+                        "updated_at": "2026-01-12T13:22:50.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2034,
+                        "reason_id": 22277,
+                        "description": "Compressão excessiva",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:22:50.000000Z",
+                        "updated_at": "2026-01-12T13:22:50.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2035,
+                        "reason_id": 22277,
+                        "description": "Falta de sustentação",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:22:50.000000Z",
+                        "updated_at": "2026-01-12T13:22:50.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2036,
+                        "reason_id": 22277,
+                        "description": "Não vestiu bem / não valorizou o corpo",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:22:50.000000Z",
+                        "updated_at": "2026-01-12T13:22:50.000000Z",
+                        "deleted_at": null
+                    }
+                ]
+            },
+            {
+                "id": 20144,
+                "ecommerce_id": 1367,
+                "description": "Modelagem/ Caimento",
+                "action": "EXG",
+                "should_approve": true,
+                "upload_image": "mandatory",
+                "show_product_grid": false,
+                "ord": 3,
+                "created_at": "2022-11-18T19:11:16.000000Z",
+                "updated_at": "2026-01-12T13:11:55.000000Z",
+                "deleted_at": null,
+                "subreasons": [
+                    {
+                        "id": 1992,
+                        "reason_id": 20144,
+                        "description": "Modelagem diferente do esperado",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:03:53.000000Z",
+                        "updated_at": "2026-01-12T13:03:53.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 1993,
+                        "reason_id": 20144,
+                        "description": "Caimento estranho no corpo",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:03:53.000000Z",
+                        "updated_at": "2026-01-12T13:03:53.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 1994,
+                        "reason_id": 20144,
+                        "description": "Cós muito alto ou muito baixo",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:03:53.000000Z",
+                        "updated_at": "2026-01-12T13:03:53.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 1995,
+                        "reason_id": 20144,
+                        "description": "Peça desconfortável",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:03:53.000000Z",
+                        "updated_at": "2026-01-12T13:03:53.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 1996,
+                        "reason_id": 20144,
+                        "description": "Costura incomoda / machuca",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:03:53.000000Z",
+                        "updated_at": "2026-01-12T13:03:53.000000Z",
+                        "deleted_at": null
+                    }
+                ]
+            },
+            {
+                "id": 22278,
+                "ecommerce_id": 1367,
+                "description": "Modelagem/ Caimento",
+                "action": "RTN",
+                "should_approve": false,
+                "upload_image": "none",
+                "show_product_grid": false,
+                "ord": 3,
+                "created_at": "2023-07-12T20:24:54.000000Z",
+                "updated_at": "2026-01-12T13:24:29.000000Z",
+                "deleted_at": null,
+                "subreasons": [
+                    {
+                        "id": 2038,
+                        "reason_id": 22278,
+                        "description": "Modelagem diferente do esperado",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:24:29.000000Z",
+                        "updated_at": "2026-01-12T13:24:29.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2039,
+                        "reason_id": 22278,
+                        "description": "Caimento estranho no corpo",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:24:29.000000Z",
+                        "updated_at": "2026-01-12T13:24:29.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2040,
+                        "reason_id": 22278,
+                        "description": "Cós muito alto ou muito baixo",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:24:29.000000Z",
+                        "updated_at": "2026-01-12T13:24:29.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2041,
+                        "reason_id": 22278,
+                        "description": "Peça desconfortável",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:24:29.000000Z",
+                        "updated_at": "2026-01-12T13:24:29.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2042,
+                        "reason_id": 22278,
+                        "description": "Costura incomoda / machuca",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:24:29.000000Z",
+                        "updated_at": "2026-01-12T13:24:29.000000Z",
+                        "deleted_at": null
+                    }
+                ]
+            },
+            {
+                "id": 20143,
+                "ecommerce_id": 1367,
+                "description": "Tecido/ Qualidade/ Expectativa",
+                "action": "EXG",
+                "should_approve": false,
+                "upload_image": "optional",
+                "show_product_grid": false,
+                "ord": 4,
+                "created_at": "2022-11-18T19:11:16.000000Z",
+                "updated_at": "2026-01-12T13:11:55.000000Z",
+                "deleted_at": null,
+                "subreasons": [
+                    {
+                        "id": 1997,
+                        "reason_id": 20143,
+                        "description": "Tecido diferente do esperado",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:05:59.000000Z",
+                        "updated_at": "2026-01-12T13:05:59.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 1998,
+                        "reason_id": 20143,
+                        "description": "Toque do tecido não agradou",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:05:59.000000Z",
+                        "updated_at": "2026-01-12T13:05:59.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 1999,
+                        "reason_id": 20143,
+                        "description": "Tecido transparente",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:05:59.000000Z",
+                        "updated_at": "2026-01-12T13:05:59.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2000,
+                        "reason_id": 20143,
+                        "description": "Soltou tinta na lavagem",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:05:59.000000Z",
+                        "updated_at": "2026-01-12T13:05:59.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2001,
+                        "reason_id": 20143,
+                        "description": "Criou bolinhas",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:05:59.000000Z",
+                        "updated_at": "2026-01-12T13:05:59.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2002,
+                        "reason_id": 20143,
+                        "description": "Qualidade inferior / malha fina",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:05:59.000000Z",
+                        "updated_at": "2026-01-12T13:05:59.000000Z",
+                        "deleted_at": null
+                    }
+                ]
+            },
+            {
+                "id": 20152,
+                "ecommerce_id": 1367,
+                "description": "Tecido/ Qualidade/ Expectativa",
+                "action": "RTN",
+                "should_approve": true,
+                "upload_image": "mandatory",
+                "show_product_grid": false,
+                "ord": 4,
+                "created_at": "2022-11-18T19:11:16.000000Z",
+                "updated_at": "2026-01-12T13:26:11.000000Z",
+                "deleted_at": null,
+                "subreasons": [
+                    {
+                        "id": 2043,
+                        "reason_id": 20152,
+                        "description": "Tecido diferente do esperado",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:26:11.000000Z",
+                        "updated_at": "2026-01-12T13:26:11.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2044,
+                        "reason_id": 20152,
+                        "description": "Tecido transparente",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:26:11.000000Z",
+                        "updated_at": "2026-01-12T13:26:11.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2045,
+                        "reason_id": 20152,
+                        "description": "Toque do tecido não agradou",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:26:11.000000Z",
+                        "updated_at": "2026-01-12T13:26:11.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2046,
+                        "reason_id": 20152,
+                        "description": "Soltou tinta na lavagem",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:26:11.000000Z",
+                        "updated_at": "2026-01-12T13:26:11.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2047,
+                        "reason_id": 20152,
+                        "description": "Criou bolinhas",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:26:11.000000Z",
+                        "updated_at": "2026-01-12T13:26:11.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2048,
+                        "reason_id": 20152,
+                        "description": "Qualidade inferior / malha fina",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:26:11.000000Z",
+                        "updated_at": "2026-01-12T13:26:11.000000Z",
+                        "deleted_at": null
+                    }
+                ]
+            },
+            {
+                "id": 20151,
+                "ecommerce_id": 1367,
+                "description": "Logística/ Envio",
+                "action": "RTN",
+                "should_approve": false,
+                "upload_image": "optional",
+                "show_product_grid": false,
+                "ord": 5,
+                "created_at": "2022-11-18T19:11:16.000000Z",
+                "updated_at": "2026-01-12T13:27:34.000000Z",
+                "deleted_at": null,
+                "subreasons": [
+                    {
+                        "id": 2049,
+                        "reason_id": 20151,
+                        "description": "Atraso no pedido",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:27:34.000000Z",
+                        "updated_at": "2026-01-12T13:27:34.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2050,
+                        "reason_id": 20151,
+                        "description": "Recebi item errado/ De outro cliente",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:27:34.000000Z",
+                        "updated_at": "2026-01-12T13:28:01.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2051,
+                        "reason_id": 20151,
+                        "description": "Pedido Duplicado",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:27:34.000000Z",
+                        "updated_at": "2026-01-12T13:28:18.000000Z",
+                        "deleted_at": null
+                    }
+                ]
+            },
+            {
+                "id": 32562,
+                "ecommerce_id": 1367,
+                "description": "Logística/ Envio",
+                "action": "EXG",
+                "should_approve": false,
+                "upload_image": "none",
+                "show_product_grid": false,
+                "ord": 5,
+                "created_at": "2026-01-12T13:13:14.000000Z",
+                "updated_at": "2026-01-12T13:13:19.000000Z",
+                "deleted_at": null,
+                "subreasons": [
+                    {
+                        "id": 2016,
+                        "reason_id": 32562,
+                        "description": "Atraso no pedido",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:13:14.000000Z",
+                        "updated_at": "2026-01-12T13:13:14.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2017,
+                        "reason_id": 32562,
+                        "description": "Recebi item errado / De outro cliente",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:13:14.000000Z",
+                        "updated_at": "2026-01-12T13:13:14.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2018,
+                        "reason_id": 32562,
+                        "description": "Pedido duplicado",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:13:14.000000Z",
+                        "updated_at": "2026-01-12T13:13:14.000000Z",
+                        "deleted_at": null
+                    }
+                ]
+            },
+            {
+                "id": 20141,
+                "ecommerce_id": 1367,
+                "description": "Diferente do Anunciado",
+                "action": "EXG",
+                "should_approve": false,
+                "upload_image": "optional",
+                "show_product_grid": false,
+                "ord": 6,
+                "created_at": "2022-11-18T19:11:16.000000Z",
+                "updated_at": "2026-01-12T13:13:19.000000Z",
+                "deleted_at": null,
+                "subreasons": [
+                    {
+                        "id": 2009,
+                        "reason_id": 20141,
+                        "description": "Cor diferente das fotos",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:09:30.000000Z",
+                        "updated_at": "2026-01-12T13:09:30.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2010,
+                        "reason_id": 20141,
+                        "description": "Detalhes diferentes do anunciado",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:09:30.000000Z",
+                        "updated_at": "2026-01-12T13:09:30.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2011,
+                        "reason_id": 20141,
+                        "description": "Produto não corresponde à descrição",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:09:30.000000Z",
+                        "updated_at": "2026-01-12T13:09:30.000000Z",
+                        "deleted_at": null
+                    }
+                ]
+            },
+            {
+                "id": 20150,
+                "ecommerce_id": 1367,
+                "description": "Diferente do Anunciado",
+                "action": "RTN",
+                "should_approve": false,
+                "upload_image": "none",
+                "show_product_grid": false,
+                "ord": 6,
+                "created_at": "2022-11-18T19:11:16.000000Z",
+                "updated_at": "2026-01-12T13:29:02.000000Z",
+                "deleted_at": null,
+                "subreasons": [
+                    {
+                        "id": 2052,
+                        "reason_id": 20150,
+                        "description": "Cor diferente das fotos",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:29:02.000000Z",
+                        "updated_at": "2026-01-12T13:29:02.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2053,
+                        "reason_id": 20150,
+                        "description": "Detalhes diferentes do anunciado",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:29:02.000000Z",
+                        "updated_at": "2026-01-12T13:29:02.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2054,
+                        "reason_id": 20150,
+                        "description": "Produto não corresponde à descrição",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:29:02.000000Z",
+                        "updated_at": "2026-01-12T13:29:02.000000Z",
+                        "deleted_at": null
+                    }
+                ]
+            },
+            {
+                "id": 20149,
+                "ecommerce_id": 1367,
+                "description": "Compra Incorreta",
+                "action": "RTN",
+                "should_approve": false,
+                "upload_image": "optional",
+                "show_product_grid": false,
+                "ord": 7,
+                "created_at": "2022-11-18T19:11:16.000000Z",
+                "updated_at": "2026-01-12T13:30:06.000000Z",
+                "deleted_at": null,
+                "subreasons": [
+                    {
+                        "id": 2055,
+                        "reason_id": 20149,
+                        "description": "Comprei a cor errada",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:30:06.000000Z",
+                        "updated_at": "2026-01-12T13:30:06.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2056,
+                        "reason_id": 20149,
+                        "description": "Comprei o tamanho errado",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:30:06.000000Z",
+                        "updated_at": "2026-01-12T13:30:06.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2057,
+                        "reason_id": 20149,
+                        "description": "Presente não serviu",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:30:06.000000Z",
+                        "updated_at": "2026-01-12T13:30:35.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2058,
+                        "reason_id": 20149,
+                        "description": "Comprei duplicado",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:30:06.000000Z",
+                        "updated_at": "2026-01-12T13:30:06.000000Z",
+                        "deleted_at": null
+                    }
+                ]
+            },
+            {
+                "id": 32561,
+                "ecommerce_id": 1367,
+                "description": "Compra Incorreta",
+                "action": "EXG",
+                "should_approve": false,
+                "upload_image": "none",
+                "show_product_grid": false,
+                "ord": 7,
+                "created_at": "2026-01-12T13:11:28.000000Z",
+                "updated_at": "2026-01-12T13:13:19.000000Z",
+                "deleted_at": null,
+                "subreasons": [
+                    {
+                        "id": 2012,
+                        "reason_id": 32561,
+                        "description": "Comprei a cor errada",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:11:28.000000Z",
+                        "updated_at": "2026-01-12T13:11:28.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2013,
+                        "reason_id": 32561,
+                        "description": "Comprei o tamanho errado",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:11:28.000000Z",
+                        "updated_at": "2026-01-12T13:11:28.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2014,
+                        "reason_id": 32561,
+                        "description": "Presente não serviu",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:11:28.000000Z",
+                        "updated_at": "2026-01-12T13:11:28.000000Z",
+                        "deleted_at": null
+                    },
+                    {
+                        "id": 2015,
+                        "reason_id": 32561,
+                        "description": "Comprei duplicado",
+                        "ord": null,
+                        "created_at": "2026-01-12T13:11:28.000000Z",
+                        "updated_at": "2026-01-12T13:11:28.000000Z",
+                        "deleted_at": null
+                    }
+                ]
+            }
+        ],
+        "address": {
+            "id": 6232,
+            "zip_code": "06415970",
+            "address": "Avenida Capitão Francisco Cézar, 664",
+            "complement": "Caixa Postal 75660",
+            "number": "1818",
+            "neighborhood": "Vila Engenho Novo",
+            "city": "Barueri",
+            "state": "SP",
+            "country": "BR",
+            "lat": "-23.4907337",
+            "long": "-46.8863708",
+            "updated_at": "2023-05-03T12:47:14.000000Z",
+            "deleted_at": null
+        }
+    }
+}

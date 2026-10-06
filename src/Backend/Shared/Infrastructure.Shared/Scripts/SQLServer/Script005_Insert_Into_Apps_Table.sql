@@ -1,0 +1,24 @@
+INSERT INTO [auditing].[Apps]
+VALUES 
+(10,'Procedures/ERP', 'Grupo de Procedures de sincronização Linx Microvix ERP'),
+(11,'Procedures/B2C', 'Schema do Database NewBloomers'),
+(12,'Procedures/ECOMMERCE', 'Schema do Database NewBloomers'),
+(13,'Procedures/General', 'Schema do Database NewBloomers'),
+(14,'Procedures/Operations', 'Schema do Database NewBloomers'),
+
+(15,'CRM', 'Schema do Database NewBloomers'),
+(16,'WebApplication', 'Schema do database NewBloomers'),
+(40,'Procedures', 'Procedures Realizadas no Database NewBloomers'),
+
+(50,'Integrações/ERP', 'Sistema de Integrações do ERP'),
+(51,'Integrações/ECOMMERCE', 'Sistema de Integrações do Ecommerce'),
+(52,'Integrações/B2C', 'Sistema de Integrações do Ecommerce após Integração Nativa do ERP'),
+(53,'Integrações/Dootax', 'Sistema Integrações da Dootax'),
+(55,'Integrações/Mobsim', 'Sistema Integrações da Mobsim'),
+(56,'Integrações/Movidesk', 'Sistema Integrações da Movidesk'),
+(57,'Integrações/Pagarme', 'Sistema Integrações da Pagarme'),
+(58,'Integrações/TotalExpress', 'Sistema Integrações da TotalExpress'),
+(59,'Integrações/FlashCourier', 'Sistema Integrações da FlashCourier'),
+(60,'Integrações/JadLog', 'Sistema Integrações da JadLog'),
+(61,'Integrações/Stone', 'Sistema Integrações da Stone'),
+(62,'Integrações/Oto', 'Sistema Integrações da Oto')

@@ -1,0 +1,245 @@
+{
+    "success": true,
+    "ecommerce": {
+        "id": 0,
+        "uuid": "d290f1ee-6c54-4b01-90e6-d701748f0851",
+        "company_name": "string",
+        "trade_name": "string",
+        "display_name": "string",
+        "url": "string",
+        "phone": "string",
+        "email": "string",
+        "document": "string",
+        "address_id": 0,
+        "maintenance_mode_global": true,
+        "messages": {
+            "pages": {
+                "introduction": {
+                    "title": "string",
+                    "description": "string"
+                },
+                "select_source": {
+                    "title": "string",
+                    "description": "string"
+                },
+                "order": {
+                    "title": "string",
+                    "description": "string"
+                },
+                "products": {
+                    "title": "string",
+                    "description": "string"
+                },
+                "optional_commentary": {
+                    "title": "string",
+                    "description": "string"
+                },
+                "shipping": {
+                    "title": "string",
+                    "description": "string"
+                },
+                "resume": {
+                    "title": "string",
+                    "description": "string"
+                },
+                "finish": {
+                    "title": "string",
+                    "description": "string"
+                },
+                "customer": {
+                    "title": "string",
+                    "description": "string"
+                },
+                "customer_products": {
+                    "title": "string",
+                    "description": "string"
+                },
+                "seller": {
+                    "title": "string",
+                    "description": "string"
+                },
+                "email_by_customer": {
+                    "title": "string",
+                    "description": "string"
+                }
+            },
+            "mails": {
+                "greeting": "string",
+                "footer": "string",
+                "reverse": {
+                    "send4_code_generated": {
+                        "subject": "string",
+                        "content": "string"
+                    },
+                    "correio_code_generated": {
+                        "subject": "string",
+                        "content": "string"
+                    },
+                    "courier_collect_code_generated": {
+                        "subject": "string",
+                        "content": "string"
+                    },
+                    "correio_code_expiring": {
+                        "subject": "string",
+                        "content": "string"
+                    },
+                    "correio_collect_change_to_post": {
+                        "subject": "string",
+                        "content": "string"
+                    },
+                    "correio_tracking_posted": {
+                        "subject": "string",
+                        "content": "string"
+                    },
+                    "correio_tracking_delivered": {
+                        "subject": "string",
+                        "content": "string"
+                    },
+                    "ecommerce_store_reverse": {
+                        "subject": "string",
+                        "content": "string"
+                    },
+                    "products_received": {
+                        "subject": "string",
+                        "content": "string"
+                    },
+                    "reverse_refused": {
+                        "subject": "string",
+                        "content": "string"
+                    },
+                    "reverse_canceled": {
+                        "subject": "string",
+                        "content": "string"
+                    },
+                    "awaiting_without_process": {
+                        "subject": "string",
+                        "content": "string"
+                    }
+                },
+                "refund": {
+                    "approved": {
+                        "subject": "string",
+                        "content": "string"
+                    },
+                    "paid_refund": {
+                        "subject": "string",
+                        "content": "string"
+                    },
+                    "paid_wire_transfer": {
+                        "subject": "string",
+                        "content": "string"
+                    },
+                    "paid_product": {
+                        "subject": "string",
+                        "content": "string"
+                    },
+                    "paid_voucher": {
+                        "subject": "string",
+                        "content": "string"
+                    },
+                    "paid_credit": {
+                        "subject": "string",
+                        "content": "string"
+                    },
+                    "ask_wire_transfer_data": {
+                        "subject": "string",
+                        "content": "string"
+                    },
+                    "paid_hard_retention": {
+                        "subject": "string",
+                        "content": "string"
+                    }
+                },
+                "partials": {
+                    "partially_received_warning": "string"
+                }
+            },
+            "shortcodes": {
+                "app_name": "string",
+                "ecommerce_name": "string",
+                "ecommerce_phone": "string",
+                "ecommerce_url": "string",
+                "ecommerce_logo_url": "string",
+                "ecommerce_logo_email_url": "string",
+                "ecommerce_display_name": "string"
+            },
+            "app_name": "string",
+            "deny_search_index": true,
+            "theme": "string",
+            "stylesheet": {
+            },
+            "terms": "string",
+            "limit_value_collect": "string",
+            "collect_enabled": true,
+            "has_ecommerce_integration": true,
+            "has_info_by_customer_enabled": true,
+            "field_order_id_label": "string",
+            "field_order_id_placeholder": "string",
+            "field_product_comment_label": "string",
+            "field_product_comment_placeholder": "string",
+            "field_confirmation_label": "string",
+            "field_confirmation_placeholder": "string",
+            "field_confirmation_type": "string",
+            "hotjar_enabled": true,
+            "hotjar_id": "string",
+            "retention_method": "string",
+            "retention_free_shipping": true,
+            "product_comment_required": true,
+            "localization": {
+                "language": "string",
+                "timezone": "string",
+                "currency": "string"
+            },
+            "show_quick_selection": true,
+            "maintenance_mode": true,
+            "modules": {
+                "app": [
+                    "string"
+                ],
+                "care": [
+                    "string"
+                ],
+                "logistic": [
+                    "string"
+                ],
+                "loyalty": [
+                    "string"
+                ],
+                "money": [
+                    "string"
+                ],
+                "omnichannel": [
+                    "string"
+                ],
+                "retention": [
+                    "string"
+                ],
+                "whitelabel": [
+                    "string"
+                ]
+            },
+            "enabled_reverse_types": [
+                "string"
+            ],
+            "could_be_retained": true,
+            "cashback_allow_third_party": true,
+            "show_product_images": true,
+            "reasons": [
+                {
+                    "id": 0,
+                    "ecommerce_id": 0,
+                    "description": "string",
+                    "reason_category_id": "string",
+                    "action": "string",
+                    "should_approve": true,
+                    "upload_image": "string",
+                    "show_product_grid": true,
+                    "ord": "string",
+                    "created_at": "string",
+                    "updated_at": "string",
+                    "deleted_at": "string"
+                }
+            ]
+        }
+    }
+}

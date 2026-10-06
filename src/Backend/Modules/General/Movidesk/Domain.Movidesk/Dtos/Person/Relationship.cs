@@ -1,0 +1,15 @@
+﻿namespace Domain.Movidesk.Dtos.Person
+{
+    public class Relationship
+    {
+        public string id { get; init; }
+        public string name { get; init; }
+        public string slaAgreement { get; init; }
+        public string forceChildrenToHaveSomeAgreement { get; init; }
+        public string allowAllServices { get; init; }
+        public string includeInParents { get; init; }
+        public string loadChildOrganizations { get; init; }
+        public string isGetMethod { get; init; }
+        public List<Service>? services { get; init; }
+    }
+}

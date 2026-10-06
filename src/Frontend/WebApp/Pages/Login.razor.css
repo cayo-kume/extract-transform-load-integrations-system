@@ -1,0 +1,43 @@
+﻿.login-container {
+    display: flex !important;
+    height: 100vh !important;
+    width: 100% !important;
+}
+
+.login-background {
+    flex: 1.3;
+    background-image: url('/images/wallpapers/wallpaper_black.png');
+    background-size: cover;
+    background-position: center;
+}
+
+.login-form-container {
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+    flex: 0.5;
+}
+
+/* Laptop - 1024px */
+@media (max-width: 1024px) {
+    .login-background {
+        flex: 1.3;
+    }
+
+    .login-form-container {
+        flex: 0.5;
+    }
+}
+
+/* Tablet - 768px */
+@media (max-width: 768px) {
+    .login-background {
+        display: none;
+    }
+
+    .login-form-container {
+        flex: none;
+        width: 100%;
+    }
+}

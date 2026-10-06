@@ -1,0 +1,39 @@
+{
+    "current_page": 0,
+    "first_page_url": "string",
+    "from": 0,
+    "last_page": 0,
+    "last_page_url": "string",
+    "next_page_url": "string",
+    "path": "string",
+    "per_page": 0,
+    "prev_page_url": "string",
+    "to": 0,
+    "total": 0,
+    "success": true,
+    "data": [
+        {
+            "id": 0,
+            "action": "string",
+            "bonus_amount_percent": "string",
+            "customer": {
+                "id": 0,
+                "first_name": "string",
+                "last_name": "string"
+            },
+            "order_id": "string",
+            "requested_amount": 0,
+            "requested_total_amount": 0,
+            "reverse_id": 0,
+            "status": {
+                "id": 0,
+                "name": "string",
+                "description": "string"
+            },
+            "total_amount": "string",
+            "type": "string",
+            "updated_at": "string",
+            "created_at": "string"
+        }
+    ]
+}

@@ -1,0 +1,91 @@
+﻿<!--Filtros-->
+<MudItem xs="7">
+    <div class="d-flex flex-row align-center gap-2 ml-8 mr-8">
+        <div class="flex-grow-1">
+            <MudAutocomplete @bind-value="_period"
+                             SearchFunc="SearchPeriod"
+                             Variant=Variant.Outlined
+                             Label="Período"
+                             Margin=Margin.Normal
+                             Placeholder="Período"
+                             Clearable=true
+                             Modal=true />
+        </div>
+        <div class="flex-grow-1">
+            <MudAutocomplete @bind-value="_type"
+                             SearchFunc="SearchTypes"
+                             Variant=Variant.Outlined
+                             Label="Tipo"
+                             Margin=Margin.Normal
+                             Placeholder="Tipo"
+                             Clearable=true
+                             Modal=true />
+        </div>
+        <div class="flex-grow-1">
+            <MudAutocomplete @bind-value="_aplication"
+                             SearchFunc="SearchSystems"
+                             Variant=Variant.Outlined
+                             Label="Aplicação"
+                             Margin=Margin.Normal
+                             Placeholder="Aplicação"
+                             Clearable=true
+                             Modal=true />
+        </div>
+    </div>
+    <!--Pesquisa-->
+    <div class="d-flex flex-row align-center ml-8 mr-8">
+        <MudTextField @bind-Value="_search"
+                      Label="Search"
+                      Variant="Variant.Outlined"
+                      Adornment="Adornment.End"
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      AdornmentColor="Color.Default" />
+    </div>
+</MudItem>
+
+@code {
+    private string _period = "24h";
+    private string _type = "Todos";
+    private string _aplication = "Todos";
+    private string _search;
+
+    private string[] _periods = { "24h", "12h", "7 dias" };
+
+    private string[] _types = { "Todos" };
+
+    private string[] _aplications = { "Todos" };
+
+    private async Task<IEnumerable<string>> SearchPeriod(string value, CancellationToken token)
+    {
+        // In real life use an asynchronous function for fetching data from an api.
+        await Task.Delay(5, token);
+
+        if (string.IsNullOrEmpty(value))
+            return _periods;
+
+        return _periods.Where(x => x.Contains(value, StringComparison.InvariantCultureIgnoreCase));
+    }
+
+    private async Task<IEnumerable<string>> SearchTypes(string value, CancellationToken token)
+    {
+        // In real life use an asynchronous function for fetching data from an api.
+        await Task.Delay(5, token);
+
+        if (string.IsNullOrEmpty(value))
+            return _types;
+
+        return _types.Where(x => x.Contains(value, StringComparison.InvariantCultureIgnoreCase));
+    }
+
+    private async Task<IEnumerable<string>> SearchSystems(string value, CancellationToken token)
+    {
+        // In real life use an asynchronous function for fetching data from an api.
+        await Task.Delay(5, token);
+
+        if (string.IsNullOrEmpty(value))
+            return _aplications;
+
+        return _aplications.Where(x => x.Contains(value, StringComparison.InvariantCultureIgnoreCase));
+    }
+
+}

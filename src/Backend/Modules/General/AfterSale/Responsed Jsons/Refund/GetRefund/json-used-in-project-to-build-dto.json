@@ -1,0 +1,218 @@
+{
+    "success": true,
+    "data": {
+        "id": 0,
+        "type": "string",
+        "action": "string",
+        "bonus_amount": 0,
+        "bonus_amount_percent": 0,
+        "requested_shipping_amount": 0,
+        "shipping_method": "string",
+        "added_taxes_amount": null,
+        "requested_raw_amount": 0,
+        "requested_amount": 0,
+        "requested_total_amount": 0,
+        "received_amount": 0,
+        "received_raw_amount": 0,
+        "total_amount": 0,
+        "free_shipping": false,
+        "created_at": "2026-06-19T14:06:53.000000Z",
+        "updated_at": "2026-06-19T14:10:06.000000Z",
+        "customer": {
+            "id": 0,
+            "first_name": "string",
+            "last_name": "string",
+            "email": "string",
+            "document": "string"
+        },
+        "status": {
+            "id": 0,
+            "name": "string",
+            "description": "string"
+        },
+        "seller_info": "string",
+        "status_histories": [
+            {
+                "status": {
+                    "id": 0,
+                    "service_code": "string",
+                    "name": "string",
+                    "description": "string"
+                },
+                "date": "2026-06-19T14:06:53.000000Z",
+                "user": {
+                    "id": 0,
+                    "name": "string",
+                    "first_name": "string",
+                    "last_name": "string",
+                    "email": "string",
+                    "mobile_phone": "string",
+                    "phone": "string",
+                    "document": "string",
+                    "wallet": "string"
+                },
+                "comments": "string"
+            }
+        ],
+        "total_amount_histories": [
+            {
+                "id": 0,
+                "user": {
+                    "id": 0,
+                    "first_name": "string",
+                    "last_name": "string"
+                },
+                "total_amount": "string",
+                "date": "2026-06-19T14:06:53.000000Z",
+                "type": {
+                    "id": 0,
+                    "name": "string",
+                    "description": "string"
+                }
+            }
+        ],
+        "cashback_account": "string",
+        "voucher": {
+            "redemption_code": "string",
+            "giftcard_id": "string",
+            "expiring_date": "string"
+        },
+        "should_ask_voucher_code": true,
+        "order_payment_methods": [
+			"string"
+        ],
+        "reverse": {
+            "updated_at": "2026-06-19 15:16:33",
+            "reverse_type": "string",
+            "status": {
+                "id": 0,
+                "service_code": "string",
+                "name": "string",
+                "description": "string"
+            },
+			
+            "id": 0,
+            "created_at": "2026-06-19 14:06:53",
+            "refunds_count": 0,
+            
+			//O end-point da API retorna essas propriedades nulas e como elas não existem na documentação, não tenho como afirmar o tipo de cada uma delas, então elas não serão incluidas no objeto
+			//"partner_store": null,
+            //"returned_invoice": null,
+			
+			"ecommerceOrder": {
+                "id": 0,
+                "order_id": "string",
+				
+				//O end-point da API retorna essa propriedade nula e como ela não existem na documentação, não tenho como afirmar o tipo dela, então decidi não inclui-la no objeto
+                //"options": null
+            },
+            "ecommerce_order_seller": {
+                "invoice_number": "string",
+                "invoice_url": "string"
+            }
+        },
+        "products": [
+            {
+                "id": 0,
+                "reverse_id": 0,
+                "motive_id": 0,
+                "reason": {
+                    "id": 0,
+                    "ecommerce_id": 0,
+                    "description": "string",
+                    "action": "string",
+                    "should_approve": false,
+                    "upload_image": "string",
+                    "show_product_grid": false,
+                    "ord": 0,
+                    "created_at": "2022-11-18T19:11:16.000000Z",
+                    "updated_at": "2026-01-12T13:13:19.000000Z",
+                    "deleted_at": "2026-01-12T13:13:19.000000Z"
+                },
+                "subreason": {
+                    "id": 0,
+                    "reason_id": 0,
+                    "description": "string",
+                    //"ord": null,
+                    "created_at": "2026-01-12T13:09:30.000000Z",
+                    "updated_at": "2026-01-12T13:09:30.000000Z",
+                    "deleted_at": "2026-01-12T13:13:19.000000Z"
+                },
+                "ecommerce_order_product_id": 0,
+                "refund_id": 0,
+                "qty": 0,
+                "requested_qty": 0,
+                "received_qty": 0,
+                "product_received_comment": "string",
+                "comments": "string",
+                "reverse_action": "string",
+                "protocol": "string",
+                "images": [
+                    {
+                        "id": 0,
+                        "product_id": "string",
+                        "image_path": "string",
+                        "image_url": "string"
+                    }
+                ],
+				"image_url": [
+                    "string"
+                ],
+                "product_id": "string",
+                "hash": "string",
+                "name": "string",
+                "sku": "string",
+                "reference": "string",
+                "price": 0,
+                "selling_price": 0,
+                "shipping_price": 0,
+                "weight": "string",
+                "order_id": 0,
+                "returned_invoice": "string",
+                "returned_invoice_url": "string",
+                "returned_invoice_url_xml": "string",
+                "invoice": "string",
+                "original_qty": 0,
+				"brand": "string",
+				"is_included_by_admin": false,
+				"situation": "string",
+				"bundle_hash": "string",
+				"is_bundle": false,
+				"customer_retention_method_id": 0,
+				
+				//O end-point da API retorna essas propriedades nulas e como elas não existem na documentação, não tenho como afirmar o tipo de cada uma delas, então elas não serão incluidas no objeto
+				//"options": null,
+				//"transference_invoice": null,
+				//"original_images": []
+				//"refund_product_requests": []
+                //"insurances": []
+				//"fraud": null,
+            }
+        ],
+        "product_price_type": {
+            "type": "string",
+            "label": "string"
+        },
+        "refunded_shipping_type": "string",
+        "can_edit_wire_transfer": false,
+        "can_edit_email": false,
+        "has_wire_transfer_account": false,
+        "customer_retention_method_id": "string",
+        "external_order_url": "string",
+        "could_change_status_for": [
+            "string"
+        ],
+        "comments_count": 0,
+		"insurance_amount": 0,
+		"enable_payment": true,
+		
+		//O end-point da API retorna essas propriedades nulas e como elas não existem na documentação, não tenho como afirmar o tipo de cada uma delas, então elas não serão incluidas no objeto
+        //"hard_retention_deadline": null,
+        //"refund_attachment": null,
+		//"sellers": [],
+		//"order_payment_methods_detailed": [],
+        //"administrative_records": [],
+		//"order_transactions": [],
+        //"refund_product_requests": []
+    }
+}

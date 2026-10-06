@@ -1,0 +1,396 @@
+{
+  "success": true,
+  "data": {
+    "reverse": {
+      "id": 0, //bigint
+      "reverse_type": "string",
+      "courier_collect": false,
+      "courier_service_type": "string",
+      "service_type_change": 0,
+      "ecommerce_order_id": 0, //bigint
+      "store_id": "string",
+      "courier_contract_id": 0,
+      "is_awaiting_resend_webhook": true,
+	  "is_erased": true,
+	  //"brand_id": null,
+	  //"created_by": null,
+	  //"order_sequence_number": null,
+	  //"tracking_error": null,
+	  //"locker_reference": null,
+	  //"partner_store": null,
+      //"destination_seller_id": null,
+	  //"service_type_changed": null,
+	  //"invoice_encrypted": null,
+      //"was_close_to_idle_notified": null,
+      //"auto_receive_product_deadline": null,
+      //"had_opening_validations": null,
+	  //"ecommerce_order_whitelist_id": null,
+      //"was_order_whitelisted": null,
+      //"opened_how_many_days_after_delivered_at": null,
+      //"collect_scheduling_expiration_date": null,
+      //"last_resent_webhook_at": null,
+      //"salesforce_crm_id": null,
+	  //"administrative_records": [],
+      "total_amount": "string",
+      "invoice": 0,
+      "courier_data": {
+        "posting_card": "string",
+        "is_store_seller_contract": false
+      },
+      "destination_data": {
+        "name": "string",
+        "type": "string",
+        "address": {
+          "id": 0, //bigint
+          "lat": "string",
+          "city": "string",
+          "long": "string",
+          "state": "string",
+          "number": "string",
+          "address": "string",
+          "country": "string",
+          "zip_code": "string",
+          "complement": "string",
+          "deleted_at": "2023-05-03T12:47:14.000000Z",
+          "updated_at": "2023-05-03T12:47:14.000000Z",
+          "neighborhood": "string"
+        },
+		"type_id": 0,
+		"updated_at": "2026-06-19 14:06:58",
+        "seller_info": "string",
+        "return_to_seller": false,
+        "was_manually_changed": false,
+        "label": "string"
+		//"sellers": [],
+        //"seller_id": null,
+      },
+      "store_expire_date": "string",
+      "skip_process_step": 0,
+      "freight_by_customer": false,
+      "origin": "string",
+      "external_source": "string",
+      "billing_item_id": 0, //bigint
+      "created_at": "2026-06-19T14:06:53.000000Z",
+      "updated_at": "2026-06-23T21:21:01.000000Z",
+      "deleted_at": "2026-06-19T14:06:53.000000Z",
+      "status_id": 0,
+      "type": "string",
+      "ecommerce_id": 0, //bigint
+      "origin_seller_id": "string",
+      "courier_data_encrypted": {
+        "posting_card": "string",
+        "is_store_seller_contract": false
+      },
+      "insurance_manual_needed": 0,
+      "ecommerce": {
+        "id": 0, //bigint
+        "uuid": "25700212-a6a0-48ed-8553-2701d9c343f3",
+        "company_name": "string",
+        "trade_name": "string",
+        "display_name": "string",
+        "url": "string",
+        "is_active": true,
+        "phone": "string",
+        "email": "string",
+        "document": "string",
+        "address_id": 0, //bigint
+        "maintenance_mode_global": false,
+        "last_order_report_date": "2026-04-09T23:59:59.000000Z",
+        "is_test": false,
+        //"segment": null,
+        //"oauth_client_id": null,
+        //"provider_id": null,
+        //"registration_origin": null
+		//"ecommerce_group_id": null,
+        //"hubspot_code": null,
+      },
+      "ecommerce_order": {
+        "id": 0, //bigint
+        "order_id": "string",
+        "invoice_number": "string",
+        "uuid": "25700212-a6a0-48ed-8553-2701d9c343f3",
+        "shipping_value": 0, //decimal
+        "ordered_at": "2026-06-19T14:06:52.000000Z",
+        "invoiced_at": "2026-06-19T14:06:52.000000Z",
+        "delivered_at": "2026-06-19T14:06:52.000000Z",
+        "value": 0,
+        "payment_methods": [
+			"string"
+		],
+        "ecommerce_id": 0, //bigint
+        "customer_id": 0, //bigint
+        "is_online": false,
+        "is_marketplace": true,
+        "marketplace_name": "string",
+        "updated_at": "2026-06-19T14:06:52.000000Z",
+        "deleted_at": "2026-06-19T14:06:52.000000Z",
+        "is_erased": true,
+		"is_restrict": true,
+        //"options_encrypted": null,
+        //"invoice_number_encrypted": null,
+		//"packages": null,
+		//"options": null,
+		//"currency": null,
+		//"payment_methods_detailed": null,
+		//"partner_store": null,
+      },
+      "products": [
+        {
+          "id": 0, //bigint
+          "reverse_id": 0, //bigint
+          "motive_id": 0,
+          "reason": {
+            "id": 0, //bigint
+            "ecommerce_id": 0, //bigint
+            "description": "string",
+            "action": "string",
+            "should_approve": false,
+            "upload_image": "string",
+            "show_product_grid": false,
+            "ord": 6,
+            "created_at": "2022-11-18T19:11:16.000000Z",
+            "updated_at": "2026-01-12T13:13:19.000000Z",
+            "deleted_at": "2026-01-12T13:13:19.000000Z"
+          },
+          "subreason": {
+            "id": 2009, //bigint
+            "reason_id": 20141, //bigint
+            "description": "string",
+            //"ord": null,
+            "created_at": "2026-01-12T13:09:30.000000Z",
+            "updated_at": "2026-01-12T13:09:30.000000Z",
+            "deleted_at": "2026-01-12T13:09:30.000000Z"
+          },
+          "ecommerce_order_product_id": 0, //bigint
+          "refund_id": 0, //bigint
+          "qty": 1,
+          "requested_qty": 1,
+          "received_qty": 0,
+          "product_received_comment": 0,
+          "comments": "string",
+          "reverse_action": "string",
+          "customer_retention_method_id": "string",
+          "protocol": "string",
+          "images": [
+			{
+              "id": 0,
+              "product_id": "string",
+              "image_path": "string",
+              "image_url": "string"
+            }
+		  ],
+          //"refund_product_requests": [],
+          "is_included_by_admin": true,
+          //"fraud": null,
+          //"situation": null,
+          "product_id": "string",
+          "hash": "c4ca4238a0b923820dcc509a6f75849b",
+          "name": "string",
+          "sku": "string",
+          "reference": "string",
+          "price": "string", //decimal
+          "selling_price": "string", //decimal
+          "shipping_price": "string", //decimal
+          "brand": "string", //decimal
+          "weight": "string", //decimal
+          "order_id": 0, //bigint
+          //"original_images": [],
+          "returned_invoice": "string",
+          "returned_invoice_url": "string",
+          "returned_invoice_url_xml": "string",
+          //"bundle_hash": null,
+          "is_bundle": true,
+          //"transference_invoice": null,
+          "invoice": "string",
+          //"options": null,
+          "original_qty": 1,
+          //"insurances": []
+        }
+      ],
+      "status": {
+        "id": 0,
+        "service_code": "string",
+        "name": "string",
+        "description": "string"
+      },
+      "status_histories": [
+        {
+          "id": 0, //bigint
+          "reverse_id": 0, //bigint
+          "status_id": 0,
+          "user_id": 0, //bigint
+          "customer_id": 0, //bigint
+          "date": "2026-06-22T12:25:37.000000Z",
+          "comments": "string",
+          "billing_message": null,
+          "status": {
+            "id": 0,
+            "service_code": "string",
+            "name": "string",
+            "description": "string"
+          },
+          "user": {
+            "name": "string",
+            "first_name": "string",
+            "last_name": "string",
+            "email": "string",
+            "mobile_phone": "string",
+            "phone": "string",
+            "document": "string",
+            "wallet": "string"
+          }
+        }
+      ],
+      "tracking": {
+        "id": 0, //bigint
+        "reverse_id": 0, //bigint
+        "courier_contract_id": 0,
+        "authorization_code": "string",
+        "tracking_code": "string",
+        "shipping_amount": "string", //decimal
+        "package_amount": "string", //decimal
+        "courier_name": "string",
+        "tracking_url": "string",
+        "expire_date": "2026-07-04 03:00:00",
+        "collect_date": "2026-07-04 03:00:00",
+        "requested_collect_date": "2026-07-04 03:00:00",
+        "status": "string",
+        "message": "string", //varchar(800)
+        "status_updated_at": "2026-06-23 19:04:00",
+        "is_change_collect_to_post": true,
+        "type": "string",
+        "qr_code": "string",
+        "service_type": "string",
+        "cte": "string",
+        "delivery_deadline": "2026-06-26 02:59:59",
+        //"extra_fields": null,
+        "updated_at": "2026-06-24T06:17:22.000000Z",
+        "deleted_at": "2026-06-24T06:17:22.000000Z"
+      },
+      "billing_date": "2026-06-22 15:13:54",
+      "must_treat_refund": false,
+      "customer_nfd_attached": "string",
+      "customer_nfd_xml_attached": "string",
+      //"external_order_url": null,
+      "returned_invoice": "string",
+      "reverse_type_name": "string",
+      "is_generic_courier": false,
+      "can_generate_voucher": false,
+      "could_cancel": true,
+      //"available_swap_couriers": [],
+      "can_send_correction_letter": false,
+      "correction_letter_link": "string",
+      "ecommerce_order_seller": {
+        "invoice_number": "string",
+        "invoice_url": "string"
+      },
+      "brand": {
+        "name": "string"
+      },
+      "customer_url": "string",
+      "timeline_url": "string",
+      "retry_options": {
+        "can_retry": false
+      },
+      "collect_scheduling_link": "string",
+      "reverse_destination": {
+        "is_omnichannel": false,
+        "ie_number": "string",
+        //"partner_number": null,
+        "display_name": "string",
+        "cnpj": "string",
+        //"seller": null,
+        //"schedules": null,
+        "address": {
+          "zip_code": "string",
+          "address": "string",
+          "number": "string",
+          "complement": "string",
+          "neighborhood": "string",
+          "city": "string",
+          "state": "string",
+          "country": "string",
+          "lat": "string",
+          "long": "string",
+          "updated_at": "2026-06-24T06:17:22.000000Z",
+          "deleted_at": "2026-06-24T06:17:22.000000Z"
+        }
+      }
+    },
+    "customer": {
+      "id": 0, //bigint
+      "first_name": "string",
+      "last_name": "string",
+      "email": "string",
+      "contact_email": "string",
+      "document": "string",
+      "phone": "string",
+      "contact_phone": "string",
+      "address_id": 0, //bigint
+      "shipping_address_id": 0, //bigint
+      "is_restrict": false,
+      //"disable_extra_notifications": null,
+      "is_erased": false,
+      "first_name_encrypted": "string",
+      "last_name_encrypted": "string",
+      "document_encrypted": "string",
+      "email_encrypted": "string",
+      //"contact_email_encrypted": null,
+      "phone_encrypted": "string",
+      "contact_phone_encrypted": "string",
+      "order_email": "string",
+      "order_phone": "string",
+      "address": {
+        "id": 0, //bigint
+        "zip_code": "string",
+        "address": "string",
+        "complement": "string",
+        //"complement_encrypted": null,
+        "number": "string",
+        "number_encrypted": "string",
+        "neighborhood": "string",
+        "city": "string",
+        "state": "string",
+        "country": "string",
+        "lat": "string",
+        "long": "string",
+        "is_restrict": true,
+        "updated_at": "2026-06-19T14:06:51.000000Z",
+        "deleted_at": "2026-06-23T21:21:01.000000Z",
+        "is_erased": false
+      },
+      "shipping_address": {
+        "id": 0, //bigint
+        "zip_code": "string",
+        "address": "string",
+        "complement": "string",
+        //"complement_encrypted": null,
+        "number": "string",
+        "number_encrypted": "string",
+        "neighborhood": "string",
+        "city": "string",
+        "state": "string",
+        "country": "string",
+        "lat": "string",
+        "long": "string",
+        "is_restrict": true,
+        "updated_at": "2026-06-19T14:06:52.000000Z",
+        "deleted_at": "2026-06-23T21:21:01.000000Z",
+        "is_erased": true
+      }
+    },
+    "ecommerce_order": "string",
+    "tracking_history": [
+      {
+        "id": 0, //bigint
+        "tracking_id": 0, //bigint
+        "status": "string",
+        "message": "string", //varchar(800)
+        "status_updated_at": "2026-06-23T19:04:00.000000Z",
+        "created_at": "2026-06-23T21:21:01.000000Z",
+        "updated_at": "2026-06-23T21:21:01.000000Z",
+        "deleted_at": "2026-06-23T21:21:01.000000Z"
+      }
+    ]
+  }
+}

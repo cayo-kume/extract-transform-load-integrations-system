@@ -1,0 +1,141 @@
+@* SpaceLoading.razor
+   Loader padrão do app: ícones espaciais em line-art que se alternam com efeito
+   de traço sendo desenhado + rótulo animado ("Carregando...").
+   Sem JS interop — ciclo controlado por PeriodicTimer em C#.
+
+   Modos de uso:
+     • Inline (padrão) ...... <SpaceLoading />                  → card centralizado no fluxo
+     • Overlay .............. <SpaceLoading Overlay="true" />   → cobre o container pai (que deve ser position:relative)
+     • Fullscreen ........... <SpaceLoading FullScreen="true" />→ cobre a viewport inteira
+
+   Renderiza somente quando Visible = true (facilita @if implícito):
+     <SpaceLoading Overlay="true" Visible="_carregando" Label="Buscando integrações" /> *@
+
+@namespace WebApp.Components.Loadings
+@implements IAsyncDisposable
+
+@if (Visible)
+{
+    <div class="loading-root @ModeCss">
+        <div class="space-loading" role="status" aria-live="polite" aria-label="@Label">
+
+            <div class="icon-stage">
+
+                @* 1 — Foguete *@
+                <svg class="icon @Cls(0)" viewBox="0 0 100 100" fill="none">
+                    <g transform="rotate(40 50 50)">
+                        <path pathLength="100" d="M50 12c9 9 13 21 13 34 0 8-2 15-4 20H41c-2-5-4-12-4-20 0-13 4-25 13-34Z" />
+                        <circle pathLength="100" cx="50" cy="40" r="6" />
+                        <path pathLength="100" d="M38 52l-8 13c5 1 9 0 12-2" />
+                        <path pathLength="100" d="M62 52l8 13c-5 1-9 0-12-2" />
+                        <path pathLength="100" class="dash" d="M50 72v8M50 86v5" />
+                    </g>
+                    <path pathLength="100" class="spark" d="M22 24v8M18 28h8" />
+                    <path pathLength="100" class="spark" d="M80 70v6M77 73h6" />
+                </svg>
+
+                @* 2 — Planeta com anel *@
+                <svg class="icon @Cls(1)" viewBox="0 0 100 100" fill="none">
+                    <circle pathLength="100" cx="50" cy="50" r="22" />
+                    <path pathLength="100" d="M25 62C12 58 8 50 14 44c4-4 12-6 22-6M64 38c14 2 22 8 17 15-3 5-12 8-23 9" />
+                    <path pathLength="100" class="dash" d="M42 45h9M52 55h7M40 55h4" />
+                    <path pathLength="100" d="M34 84h32" />
+                </svg>
+
+                @* 3 — Astronauta flutuando *@
+                <svg class="icon @Cls(2)" viewBox="0 0 100 100" fill="none">
+                    <g transform="rotate(-18 50 50)">
+                        <circle pathLength="100" cx="50" cy="32" r="13" />
+                        <path pathLength="100" d="M42 32c1-4 4-7 8-7" />
+                        <rect pathLength="100" x="39" y="47" width="22" height="26" rx="7" />
+                        <path pathLength="100" d="M39 54h-7v12h7M61 54h7v12h-7" />
+                        <path pathLength="100" d="M44 73l-3 10M56 73l3 10" />
+                    </g>
+                    <path pathLength="100" class="dash" d="M64 78c8 4 14 2 16-4" />
+                </svg>
+
+                @* 4 — Bandeira na Lua *@
+                <svg class="icon @Cls(3)" viewBox="0 0 100 100" fill="none">
+                    <circle pathLength="100" cx="32" cy="30" r="12" />
+                    <path pathLength="100" class="dash" d="M26 27h6M32 33h6" />
+                    <path pathLength="100" d="M60 24v46" />
+                    <path pathLength="100" d="M60 26h22v14H60" />
+                    <path pathLength="100" class="dash" d="M66 33h10" />
+                    <path pathLength="100" d="M40 74c8-5 24-5 34 0" />
+                </svg>
+
+                @* 5 — Rover lunar *@
+                <svg class="icon @Cls(4)" viewBox="0 0 100 100" fill="none">
+                    <circle pathLength="100" cx="36" cy="68" r="8" />
+                    <circle pathLength="100" cx="66" cy="68" r="8" />
+                    <path pathLength="100" d="M28 58h46l-6-14H40l-12 14Z" />
+                    <path pathLength="100" d="M56 44V32" />
+                    <path pathLength="100" d="M48 30c2-6 12-6 14 0" />
+                    <path pathLength="100" class="dash" d="M22 80h58" />
+                </svg>
+            </div>
+
+            <p class="label">
+                @Label<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span>
+            </p>
+        </div>
+    </div>
+}
+
+@code {
+    /// <summary>Controla a exibição do loader. Útil para bindar direto a uma flag de carregamento.</summary>
+    [Parameter] public bool Visible { get; set; } = true;
+
+    /// <summary>Texto exibido abaixo do ícone (os "..." são animados à parte).</summary>
+    [Parameter] public string Label { get; set; } = "Carregando";
+
+    /// <summary>Tempo que cada ícone permanece em cena.</summary>
+    [Parameter] public TimeSpan IconInterval { get; set; } = TimeSpan.FromMilliseconds(2200);
+
+    /// <summary>Cobre o container pai (que deve ter <c>position: relative</c>) com um backdrop.</summary>
+    [Parameter] public bool Overlay { get; set; }
+
+    /// <summary>Cobre a viewport inteira. Tem precedência sobre <see cref="Overlay"/>.</summary>
+    [Parameter] public bool FullScreen { get; set; }
+
+    private const int IconCount = 5;
+    private int _current;
+    private PeriodicTimer? _timer;
+    private Task? _loop;
+    private CancellationTokenSource? _cts;
+
+    private string ModeCss => FullScreen ? "fullscreen" : Overlay ? "overlay" : "inline";
+
+    private string Cls(int index) => index == _current ? "active" : "";
+
+    protected override void OnInitialized()
+    {
+        _cts = new CancellationTokenSource();
+        _timer = new PeriodicTimer(IconInterval);
+        _loop = CycleAsync();
+    }
+
+    private async Task CycleAsync()
+    {
+        try
+        {
+            while (await _timer!.WaitForNextTickAsync(_cts!.Token))
+            {
+                _current = (_current + 1) % IconCount;
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException) { /* componente descartado */ }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _cts?.Cancel();
+        _timer?.Dispose();
+        if (_loop is not null)
+        {
+            try { await _loop; } catch { /* ignore */ }
+        }
+        _cts?.Dispose();
+    }
+}

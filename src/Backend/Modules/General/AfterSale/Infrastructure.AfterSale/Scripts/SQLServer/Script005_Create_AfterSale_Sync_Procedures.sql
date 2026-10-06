@@ -1,0 +1,40 @@
+﻿exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'AfterSaleErrors', @execute = 1;
+
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'AfterSaleEcommerces', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'AfterSaleEcommercesMessagesPages', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'AfterSaleEcommercesMessagesMails', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'AfterSaleEcommercesReasons', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'AfterSaleEcommercesSubReasons', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'AfterSaleEcommercesStringValues', @execute = 1;
+
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'AfterSaleRefunds', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'AfterSaleRefundsCouldChangeStatusFor', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'AfterSaleRefundsOrdersPaymentsMethods', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'AfterSaleRefundsStatusHistories', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'AfterSaleRefundsTotalAmountHistories', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'AfterSaleRefundsProducts', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'AfterSaleRefundsProductsImages', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'AfterSaleRefundsProductsImagesUrls', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'AfterSaleSummarizedRefunds', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'AfterSaleStatusRefunds', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'AfterSaleActionsRefunds', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'AfterSaleBanksRefunds', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'AfterSaleTypesRefunds', @execute = 1;
+
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'AfterSaleCourierAttributes', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'AfterSaleCourierAttributesFields', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'AfterSaleTransportationsReverses', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'AfterSaleHistoriesReverses', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'AfterSaleStatusReverses', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'AfterSaleSummarizedReverses', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'AfterSaleReverses', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'AfterSaleReversesCustomers', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'AfterSaleReversesDestinationsData', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'AfterSaleReversesTrackings', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'AfterSaleReversesTrackingHistories', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'AfterSaleReversesDestinations', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'AfterSaleReversesEcommerceOrders', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'AfterSaleReversesEcommerceOrdersPaymentsMethods', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'AfterSaleReversesProducts', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'AfterSaleReversesProductsImages', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'AfterSaleReversesStatusHistories', @execute = 1;

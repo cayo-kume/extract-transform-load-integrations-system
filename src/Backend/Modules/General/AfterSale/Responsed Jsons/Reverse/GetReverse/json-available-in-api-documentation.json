@@ -1,0 +1,226 @@
+{
+  "success": true,
+  "data": {
+    "tracking_history": [
+      {
+        "id": 0,
+        "tracking_id": 0,
+        "status": "string",
+        "message": "string",
+        "status_updated_at": "string",
+        "created_at": "string",
+        "updated_at": "string",
+        "deleted_at": "string"
+      }
+    ],
+    "customer": {
+      "id": 0,
+      "address": {
+        "id": 0,
+        "zip_code": "string",
+        "address": "string",
+        "complement": "string",
+        "number": "string",
+        "neighborhood\"": "string",
+        "city": "string",
+        "state": "string",
+        "lat": "string",
+        "long": "string",
+        "updated_at": "string",
+        "deleted_at": "string"
+      },
+      "address_id": "string",
+      "contact_email": "string",
+      "document": "string",
+      "email": "string",
+      "first_name": "string",
+      "last_name": "string",
+      "phone": "string",
+      "shipping_address": {
+        "id": 0,
+        "zip_code": "string",
+        "address": "string",
+        "complement": "string",
+        "number": "string",
+        "neighborhood\"": "string",
+        "city": "string",
+        "state": "string",
+        "lat": "string",
+        "long": "string",
+        "updated_at": "string",
+        "deleted_at": "string"
+      },
+      "shipping_address_id": "string"
+    },
+    "ecommerce_order": "string",
+    "reverse": {
+      "returned_invoice": "string",
+      "customer_nfd_attached": "string",
+      "customer_nfd_xml_attached": "string",
+      "can_generate_voucher": true,
+      "could_cancel": true,
+      "courier_collect": true,
+      "courier_contract_id": 0,
+      "courier_data": {
+        "weight": "string",
+        "nf_cfop": "string",
+        "nf_amount": "string",
+        "nf_number": "string",
+        "nf_serial": "string",
+        "nf_access_key": "string"
+      },
+      "created_at": "string",
+      "deleted_at": "string",
+      "dot_id": "string",
+      "ecommerce_order": {
+        "id": 0,
+        "currency": {},
+        "customer_id": 0,
+        "deleted_at": "string",
+        "ecommerce_id": 0,
+        "invoice_number": "string",
+        "is_marketplace": true,
+        "is_online": true,
+        "marketplace_name": "string",
+        "options": {},
+        "order_id": "string",
+        "ordered_at": "string",
+        "payment_methods": [
+          "string"
+        ],
+        "shipping_value": 0,
+        "updated_at": "string",
+        "value": 0
+      },
+      "ecommerce_order_id": 0,
+      "id": 0,
+      "invoice": 0,
+      "order_id": "string",
+      "products": [
+        {
+          "id": 0,
+          "reverse_id": 0,
+          "motive_id": 0,
+          "reason": {
+            "id": 0,
+            "ecommerce_id": 0,
+            "description": "string",
+            "reason_category_id": "string",
+            "action": "string",
+            "should_approve": true,
+            "upload_image": "string",
+            "show_product_grid": true,
+            "ord": "string",
+            "created_at": "string",
+            "updated_at": "string",
+            "deleted_at": "string"
+          },
+          "ecommerce_order_product_id": 0,
+          "refund_id": 0,
+          "qty": 0,
+          "requested_qty": 0,
+          "received_qty": 0,
+          "product_received_comment": 0,
+          "comments": "string",
+          "reverse_action": "string",
+          "customer_retention_method_id": "string",
+          "protocol": "string",
+          "images": [
+            {
+              "id": 0,
+              "product_id": "string",
+              "image_path": "string",
+              "image_url": "string"
+            }
+          ],
+          "refund_product_requests": [
+            {}
+          ],
+          "product_id": "string",
+          "hash": "string",
+          "name": "string",
+          "sku": "string",
+          "price": "string",
+          "selling_price": "string",
+          "weight": "string",
+          "returned_invoice": "string",
+          "returned_invoice_url": "string",
+          "returned_invoice_url_xml": "string",
+          "invoice": "string",
+          "order_id": 0,
+          "image_url": [
+            "string"
+          ]
+        }
+      ],
+      "refunds": [
+        {
+          "id": 0,
+          "action": "string",
+          "bonus_amount_percent": "string",
+          "customer": {
+            "id": 0,
+            "first_name": "string",
+            "last_name": "string"
+          },
+          "order_id": "string",
+          "requested_amount": 0,
+          "requested_total_amount": 0,
+          "reverse_id": 0,
+          "status": {
+            "id": 0,
+            "name": "string",
+            "description": "string"
+          },
+          "total_amount": "string",
+          "type": "string",
+          "updated_at": "string",
+          "created_at": "string"
+        }
+      ],
+      "reverse_type": "string",
+      "reverse_type_name": "string",
+      "skip_process_step": true,
+      "status": {
+        "id": 0,
+        "service_code": "string",
+        "name": "string",
+        "description": "string"
+      },
+      "status_histories": [
+        {
+          "id": 0,
+          "reverse_id": 0,
+          "status_id": 0,
+          "user_id": 0,
+          "customer_id": 0,
+          "date": "string",
+          "comments": "string",
+          "status": {
+            "id": 0,
+            "service_code": "string",
+            "name": "string",
+            "description": "string"
+          },
+          "user": {
+            "id": 0,
+            "name": "string",
+            "first_name": "string",
+            "last_name": "string",
+            "email": "string",
+            "mobile_phone": "string",
+            "phone": "string",
+            "document": "string",
+            "wallet": "string"
+          }
+        }
+      ],
+      "status_id": 0,
+      "store_expire_date": "string",
+      "store_id": "string",
+      "total_amount": "string",
+      "tracking": "string",
+      "updated_at": "string"
+    }
+  }
+}

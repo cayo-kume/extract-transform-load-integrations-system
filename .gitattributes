@@ -1,0 +1,31 @@
+# Normaliza line endings automaticamente
+* text=auto
+
+# Arquivos de código: LF no repositório
+*.cs        text eol=lf
+*.csproj    text eol=lf
+*.slnx      text eol=lf
+*.json      text eol=lf
+*.md        text eol=lf
+*.razor     text eol=lf
+*.css       text eol=lf
+*.html      text eol=lf
+*.js        text eol=lf
+*.ts        text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf
+*.xml       text eol=lf
+
+# Scripts que precisam de CRLF no Windows
+*.bat       text eol=crlf
+*.cmd       text eol=crlf
+*.ps1       text eol=crlf
+
+# Binários: nunca converter
+*.png       binary
+*.jpg       binary
+*.gif       binary
+*.ico       binary
+*.dll       binary
+*.exe       binary
+*.pdf       binary

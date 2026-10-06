@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+  	<PackageReference Include="Dapper" />
+	<PackageReference Include="Microsoft.Extensions.Http" />
+	<PackageReference Include="System.Data.SqlClient" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\Application.LinxCommerce\Application.LinxCommerce.csproj" />
+    <ProjectReference Include="..\Domain.LinxCommerce\Domain.LinxCommerce.csproj" />
+    <ProjectReference Include="..\..\..\..\newbloomers-core-dlls\src\Infrastructure.Core\Infrastructure.Core.csproj" />
+  </ItemGroup>
+
+</Project>

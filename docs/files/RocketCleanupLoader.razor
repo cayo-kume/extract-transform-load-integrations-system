@@ -1,0 +1,135 @@
+@* RocketCleanupLoader.razor
+   Loader inspirado na referência Dribbble: orbe roxo pulsante com contador de
+   progresso e foguete que dispara ao completar. 100% CSS + C#, sem JS interop. *@
+
+<div class="cleanup-scene @SceneCss">
+
+    @* Estrelas do fundo (posições/delays definidos no CSS por nth-child) *@
+    <div class="stars">
+        @for (var i = 0; i < 14; i++)
+        {
+            <span class="star"></span>
+        }
+    </div>
+
+    <div class="orb-area">
+        @* Halo externo que "respira" *@
+        <div class="orb-halo"></div>
+
+        @* Anel de burst exibido no lançamento *@
+        <div class="burst-ring"></div>
+
+        @* Partículas do lançamento *@
+        <div class="burst">
+            @for (var i = 0; i < 8; i++)
+            {
+                <span class="spark"></span>
+            }
+        </div>
+
+        <div class="orb">
+            <span class="pct">@Progress%</span>
+        </div>
+
+        @* Foguete + chama + rastro *@
+        <div class="rocket-wrap">
+            <div class="trail"></div>
+            <svg class="rocket" viewBox="0 0 64 96" aria-hidden="true">
+                <path class="r-body" d="M32 4c10 10 14 24 14 38 0 10-2 18-5 24H23c-3-6-5-14-5-24C18 28 22 14 32 4Z"/>
+                <circle class="r-window" cx="32" cy="34" r="7"/>
+                <path class="r-fin" d="M18 46 8 62c6 1 11 0 15-3l-5-13Z"/>
+                <path class="r-fin" d="M46 46l10 16c-6 1-11 0-15-3l5-13Z"/>
+                <path class="r-nozzle" d="M26 66h12l-2 8H28l-2-8Z"/>
+                <path class="flame" d="M32 76c4 5 5 10 0 16-5-6-4-11 0-16Z"/>
+            </svg>
+        </div>
+    </div>
+
+    <button class="hint" @onclick="StartAsync" disabled="@_running">
+        @(Completed ? CompletedLabel : IdleLabel)
+    </button>
+</div>
+
+@code {
+    /// <summary>Progresso atual (0–100). Pode ser controlado externamente via Bind.</summary>
+    [Parameter] public int Progress { get; set; }
+    [Parameter] public EventCallback<int> ProgressChanged { get; set; }
+
+    /// <summary>Disparado quando a animação de lançamento termina.</summary>
+    [Parameter] public EventCallback OnCompleted { get; set; }
+
+    /// <summary>Se true, o componente anima o progresso sozinho ao clicar (modo demo).
+    /// Se false, você controla <see cref="Progress"/> de fora (progresso real de um job).</summary>
+    [Parameter] public bool AutoRun { get; set; } = true;
+
+    [Parameter] public string IdleLabel { get; set; } = "CLICK THE BUTTON TO CLEAN UP";
+    [Parameter] public string CompletedLabel { get; set; } = "CLEANUP COMPLETE";
+
+    /// <summary>Duração aproximada do preenchimento no modo AutoRun.</summary>
+    [Parameter] public TimeSpan FillDuration { get; set; } = TimeSpan.FromSeconds(3.5);
+
+    private bool _running;
+    private bool _launching;
+    public bool Completed { get; private set; }
+
+    private string SceneCss =>
+        (_launching ? "launching " : "") + (_running ? "running" : "");
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Modo controlado: quando o progresso externo chega a 100, dispara o launch.
+        if (!AutoRun && Progress >= 100 && !_launching && !Completed)
+            await LaunchAsync();
+    }
+
+    private async Task StartAsync()
+    {
+        if (_running) return;
+
+        Completed = false;
+        _running = true;
+
+        if (AutoRun)
+        {
+            var steps = 100;
+            var delay = (int)(FillDuration.TotalMilliseconds / steps);
+            for (var p = Progress; p <= 100; p++)
+            {
+                Progress = p;
+                await ProgressChanged.InvokeAsync(p);
+                StateHasChanged();
+
+                // Easing simples: acelera no meio, desacelera perto do fim.
+                var eased = p < 15 || p > 85 ? (int)(delay * 1.8) : delay;
+                await Task.Delay(eased);
+            }
+            await LaunchAsync();
+        }
+    }
+
+    private async Task LaunchAsync()
+    {
+        _launching = true;
+        StateHasChanged();
+
+        await Task.Delay(1600); // duração da animação de lançamento no CSS
+
+        _launching = false;
+        _running = false;
+        Completed = true;
+        StateHasChanged();
+
+        await OnCompleted.InvokeAsync();
+    }
+
+    /// <summary>Reinicia o loader para o estado inicial.</summary>
+    public async Task ResetAsync()
+    {
+        Progress = 0;
+        Completed = false;
+        _launching = false;
+        _running = false;
+        await ProgressChanged.InvokeAsync(0);
+        StateHasChanged();
+    }
+}

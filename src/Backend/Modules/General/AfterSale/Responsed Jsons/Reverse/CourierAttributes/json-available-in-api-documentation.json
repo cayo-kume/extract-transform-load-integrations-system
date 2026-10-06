@@ -1,0 +1,20 @@
+{
+  "success": true,
+  "data": {
+    "reverse": {
+      "id": 4926
+    },
+    "fields": [
+      {
+        "id": "xml",
+        "name": "Arquivo XML",
+        "validation": {
+          "required": true,
+          "mime": "xml"
+        },
+        "type": "file"
+      }
+    ],
+    "fill_form_from_file": null
+  }
+}

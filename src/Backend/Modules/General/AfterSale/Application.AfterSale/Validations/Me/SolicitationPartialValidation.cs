@@ -1,0 +1,17 @@
+﻿using Domain.AfterSale.Dtos.Me;
+using FluentValidation;
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace Application.AfterSale.Validations.Me
+{
+    public class SolicitationPartialValidation : AbstractValidator<SolicitationPartial>
+    {
+        public SolicitationPartialValidation()
+        {
+            RuleFor(x => x.requested_products)
+                .SetValidator(new RequestedProductValidation());
+        }
+    }
+}

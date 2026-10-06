@@ -1,0 +1,129 @@
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            Configurações - @ApplicationTitle(Application)
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText Typo="Typo.h6">
+        </MudText>
+        <MudGrid Spacing="2" Justify="Justify.SpaceAround">
+            @bodyContent
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Close</MudButton>
+        <MudButton Color="Color.Success">Confirm</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; }
+
+    /// <summary>
+    /// Aplicação cujas configurações serão exibidas. Define o conteúdo padrão do body.
+    /// </summary>
+    [Parameter] public ApplicationName Application { get; set; } = ApplicationName.Unknown;
+
+    /// <summary>
+    /// Conteúdo a ser injetado no body. Quando informado, sobrepõe o conteúdo padrão de <see cref="Application"/>.
+    /// </summary>
+    [Parameter] public RenderFragment? BodyContent { get; set; }
+
+    private RenderFragment bodyContent
+        => BodyContent ?? Application switch
+        {
+            ApplicationName.AfterSale => AfterSaleContent,
+            ApplicationName.IntegracoesERP => IntegracoesERPContent,
+            ApplicationName.ProceduresERP => ProceduresERPContent,
+            _ => EmptyContent
+        };
+
+    private void Cancel() => MudDialog?.Cancel();
+
+    public enum ApplicationName
+    {
+        Unknown,
+        AfterSale,
+        IntegracoesERP,
+        ProceduresERP
+    }
+
+    /// <summary>
+    /// Converte o nome da aplicação vindo da base de dados no enum correspondente.
+    /// </summary>
+    public static ApplicationName FromAppName(string? appName)
+        => appName switch
+        {
+            "AfterSale" => ApplicationName.AfterSale,
+            "Integrações/ERP" => ApplicationName.IntegracoesERP,
+            "Procedures/ERP" => ApplicationName.ProceduresERP,
+            _ => ApplicationName.Unknown
+        };
+
+    private static string ApplicationTitle(ApplicationName application)
+        => application switch
+        {
+            ApplicationName.AfterSale => "AfterSale",
+            ApplicationName.IntegracoesERP => "Integrações/ERP",
+            ApplicationName.ProceduresERP => "Procedures/ERP",
+            _ => "Geral"
+        };
+
+    private static readonly RenderFragment AfterSaleContent =
+    @<text>
+        <MudItem xs="12">
+            <MudText Typo="Typo.caption">API Key</MudText>
+            <MudTextField T="string" Clearable="true" Variant="Variant.Outlined" Style="height:2.5rem" />
+        </MudItem>
+        <MudItem xs="12">
+            <MudText Typo="Typo.caption">Base URL</MudText>
+            <MudTextField T="string" Clearable="true" Variant="Variant.Outlined" Style="height:2.5rem" />
+        </MudItem>
+        <MudItem xs="12">
+            <MudText Typo="Typo.caption">Timeout (segundos)</MudText>
+            <MudNumericField T="int" Min="0" Variant="Variant.Outlined" Style="height:2.5rem" />
+        </MudItem>
+    </text>;
+
+    private static readonly RenderFragment IntegracoesERPContent =
+    @<text>
+        <MudItem xs="12">
+            <MudText Typo="Typo.caption">Chave Linx Microvix</MudText>
+            <MudTextField T="string" Clearable="true" Variant="Variant.Outlined" Style="height:2.5rem" />
+        </MudItem>
+        <MudItem xs="12">
+            <MudText Typo="Typo.caption">Usuário</MudText>
+            <MudTextField T="string" Clearable="true" Variant="Variant.Outlined" Style="height:2.5rem" />
+        </MudItem>
+        <MudItem xs="12">
+            <MudText Typo="Typo.caption">Senha</MudText>
+            <MudTextField T="string" InputType="InputType.Password" Clearable="true" Variant="Variant.Outlined" Style="height:2.5rem" />
+        </MudItem>
+        <MudItem xs="12">
+            <MudText Typo="Typo.caption">Intervalo de execução (minutos)</MudText>
+            <MudNumericField T="int" Min="1" Variant="Variant.Outlined" Style="height:2.5rem" />
+        </MudItem>
+    </text>;
+
+    private static readonly RenderFragment ProceduresERPContent =
+    @<text>
+        <MudItem xs="12">
+            <MudText Typo="Typo.caption">Connection String</MudText>
+            <MudTextField T="string" Clearable="true" Variant="Variant.Outlined" Style="height:2.5rem" />
+        </MudItem>
+        <MudItem xs="12">
+            <MudText Typo="Typo.caption">Command Timeout (segundos)</MudText>
+            <MudNumericField T="int" Min="0" Variant="Variant.Outlined" Style="height:2.5rem" />
+        </MudItem>
+        <MudItem xs="12">
+            <MudText Typo="Typo.caption">Tamanho do lote (Bulk Insert)</MudText>
+            <MudNumericField T="int" Min="1" Variant="Variant.Outlined" Style="height:2.5rem" />
+        </MudItem>
+    </text>;
+
+    private static readonly RenderFragment EmptyContent =
+    @<MudItem xs="12">
+        <MudText Typo="Typo.body2">Nenhuma configuração disponível para esta aplicação.</MudText>
+    </MudItem>;
+}

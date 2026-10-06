@@ -1,0 +1,903 @@
+{
+    "success": true,
+    "data": {
+        "id": 0,
+		"address_id": 0,
+        "uuid": "d290f1ee-6c54-4b01-90e6-d701748f0851",
+        "maintenance_mode_global": false,
+        "is_active": true,
+		"is_test": false,
+		"deny_search_index": false,
+		"collect_enabled": false,
+        "has_ecommerce_integration": true,
+        "has_info_by_customer_enabled": true,
+		"hotjar_enabled": false,
+		"retention_free_shipping": false,
+        "show_quick_selection": false,
+        "maintenance_mode": false,
+        "enable_price_visibility": false,
+		"shipping_address_change_enabled": true,
+        "request_evaluation_enabled": true,
+		"enable_transportation_priority_by_preferences": false,
+        "force_courier_show_when_postage_block_by_pickup_in_use": false,
+        "refund_pix_enabled": false,
+        "allow_refund_for_third_parties_by_pix": false,
+        "could_be_retained": true,
+        "cashback_allow_third_party": false,
+        "request_pix_key_by_customer_interface": true,
+        "correios_checklist_enabled": false,
+        "request_customer_invoice_xml_enabled": false,
+        "split_reverses_by_seller": false,
+        "group_products_with_unregistered_sellers": false,
+        "care_plus_enabled": false,
+        "hide_courier_enabled": false,
+        "show_product_images": true,
+		"last_order_report_date": "2026-04-09T23:59:59.000000Z",
+		"company_name": "string",
+        "trade_name": "string",
+        "display_name": "string",
+        "url": "string",
+        "phone": "string",
+        "email": "string",
+        "document": "string",
+        "app_name": "string",
+        "theme": "string",
+        "logo": "string",
+        "terms": "string",
+        "limit_value_collect": "string",
+        "field_order_id_label": "string",
+        "field_order_id_placeholder": "string",
+        "field_confirmation_label_email": "string",
+        "field_confirmation_placeholder_email": "string",
+        "field_confirmation_label_document": "string",
+        "field_confirmation_placeholder_document": "string",
+        "field_confirmation_type": "string",
+        "retention_method": "string",
+        "retention_layout_version": "string",
+        "request_evaluation_method": "string",
+        
+        "messages": {
+			"pages": {
+				"introduction": {
+					"title": "string",
+					"description": "string"
+				},
+				"select_source": {
+					"title": "string",
+					"description": "string"
+				},
+				"order": {
+					"title": "string",
+					"description": "string"
+				},
+				"products": {
+					"title": "string",
+					"description": "string",
+					"label_commentary": "string",
+					"description_commentary": "string",
+					"required_commentary": true,
+					"image_upload_title": "string",
+					"image_upload_description": "string"
+				},
+				"insurance_checklist": {
+					"title": "string",
+					"description": "string"
+				},
+				"cancellation_insurance": {
+					"title": "string",
+					"description": "string",
+					"checkbox": "string"
+				},
+				"deadline_for_insurance_cancellation_expired": {
+					"title": "string",
+					"description": "string",
+					"checkbox": "string"
+				},
+				"insurance_loading_failure": {
+					"title": "string",
+					"description": "string"
+				},
+				"shipping": {
+					"title": "string",
+					"description": "string"
+				},
+				"resume": {
+					"title": "string",
+					"description": "string"
+				},
+				"finish": {
+					"title": "string",
+					"description": "string",
+					"label_commentary": "string",
+					"description_commentary": "string"
+				},
+				"finish_thank": {
+					"title": "string",
+					"description": "string"
+				},
+				"customer": {
+					"title": "string",
+					"description": "string"
+				},
+				"customer_products": {
+					"title": "string",
+					"description": "string"
+				},
+				"seller": {
+					"title": "string",
+					"description": "string",
+					"required_invoice_number": true,
+					"required_invoice_file": true
+				},
+				"email_by_customer": {
+					"title": "string",
+					"description": "string"
+				},
+				"retention": {
+					"title": "string",
+					"description": "string",
+					"deny_action": "string",
+					"observation": "string",
+					"enabled_observations": true
+				},
+				"retention_voucher": {
+					"title": "string",
+					"description": "string",
+					"deny_action": "string",
+					"observation": "string",
+					"enabled_observations": true
+				},
+				"retention_freight": {
+					"title": "string",
+					"description": "string",
+					"deny_action": "string",
+					"observation": "string",
+					"enabled_observations": true
+				},
+				"bank_account_details": {
+					"title": "string",
+					"description": "string",
+					"request_pix_key_disabled": "string"
+				},
+				"existing_request_post": {
+					"title": "string",
+					"description": "string"
+				},
+				"existing_request_collect": {
+					"title": "string",
+					"description": "string"
+				},
+				"existing_request": {
+					"title": "string",
+					"description": "string"
+				},
+				"request_follow_up": {
+					"title": "string",
+					"description": "string"
+				},
+				"refund_nps": {
+					"title": "string",
+					"description_commentary": "string",
+					"label_commentary": "string",
+					"required_commentary": false
+				},
+				"refund_nps_confirmation": {
+					"title": "string",
+					"description": "string"
+				}
+			},
+			"mails": {
+				"greeting": {
+					"content": "string",
+					"advancedEmailEnabled": false
+				},
+				"footer": {
+					"content": "string",
+					"advancedEmailEnabled": false
+				},
+				"reverse": {
+					"invalid_courier_contract": {
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"awaiting_with_freight_by_customer": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"pending": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"send4_code_generated": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"correio_code_generated": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"manual_modal_change_correio_code_generated": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"manual_modal_change_correio_code_generated_collect": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"estafeta_post_code_generated": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"courier_collect_code_generated": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"courier_collect_scheduling": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"generic_courier_collect_requested_date_changed_code_generated": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"locker_post_code_generated": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"correio_code_expiring": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"correio_collect_change_to_post": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"correio_tracking_posted": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"correio_tracking_delivered": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"ecommerce_store_reverse": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"products_received": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"reverse_refused": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"reverse_canceled": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"reverse_reopened": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"reverse_returned_invoice_solicitation": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"reverse_returned_invoice_solicitation_partially_missing": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"awaiting_without_process": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"reverse_with_manual_processing": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"generic_courier_collect_info": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"return_point_code_generated": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"return_point_code_expiring": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"awaiting_collect_scheduling": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"awaiting_collect_scheduling_reminder": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					}
+				},
+				"refund": {
+					"approved": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"paid_refund": {
+						"subject": "string",
+						"content": "string",
+						"enabled": false,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"refund_nps": {
+						"subject": "string",
+						"content": "string",
+						"enabled": false,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"paid_wire_transfer": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"paid_product": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"paid_voucher": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"paid_credit": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"ask_wire_transfer_data": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"paid_hard_retention": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"ask_wire_transfer_data_update": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"review": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					}
+				},
+				"retention": {
+					"retention_disabled": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": true,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					}
+				},
+				"partials": {
+					"partially_received_warning": {
+						"content": "string",
+						"advancedEmailEnabled": false
+					},
+					"new_products_include_info": {
+						"content": "string",
+						"advancedEmailEnabled": false
+					}
+				},
+				"occurrence": {
+					"awaiting_customer": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"awaiting_customer_remind_deadline": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"created": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					}
+				},
+				"cancellation": {
+					"failed": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"fully": {
+						"accepted": {
+							"subject": "string",
+							"content": "string",
+							"enabled": true,
+							"advancedEmailEnabled": false,
+							"fromCustomerOriginEnabled": true,
+							"fromAgentOriginEnabled": true
+						}
+					},
+					"partially": {
+						"accepted": {
+							"subject": "string",
+							"content": "string",
+							"enabled": true,
+							"advancedEmailEnabled": false,
+							"fromCustomerOriginEnabled": true,
+							"fromAgentOriginEnabled": true
+						}
+					},
+					"refused": {
+						"subject": "string",
+						"content": "string",
+						"enabled": true,
+						"advancedEmailEnabled": false,
+						"fromCustomerOriginEnabled": true,
+						"fromAgentOriginEnabled": true
+					},
+					"created": {
+						"customer": {
+							"subject": "string",
+							"content": "string",
+							"enabled": true,
+							"advancedEmailEnabled": false,
+							"fromCustomerOriginEnabled": true,
+							"fromAgentOriginEnabled": true
+						},
+						"agent": {
+							"subject": "string",
+							"content": "string",
+							"enabled": true,
+							"advancedEmailEnabled": false,
+							"fromCustomerOriginEnabled": true,
+							"fromAgentOriginEnabled": true
+						},
+						"customer_by_agent": {
+							"subject": "string",
+							"content": "string",
+							"enabled": true,
+							"advancedEmailEnabled": false,
+							"fromCustomerOriginEnabled": true,
+							"fromAgentOriginEnabled": true
+						}
+					}
+				},
+				"solicitation": {
+					"partials": {
+						"requested_products": {
+							"ref_id": "string",
+							"sku": "string",
+							"unity": "string",
+							"unity_plural": "string"
+						}
+					}
+				},
+				"compensation": {
+					"payment": {
+						"cancellation": {
+							"gift_card": {
+								"subject": "string",
+								"content": "string",
+								"enabled": true,
+								"advancedEmailEnabled": false,
+								"fromCustomerOriginEnabled": true,
+								"fromAgentOriginEnabled": true
+							},
+							"refund": {
+								"subject": "string",
+								"content": "string",
+								"enabled": true,
+								"advancedEmailEnabled": false,
+								"fromCustomerOriginEnabled": true,
+								"fromAgentOriginEnabled": true
+							},
+							"wire_transfer": {
+								"subject": "string",
+								"content": "string",
+								"enabled": true,
+								"advancedEmailEnabled": false,
+								"fromCustomerOriginEnabled": true,
+								"fromAgentOriginEnabled": true
+							}
+						},
+						"occurrence": {
+							"gift_card": {
+								"subject": "string",
+								"content": "string",
+								"enabled": true,
+								"advancedEmailEnabled": false,
+								"fromCustomerOriginEnabled": true,
+								"fromAgentOriginEnabled": true
+							},
+							"refund": {
+								"subject": "string",
+								"content": "string",
+								"enabled": true,
+								"advancedEmailEnabled": false,
+								"fromCustomerOriginEnabled": true,
+								"fromAgentOriginEnabled": true
+							},
+							"wire_transfer": {
+								"subject": "string",
+								"content": "string",
+								"enabled": true,
+								"advancedEmailEnabled": false,
+								"fromCustomerOriginEnabled": true,
+								"fromAgentOriginEnabled": true
+							}
+						}
+					},
+					"wire_transfer": {
+						"ask_transfer_bank_account_info": {
+							"subject": "string",
+							"content": "string",
+							"enabled": true,
+							"advancedEmailEnabled": false,
+							"fromCustomerOriginEnabled": true,
+							"fromAgentOriginEnabled": true
+						}
+					}
+				}
+			}
+		},
+        
+		"shortcodes": {
+            "app_name": "string",
+            "ecommerce_name": "string",
+            "ecommerce_phone": "string",
+            "ecommerce_url": "string",
+            "ecommerce_logo_url": "string",
+            "ecommerce_logo_email_url": "string",
+            "ecommerce_display_name": "string"
+        },
+        
+		"stylesheet": {
+            "background": {
+                "primary": "string"
+            },
+            "table": {
+                "primary": "string"
+            },
+            "text": {
+                "primary": "string"
+            },
+            "button": {
+                "primary": "string",
+                "text": "string",
+                "borderradius": "string"
+            },
+            "input": {
+                "text": "string",
+                "border": "string",
+                "background": "string",
+                "borderradius": "string"
+            },
+            "paragraph": {
+                "primary": "string"
+            },
+            "label": {
+                "primary": "string"
+            },
+            "whitebox": {
+                "primary": "string",
+                "boxshadow": "string"
+            }
+        },
+        
+		"reverse_actions_customization": {
+            "online": {
+                "exchange": true,
+                "return": true
+            },
+            "offline": {
+                "exchange": true,
+                "return": false
+            }
+        },
+        
+		"reverse_actions_customization_labels": {
+            "online": {
+                "exchange": "string",
+                "return": "string"
+            },
+            "offline": {
+                "exchange": "string",
+                "return": "string"
+            }
+        },
+        
+		"refund_exchange_options": [
+            "voucher"
+        ],
+		
+		"modules": {
+            "app": [
+                "string"
+            ],
+            "beta": [
+                "string"
+            ],
+            "care": [
+                "string"
+            ],
+            "logistic": [
+                "string"
+            ],
+            "loyalty": [
+                "string"
+            ],
+            "money": [
+                "string"
+            ],
+            "omnichannel": [
+                "string"
+            ],
+			"retention": [
+                "string"
+            ],
+			
+			//O end-point da API retorna essas 5 listas vazias e elas não existem na documentação, então não tenho certeza do tipo de cada uma delas
+			//Porém pelo padrão apresentado pelas demais listas, podemos inferir que é uma lista de string
+            "order-cancellation": [
+				"string"
+            ],
+            "fiscal": [
+				"string"
+            ],
+            "insurance": [
+				"string"
+            ],
+            "security": [
+				"string"
+            ],
+            "whitelabel": [
+				"string"
+            ]
+        },
+		
+        "enabled_reverse_types": [
+            "string"        
+		],
+		
+        "localization": {
+            "language": "string",
+            "timezone": "string",
+            "currency": "string"
+        },
+		
+        "reasons": [
+            {
+                "id": 0,
+                "ecommerce_id": 0,
+                "description": "string",
+                "action": "string",
+                "should_approve": false,
+                "upload_image": "string",
+                "show_product_grid": false,
+                "ord": 0,
+                "created_at": "2022-11-18T19:11:16.000000Z",
+                "updated_at": "2026-01-12T13:17:35.000000Z",
+                "deleted_at": "2026-01-12T13:17:35.000000Z", 
+                "subreasons": [
+                    {
+                        "id": 0,
+                        "reason_id": 0,
+                        "description": "string",
+                        "ord": "string",
+                        "created_at": "2026-01-12T13:19:03.000000Z",
+                        "updated_at": "2026-01-12T13:19:03.000000Z",
+                        "deleted_at": "2026-01-12T13:19:03.000000Z" 
+                    }
+                ]
+            }
+        ],
+		
+        "address": {
+            "id": 0,
+            "zip_code": "string",
+            "address": "string",
+            "complement": "string",
+            "number": "string",
+            "neighborhood": "string",
+            "city": "string",
+            "state": "string",
+            "country": "string",
+            "lat": "string",
+            "long": "string",
+            "updated_at": "2023-05-03T12:47:14.000000Z",
+            "deleted_at": "2023-05-03T12:47:14.000000Z"
+        }
+    
+		//O end-point retorna essas propriedades nulas, e como elas não estão presentes na documentação, não tenho como afirmar o tipo de cada uma delas, por isso decidi não implementa-las a classe
+        //"ecommerce_group_id": null, 
+        //"hubspot_code": null, 
+		//"segment": null,
+        //"oauth_client_id": null,
+        //"provider_id": null,
+        //"registration_origin": null,
+        //"brand_id": null,
+		//"hotjar_id": null,
+		//"field_product_comment_label": null,
+        //"field_product_comment_placeholder": null,
+		//"correios_checklist_default_type": null,
+		//"bank_agency_max_length": null,
+		//"transportation_modal_priority_order": [],
+		//"correios_checklist_content_categories": [],
+		//"correios_checklist_phone_categories": [],
+		//"correios_checklist_eletronic_categories": [],
+	}
+}

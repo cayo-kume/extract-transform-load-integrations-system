@@ -1,0 +1,96 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Backend/" />
+  <Folder Name="/src/Backend/Hosts/">
+    <Project Path="src/Backend/Hosts/AzureWebJob/AzureWebJob.csproj" />
+    <Project Path="src/Backend/Hosts/Hangfire/Hangfire.csproj" />
+    <Project Path="src/Backend/Hosts/Quartz/Quartz.csproj" />
+  </Folder>
+  <Folder Name="/src/Backend/Modules/" />
+  <Folder Name="/src/Backend/Modules/General/" />
+  <Folder Name="/src/Backend/Modules/General/Aftersale/">
+    <Project Path="src/Backend/Modules/General/AfterSale/Application.AfterSale/Application.AfterSale.csproj" />
+    <Project Path="src/Backend/Modules/General/AfterSale/Domain.AfterSale/Domain.AfterSale.csproj" />
+    <Project Path="src/Backend/Modules/General/AfterSale/Infrastructure.AfterSale/Infrastructure.AfterSale.csproj" />
+  </Folder>
+  <Folder Name="/src/Backend/Modules/General/Dootax/">
+    <Project Path="src/Backend/Modules/General/Dootax/Application.Dootax/Application.Dootax.csproj" />
+    <Project Path="src/Backend/Modules/General/Dootax/Domain.Dootax/Domain.Dootax.csproj" />
+    <Project Path="src/Backend/Modules/General/Dootax/Infrastructure.Dootax/Infrastructure.Dootax.csproj" />
+  </Folder>
+  <Folder Name="/src/Backend/Modules/General/Mobsim/">
+    <Project Path="src/Backend/Modules/General/Mobsim/Application.Mobsim/Application.Mobsim.csproj" />
+    <Project Path="src/Backend/Modules/General/Mobsim/Domain.Mobsim/Domain.Mobsim.csproj" />
+    <Project Path="src/Backend/Modules/General/Mobsim/Infrastructure.Mobsim/Infrastructure.Mobsim.csproj" />
+  </Folder>
+  <Folder Name="/src/Backend/Modules/General/Movidesk/">
+    <Project Path="src/Backend/Modules/General/Movidesk/Application.Movidesk/Application.Movidesk.csproj" />
+    <Project Path="src/Backend/Modules/General/Movidesk/Domain.Movidesk/Domain.Movidesk.csproj" />
+    <Project Path="src/Backend/Modules/General/Movidesk/Infrastructure.Movidesk/Infrastructure.Movidesk.csproj" />
+  </Folder>
+  <Folder Name="/src/Backend/Modules/General/Oto/">
+    <Project Path="src/Backend/Modules/General/Oto/Application.Oto/Application.Oto.csproj" />
+    <Project Path="src/Backend/Modules/General/Oto/Domain.Oto/Domain.Oto.csproj" />
+    <Project Path="src/Backend/Modules/General/Oto/Infrastructure.Oto/Infrastructure.Oto.csproj" />
+  </Folder>
+  <Folder Name="/src/Backend/Modules/General/Pagarme/">
+    <Project Path="src/Backend/Modules/General/Pagarme/Application.Pagarme/Application.Pagarme.csproj" />
+    <Project Path="src/Backend/Modules/General/Pagarme/Domain.Pagarme/Domain.Pagarme.csproj" />
+    <Project Path="src/Backend/Modules/General/Pagarme/Infrastructure.Pagarme/Infrastructure.Pagarme.csproj" />
+  </Folder>
+  <Folder Name="/src/Backend/Modules/LinxCommerce/">
+    <Project Path="src/Backend/Modules/LinxCommerce/Application.LinxCommerce/Application.LinxCommerce.csproj" />
+    <Project Path="src/Backend/Modules/LinxCommerce/Domain.LinxCommerce/Domain.LinxCommerce.csproj" />
+    <Project Path="src/Backend/Modules/LinxCommerce/Infrastructure.LinxCommerce/Infrastructure.LinxCommerce.csproj" />
+  </Folder>
+  <Folder Name="/src/Backend/Modules/LinxMicrovix/" />
+  <Folder Name="/src/Backend/Modules/LinxMicrovix/Inbound/">
+    <Project Path="src/Backend/Modules/LinxMicrovix/LinxMicrovix - Inbound Web Service/Application.LinxMicrovix.Inbound/Application.LinxMicrovix.Inbound.csproj" />
+    <Project Path="src/Backend/Modules/LinxMicrovix/LinxMicrovix - Inbound Web Service/Domain.LinxMicrovix.Inbound/Domain.LinxMicrovix.Inbound.csproj" />
+    <Project Path="src/Backend/Modules/LinxMicrovix/LinxMicrovix - Inbound Web Service/Infrastructure.LinxMicrovix.Inbound/Infrastructure.LinxMicrovix.Inbound.csproj" />
+  </Folder>
+  <Folder Name="/src/Backend/Modules/LinxMicrovix/Outbound/">
+    <Project Path="src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/Application.LinxMicrovix.Outbound/Application.LinxMicrovix.Outbound.csproj" />
+    <Project Path="src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/Domain.LinxMicrovix.Outbound/Domain.LinxMicrovix.Outbound.csproj" />
+    <Project Path="src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/Infrastructure.LinxMicrovix.Outbound/Infrastructure.LinxMicrovix.Outbound.csproj" />
+  </Folder>
+  <Folder Name="/src/Backend/Modules/Shippment/" />
+  <Folder Name="/src/Backend/Modules/Shippment/FlashCourier/">
+    <Project Path="src/Backend/Modules/Shippment/FlashCourier/Application.FlashCourier/Application.FlashCourier.csproj" />
+    <Project Path="src/Backend/Modules/Shippment/FlashCourier/Domain.FlashCourier/Domain.FlashCourier.csproj" />
+    <Project Path="src/Backend/Modules/Shippment/FlashCourier/Infrastructure.FlashCourier/Infrastructure.FlashCourier.csproj" />
+  </Folder>
+  <Folder Name="/src/Backend/Modules/Shippment/Jadlog/">
+    <Project Path="src/Backend/Modules/Shippment/Jadlog/Application.Jadlog/Application.Jadlog.csproj" />
+    <Project Path="src/Backend/Modules/Shippment/Jadlog/Domain.Jadlog/Domain.Jadlog.csproj" />
+    <Project Path="src/Backend/Modules/Shippment/Jadlog/Infrastructure.Jadlog/Infrastructure.Jadlog.csproj" />
+  </Folder>
+  <Folder Name="/src/Backend/Modules/Shippment/Stone/">
+    <Project Path="src/Backend/Modules/Shippment/Stone/Application.Stone/Application.Stone.csproj" />
+    <Project Path="src/Backend/Modules/Shippment/Stone/Domain.Stone/Domain.Stone.csproj" />
+    <Project Path="src/Backend/Modules/Shippment/Stone/Infrastructure.Stone/Infrastructure.Stone.csproj" />
+  </Folder>
+  <Folder Name="/src/Backend/Modules/Shippment/TotalExpress/">
+    <Project Path="src/Backend/Modules/Shippment/TotalExpress/Application.TotalExpress/Application.TotalExpress.csproj" />
+    <Project Path="src/Backend/Modules/Shippment/TotalExpress/Domain.TotalExpress/Domain.TotalExpress.csproj" />
+    <Project Path="src/Backend/Modules/Shippment/TotalExpress/Infrastructure.TotalExpress/Infrastructure.TotalExpress.csproj" />
+  </Folder>
+  <Folder Name="/src/Backend/Modules/Totvs/">
+    <Project Path="src/Backend/Modules/Totvs/Application.Totvs/Application.Totvs.csproj" />
+    <Project Path="src/Backend/Modules/Totvs/Domain.Totvs/Domain.Totvs.csproj" />
+    <Project Path="src/Backend/Modules/Totvs/Infrastructure.Totvs/Infrastructure.Totvs.csproj" />
+  </Folder>
+  <Folder Name="/src/Backend/Shared/">
+    <Project Path="src/Backend/Shared/Application.Shared/Application.Shared.csproj" />
+    <Project Path="src/Backend/Shared/Domain.Shared/Domain.Shared.csproj" />
+    <Project Path="src/Backend/Shared/Infrastructure.Shared/Infrastructure.Shared.csproj" />
+  </Folder>
+  <Folder Name="/src/Frontend/">
+    <Project Path="src/Frontend/WebApp/WebApp.csproj" Id="aae544a6-5e19-4ef9-8403-7da7563e2806" />
+  </Folder>
+  <Folder Name="/src/Mobile/">
+    <Project Path="src/Mobile/MobileApp/MobileApp.csproj" Id="7f3b4aff-e446-4325-a762-3bba3a38fe04" />
+  </Folder>
+  <Folder Name="/tests/">
+  </Folder>
+</Solution>

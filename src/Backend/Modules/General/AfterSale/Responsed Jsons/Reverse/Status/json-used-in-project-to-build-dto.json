@@ -1,0 +1,10 @@
+{
+  "success": true,
+  "data": [
+    {
+      "id": 0,
+      "name": "string",
+      "description": "string"
+    }
+  ]
+}

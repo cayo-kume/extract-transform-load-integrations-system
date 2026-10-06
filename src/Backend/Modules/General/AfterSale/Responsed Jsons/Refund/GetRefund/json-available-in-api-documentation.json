@@ -1,0 +1,166 @@
+{
+    "success": true,
+    "data": {
+        "id": 0,
+        "type": "string",
+        "action": "string",
+        "bonus_amount": 0,
+        "bonus_amount_percent": 0,
+        "requested_amount": 0,
+        "requested_total_amount": 0,
+        "received_amount": 0,
+        "received_raw_amount": 0,
+        "total_amount": 0,
+        "free_shipping": "string",
+        "created_at": "string",
+        "updated_at": "string",
+        "customer": {
+            "id": 0,
+            "first_name": "string",
+            "last_name": "string",
+            "email": "string"
+        },
+        "status": {
+            "id": 0,
+            "name": "string",
+            "description": "string"
+        },
+        "status_histories": [
+            {
+                "id": 0,
+                "reverse_id": 0,
+                "status_id": 0,
+                "user_id": 0,
+                "customer_id": 0,
+                "date": "string",
+                "comments": "string",
+                "status": {
+                    "id": 0,
+                    "service_code": "string",
+                    "name": "string",
+                    "description": "string"
+                },
+                "user": {
+                    "id": 0,
+                    "name": "string",
+                    "first_name": "string",
+                    "last_name": "string",
+                    "email": "string",
+                    "mobile_phone": "string",
+                    "phone": "string",
+                    "document": "string",
+                    "wallet": "string"
+                }
+            }
+        ],
+        "total_amount_histories": [
+            {
+                "id": 0,
+                "user": {
+                    "id": 0,
+                    "first_name": "string",
+                    "last_name": "string"
+                },
+                "total_amount": "string",
+                "date": "string",
+                "type": {
+                    "id": 0,
+                    "name": "string",
+                    "description": "string"
+                }
+            }
+        ],
+        "cashback_account": "string",
+        "voucher": {
+            "redemption_code": "string",
+            "giftcard_id": "string",
+            "expiring_date": "string"
+        },
+        "should_ask_voucher_code": true,
+        "order_payment_methods": "string",
+        "order_transactions": [
+            {
+            }
+        ],
+        "refund_product_requests": [
+            {
+            }
+        ],
+        "reverse": {
+            "status": {
+                "id": 0,
+                "service_code": "string",
+                "name": "string",
+                "description": "string"
+            },
+            "id": 0,
+            "created_at": "string",
+            "ecommerceOrder": {
+                "id": 0,
+                "order_id": "string"
+            }
+        },
+        "products": [
+            {
+                "id": 0,
+                "reverse_id": 0,
+                "motive_id": 0,
+                "reason": {
+                    "id": 0,
+                    "ecommerce_id": 0,
+                    "description": "string",
+                    "reason_category_id": "string",
+                    "action": "string",
+                    "should_approve": true,
+                    "upload_image": "string",
+                    "show_product_grid": true,
+                    "ord": "string",
+                    "created_at": "string",
+                    "updated_at": "string",
+                    "deleted_at": "string"
+                },
+                "ecommerce_order_product_id": 0,
+                "refund_id": 0,
+                "qty": 0,
+                "requested_qty": 0,
+                "received_qty": 0,
+                "product_received_comment": 0,
+                "comments": "string",
+                "reverse_action": "string",
+                "customer_retention_method_id": "string",
+                "protocol": "string",
+                "images": [
+                    {
+                        "id": 0,
+                        "product_id": "string",
+                        "image_path": "string",
+                        "image_url": "string"
+                    }
+                ],
+                "refund_product_requests": [
+                    {
+                    }
+                ],
+                "product_id": "string",
+                "hash": "string",
+                "name": "string",
+                "sku": "string",
+                "price": "string",
+                "selling_price": "string",
+                "weight": "string",
+                "returned_invoice": "string",
+                "returned_invoice_url": "string",
+                "returned_invoice_url_xml": "string",
+                "invoice": "string",
+                "order_id": 0,
+                "image_url": [
+                    "string"
+                ]
+            }
+        ],
+        "can_edit_wire_transfer": true,
+        "has_wire_transfer_account": true,
+        "customer_retention_method_id": "string",
+        "external_order_url": "string"
+    }
+}

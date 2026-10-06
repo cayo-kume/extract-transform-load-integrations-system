@@ -1,0 +1,50 @@
+{
+    "current_page": 0,
+    "first_page_url": "string",
+    "from": 0,
+    "last_page": 0,
+    "last_page_url": "string",
+    "next_page_url": "string",
+    "path": "string",
+    "per_page": 0,
+    "prev_page_url": "string",
+    "to": 0,
+    "total": 0,
+    "success": true,
+    "links": [
+        {
+            "url": null,
+            "label": "string",
+            "active": false
+        }
+    ],
+    "refund": {
+		"integreated_or_updated_at": "2026-06-19T14:06:53.000000Z",
+        "id": 0,
+        "reverse_id": 0,
+        "order_id": "string",
+        "ecommerce_order_id": 0,
+        "type": "string",
+        "action": "string",
+        "requested_amount": 0,
+        "bonus_amount": 0,
+        "bonus_amount_percent": 0,
+        "requested_shipping_amount": 0,
+        "shipping_method": "string",
+        "requested_raw_amount": 0,
+        "requested_total_amount": 0,
+        "total_amount": 0,
+        "created_at": "2026-06-19T14:06:53.000000Z",
+        "updated_at": "2026-06-19T14:10:06.000000Z",
+        "customer_id": 0,
+        "customer_first_name": "string",
+        "customer_last_name": "string",
+        "status_id": 0,
+        "status_name": "string",
+        "status_description": "string",
+        "product_price_type_type": "string",
+        "product_price_type_label": "string",
+        "refunded_shipping_type": "string",
+        "last_status_history_date": "2026-06-19 14:06:53"
+    }
+}

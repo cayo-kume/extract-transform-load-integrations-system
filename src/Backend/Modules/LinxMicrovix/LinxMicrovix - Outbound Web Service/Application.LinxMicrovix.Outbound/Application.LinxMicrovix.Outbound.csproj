@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="CustomValidations\**" />
+    <EmbeddedResource Remove="CustomValidations\**" />
+    <None Remove="CustomValidations\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Services\LinxCommerce\ctwrzoso.apw~" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="EPPlus" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\..\newbloomers-core-dlls\src\Application.Core\Application.Core.csproj" />
+    <ProjectReference Include="..\Domain.LinxMicrovix.Outbound\Domain.LinxMicrovix.Outbound.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Preview — RocketCleanupLoader (Blazor)</title>
+<style>
+body { margin: 0; background: #1E0E52; min-height: 100vh; display: grid; place-items: center; padding: 24px; box-sizing: border-box; }
+.frame { width: min(680px, 100%); }
+/* RocketCleanupLoader.razor.css — CSS Isolation (Blazor)
+   Paleta extraída da referência:
+   fundo #2E1576 · orbe #F1EEFD→#6544BA · glow #7C5CE0 · foguete #3A2870 */
+
+.cleanup-scene {
+    --bg: #2E1576;
+    --orb-core: #F1EEFD;
+    --orb-mid: #A78BE0;
+    --orb-edge: #6544BA;
+    --glow: #7C5CE0;
+    --ink: #2B1B5E;
+    --rocket: #4A3585;
+    --rocket-dark: #362566;
+    --hint: #7A63C4;
+
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3.5rem;
+    min-height: 480px;
+    width: 100%;
+    background: var(--bg);
+    border-radius: 12px;
+    overflow: hidden;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+/* ---------- Estrelas ---------- */
+.stars { position: absolute; inset: 0; pointer-events: none; }
+
+.star {
+    position: absolute;
+    width: 3px; height: 3px;
+    border-radius: 50%;
+    background: #C9BCF2;
+    opacity: .35;
+    animation: twinkle 3s ease-in-out infinite;
+}
+
+.star:nth-child(1)  { top: 12%; left: 18%; animation-delay: 0s;   }
+.star:nth-child(2)  { top: 22%; left: 72%; animation-delay: .4s; width: 2px; height: 2px; }
+.star:nth-child(3)  { top: 8%;  left: 55%; animation-delay: .9s;  }
+.star:nth-child(4)  { top: 35%; left: 10%; animation-delay: 1.3s; width: 2px; height: 2px; }
+.star:nth-child(5)  { top: 45%; left: 88%; animation-delay: .6s;  }
+.star:nth-child(6)  { top: 65%; left: 15%; animation-delay: 1.8s; }
+.star:nth-child(7)  { top: 78%; left: 80%; animation-delay: .2s; width: 2px; height: 2px; }
+.star:nth-child(8)  { top: 85%; left: 35%; animation-delay: 1.1s; }
+.star:nth-child(9)  { top: 15%; left: 90%; animation-delay: 2.1s; }
+.star:nth-child(10) { top: 55%; left: 5%;  animation-delay: .7s; width: 4px; height: 4px; }
+.star:nth-child(11) { top: 90%; left: 60%; animation-delay: 1.5s; }
+.star:nth-child(12) { top: 30%; left: 40%; animation-delay: 2.4s; width: 2px; height: 2px; }
+.star:nth-child(13) { top: 70%; left: 50%; animation-delay: .9s;  }
+.star:nth-child(14) { top: 5%;  left: 30%; animation-delay: 1.7s; width: 2px; height: 2px; }
+
+@keyframes twinkle {
+    0%, 100% { opacity: .15; transform: scale(1); }
+    50%      { opacity: .9;  transform: scale(1.4); }
+}
+
+/* ---------- Orbe ---------- */
+.orb-area {
+    position: relative;
+    width: 220px;
+    height: 220px;
+    display: grid;
+    place-items: center;
+}
+
+.orb-halo {
+    position: absolute;
+    inset: -30px;
+    border-radius: 50%;
+    background: radial-gradient(circle,
+        rgba(124, 92, 224, .45) 0%,
+        rgba(124, 92, 224, .18) 45%,
+        transparent 70%);
+    animation: breathe 2.6s ease-in-out infinite;
+}
+
+.orb {
+    position: relative;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: radial-gradient(circle at 50% 42%,
+        var(--orb-core) 0%,
+        #D9CCF6 30%,
+        var(--orb-mid) 58%,
+        var(--orb-edge) 100%);
+    box-shadow:
+        0 0 40px 8px rgba(124, 92, 224, .55),
+        0 0 90px 20px rgba(124, 92, 224, .25),
+        inset 0 -18px 40px rgba(101, 68, 186, .7);
+    animation: pulse 2.6s ease-in-out infinite;
+    z-index: 2;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.05); }
+}
+
+@keyframes breathe {
+    0%, 100% { transform: scale(1);   opacity: .8; }
+    50%      { transform: scale(1.12); opacity: 1;  }
+}
+
+.pct {
+    font-size: 2.4rem;
+    font-weight: 800;
+    letter-spacing: .02em;
+    color: var(--ink);
+    transform: translateY(-14px);
+    user-select: none;
+}
+
+/* ---------- Foguete ---------- */
+.rocket-wrap {
+    position: absolute;
+    bottom: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 3;
+    display: grid;
+    place-items: center;
+}
+
+.rocket {
+    width: 56px;
+    height: 84px;
+    animation: idle-shake 0.35s ease-in-out infinite;
+}
+
+.r-body   { fill: var(--rocket); }
+.r-window { fill: var(--ink); }
+.r-fin    { fill: var(--rocket-dark); }
+.r-nozzle { fill: var(--rocket-dark); }
+
+.flame {
+    fill: #C9B6FF;
+    transform-origin: 32px 76px;
+    animation: flicker .22s ease-in-out infinite alternate;
+}
+
+@keyframes idle-shake {
+    0%, 100% { transform: translateX(0); }
+    50%      { transform: translateX(0.6px); }
+}
+
+@keyframes flicker {
+    from { transform: scaleY(.75) scaleX(.9); opacity: .7; }
+    to   { transform: scaleY(1.15) scaleX(1.05); opacity: 1; }
+}
+
+/* Rastro de exaustão (visível só no launch) */
+.trail {
+    position: absolute;
+    bottom: -8px;
+    width: 10px;
+    height: 0;
+    border-radius: 999px;
+    background: linear-gradient(to top,
+        transparent,
+        rgba(124, 92, 224, .6) 30%,
+        #E4DBFF 100%);
+    opacity: 0;
+}
+
+/* ---------- Lançamento ---------- */
+.launching .rocket {
+    animation: launch 1.4s cubic-bezier(.55, 0, .85, .35) forwards;
+}
+
+@keyframes launch {
+    0%   { transform: translateY(0) scale(1); }
+    12%  { transform: translateY(6px) scale(1.02, .96); }   /* agachamento */
+    100% { transform: translateY(-620px) scale(.75); opacity: .9; }
+}
+
+.launching .trail {
+    animation: trail-grow 1.4s cubic-bezier(.55, 0, .85, .35) forwards;
+}
+
+@keyframes trail-grow {
+    0%   { height: 0;     opacity: 0; }
+    15%  { height: 40px;  opacity: 1; }
+    60%  { height: 260px; opacity: .9; }
+    100% { height: 520px; opacity: 0; transform: translateY(-420px); }
+}
+
+.launching .orb {
+    animation: orb-flash 1.4s ease-out forwards;
+}
+
+@keyframes orb-flash {
+    0%   { transform: scale(1); filter: brightness(1); }
+    18%  { transform: scale(1.12); filter: brightness(1.6); }
+    100% { transform: scale(.94); filter: brightness(1); }
+}
+
+/* Anel de choque */
+.burst-ring {
+    position: absolute;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    border: 2px solid #E4DBFF;
+    opacity: 0;
+    z-index: 1;
+}
+
+.launching .burst-ring {
+    animation: ring-out 1s ease-out .1s forwards;
+}
+
+@keyframes ring-out {
+    0%   { transform: scale(1);   opacity: .9; }
+    100% { transform: scale(1.9); opacity: 0;  }
+}
+
+/* Partículas */
+.burst { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
+
+.spark {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: #E4DBFF;
+    opacity: 0;
+}
+
+.launching .spark { animation: spark-fly .9s ease-out .15s forwards; }
+
+.spark:nth-child(1) { --dx: -120px; --dy: -60px;  }
+.spark:nth-child(2) { --dx:  130px; --dy: -40px;  }
+.spark:nth-child(3) { --dx: -90px;  --dy:  80px;  }
+.spark:nth-child(4) { --dx:  100px; --dy:  95px;  }
+.spark:nth-child(5) { --dx: -140px; --dy:  10px;  }
+.spark:nth-child(6) { --dx:  145px; --dy:  25px;  }
+.spark:nth-child(7) { --dx: -50px;  --dy: -130px; }
+.spark:nth-child(8) { --dx:  60px;  --dy: -125px; }
+
+@keyframes spark-fly {
+    0%   { transform: translate(-50%, -50%); opacity: 1; }
+    100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(.4); opacity: 0; }
+}
+
+/* ---------- Texto/botão ---------- */
+.hint {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--hint);
+    font-size: .78rem;
+    font-weight: 700;
+    letter-spacing: .28em;
+    text-transform: uppercase;
+    padding: .6rem 1rem;
+    transition: color .2s, opacity .2s;
+}
+
+.hint:hover:not(:disabled) { color: #A48FE0; }
+.hint:disabled { cursor: default; opacity: .6; }
+
+/* ---------- Acessibilidade ---------- */
+@media (prefers-reduced-motion: reduce) {
+    .star, .orb, .orb-halo, .rocket, .flame { animation: none !important; }
+}
+
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="cleanup-scene" id="scene">
+    <div class="stars"><span class="star"></span><span class="star"></span><span class="star"></span><span class="star"></span><span class="star"></span><span class="star"></span><span class="star"></span><span class="star"></span><span class="star"></span><span class="star"></span><span class="star"></span><span class="star"></span><span class="star"></span><span class="star"></span></div>
+    <div class="orb-area">
+      <div class="orb-halo"></div>
+      <div class="burst-ring"></div>
+      <div class="burst"><span class="spark"></span><span class="spark"></span><span class="spark"></span><span class="spark"></span><span class="spark"></span><span class="spark"></span><span class="spark"></span><span class="spark"></span></div>
+      <div class="orb"><span class="pct" id="pct">0%</span></div>
+      <div class="rocket-wrap">
+        <div class="trail"></div>
+        <svg class="rocket" viewBox="0 0 64 96" aria-hidden="true">
+          <path class="r-body" d="M32 4c10 10 14 24 14 38 0 10-2 18-5 24H23c-3-6-5-14-5-24C18 28 22 14 32 4Z"/>
+          <circle class="r-window" cx="32" cy="34" r="7"/>
+          <path class="r-fin" d="M18 46 8 62c6 1 11 0 15-3l-5-13Z"/>
+          <path class="r-fin" d="M46 46l10 16c-6 1-11 0-15-3l5-13Z"/>
+          <path class="r-nozzle" d="M26 66h12l-2 8H28l-2-8Z"/>
+          <path class="flame" d="M32 76c4 5 5 10 0 16-5-6-4-11 0-16Z"/>
+        </svg>
+      </div>
+    </div>
+    <button class="hint" id="hint">CLICK THE BUTTON TO CLEAN UP</button>
+  </div>
+</div>
+
+<script>
+// Simula a lógica que no Blazor fica no @code do componente.
+const scene = document.getElementById('scene');
+const pct = document.getElementById('pct');
+const hint = document.getElementById('hint');
+let running = false;
+
+hint.addEventListener('click', async () => {
+  if (running) return;
+  running = true;
+  hint.disabled = true;
+  scene.classList.add('running');
+
+  for (let p = 0; p <= 100; p++) {
+    pct.textContent = p + '%';
+    const eased = (p < 15 || p > 85) ? 55 : 30;
+    await new Promise(r => setTimeout(r, eased));
+  }
+
+  scene.classList.add('launching');
+  await new Promise(r => setTimeout(r, 1600));
+  scene.classList.remove('launching', 'running');
+
+  hint.textContent = 'CLEANUP COMPLETE';
+  await new Promise(r => setTimeout(r, 1400));
+
+  // reset para permitir replay no preview
+  pct.textContent = '0%';
+  hint.textContent = 'CLICK THE BUTTON TO CLEAN UP';
+  hint.disabled = false;
+  running = false;
+});
+</script>
+</body>
+</html>
