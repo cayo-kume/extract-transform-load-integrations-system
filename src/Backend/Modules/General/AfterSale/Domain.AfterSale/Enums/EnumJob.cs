@@ -1,34 +1,37 @@
 ﻿namespace Domain.AfterSale.Enums
 {
+    /// <summary>
+    /// Qualquer alteração neste arquivo deve refletir nos códigos do arquivo Script007_Insert_Into_Jobs_Table.sql
+    /// </summary>
     public enum EnumJob
     {
         None = 0,
 
         /*Me*/
-        AfterSaleEcommerces = 1200,
+        AfterSaleEcommerces = 5000,
 
         /*Reverses*/
-        AfterSaleReverse = 1201,
-        AfterSaleReverses = 1202,
-        AfterSaleTransportationsReverses = 1203,
-        AfterSaleCourierAttributes = 1204,
-        AfterSaleApproveReverse = 1205,
-        AfterSaleReciveProducts = 1206,
-        AfterSaleReturnedInvoice = 1207,
-        AfterSaleReverseInvoice = 1208,
-        AfterSaleStatusReverses = 1209,
-        AfterSaleHistoriesReverses = 1210,
+        AfterSaleReverse = 5001,
+        AfterSaleReverses = 5002,
+        AfterSaleTransportationsReverses = 5003,
+        AfterSaleCourierAttributes = 5004,
+        AfterSaleApproveReverse = 5005,
+        AfterSaleReciveProducts = 5006,
+        AfterSaleReturnedInvoice = 5007,
+        AfterSaleReverseInvoice = 5008,
+        AfterSaleStatusReverses = 5009,
+        AfterSaleHistoriesReverses = 5010,
 
         /*Refunds*/
-        AfterSaleRefund = 1211,
-        AfterSaleRefunds = 1212,
-        AfterSaleStatusRefunds = 1213,
-        AfterSaleActionsRefunds = 1214,
-        AfterSaleBanksRefunds = 1215,
-        AfterSaleTypesRefunds = 1216,
-        AfterSaleApproveRefund = 1217,
-        AfterSaleCancelRefund = 1218,
-        AfterSalePayRefund = 1219,
-        AfterSaleChangeTotalAmountRefund = 1220
+        AfterSaleRefund = 5011,
+        AfterSaleRefunds = 5012,
+        AfterSaleStatusRefunds = 5013,
+        AfterSaleActionsRefunds = 5014,
+        AfterSaleBanksRefunds = 5015,
+        AfterSaleTypesRefunds = 5016,
+        AfterSaleApproveRefund = 5017,
+        AfterSaleCancelRefund = 5018,
+        AfterSalePayRefund = 5019,
+        AfterSaleChangeTotalAmountRefund = 5020
     }
 }

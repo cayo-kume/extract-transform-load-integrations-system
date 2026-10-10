@@ -7,13 +7,18 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Handlers\**" />
+    <EmbeddedResource Remove="Handlers\**" />
+    <None Remove="Handlers\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\..\..\..\newbloomers-core-dlls\src\Application.Core\Application.Core.csproj" />
     <ProjectReference Include="..\Domain.TotalExpress\Domain.TotalExpress.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="Abstractions\Handlers\Commands\" />
-    <Folder Include="Handlers\Commands\" />
   </ItemGroup>
 
 </Project>

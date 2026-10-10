@@ -1,3 +1,3 @@
-INSERT INTO [auditing].[Apps]
+INSERT INTO [auditing].[Apps] ([IdParent], [Title], [Description])
 VALUES
-(54,'AfterSale', 'Sistema de Integrações da AfterSale');
+(50,'AfterSale', 'Sistema de Integrações da AfterSale');

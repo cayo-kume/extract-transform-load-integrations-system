@@ -1,4 +1,4 @@
-INSERT INTO [general].[AfterSaleParameters]
+INSERT INTO [general].[AfterSaleParameters] (integrated_or_updated_at, cnpj_emp, token)
 VALUES
 (SYSDATETIMEOFFSET() AT TIME ZONE 'E. South America Standard Time', '42538267000268', '56DFD210-0472-11EE-BFA0-99577F33D6F0'), --CHAVE E CNPJ DA OPEN ERA
 (SYSDATETIMEOFFSET() AT TIME ZONE 'E. South America Standard Time', '38367316000199', '69EA80A0-0472-11EE-993E-37EECAAE1115')  --CHAVE E CNPJ DA MISHA

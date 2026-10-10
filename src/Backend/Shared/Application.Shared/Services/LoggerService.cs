@@ -33,6 +33,8 @@ namespace Application.Shared.Services
 
             Log.Messages.Add(
                 new Message(
+                    job: Log.Job,
+                    jobType: Log.IdType,
                     message: message,
                     exceptionMessage: exceptionMessage,
                     stackTraceMessage: stackTraceMessage,
@@ -50,6 +52,8 @@ namespace Application.Shared.Services
 
             Log.Messages.Add(
                 new Message(
+                    job: Log.Job,
+                    jobType: Log.IdType,
                     message,
                     Log.Execution
                 )
@@ -63,7 +67,7 @@ namespace Application.Shared.Services
             if (Log is null) return this;
 
             Log.Records.Add(
-                new Record(key: key, regXML: xml, execution: Log.Execution)
+                new Record(job: Log.Job, jobType: Log.IdType, key: key, regXML: xml, execution: Log.Execution)
             );
 
             return this;
