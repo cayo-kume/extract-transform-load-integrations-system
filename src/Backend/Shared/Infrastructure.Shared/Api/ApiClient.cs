@@ -110,6 +110,31 @@ namespace Infrastructure.Shared.Api
             return content;
         }
 
+        public async Task<string?> PostMultipartAsync(string route, Dictionary<string, string> fields, string fileField, byte[] fileContent, string fileName, string fileContentType, Dictionary<string, string>? headers = null)
+        {
+            var client = CreateClient(headers);
+
+            var url = BuildUrl(client.BaseAddress?.ToString(), route);
+
+            using var httpContent = new MultipartFormDataContent();
+
+            foreach (var field in fields)
+                httpContent.Add(new StringContent(field.Value), field.Key);
+
+            var file = new ByteArrayContent(fileContent);
+            file.Headers.ContentType = new MediaTypeHeaderValue(fileContentType);
+            httpContent.Add(file, fileField, fileName);
+
+            _logger.LogDebug("[ApiClient] POST-MULTIPART {Url} File: {FileName}", url, fileName);
+
+            var response = await client.PostAsync(url, httpContent);
+            var content = await response.Content.ReadAsStringAsync();
+
+            _logger.LogDebug("[ApiClient] POST-MULTIPART {Url} → {StatusCode}", url, response.StatusCode);
+
+            return content;
+        }
+
         private HttpClient CreateClient(Dictionary<string, string>? headers)
         {
             var client = _httpClientFactory.CreateClient(_clientName);

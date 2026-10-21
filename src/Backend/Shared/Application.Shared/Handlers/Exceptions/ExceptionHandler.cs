@@ -23,11 +23,14 @@ namespace Application.Shared.Handlers.Exceptions
 
         public async Task HandleAsync(HttpContext context, Exception exception)
         {
+            // Nem toda exceção tem InnerException ou o trecho após o "|"; cai na própria exceção para não mascarar o erro real.
+            var messageParts = exception.Message.Split('|');
+
             _logger.AddMessage(
                 message: exception.Message,
-                sqlCommand: exception.Message.Contains("|") ? exception.Message.Split('|')[1] : exception.Message,
-                exceptionMessage: exception.InnerException.Message,
-                stackTraceMessage: exception.InnerException.StackTrace
+                sqlCommand: messageParts.Length > 1 ? messageParts[1] : exception.Message,
+                exceptionMessage: exception.InnerException?.Message ?? exception.Message,
+                stackTraceMessage: exception.InnerException?.StackTrace ?? exception.StackTrace
             );
 
             _logger.SetLogEndDate();

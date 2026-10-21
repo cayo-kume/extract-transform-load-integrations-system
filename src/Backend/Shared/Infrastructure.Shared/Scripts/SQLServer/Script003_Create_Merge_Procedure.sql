@@ -4,9 +4,12 @@ go
 set quoted_identifier off
 go
 
---declare @schema_name nvarchar(50) = 'general', @table_name nvarchar(50) = 'AfterSaleSummarizedReverses', @execute bit = 0
+--declare @schema_name nvarchar(50) = 'general', @table_name nvarchar(50) = 'AfterSaleSummarizedReverses', @execute bit = 0, @delete_condition nvarchar(max) = null
 
-create procedure [dbo].[sp_Create_Merge_Procedure] (@schema_name nvarchar(50), @table_name nvarchar(50), @execute bit = 0) as
+--@delete_condition (opcional): quando informado, o merge ganha "when not matched by source and (<condição>) then delete".
+--A condição usa o alias "target" e deve limitar a exclusão às linhas do lote (sem ela, tudo que não está na untreated seria apagado).
+--Exemplo (Movidesk): 'exists (select 1 from [general].MovideskTickets p where p.doc_company = target.doc_company and p.id = target.ticketId and p.integrated_or_updated_at > target.integrated_or_updated_at)'
+create or alter procedure [dbo].[sp_Create_Merge_Procedure] (@schema_name nvarchar(50), @table_name nvarchar(50), @execute bit = 0, @delete_condition nvarchar(max) = null) as
 begin
 
 	set nocount on
@@ -18,7 +21,7 @@ begin
 		@complete_table_name	 varchar(300) = concat(@schema_name, '.', @table_name),
 		@complete_untreated_name varchar(300) = concat('untreated', '.', @table_name),
 
-		@procedure_version		 varchar(10) = '0.7.3',
+		@procedure_version		 varchar(10) = '0.9.0',
 		@procedure_name			 varchar(300) = concat(@schema_name, ".sp_", @table_name, '_Sync'),
 
 		@transaction_name		 varchar(32) = concat('t_', left(@table_name, 30))
@@ -56,6 +59,7 @@ begin
 			@sql_merge					nvarchar(max) = '',
 			@sql_merge_upd				nvarchar(max) = '',
 			@sql_merge_ins				nvarchar(max) = '',
+			@sql_merge_del				nvarchar(max) = '',
 			@sql_log_final				nvarchar(max) = '',
 			@sql_lock_end				nvarchar(max)
 
@@ -187,9 +191,15 @@ begin
 
 		"declare @Execution	uniqueidentifier", char(10),
 		"declare @Output dbo.MergeOutput", char(10),
-		"declare @IdJob	smallint", char(10), char(10),
+		"declare @IdJob	int", char(10),
+		"declare @IdType	int = 1 --auditing.Types: Procedure", char(10), char(10),
 
-		"exec auditing.sp_Log_Start 'sp_", @table_name, "_Sync', @Guid, @IdJob, @Execution output", char(10), char(10),
+		"exec auditing.sp_Log_Start", char(10),
+		"	@jobTitle = 'sp_", @table_name, "_Sync',", char(10),
+		"	@parentExecutionGUID = @Guid,", char(10),
+		"	@idJob = @IdJob output,", char(10),
+		"	@execution = @Execution output,", char(10),
+		"	@idType = @IdType", char(10), char(10),
 
 		"declare @res bit", char(10), char(10),
 		"begin try", char(10),
@@ -302,10 +312,21 @@ begin
 		"	)", char(10), char(10)
 	);
 
+	set @sql_merge_del = iif(
+		--------------------------------------------------------------------------------------------------------------------------------------
+		--Delete (opcional): só é gerado quando @delete_condition é informado
+		nullif(trim(@delete_condition), '') is null,
+		'',
+		concat(
+		"	when not matched by source and (", @delete_condition, ") then", char(10),
+		"	delete", char(10), char(10)
+		)
+	);
+
 	set @sql_log_final = concat(
 		--------------------------------------------------------------------------------------------------------------------------------------
 		--Insere todos os campos do output do merge, separados por ação.
-		"	output iif($action = 'update', 'atualizados', 'inseridos'),", char(10),
+		"	output case $action when 'UPDATE' then 'atualizados' when 'INSERT' then 'inseridos' else 'excluidos' end,", char(10),
 		"	concat( ", @pk_column_list_output, iif(@has_timestamp_column = 1, ", '|', isnull(inserted.[timestamp], deleted.[timestamp])", ""), ", '')", char(10),
 		"	into @output;", char(10), char(10),
 		
@@ -334,8 +355,12 @@ begin
 		"	commit transaction ", @transaction_name, ";", char(10), char(10),
 		"	end try", char(10),
 		"	begin catch", char(10),
-		"		select error_message()", char(10),
-		"		rollback transaction ", @transaction_name, char(10),
+		"		declare @ErrorMessage nvarchar(4000) = error_message()", char(10), char(10),
+		"		if xact_state() <> 0", char(10),
+		"			rollback transaction ", @transaction_name, char(10), char(10),
+		"		exec auditing.sp_Log_Error @Execution, @ErrorMessage", char(10),
+		"		select @ErrorMessage", char(10),
+		"		return", char(10),
 		"	end catch", char(10),
 		"	--log end", char(10),
 		"	declare @MergeOutputSTR nvarchar(max) =", char(10),
@@ -364,6 +389,7 @@ begin
 			@sql_merge,
 			@sql_merge_upd,
 			@sql_merge_ins,
+			@sql_merge_del,
 			@sql_log_final,
 			@sql_lock_end
 		)

@@ -7,5 +7,6 @@ namespace Domain.Shared.Abstractions.Api
         Task<string?> PutAsync(string route, object? body = null, Dictionary<string, string>? headers = null);
         Task<string?> DeleteAsync(string route, object? body = null, Dictionary<string, string>? headers = null);
         Task<string?> PostFormAsync(string route, Dictionary<string, string> formData, Dictionary<string, string>? headers = null);
+        Task<string?> PostMultipartAsync(string route, Dictionary<string, string> fields, string fileField, byte[] fileContent, string fileName, string fileContentType, Dictionary<string, string>? headers = null);
     }
 }

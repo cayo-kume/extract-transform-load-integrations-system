@@ -21,6 +21,7 @@ namespace Infrastructure.Shared.Repositorys
             var parameter = new
             {
                 IdJob = (Int32)(object)log.Job,
+                IdType = (Int32)(object)log.IdType,
                 StartDate = log.StartDate.ToString("s"),
                 EndDate = log.EndDate.ToString("s"),
                 Execution = log.Execution

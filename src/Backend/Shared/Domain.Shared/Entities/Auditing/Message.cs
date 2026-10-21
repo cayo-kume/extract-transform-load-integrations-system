@@ -30,6 +30,8 @@ namespace Domain.Shared.Entities.Auditing
         /// <param name="guidExecution"></param>
         public Message(Enum job, Enum jobType, string message, Guid guidExecution)
         {
+            IdJob = job;
+            IdType = jobType;
             Msg = message.Length > 800 ? message.Substring(0, 800) : message;
             IsError = false;
             Execution = guidExecution;
