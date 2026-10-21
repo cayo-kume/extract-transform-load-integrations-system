@@ -1,23 +1,12 @@
-﻿using Domain.Movidesk.Entities;
-//using Domain.Movidesk.Models.Tickets;
+﻿using Domain.Movidesk.Entities.Parameters;
 
-namespace Domain.Movidesk.Interfaces.Repositorys
+namespace Domain.Movidesk.Abstractions.Repositorys
 {
     public interface IMovideskRepository
     {
-        public Task<Parameters?> GetTokenAsync();
+        public Task<IEnumerable<Company?>> GetCompanys();
+        public Task<Company?> GetCompany(string doc_company);
 
-        //public Task<bool> BulkInsertIntoTableRaw(List<Domain.Movidesk.Models.Persons.Person> registros, Guid? parentExecutionGUID);
-        //public Task<bool> BulkInsertIntoTableRaw(List<Domain.Movidesk.Models.Tickets.Ticket> registros, Guid? parentExecutionGUID);
-        //public Task<bool> BulkInsertIntoTableRaw(List<Domain.Movidesk.Models.> registros, Guid? parentExecutionGUID);
-
-        /*************************************************************************************************************************************************************************/
-
-        //public Task<List<TicketAntigo?>> GetBlankTicketsFromDatabase();
-        //public Task<List<TicketAntigo?>> GetTicketsFromDatabase();
-        //public Task<bool> InsertInvoice(Invoice invoice);
-        //public Task<bool> InsertTicket(TicketAntigo? ticket);
-        //public Task UpdateTicketFromDatabase(List<TicketAntigo> tickets);
-        //public Task UpdateTicketStatusFromDatabase(Invoice invoice);
+        public bool InsertIntoMovideskRequests(Domain.Movidesk.Entities.Writes.Requests.Request request);
     }
 }

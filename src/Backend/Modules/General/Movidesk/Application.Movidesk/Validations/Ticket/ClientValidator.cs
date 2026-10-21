@@ -1,17 +1,24 @@
-﻿using Domain.Core.Extensions;
+﻿using Domain.Shared.Extensions;
 using FluentValidation;
 
 namespace Application.Movidesk.Validations.Ticket
 {
-    public class ClientValidator : AbstractValidator<Domain.Movidesk.Dtos.Tickets.Client>
+    public class ClientValidator : AbstractValidator<Domain.Movidesk.Dtos.Reads.Tickets.Client>
     {
         public ClientValidator()
         {
-            RuleFor(dto => dto.isDeleted)
-                   .MustBeValidBoolean();
+            RuleFor(x => x.id)
+                .MaximumLength(64)
+                .WithMessage("O campo 'id' do cliente deve ter no máximo 64 caracteres.")
+                .When(x => !string.IsNullOrEmpty(x.id));
+
+            RuleFor(x => x.isDeleted)
+                .MustBeValidBoolean()
+                .When(x => !string.IsNullOrEmpty(x.isDeleted));
 
             RuleFor(x => x.organization)
-                    .SetValidator(new CreatedbyValidator());
+                .SetValidator(new TicketPersonValidator()!)
+                .When(x => x.organization is not null);
         }
     }
 }

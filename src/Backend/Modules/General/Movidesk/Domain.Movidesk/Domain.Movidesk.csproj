@@ -7,20 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Entities\Services\**" />
-    <Compile Remove="Entities\Tickets\**" />
-    <EmbeddedResource Remove="Entities\Services\**" />
-    <EmbeddedResource Remove="Entities\Tickets\**" />
-    <None Remove="Entities\Services\**" />
-    <None Remove="Entities\Tickets\**" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
   </ItemGroup>
 
   <ItemGroup>
-  	<PackageReference Include="Newtonsoft.Json" />
-  </ItemGroup>
-  
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\..\..\newbloomers-core-dlls\src\Domain.Core\Domain.Core.csproj" />
+    <ProjectReference Include="..\..\..\..\shared\Domain.Shared\Domain.Shared.csproj" />
   </ItemGroup>
 
 </Project>

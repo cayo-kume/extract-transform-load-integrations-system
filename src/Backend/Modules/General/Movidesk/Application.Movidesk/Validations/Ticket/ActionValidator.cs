@@ -1,15 +1,15 @@
-﻿using Domain.Core.Extensions;
+﻿using Domain.Shared.Extensions;
 using FluentValidation;
 
 namespace Application.Movidesk.Validations.Ticket
 {
-    public class ActionValidator : AbstractValidator<Domain.Movidesk.Dtos.Tickets.Action>
+    public class ActionValidator : AbstractValidator<Domain.Movidesk.Dtos.Reads.Tickets.Action>
     {
         public ActionValidator()
         {
             RuleFor(x => x.id)
-            .MustBeValidInt32()
-            .When(x => !string.IsNullOrEmpty(x.id));
+                .MustBeValidInt32()
+                .When(x => !string.IsNullOrEmpty(x.id));
 
             RuleFor(x => x.type)
                 .MustBeValidInt32()
@@ -19,30 +19,32 @@ namespace Application.Movidesk.Validations.Ticket
                 .MustBeValidInt32()
                 .When(x => !string.IsNullOrEmpty(x.origin));
 
-            RuleFor(dto => dto.description)
-                   .MaximumLength(300);
+            // description e htmlDescription são nvarchar(max): sem limite de tamanho
 
-            RuleFor(dto => dto.status)
-                   .MaximumLength(60);
+            RuleFor(x => x.status)
+                .MaximumLength(128)
+                .WithMessage("O campo 'status' da ação deve ter no máximo 128 caracteres.")
+                .When(x => !string.IsNullOrEmpty(x.status));
 
-            RuleFor(dto => dto.justification)
-                   .MaximumLength(300);
+            RuleFor(x => x.justification)
+                .MaximumLength(128)
+                .WithMessage("O campo 'justification' da ação deve ter no máximo 128 caracteres.")
+                .When(x => !string.IsNullOrEmpty(x.justification));
 
             RuleFor(x => x.createdDate)
                 .MustBeValidDateTime()
                 .When(x => !string.IsNullOrEmpty(x.createdDate));
 
-            RuleFor(dto => dto.isDeleted)
-                   .MustBeValidBoolean();
+            RuleFor(x => x.isDeleted)
+                .MustBeValidBoolean()
+                .When(x => !string.IsNullOrEmpty(x.isDeleted));
 
             RuleFor(x => x.createdBy)
-                .SetValidator(new CreatedbyValidator());
+                .SetValidator(new TicketPersonValidator()!)
+                .When(x => x.createdBy is not null);
 
             RuleForEach(x => x.attachments)
                 .SetValidator(new AttachmentValidator());
-
-            RuleForEach(x => x.customFieldValues)
-                .SetValidator(new CustomfieldValueValidator());
         }
     }
 }

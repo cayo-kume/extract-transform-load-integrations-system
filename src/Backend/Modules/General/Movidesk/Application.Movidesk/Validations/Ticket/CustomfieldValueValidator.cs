@@ -1,33 +1,28 @@
-﻿using FluentValidation;
+﻿using Domain.Shared.Extensions;
+using FluentValidation;
 
 namespace Application.Movidesk.Validations.Ticket
 {
-    public class CustomfieldValueValidator : AbstractValidator<Domain.Movidesk.Dtos.Tickets.Customfieldvalue>
+    public class CustomFieldValueValidator : AbstractValidator<Domain.Movidesk.Dtos.Reads.Tickets.CustomFieldValue>
     {
-        public CustomfieldValueValidator()
+        public CustomFieldValueValidator()
         {
             RuleFor(x => x.customFieldId)
-                .MaximumLength(50)
-                .WithMessage("O campo 'customFieldId' deve ter no máximo 50 caracteres.")
+                .MustBeValidInt32()
                 .When(x => !string.IsNullOrEmpty(x.customFieldId));
 
             RuleFor(x => x.customFieldRuleId)
-                .MaximumLength(50)
-                .WithMessage("O campo 'customFieldRuleId' deve ter no máximo 50 caracteres.")
+                .MustBeValidInt32()
                 .When(x => !string.IsNullOrEmpty(x.customFieldRuleId));
 
             RuleFor(x => x.line)
-                .MaximumLength(50)
-                .WithMessage("O campo 'line' deve ter no máximo 50 caracteres.")
+                .MustBeValidInt32()
                 .When(x => !string.IsNullOrEmpty(x.line));
 
-            RuleFor(x => x.value)
-                .MaximumLength(50)
-                .WithMessage("O campo 'value' deve ter no máximo 50 caracteres.")
-                .When(x => !string.IsNullOrEmpty(x.value));
+            // value é nvarchar(max): sem limite de tamanho
 
             RuleForEach(x => x.items)
-                .SetValidator(new ItemValidator());
+                .SetValidator(new CustomFieldValueItemValidator());
         }
     }
 }

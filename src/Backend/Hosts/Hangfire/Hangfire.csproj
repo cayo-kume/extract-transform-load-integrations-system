@@ -16,6 +16,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Modules\General\AfterSale\Application.AfterSale\Application.AfterSale.csproj" />
     <ProjectReference Include="..\..\Modules\General\AfterSale\Infrastructure.AfterSale\Infrastructure.AfterSale.csproj" />
+    <ProjectReference Include="..\..\Modules\General\Movidesk\Application.Movidesk\Application.Movidesk.csproj" />
+    <ProjectReference Include="..\..\Modules\General\Movidesk\Infrastructure.Movidesk\Infrastructure.Movidesk.csproj" />
   </ItemGroup>
   
 </Project>

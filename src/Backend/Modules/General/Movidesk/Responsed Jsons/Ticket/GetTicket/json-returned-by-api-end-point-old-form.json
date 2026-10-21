@@ -1,0 +1,377 @@
+{
+  "id": "1000",
+  "protocol": null,
+  "type": 2,
+  "subject": "Assunto do ticket exemplo 2",
+  "category": "Solicitação de serviço",
+  "urgency": "Urgente",
+  "status": "Fechado",
+  "baseStatus": "Closed",
+  "justification": null,
+  "origin": 1,
+  "createdDate": "2021-11-09T17:41:30.7985589",
+  "isDeleted": false,
+  "originEmailAccount": null,
+  "owner": {
+    "id": "1000000004",
+    "personType": 1,
+    "profileType": 2,
+    "businessName": "Pessoa Exemplo 4",
+    "email": "pessoa4@exemplo.com.br",
+    "phone": null
+  },
+  "ownerTeam": "Equipe Exemplo",
+  "createdBy": {
+    "id": "1000000005",
+    "personType": 1,
+    "profileType": 2,
+    "businessName": "Pessoa Exemplo 5",
+    "email": "pessoa5@exemplo.com.br",
+    "phone": null
+  },
+  "serviceFull": [
+    "Serviço nível 2",
+    "Serviço nível 1"
+  ],
+  "serviceFirstLevelId": 100002,
+  "serviceFirstLevel": "Serviço nível 1",
+  "serviceSecondLevel": "Serviço nível 2",
+  "serviceThirdLevel": null,
+  "contactForm": null,
+  "tags": [],
+  "cc": null,
+  "resolvedIn": "2021-11-10T11:04:08.3636633",
+  "closedIn": "2021-11-15T11:13:53.5753795",
+  "canceledIn": null,
+  "actionCount": 2,
+  "lifeTimeWorkingTime": 1043,
+  "stoppedTime": 0,
+  "stoppedTimeWorkingTime": 0,
+  "resolvedInFirstCall": false,
+  "chatWidget": null,
+  "chatGroup": null,
+  "chatTalkTime": null,
+  "chatWaitingTime": null,
+  "sequence": null,
+  "slaAgreement": null,
+  "slaAgreementRule": null,
+  "slaSolutionTime": 0,
+  "slaResponseTime": 0,
+  "slaSolutionChangedByUser": false,
+  "slaSolutionChangedBy": {
+    "id": "1000000005",
+    "personType": 1,
+    "profileType": 2,
+    "businessName": "Pessoa Exemplo 5",
+    "email": "pessoa5@exemplo.com.br",
+    "phone": null
+  },
+  "slaSolutionDate": null,
+  "slaSolutionDateIsPaused": false,
+  "jiraIssueKey": null,
+  "redmineIssueId": null,
+  "movideskTicketNumber": null,
+  "linkedToIntegratedTicketNumber": null,
+  "reopenedIn": null,
+  "lastActionDate": "2021-11-10T11:04:08.4376619",
+  "lastUpdate": "2021-11-15T11:13:58.2703808",
+  "slaResponseDate": null,
+  "slaRealResponseDate": null,
+  "clients": [
+    {
+      "id": "1000000005",
+      "personType": 1,
+      "profileType": 2,
+      "businessName": "Pessoa Exemplo 5",
+      "email": "pessoa5@exemplo.com.br",
+      "phone": null,
+      "isDeleted": false,
+      "organization": {
+        "id": "1000000002",
+        "personType": 2,
+        "profileType": 2,
+        "businessName": "Empresa Exemplo 2",
+        "email": null,
+        "phone": null
+      },
+      "address": null,
+      "complement": null,
+      "cep": null,
+      "city": null,
+      "bairro": null,
+      "number": null,
+      "reference": null
+    }
+  ],
+  "actions": [
+    {
+      "id": 1,
+      "type": 2,
+      "origin": 0,
+      "description": "Descrição da ação 1\n",
+      "htmlDescription": "<p>Descrição da ação 1</p>",
+      "status": "Novo",
+      "justification": null,
+      "createdDate": "2021-11-09T17:41:30.7385478",
+      "createdBy": {
+        "id": "1000000005",
+        "personType": 1,
+        "profileType": 2,
+        "businessName": "Pessoa Exemplo 5",
+        "email": "pessoa5@exemplo.com.br",
+        "phone": null
+      },
+      "isDeleted": false,
+      "timeAppointments": [],
+      "attachments": [
+        {
+          "fileName": "anexo-exemplo-1.docx",
+          "path": "CA2A30F505AE59C930517589BDE530D1",
+          "createdBy": {
+            "id": "1000000005",
+            "personType": 1,
+            "profileType": 2,
+            "businessName": "Pessoa Exemplo 5",
+            "email": "pessoa5@exemplo.com.br",
+            "phone": null
+          },
+          "createdDate": "2021-11-09T17:41:31.9915589"
+        }
+      ],
+      "expenses": [],
+      "tags": []
+    },
+    {
+      "id": 2,
+      "type": 2,
+      "origin": 2,
+      "description": "Descrição da ação 2\n",
+      "htmlDescription": "<p>Descrição da ação 2</p>",
+      "status": "Resolvido",
+      "justification": null,
+      "createdDate": "2021-11-10T11:04:08.4376619",
+      "createdBy": {
+        "id": "1000000004",
+        "personType": 1,
+        "profileType": 2,
+        "businessName": "Pessoa Exemplo 4",
+        "email": "pessoa4@exemplo.com.br",
+        "phone": null
+      },
+      "isDeleted": false,
+      "timeAppointments": [],
+      "attachments": [
+        {
+          "fileName": "anexo-exemplo-1.pdf",
+          "path": "073EE07A19557B9CFD1F503D6C04D904",
+          "createdBy": {
+            "id": "1000000004",
+            "personType": 1,
+            "profileType": 2,
+            "businessName": "Pessoa Exemplo 4",
+            "email": "pessoa4@exemplo.com.br",
+            "phone": null
+          },
+          "createdDate": "2021-11-10T11:04:08.5226567"
+        }
+      ],
+      "expenses": [],
+      "tags": []
+    }
+  ],
+  "parentTickets": [],
+  "childrenTickets": [],
+  "ownerHistories": [
+    {
+      "ownerTeam": null,
+      "owner": null,
+      "changedBy": {
+        "id": "1000000005",
+        "personType": 1,
+        "profileType": 2,
+        "businessName": "Pessoa Exemplo 5",
+        "email": "pessoa5@exemplo.com.br",
+        "phone": null
+      },
+      "changedDate": "2021-11-09T17:32:39.2587024",
+      "permanencyTimeFullTime": 63089.171960499996,
+      "permanencyTimeWorkingTime": 63089.171960499996
+    },
+    {
+      "ownerTeam": "Equipe Exemplo",
+      "owner": {
+        "id": "1000000004",
+        "personType": 1,
+        "profileType": 2,
+        "businessName": "Pessoa Exemplo 4",
+        "email": "pessoa4@exemplo.com.br",
+        "phone": null
+      },
+      "changedBy": {
+        "id": "1000000004",
+        "personType": 1,
+        "profileType": 2,
+        "businessName": "Pessoa Exemplo 4",
+        "email": "pessoa4@exemplo.com.br",
+        "phone": null
+      },
+      "changedDate": "2021-11-10T11:04:08.5226567",
+      "permanencyTimeFullTime": null,
+      "permanencyTimeWorkingTime": null
+    }
+  ],
+  "statusHistories": [
+    {
+      "status": "Novo",
+      "justification": null,
+      "changedBy": {
+        "id": "1000000005",
+        "personType": 1,
+        "profileType": 2,
+        "businessName": "Pessoa Exemplo 5",
+        "email": "pessoa5@exemplo.com.br",
+        "phone": null
+      },
+      "changedDate": "2021-11-09T17:32:39.2587024",
+      "permanencyTimeFullTime": 63089.0979618,
+      "permanencyTimeWorkingTime": 63089.0979618
+    },
+    {
+      "status": "Resolvido",
+      "justification": null,
+      "changedBy": {
+        "id": "1000000004",
+        "personType": 1,
+        "profileType": 2,
+        "businessName": "Pessoa Exemplo 4",
+        "email": "pessoa4@exemplo.com.br",
+        "phone": null
+      },
+      "changedDate": "2021-11-10T11:04:08.5226567",
+      "permanencyTimeFullTime": 432583.916713,
+      "permanencyTimeWorkingTime": 392151.4773433
+    },
+    {
+      "status": "Fechado",
+      "justification": null,
+      "changedBy": null,
+      "changedDate": "2021-11-15T11:14:05.151377",
+      "permanencyTimeFullTime": null,
+      "permanencyTimeWorkingTime": null
+    }
+  ],
+  "satisfactionSurveyResponses": [],
+  "customFieldValues": [
+    {
+      "customFieldId": 88915,
+      "customFieldRuleId": 44550,
+      "line": 1,
+      "value": "1234,56",
+      "items": []
+    },
+    {
+      "customFieldId": 90558,
+      "customFieldRuleId": 44550,
+      "line": 1,
+      "value": null,
+      "items": []
+    },
+    {
+      "customFieldId": 90574,
+      "customFieldRuleId": 44550,
+      "line": 1,
+      "value": null,
+      "items": []
+    },
+    {
+      "customFieldId": 90575,
+      "customFieldRuleId": 44550,
+      "line": 1,
+      "value": "9999",
+      "items": []
+    },
+    {
+      "customFieldId": 90578,
+      "customFieldRuleId": 44550,
+      "line": 1,
+      "value": "99999",
+      "items": []
+    },
+    {
+      "customFieldId": 90580,
+      "customFieldRuleId": 44550,
+      "line": 1,
+      "value": "99999999",
+      "items": []
+    },
+    {
+      "customFieldId": 90581,
+      "customFieldRuleId": 44550,
+      "line": 1,
+      "value": "Texto exemplo",
+      "items": []
+    },
+    {
+      "customFieldId": 90582,
+      "customFieldRuleId": 44550,
+      "line": 1,
+      "value": "Texto exemplo",
+      "items": []
+    },
+    {
+      "customFieldId": 90583,
+      "customFieldRuleId": 44550,
+      "line": 1,
+      "value": "Texto exemplo",
+      "items": []
+    },
+    {
+      "customFieldId": 90584,
+      "customFieldRuleId": 44550,
+      "line": 1,
+      "value": "Texto exemplo",
+      "items": []
+    },
+    {
+      "customFieldId": 90585,
+      "customFieldRuleId": 44550,
+      "line": 1,
+      "value": null,
+      "items": [
+        {
+          "personId": null,
+          "clientId": null,
+          "team": null,
+          "customFieldItem": "Item exemplo",
+          "storageFileGuid": "",
+          "fileName": null
+        }
+      ]
+    },
+    {
+      "customFieldId": 90586,
+      "customFieldRuleId": 44550,
+      "line": 1,
+      "value": null,
+      "items": [
+        {
+          "personId": null,
+          "clientId": null,
+          "team": null,
+          "customFieldItem": "Item exemplo",
+          "storageFileGuid": "",
+          "fileName": null
+        }
+      ]
+    },
+    {
+      "customFieldId": 90677,
+      "customFieldRuleId": 44550,
+      "line": 1,
+      "value": "0,00",
+      "items": []
+    }
+  ],
+  "assets": [],
+  "webhookEvents": null
+}

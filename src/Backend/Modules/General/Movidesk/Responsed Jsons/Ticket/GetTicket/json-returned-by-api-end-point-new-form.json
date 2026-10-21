@@ -1,0 +1,382 @@
+{
+  "id": "69255",
+  "protocol": null,
+  "type": 2,
+  "subject": "Assunto do ticket exemplo 1",
+  "category": "Solicitação de serviço",
+  "urgency": "Média",
+  "status": "Novo",
+  "baseStatus": "New",
+  "justification": null,
+  "origin": 2,
+  "createdDate": "2026-10-15T20:21:17.9358404",
+  "isDeleted": false,
+  "originEmailAccount": null,
+  "owner": {
+    "id": "1000000001",
+    "personType": 1,
+    "profileType": 3,
+    "businessName": "Pessoa Exemplo 1",
+    "email": "pessoa1@exemplo.com.br",
+    "phone": "11999999999"
+  },
+  "ownerTeam": "Equipe Exemplo",
+  "createdBy": {
+    "id": "1000000001",
+    "personType": 1,
+    "profileType": 3,
+    "businessName": "Pessoa Exemplo 1",
+    "email": "pessoa1@exemplo.com.br",
+    "phone": "11999999999"
+  },
+  "serviceFull": [
+    "Serviço nível 3",
+    "Serviço nível 2",
+    "Serviço nível 1"
+  ],
+  "serviceFirstLevelId": 100001,
+  "serviceFirstLevel": "Serviço nível 1",
+  "serviceSecondLevel": "Serviço nível 2",
+  "serviceThirdLevel": "Serviço nível 3",
+  "contactForm": null,
+  "tags": [],
+  "cc": null,
+  "resolvedIn": null,
+  "closedIn": null,
+  "canceledIn": null,
+  "actionCount": 1,
+  "lifeTimeWorkingTime": null,
+  "stoppedTime": null,
+  "stoppedTimeWorkingTime": null,
+  "resolvedInFirstCall": false,
+  "chatWidget": null,
+  "chatGroup": null,
+  "chatTalkTime": null,
+  "chatWaitingTime": null,
+  "sequence": null,
+  "slaAgreement": null,
+  "slaAgreementRule": null,
+  "slaSolutionTime": 0,
+  "slaResponseTime": 0,
+  "slaSolutionChangedByUser": false,
+  "slaSolutionChangedBy": {
+    "id": "1000000001",
+    "personType": 1,
+    "profileType": 3,
+    "businessName": "Pessoa Exemplo 1",
+    "email": "pessoa1@exemplo.com.br",
+    "phone": "11999999999"
+  },
+  "slaSolutionDate": null,
+  "slaSolutionDateIsPaused": false,
+  "jiraIssueKey": null,
+  "redmineIssueId": null,
+  "movideskTicketNumber": null,
+  "linkedToIntegratedTicketNumber": null,
+  "reopenedIn": null,
+  "lastActionDate": "2026-10-15T20:25:02.4987655",
+  "lastUpdate": "2026-10-15T20:25:02.4987655",
+  "slaResponseDate": null,
+  "slaRealResponseDate": null,
+  "clients": [
+    {
+      "id": "1000000001",
+      "personType": 1,
+      "profileType": 3,
+      "businessName": "Pessoa Exemplo 1",
+      "email": "pessoa1@exemplo.com.br",
+      "phone": "11999999999",
+      "isDeleted": false,
+      "organization": {
+        "id": "1000000002",
+        "personType": 2,
+        "profileType": 2,
+        "businessName": "Empresa Exemplo 2",
+        "email": null,
+        "phone": null
+      },
+      "address": null,
+      "complement": null,
+      "cep": null,
+      "city": null,
+      "bairro": null,
+      "number": null,
+      "reference": null
+    }
+  ],
+  "actions": [
+    {
+      "id": 1,
+      "type": 2,
+      "origin": 0,
+      "description": "Descrição da ação 1\n",
+      "htmlDescription": "<p>Descrição da ação 1</p>",
+      "status": "Novo",
+      "justification": null,
+      "createdDate": "2026-10-15T20:25:02.4987655",
+      "createdBy": {
+        "id": "1000000001",
+        "personType": 1,
+        "profileType": 3,
+        "businessName": "Pessoa Exemplo 1",
+        "email": "pessoa1@exemplo.com.br",
+        "phone": "11999999999"
+      },
+      "isDeleted": false,
+      "timeAppointments": [],
+      "attachments": [],
+      "expenses": [],
+      "tags": []
+    }
+  ],
+  "parentTickets": [],
+  "childrenTickets": [],
+  "ownerHistories": [
+    {
+      "ownerTeam": "Equipe Exemplo",
+      "owner": {
+        "id": "1000000001",
+        "personType": 1,
+        "profileType": 3,
+        "businessName": "Pessoa Exemplo 1",
+        "email": "pessoa1@exemplo.com.br",
+        "phone": "11999999999"
+      },
+      "changedBy": {
+        "id": "1000000001",
+        "personType": 1,
+        "profileType": 3,
+        "businessName": "Pessoa Exemplo 1",
+        "email": "pessoa1@exemplo.com.br",
+        "phone": "11999999999"
+      },
+      "changedDate": "2026-10-15T20:21:17.9358404",
+      "permanencyTimeFullTime": null,
+      "permanencyTimeWorkingTime": null
+    }
+  ],
+  "statusHistories": [
+    {
+      "status": "Novo",
+      "justification": null,
+      "changedBy": {
+        "id": "1000000001",
+        "personType": 1,
+        "profileType": 3,
+        "businessName": "Pessoa Exemplo 1",
+        "email": "pessoa1@exemplo.com.br",
+        "phone": "11999999999"
+      },
+      "changedDate": "2026-10-15T20:21:17.9358404",
+      "permanencyTimeFullTime": null,
+      "permanencyTimeWorkingTime": null
+    }
+  ],
+  "satisfactionSurveyResponses": [],
+  "customFieldValues": [
+    {
+      "customFieldId": 89318,
+      "customFieldRuleId": 132441,
+      "line": 1,
+      "value": null,
+      "items": [
+        {
+          "personId": null,
+          "clientId": null,
+          "team": null,
+          "customFieldItem": null,
+          "storageFileGuid": "d785fff8-9622-5659-a26a-cb53a187f8b9",
+          "fileName": null
+        }
+      ]
+    },
+    {
+      "customFieldId": 118039,
+      "customFieldRuleId": 132441,
+      "line": 1,
+      "value": "Texto exemplo",
+      "items": []
+    },
+    {
+      "customFieldId": 250781,
+      "customFieldRuleId": 132441,
+      "line": 1,
+      "value": null,
+      "items": [
+        {
+          "personId": null,
+          "clientId": null,
+          "team": null,
+          "customFieldItem": "Item exemplo",
+          "storageFileGuid": "",
+          "fileName": null
+        }
+      ]
+    },
+    {
+      "customFieldId": 250784,
+      "customFieldRuleId": 132441,
+      "line": 1,
+      "value": null,
+      "items": [
+        {
+          "personId": null,
+          "clientId": null,
+          "team": null,
+          "customFieldItem": "Item exemplo",
+          "storageFileGuid": "",
+          "fileName": null
+        }
+      ]
+    },
+    {
+      "customFieldId": 250787,
+      "customFieldRuleId": 132441,
+      "line": 1,
+      "value": "9999",
+      "items": []
+    },
+    {
+      "customFieldId": 250788,
+      "customFieldRuleId": 132441,
+      "line": 1,
+      "value": null,
+      "items": [
+        {
+          "personId": null,
+          "clientId": null,
+          "team": null,
+          "customFieldItem": "Item exemplo",
+          "storageFileGuid": "",
+          "fileName": null
+        }
+      ]
+    },
+    {
+      "customFieldId": 250789,
+      "customFieldRuleId": 132441,
+      "line": 1,
+      "value": null,
+      "items": [
+        {
+          "personId": null,
+          "clientId": null,
+          "team": null,
+          "customFieldItem": "Item exemplo",
+          "storageFileGuid": "",
+          "fileName": null
+        }
+      ]
+    },
+    {
+      "customFieldId": 250790,
+      "customFieldRuleId": 132441,
+      "line": 1,
+      "value": null,
+      "items": [
+        {
+          "personId": null,
+          "clientId": null,
+          "team": null,
+          "customFieldItem": "Item exemplo",
+          "storageFileGuid": "",
+          "fileName": null
+        }
+      ]
+    },
+    {
+      "customFieldId": 250791,
+      "customFieldRuleId": 132441,
+      "line": 1,
+      "value": "2026-10-14T00:00:00.000Z",
+      "items": []
+    },
+    {
+      "customFieldId": 250798,
+      "customFieldRuleId": 132441,
+      "line": 1,
+      "value": "1234.56",
+      "items": []
+    },
+    {
+      "customFieldId": 250801,
+      "customFieldRuleId": 132441,
+      "line": 1,
+      "value": null,
+      "items": [
+        {
+          "personId": null,
+          "clientId": null,
+          "team": null,
+          "customFieldItem": "Item exemplo",
+          "storageFileGuid": "",
+          "fileName": null
+        }
+      ]
+    },
+    {
+      "customFieldId": 250803,
+      "customFieldRuleId": 132441,
+      "line": 1,
+      "value": null,
+      "items": [
+        {
+          "personId": null,
+          "clientId": null,
+          "team": null,
+          "customFieldItem": "Item exemplo",
+          "storageFileGuid": "",
+          "fileName": null
+        }
+      ]
+    },
+    {
+      "customFieldId": 250963,
+      "customFieldRuleId": 132441,
+      "line": 1,
+      "value": null,
+      "items": [
+        {
+          "personId": null,
+          "clientId": "1000000003",
+          "team": null,
+          "customFieldItem": null,
+          "storageFileGuid": "",
+          "fileName": null
+        }
+      ]
+    },
+    {
+      "customFieldId": 251311,
+      "customFieldRuleId": 132441,
+      "line": 1,
+      "value": null,
+      "items": [
+        {
+          "personId": null,
+          "clientId": null,
+          "team": null,
+          "customFieldItem": "Item exemplo",
+          "storageFileGuid": "",
+          "fileName": null
+        }
+      ]
+    },
+    {
+      "customFieldId": 251312,
+      "customFieldRuleId": 132441,
+      "line": 1,
+      "value": "9",
+      "items": []
+    },
+    {
+      "customFieldId": 251313,
+      "customFieldRuleId": 132441,
+      "line": 1,
+      "value": "1234,56",
+      "items": []
+    }
+  ],
+  "assets": [],
+  "webhookEvents": null
+}

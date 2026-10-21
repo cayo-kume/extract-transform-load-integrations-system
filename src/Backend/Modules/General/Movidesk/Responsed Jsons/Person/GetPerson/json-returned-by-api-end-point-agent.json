@@ -1,0 +1,82 @@
+{
+  "id": "1000000001",
+  "codeReferenceAdditional": null,
+  "isActive": true,
+  "personType": 1,
+  "profileType": 3,
+  "accessProfile": "accessProfile exemplo",
+  "businessName": "Pessoa Exemplo 1",
+  "businessBranch": null,
+  "corporateName": null,
+  "cpfCnpj": "99999999999",
+  "userName": "pessoa1@exemplo.com.br",
+  "accountEmail": null,
+  "role": null,
+  "bossId": null,
+  "bossName": null,
+  "classification": "classification exemplo",
+  "cultureId": null,
+  "timeZoneId": null,
+  "createdDate": "2021-08-24T12:45:34.1198308",
+  "createdBy": "1000000006",
+  "changedDate": "2024-08-14T17:59:37.1219924",
+  "changedBy": "1000000001",
+  "observations": null,
+  "authenticateOn": null,
+  "addresses": [],
+  "contacts": [
+    {
+      "contactType": "Telefone celular",
+      "contact": "99999999999",
+      "isDefault": true
+    }
+  ],
+  "emails": [
+    {
+      "emailType": "Profissional",
+      "email": "pessoa1.1@exemplo.com.br",
+      "isDefault": true
+    }
+  ],
+  "teams": [
+    "Equipe Exemplo 1",
+    "Equipe Exemplo 2"
+  ],
+  "relationships": [
+    {
+      "id": "1000000002",
+      "name": "Empresa Exemplo 2",
+      "slaAgreement": null,
+      "forceChildrenToHaveSomeAgreement": false,
+      "allowAllServices": true,
+      "includeInParents": null,
+      "loadChildOrganizations": null,
+      "services": [],
+      "isGetMethod": true
+    },
+    {
+      "id": "1000000007",
+      "name": "Empresa Exemplo 7",
+      "slaAgreement": null,
+      "forceChildrenToHaveSomeAgreement": false,
+      "allowAllServices": true,
+      "includeInParents": null,
+      "loadChildOrganizations": null,
+      "services": [],
+      "isGetMethod": true
+    },
+    {
+      "id": "1000000008",
+      "name": "Empresa Exemplo 8",
+      "slaAgreement": null,
+      "forceChildrenToHaveSomeAgreement": false,
+      "allowAllServices": true,
+      "includeInParents": null,
+      "loadChildOrganizations": null,
+      "services": [],
+      "isGetMethod": true
+    }
+  ],
+  "customFieldValues": [],
+  "atAssets": []
+}

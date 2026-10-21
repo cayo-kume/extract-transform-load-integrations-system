@@ -1,0 +1,178 @@
+[
+  {
+    "id": "1000000010",
+    "codeReferenceAdditional": null,
+    "isActive": true,
+    "personType": 1,
+    "profileType": 3,
+    "accessProfile": "accessProfile exemplo",
+    "businessName": "Pessoa Exemplo 10",
+    "businessBranch": null,
+    "corporateName": null,
+    "cpfCnpj": "99999999999",
+    "userName": "pessoa10@exemplo.com.br",
+    "accountEmail": null,
+    "role": "role exemplo",
+    "bossId": "1000000011",
+    "bossName": "Pessoa Exemplo Chefe",
+    "classification": "classification exemplo",
+    "cultureId": "pt-BR",
+    "timeZoneId": "UTC",
+    "createdDate": "2023-03-22T14:18:27.4398281",
+    "createdBy": "1000000001",
+    "changedDate": "2026-10-20T16:30:00.7232547",
+    "changedBy": "1000000001",
+    "observations": null,
+    "authenticateOn": null,
+    "addresses": [],
+    "contacts": [],
+    "emails": [
+      {
+        "emailType": "Profissional",
+        "email": "pessoa10.1@exemplo.com.br",
+        "isDefault": true
+      }
+    ],
+    "teams": [
+      "Equipe Exemplo 1"
+    ],
+    "relationships": [
+      {
+        "id": "1000000002",
+        "name": "Empresa Exemplo 2",
+        "slaAgreement": null,
+        "forceChildrenToHaveSomeAgreement": false,
+        "allowAllServices": true,
+        "includeInParents": null,
+        "loadChildOrganizations": null,
+        "services": [],
+        "isGetMethod": true
+      }
+    ],
+    "customFieldValues": [],
+    "atAssets": []
+  },
+  {
+    "id": "1000000012",
+    "codeReferenceAdditional": null,
+    "isActive": true,
+    "personType": 1,
+    "profileType": 2,
+    "accessProfile": "accessProfile exemplo",
+    "businessName": "Pessoa Exemplo 12",
+    "businessBranch": null,
+    "corporateName": null,
+    "cpfCnpj": "99999999999",
+    "userName": "pessoa12@exemplo.com.br",
+    "accountEmail": null,
+    "role": "role exemplo",
+    "bossId": "1000000013",
+    "bossName": "Pessoa Exemplo Chefe",
+    "classification": "classification exemplo",
+    "cultureId": "pt-BR",
+    "timeZoneId": "UTC",
+    "createdDate": "2022-05-16T13:54:37.1556479",
+    "createdBy": "1000000001",
+    "changedDate": "2026-10-20T16:29:17.5230434",
+    "changedBy": "1000000001",
+    "observations": null,
+    "authenticateOn": null,
+    "addresses": [],
+    "contacts": [],
+    "emails": [
+      {
+        "emailType": "Profissional",
+        "email": "pessoa12.1@exemplo.com.br",
+        "isDefault": true
+      }
+    ],
+    "teams": [],
+    "relationships": [
+      {
+        "id": "1000000002",
+        "name": "Empresa Exemplo 2",
+        "slaAgreement": null,
+        "forceChildrenToHaveSomeAgreement": false,
+        "allowAllServices": true,
+        "includeInParents": null,
+        "loadChildOrganizations": null,
+        "services": [],
+        "isGetMethod": true
+      }
+    ],
+    "customFieldValues": [],
+    "atAssets": []
+  },
+  {
+    "id": "1000000014",
+    "codeReferenceAdditional": null,
+    "isActive": true,
+    "personType": 1,
+    "profileType": 2,
+    "accessProfile": "accessProfile exemplo",
+    "businessName": "Pessoa Exemplo 14",
+    "businessBranch": null,
+    "corporateName": null,
+    "cpfCnpj": "99999999999",
+    "userName": "pessoa14@exemplo.com.br",
+    "accountEmail": null,
+    "role": "role exemplo",
+    "bossId": null,
+    "bossName": null,
+    "classification": "classification exemplo",
+    "cultureId": null,
+    "timeZoneId": null,
+    "createdDate": "2024-03-26T14:54:39.1192332",
+    "createdBy": "1000000001",
+    "changedDate": "2026-10-20T16:28:53.1137832",
+    "changedBy": "1000000001",
+    "observations": null,
+    "authenticateOn": null,
+    "addresses": [
+      {
+        "addressType": "Comercial",
+        "country": "BRASIL",
+        "postalCode": "9999999",
+        "state": "Sao Paulo",
+        "district": "district exemplo",
+        "city": "city exemplo",
+        "street": "street exemplo",
+        "number": "999",
+        "complement": "complement exemplo",
+        "reference": null,
+        "isDefault": true,
+        "countryId": 1058
+      }
+    ],
+    "contacts": [
+      {
+        "contactType": "Telefone celular",
+        "contact": "99999999999",
+        "isDefault": true
+      }
+    ],
+    "emails": [
+      {
+        "emailType": "Profissional",
+        "email": "pessoa14.1@exemplo.com.br",
+        "isDefault": true
+      }
+    ],
+    "teams": [],
+    "relationships": [
+      {
+        "id": null,
+        "name": null,
+        "slaAgreement": null,
+        "forceChildrenToHaveSomeAgreement": false,
+        "allowAllServices": true,
+        "includeInParents": null,
+        "loadChildOrganizations": null,
+        "services": [],
+        "isGetMethod": true
+      }
+    ],
+    "customFieldValues": [],
+    "atAssets": []
+  }
+]

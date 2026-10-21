@@ -1,28 +1,29 @@
-﻿using Domain.Core.Extensions;
+﻿using Domain.Shared.Extensions;
 using FluentValidation;
 
 namespace Application.Movidesk.Validations.Ticket
 {
-    public class AttachmentValidator : AbstractValidator<Domain.Movidesk.Dtos.Tickets.Attachment>
+    public class AttachmentValidator : AbstractValidator<Domain.Movidesk.Dtos.Reads.Tickets.Attachment>
     {
         public AttachmentValidator()
         {
-            RuleFor(dto => dto.fileName)
-                   .MaximumLength(120);
+            RuleFor(x => x.fileName)
+                .MaximumLength(255)
+                .WithMessage("O campo 'fileName' deve ter no máximo 255 caracteres.")
+                .When(x => !string.IsNullOrEmpty(x.fileName));
 
-            RuleFor(dto => dto.path)
-                   .MaximumLength(300);
-
-            RuleFor(x => x.createdDate)
-                .MustBeValidDateTime()
-                .When(x => !string.IsNullOrEmpty(x.createdDate));
+            RuleFor(x => x.path)
+                .MaximumLength(255)
+                .WithMessage("O campo 'path' deve ter no máximo 255 caracteres.")
+                .When(x => !string.IsNullOrEmpty(x.path));
 
             RuleFor(x => x.createdDate)
                 .MustBeValidDateTime()
                 .When(x => !string.IsNullOrEmpty(x.createdDate));
 
             RuleFor(x => x.createdBy)
-                .SetValidator(new CreatedbyValidator());
+                .SetValidator(new TicketPersonValidator()!)
+                .When(x => x.createdBy is not null);
         }
     }
 }

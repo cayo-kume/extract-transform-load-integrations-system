@@ -1,13 +1,13 @@
-﻿using Application.Movidesk.Validations.Person;
+﻿using Application.Movidesk.Abstractions.Handlers.Commands;
+using Application.Movidesk.Abstractions.Services;
 using Application.Movidesk.Handlers.Commands;
-using Application.Movidesk.Interfaces.Services;
 using Application.Movidesk.Services;
-using Domain.Core.Abstractions.Api;
-using Domain.Movidesk.Interfaces.Handlers.Commands;
-using Domain.Movidesk.Interfaces.Repositorys;
+using Application.Movidesk.Validations.Ticket;
+using Domain.Movidesk.Abstractions.Repositorys;
+using Domain.Shared.Abstractions.Api;
 using FluentValidation;
-using Infrastructure.Core.Api;
 using Infrastructure.Movidesk.Repositorys;
+using Infrastructure.Shared.Api;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -18,8 +18,6 @@ namespace Infrastructure.Movidesk.DependencyInjection
     {
         public static IServiceCollection AddScopedMovideskServices(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddScopedMovideskValidations();
-
             services.AddKeyedScoped<IApiClient>("MovideskAPI", (sp, _) =>
                 new ApiClient(sp.GetRequiredService<IHttpClientFactory>(), sp.GetRequiredService<ILogger<ApiClient>>(), "MovideskAPI"));
             services.AddHttpClient("MovideskAPI", client =>
@@ -28,20 +26,22 @@ namespace Infrastructure.Movidesk.DependencyInjection
                 client.Timeout = new TimeSpan(0, 20, 0);
             });
 
+            services.AddScoped<IMovideskTicketsService, MovideskTicketsService>();
+            services.AddScoped<IMovideskTicketsRepository, MovideskTicketsRepository>();
+
+            services.AddScoped<IMovideskPeopleService, MovideskPeopleService>();
+            services.AddScoped<IMovideskPeopleRepository, MovideskPeopleRepository>();
+
+            services.AddScoped<IMovideskServicesService, MovideskServicesService>();
+            services.AddScoped<IMovideskServicesRepository, MovideskServicesRepository>();
+
             services.AddScoped<IMovideskService, MovideskService>();
             services.AddScoped<IMovideskRepository, MovideskRepository>();
+
             services.AddScoped<IMovideskCommandHandler, MovideskCommandHandler>();
 
-            return services;
-        }
-
-        private static IServiceCollection AddScopedMovideskValidations(this IServiceCollection services)
-        {
-            services.AddValidatorsFromAssemblyContaining<PersonValidator>();
-            services.AddValidatorsFromAssemblyContaining<ContactValidator>();
-            services.AddValidatorsFromAssemblyContaining<EmailValidator>();
-            services.AddValidatorsFromAssemblyContaining<AddressValidator>();
-            services.AddValidatorsFromAssemblyContaining<RelationshipValidator>();
+            // registra todos os validadores do assembly (tickets e pessoas), como o AfterSale
+            services.AddValidatorsFromAssemblyContaining<TicketValidator>();
 
             return services;
         }

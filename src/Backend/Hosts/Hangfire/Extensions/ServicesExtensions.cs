@@ -4,7 +4,7 @@ using Infrastructure.Shared;
 //using Infrastructure.Dootax;
 //using Infrastructure.Jadlog.DependencyInjection;
 //using Infrastructure.LinxCommerce.DependencyInjection;
-//using Infrastructure.Movidesk.DependencyInjection;
+using Infrastructure.Movidesk.DependencyInjection;
 //using Infrastructure.Oto;
 //using Infrastructure.Outbound.WebService.DependencyInjection;
 //using Infrastructure.Stone;
@@ -30,7 +30,7 @@ namespace Hangfire.Extensions
             //builder.Services.AddScopedJadlogServices(builder.Configuration);
             //builder.Services.AddScopedStoneServices(builder.Configuration);
             //builder.Services.AddScopedDootaxServices(builder.Configuration);
-            //builder.Services.AddScopedMovideskServices(builder.Configuration);
+            builder.Services.AddScopedMovideskServices(builder.Configuration);
             //builder.Services.AddScopedOttoServices(builder.Configuration);
             //builder.Services.AddScopedTotvsServices(builder.Configuration);
 

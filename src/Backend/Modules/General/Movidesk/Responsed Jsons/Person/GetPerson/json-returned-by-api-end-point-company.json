@@ -1,0 +1,60 @@
+{
+  "id": "1000000002",
+  "codeReferenceAdditional": null,
+  "isActive": true,
+  "personType": 2,
+  "profileType": 2,
+  "accessProfile": "accessProfile exemplo",
+  "businessName": "Empresa Exemplo 2",
+  "businessBranch": "businessBranch exemplo",
+  "corporateName": "Empresa Exemplo 2 LTDA",
+  "cpfCnpj": "99999999999999",
+  "userName": "usuario2",
+  "accountEmail": null,
+  "role": null,
+  "bossId": null,
+  "bossName": null,
+  "classification": null,
+  "cultureId": "pt-BR",
+  "timeZoneId": "UTC",
+  "createdDate": "2021-11-08T16:05:16.853188",
+  "createdBy": "1000000006",
+  "changedDate": null,
+  "changedBy": null,
+  "observations": null,
+  "authenticateOn": null,
+  "addresses": [
+    {
+      "addressType": "Comercial",
+      "country": "BRASIL",
+      "postalCode": "9999999",
+      "state": "Sao Paulo",
+      "district": "district exemplo",
+      "city": "city exemplo",
+      "street": "street exemplo",
+      "number": "9999",
+      "complement": "complement exemplo",
+      "reference": null,
+      "isDefault": true,
+      "countryId": 1058
+    }
+  ],
+  "contacts": [],
+  "emails": [],
+  "teams": [],
+  "relationships": [
+    {
+      "id": null,
+      "name": null,
+      "slaAgreement": null,
+      "forceChildrenToHaveSomeAgreement": false,
+      "allowAllServices": true,
+      "includeInParents": null,
+      "loadChildOrganizations": null,
+      "services": [],
+      "isGetMethod": true
+    }
+  ],
+  "customFieldValues": [],
+  "atAssets": []
+}
