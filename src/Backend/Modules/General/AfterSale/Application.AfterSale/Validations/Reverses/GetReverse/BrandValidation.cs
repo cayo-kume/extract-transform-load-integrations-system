@@ -1,4 +1,4 @@
-﻿using Domain.AfterSale.Dtos.Reverses.GetReverse;
+﻿using Domain.AfterSale.Dtos.Reads.Reverses.GetReverse;
 using FluentValidation;
 using System;
 using System.Collections.Generic;

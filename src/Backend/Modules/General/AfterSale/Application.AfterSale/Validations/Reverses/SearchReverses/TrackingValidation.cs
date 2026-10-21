@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Application.AfterSale.Validations.Reverses.SearchReverses
 {
-    public class TrackingValidation : AbstractValidator<Domain.AfterSale.Dtos.Reverses.SearchReverses.Tracking>
+    public class TrackingValidation : AbstractValidator<Domain.AfterSale.Dtos.Reads.Reverses.SearchReverses.Tracking>
     {
         public TrackingValidation()
         {

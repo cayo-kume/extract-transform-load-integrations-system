@@ -13,6 +13,10 @@
 
             builder.Services.AddSwaggerGen(options =>
             {
+                //os DTOs seguem o padrão Root por rota (ex.: Approve.Request.Root e Approve.Response.Root),
+                //então o nome curto da classe se repete; o schema usa o nome completo para não conflitar
+                options.CustomSchemaIds(type => type.FullName?.Replace("+", ".") ?? type.Name);
+
                 //options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo() { Title = "Web Jobs Apis", Version = "v1" });
 //                options.AddSecurityDefinition("oAuth2", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
 //                {

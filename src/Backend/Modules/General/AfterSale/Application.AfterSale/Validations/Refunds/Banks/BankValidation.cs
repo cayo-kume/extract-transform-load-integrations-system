@@ -1,4 +1,4 @@
-﻿using Domain.AfterSale.Dtos.Refunds.Banks;
+﻿using Domain.AfterSale.Dtos.Reads.Refunds.Banks;
 using Domain.Shared.Extensions;
 using FluentValidation;
 using System;

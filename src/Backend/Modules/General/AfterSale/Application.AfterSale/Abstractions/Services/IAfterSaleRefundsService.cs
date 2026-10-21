@@ -12,9 +12,9 @@ namespace Application.AfterSale.Abstractions.Services
         public Task<bool?> GetTypes();
         public Task<bool?> GetRefunds();
         public Task<bool?> GetRefundById(long id);
-        public Task<bool?> PostApproveRefundById(long id);
-        public Task<bool?> PostCancelRefundById(long id);
-        public Task<bool?> PostPayRefundById(long id);
-        public Task<bool?> PostChangeTotalAmountRefundById(long id);
+        public Task<Domain.AfterSale.Dtos.Writes.Refunds.Approve.Response.Root> PostApproveRefundById(string user_name, string doc_company, long id);
+        public Task<Domain.AfterSale.Dtos.Writes.Refunds.Cancel.Response.Root> PostCancelRefundById(string user_name, string doc_company, long id);
+        public Task<Domain.AfterSale.Dtos.Writes.Refunds.Pay.Response.Root> PostPayRefundById(string user_name, string doc_company, long id, Domain.AfterSale.Dtos.Writes.Refunds.Pay.Request.Root request, byte[] file, string fileName, string fileContentType);
+        public Task<Domain.AfterSale.Dtos.Writes.Refunds.ChangeTotalAmount.Response.Root> PostChangeTotalAmountRefundById(string user_name, string doc_company, long id, Domain.AfterSale.Dtos.Writes.Refunds.ChangeTotalAmount.Request.Root request);
     }
 }

@@ -1,4 +1,4 @@
-﻿using Domain.AfterSale.Dtos.Refunds.SearchRefunds;
+﻿using Domain.AfterSale.Dtos.Reads.Refunds.SearchRefunds;
 using FluentValidation;
 using System;
 using System.Collections.Generic;

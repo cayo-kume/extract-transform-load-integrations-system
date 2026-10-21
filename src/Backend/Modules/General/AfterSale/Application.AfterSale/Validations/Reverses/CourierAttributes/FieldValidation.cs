@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Application.AfterSale.Validations.Reverses.CourierAttributes
 {
-    public class FieldValidation : AbstractValidator<Domain.AfterSale.Dtos.Reverses.CourierAttributes.Field>
+    public class FieldValidation : AbstractValidator<Domain.AfterSale.Dtos.Reads.Reverses.CourierAttributes.Field>
     {
         public FieldValidation()
         {

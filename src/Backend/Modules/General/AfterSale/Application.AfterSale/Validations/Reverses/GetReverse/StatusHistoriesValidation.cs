@@ -1,5 +1,5 @@
 ﻿using Application.AfterSale.Validations.Me;
-using Domain.AfterSale.Dtos.Reverses.GetReverse;
+using Domain.AfterSale.Dtos.Reads.Reverses.GetReverse;
 using Domain.Shared.Extensions;
 using FluentValidation;
 using System;

@@ -1,9 +1,10 @@
 ﻿using Application.AfterSale.Abstractions.Services;
 using Application.Shared.Abstractions.Services;
 using Domain.AfterSale.Abstractions.Repositorys;
-using Domain.AfterSale.Dtos.Reverses.CourierAttributes;
-using Domain.AfterSale.Entities.Reverses.CourierAttributes;
-using Domain.AfterSale.Entities.Reverses.Transportations;
+using Domain.AfterSale.Dtos.Reads.Reverses.CourierAttributes;
+using Domain.AfterSale.Entities.Parameters;
+using Domain.AfterSale.Entities.Reads.Reverses.CourierAttributes;
+using Domain.AfterSale.Entities.Reads.Reverses.Transportations;
 using Domain.AfterSale.Enums;
 using Domain.Shared.Abstractions.Api;
 using Domain.Shared.Extensions;
@@ -25,12 +26,13 @@ namespace Application.AfterSale.Services
         private readonly IMemoryCache _cache;
         private readonly IAfterSaleReversesRepository _afterSaleReversesRepository;
         private readonly IAfterSaleRepository _afterSaleRepository;
+        private readonly IAfterSaleService _afterSaleService;
 
-        private readonly IValidator<Domain.AfterSale.Dtos.Reverses.SearchReverses.Reverse> _summarizedReversesValidator;
-        private readonly IValidator<Domain.AfterSale.Dtos.Reverses.GetReverse.Reverse> _reversesValidator;
-        private readonly IValidator<Domain.AfterSale.Dtos.Reverses.Status.Status> _statusValidator;
+        private readonly IValidator<Domain.AfterSale.Dtos.Reads.Reverses.SearchReverses.Reverse> _summarizedReversesValidator;
+        private readonly IValidator<Domain.AfterSale.Dtos.Reads.Reverses.GetReverse.Reverse> _reversesValidator;
+        private readonly IValidator<Domain.AfterSale.Dtos.Reads.Reverses.Status.Status> _statusValidator;
         private readonly IValidator<string> _transportationsValidator;
-        private readonly IValidator<Domain.AfterSale.Dtos.Reverses.CourierAttributes.CourierAttribute> _courierAttributeValidator;
+        private readonly IValidator<Domain.AfterSale.Dtos.Reads.Reverses.CourierAttributes.CourierAttribute> _courierAttributeValidator;
 
         private const string ReversesKey = "AfterSale:Reverses";
         private const string SummarizedReversesKey = "AfterSale:SummarizedReverses";
@@ -43,17 +45,19 @@ namespace Application.AfterSale.Services
             ILoggerService logger,
             IAfterSaleReversesRepository afterSaleReversesRepository,
             IAfterSaleRepository afterSaleRepository,
-            IValidator<Domain.AfterSale.Dtos.Reverses.SearchReverses.Reverse> summarizedReversesValidator,
-            IValidator<Domain.AfterSale.Dtos.Reverses.GetReverse.Reverse> reversesValidator,
-            IValidator<Domain.AfterSale.Dtos.Reverses.Status.Status> statusValidator,
+            IAfterSaleService afterSaleService,
+            IValidator<Domain.AfterSale.Dtos.Reads.Reverses.SearchReverses.Reverse> summarizedReversesValidator,
+            IValidator<Domain.AfterSale.Dtos.Reads.Reverses.GetReverse.Reverse> reversesValidator,
+            IValidator<Domain.AfterSale.Dtos.Reads.Reverses.Status.Status> statusValidator,
             IValidator<string> transportationsValidator,
-            IValidator<Domain.AfterSale.Dtos.Reverses.CourierAttributes.CourierAttribute> courierAttributeValidator,
+            IValidator<Domain.AfterSale.Dtos.Reads.Reverses.CourierAttributes.CourierAttribute> courierAttributeValidator,
             IMemoryCache cache
         ) =>
         (
             _apiClient,
             _logger,
             _afterSaleRepository,
+            _afterSaleService,
             _afterSaleReversesRepository,
             _summarizedReversesValidator,
             _reversesValidator,
@@ -67,6 +71,7 @@ namespace Application.AfterSale.Services
             apiClient,
             logger,
             afterSaleRepository,
+            afterSaleService,
             afterSaleReversesRepository,
             summarizedReversesValidator,
             reversesValidator,
@@ -77,7 +82,7 @@ namespace Application.AfterSale.Services
         );
 
         /// <summary>
-        /// returns all reverses summarized
+        /// returns all reverses summarized, for each company
         /// </summary>
         public async Task<bool?> GetReverses()
         {
@@ -85,23 +90,22 @@ namespace Application.AfterSale.Services
                .Clear()
                .AddLog(EnumJob.AfterSaleReverses);
 
-            var listResponses = new List<string>();
+            var totalInseridos = 0;
             var companys = await _afterSaleRepository.GetCompanys();
-            var dictionarysDocCompanyReverses = new Dictionary<string, List<Domain.AfterSale.Dtos.Reverses.SearchReverses.Reverse>>();
             var _listErrors = new List<Domain.AfterSale.Entities.Errors.Error>();
-            var _listSomenteNovos = new List<Domain.AfterSale.Entities.Reverses.SearchReverses.Reverse>();
 
             foreach (var company in companys)
             {
-                var summarizedReverses = new List<Domain.AfterSale.Dtos.Reverses.SearchReverses.Reverse>();
+                var summarizedReverses = new List<Domain.AfterSale.Dtos.Reads.Reverses.SearchReverses.Reverse>();
+                var listResponses = new List<string>();
 
                 var parameters = new Dictionary<string, string>
                 {
                     //{ "start_date", $"{DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd")}" },
                     //{ "end_date", $"{DateTime.Now.ToString("yyyy-MM-dd")}" }
 
-                    { "start_date", $"{DateTime.Now.AddMonths(-1).ToString()}" },
-                    { "end_date", $"{DateTime.Now.ToString()}" }
+                    { "start_date", $"{DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd")}" },
+                    { "end_date", $"{DateTime.Now.ToString("yyyy-MM-dd")}" }
                 };
 
                 var encodedParameters = await new FormUrlEncodedContent(parameters).ReadAsStringAsync();
@@ -111,147 +115,144 @@ namespace Application.AfterSale.Services
                     headers: new Dictionary<string, string> { { "Authorization", $"Bearer {company.Token}" } }
                 );
 
-                var page = Newtonsoft.Json.JsonConvert.DeserializeObject<Domain.AfterSale.Dtos.Reverses.SearchReverses.Root>(response);
+                var page = Newtonsoft.Json.JsonConvert.DeserializeObject<Domain.AfterSale.Dtos.Reads.Reverses.SearchReverses.Root>(response);
 
-                if (!page.success)
+                if (page is null || !page.success)
                 {
                     _listErrors.Add(new Domain.AfterSale.Entities.Errors.Error(
                         company.doc_company,
                         EnumJob.AfterSaleReverses,
                         _logger.GetExecutionGuid(),
-                        page.error,
-                        page.error_code,
-                        page.message,
-                        page.message_translated
+                        page?.error,
+                        page?.error_code,
+                        page?.message,
+                        page?.message_translated
                     ));
                     continue;
                 }
 
                 int contador = 0;
                 string? rote = page.next_page_url;
-                summarizedReverses.AddRange(page.data);
+                summarizedReverses.AddRange(page.data ?? []);
                 listResponses.Add(response);
 
-                if (page.last_page > 1)
+                while (page.last_page > 1 && !String.IsNullOrEmpty(rote))
                 {
-                    while (!String.IsNullOrEmpty(rote))
+                    //API da AfterSale lança Too Many Requests após 30 consultas, por isso caso tenha dado erro na consuta das páginas aguardamos por 1 minuto
+                    if (contador > 14)
                     {
-                        //API da AfterSale lança Too Many Requests após 30 consultas, por isso caso tenha dado erro na consuta das páginas aguardamos por 1 minuto
-                        if (contador > 14)
-                        {
-                            Thread.Sleep(60 * 1000);
-                            contador = 0;
-                        }
-
-                        var responseByPage = await _apiClient.GetAsync(
-                            route: rote.Replace("https://api.send4.com.br/", ""),
-                            headers: new Dictionary<string, string> { { "Authorization", $"Bearer {company.Token}" } }
-                        );
-
-                        var nextPage = Newtonsoft.Json.JsonConvert.DeserializeObject<Domain.AfterSale.Dtos.Reverses.SearchReverses.Root>(responseByPage);
-
-                        if (!nextPage.success)
-                        {
-                            _listErrors.Add(new Domain.AfterSale.Entities.Errors.Error(
-                                company.doc_company,
-                                EnumJob.AfterSaleReverses,
-                                _logger.GetExecutionGuid(),
-                                nextPage.error,
-                                nextPage.error_code,
-                                nextPage.message,
-                                nextPage.message_translated
-                            ));
-                            continue;
-                        }
-
-                        contador++;
-                        rote = nextPage.next_page_url;
-                        summarizedReverses.AddRange(nextPage.data);
-                        listResponses.Add(responseByPage);
-                        Thread.Sleep(2 * 1000);
-
-                        continue;
+                        Thread.Sleep(60 * 1000);
+                        contador = 0;
                     }
+
+                    var responseByPage = await _apiClient.GetAsync(
+                        route: rote.Replace("https://api.send4.com.br/", ""),
+                        headers: new Dictionary<string, string> { { "Authorization", $"Bearer {company.Token}" } }
+                    );
+
+                    var nextPage = Newtonsoft.Json.JsonConvert.DeserializeObject<Domain.AfterSale.Dtos.Reads.Reverses.SearchReverses.Root>(responseByPage);
+
+                    if (nextPage is null || !nextPage.success)
+                    {
+                        _listErrors.Add(new Domain.AfterSale.Entities.Errors.Error(
+                            company.doc_company,
+                            EnumJob.AfterSaleReverses,
+                            _logger.GetExecutionGuid(),
+                            nextPage?.error,
+                            nextPage?.error_code,
+                            nextPage?.message,
+                            nextPage?.message_translated
+                        ));
+                        break;
+                    }
+
+                    contador++;
+                    rote = nextPage.next_page_url;
+                    summarizedReverses.AddRange(nextPage.data ?? []);
+                    listResponses.Add(responseByPage);
+                    Thread.Sleep(2 * 1000);
                 }
 
-                dictionarysDocCompanyReverses.Add(company.doc_company, summarizedReverses);
-            }
+                if (summarizedReverses.Count == 0)
+                    continue;
 
-            var summarizedReversesCache = await _cache.GetOrCreateAsync(SummarizedReversesKey, async entry =>
-            {
-                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(2);
-                entry.SlidingExpiration = TimeSpan.FromMinutes(30);
+                var summarizedReversesCache = await _cache.GetOrCreateAsync($"{SummarizedReversesKey}:{company.doc_company}", async entry =>
+                {
+                    entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(2);
+                    entry.SlidingExpiration = TimeSpan.FromMinutes(30);
 
-                var list = await _afterSaleReversesRepository.GetSummarizedReversesByIds(
-                    //concatena as duas listas de reversas visto que reverse id não replica entre os cnpjs
-                    dictionarysDocCompanyReverses.Values.SelectMany(x => x).Select(x => x.id).ToList()
-                );
+                    var list = await _afterSaleReversesRepository.GetSummarizedReversesByIds(
+                        company.doc_company,
+                        summarizedReverses.Select(x => x.id).ToList()
+                    );
 
-                return list
-                    .Where(x => x != null)
-                    .GroupBy(x => x.id)
-                    .ToDictionary(g => g.Key, g => g.First()); // Dictionary<long, Entities...SearchReverses.Reverse>
-            });
+                    return list
+                        .Where(x => x != null)
+                        .GroupBy(x => x!.id)
+                        .ToDictionary(g => g.Key, g => g.First()!); // Dictionary<long, Entities...SearchReverses.Reverse>
+                });
 
-            foreach (var dictionary in dictionarysDocCompanyReverses)
-            {
-                var summarizedReversesList = dictionary.Value;
-                var cnpj_emp = dictionary.Key;
-
-                summarizedReversesList.RemoveAll(x =>
+                summarizedReverses.RemoveAll(x =>
                    !string.IsNullOrEmpty(x.id) &&
                    summarizedReversesCache.TryGetValue(
                        ConverterValidatorsExtensions.ConvertToInt64Validation(x.id), out var y) &&
                        ConverterValidatorsExtensions.ConvertToDateTimeValidation(x.updated_at) <= y.updated_at
                 );
 
-                if (summarizedReversesList.Count() > 0)
+                var _listSomenteNovos = new List<Domain.AfterSale.Entities.Reads.Reverses.SearchReverses.Reverse>();
+
+                foreach (var summarizedReverse in summarizedReverses)
                 {
-                    foreach (var simplifiedReverse in summarizedReversesList)
+                    var validations = _summarizedReversesValidator.Validate(summarizedReverse);
+
+                    if (validations.Errors.Count() > 0)
                     {
-                        var validations = _summarizedReversesValidator.Validate(simplifiedReverse);
+                        var message = String.Empty;
+                        validations.Errors.ForEach(s =>
+                            message += $"{s.ErrorMessage}\n"
+                        );
 
-                        if (validations.Errors.Count() > 0)
-                        {
-                            var message = String.Empty;
-                            validations.Errors.ForEach(s =>
-                                message += $"{s.ErrorMessage}\n"
-                            );
-
-                            _logger.AddMessage(message);
-                        }
-
-                        _listSomenteNovos.Add(new Domain.AfterSale.Entities.Reverses.SearchReverses.Reverse(cnpj_emp, simplifiedReverse));
+                        _logger.AddMessage(message);
                     }
+
+                    _listSomenteNovos.Add(new Domain.AfterSale.Entities.Reads.Reverses.SearchReverses.Reverse(company.doc_company, summarizedReverse));
                 }
-            }
 
-            if (_listSomenteNovos.Count() > 0)
-            {
-                await _afterSaleReversesRepository.BulkInsertIntoAfterSaleSummarizedReverses(_listSomenteNovos, _logger.GetExecutionGuid());
-                await _afterSaleReversesRepository.BulkInsertIntoAfterSaleErrors(_listErrors, _logger.GetExecutionGuid());
-
-                foreach (var record in _listSomenteNovos)
+                if (_listSomenteNovos.Count() > 0)
                 {
-                    JToken? reverse = null;
+                    await _afterSaleReversesRepository.BulkInsertIntoAfterSaleSummarizedReverses(_listSomenteNovos, _logger.GetExecutionGuid());
 
-                    foreach (var page in listResponses)
+                    // índice id -> json da reversa, montado só com as páginas desta empresa
+                    var reversesJson = new Dictionary<long, string>();
+
+                    foreach (var pageResponse in listResponses)
                     {
-                        var data = JObject.Parse(page)["data"] as JArray;
-                        reverse = data?.FirstOrDefault(r => (long?)r["id"] == record.id);
-                        if (reverse != null) break;
+                        foreach (var item in (JObject.Parse(pageResponse)["data"] as JArray) ?? [])
+                        {
+                            var id = (long?)item["id"];
+
+                            if (id != null)
+                                reversesJson[id.Value] = item.ToString();
+                        }
                     }
 
-                    if (reverse != null)
+                    foreach (var record in _listSomenteNovos)
                     {
-                        _logger.AddRecord(record.id.ToString(), reverse.ToString());
+                        if (reversesJson.TryGetValue(record.id, out var json))
+                            _logger.AddRecord(record.id.ToString(), json);
+
                         summarizedReversesCache[record.id] = record;
                     }
+
+                    totalInseridos += _listSomenteNovos.Count;
                 }
             }
 
+            if (_listErrors.Count > 0)
+                await _afterSaleReversesRepository.BulkInsertIntoAfterSaleErrors(_listErrors, _logger.GetExecutionGuid());
+
             _logger.AddMessage(
-                $"Concluída com sucesso: {_listSomenteNovos.Count} registro(s) novo(s) inserido(s)!"
+                $"Concluída com sucesso: {totalInseridos} registro(s) novo(s) inserido(s)!"
             );
 
             _logger.SetLogEndDate();
@@ -261,76 +262,90 @@ namespace Application.AfterSale.Services
         }
 
         /// <summary>
-        /// get one reverse
+        /// get the details of the summarized reverses not yet integrated, for each company
         /// </summary>
-        /// <param name="id"></param>
         public async Task<bool?> GetReverse()
         {
             _logger
                .Clear()
                .AddLog(EnumJob.AfterSaleReverse);
 
+            var totalInseridos = 0;
             var companys = await _afterSaleRepository.GetCompanys();
-            var listResponses = new List<string>();
             var summarizedReverses = await _afterSaleReversesRepository.GetSummarizedReversesIdsForGetReverse();
             var _listErrors = new List<Domain.AfterSale.Entities.Errors.Error>();
-            var _listSomenteNovos = new List<Domain.AfterSale.Entities.Reverses.GetReverse.Reverse>();
-            var reversesDtosList = new List<Domain.AfterSale.Dtos.Reverses.GetReverse.Root>();
 
-            if (summarizedReverses.Count() > 0)
+            foreach (var reversesByCompany in summarizedReverses.Where(x => x != null).GroupBy(x => x!.doc_company))
             {
-                foreach (var summarizedReverse in summarizedReverses)
+                var company = companys.FirstOrDefault(x => x.doc_company == reversesByCompany.Key);
+
+                if (company is null)
+                {
+                    _logger.AddMessage($"CNPJ {reversesByCompany.Key} não encontrado em AfterSaleParameters: {reversesByCompany.Count()} reversa(s) ignorada(s).\n");
+                    continue;
+                }
+
+                var reversesDtosList = new List<Domain.AfterSale.Dtos.Reads.Reverses.GetReverse.Root>();
+                var reversesJson = new Dictionary<long, string>();
+
+                foreach (var summarizedReverse in reversesByCompany)
                 {
                     var response = await _apiClient.GetAsync(
-                        route: $"v3/api/reverses/{summarizedReverse}",
-                        headers: new Dictionary<string, string> { { "Authorization", $"Bearer {companys.Where(x => x.doc_company == summarizedReverse.cnpj_emp).Select(x => x.Token).First()}" } }
+                        route: $"v3/api/reverses/{summarizedReverse!.id}",
+                        headers: new Dictionary<string, string> { { "Authorization", $"Bearer {company.Token}" } }
                     );
 
                     if (String.IsNullOrEmpty(response))
                         continue;
 
-                    var root = Newtonsoft.Json.JsonConvert.DeserializeObject<Domain.AfterSale.Dtos.Reverses.GetReverse.Root>(response);
+                    var root = Newtonsoft.Json.JsonConvert.DeserializeObject<Domain.AfterSale.Dtos.Reads.Reverses.GetReverse.Root>(response);
 
-                    if (!root.success)
+                    if (root is null || !root.success || root.data?.reverse is null)
                     {
                         _listErrors.Add(new Domain.AfterSale.Entities.Errors.Error(
-                            companys.Where(x => x.doc_company == summarizedReverse.cnpj_emp).Select(x => x.doc_company).First(),
+                            company.doc_company,
                             EnumJob.AfterSaleReverse,
                             _logger.GetExecutionGuid(),
                             summarizedReverse.id,
-                            root.error,
-                            root.error_code,
-                            root.message,
-                            root.message_translated
+                            root?.error,
+                            root?.error_code,
+                            root?.message,
+                            root?.message_translated
                         ));
                         continue;
                     }
 
-                    listResponses.Add(response);
                     reversesDtosList.Add(root);
+                    reversesJson[summarizedReverse.id] = JObject.Parse(response)["data"]?["reverse"]?.ToString() ?? response;
                 }
 
-                var reversesCache = await _cache.GetOrCreateAsync(ReversesKey, async entry =>
+                if (reversesDtosList.Count == 0)
+                    continue;
+
+                var reversesCache = await _cache.GetOrCreateAsync($"{ReversesKey}:{company.doc_company}", async entry =>
                 {
                     entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(2);
                     entry.SlidingExpiration = TimeSpan.FromMinutes(30);
 
                     var list = await _afterSaleReversesRepository.GetReversesByIds(
+                        company.doc_company,
                         reversesDtosList.Select(x => x.data.reverse.id).ToList()
                     );
 
                     return list
                         .Where(x => x != null)
-                        .GroupBy(x => x.id)
-                        .ToDictionary(g => g.Key, g => g.First()); // Dictionary<long, Entities...Reverse>
+                        .GroupBy(x => x!.id)
+                        .ToDictionary(g => g.Key, g => g.First()!); // Dictionary<long, Entities...Reverse>
                 });
 
                 reversesDtosList.RemoveAll(x =>
-                   x != null &&
+                   !string.IsNullOrEmpty(x.data.reverse.id) &&
                    reversesCache.TryGetValue(
                        ConverterValidatorsExtensions.ConvertToInt64Validation(x.data.reverse.id), out var y) &&
                        ConverterValidatorsExtensions.ConvertToDateTimeValidation(x.data.reverse.updated_at) <= y.updated_at
                 );
+
+                var _listSomenteNovos = new List<Domain.AfterSale.Entities.Reads.Reverses.GetReverse.Reverse>();
 
                 foreach (var reversesDto in reversesDtosList)
                 {
@@ -346,36 +361,30 @@ namespace Application.AfterSale.Services
                         _logger.AddMessage(message);
                     }
 
-                    _listSomenteNovos.Add(new Domain.AfterSale.Entities.Reverses.GetReverse.Reverse(reversesDto.data.reverse, reversesDto.data.customer, reversesDto.data.tracking_history));
+                    _listSomenteNovos.Add(new Domain.AfterSale.Entities.Reads.Reverses.GetReverse.Reverse(company.doc_company, reversesDto.data.reverse, reversesDto.data.customer, reversesDto.data.tracking_history));
                 }
 
                 if (_listSomenteNovos.Count() > 0)
                 {
                     await _afterSaleReversesRepository.BulkInsertIntoAfterSaleReverses(_listSomenteNovos, _logger.GetExecutionGuid());
-                    await _afterSaleReversesRepository.BulkInsertIntoAfterSaleErrors(_listErrors, _logger.GetExecutionGuid());
 
                     foreach (var record in _listSomenteNovos)
                     {
-                        JToken? reverse = null;
+                        if (reversesJson.TryGetValue(record.id, out var json))
+                            _logger.AddRecord(record.id.ToString(), json);
 
-                        foreach (var page in listResponses)
-                        {
-                            var data = JObject.Parse(page)["data"]?["reverse"];
-                            reverse = data?.FirstOrDefault(r => (long?)r["id"] == record.id);
-                            if (reverse != null) break;
-                        }
-
-                        if (reverse != null)
-                        {
-                            _logger.AddRecord(record.id.ToString(), reverse.ToString());
-                            reversesCache[record.id] = record;
-                        }
+                        reversesCache[record.id] = record;
                     }
+
+                    totalInseridos += _listSomenteNovos.Count;
                 }
             }
 
+            if (_listErrors.Count > 0)
+                await _afterSaleReversesRepository.BulkInsertIntoAfterSaleErrors(_listErrors, _logger.GetExecutionGuid());
+
             _logger.AddMessage(
-                $"Concluída com sucesso: {_listSomenteNovos.Count} registro(s) novo(s) inserido(s)!"
+                $"Concluída com sucesso: {totalInseridos} registro(s) novo(s) inserido(s)!"
             );
 
             _logger.SetLogEndDate();
@@ -385,7 +394,7 @@ namespace Application.AfterSale.Services
         }
 
         /// <summary>
-        /// get courier data fields needed to process the reverse
+        /// get courier data fields needed to process the reverse, for each company
         /// </summary>
         public async Task<bool?> GetCourierAttributes()
         {
@@ -393,89 +402,105 @@ namespace Application.AfterSale.Services
                .Clear()
                .AddLog(EnumJob.AfterSaleCourierAttributes);
 
+            var totalInseridos = 0;
             var companys = await _afterSaleRepository.GetCompanys();
-            var listResponses = new List<string>();
             var summarizedReverses = await _afterSaleReversesRepository.GetSummarizedReversesIdsForGetCourierAttributes();
-            var courierAttributes = new List<Domain.AfterSale.Dtos.Reverses.CourierAttributes.CourierAttribute>();
-            var _listSomenteNovos = new List<Domain.AfterSale.Entities.Reverses.CourierAttributes.CourierAttributes>();
 
-            foreach (var summarizedReverse in summarizedReverses)
+            foreach (var reversesByCompany in summarizedReverses.Where(x => x != null).GroupBy(x => x!.doc_company))
             {
-                foreach (var company in companys)
+                var company = companys.FirstOrDefault(x => x.doc_company == reversesByCompany.Key);
+
+                if (company is null)
                 {
-                    var parameters = new Dictionary<string, string>
-                    {
-                        { "id", $"{summarizedReverse}" }
-                    };
+                    _logger.AddMessage($"CNPJ {reversesByCompany.Key} não encontrado em AfterSaleParameters: {reversesByCompany.Count()} reversa(s) ignorada(s).\n");
+                    continue;
+                }
 
-                    var encodedParameters = await new FormUrlEncodedContent(parameters).ReadAsStringAsync();
+                // reverse_id consultado -> dto; a API pode devolver reverse.id = 0, então o id vem da consulta
+                var courierAttributes = new Dictionary<long, Domain.AfterSale.Dtos.Reads.Reverses.CourierAttributes.CourierAttribute>();
+                var courierAttributesJson = new Dictionary<long, string>();
 
+                foreach (var summarizedReverse in reversesByCompany)
+                {
                     var response = await _apiClient.GetAsync(
-                        route: $"/v3/api/reverses?{encodedParameters}/get-courier-attributes",
+                        route: $"v3/api/reverses/{summarizedReverse!.id}/get-courier-attributes",
                         headers: new Dictionary<string, string> { { "Authorization", $"Bearer {company.Token}" } }
                     );
 
                     if (String.IsNullOrEmpty(response))
                         continue;
 
-                    var courierAttribute = Newtonsoft.Json.JsonConvert.DeserializeObject<Domain.AfterSale.Dtos.Reverses.CourierAttributes.CourierAttribute>(response);
+                    var root = Newtonsoft.Json.JsonConvert.DeserializeObject<Domain.AfterSale.Dtos.Reads.Reverses.CourierAttributes.Root>(response);
 
-                    courierAttributes.Add(courierAttribute);
-                    listResponses.Add(response);
+                    if (root is null || !root.success || root.data is null)
+                    {
+                        _logger.AddMessage($"Reversa {summarizedReverse.id}: resposta sem sucesso ao consultar courier attributes.\n");
+                        continue;
+                    }
+
+                    courierAttributes[summarizedReverse.id] = root.data;
+                    courierAttributesJson[summarizedReverse.id] = JObject.Parse(response)["data"]?.ToString() ?? response;
                 }
-            }
 
-            var courierAttributesCache = await _cache.GetOrCreateAsync(CourierAttributesKey, async entry =>
-            {
-                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(2);
-                entry.SlidingExpiration = TimeSpan.FromMinutes(30);
+                if (courierAttributes.Count == 0)
+                    continue;
 
-                var list = await _afterSaleReversesRepository.GetCourierAttributesByReverseId(
-                    summarizedReverses.Select(x => x).ToList()
-                );
-
-                return list
-                    .Where(x => x != null)
-                    .GroupBy(x => x.reverse_id)
-                    .ToDictionary(g => g.Key, g => g.First()); // Dictionary<long, Entities...Reverse>
-            });
-
-            //courierAttributes.RemoveAll(x =>
-            //   x.reverse.id != null &&
-            //   courierAttributesCache.TryGetValue(
-            //       ConverterValidatorsExtensions.ConvertToInt64Validation(x.reverse.id), out var y) &&
-            //       x. <= y.updated_at
-            //);
-
-            foreach (var courierAttribute in courierAttributes)
-            {
-                var validations = _courierAttributeValidator.Validate(courierAttribute);
-
-                if (validations.Errors.Count() > 0)
+                var courierAttributesCache = await _cache.GetOrCreateAsync($"{CourierAttributesKey}:{company.doc_company}", async entry =>
                 {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s =>
-                        message += $"{s.ErrorMessage}\n"
+                    entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(2);
+                    entry.SlidingExpiration = TimeSpan.FromMinutes(30);
+
+                    var list = await _afterSaleReversesRepository.GetCourierAttributesByReverseId(
+                        company.doc_company,
+                        reversesByCompany.Select(x => x!.id).ToList()
                     );
 
-                    _logger.AddMessage(message);
+                    return list
+                        .Where(x => x != null)
+                        .GroupBy(x => x!.reverse_id)
+                        .ToDictionary(g => g.Key, g => g.First()!); // Dictionary<long, Entities...CourierAttributes>
+                });
+
+                var _listSomenteNovos = new List<Domain.AfterSale.Entities.Reads.Reverses.CourierAttributes.CourierAttributes>();
+
+                foreach (var (reverseId, courierAttribute) in courierAttributes)
+                {
+                    var validations = _courierAttributeValidator.Validate(courierAttribute);
+
+                    if (validations.Errors.Count() > 0)
+                    {
+                        var message = String.Empty;
+                        validations.Errors.ForEach(s =>
+                            message += $"{s.ErrorMessage}\n"
+                        );
+
+                        _logger.AddMessage(message);
+                    }
+
+                    _listSomenteNovos.Add(new Domain.AfterSale.Entities.Reads.Reverses.CourierAttributes.CourierAttributes(company.doc_company, reverseId, courierAttribute));
                 }
 
-                _listSomenteNovos.Add(new Domain.AfterSale.Entities.Reverses.CourierAttributes.CourierAttributes(courierAttribute));
-            }
+                // mantém só as reversas que ainda não têm courier attributes gravados para a empresa
+                _listSomenteNovos.RemoveAll(x => courierAttributesCache.ContainsKey(x.reverse_id));
 
-            if (_listSomenteNovos.Count() > 0)
-            {
-                //await _afterSaleReversesRepository.BulkInsertIntoAfterSaleC(_listSomenteNovos, _logger.GetExecutionGuid());
+                if (_listSomenteNovos.Count() > 0)
+                {
+                    await _afterSaleReversesRepository.BulkInsertIntoAfterSaleCourierAttributes(_listSomenteNovos, _logger.GetExecutionGuid());
 
-                //_listSomenteNovos.ForEach(x =>
-                //{
-                //    _logger.AddRecord(x.id.ToString(), x.response);
-                //});
+                    foreach (var record in _listSomenteNovos)
+                    {
+                        if (courierAttributesJson.TryGetValue(record.reverse_id, out var json))
+                            _logger.AddRecord(record.reverse_id.ToString(), json);
+
+                        courierAttributesCache[record.reverse_id] = record;
+                    }
+
+                    totalInseridos += _listSomenteNovos.Count;
+                }
             }
 
             _logger.AddMessage(
-                $"Concluída com sucesso: {_listSomenteNovos.Count} registro(s) novo(s) inserido(s)!"
+                $"Concluída com sucesso: {totalInseridos} registro(s) novo(s) inserido(s)!"
             );
 
             _logger.SetLogEndDate();
@@ -485,9 +510,7 @@ namespace Application.AfterSale.Services
         }
 
         /// <summary>
-        /// returns the possible status of a reverse.
-        /// currently, the status codes are the same for both companies, 
-        /// so we only provide the token for one of them.
+        ///returns the possible status of a reverse for each company.
         /// </summary>
         public async Task<bool?> GetStatus()
         {
@@ -495,10 +518,8 @@ namespace Application.AfterSale.Services
                .Clear()
                .AddLog(EnumJob.AfterSaleStatusReverses);
 
-            var listResponses = new List<string>();
-            var _listSomenteNovos = new List<Domain.AfterSale.Entities.Reverses.Status.Status>();
+            var totalInseridos = 0;
             var companys = await _afterSaleRepository.GetCompanys();
-            var statusReverses = new List<Domain.AfterSale.Dtos.Reverses.Status.Status>();
 
             foreach (var company in companys)
             {
@@ -507,39 +528,26 @@ namespace Application.AfterSale.Services
                     headers: new Dictionary<string, string> { { "Authorization", $"Bearer {company.Token}" } }
                 );
 
-                var status = Newtonsoft.Json.JsonConvert.DeserializeObject<Domain.AfterSale.Dtos.Reverses.Status.Root>(response);
-                statusReverses.AddRange(status.data);
-                listResponses.Add(response);
+                var root = Newtonsoft.Json.JsonConvert.DeserializeObject<Domain.AfterSale.Dtos.Reads.Reverses.Status.Root>(response);
+                var statusReverses = root?.data ?? [];
 
-                var statusReversesCache = await _cache.GetOrCreateAsync(StatusReversesKey, async entry =>
+                foreach (var statusReverse in statusReverses)
+                    statusReverse.doc_company = company.doc_company;
+
+                var statusReversesCache = await _cache.GetOrCreateAsync($"{StatusReversesKey}:{company.doc_company}", async entry =>
                 {
                     entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(2);
                     entry.SlidingExpiration = TimeSpan.FromMinutes(30);
 
-                    var list = await _afterSaleReversesRepository.GetStatus(/*company.doc_company*/);
+                    var list = await _afterSaleReversesRepository.GetStatus(company.doc_company);
 
                     return list
                         .Where(x => x != null)
-                        .GroupBy(x => x.id)
-                        .ToDictionary(g => g.Key, g => g.First()); // Dictionary<long, Entities...Status>
+                        .GroupBy(x => x!.id)
+                        .ToDictionary(g => g.Key, g => g.First()!); // Dictionary<int, Entities...Status>
                 });
 
-                statusReverses.RemoveAll(x =>
-                   !string.IsNullOrEmpty(x.id) &&
-                   statusReversesCache.TryGetValue(
-                       ConverterValidatorsExtensions.ConvertToInt32Validation(x.id), out var y) &&
-                       x.name != y.name &&
-                       x.description != y.description
-                );
-
-                //statusReverses.RemoveAll(x =>
-                //   !string.IsNullOrEmpty(x.id) &&
-                //   statusReversesCache.TryGetValue(
-                //       ConverterValidatorsExtensions.ConvertToInt32Validation(x.id), out var y) &&
-                //       x.doc_company != y.doc_company &&
-                //       x.name != y.name &&
-                //       x.description != y.description
-                //);
+                var _listSomenteNovos = new List<Domain.AfterSale.Entities.Reads.Reverses.Status.Status>();
 
                 foreach (var statusReverse in statusReverses)
                 {
@@ -555,40 +563,39 @@ namespace Application.AfterSale.Services
                         _logger.AddMessage(message);
                     }
 
-                    _listSomenteNovos.Add(new Domain.AfterSale.Entities.Reverses.Status.Status(statusReverse/*, company.doc_company*/));
+                    _listSomenteNovos.Add(new Domain.AfterSale.Entities.Reads.Reverses.Status.Status(statusReverse, statusReverse.doc_company));
                 }
+
+                // mantém só o que é novo ou foi alterado (remove quando já existe no cache e está igual)
+                _listSomenteNovos.RemoveAll(x =>
+                    statusReversesCache.TryGetValue(x.id, out var y) &&
+                    x.doc_company == y.doc_company &&
+                    x.name == y.name &&
+                    x.description == y.description
+                );
 
                 if (_listSomenteNovos.Count() > 0)
                 {
                     await _afterSaleReversesRepository.BulkInsertIntoAfterSaleStatusReverses(_listSomenteNovos, _logger.GetExecutionGuid());
 
+                    var data = JObject.Parse(response)["data"] as JArray;
+
                     foreach (var record in _listSomenteNovos)
                     {
-                        JToken? reverse = null;
-
-                        foreach (var page in listResponses)
-                        {
-                            var data = JObject.Parse(page)["data"] as JArray;
-                            reverse = data?.FirstOrDefault(r => (long?)r["id"] == record.id);
-                            if (reverse != null) break;
-                        }
+                        var reverse = data?.FirstOrDefault(r => (int?)r["id"] == record.id);
 
                         if (reverse != null)
-                        {
                             _logger.AddRecord(record.id.ToString(), reverse.ToString());
-                            statusReversesCache[record.id] = record;
-                        }
-                    }
-                }
 
-                //If the status codes differ between companies, comment out this `break` so that the `foreach` loop iterates through all companies.
-                //Don't forget to add the `doc_company` column to the `AfterSaleStatusReverses` tables and add the `doc_company` property to the `Status` entity.
-                //Also comment out the RemoveAll method from cache
-                break;
+                        statusReversesCache[record.id] = record;
+                    }
+
+                    totalInseridos += _listSomenteNovos.Count;
+                }
             }
 
             _logger.AddMessage(
-                    $"Concluída com sucesso: {_listSomenteNovos.Count} registro(s) novo(s) inserido(s)!"
+                    $"Concluída com sucesso: {totalInseridos} registro(s) novo(s) inserido(s)!"
                 );
 
             _logger.SetLogEndDate();
@@ -598,7 +605,7 @@ namespace Application.AfterSale.Services
         }
 
         /// <summary>
-        /// returns the possible transportations
+        /// returns the possible transportations for each company.
         /// </summary>
         public async Task<bool?> GetTransportations()
         {
@@ -606,10 +613,8 @@ namespace Application.AfterSale.Services
                .Clear()
                .AddLog(EnumJob.AfterSaleTransportationsReverses);
 
-            var listResponses = new List<string>();
+            var totalInseridos = 0;
             var companys = await _afterSaleRepository.GetCompanys();
-            var _listSomenteNovos = new List<Domain.AfterSale.Entities.Reverses.Transportations.Transportation>();
-            var transportationsReverses = new List<string>();
 
             foreach (var company in companys)
             {
@@ -618,43 +623,30 @@ namespace Application.AfterSale.Services
                         headers: new Dictionary<string, string> { { "Authorization", $"Bearer {company.Token}" } }
                 );
 
-                var root = Newtonsoft.Json.JsonConvert.DeserializeObject<Domain.AfterSale.Dtos.Reverses.Transportations.Root>(response);
-                transportationsReverses.AddRange(root.data);
-                listResponses.Add(response);
+                var root = Newtonsoft.Json.JsonConvert.DeserializeObject<Domain.AfterSale.Dtos.Reads.Reverses.Transportations.Root>(response);
+                var transportationsReverses = (root?.data ?? [])
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
 
-                var transportationsReversesCache = await _cache.GetOrCreateAsync(TransportationsReversesKey, async entry =>
+                var transportationsReversesCache = await _cache.GetOrCreateAsync($"{TransportationsReversesKey}:{company.doc_company}", async entry =>
                 {
                     entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(2);
                     entry.SlidingExpiration = TimeSpan.FromMinutes(30);
 
-                    var list = await _afterSaleReversesRepository.GetTransportations(/*company.doc_company*/);
+                    var list = await _afterSaleReversesRepository.GetTransportations(company.doc_company);
 
                     return list
-                        .Where(x => x != null)
-                        .Select(x => x.transportation)
-                        .ToList(); // List<string>
-
-                    //return list
-                    //    .Where(x => x != null)
-                    //    .GroupBy(x => x.doc_company)
-                    //    .ToDictionary(g => g.Key, g => g.First()); // Dictionary<long, Entities...Transportation>
+                        .Where(x => x != null && !string.IsNullOrEmpty(x.transportation))
+                        .Select(x => x!.transportation)
+                        .ToHashSet(StringComparer.OrdinalIgnoreCase); // HashSet<string> com as transportadoras já gravadas da empresa
                 });
 
-                transportationsReverses.RemoveAll(
-                    x => transportationsReversesCache.Contains(x)
-                );
+                var _listSomenteNovos = new List<Domain.AfterSale.Entities.Reads.Reverses.Transportations.Transportation>();
 
-                //transportationsReversesCache.RemoveAll(x =>
-                //   !string.IsNullOrEmpty(x.doc_company) &&
-                //   transportationsReversesCache.TryGetValue(
-                //       x.transportation, out var y) &&
-                //       x.doc_company != y.doc_company &&
-                //       x.transportation != y.transportation
-                //);
-
-                foreach (var transportationRoot in transportationsReverses)
+                foreach (var transportationReverse in transportationsReverses)
                 {
-                    var validations = _transportationsValidator.Validate(transportationRoot);
+                    var validations = _transportationsValidator.Validate(transportationReverse);
 
                     if (validations.Errors.Count() > 0)
                     {
@@ -666,8 +658,11 @@ namespace Application.AfterSale.Services
                         _logger.AddMessage(message);
                     }
 
-                    _listSomenteNovos.Add(new Domain.AfterSale.Entities.Reverses.Transportations.Transportation(transportationRoot/*, company.doc_company*/));
+                    _listSomenteNovos.Add(new Domain.AfterSale.Entities.Reads.Reverses.Transportations.Transportation(transportationReverse, company.doc_company));
                 }
+
+                // mantém só o que é novo (remove quando a transportadora já existe no cache da empresa)
+                _listSomenteNovos.RemoveAll(x => transportationsReversesCache.Contains(x.transportation));
 
                 if (_listSomenteNovos.Count() > 0)
                 {
@@ -675,31 +670,16 @@ namespace Application.AfterSale.Services
 
                     foreach (var record in _listSomenteNovos)
                     {
-                        JArray? data = null;
-
-                        foreach (var _response in listResponses)
-                        {
-                            var _root = JObject.Parse(_response);
-                            data = _root["data"] as JArray;
-                            if (data == null) continue;
-                        }
-
-                        if (data != null)
-                        {
-                            _logger.AddRecord(record.transportation, data.Select(t => (string?)t).FirstOrDefault(s => string.Equals(s, record.transportation, StringComparison.OrdinalIgnoreCase)));
-                            transportationsReversesCache.Add(record.transportation);
-                        }
+                        _logger.AddRecord(record.transportation, record.transportation);
+                        transportationsReversesCache.Add(record.transportation);
                     }
-                }
 
-                //If the status codes differ between companies, comment out this `break` so that the `foreach` loop iterates through all companies.
-                //Don't forget to add the `doc_company` column to the `AfterSaleStatusReverses` tables and add the `doc_company` property to the `Status` entity.
-                //Also switch the return value, and comment out the RemoveAll method from cache
-                break;
+                    totalInseridos += _listSomenteNovos.Count;
+                }
             }
 
             _logger.AddMessage(
-                    $"Concluída com sucesso: {_listSomenteNovos.Count} registro(s) novo(s) inserido(s)!"
+                    $"Concluída com sucesso: {totalInseridos} registro(s) novo(s) inserido(s)!"
                 );
 
             _logger.SetLogEndDate();
@@ -711,37 +691,182 @@ namespace Application.AfterSale.Services
         /// <summary>
         /// receive products by reverse ID
         /// </summary>
-        /// <param name="id"></param>
-        public Task<bool?> PutReciveProductsById(long id)
+        public Task<Domain.AfterSale.Dtos.Writes.Reverses.ReceiveProducts.Response.Root> PutReciveProductsById(string user_name, string doc_company, long id, Domain.AfterSale.Dtos.Writes.Reverses.ReceiveProducts.Request.Root request)
         {
-            throw new NotImplementedException();
+            var body = ToJsonBody(request);
+            var route = $"v3/api/reverses/{id}/receive-products";
+
+            return SendReverseAction<Domain.AfterSale.Dtos.Writes.Reverses.ReceiveProducts.Response.Root>(EnumJob.AfterSaleReciveProducts, user_name, doc_company, id, "PUT", route, body.ToString(Newtonsoft.Json.Formatting.None),
+                headers => _apiClient.PutAsync(route, body, headers));
         }
 
         /// <summary>
-        /// update recived invoice in reverse products. Need pass the products id and the returned invoice
+        /// update returned invoice in reverse products. Need pass the products id and the returned invoice
         /// </summary>
-        /// <param name="id"></param>
-        public Task<bool?> PutReturnedInvoiceById(long id)
+        public Task<Domain.AfterSale.Dtos.Writes.Reverses.ReturnedInvoice.Response.Root> PutReturnedInvoiceById(string user_name, string doc_company, long id, Domain.AfterSale.Dtos.Writes.Reverses.ReturnedInvoice.Request.Root request)
         {
-            throw new NotImplementedException();
+            var body = ToJsonBody(request);
+            var route = $"v3/api/reverses/{id}/products/returned-invoice";
+
+            return SendReverseAction<Domain.AfterSale.Dtos.Writes.Reverses.ReturnedInvoice.Response.Root>(EnumJob.AfterSaleReturnedInvoice, user_name, doc_company, id, "PUT", route, body.ToString(Newtonsoft.Json.Formatting.None),
+                headers => _apiClient.PutAsync(route, body, headers));
         }
 
         /// <summary>
-        /// set reverse courier data and process/generate code
+        /// set reverse courier data (invoice fields) and process/generate code
         /// </summary>
-        /// <param name="id"></param>
-        public Task<bool?> PostReverseInvoiceById(long id)
+        public Task<Domain.AfterSale.Dtos.Writes.Reverses.Invoice.Response.Root> PostReverseInvoiceById(string user_name, string doc_company, long id, Domain.AfterSale.Dtos.Writes.Reverses.Invoice.Request.Root request)
         {
-            throw new NotImplementedException();
+            var body = ToJsonBody(request);
+            body["id"] = id;
+            var route = $"v3/api/reverses/{id}/invoice";
+
+            return SendReverseAction<Domain.AfterSale.Dtos.Writes.Reverses.Invoice.Response.Root>(EnumJob.AfterSaleReverseInvoice, user_name, doc_company, id, "POST", route, body.ToString(Newtonsoft.Json.Formatting.None),
+                headers => _apiClient.PostAsync(route, body, headers));
+        }
+
+        /// <summary>
+        /// set reverse courier data (invoice XML file) and process/generate code.
+        /// the whole XML is logged as the request body.
+        /// </summary>
+        public Task<Domain.AfterSale.Dtos.Writes.Reverses.Invoice.Response.Root> PostReverseInvoiceXmlById(string user_name, string doc_company, long id, byte[] xml, string fileName)
+        {
+            var route = $"v3/api/reverses/{id}/invoice";
+
+            return SendReverseAction<Domain.AfterSale.Dtos.Writes.Reverses.Invoice.Response.Root>(EnumJob.AfterSaleReverseInvoice, user_name, doc_company, id, "POST", route, Encoding.UTF8.GetString(xml),
+                headers => _apiClient.PostMultipartAsync(
+                    route: route,
+                    fields: new Dictionary<string, string> { { "id", id.ToString() } },
+                    fileField: "xml",
+                    fileContent: xml,
+                    fileName: fileName,
+                    fileContentType: "application/xml",
+                    headers: headers
+                ));
         }
 
         /// <summary>
         /// approve products by reverse ID
         /// </summary>
-        /// <param name="id"></param>
-        public Task<bool?> PostApproveReverseById(long id)
+        public Task<Domain.AfterSale.Dtos.Writes.Reverses.Approve.Response.Root> PostApproveReverseById(string user_name, string doc_company, long id, Domain.AfterSale.Dtos.Writes.Reverses.Approve.Request.Root request)
         {
-            throw new NotImplementedException();
+            var body = ToJsonBody(request);
+            var route = $"v3/api/reverses/{id}/approve";
+
+            return SendReverseAction<Domain.AfterSale.Dtos.Writes.Reverses.Approve.Response.Root>(EnumJob.AfterSaleApproveReverse, user_name, doc_company, id, "POST", route, body.ToString(Newtonsoft.Json.Formatting.None),
+                headers => _apiClient.PostAsync(route, body, headers));
+        }
+
+        /// <summary>
+        /// create an administrative record (note) in the reverse
+        /// </summary>
+        public Task<Domain.AfterSale.Dtos.Writes.Reverses.AdministrativeRecords.Response.Root> PostAdministrativeRecordById(string user_name, string doc_company, long id, Domain.AfterSale.Dtos.Writes.Reverses.AdministrativeRecords.Request.Root request)
+        {
+            var body = ToJsonBody(request);
+            var route = $"v3/api/reverses/{id}/administrative-records";
+
+            return SendReverseAction<Domain.AfterSale.Dtos.Writes.Reverses.AdministrativeRecords.Response.Root>(EnumJob.AfterSaleAdministrativeRecordsReverse, user_name, doc_company, id, "POST", route, body.ToString(Newtonsoft.Json.Formatting.None),
+                headers => _apiClient.PostAsync(route, body, headers));
+        }
+
+        /// <summary>
+        /// serializes the request ignoring null properties, so the API does not receive fields the caller did not fill
+        /// </summary>
+        private static JObject ToJsonBody(object request) =>
+            JObject.FromObject(request, Newtonsoft.Json.JsonSerializer.Create(new Newtonsoft.Json.JsonSerializerSettings
+            {
+                NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore
+            }));
+
+        /// <summary>
+        /// common flow of the reverse write routes: resolves the company token, calls the API,
+        /// logs the call in general.AfterSaleRequests (user, request and response) and saves an
+        /// AfterSaleErrors record when the API does not return success
+        /// </summary>
+        private async Task<TResponse> SendReverseAction<TResponse>(EnumJob job, string user_name, string doc_company, long id, string httpMethod, string route, string requestBody, Func<Dictionary<string, string>, Task<string?>> send)
+            where TResponse : Domain.AfterSale.Dtos.Writes.Base.ResponseRoot, new()
+        {
+            _logger
+               .Clear()
+               .AddLog(job);
+
+            TResponse result;
+            string? response = null;
+
+            try
+            {
+                var company = (await _afterSaleRepository.GetCompanys()).FirstOrDefault(x => x?.doc_company == doc_company);
+
+                if (company is null)
+                {
+                    result = new TResponse { success = false, message = $"CNPJ {doc_company} não encontrado em AfterSaleParameters." };
+                    _logger.AddMessage($"Reversa {id}: {result.message}");
+
+                    return result;
+                }
+
+                try
+                {
+                    response = await send(new Dictionary<string, string> { { "Authorization", $"Bearer {company.Token}" } });
+                }
+                catch (Exception ex)
+                {
+                    //registra a tentativa mesmo quando a chamada não chega a ter resposta (timeout, rede)
+                    _afterSaleService.SaveRequest(_logger.GetExecutionGuid(), job, user_name, httpMethod, route, doc_company, id, requestBody, $"Exceção ao chamar a API: {ex.Message}", false);
+                    throw;
+                }
+
+                JToken? responseJson = null;
+
+                try
+                {
+                    responseJson = String.IsNullOrEmpty(response) ? null : JToken.Parse(response);
+                }
+                catch (Newtonsoft.Json.JsonReaderException) { }
+
+                result = responseJson is JObject responseObject
+                    ? responseObject.ToObject<TResponse>() ?? new TResponse()
+                    : new TResponse
+                    {
+                        success = false,
+                        message = "Resposta inválida da API.",
+                        error = response?.Length > 800 ? response.Substring(0, 800) : response
+                    };
+
+                _afterSaleService.SaveRequest(_logger.GetExecutionGuid(), job, user_name, httpMethod, route, doc_company, id, requestBody, response, result.success);
+
+                if (result.success)
+                {
+                    _logger.AddMessage($"Reversa {id}: concluída com sucesso. {result.message}".Trim());
+                }
+                else
+                {
+                    _logger.AddMessage($"Reversa {id}: {result.message_translated ?? result.message ?? result.error ?? "a API não retornou sucesso."}");
+
+                    await _afterSaleReversesRepository.BulkInsertIntoAfterSaleErrors(
+                        [
+                            new Domain.AfterSale.Entities.Errors.Error(
+                                company.doc_company,
+                                job,
+                                _logger.GetExecutionGuid(),
+                                id,
+                                result.error,
+                                result.error_code,
+                                result.message,
+                                result.message_translated
+                            )
+                        ],
+                        _logger.GetExecutionGuid()
+                    );
+                }
+
+                return result;
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
         }
     }
 }

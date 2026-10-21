@@ -28,4 +28,15 @@ public class AfterSaleRepository : IAfterSaleRepository
         return await _coreRepository.GetRecord<Company>(sql);
     }
 
+    /// <summary>
+    /// log table of the write calls: insert-only, so it goes straight to the general schema (no untreated/merge)
+    /// </summary>
+    public bool InsertIntoAfterSaleRequests(Domain.AfterSale.Entities.Writes.Requests.Request request)
+    {
+        var requestsTable = _coreRepository.CreateSystemDataTable(entity: new Domain.AfterSale.Entities.Writes.Requests.Request(), tableName: "AfterSaleRequests");
+
+        _coreRepository.FillSystemDataTable(requestsTable, [request]);
+
+        return _coreRepository.BulkInsertIntoTableRaw(requestsTable, "general");
+    }
 }

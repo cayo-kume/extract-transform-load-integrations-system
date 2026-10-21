@@ -391,6 +391,7 @@ alter table [general].AfterSaleRefundsProducts add constraint [FK_AfterSaleRefun
 
 create table [untreated].AfterSaleSummarizedRefunds (
 	integrated_or_updated_at datetime,
+	[doc_company] nvarchar(14),
 	id bigint,
 	reverse_id bigint,
 	reverse_partner_store nvarchar(50),
@@ -423,7 +424,8 @@ create table [untreated].AfterSaleSummarizedRefunds (
 
 create table [general].AfterSaleSummarizedRefunds (
 	integrated_or_updated_at datetime,
-	id bigint not null primary key,
+	[doc_company] nvarchar(14) not null,
+	id bigint not null,
 	reverse_id bigint,
 	reverse_partner_store nvarchar(50),
 	[action] nvarchar(50),
@@ -450,61 +452,83 @@ create table [general].AfterSaleSummarizedRefunds (
 	product_price_type nvarchar(50), 
 	product_price_type_label nvarchar(50), 
 	refunded_shipping_type nvarchar(50),
-	last_status_history_date datetime
-);
+	last_status_history_date datetime,
+constraint [PK_AfterSaleSummarizedRefunds] primary key (
+	doc_company asc,
+	id asc
+));
 
 create table [untreated].AfterSaleStatusRefunds (
 	integrated_or_updated_at datetime,
 	id int,
+	[doc_company] nvarchar(14),
 	[name] nvarchar(50),
 	[description] nvarchar(250)
 );
 
 create table [general].AfterSaleStatusRefunds (
 	integrated_or_updated_at datetime,
-	id int not null primary key,
+	id int not null,
+	[doc_company] nvarchar(14) not null,
 	[name] nvarchar(50),
-	[description] nvarchar(250)
-);
+	[description] nvarchar(250),
+constraint [PK_AfterSaleStatusRefunds] primary key (
+	id asc,
+	doc_company asc
+));
 
 create table [untreated].AfterSaleActionsRefunds (
 	integrated_or_updated_at datetime,
 	id int,
+	[doc_company] nvarchar(14),
 	[name] nvarchar(50),
 	[description] nvarchar(250)
 );
 
 create table [general].AfterSaleActionsRefunds (
 	integrated_or_updated_at datetime,
-	id int not null primary key,
+	id int not null,
+	[doc_company] nvarchar(14) not null,
 	[name] nvarchar(50),
-	[description] nvarchar(250)
-);
+	[description] nvarchar(250),
+constraint [PK_AfterSaleActionsRefunds] primary key (
+	id asc,
+	doc_company asc
+));
 
 create table [untreated].AfterSaleBanksRefunds (
 	integrated_or_updated_at datetime,
 	id int,
+	[doc_company] nvarchar(14),
 	[name] nvarchar(250),
 	[description] nvarchar(250)
 );
 
 create table [general].AfterSaleBanksRefunds (
 	integrated_or_updated_at datetime,
-	id int not null primary key,
+	id int not null,
+	[doc_company] nvarchar(14) not null,
 	[name] nvarchar(250),
-	[description] nvarchar(250)
-);
+	[description] nvarchar(250),
+constraint [PK_AfterSaleBanksRefunds] primary key (
+	id asc,
+	doc_company asc
+));
 
 create table [untreated].AfterSaleTypesRefunds (
 	integrated_or_updated_at datetime,
-	id int, --gerar com incremental no c-sharp
+	[doc_company] nvarchar(14),
 	[name] nvarchar(50),
 	[description] nvarchar(250)
 );
 
+--a API não devolve id para os tipos de reembolso: a chave é o nome dentro da empresa
 create table [general].AfterSaleTypesRefunds (
 	integrated_or_updated_at datetime,
-	id int not null primary key, --gerar com incremental no c-sharp
-	[name] nvarchar(50),
-	[description] nvarchar(250)
-);
+	[doc_company] nvarchar(14) not null,
+	[name] nvarchar(50) not null,
+	[description] nvarchar(250),
+constraint [PK_AfterSaleTypesRefunds] primary key (
+	doc_company asc,
+	[name] asc
+));

@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Application.AfterSale.Validations.Refunds.Actions
 {
-    public class ActionValidation : AbstractValidator<Domain.AfterSale.Dtos.Refunds.Actions.Action>
+    public class ActionValidation : AbstractValidator<Domain.AfterSale.Dtos.Reads.Refunds.Actions.Action>
     {
         public ActionValidation()
         {

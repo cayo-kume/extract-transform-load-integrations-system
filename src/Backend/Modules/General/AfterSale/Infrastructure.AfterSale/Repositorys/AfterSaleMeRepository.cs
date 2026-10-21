@@ -1,6 +1,6 @@
 ﻿using Application.AfterSale.Abstractions.Handlers.Commands;
 using Domain.AfterSale.Abstractions.Repositorys;
-using Domain.AfterSale.Entities.Me;
+using Domain.AfterSale.Entities.Reads.Me;
 using Domain.Shared.Abstractions.Repositorys;
 using System;
 using System.Collections.Generic;

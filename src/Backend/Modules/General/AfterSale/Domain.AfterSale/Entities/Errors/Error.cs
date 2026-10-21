@@ -30,10 +30,11 @@ namespace Domain.AfterSale.Entities.Errors
             this.cnpj_emp = cnpj_emp;
 
             this.reverse_id = reverse_id;
-            this.error = error;
-            this.error_code = error_code;
-            this.message = message;
-            this.message_translated = message_translated;
+            //colunas nvarchar(50) em AfterSaleErrors
+            this.error = Truncate(error, 50);
+            this.error_code = Truncate(error_code, 50);
+            this.message = Truncate(message, 50);
+            this.message_translated = Truncate(message_translated, 50);
         }
 
         public Error(string cnpj_emp, Enum job, Guid? execution, string error, string error_code, string message, string message_translated)
@@ -45,10 +46,14 @@ namespace Domain.AfterSale.Entities.Errors
             this.cnpj_emp = cnpj_emp;
 
             this.reverse_id = reverse_id;
-            this.error = error;
-            this.error_code = error_code;
-            this.message = message;
-            this.message_translated = message_translated;
+            //colunas nvarchar(50) em AfterSaleErrors
+            this.error = Truncate(error, 50);
+            this.error_code = Truncate(error_code, 50);
+            this.message = Truncate(message, 50);
+            this.message_translated = Truncate(message_translated, 50);
         }
+
+        private static string? Truncate(string? value, int length) =>
+            value?.Length > length ? value.Substring(0, length) : value;
     }
 }

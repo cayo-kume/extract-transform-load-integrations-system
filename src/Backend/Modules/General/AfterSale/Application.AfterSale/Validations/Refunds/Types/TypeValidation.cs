@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Application.AfterSale.Validations.Refunds.Types
 {
-    public class TypeValidation : AbstractValidator<Domain.AfterSale.Dtos.Refunds.Types.Type>
+    public class TypeValidation : AbstractValidator<Domain.AfterSale.Dtos.Reads.Refunds.Types.Type>
     {
         public TypeValidation()
         {

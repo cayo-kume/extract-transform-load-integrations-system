@@ -41,6 +41,8 @@ VALUES
 (5000, 5534, 'sp_AfterSaleEcommercesSubReasons_Sync', 'Procedure de sincronização entre as tabelas raw e trusted', 3, 1),
 (5000, 5535, 'sp_AfterSaleEcommercesStringValues_Sync', 'Procedure de sincronização entre as tabelas raw e trusted', 3, 1),
 
+(50, 5536, 'sp_AfterSaleErrors_Sync', 'Procedure de sincronização entre as tabelas AfterSaleErrors raw e trusted', 3, 1),
+
 /*Integrações*/
 /*Range 5000 - 5499*/
 (50, 5000, 'AfterSaleEcommerces', 'Integração de dados das tabelas AfterSaleEcommerces, AfterSaleEcommercesMessagesPages, AfterSaleEcommercesMessagesMails, AfterSaleEcommercesReasons, AfterSaleEcommercesSubReasons e AfterSaleEcommercesStringValues', 3, 2),
@@ -51,10 +53,6 @@ VALUES
 (50, 5004, 'AfterSaleCourierAttributes', 'Integração de dados das tabelas AfterSaleCourierAttributes e AfterSaleCourierAttributesFields', 3, 2),
 (50, 5009, 'AfterSaleStatusReverses', 'Integração de dados da tabela AfterSaleStatusReverses', 3, 2),
 (50, 5010, 'AfterSaleHistoriesReverses', 'Integração de dados da tabela AfterSaleHistoriesReverses', 3, 2),
-(50, 5005, 'AfterSaleApproveReverse', 'Integração de aprovação de produtos por ID da reversa', 3, 2),
-(50, 5006, 'AfterSaleReciveProducts', 'Integração de recebimento de produtos por ID da reversa', 3, 2),
-(50, 5007, 'AfterSaleReturnedInvoice', 'Integração de atualização da nota de devolucao por ID dos produtos', 3, 2),
-(50, 5008, 'AfterSaleReverseInvoice', 'Integração de definição de dados de logística (processar/gerar codigo)', 3, 2),
 
 (50, 5011, 'AfterSaleRefund', 'Integração de dados das tabelas AfterSaleRefunds, AfterSaleRefundsCouldChangeStatusFor, AfterSaleRefundsOrdersPaymentsMethods, AfterSaleRefundsStatusHistories, AfterSaleRefundsTotalAmountHistories, AfterSaleRefundsProducts, AfterSaleRefundsProductsImages, AfterSaleRefundsProductsImagesUrls, ', 3, 2),
 (50, 5012, 'AfterSaleRefunds', 'Integração de dados da tabela AfterSaleSummarizedRefunds', 3, 2),
@@ -62,7 +60,16 @@ VALUES
 (50, 5014, 'AfterSaleActionsRefunds', 'Integração de dados da tabela AfterSaleActionsRefunds', 3, 2),
 (50, 5015, 'AfterSaleBanksRefunds', 'Integração de dados da tabela AfterSaleBanksRefunds', 3, 2),
 (50, 5016, 'AfterSaleTypesRefunds', 'Integração de dados da tabela AfterSaleTypesRefunds', 3, 2),
-(50, 5017, 'AfterSaleApproveRefund', 'Integração de aprovação de produtos por ID do reembolso', 3, 2),
-(50, 5018, 'AfterSaleCancelRefund', 'Integração de cancelamento do reembolso', 3, 2),
-(50, 5019, 'AfterSalePayRefund', 'Integração de pagamento do reembolso', 3, 2),
-(50, 5020, 'AfterSaleChangeTotalAmountRefund', 'Integração de atualização do total amount do reembolso', 3, 2);
+
+/*Ações (POST/PUT) - executadas sob demanda pelo AfterSaleController, não são recorrentes (IntervalTimeInMinutes = 0)*/
+/*Reversas*/
+(50, 5005, 'AfterSaleApproveReverse', 'Aprovação de produtos por ID da reversa (POST approve)', 0, 2),
+(50, 5006, 'AfterSaleReciveProducts', 'Recebimento de produtos por ID da reversa (PUT receive-products)', 0, 2),
+(50, 5007, 'AfterSaleReturnedInvoice', 'Atualização da nota de devolução por ID dos produtos (PUT products/returned-invoice)', 0, 2),
+(50, 5008, 'AfterSaleReverseInvoice', 'Envio dos dados da nota para a transportadora e geração do código (POST invoice)', 0, 2),
+(50, 5021, 'AfterSaleAdministrativeRecordsReverse', 'Criação de registro administrativo por ID da reversa (POST administrative-records)', 0, 2),
+/*Reembolsos*/
+(50, 5017, 'AfterSaleApproveRefund', 'Aprovação de produtos por ID do reembolso', 0, 2),
+(50, 5018, 'AfterSaleCancelRefund', 'Cancelamento do reembolso', 0, 2),
+(50, 5019, 'AfterSalePayRefund', 'Pagamento do reembolso', 0, 2),
+(50, 5020, 'AfterSaleChangeTotalAmountRefund', 'Atualização do total amount do reembolso', 0, 2);

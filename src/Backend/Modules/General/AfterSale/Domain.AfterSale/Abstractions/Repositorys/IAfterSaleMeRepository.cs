@@ -1,4 +1,4 @@
-﻿using Domain.AfterSale.Entities.Me;
+﻿using Domain.AfterSale.Entities.Reads.Me;
 using System;
 using System.Collections.Generic;
 using System.Text;

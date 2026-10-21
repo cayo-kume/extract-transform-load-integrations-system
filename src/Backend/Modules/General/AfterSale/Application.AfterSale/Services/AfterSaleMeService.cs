@@ -1,7 +1,7 @@
 ﻿using Application.AfterSale.Abstractions.Services;
 using Application.Shared.Abstractions.Services;
 using Domain.AfterSale.Abstractions.Repositorys;
-using Domain.AfterSale.Entities.Me;
+using Domain.AfterSale.Entities.Reads.Me;
 using Domain.Shared.Abstractions.Api;
 using Domain.AfterSale.Enums;
 using FluentValidation;
@@ -20,7 +20,7 @@ namespace Application.AfterSale.Services
         private readonly IMemoryCache _cache;
         private readonly IAfterSaleRepository _afterSaleRepository;
         private readonly IAfterSaleMeRepository _afterSaleMeRepository;
-        private readonly IValidator<Domain.AfterSale.Dtos.Me.Ecommerce> _ecommerceValidator;
+        private readonly IValidator<Domain.AfterSale.Dtos.Reads.Me.Ecommerce> _ecommerceValidator;
 
         private const string GetMeHashesKey = "AfterSale:GetMeHashes";
 
@@ -29,7 +29,7 @@ namespace Application.AfterSale.Services
             ILoggerService logger, 
             IAfterSaleRepository afterSaleRepository,
             IAfterSaleMeRepository afterSaleMeRepository,
-            IValidator<Domain.AfterSale.Dtos.Me.Ecommerce> ecommerceValidator, 
+            IValidator<Domain.AfterSale.Dtos.Reads.Me.Ecommerce> ecommerceValidator, 
             IMemoryCache cache
         ) =>
         (_apiClient, _logger, _afterSaleRepository, _afterSaleMeRepository, _ecommerceValidator, _cache) = (apiClient, logger, afterSaleRepository, afterSaleMeRepository, ecommerceValidator, cache);
@@ -44,7 +44,7 @@ namespace Application.AfterSale.Services
                .AddLog(EnumJob.AfterSaleEcommerces);
 
             List<string> sucessfulHashsKeys = [];
-            var _listSomenteNovos = new List<Domain.AfterSale.Entities.Me.Ecommerce>();
+            var _listSomenteNovos = new List<Domain.AfterSale.Entities.Reads.Me.Ecommerce>();
             var companys = await _afterSaleRepository.GetCompanys();
 
             var processedHashes = _cache.GetOrCreate(GetMeHashesKey, entry =>
@@ -67,7 +67,7 @@ namespace Application.AfterSale.Services
 
                 if (!processedHashes.Contains(hashKey))
                 {
-                    var me = Newtonsoft.Json.JsonConvert.DeserializeObject<Domain.AfterSale.Dtos.Me.Root>(response);
+                    var me = Newtonsoft.Json.JsonConvert.DeserializeObject<Domain.AfterSale.Dtos.Reads.Me.Root>(response);
                     var validations = _ecommerceValidator.Validate(me.data);
 
                     if (validations.Errors.Count() > 0)
@@ -80,7 +80,7 @@ namespace Application.AfterSale.Services
                         _logger.AddMessage(message);
                     }
 
-                    _listSomenteNovos.Add(new Domain.AfterSale.Entities.Me.Ecommerce(me.data, response));
+                    _listSomenteNovos.Add(new Domain.AfterSale.Entities.Reads.Me.Ecommerce(me.data, response));
                 }
             }
 

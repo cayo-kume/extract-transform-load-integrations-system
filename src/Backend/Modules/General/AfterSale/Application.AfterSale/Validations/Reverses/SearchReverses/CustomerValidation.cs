@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Application.AfterSale.Validations.Reverses.SearchReverses
 {
-    public class CustomerValidation : AbstractValidator<Domain.AfterSale.Dtos.Reverses.SearchReverses.Customer>
+    public class CustomerValidation : AbstractValidator<Domain.AfterSale.Dtos.Reads.Reverses.SearchReverses.Customer>
     {
         public CustomerValidation()
         {

@@ -1,4 +1,4 @@
-﻿using Domain.AfterSale.Dtos.Refunds.GetRefund;
+﻿using Domain.AfterSale.Dtos.Reads.Refunds.GetRefund;
 using Domain.Shared.Extensions;
 using FluentValidation;
 using System;
@@ -7,7 +7,7 @@ using System.Text;
 
 namespace Application.AfterSale.Validations.Refunds.GetRefund
 {
-    public class StatusValidation : AbstractValidator<Domain.AfterSale.Dtos.Refunds.GetRefund.Status>
+    public class StatusValidation : AbstractValidator<Domain.AfterSale.Dtos.Reads.Refunds.GetRefund.Status>
     {
         public StatusValidation()
         {

@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Application.AfterSale.Validations.Refunds.GetRefund
 {
-    public class TypeValidation : AbstractValidator<Domain.AfterSale.Dtos.Refunds.GetRefund.Type>
+    public class TypeValidation : AbstractValidator<Domain.AfterSale.Dtos.Reads.Refunds.GetRefund.Type>
     {
         public TypeValidation()
         {

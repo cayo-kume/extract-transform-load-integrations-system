@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Application.AfterSale.Validations.Reverses.History
 {
-    public class HistoryValidation : AbstractValidator<Domain.AfterSale.Dtos.Reverses.History.Root>
+    public class HistoryValidation : AbstractValidator<Domain.AfterSale.Dtos.Reads.Reverses.History.Root>
     {
         public HistoryValidation()
         {

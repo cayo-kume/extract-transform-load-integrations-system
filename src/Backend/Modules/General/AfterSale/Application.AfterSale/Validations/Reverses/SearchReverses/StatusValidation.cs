@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Application.AfterSale.Validations.Reverses.SearchReverses
 {
-    public class StatusValidation : AbstractValidator<Domain.AfterSale.Dtos.Reverses.SearchReverses.Status>
+    public class StatusValidation : AbstractValidator<Domain.AfterSale.Dtos.Reads.Reverses.SearchReverses.Status>
     {
         public StatusValidation()
         {

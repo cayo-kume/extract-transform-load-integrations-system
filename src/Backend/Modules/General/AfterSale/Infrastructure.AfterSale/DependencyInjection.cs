@@ -36,6 +36,7 @@ namespace Infrastructure.AfterSale.DependencyInjection
             services.AddScoped<IAfterSaleReversesService, AfterSaleReversesService>();
             services.AddScoped<IAfterSaleReversesRepository, AfterSaleReversesRepository>();
             
+            services.AddScoped<IAfterSaleService, AfterSaleService>();
             services.AddScoped<IAfterSaleRepository, AfterSaleRepository>();
 
             services.AddScoped<IAfterSaleCommandHandler, AfterSaleCommandHandler>();

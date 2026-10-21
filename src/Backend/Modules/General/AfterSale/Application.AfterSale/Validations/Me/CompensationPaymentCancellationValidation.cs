@@ -1,4 +1,4 @@
-﻿using Domain.AfterSale.Dtos.Me;
+﻿using Domain.AfterSale.Dtos.Reads.Me;
 using FluentValidation;
 
 namespace Application.AfterSale.Validations.Me

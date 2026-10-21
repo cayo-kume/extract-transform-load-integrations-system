@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Application.AfterSale.Validations.Reverses.CourierAttributes
 {
-    public class ReverseValidation : AbstractValidator<Domain.AfterSale.Dtos.Reverses.CourierAttributes.Reverse>
+    public class ReverseValidation : AbstractValidator<Domain.AfterSale.Dtos.Reads.Reverses.CourierAttributes.Reverse>
     {
         public ReverseValidation()
         {

@@ -1,5 +1,5 @@
 ﻿using FluentValidation;
-using Domain.AfterSale.Dtos.Me;
+using Domain.AfterSale.Dtos.Reads.Me;
 using Domain.Shared.Extensions;
 
 namespace Application.AfterSale.Validations.Me

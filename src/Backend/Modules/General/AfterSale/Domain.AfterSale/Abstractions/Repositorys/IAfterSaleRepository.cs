@@ -8,6 +8,9 @@ public interface IAfterSaleRepository
     public Task<IEnumerable<Company?>> GetCompanys();
     public Task<Company?> GetCompany(string cnpj_emp);
 
+    /*Insert in Database*/
+    public bool InsertIntoAfterSaleRequests(Entities.Writes.Requests.Request request);
+
     /*Call Proc Merge*/
     //public Task<bool> CallProcMerge();
 }
