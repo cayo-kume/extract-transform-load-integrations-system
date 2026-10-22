@@ -7,20 +7,20 @@ namespace Application.AfterSale.Handlers.Commands
         public string CreateGetCompanyQuery(string cnpj_emp)
         {
             return @$"SELECT DISTINCT
-                     CNPJ_EMP AS DOC_COMPANY,
+                     DOC_COMPANY,
                      TOKEN
                      FROM GENERAL.AFTERSALEPARAMETERS
                      WHERE 
-                     CNPJ_EMP = {cnpj_emp}";
+                     DOC_COMPANY = {cnpj_emp}";
         }
 
         public string CreateGetCompanysQuery()
         {
             return @$"SELECT DISTINCT
-                    CNPJ_EMP AS DOC_COMPANY,
+                    DOC_COMPANY,
                     TOKEN AS TOKEN
                     FROM GENERAL.AFTERSALEPARAMETERS
-                    --WHERE CNPJ_EMP = '38367316000199'";
+                    --WHERE DOC_COMPANY = '38367316000199'";
         }
 
         public string CreateGetReversesByIdsQuery(string doc_company, List<string> reversesIds)

@@ -255,6 +255,7 @@ Executados uma única vez cada, em ordem, pelo DbUp (`Scripts/SQLServer/migrator
 | `Script007_Insert_AfterSale_Values_Into_Jobs_Table.sql` | Jobs em `auditing.Jobs` (ver [Auditoria](#auditoria-jobs)) |
 | `Script008_Insert_Values_Into_AfterSale_Parameters_Table.sql` | Empresas e tokens em `AfterSaleParameters` |
 | `Script009_Create_AfterSale_Requests_Table.sql` | `general.AfterSaleRequests` (log das chamadas de escrita) |
+| `Script010_Rename_CnpjEmp_To_DocCompany_In_AfterSale_Parameters.sql` | Renomeia `cnpj_emp` para `doc_company` em `AfterSaleParameters` nos bancos que rodaram o `Script001` antigo |
 
 Toda tabela de dados existe em dois schemas: `untreated` (recebe o bulk insert, sem chave) e
 `general` (tabela final, com PK). A procedure de merge leva os dados de uma para a outra. A
@@ -344,7 +345,7 @@ validação) e `auditing.Records` (registros integrados).
 |---|---|---|
 | `appsettings.json` do host | `AfterSale:BaseUrl` | Endereço da API (`https://api.send4.com.br/`) |
 | `appsettings.json` do host | `ConnectionStrings` | Conexão com o SQL Server (dados e auditoria) |
-| Banco | `general.AfterSaleParameters` | CNPJ (`cnpj_emp`) e token de cada empresa |
+| Banco | `general.AfterSaleParameters` | CNPJ (`doc_company`) e token de cada empresa |
 
 ---
 

@@ -6,7 +6,7 @@ if not exists (select 1 from sys.schemas where name = 'general')
 create table [general].AfterSaleParameters (
 	integrated_or_updated_at datetime,
 	id int not null identity primary key, 
-	cnpj_emp nvarchar(14) not null,
+	[doc_company] nvarchar(14) not null,
 	token uniqueidentifier
 );
 
