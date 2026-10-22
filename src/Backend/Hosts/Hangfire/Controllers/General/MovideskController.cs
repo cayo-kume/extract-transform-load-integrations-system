@@ -1,5 +1,6 @@
 ﻿using Application.Movidesk.Abstractions.Services;
 using Application.Movidesk.Validations.Writes.People;
+using Application.Movidesk.Validations.Writes.Services;
 using Application.Movidesk.Validations.Writes.Tickets;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -23,6 +24,8 @@ namespace Hangfire.Controllers.General
         private readonly PostPersonValidator _postPersonValidator;
         private readonly PatchPersonValidator _patchPersonValidator;
         private readonly RelationshipsValidator _relationshipsValidator;
+        private readonly PostServiceValidator _postServiceValidator;
+        private readonly PatchServiceValidator _patchServiceValidator;
 
         // limite da Movidesk por anexo (dúvidas frequentes sobre tickets); a requisição aceita vários anexos de uma vez
         private const long MaxAttachmentBytes = 25L * 1024 * 1024;
@@ -36,10 +39,12 @@ namespace Hangfire.Controllers.General
             PatchTicketValidator patchTicketValidator,
             PostPersonValidator postPersonValidator,
             PatchPersonValidator patchPersonValidator,
-            RelationshipsValidator relationshipsValidator
+            RelationshipsValidator relationshipsValidator,
+            PostServiceValidator postServiceValidator,
+            PatchServiceValidator patchServiceValidator
         ) =>
-            (_movideskTicketsService, _movideskPeopleService, _movideskServicesService, _postTicketValidator, _patchTicketValidator, _postPersonValidator, _patchPersonValidator, _relationshipsValidator) =
-            (movideskTicketsService, movideskPeopleService, movideskServicesService, postTicketValidator, patchTicketValidator, postPersonValidator, patchPersonValidator, relationshipsValidator);
+            (_movideskTicketsService, _movideskPeopleService, _movideskServicesService, _postTicketValidator, _patchTicketValidator, _postPersonValidator, _patchPersonValidator, _relationshipsValidator, _postServiceValidator, _patchServiceValidator) =
+            (movideskTicketsService, movideskPeopleService, movideskServicesService, postTicketValidator, patchTicketValidator, postPersonValidator, patchPersonValidator, relationshipsValidator, postServiceValidator, patchServiceValidator);
 
         [HttpGet("Tickets")]
         [Tags("MovideskTickets")]
@@ -300,5 +305,56 @@ namespace Hangfire.Controllers.General
                 null => UnprocessableEntity("Company not registered or invalid response from Movidesk. See the execution log.")
             };
         }
+
+        /// <summary>
+        /// cria um serviço (POST services). O corpo é validado antes de chamar a API; o id é gerado pela Movidesk
+        /// </summary>
+        [HttpPost("Services/{docCompany}")]
+        [Tags("MovideskServices")]
+        public async Task<ActionResult> PostService(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Movidesk.Dtos.Writes.Services.Service service
+        )
+        {
+            var validation = await _postServiceValidator.ValidateAsync(service);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _movideskServicesService.PostService(userName, docCompany, service));
+        }
+
+        /// <summary>
+        /// altera um serviço (PATCH services?id={id}): só os campos enviados mudam, e categories substitui a lista inteira
+        /// </summary>
+        [HttpPatch("Services/{docCompany}/{id:int:min(1)}")]
+        [Tags("MovideskServices")]
+        public async Task<ActionResult> PatchService(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            int id,
+            [FromBody] Domain.Movidesk.Dtos.Writes.Services.Service service
+        )
+        {
+            var validation = await _patchServiceValidator.ValidateAsync(service);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _movideskServicesService.PatchServiceById(userName, docCompany, id, service));
+        }
+
+        /// <summary>
+        /// exclui um serviço do catálogo (DELETE services?id={id}). Irreversível; o serviço continua no banco local
+        /// </summary>
+        [HttpDelete("Services/{docCompany}/{id:int:min(1)}")]
+        [Tags("MovideskServices")]
+        public async Task<ActionResult> DeleteService(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            int id
+        ) =>
+            WriteResponse(await _movideskServicesService.DeleteServiceById(userName, docCompany, id));
     }
 }

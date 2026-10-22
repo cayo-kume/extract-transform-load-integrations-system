@@ -53,6 +53,10 @@ namespace Infrastructure.Movidesk.DependencyInjection
             services.AddScoped<Application.Movidesk.Validations.Writes.People.PatchPersonValidator>();
             services.AddScoped<Application.Movidesk.Validations.Writes.People.RelationshipsValidator>();
 
+            // escrita de serviços: o mesmo padrão (criação e alteração validam o mesmo DTO)
+            services.AddScoped<Application.Movidesk.Validations.Writes.Services.PostServiceValidator>();
+            services.AddScoped<Application.Movidesk.Validations.Writes.Services.PatchServiceValidator>();
+
             return services;
         }
     }

@@ -27,6 +27,9 @@ namespace Domain.Movidesk.Enums
         MovideskPostPerson = 3009,
         MovideskPatchPersonById = 3010,
         MovideskPostPersonRelationshipsById = 3011,
-        MovideskDeletePersonById = 3012
+        MovideskDeletePersonById = 3012,
+        MovideskPostService = 3013,
+        MovideskPatchServiceById = 3014,
+        MovideskDeleteServiceById = 3015
     }
 }

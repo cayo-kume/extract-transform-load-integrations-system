@@ -7,12 +7,14 @@ using Domain.Shared.Extensions;
 using FluentValidation;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Text;
 
 namespace Application.Movidesk.Services
 {
     /// <summary>
-    /// catálogo de serviços da Movidesk (GET /services)
+    /// catálogo de serviços da Movidesk: leituras (GET /services) e escrita (POST, PATCH e DELETE)
     /// </summary>
     public class MovideskServicesService : IMovideskServicesService
     {
@@ -25,6 +27,12 @@ namespace Application.Movidesk.Services
         private readonly IValidator<Domain.Movidesk.Dtos.Reads.Services.Service> _serviceValidator;
 
         private const string ServicesHashKey = "Movidesk:ServicesHash";
+
+        // escrita: campos nulos não são enviados (no PATCH, campo ausente = campo que não muda)
+        private static readonly JsonSerializerSettings WriteSettings = new()
+        {
+            NullValueHandling = NullValueHandling.Ignore
+        };
 
         public MovideskServicesService(
             [FromKeyedServices("MovideskAPI")] IApiClient apiClient,
@@ -198,6 +206,212 @@ namespace Application.Movidesk.Services
             await _logger.CommitAllChanges();
 
             return true;
+        }
+
+        /// <summary>
+        /// cria um serviço (sem id: a Movidesk gera). Com returnAllProperties=true, se a API devolver o serviço inteiro ele é
+        /// gravado sem releitura; se devolver só o id, o serviço chega pela próxima execução do GetServices
+        /// </summary>
+        public Task<Domain.Movidesk.Dtos.Writes.Result> PostService(string user_name, string doc_company, Domain.Movidesk.Dtos.Writes.Services.Service service) =>
+            SendService(EnumJob.MovideskPostService, user_name, doc_company, null, HttpMethod.Post, "services",
+                query: new Dictionary<string, string> { { "returnAllProperties", "true" } },
+                body: service,
+                readResponse: response =>
+                {
+                    // o formato da resposta não está na documentação (a conferir no teste real):
+                    // o serviço inteiro, o id puro ou { "id": ... }
+                    JToken? json = null;
+
+                    try
+                    {
+                        json = String.IsNullOrWhiteSpace(response) ? null : JToken.Parse(response);
+                    }
+                    catch (JsonReaderException)
+                    {
+                        // json continua null: o id fica desconhecido e o GetServices traz o serviço depois
+                    }
+
+                    if (json is JObject full && full.ContainsKey("name"))
+                    {
+                        var created = JsonConvert.DeserializeObject<Domain.Movidesk.Dtos.Reads.Services.Service>(response!);
+                        var createdId = ConverterValidatorsExtensions.ConvertToInt32Validation(created?.id);
+
+                        return (createdId > 0 ? createdId : null, created);
+                    }
+
+                    var number = ConverterValidatorsExtensions.ConvertToInt32Validation(json is JObject idOnly ? (string?)idOnly["id"] : json?.ToString());
+
+                    return (number > 0 ? number : null, null);
+                });
+
+        /// <summary>
+        /// altera um serviço: só os campos enviados mudam, e categories enviada substitui a lista inteira na Movidesk.
+        /// Como o PATCH responde sem corpo e o GetServices só roda a cada 2 horas, o serviço é relido e gravado na hora
+        /// </summary>
+        public Task<Domain.Movidesk.Dtos.Writes.Result> PatchServiceById(string user_name, string doc_company, int id, Domain.Movidesk.Dtos.Writes.Services.Service service) =>
+            SendService(EnumJob.MovideskPatchServiceById, user_name, doc_company, id, HttpMethod.Patch, "services",
+                query: new Dictionary<string, string> { { "id", id.ToString() } },
+                body: service,
+                readResponse: _ => (id, null));
+
+        /// <summary>
+        /// exclui um serviço do catálogo (irreversível). O serviço continua no banco local, como os removidos pelo painel,
+        /// porque tickets antigos apontam para ele
+        /// </summary>
+        public Task<Domain.Movidesk.Dtos.Writes.Result> DeleteServiceById(string user_name, string doc_company, int id) =>
+            SendService(EnumJob.MovideskDeleteServiceById, user_name, doc_company, id, HttpMethod.Delete, "services",
+                query: new Dictionary<string, string> { { "id", id.ToString() } },
+                body: null,
+                readResponse: _ => (id, null));
+
+        /// <summary>
+        /// fluxo comum das rotas de escrita de serviços (mesmo desenho do SendTicket e do SendPerson): empresa, chamada à API,
+        /// registro em general.MovideskRequests (com o corpo enviado) e, depois do sucesso, hash do catálogo fora do cache,
+        /// gravação do serviço devolvido pelo POST e releitura do serviço alterado pelo PATCH
+        /// </summary>
+        private async Task<Domain.Movidesk.Dtos.Writes.Result> SendService(
+            EnumJob job,
+            string user_name,
+            string doc_company,
+            int? id,
+            HttpMethod method,
+            string route,
+            Dictionary<string, string> query,
+            object? body,
+            Func<string?, (int? serviceId, Domain.Movidesk.Dtos.Reads.Services.Service? service)> readResponse)
+        {
+            _logger
+                .Clear()
+                .AddLog(job);
+
+            // rota registrada no log de requisições: sem o token
+            var logRoute = $"{route}?{String.Join("&", query.Select(x => $"{x.Key}={x.Value}"))}";
+
+            // corpo sem nulos (no PATCH, campo ausente = campo que não muda); o DELETE não tem corpo
+            var requestBody = body is null ? null : JsonConvert.SerializeObject(body, WriteSettings);
+
+            try
+            {
+                var company = await _movideskRepository.GetCompany(doc_company);
+
+                if (company is null)
+                {
+                    // nenhuma chamada à API: não há o que registrar em MovideskRequests (igual ao GetServiceById)
+                    var notFound = $"Empresa {doc_company} não cadastrada em general.MovideskParameters.";
+                    _logger.AddMessage(notFound);
+
+                    return new Domain.Movidesk.Dtos.Writes.Result { success = false, id = id?.ToString(), message = notFound };
+                }
+
+                ApiResponse response;
+
+                try
+                {
+                    using var httpContent = requestBody is null ? null : new StringContent(requestBody, Encoding.UTF8, "application/json");
+
+                    response = await _apiClient.SendAsync(
+                        method,
+                        route,
+                        httpContent,
+                        queryParams: new Dictionary<string, string>(query) { { "token", company.Token.ToString() } }
+                    );
+                }
+                catch (Exception ex)
+                {
+                    // registra a tentativa mesmo quando a chamada não chega a ter resposta (timeout, rede)
+                    _movideskService.SaveRequest(job, user_name, method.Method, logRoute, doc_company, id?.ToString() ?? String.Empty, $"Exceção ao chamar a API: {ex.Message}", false, requestBody);
+                    throw;
+                }
+
+                var (serviceId, service) = response.IsSuccess ? readResponse(response.Content) : (id, null);
+
+                _movideskService.SaveRequest(job, user_name, method.Method, logRoute, doc_company, serviceId?.ToString() ?? String.Empty, response.Content, response.IsSuccess, requestBody);
+
+                if (!response.IsSuccess)
+                {
+                    // mensagem da API quando vier em JSON ({ "message": ... }); senão, o corpo como veio
+                    string? apiMessage = null;
+
+                    try
+                    {
+                        apiMessage = String.IsNullOrWhiteSpace(response.Content) ? null : (JToken.Parse(response.Content) as JObject)?["message"]?.ToString();
+                    }
+                    catch (JsonReaderException)
+                    {
+                        // corpo em texto: usa o corpo como veio
+                    }
+
+                    var message = apiMessage ?? (response.Content?.Length > 800 ? response.Content[..800] : response.Content) ?? $"A Movidesk devolveu {response.StatusCode}.";
+                    _logger.AddMessage($"Serviço {serviceId?.ToString() ?? "novo"} (empresa {doc_company}): {message}");
+
+                    return new Domain.Movidesk.Dtos.Writes.Result
+                    {
+                        success = false,
+                        id = serviceId?.ToString(),
+                        statusCode = response.StatusCode,
+                        message = message,
+                        response = response.Content,
+                        retryAfterSeconds = response.Headers.TryGetValue("Retry-After", out var retryAfter) && int.TryParse(retryAfter, out var seconds) ? seconds : null
+                    };
+                }
+
+                // o catálogo mudou: o próximo GetServices não pode pular a resposta pelo hash
+                _cache.Remove($"{ServicesHashKey}:{doc_company}");
+
+                string? localMessage = null;
+
+                try
+                {
+                    if (service is not null && serviceId is not null)
+                    {
+                        // serviço inteiro na resposta do POST: grava agora, sem releitura
+                        await SaveServices(doc_company, _movideskService.GetBatchTime(), [service], new Dictionary<int, string> { { serviceId.Value, response.Content! } });
+                    }
+                    else if (method == HttpMethod.Patch && serviceId is not null)
+                    {
+                        // o PATCH responde sem corpo e o GetServices só roda a cada 2 horas: relê o serviço e grava na hora
+                        var reread = await _apiClient.GetAsync(
+                            route: "services",
+                            queryParams: new Dictionary<string, string>
+                            {
+                                { "token", company.Token.ToString() },
+                                { "id", serviceId.Value.ToString() }
+                            }
+                        );
+
+                        var changed = String.IsNullOrWhiteSpace(reread) ? null : JsonConvert.DeserializeObject<Domain.Movidesk.Dtos.Reads.Services.Service>(reread);
+
+                        if (changed is not null && ConverterValidatorsExtensions.ConvertToInt32Validation(changed.id) == serviceId)
+                            await SaveServices(doc_company, _movideskService.GetBatchTime(), [changed], new Dictionary<int, string> { { serviceId.Value, reread! } });
+                        else
+                            localMessage = $"Serviço {serviceId} alterado, mas a releitura não trouxe o serviço (o GetServices grava depois): {reread}";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // a escrita na Movidesk continua valendo; o GetServices corrige depois (o hash já saiu do cache)
+                    localMessage = $"Serviço {serviceId} gravado na Movidesk, mas não no banco (o GetServices grava depois): {ex.Message}";
+                }
+
+                if (localMessage is not null)
+                    _logger.AddMessage(localMessage);
+
+                _logger.AddMessage($"Concluída com sucesso: serviço {serviceId?.ToString() ?? "(id não informado pela API)"} ({method.Method} {route}).");
+
+                return new Domain.Movidesk.Dtos.Writes.Result
+                {
+                    success = true,
+                    id = serviceId?.ToString(),
+                    statusCode = response.StatusCode,
+                    message = localMessage,
+                    response = response.Content
+                };
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
         }
 
         /// <summary>

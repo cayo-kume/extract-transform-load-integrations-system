@@ -32,7 +32,7 @@ VALUES
 (3004, 3527, 'sp_MovideskServicesCategories_Sync', 'Procedure de sincronização entre as tabelas MovideskServicesCategories raw e trusted', 120, 1),
 
 /*Integrações*/
-/*Range 3000 - 3499 (leituras: 3000 - 3005, escrita de tickets: 3006 - 3008, escrita de pessoas: 3009 - 3012)*/
+/*Range 3000 - 3499 (leituras: 3000 - 3005, escrita de tickets: 3006 - 3008, escrita de pessoas: 3009 - 3012, escrita de serviços: 3013 - 3015)*/
 (30, 3000, 'MovideskGetTickets', 'Integração de dados das tabelas MovideskTickets e filhas', 3, 2),
 (30, 3001, 'MovideskGetPeople', 'Integração de dados das tabelas MovideskPeople e filhas', 3, 2),
 (30, 3004, 'MovideskGetServices', 'Integração do catálogo de serviços (MovideskServices e MovideskServicesCategories), a cada 2 horas', 120, 2),
@@ -47,4 +47,7 @@ VALUES
 (30, 3009, 'MovideskPostPerson', 'Criação de uma pessoa (POST People/{docCompany})', 0, 2),
 (30, 3010, 'MovideskPatchPersonById', 'Alteração de uma pessoa por Cód. Ref. (PATCH People/{docCompany}/{id})', 0, 2),
 (30, 3011, 'MovideskPostPersonRelationshipsById', 'Inclusão de organizações numa pessoa (POST People/{docCompany}/{id}/Relationships)', 0, 2),
-(30, 3012, 'MovideskDeletePersonById', 'Exclusão de uma pessoa por Cód. Ref. (DELETE People/{docCompany}/{id})', 0, 2);
+(30, 3012, 'MovideskDeletePersonById', 'Exclusão de uma pessoa por Cód. Ref. (DELETE People/{docCompany}/{id})', 0, 2),
+(30, 3013, 'MovideskPostService', 'Criação de um serviço (POST Services/{docCompany})', 0, 2),
+(30, 3014, 'MovideskPatchServiceById', 'Alteração de um serviço por id (PATCH Services/{docCompany}/{id})', 0, 2),
+(30, 3015, 'MovideskDeleteServiceById', 'Exclusão de um serviço por id (DELETE Services/{docCompany}/{id})', 0, 2);

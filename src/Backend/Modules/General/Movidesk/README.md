@@ -20,7 +20,8 @@ Módulo do sistema de integrações (ETL) responsável por **ler** os dados da A
 * **sob demanda**, a partir de um sistema externo, buscando um único registro por id e registrando quem pediu cada chamada;
 * **escrita** sob demanda, também registrando quem pediu cada chamada:
   * tickets: criar, alterar e enviar anexos para uma ação;
-  * pessoas: criar, alterar, incluir organizações e excluir.
+  * pessoas: criar, alterar, incluir organizações e excluir;
+  * serviços: criar, alterar e excluir.
 
 | Item | Valor |
 |---|---|
@@ -166,6 +167,9 @@ Application.Movidesk/
 |---|---|---|---|---|
 | `GetServices` | `GET services` (catálogo inteiro numa resposta, sem paginação) | `MovideskServices`, `MovideskServicesCategories` | 3004 | A cada 2 horas |
 | `GetServiceById` | `GET services?id={id}` | as mesmas + `MovideskRequests` (log) | 3005 | Sob demanda |
+| `PostService` | `POST services?returnAllProperties=true` | `MovideskRequests` (log) e o serviço criado nas tabelas de serviços | 3013 | Sob demanda |
+| `PatchServiceById` | `PATCH services?id={id}`, depois `GET services?id={id}` | `MovideskRequests` (log) e o serviço relido | 3014 | Sob demanda |
+| `DeleteServiceById` | `DELETE services?id={id}` | `MovideskRequests` (log); o serviço continua no banco local | 3015 | Sob demanda |
 
 ### Fluxo das leituras recorrentes (tickets e pessoas)
 
@@ -216,17 +220,18 @@ Como a API indica "não encontrado":
 | `persons?id=` | 404 com `application/problem+json` (`"status": 404`) |
 | `services?id=` | 404 com corpo vazio |
 
-### Fluxo da escrita (tickets e pessoas)
+### Fluxo da escrita (tickets, pessoas e serviços)
 
-Detalhes e decisões em [`docs/IMPLEMENTACAO-MOVIDESK-TICKETS-ESCRITA.md`](../../../../../docs/IMPLEMENTACAO-MOVIDESK-TICKETS-ESCRITA.md) e [`docs/IMPLEMENTACAO-MOVIDESK-PESSOAS-ESCRITA.md`](../../../../../docs/IMPLEMENTACAO-MOVIDESK-PESSOAS-ESCRITA.md). Cada service tem o seu fluxo comum (`SendTicket` e `SendPerson`), e os dois devolvem o mesmo `Dtos/Writes/Result`.
+Detalhes e decisões em [`docs/IMPLEMENTACAO-MOVIDESK-TICKETS-ESCRITA.md`](../../../../../docs/IMPLEMENTACAO-MOVIDESK-TICKETS-ESCRITA.md), [`docs/IMPLEMENTACAO-MOVIDESK-PESSOAS-ESCRITA.md`](../../../../../docs/IMPLEMENTACAO-MOVIDESK-PESSOAS-ESCRITA.md) e [`docs/IMPLEMENTACAO-MOVIDESK-SERVICES-ESCRITA.md`](../../../../../docs/IMPLEMENTACAO-MOVIDESK-SERVICES-ESCRITA.md). Cada service tem o seu fluxo comum (`SendTicket`, `SendPerson` e `SendService`), e os três devolvem o mesmo `Dtos/Writes/Result`.
 
-1. o controller valida o corpo (FluentValidation, `Validations/Writes/Tickets` e `Validations/Writes/People`) e devolve **400** sem chamar a API, porque 3 erros seguidos bloqueiam a API por 60 s;
+1. o controller valida o corpo (FluentValidation, `Validations/Writes/Tickets`, `Validations/Writes/People` e `Validations/Writes/Services`) e devolve **400** sem chamar a API, porque 3 erros seguidos bloqueiam a API por 60 s;
 2. o service abre um log com o job da rota, busca a empresa pelo CNPJ e chama a API pelo `IApiClient.SendAsync`, que devolve o status HTTP (PATCH, relacionamentos e DELETE respondem 200 sem corpo);
 3. a chamada vai para `general.MovideskRequests` com o corpo enviado (`request_body`). Nos anexos, só nome, tipo, tamanho e SHA-256 de cada arquivo;
 4. o banco é atualizado assim:
-   * **POST:** com `returnAllProperties=true` a Movidesk devolve o ticket ou a pessoa inteira, que é gravada na hora pelo `SaveTickets` ou `SavePeople`;
+   * **POST:** com `returnAllProperties=true` a Movidesk devolve o ticket, a pessoa ou o serviço inteiro, que é gravado na hora pelo `SaveTickets`, `SavePeople` ou `SaveServices`;
    * **PATCH, anexos e relacionamentos:** não há releitura; a alteração chega pela próxima execução do `GetTickets` ou do `GetPeople` (até 3 minutos);
-   * **DELETE de pessoa:** a pessoa e as filhas são apagadas do banco local, porque a merge de pessoas nunca apaga linhas.
+   * **DELETE de pessoa:** a pessoa e as filhas são apagadas do banco local, porque a merge de pessoas nunca apaga linhas;
+   * **Serviços:** o PATCH relê o serviço e grava na hora, porque o `GetServices` só roda a cada 2 horas; o DELETE mantém o serviço no banco local (tickets antigos apontam para ele); toda escrita tira o hash do catálogo do cache, para o próximo `GetServices` regravar.
 
 Cuidados do PATCH: só os campos enviados mudam, mas **uma lista enviada substitui a lista inteira** (`{ "tags": [] }` apaga as tags de um ticket; `{ "emails": [] }`, os e-mails de uma pessoa). Em tickets, ações e apontamentos sem `id` são inseridos como novos. Em pessoas, para só acrescentar uma organização, use a rota de relacionamentos em vez de `relationships` no PATCH.
 
@@ -319,7 +324,7 @@ Respostas:
 | **404** | O registro não existe na Movidesk |
 | **422** | Empresa não cadastrada ou resposta inválida da API (detalhes no log da execução) |
 
-### Escrita de tickets e pessoas (chamadas por sistema externo)
+### Escrita de tickets, pessoas e serviços (chamadas por sistema externo)
 
 Mesmas exigências das leituras sob demanda (`X-User-Name` e `{docCompany}`), com o corpo validado antes de chamar a API.
 
@@ -332,6 +337,9 @@ Mesmas exigências das leituras sob demanda (`X-User-Name` e `{docCompany}`), co
 | PATCH | `People/{docCompany}/{id}` | JSON só com o que muda | `PatchPersonById` |
 | POST | `People/{docCompany}/{id}/Relationships` | `{ "relationships": [ ... ] }` (inclui sem mexer nas existentes) | `PostPersonRelationshipsById` |
 | DELETE | `People/{docCompany}/{id}` | nenhum (**irreversível**) | `DeletePersonById` |
+| POST | `Services/{docCompany}` | JSON do serviço (sem `id`: a Movidesk gera) | `PostService` |
+| PATCH | `Services/{docCompany}/{id}` | JSON só com o que muda | `PatchServiceById` |
+| DELETE | `Services/{docCompany}/{id}` | nenhum (**irreversível**) | `DeleteServiceById` |
 
 | Código | Quando |
 |---|---|
@@ -368,6 +376,9 @@ Os jobs ficam em `auditing.Jobs` (`Script005`), com os mesmos ids em `EnumJob`.
 | 3010 | `MovideskPatchPersonById` | sob demanda (escrita) |
 | 3011 | `MovideskPostPersonRelationshipsById` | sob demanda (escrita) |
 | 3012 | `MovideskDeletePersonById` | sob demanda (escrita) |
+| 3013 | `MovideskPostService` | sob demanda (escrita) |
+| 3014 | `MovideskPatchServiceById` | sob demanda (escrita) |
+| 3015 | `MovideskDeleteServiceById` | sob demanda (escrita) |
 
 Toda execução grava `auditing.Logs` e, conforme o caso:
 * `auditing.Messages`, com mensagens e erros de validação;
@@ -414,5 +425,6 @@ Guias de modelagem, implementação e decisões tomadas, na pasta `docs/` da rai
 | `IMPLEMENTACAO-MOVIDESK-SERVICES.md` | Tabelas e leitura do catálogo de serviços |
 | `IMPLEMENTACAO-MOVIDESK-TICKETS-ESCRITA.md` | Criação, alteração e anexos de tickets |
 | `IMPLEMENTACAO-MOVIDESK-PESSOAS-ESCRITA.md` | Criação, alteração, relacionamentos e exclusão de pessoas |
+| `IMPLEMENTACAO-MOVIDESK-SERVICES-ESCRITA.md` | Criação, alteração e exclusão de serviços |
 | `PADRAO-CACHE-INTEGRACOES.md` | Padrão de cache das leituras |
 | `ALTERACOES-MERGE-PROCEDURE-AUDITORIA.md` | Procedure de merge e auditoria |
