@@ -68,8 +68,9 @@ Infrastructure.Shared        Application.Shared         Domain.Shared
 | `Infrastructure.AfterSale` | — | `Infrastructure.Shared`, `Application.AfterSale`, `Domain.AfterSale` |
 
 Do projeto Shared o módulo usa: `IApiClient`/`ApiClient` (cliente HTTP), `ILoggerService` (auditoria),
-`ISharedRepository` (consultas, bulk insert e chamada das procedures de merge) e
-`ConverterValidatorsExtensions` (conversões de string para os tipos das entidades).
+`ISharedRepository` (consultas, bulk insert e chamada das procedures de merge),
+`ConverterValidatorsExtensions` (conversões de string para os tipos das entidades) e
+`NullableConverters` (conversões que mantêm o `null` da API, usadas nas datas).
 
 ---
 
@@ -103,7 +104,12 @@ Domain.AfterSale/
 
 * **DTOs** espelham o JSON da API, com propriedades `string` e nomes em `snake_case` iguais aos da API. Cada rota tem uma pasta com um `Root.cs` (objeto raiz do JSON) e um arquivo por objeto aninhado.
 * Nas rotas de escrita, cada pasta tem `Request/` (corpo enviado) e `Response/` (resposta), cada uma com o seu `Root`. As respostas herdam de `Dtos/Writes/Base/ResponseRoot`.
-* **Entidades** têm os tipos fortes das colunas (`Int64`, `DateTime`, `decimal`, `Guid`...), convertem os campos do DTO no construtor com `ConverterValidatorsExtensions` e cortam textos no tamanho da coluna.
+* **Entidades** têm os tipos fortes das colunas (`Int64`, `DateTime?`, `decimal`, `Guid`...), convertem os campos do DTO no construtor com `ConverterValidatorsExtensions` e cortam textos no tamanho da coluna.
+* **Datas** seguem o padrão do Movidesk: as que vêm da API são `DateTime?` e são convertidas com `NullableConverters.ToNullableDateTime`. Assim, um valor nulo ou vazio é gravado como `NULL`. Um texto preenchido mas inválido, ou anterior a 1753, continua virando `01/01/1990`, para não quebrar o bulk insert. Ficam como `DateTime` com valor:
+  * `integrated_or_updated_at` e `request_date`, preenchidas pelo sistema com o horário de Brasília;
+  * `date` de `AfterSaleRefundsStatusHistories`, que faz parte da chave primária e por isso mantém o fallback `01/01/1990`.
+  
+  Guia: [`docs/PROPOSTA-DATAS-NULAS-AFTERSALE.md`](../../../../../docs/PROPOSTA-DATAS-NULAS-AFTERSALE.md).
 * As entidades de reversas e de reembolsos usadas pelos métodos implementados têm `doc_company` (CNPJ da empresa), que faz parte da chave primária da tabela. Ainda **sem** `doc_company`: `Me` (dados do e-commerce) e `Reverses/History`, cujo método está pendente (ver [Pendências](#pendências-conhecidas)).
 * Listas filhas usam `[SkipProperty]` para não virarem coluna no bulk insert. O bulk insert mapeia as colunas **pelo nome** da propriedade.
 * `EnumJob` deve ficar em sincronia com o `Script007_Insert_AfterSale_Values_Into_Jobs_Table.sql`.
@@ -115,7 +121,7 @@ Domain.AfterSale/
 | `IAfterSaleRepository` | Empresas (`GetCompanys`, `GetCompany`) e log das chamadas de escrita (`InsertIntoAfterSaleRequests`) |
 | `IAfterSaleMeRepository` | Dados do e-commerce (`/me`) |
 | `IAfterSaleReversesRepository` | Reversas resumidas e detalhadas, status, transportadoras, courier attributes e erros |
-| `IAfterSaleRefundsRepository` | Reembolsos resumidos, status, ações, bancos, tipos e erros |
+| `IAfterSaleRefundsRepository` | Reembolsos resumidos e detalhados (pendentes de detalhe, busca por ids, bulk insert das 8 tabelas), status, ações, bancos, tipos e erros |
 
 ---
 
@@ -171,6 +177,7 @@ Application.AfterSale/
 | `GetActions` | `GET v3/api/refunds/actions` | `AfterSaleActionsRefunds` | 5014 | Implementado |
 | `GetBanks` | `GET v3/api/refunds/banks` | `AfterSaleBanksRefunds` | 5015 | Implementado |
 | `GetTypes` | `GET v3/api/refunds/types` | `AfterSaleTypesRefunds` (chave pelo nome) | 5016 | Implementado |
+| `GetRefund` | `GET v3/api/refunds/{id}` (reembolsos resumidos ainda sem detalhe, 30 por execução) | `AfterSaleRefunds` e 7 tabelas filhas | 5011 | Implementado |
 | `GetRefundById` | `GET v3/api/refunds/{id}` (um reembolso, sob demanda) | `AfterSaleRefunds` e 7 tabelas filhas + `AfterSaleRequests` (log) | 5023 | Implementado |
 | `PostApproveRefundById` | `POST v3/api/refunds/{id}/approve` | `AfterSaleRequests` (log) | 5017 | Implementado |
 | `PostCancelRefundById` | `POST v3/api/refunds/{id}/cancel` | `AfterSaleRequests` (log) | 5018 | Implementado |
@@ -202,6 +209,15 @@ Todas as leituras seguem o mesmo desenho, documentado em [`docs/PADRAO-CACHE-INT
 | `AfterSale:ActionsRefunds:<cnpj>` | `GetActions` |
 | `AfterSale:BanksRefunds:<cnpj>` | `GetBanks` |
 | `AfterSale:TypesRefunds:<cnpj>` | `GetTypes` |
+| `AfterSale:Refunds:<cnpj>` | `GetRefund` |
+
+`GetReverse` e `GetRefund` só buscam o detalhe de quem está na tabela resumida e ainda não está na
+tabela de detalhe (`TOP 30`, por causa do limite de requisições da API). Por isso dependem de
+`GetReverses` / `GetRefunds` terem rodado antes.
+
+`GetReverseById` e `GetRefundById` gravam sempre, sem consultar o cache. Quando o cache de
+`GetReverse` / `GetRefund` da empresa está carregado, eles também o atualizam, para que a próxima
+execução em lote não regrave o registro.
 
 ### Fluxo das escritas (POST/PUT)
 
@@ -279,6 +295,7 @@ Rota base: `AfterSaleJobs/AfterSale`.
 | GET | `Transportations` | `AfterSaleReversesService.GetTransportations` |
 | GET | `CourierAttributes` | `AfterSaleReversesService.GetCourierAttributes` |
 | GET | `Refunds` | `AfterSaleRefundsService.GetRefunds` |
+| GET | `Refund` | `AfterSaleRefundsService.GetRefund` |
 | GET | `Refunds/{docCompany}/{id}` (cabeçalho `X-User-Name`) | `AfterSaleRefundsService.GetRefundById` |
 | GET | `Refunds/Status` | `AfterSaleRefundsService.GetStatus` |
 | GET | `Refunds/Actions` | `AfterSaleRefundsService.GetActions` |
@@ -367,7 +384,8 @@ JSONs de referência por rota (`Me`, `Refund/*`, `Reverse/*`), usados para monta
 
 ## Pendências conhecidas
 
-* **Job 5011 (`AfterSaleRefund`)**: reservado para uma leitura em lote dos detalhes de reembolsos (como o `GetReverse` faz para reversas); hoje o detalhe só é lido por id (`GetRefundById`, job 5023).
+* **Datas legadas `1990-01-01`**: registros gravados antes da mudança para datas anuláveis mantêm `01/01/1990` nas datas que vieram vazias, até serem reintegrados. O script avulso de limpeza está em [`docs/PROPOSTA-DATAS-NULAS-AFTERSALE.md`](../../../../../docs/PROPOSTA-DATAS-NULAS-AFTERSALE.md) e ainda não foi executado. Consumidores fora do módulo que tratam `1990-01-01` como "sem data" precisam passar a usar `is null`.
+* **Detalhes já gravados não são atualizados pelo lote**: `GetReverse` e `GetRefund` só leem quem ainda não tem detalhe. Alterações posteriores chegam apenas por `GetReverseById` / `GetRefundById`.
 * **Histórico de reversas**: DTOs, entidade, tabela `AfterSaleHistoriesReverses` (já com `doc_company`) e job 5010 existem, mas não há método nem endpoint, e a entidade ainda não tem `doc_company`.
 * **`Me`**: as entidades e tabelas do e-commerce ainda não têm `doc_company`, então os dados das duas empresas não são separados por CNPJ.
 * **`AfterSaleErrors` nas tabelas de domínio de reembolsos** (`GetStatus`, `GetActions`, `GetBanks`, `GetTypes`): quando a API devolve `success = false`, nada é gravado. A decisão sobre o que gravar está pendente.
@@ -386,4 +404,5 @@ Guias de alteração e decisões tomadas durante o desenvolvimento, na pasta `do
 | `ANALISE-ROTAS-PUT-POST-REVERSAS.md` | Análise das rotas de escrita de reversas |
 | `PROPOSTA-LOG-REQUISICOES-ESCRITA.md` | Log das chamadas de escrita (`AfterSaleRequests`) |
 | `ALTERACOES-MERGE-PROCEDURE-AUDITORIA.md` | Procedure de merge e relacionamentos da auditoria |
-| `IMPLEMENTACAO-GETREFUNDS.md`, `IMPLEMENTACAO-REFUNDS-STATUS-ACTIONS-BANKS-TYPES.md`, `IMPLEMENTACAO-REFUNDS-POSTS.md` | Implementação das rotas de reembolsos |
+| `IMPLEMENTACAO-GETREFUNDS.md`, `IMPLEMENTACAO-GETREFUND.md`, `IMPLEMENTACAO-REFUNDS-STATUS-ACTIONS-BANKS-TYPES.md`, `IMPLEMENTACAO-REFUNDS-POSTS.md` | Implementação das rotas de reembolsos |
+| `PROPOSTA-DATAS-NULAS-AFTERSALE.md` | Datas anuláveis (`DateTime?`) no padrão do Movidesk |
