@@ -14,12 +14,13 @@ Para conhecer a solução, visite o [**site da Movidesk**](https://www.movidesk.
 
 ## Sobre o pacote
 
-Módulo do sistema de integrações (ETL) responsável por **ler** os dados da API pública da Movidesk (tickets, pessoas e serviços) e gravá-los no banco SQL Server, empresa por empresa:
+Módulo do sistema de integrações (ETL) responsável por **ler** os dados da API pública da Movidesk (tickets, pessoas e serviços) e gravá-los no banco SQL Server, empresa por empresa, e por **escrever** tickets na Movidesk:
 
 * de forma **recorrente**, pelos jobs do Hangfire (leituras incrementais ou do catálogo inteiro);
-* **sob demanda**, a partir de um sistema externo, buscando um único registro por id e registrando quem pediu cada chamada.
-
-O módulo só lê da Movidesk: nenhuma rota altera dados na plataforma.
+* **sob demanda**, a partir de um sistema externo, buscando um único registro por id e registrando quem pediu cada chamada;
+* **escrita** sob demanda, também registrando quem pediu cada chamada:
+  * tickets: criar, alterar e enviar anexos para uma ação;
+  * pessoas: criar, alterar, incluir organizações e excluir.
 
 | Item | Valor |
 |---|---|
@@ -136,7 +137,7 @@ Application.Movidesk/
 | Método | O que faz |
 |---|---|
 | `GetBatchTime` | Horário do lote (horário de Brasília), gravado igual no registro e em todas as filhas |
-| `SaveRequest` | Grava uma chamada sob demanda em `general.MovideskRequests`, ligada ao `Execution` do log aberto por quem chama. A rota é gravada **sem o token** |
+| `SaveRequest` | Grava uma chamada sob demanda em `general.MovideskRequests`, ligada ao `Execution` do log aberto por quem chama. A rota é gravada **sem o token**; nas escritas, o corpo enviado vai em `request_body` |
 
 **`MovideskTicketsService`**
 
@@ -144,6 +145,9 @@ Application.Movidesk/
 |---|---|---|---|---|
 | `GetTickets` | `GET tickets` (lista de ids por `lastUpdate`, depois blocos de 100 com o `$expand` em 5 chamadas) | `MovideskTickets` e 13 tabelas filhas/netas | 3000 | A cada 3 minutos |
 | `GetTicketById` | `GET tickets?id={id}` | as mesmas + `MovideskRequests` (log) | 3002 | Sob demanda |
+| `PostTicket` | `POST tickets?returnAllProperties=true` | `MovideskRequests` (log) e o ticket criado nas tabelas de tickets | 3006 | Sob demanda |
+| `PatchTicketById` | `PATCH tickets?id={id}` | `MovideskRequests` (log) | 3007 | Sob demanda |
+| `PostTicketFileUploadById` | `POST ticketFileUpload?id={id}&actionId={actionId}` | `MovideskRequests` (log, só metadados e SHA-256 dos arquivos) | 3008 | Sob demanda |
 
 **`MovideskPeopleService`**
 
@@ -151,6 +155,10 @@ Application.Movidesk/
 |---|---|---|---|---|
 | `GetPeople` | `GET persons` (`$filter` por `changedDate` **ou** `createdDate`, paginado de 100 em 100) | `MovideskPeople` e 9 tabelas filhas/netas | 3001 | A cada 3 minutos |
 | `GetPersonById` | `GET persons?id={id}` | as mesmas + `MovideskRequests` (log) | 3003 | Sob demanda |
+| `PostPerson` | `POST persons?returnAllProperties=true` | `MovideskRequests` (log) e a pessoa criada nas tabelas de pessoas | 3009 | Sob demanda |
+| `PatchPersonById` | `PATCH persons?id={id}` | `MovideskRequests` (log) | 3010 | Sob demanda |
+| `PostPersonRelationshipsById` | `POST persons/relationships?id={id}` | `MovideskRequests` (log) | 3011 | Sob demanda |
+| `DeletePersonById` | `DELETE persons?id={id}` | `MovideskRequests` (log); apaga a pessoa e as filhas do banco local | 3012 | Sob demanda |
 
 **`MovideskServicesService`**
 
@@ -207,6 +215,22 @@ Como a API indica "não encontrado":
 | `tickets?id=` | 404 com corpo vazio |
 | `persons?id=` | 404 com `application/problem+json` (`"status": 404`) |
 | `services?id=` | 404 com corpo vazio |
+
+### Fluxo da escrita (tickets e pessoas)
+
+Detalhes e decisões em [`docs/IMPLEMENTACAO-MOVIDESK-TICKETS-ESCRITA.md`](../../../../../docs/IMPLEMENTACAO-MOVIDESK-TICKETS-ESCRITA.md) e [`docs/IMPLEMENTACAO-MOVIDESK-PESSOAS-ESCRITA.md`](../../../../../docs/IMPLEMENTACAO-MOVIDESK-PESSOAS-ESCRITA.md). Cada service tem o seu fluxo comum (`SendTicket` e `SendPerson`), e os dois devolvem o mesmo `Dtos/Writes/Result`.
+
+1. o controller valida o corpo (FluentValidation, `Validations/Writes/Tickets` e `Validations/Writes/People`) e devolve **400** sem chamar a API, porque 3 erros seguidos bloqueiam a API por 60 s;
+2. o service abre um log com o job da rota, busca a empresa pelo CNPJ e chama a API pelo `IApiClient.SendAsync`, que devolve o status HTTP (PATCH, relacionamentos e DELETE respondem 200 sem corpo);
+3. a chamada vai para `general.MovideskRequests` com o corpo enviado (`request_body`). Nos anexos, só nome, tipo, tamanho e SHA-256 de cada arquivo;
+4. o banco é atualizado assim:
+   * **POST:** com `returnAllProperties=true` a Movidesk devolve o ticket ou a pessoa inteira, que é gravada na hora pelo `SaveTickets` ou `SavePeople`;
+   * **PATCH, anexos e relacionamentos:** não há releitura; a alteração chega pela próxima execução do `GetTickets` ou do `GetPeople` (até 3 minutos);
+   * **DELETE de pessoa:** a pessoa e as filhas são apagadas do banco local, porque a merge de pessoas nunca apaga linhas.
+
+Cuidados do PATCH: só os campos enviados mudam, mas **uma lista enviada substitui a lista inteira** (`{ "tags": [] }` apaga as tags de um ticket; `{ "emails": [] }`, os e-mails de uma pessoa). Em tickets, ações e apontamentos sem `id` são inseridos como novos. Em pessoas, para só acrescentar uma organização, use a rota de relacionamentos em vez de `relationships` no PATCH.
+
+A integração **não aceita senha** de pessoa: um `password` enviado no corpo é ignorado e não chega ao log nem à Movidesk.
 
 ---
 
@@ -295,6 +319,27 @@ Respostas:
 | **404** | O registro não existe na Movidesk |
 | **422** | Empresa não cadastrada ou resposta inválida da API (detalhes no log da execução) |
 
+### Escrita de tickets e pessoas (chamadas por sistema externo)
+
+Mesmas exigências das leituras sob demanda (`X-User-Name` e `{docCompany}`), com o corpo validado antes de chamar a API.
+
+| Método | Rota | Corpo | Service |
+|---|---|---|---|
+| POST | `Tickets/{docCompany}` | JSON do ticket (obrigatórios: `type`, `createdBy`, `clients`, `actions`) | `PostTicket` |
+| PATCH | `Tickets/{docCompany}/{id}` | JSON só com o que muda | `PatchTicketById` |
+| POST | `Tickets/{docCompany}/{id}/Actions/{actionId}/Files` | multipart (`files`, um ou mais, até 25 MB cada) | `PostTicketFileUploadById` |
+| POST | `People/{docCompany}` | JSON da pessoa (obrigatórios: `id` só com letras e números, `isActive`, `personType`, `profileType`, `businessName`) | `PostPerson` |
+| PATCH | `People/{docCompany}/{id}` | JSON só com o que muda | `PatchPersonById` |
+| POST | `People/{docCompany}/{id}/Relationships` | `{ "relationships": [ ... ] }` (inclui sem mexer nas existentes) | `PostPersonRelationshipsById` |
+| DELETE | `People/{docCompany}/{id}` | nenhum (**irreversível**) | `DeletePersonById` |
+
+| Código | Quando |
+|---|---|
+| **200** | Escrita aceita (`id` do ticket ou da pessoa e o retorno da Movidesk no corpo) |
+| **400** | Corpo inválido, arquivo vazio ou acima de 25 MB |
+| **422** | Empresa não cadastrada ou a Movidesk recusou (mensagem da API no corpo) |
+| **429** | A Movidesk bloqueou por excesso de erros (`Retry-After`) |
+
 > O `[Authorize]` do controller está comentado, como no AfterSale, porque o host ainda não tem um esquema de autenticação configurado.
 
 ---
@@ -316,6 +361,13 @@ Os jobs ficam em `auditing.Jobs` (`Script005`), com os mesmos ids em `EnumJob`.
 | 3003 | `MovideskGetPersonById` | sob demanda |
 | 3004 | `MovideskGetServices` | 120 min |
 | 3005 | `MovideskGetServiceById` | sob demanda |
+| 3006 | `MovideskPostTicket` | sob demanda (escrita) |
+| 3007 | `MovideskPatchTicketById` | sob demanda (escrita) |
+| 3008 | `MovideskPostTicketFileUploadById` | sob demanda (escrita) |
+| 3009 | `MovideskPostPerson` | sob demanda (escrita) |
+| 3010 | `MovideskPatchPersonById` | sob demanda (escrita) |
+| 3011 | `MovideskPostPersonRelationshipsById` | sob demanda (escrita) |
+| 3012 | `MovideskDeletePersonById` | sob demanda (escrita) |
 
 Toda execução grava `auditing.Logs` e, conforme o caso:
 * `auditing.Messages`, com mensagens e erros de validação;
@@ -360,5 +412,7 @@ Guias de modelagem, implementação e decisões tomadas, na pasta `docs/` da rai
 | `MOVIDESK-MODELAGEM-PESSOAS.md` | Tabelas e relações das pessoas |
 | `IMPLEMENTACAO-MOVIDESK-GETPEOPLE.md`, `IMPLEMENTACAO-MOVIDESK-GETPERSON.md` | Leitura das pessoas (lista e por Cód. Ref.) |
 | `IMPLEMENTACAO-MOVIDESK-SERVICES.md` | Tabelas e leitura do catálogo de serviços |
+| `IMPLEMENTACAO-MOVIDESK-TICKETS-ESCRITA.md` | Criação, alteração e anexos de tickets |
+| `IMPLEMENTACAO-MOVIDESK-PESSOAS-ESCRITA.md` | Criação, alteração, relacionamentos e exclusão de pessoas |
 | `PADRAO-CACHE-INTEGRACOES.md` | Padrão de cache das leituras |
 | `ALTERACOES-MERGE-PROCEDURE-AUDITORIA.md` | Procedure de merge e auditoria |

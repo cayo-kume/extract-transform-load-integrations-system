@@ -135,6 +135,31 @@ namespace Infrastructure.Shared.Api
             return content;
         }
 
+        public async Task<ApiResponse> SendAsync(HttpMethod method, string route, HttpContent? content = null, Dictionary<string, string>? headers = null, Dictionary<string, string>? queryParams = null)
+        {
+            var client = CreateClient(headers);
+
+            var url = BuildUrl(client.BaseAddress?.ToString(), route, queryParams);
+
+            using var request = new HttpRequestMessage(method, url) { Content = content };
+
+            _logger.LogDebug("[ApiClient] {Method} {Route}", method, route);
+
+            using var response = await client.SendAsync(request);
+            var body = await response.Content.ReadAsStringAsync();
+
+            // cabeçalhos da resposta e do conteúdo juntos (retry-after vem na resposta, content-type no conteúdo)
+            var responseHeaders = response.Headers
+                .Concat(response.Content.Headers)
+                .GroupBy(x => x.Key, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => String.Join(",", g.SelectMany(x => x.Value)), StringComparer.OrdinalIgnoreCase);
+
+            // a rota, não a url: a query string pode levar o token
+            _logger.LogDebug("[ApiClient] {Method} {Route} → {StatusCode}", method, route, response.StatusCode);
+
+            return new ApiResponse((int)response.StatusCode, body, responseHeaders);
+        }
+
         private HttpClient CreateClient(Dictionary<string, string>? headers)
         {
             var client = _httpClientFactory.CreateClient(_clientName);

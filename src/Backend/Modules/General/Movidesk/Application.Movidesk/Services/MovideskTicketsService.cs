@@ -9,6 +9,10 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Net.Http.Headers;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Application.Movidesk.Services
 {
@@ -54,6 +58,13 @@ namespace Application.Movidesk.Services
             ("id", "ownerHistories($expand=owner,changedBy),statusHistories($expand=changedBy)"),
             ("id", "customFieldValues($expand=items)"),
         ];
+
+        // escrita: campos nulos não são enviados (no PATCH, campo ausente = campo que não muda); datas no formato da Movidesk
+        private static readonly JsonSerializerSettings WriteSettings = new()
+        {
+            NullValueHandling = NullValueHandling.Ignore,
+            DateFormatString = "yyyy-MM-ddTHH:mm:ss"
+        };
 
         public MovideskTicketsService(
             [FromKeyedServices("MovideskAPI")] IApiClient apiClient,
@@ -411,6 +422,222 @@ namespace Application.Movidesk.Services
             await _logger.CommitAllChanges();
 
             return true;
+        }
+
+        /// <summary>
+        /// cria um ticket. Com returnAllProperties=true, se a API devolver o ticket inteiro ele é gravado sem releitura;
+        /// se devolver só o número, o ticket chega pela próxima execução do GetTickets
+        /// </summary>
+        public Task<Domain.Movidesk.Dtos.Writes.Result> PostTicket(string user_name, string doc_company, Domain.Movidesk.Dtos.Writes.Tickets.Ticket ticket)
+        {
+            var body = JsonConvert.SerializeObject(ticket, WriteSettings);
+
+            return SendTicket(EnumJob.MovideskPostTicket, user_name, doc_company, null, HttpMethod.Post, "tickets",
+                query: new Dictionary<string, string> { { "returnAllProperties", "true" } },
+                requestBody: body,
+                content: () => new StringContent(body, Encoding.UTF8, "application/json"),
+                readResponse: response =>
+                {
+                    // o formato da resposta não está na documentação (a conferir no teste real):
+                    // o ticket inteiro, o número puro ou { "id": ... }
+                    JToken? json = null;
+
+                    try
+                    {
+                        json = String.IsNullOrWhiteSpace(response) ? null : JToken.Parse(response);
+                    }
+                    catch (JsonReaderException)
+                    {
+                        // json continua null: o número fica desconhecido e o GetTickets traz o ticket depois
+                    }
+
+                    if (json is JObject full && (full.ContainsKey("subject") || full.ContainsKey("actions")))
+                    {
+                        // nesta resposta as datas vêm em UTC com "Z" (ex.: 2026-10-22T15:58:42.83Z), e o "Z" faria a conversão
+                        // passar para o horário local; na listagem e no GET por id elas vêm em UTC sem o sufixo. Tirar o "Z"
+                        // deixa o ticket igual ao que o GetTickets grava (testado em 22/10/2026, ticket 69369)
+                        var created = JsonConvert.DeserializeObject<Domain.Movidesk.Dtos.Reads.Tickets.Ticket>(
+                            Regex.Replace(response!, @"(""\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?)Z""", "$1\"")
+                        );
+                        var createdId = ConverterValidatorsExtensions.ConvertToInt64Validation(created?.id);
+
+                        return (createdId > 0 ? createdId : null, created);
+                    }
+
+                    var number = ConverterValidatorsExtensions.ConvertToInt64Validation(json is JObject idOnly ? (string?)idOnly["id"] : json?.ToString());
+
+                    return (number > 0 ? number : null, null);
+                });
+        }
+
+        /// <summary>
+        /// altera um ticket: só os campos enviados mudam, e listas enviadas substituem a lista inteira na Movidesk.
+        /// A alteração chega ao banco pela próxima execução do GetTickets
+        /// </summary>
+        public Task<Domain.Movidesk.Dtos.Writes.Result> PatchTicketById(string user_name, string doc_company, long id, Domain.Movidesk.Dtos.Writes.Tickets.Ticket ticket)
+        {
+            var body = JsonConvert.SerializeObject(ticket, WriteSettings);
+
+            return SendTicket(EnumJob.MovideskPatchTicketById, user_name, doc_company, id, HttpMethod.Patch, "tickets",
+                query: new Dictionary<string, string> { { "id", id.ToString() } },
+                requestBody: body,
+                content: () => new StringContent(body, Encoding.UTF8, "application/json"),
+                readResponse: _ => (id, null));
+        }
+
+        /// <summary>
+        /// envia anexos para uma ação, todos numa chamada. No log vão só os metadados e o hash de cada arquivo
+        /// </summary>
+        public Task<Domain.Movidesk.Dtos.Writes.Result> PostTicketFileUploadById(string user_name, string doc_company, long id, int actionId, IReadOnlyList<(string fileName, string contentType, byte[] content)> files)
+        {
+            // a Movidesk guarda o arquivo: no log bastam nome, tipo, tamanho e SHA-256
+            var requestBody = JsonConvert.SerializeObject(files.Select(x => new
+            {
+                x.fileName,
+                x.contentType,
+                size = x.content.Length,
+                sha256 = Convert.ToHexString(SHA256.HashData(x.content)).ToLowerInvariant()
+            }));
+
+            return SendTicket(EnumJob.MovideskPostTicketFileUploadById, user_name, doc_company, id, HttpMethod.Post, "ticketFileUpload",
+                query: new Dictionary<string, string> { { "id", id.ToString() }, { "actionId", actionId.ToString() } },
+                requestBody: requestBody,
+                content: () =>
+                {
+                    var multipart = new MultipartFormDataContent();
+
+                    foreach (var (fileName, contentType, content) in files)
+                    {
+                        var file = new ByteArrayContent(content);
+                        file.Headers.ContentType = MediaTypeHeaderValue.Parse(String.IsNullOrWhiteSpace(contentType) ? "application/octet-stream" : contentType);
+
+                        // a documentação não informa o nome do campo (a conferir no teste real)
+                        multipart.Add(file, "file", fileName);
+                    }
+
+                    return multipart;
+                },
+                readResponse: _ => (id, null));
+        }
+
+        /// <summary>
+        /// fluxo comum das rotas de escrita de tickets: empresa, chamada à API, registro em general.MovideskRequests
+        /// (com o corpo enviado) e, quando readResponse devolve o ticket inteiro, gravação com o SaveTickets
+        /// </summary>
+        private async Task<Domain.Movidesk.Dtos.Writes.Result> SendTicket(
+            EnumJob job,
+            string user_name,
+            string doc_company,
+            long? id,
+            HttpMethod method,
+            string route,
+            Dictionary<string, string> query,
+            string requestBody,
+            Func<HttpContent> content,
+            Func<string?, (long? ticketId, Domain.Movidesk.Dtos.Reads.Tickets.Ticket? ticket)> readResponse)
+        {
+            _logger
+                .Clear()
+                .AddLog(job);
+
+            // rota registrada no log de requisições: sem o token
+            var logRoute = $"{route}?{String.Join("&", query.Select(x => $"{x.Key}={x.Value}"))}";
+
+            try
+            {
+                var company = await _movideskRepository.GetCompany(doc_company);
+
+                if (company is null)
+                {
+                    // nenhuma chamada à API: não há o que registrar em MovideskRequests (igual ao GetTicketById)
+                    var notFound = $"Empresa {doc_company} não cadastrada em general.MovideskParameters.";
+                    _logger.AddMessage(notFound);
+
+                    return new Domain.Movidesk.Dtos.Writes.Result { success = false, id = id?.ToString(), message = notFound };
+                }
+
+                ApiResponse response;
+
+                try
+                {
+                    using var httpContent = content();
+
+                    response = await _apiClient.SendAsync(
+                        method,
+                        route,
+                        httpContent,
+                        queryParams: new Dictionary<string, string>(query) { { "token", company.Token.ToString() } }
+                    );
+                }
+                catch (Exception ex)
+                {
+                    // registra a tentativa mesmo quando a chamada não chega a ter resposta (timeout, rede)
+                    _movideskService.SaveRequest(job, user_name, method.Method, logRoute, doc_company, id?.ToString() ?? String.Empty, $"Exceção ao chamar a API: {ex.Message}", false, requestBody);
+                    throw;
+                }
+
+                var (ticketId, ticket) = response.IsSuccess ? readResponse(response.Content) : (id, null);
+
+                _movideskService.SaveRequest(job, user_name, method.Method, logRoute, doc_company, ticketId?.ToString() ?? String.Empty, response.Content, response.IsSuccess, requestBody);
+
+                if (!response.IsSuccess)
+                {
+                    // mensagem da API quando vier em JSON ({ "message": ... }); senão, o corpo como veio
+                    string? apiMessage = null;
+
+                    try
+                    {
+                        apiMessage = String.IsNullOrWhiteSpace(response.Content) ? null : (JToken.Parse(response.Content) as JObject)?["message"]?.ToString();
+                    }
+                    catch (JsonReaderException)
+                    {
+                        // corpo em texto: usa o corpo como veio
+                    }
+
+                    var message = apiMessage ?? (response.Content?.Length > 800 ? response.Content[..800] : response.Content) ?? $"A Movidesk devolveu {response.StatusCode}.";
+                    _logger.AddMessage($"Ticket {ticketId?.ToString() ?? "novo"} (empresa {doc_company}): {message}");
+
+                    return new Domain.Movidesk.Dtos.Writes.Result
+                    {
+                        success = false,
+                        id = ticketId?.ToString(),
+                        statusCode = response.StatusCode,
+                        message = message,
+                        response = response.Content,
+                        retryAfterSeconds = response.Headers.TryGetValue("Retry-After", out var retryAfter) && int.TryParse(retryAfter, out var seconds) ? seconds : null
+                    };
+                }
+
+                if (ticket is not null && ticketId is not null)
+                {
+                    // ticket inteiro na resposta: grava agora, sem releitura. Se falhar, a escrita continua valendo e o GetTickets corrige
+                    try
+                    {
+                        _cache.TryGetValue($"{TicketsKey}:{doc_company}", out Dictionary<long, Domain.Movidesk.Entities.Reads.Tickets.Ticket>? ticketsCache);
+
+                        await SaveTickets(doc_company, _movideskService.GetBatchTime(), [ticket], new Dictionary<long, string> { { ticketId.Value, response.Content! } }, ticketsCache);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.AddMessage($"Ticket {ticketId} criado, mas não gravado no banco (o GetTickets grava depois): {ex.Message}");
+                    }
+                }
+
+                _logger.AddMessage($"Concluída com sucesso: ticket {ticketId?.ToString() ?? "(número não informado pela API)"} ({method.Method} {route}).");
+
+                return new Domain.Movidesk.Dtos.Writes.Result
+                {
+                    success = true,
+                    id = ticketId?.ToString(),
+                    statusCode = response.StatusCode,
+                    response = response.Content
+                };
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
         }
 
         /// <summary>

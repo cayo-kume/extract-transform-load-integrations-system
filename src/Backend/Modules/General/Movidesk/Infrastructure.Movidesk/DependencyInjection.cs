@@ -3,6 +3,7 @@ using Application.Movidesk.Abstractions.Services;
 using Application.Movidesk.Handlers.Commands;
 using Application.Movidesk.Services;
 using Application.Movidesk.Validations.Ticket;
+using Application.Movidesk.Validations.Writes.Tickets;
 using Domain.Movidesk.Abstractions.Repositorys;
 using Domain.Shared.Abstractions.Api;
 using FluentValidation;
@@ -42,6 +43,15 @@ namespace Infrastructure.Movidesk.DependencyInjection
 
             // registra todos os validadores do assembly (tickets e pessoas), como o AfterSale
             services.AddValidatorsFromAssemblyContaining<TicketValidator>();
+
+            // escrita de tickets: dois validadores do mesmo DTO (criação e alteração), então o controller recebe o tipo concreto
+            services.AddScoped<PostTicketValidator>();
+            services.AddScoped<PatchTicketValidator>();
+
+            // escrita de pessoas: o mesmo padrão (criação e alteração validam o mesmo DTO)
+            services.AddScoped<Application.Movidesk.Validations.Writes.People.PostPersonValidator>();
+            services.AddScoped<Application.Movidesk.Validations.Writes.People.PatchPersonValidator>();
+            services.AddScoped<Application.Movidesk.Validations.Writes.People.RelationshipsValidator>();
 
             return services;
         }

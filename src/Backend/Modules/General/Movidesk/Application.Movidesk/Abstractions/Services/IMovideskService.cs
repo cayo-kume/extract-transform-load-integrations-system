@@ -15,6 +15,6 @@ namespace Application.Movidesk.Abstractions.Services
         /// <summary>
         /// registra uma chamada sob demanda à API da Movidesk em general.MovideskRequests (a rota nunca leva o token)
         /// </summary>
-        public void SaveRequest(EnumJob job, string user_name, string httpMethod, string route, string doc_company, string field_key_value, string? responseBody, bool isSuccess);
+        public void SaveRequest(EnumJob job, string user_name, string httpMethod, string route, string doc_company, string field_key_value, string? responseBody, bool isSuccess, string? requestBody = null);
     }
 }

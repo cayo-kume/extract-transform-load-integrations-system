@@ -1,0 +1,21 @@
+﻿namespace Domain.Movidesk.Dtos.Writes.Tickets
+{
+    /// <summary>
+    /// valor de um campo adicional do ticket
+    /// </summary>
+    public class CustomFieldValue
+    {
+        public int? customFieldId { get; init; }
+
+        public int? customFieldRuleId { get; init; }
+
+        // 1 quando a regra não permite adicionar linhas
+        public int? line { get; init; }
+
+        // campos de texto, número, data etc.
+        public string? value { get; init; }
+
+        // campos do tipo lista (valores, pessoas, clientes, agentes)
+        public List<CustomFieldValueItem>? items { get; init; }
+    }
+}

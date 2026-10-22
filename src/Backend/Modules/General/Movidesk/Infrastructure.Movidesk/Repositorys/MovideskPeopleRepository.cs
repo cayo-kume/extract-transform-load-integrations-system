@@ -37,6 +37,9 @@ namespace Infrastructure.Movidesk.Repositorys
             return result;
         }
 
+        public Task<bool> DeletePerson(string doc_company, string id) =>
+            _coreRepository.ExecuteCommand(_movideskCommandHandler.CreateDeletePersonQuery(), new { doc_company, id });
+
         public async Task<bool> BulkInsertIntoMovideskPeople(List<Person> data, Guid? parentExecutionGUID)
         {
             var relationships = data.SelectMany(x => x.relationships).ToList();

@@ -7,12 +7,15 @@ using Domain.Shared.Extensions;
 using FluentValidation;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Application.Movidesk.Services
 {
     /// <summary>
-    /// pessoas da Movidesk (GET /persons): agentes e clientes
+    /// pessoas da Movidesk: leituras (GET /persons) e escrita (POST, PATCH, relacionamentos e DELETE)
     /// </summary>
     public class MovideskPeopleService : IMovideskPeopleService
     {
@@ -29,6 +32,13 @@ namespace Application.Movidesk.Services
         // limite da API: 10 requisições por minuto -> 1 requisição a cada 6 s
         private const int RequestIntervalInMilliseconds = 6 * 1000;
         private const int PageSize = 100;
+
+        // escrita: campos nulos não são enviados (no PATCH, campo ausente = campo que não muda)
+        private static readonly JsonSerializerSettings WriteSettings = new()
+        {
+            NullValueHandling = NullValueHandling.Ignore,
+            DateFormatString = "yyyy-MM-ddTHH:mm:ss"
+        };
 
         public MovideskPeopleService(
             [FromKeyedServices("MovideskAPI")] IApiClient apiClient,
@@ -255,6 +265,220 @@ namespace Application.Movidesk.Services
             await _logger.CommitAllChanges();
 
             return true;
+        }
+
+        /// <summary>
+        /// cria uma pessoa. Com returnAllProperties=true, se a API devolver a pessoa inteira ela é gravada sem releitura;
+        /// se devolver só o Cód. Ref., a pessoa chega pela próxima execução do GetPeople
+        /// </summary>
+        public Task<Domain.Movidesk.Dtos.Writes.Result> PostPerson(string user_name, string doc_company, Domain.Movidesk.Dtos.Writes.People.Person person) =>
+            SendPerson(EnumJob.MovideskPostPerson, user_name, doc_company, person.id, HttpMethod.Post, "persons",
+                query: new Dictionary<string, string> { { "returnAllProperties", "true" } },
+                body: person,
+                readResponse: response =>
+                {
+                    // o formato da resposta não está na documentação (a conferir no teste real):
+                    // a pessoa inteira, o Cód. Ref. puro ou { "id": ... }
+                    JToken? json = null;
+
+                    try
+                    {
+                        json = String.IsNullOrWhiteSpace(response) ? null : JToken.Parse(response);
+                    }
+                    catch (JsonReaderException)
+                    {
+                        // texto puro: o próprio Cód. Ref.
+                        return (String.IsNullOrWhiteSpace(response) ? person.id : response.Trim(), null);
+                    }
+
+                    if (json is JObject full && (full.ContainsKey("businessName") || full.ContainsKey("personType")))
+                    {
+                        // as datas da resposta do POST de tickets vêm em UTC com "Z", que faria a conversão passar para o
+                        // horário local; o GET devolve UTC sem sufixo. Tirar o "Z" deixa a pessoa igual ao que o GetPeople grava
+                        var created = JsonConvert.DeserializeObject<Domain.Movidesk.Dtos.Reads.People.Person>(
+                            Regex.Replace(response!, @"(""\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?)Z""", "$1\"")
+                        );
+
+                        return (String.IsNullOrWhiteSpace(created?.id) ? person.id : created.id, created);
+                    }
+
+                    var createdId = json is JObject idOnly ? (string?)idOnly["id"] : json?.ToString();
+
+                    return (String.IsNullOrWhiteSpace(createdId) ? person.id : createdId, null);
+                });
+
+        /// <summary>
+        /// altera uma pessoa: só os campos enviados mudam, e listas enviadas substituem a lista inteira na Movidesk.
+        /// A alteração chega ao banco pela próxima execução do GetPeople
+        /// </summary>
+        public Task<Domain.Movidesk.Dtos.Writes.Result> PatchPersonById(string user_name, string doc_company, string id, Domain.Movidesk.Dtos.Writes.People.Person person) =>
+            SendPerson(EnumJob.MovideskPatchPersonById, user_name, doc_company, id, HttpMethod.Patch, "persons",
+                query: new Dictionary<string, string> { { "id", id } },
+                body: person,
+                readResponse: _ => (id, null));
+
+        /// <summary>
+        /// inclui organizações numa pessoa sem mexer nas que ela já tem (no PATCH, relationships substitui a lista inteira)
+        /// </summary>
+        public Task<Domain.Movidesk.Dtos.Writes.Result> PostPersonRelationshipsById(string user_name, string doc_company, string id, Domain.Movidesk.Dtos.Writes.People.Relationships relationships) =>
+            SendPerson(EnumJob.MovideskPostPersonRelationshipsById, user_name, doc_company, id, HttpMethod.Post, "persons/relationships",
+                query: new Dictionary<string, string> { { "id", id } },
+                body: relationships,
+                readResponse: _ => (id, null));
+
+        /// <summary>
+        /// exclui a pessoa na Movidesk (irreversível) e, com sucesso, apaga a pessoa e as filhas do banco local
+        /// </summary>
+        public Task<Domain.Movidesk.Dtos.Writes.Result> DeletePersonById(string user_name, string doc_company, string id) =>
+            SendPerson(EnumJob.MovideskDeletePersonById, user_name, doc_company, id, HttpMethod.Delete, "persons",
+                query: new Dictionary<string, string> { { "id", id } },
+                body: null,
+                readResponse: _ => (id, null));
+
+        /// <summary>
+        /// fluxo comum das rotas de escrita de pessoas (mesmo desenho do SendTicket): empresa, chamada à API, registro em
+        /// general.MovideskRequests (com o corpo enviado) e, depois do sucesso, gravação da pessoa devolvida pelo POST
+        /// ou exclusão local da pessoa excluída pelo DELETE
+        /// </summary>
+        private async Task<Domain.Movidesk.Dtos.Writes.Result> SendPerson(
+            EnumJob job,
+            string user_name,
+            string doc_company,
+            string? id,
+            HttpMethod method,
+            string route,
+            Dictionary<string, string> query,
+            object? body,
+            Func<string?, (string? personId, Domain.Movidesk.Dtos.Reads.People.Person? person)> readResponse)
+        {
+            _logger
+                .Clear()
+                .AddLog(job);
+
+            // rota registrada no log de requisições: sem o token
+            var logRoute = $"{route}?{String.Join("&", query.Select(x => $"{x.Key}={x.Value}"))}";
+
+            // corpo sem nulos (no PATCH, campo ausente = campo que não muda); o DELETE não tem corpo
+            var requestBody = body is null ? null : JsonConvert.SerializeObject(body, WriteSettings);
+
+            try
+            {
+                var company = await _movideskRepository.GetCompany(doc_company);
+
+                if (company is null)
+                {
+                    // nenhuma chamada à API: não há o que registrar em MovideskRequests (igual ao GetPersonById)
+                    var notFound = $"Empresa {doc_company} não cadastrada em general.MovideskParameters.";
+                    _logger.AddMessage(notFound);
+
+                    return new Domain.Movidesk.Dtos.Writes.Result { success = false, id = id, message = notFound };
+                }
+
+                ApiResponse response;
+
+                try
+                {
+                    using var httpContent = requestBody is null ? null : new StringContent(requestBody, Encoding.UTF8, "application/json");
+
+                    response = await _apiClient.SendAsync(
+                        method,
+                        route,
+                        httpContent,
+                        queryParams: new Dictionary<string, string>(query) { { "token", company.Token.ToString() } }
+                    );
+                }
+                catch (Exception ex)
+                {
+                    // registra a tentativa mesmo quando a chamada não chega a ter resposta (timeout, rede)
+                    _movideskService.SaveRequest(job, user_name, method.Method, logRoute, doc_company, id ?? String.Empty, $"Exceção ao chamar a API: {ex.Message}", false, requestBody);
+                    throw;
+                }
+
+                var (personId, person) = response.IsSuccess ? readResponse(response.Content) : (id, null);
+
+                _movideskService.SaveRequest(job, user_name, method.Method, logRoute, doc_company, personId ?? String.Empty, response.Content, response.IsSuccess, requestBody);
+
+                if (!response.IsSuccess)
+                {
+                    // mensagem da API quando vier em JSON ({ "message": ... }); senão, o corpo como veio
+                    string? apiMessage = null;
+
+                    try
+                    {
+                        apiMessage = String.IsNullOrWhiteSpace(response.Content) ? null : (JToken.Parse(response.Content) as JObject)?["message"]?.ToString();
+                    }
+                    catch (JsonReaderException)
+                    {
+                        // corpo em texto: usa o corpo como veio
+                    }
+
+                    var message = apiMessage ?? (response.Content?.Length > 800 ? response.Content[..800] : response.Content) ?? $"A Movidesk devolveu {response.StatusCode}.";
+                    _logger.AddMessage($"Pessoa {personId ?? "nova"} (empresa {doc_company}): {message}");
+
+                    return new Domain.Movidesk.Dtos.Writes.Result
+                    {
+                        success = false,
+                        id = personId,
+                        statusCode = response.StatusCode,
+                        message = message,
+                        response = response.Content,
+                        retryAfterSeconds = response.Headers.TryGetValue("Retry-After", out var retryAfter) && int.TryParse(retryAfter, out var seconds) ? seconds : null
+                    };
+                }
+
+                string? localMessage = null;
+
+                if (person is not null && personId is not null)
+                {
+                    // pessoa inteira na resposta do POST: grava agora, sem releitura. Se falhar, a escrita continua valendo e o GetPeople corrige
+                    try
+                    {
+                        _cache.TryGetValue($"{PeopleKey}:{doc_company}", out Dictionary<string, Domain.Movidesk.Entities.Reads.People.Person>? peopleCache);
+
+                        await SavePeople(doc_company, _movideskService.GetBatchTime(), [person], new Dictionary<string, string> { { personId, response.Content! } }, peopleCache);
+                    }
+                    catch (Exception ex)
+                    {
+                        localMessage = $"Pessoa {personId} criada, mas não gravada no banco (o GetPeople grava depois): {ex.Message}";
+                        _logger.AddMessage(localMessage);
+                    }
+                }
+
+                if (method == HttpMethod.Delete && personId is not null)
+                {
+                    // a merge de pessoas nunca apaga linhas: a pessoa excluída sai do banco local aqui. A Movidesk já excluiu,
+                    // então uma falha local não desfaz o sucesso; vai na mensagem e no log
+                    try
+                    {
+                        await _movideskPeopleRepository.DeletePerson(doc_company, personId);
+
+                        // sem a pessoa no cache, uma recriação com o mesmo Cód. Ref. não é descartada como "já gravada"
+                        if (_cache.TryGetValue($"{PeopleKey}:{doc_company}", out Dictionary<string, Domain.Movidesk.Entities.Reads.People.Person>? peopleCache))
+                            peopleCache!.Remove(personId);
+                    }
+                    catch (Exception ex)
+                    {
+                        localMessage = $"Pessoa {personId} excluída na Movidesk, mas não apagada do banco local: {ex.Message}";
+                        _logger.AddMessage(localMessage);
+                    }
+                }
+
+                _logger.AddMessage($"Concluída com sucesso: pessoa {personId ?? "(Cód. Ref. não informado pela API)"} ({method.Method} {route}).");
+
+                return new Domain.Movidesk.Dtos.Writes.Result
+                {
+                    success = true,
+                    id = personId,
+                    statusCode = response.StatusCode,
+                    message = localMessage,
+                    response = response.Content
+                };
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
         }
 
         /// <summary>

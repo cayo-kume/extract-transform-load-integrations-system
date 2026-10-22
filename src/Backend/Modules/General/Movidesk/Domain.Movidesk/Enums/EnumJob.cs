@@ -18,6 +18,15 @@ namespace Domain.Movidesk.Enums
         /*Sob demanda*/
         MovideskGetTicketById = 3002,
         MovideskGetPersonById = 3003,
-        MovideskGetServiceById = 3005
+        MovideskGetServiceById = 3005,
+
+        /*Escrita - sob demanda*/
+        MovideskPostTicket = 3006,
+        MovideskPatchTicketById = 3007,
+        MovideskPostTicketFileUploadById = 3008,
+        MovideskPostPerson = 3009,
+        MovideskPatchPersonById = 3010,
+        MovideskPostPersonRelationshipsById = 3011,
+        MovideskDeletePersonById = 3012
     }
 }

@@ -8,5 +8,11 @@ namespace Domain.Shared.Abstractions.Api
         Task<string?> DeleteAsync(string route, object? body = null, Dictionary<string, string>? headers = null);
         Task<string?> PostFormAsync(string route, Dictionary<string, string> formData, Dictionary<string, string>? headers = null);
         Task<string?> PostMultipartAsync(string route, Dictionary<string, string> fields, string fileField, byte[] fileContent, string fileName, string fileContentType, Dictionary<string, string>? headers = null);
+
+        /// <summary>
+        /// envia a requisição e devolve status, corpo e cabeçalhos. Aceita qualquer método (PATCH incluído) e qualquer
+        /// corpo (JSON, multipart com vários arquivos); quem chama monta o HttpContent.
+        /// </summary>
+        Task<ApiResponse> SendAsync(HttpMethod method, string route, HttpContent? content = null, Dictionary<string, string>? headers = null, Dictionary<string, string>? queryParams = null);
     }
 }

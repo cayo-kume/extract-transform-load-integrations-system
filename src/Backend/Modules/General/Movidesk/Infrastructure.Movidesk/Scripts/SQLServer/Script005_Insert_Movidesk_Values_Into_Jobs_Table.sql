@@ -32,7 +32,7 @@ VALUES
 (3004, 3527, 'sp_MovideskServicesCategories_Sync', 'Procedure de sincronização entre as tabelas MovideskServicesCategories raw e trusted', 120, 1),
 
 /*Integrações*/
-/*Range 3000 - 3499*/
+/*Range 3000 - 3499 (leituras: 3000 - 3005, escrita de tickets: 3006 - 3008, escrita de pessoas: 3009 - 3012)*/
 (30, 3000, 'MovideskGetTickets', 'Integração de dados das tabelas MovideskTickets e filhas', 3, 2),
 (30, 3001, 'MovideskGetPeople', 'Integração de dados das tabelas MovideskPeople e filhas', 3, 2),
 (30, 3004, 'MovideskGetServices', 'Integração do catálogo de serviços (MovideskServices e MovideskServicesCategories), a cada 2 horas', 120, 2),
@@ -40,4 +40,11 @@ VALUES
 /*Sob demanda - executadas pelo MovideskController, não são recorrentes (IntervalTimeInMinutes = 0)*/
 (30, 3002, 'MovideskGetTicket', 'Integração de um ticket por número (GET Tickets/{docCompany}/{id})', 0, 2),
 (30, 3003, 'MovideskGetPerson', 'Integração de uma pessoa por Cód. Ref. (GET People/{docCompany}/{id})', 0, 2),
-(30, 3005, 'MovideskGetService', 'Integração de um serviço por id (GET Services/{docCompany}/{id})', 0, 2);
+(30, 3005, 'MovideskGetService', 'Integração de um serviço por id (GET Services/{docCompany}/{id})', 0, 2),
+(30, 3006, 'MovideskPostTicket', 'Criação de um ticket (POST Tickets/{docCompany})', 0, 2),
+(30, 3007, 'MovideskPatchTicketById', 'Alteração de um ticket por número (PATCH Tickets/{docCompany}/{id})', 0, 2),
+(30, 3008, 'MovideskPostTicketFileUploadById', 'Envio de anexos para uma ação (POST Tickets/{docCompany}/{id}/Actions/{actionId}/Files)', 0, 2),
+(30, 3009, 'MovideskPostPerson', 'Criação de uma pessoa (POST People/{docCompany})', 0, 2),
+(30, 3010, 'MovideskPatchPersonById', 'Alteração de uma pessoa por Cód. Ref. (PATCH People/{docCompany}/{id})', 0, 2),
+(30, 3011, 'MovideskPostPersonRelationshipsById', 'Inclusão de organizações numa pessoa (POST People/{docCompany}/{id}/Relationships)', 0, 2),
+(30, 3012, 'MovideskDeletePersonById', 'Exclusão de uma pessoa por Cód. Ref. (DELETE People/{docCompany}/{id})', 0, 2);

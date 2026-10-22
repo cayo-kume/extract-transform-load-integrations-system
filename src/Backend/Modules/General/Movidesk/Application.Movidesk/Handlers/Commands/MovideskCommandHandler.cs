@@ -65,5 +65,23 @@ namespace Application.Movidesk.Handlers.Commands
                      WHERE DOC_COMPANY = '{doc_company}'
                      AND ID IN ({String.Join(", ", ids.Select(id => $"'{id.Replace("'", "''")}'"))})";
         }
+
+        public string CreateDeletePersonQuery()
+        {
+            // pessoa excluída na Movidesk sai também do banco local (a merge de pessoas nunca apaga linhas).
+            // Filhas antes da pessoa: as FKs das filhas não têm cascade; as netas (serviços dos relacionamentos e itens dos
+            // campos adicionais) caem em cascata com o nível do meio. Valores por parâmetro (@doc_company, @id)
+            return @"SET XACT_ABORT ON;
+                     BEGIN TRANSACTION;
+                     DELETE FROM [GENERAL].MOVIDESKPEOPLEADDRESSES WHERE DOC_COMPANY = @doc_company AND PERSONID = @id;
+                     DELETE FROM [GENERAL].MOVIDESKPEOPLECONTACTS WHERE DOC_COMPANY = @doc_company AND PERSONID = @id;
+                     DELETE FROM [GENERAL].MOVIDESKPEOPLEEMAILS WHERE DOC_COMPANY = @doc_company AND PERSONID = @id;
+                     DELETE FROM [GENERAL].MOVIDESKPEOPLETEAMS WHERE DOC_COMPANY = @doc_company AND PERSONID = @id;
+                     DELETE FROM [GENERAL].MOVIDESKPEOPLERELATIONSHIPS WHERE DOC_COMPANY = @doc_company AND PERSONID = @id;
+                     DELETE FROM [GENERAL].MOVIDESKPEOPLECUSTOMFIELDVALUES WHERE DOC_COMPANY = @doc_company AND PERSONID = @id;
+                     DELETE FROM [GENERAL].MOVIDESKPEOPLEASSETS WHERE DOC_COMPANY = @doc_company AND PERSONID = @id;
+                     DELETE FROM [GENERAL].MOVIDESKPEOPLE WHERE DOC_COMPANY = @doc_company AND ID = @id;
+                     COMMIT TRANSACTION;";
+        }
     }
 }

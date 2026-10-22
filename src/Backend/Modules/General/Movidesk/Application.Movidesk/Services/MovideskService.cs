@@ -20,7 +20,7 @@ namespace Application.Movidesk.Services
         public DateTime GetBatchTime() =>
             TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time"));
 
-        public void SaveRequest(EnumJob job, string user_name, string httpMethod, string route, string doc_company, string field_key_value, string? responseBody, bool isSuccess) =>
+        public void SaveRequest(EnumJob job, string user_name, string httpMethod, string route, string doc_company, string field_key_value, string? responseBody, bool isSuccess, string? requestBody = null) =>
             _movideskRepository.InsertIntoMovideskRequests(
                 new Domain.Movidesk.Entities.Writes.Requests.Request(
                     execution: _logger.GetExecutionGuid() ?? Guid.Empty,
@@ -30,7 +30,7 @@ namespace Application.Movidesk.Services
                     route: route,
                     doc_company: doc_company,
                     field_key_value: field_key_value,
-                    request_body: null,
+                    request_body: requestBody,
                     response_body: responseBody,
                     is_success: isSuccess
                 )
