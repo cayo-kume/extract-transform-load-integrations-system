@@ -31,6 +31,7 @@ namespace Application.AfterSale.Services
 
         private const string GetRefundHashesKey = "AfterSale:GetRefundHashes";
         private const string SummarizedRefundsKey = "AfterSale:SummarizedRefunds";
+        private const string RefundsKey = "AfterSale:Refunds";
         private const string StatusRefundsKey = "AfterSale:StatusRefunds";
         private const string ActionsRefundsKey = "AfterSale:ActionsRefunds";
         private const string BanksRefundsKey = "AfterSale:BanksRefunds";
@@ -165,7 +166,7 @@ namespace Application.AfterSale.Services
                    !string.IsNullOrEmpty(x.id) &&
                    summarizedRefundsCache.TryGetValue(
                        ConverterValidatorsExtensions.ConvertToInt64Validation(x.id), out var y) &&
-                       ConverterValidatorsExtensions.ConvertToDateTimeValidation(x.updated_at) <= y.updated_at
+                       NullableConverters.ToNullableDateTime(x.updated_at) <= y.updated_at
                 );
 
                 var _listSomenteNovos = new List<Domain.AfterSale.Entities.Reads.Refunds.SearchRefunds.Refund>();
@@ -421,11 +422,258 @@ namespace Application.AfterSale.Services
         }
 
         /// <summary>
-        /// get a refund
+        /// get the details of the summarized refunds not yet integrated, for each company
         /// </summary>
-        public Task<bool?> GetRefundById(long id)
+        public async Task<bool?> GetRefund()
         {
-            throw new NotImplementedException();
+            _logger
+               .Clear()
+               .AddLog(EnumJob.AfterSaleRefund);
+
+            var totalInseridos = 0;
+            var companys = await _afterSaleRepository.GetCompanys();
+            var summarizedRefunds = await _afterSaleRefundsRepository.GetSummarizedRefundsIdsForGetRefund();
+            var _listErrors = new List<Domain.AfterSale.Entities.Errors.Error>();
+
+            foreach (var refundsByCompany in summarizedRefunds.Where(x => x != null).GroupBy(x => x!.doc_company))
+            {
+                var company = companys.FirstOrDefault(x => x?.doc_company == refundsByCompany.Key);
+
+                if (company is null)
+                {
+                    _logger.AddMessage($"CNPJ {refundsByCompany.Key} não encontrado em AfterSaleParameters: {refundsByCompany.Count()} reembolso(s) ignorado(s).\n");
+                    continue;
+                }
+
+                var refundsDtosList = new List<Domain.AfterSale.Dtos.Reads.Refunds.GetRefund.Root>();
+                var refundsJson = new Dictionary<long, string>();
+
+                foreach (var summarizedRefund in refundsByCompany)
+                {
+                    var response = await _apiClient.GetAsync(
+                        route: $"v3/api/refunds/{summarizedRefund!.id}",
+                        headers: new Dictionary<string, string> { { "Authorization", $"Bearer {company.Token}" } }
+                    );
+
+                    if (String.IsNullOrEmpty(response))
+                        continue;
+
+                    var root = Newtonsoft.Json.JsonConvert.DeserializeObject<Domain.AfterSale.Dtos.Reads.Refunds.GetRefund.Root>(response);
+
+                    if (root is null || !root.success || root.data is null)
+                    {
+                        _listErrors.Add(new Domain.AfterSale.Entities.Errors.Error(
+                            company.doc_company,
+                            EnumJob.AfterSaleRefund,
+                            _logger.GetExecutionGuid(),
+                            summarizedRefund.id,
+                            root?.error,
+                            root?.error_code,
+                            root?.message,
+                            root?.message_translated
+                        ));
+                        continue;
+                    }
+
+                    refundsDtosList.Add(root);
+                    refundsJson[summarizedRefund.id] = JObject.Parse(response)["data"]?.ToString() ?? response;
+                }
+
+                if (refundsDtosList.Count == 0)
+                    continue;
+
+                var refundsCache = await _cache.GetOrCreateAsync($"{RefundsKey}:{company.doc_company}", async entry =>
+                {
+                    entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(2);
+                    entry.SlidingExpiration = TimeSpan.FromMinutes(30);
+
+                    var list = await _afterSaleRefundsRepository.GetRefundsByIds(
+                        company.doc_company,
+                        refundsDtosList.Select(x => x.data.id).ToList()
+                    );
+
+                    return list
+                        .Where(x => x != null)
+                        .GroupBy(x => x!.id)
+                        .ToDictionary(g => g.Key, g => g.First()!); // Dictionary<long, Entities...GetRefund.Refund>
+                });
+
+                refundsDtosList.RemoveAll(x =>
+                   !string.IsNullOrEmpty(x.data.id) &&
+                   refundsCache.TryGetValue(
+                       ConverterValidatorsExtensions.ConvertToInt64Validation(x.data.id), out var y) &&
+                       NullableConverters.ToNullableDateTime(x.data.updated_at) <= y.updated_at
+                );
+
+                var _listSomenteNovos = new List<Domain.AfterSale.Entities.Reads.Refunds.GetRefund.Refund>();
+
+                foreach (var refundsDto in refundsDtosList)
+                {
+                    var validations = _refundValidator.Validate(refundsDto.data);
+
+                    if (validations.Errors.Count() > 0)
+                    {
+                        var message = String.Empty;
+                        validations.Errors.ForEach(s =>
+                            message += $"{s.ErrorMessage}\n"
+                        );
+
+                        _logger.AddMessage(message);
+                    }
+
+                    _listSomenteNovos.Add(new Domain.AfterSale.Entities.Reads.Refunds.GetRefund.Refund(company.doc_company, refundsDto.data));
+                }
+
+                if (_listSomenteNovos.Count() > 0)
+                {
+                    await _afterSaleRefundsRepository.BulkInsertIntoAfterSaleRefunds(_listSomenteNovos, _logger.GetExecutionGuid());
+
+                    foreach (var record in _listSomenteNovos)
+                    {
+                        if (refundsJson.TryGetValue(record.id, out var json))
+                            _logger.AddRecord(record.id.ToString(), json);
+
+                        refundsCache[record.id] = record;
+                    }
+
+                    totalInseridos += _listSomenteNovos.Count;
+                }
+            }
+
+            if (_listErrors.Count > 0)
+                await _afterSaleRefundsRepository.BulkInsertIntoAfterSaleErrors(_listErrors, _logger.GetExecutionGuid());
+
+            _logger.AddMessage(
+                $"Concluída com sucesso: {totalInseridos} registro(s) novo(s) inserido(s)!"
+            );
+
+            _logger.SetLogEndDate();
+            await _logger.CommitAllChanges();
+
+            return true;
+        }
+
+        /// <summary>
+        /// busca um reembolso por id, grava nas tabelas de reembolsos (sempre, sem consultar cache)
+        /// e registra a chamada em general.AfterSaleRequests
+        /// </summary>
+        public async Task<bool?> GetRefundById(string user_name, string doc_company, long id)
+        {
+            _logger
+               .Clear()
+               .AddLog(EnumJob.AfterSaleGetRefundById);
+
+            var route = $"v3/api/refunds/{id}";
+            bool? result;
+
+            try
+            {
+                var company = (await _afterSaleRepository.GetCompanys()).FirstOrDefault(x => x?.doc_company == doc_company);
+
+                if (company is null)
+                {
+                    // nenhuma chamada à API: não há o que registrar em AfterSaleRequests
+                    _logger.AddMessage($"Empresa {doc_company} não cadastrada em general.AfterSaleParameters.");
+                    return null;
+                }
+
+                string? response;
+
+                try
+                {
+                    response = await _apiClient.GetAsync(
+                        route: route,
+                        headers: new Dictionary<string, string> { { "Authorization", $"Bearer {company.Token}" } }
+                    );
+                }
+                catch (Exception ex)
+                {
+                    // registra a tentativa mesmo quando a chamada não chega a ter resposta (timeout, rede)
+                    _afterSaleService.SaveRequest(_logger.GetExecutionGuid(), EnumJob.AfterSaleGetRefundById, user_name, "GET", route, doc_company, id, null, $"Exceção ao chamar a API: {ex.Message}", false);
+                    throw;
+                }
+
+                Domain.AfterSale.Dtos.Reads.Refunds.GetRefund.Root? root = null;
+
+                try
+                {
+                    root = String.IsNullOrWhiteSpace(response) ? null : Newtonsoft.Json.JsonConvert.DeserializeObject<Domain.AfterSale.Dtos.Reads.Refunds.GetRefund.Root>(response);
+                }
+                catch (Newtonsoft.Json.JsonException)
+                {
+                    // root continua null: tratado abaixo como resposta inválida
+                }
+
+                if (root is null)
+                {
+                    _logger.AddMessage($"Resposta inválida da API AfterSale para o reembolso {id} (empresa {doc_company}): {response}");
+                    result = null;
+                }
+                else if (!root.success)
+                {
+                    // reembolso inexistente nesta empresa, ou recusado pela API
+                    _logger.AddMessage($"Reembolso {id} não encontrado na AfterSale (empresa {doc_company}): {root.message_translated ?? root.message ?? root.error}");
+
+                    await _afterSaleRefundsRepository.BulkInsertIntoAfterSaleErrors(
+                        [
+                            new Domain.AfterSale.Entities.Errors.Error(
+                                doc_company,
+                                EnumJob.AfterSaleGetRefundById,
+                                _logger.GetExecutionGuid(),
+                                id,
+                                root.error,
+                                root.error_code,
+                                root.message,
+                                root.message_translated
+                            )
+                        ],
+                        _logger.GetExecutionGuid()
+                    );
+
+                    result = false;
+                }
+                else if (root.data is null || ConverterValidatorsExtensions.ConvertToInt64Validation(root.data.id) != id)
+                {
+                    _logger.AddMessage($"Resposta inválida da API AfterSale para o reembolso {id} (empresa {doc_company}): {response}");
+                    result = null;
+                }
+                else
+                {
+                    var validations = _refundValidator.Validate(root.data);
+
+                    if (validations.Errors.Count() > 0)
+                    {
+                        var message = String.Empty;
+                        validations.Errors.ForEach(s =>
+                            message += $"{s.ErrorMessage}\n"
+                        );
+
+                        _logger.AddMessage(message);
+                    }
+
+                    var refund = new Domain.AfterSale.Entities.Reads.Refunds.GetRefund.Refund(doc_company, root.data);
+
+                    await _afterSaleRefundsRepository.BulkInsertIntoAfterSaleRefunds([refund], _logger.GetExecutionGuid());
+
+                    // atualiza o cache do GetRefund, se ele estiver carregado, para a próxima execução não regravar o reembolso
+                    if (_cache.TryGetValue($"{RefundsKey}:{doc_company}", out Dictionary<long, Domain.AfterSale.Entities.Reads.Refunds.GetRefund.Refund>? refundsCache) && refundsCache is not null)
+                        refundsCache[id] = refund;
+
+                    _logger.AddRecord(id.ToString(), JObject.Parse(response!)["data"]?.ToString() ?? response!);
+
+                    _logger.AddMessage($"Concluída com sucesso: reembolso {id} inserido ou atualizado!");
+                    result = true;
+                }
+
+                _afterSaleService.SaveRequest(_logger.GetExecutionGuid(), EnumJob.AfterSaleGetRefundById, user_name, "GET", route, doc_company, id, null, response, result == true);
+
+                return result;
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
         }
 
         /// <summary>

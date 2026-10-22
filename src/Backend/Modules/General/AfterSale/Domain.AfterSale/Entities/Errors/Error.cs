@@ -13,7 +13,7 @@ namespace Domain.AfterSale.Entities.Errors
         public Enum id_job { get; private set; }
         public Int64? reverse_id { get; private set; }
 
-        public string cnpj_emp { get; private set; }
+        public string doc_company { get; private set; }
         public string? error { get; private set; }
         public string? error_code { get; private set; }
         public string? message { get; private set; }
@@ -21,13 +21,13 @@ namespace Domain.AfterSale.Entities.Errors
 
         public Error() { }
 
-        public Error(string cnpj_emp, Enum job, Guid? execution, Int64 reverse_id, string error, string error_code, string message, string message_translated)
+        public Error(string doc_company, Enum job, Guid? execution, Int64 reverse_id, string error, string error_code, string message, string message_translated)
         {
             integrated_or_updated_at = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time"));
 
             this.execution = execution;
             this.id_job = job;
-            this.cnpj_emp = cnpj_emp;
+            this.doc_company = doc_company;
 
             this.reverse_id = reverse_id;
             //colunas nvarchar(50) em AfterSaleErrors
@@ -37,13 +37,13 @@ namespace Domain.AfterSale.Entities.Errors
             this.message_translated = Truncate(message_translated, 50);
         }
 
-        public Error(string cnpj_emp, Enum job, Guid? execution, string error, string error_code, string message, string message_translated)
+        public Error(string doc_company, Enum job, Guid? execution, string error, string error_code, string message, string message_translated)
         {
             integrated_or_updated_at = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time"));
 
             this.execution = execution;
             this.id_job = job;
-            this.cnpj_emp = cnpj_emp;
+            this.doc_company = doc_company;
 
             this.reverse_id = reverse_id;
             //colunas nvarchar(50) em AfterSaleErrors

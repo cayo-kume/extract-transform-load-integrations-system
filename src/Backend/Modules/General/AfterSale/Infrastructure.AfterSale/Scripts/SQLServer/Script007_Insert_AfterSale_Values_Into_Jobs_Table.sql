@@ -68,8 +68,10 @@ VALUES
 (50, 5007, 'AfterSaleReturnedInvoice', 'Atualização da nota de devolução por ID dos produtos (PUT products/returned-invoice)', 0, 2),
 (50, 5008, 'AfterSaleReverseInvoice', 'Envio dos dados da nota para a transportadora e geração do código (POST invoice)', 0, 2),
 (50, 5021, 'AfterSaleAdministrativeRecordsReverse', 'Criação de registro administrativo por ID da reversa (POST administrative-records)', 0, 2),
+(50, 5022, 'AfterSaleGetReverseById', 'Consulta e gravação de uma reversa por ID (GET reverses/{id})', 0, 2),
 /*Reembolsos*/
 (50, 5017, 'AfterSaleApproveRefund', 'Aprovação de produtos por ID do reembolso', 0, 2),
 (50, 5018, 'AfterSaleCancelRefund', 'Cancelamento do reembolso', 0, 2),
 (50, 5019, 'AfterSalePayRefund', 'Pagamento do reembolso', 0, 2),
-(50, 5020, 'AfterSaleChangeTotalAmountRefund', 'Atualização do total amount do reembolso', 0, 2);
+(50, 5020, 'AfterSaleChangeTotalAmountRefund', 'Atualização do total amount do reembolso', 0, 2),
+(50, 5023, 'AfterSaleGetRefundById', 'Consulta e gravação de um reembolso por ID (GET refunds/{id})', 0, 2);

@@ -15,9 +15,80 @@ namespace Infrastructure.AfterSale.Repositorys
         public AfterSaleRefundsRepository(IAfterSaleCommandHandler afterSaleCommandHandler, ISharedRepository coreRepository) =>
             (_afterSaleCommandHandler, _coreRepository) = (afterSaleCommandHandler, coreRepository);
 
-        public Task<bool> InsertIntoAfterSaleRefunds()
+        public async Task<IEnumerable<Domain.AfterSale.Entities.Reads.Refunds.SearchRefunds.Refund?>> GetSummarizedRefundsIdsForGetRefund()
         {
-            throw new NotImplementedException();
+            string sql = _afterSaleCommandHandler.CreateGetSummarizedRefundsIdsForGetRefundQuery();
+
+            return await _coreRepository.GetRecords<Domain.AfterSale.Entities.Reads.Refunds.SearchRefunds.Refund>(sql);
+        }
+
+        public async Task<List<Domain.AfterSale.Entities.Reads.Refunds.GetRefund.Refund?>> GetRefundsByIds(string doc_company, List<string> refundsIds)
+        {
+            var list = new List<Domain.AfterSale.Entities.Reads.Refunds.GetRefund.Refund?>();
+            int indice = refundsIds.Count() / 1000;
+
+            if (indice > 1)
+            {
+                for (int i = 0; i <= indice; i++)
+                {
+                    var top1000List = refundsIds.Skip(i * 1000).Take(1000).ToList();
+                    string sql = _afterSaleCommandHandler.CreateGetRefundsByIdsQuery(doc_company, top1000List);
+                    var result = await _coreRepository.GetRecords<Domain.AfterSale.Entities.Reads.Refunds.GetRefund.Refund>(sql);
+                    list.AddRange(result);
+                }
+
+                return list;
+            }
+            else
+            {
+                string sql = _afterSaleCommandHandler.CreateGetRefundsByIdsQuery(doc_company, refundsIds);
+                var result = await _coreRepository.GetRecords<Domain.AfterSale.Entities.Reads.Refunds.GetRefund.Refund>(sql);
+                list.AddRange(result);
+
+                return list;
+            }
+        }
+
+        public async Task<bool> BulkInsertIntoAfterSaleRefunds(List<Domain.AfterSale.Entities.Reads.Refunds.GetRefund.Refund> data, Guid? parentExecutionGUID)
+        {
+            var refundsTable = _coreRepository.CreateSystemDataTable(entity: new Domain.AfterSale.Entities.Reads.Refunds.GetRefund.Refund(), tableName: "AfterSaleRefunds");
+            var couldChangeStatusForTable = _coreRepository.CreateSystemDataTable(entity: new Domain.AfterSale.Entities.Reads.Refunds.GetRefund.CouldChangeStatusFor(), tableName: "AfterSaleRefundsCouldChangeStatusFor");
+            var ordersPaymentsMethodsTable = _coreRepository.CreateSystemDataTable(entity: new Domain.AfterSale.Entities.Reads.Refunds.GetRefund.OrderPaymentMethod(), tableName: "AfterSaleRefundsOrdersPaymentsMethods");
+            var statusHistoriesTable = _coreRepository.CreateSystemDataTable(entity: new Domain.AfterSale.Entities.Reads.Refunds.GetRefund.StatusHistories(), tableName: "AfterSaleRefundsStatusHistories");
+            var totalAmountHistoriesTable = _coreRepository.CreateSystemDataTable(entity: new Domain.AfterSale.Entities.Reads.Refunds.GetRefund.TotalAmountHistories(), tableName: "AfterSaleRefundsTotalAmountHistories");
+            var productsTable = _coreRepository.CreateSystemDataTable(entity: new Domain.AfterSale.Entities.Reads.Refunds.GetRefund.Product(), tableName: "AfterSaleRefundsProducts");
+            var productsImagesTable = _coreRepository.CreateSystemDataTable(entity: new Domain.AfterSale.Entities.Reads.Refunds.GetRefund.Image(), tableName: "AfterSaleRefundsProductsImages");
+            var productsImagesUrlsTable = _coreRepository.CreateSystemDataTable(entity: new Domain.AfterSale.Entities.Reads.Refunds.GetRefund.ImageUrl(), tableName: "AfterSaleRefundsProductsImagesUrls");
+
+            _coreRepository.FillSystemDataTable(refundsTable, data.Select(x => x).ToList());
+            _coreRepository.FillSystemDataTable(couldChangeStatusForTable, data.SelectMany(x => x.could_change_status_for).ToList());
+            _coreRepository.FillSystemDataTable(ordersPaymentsMethodsTable, data.SelectMany(x => x.order_payment_methods).ToList());
+            _coreRepository.FillSystemDataTable(statusHistoriesTable, data.SelectMany(x => x.status_histories).ToList());
+            _coreRepository.FillSystemDataTable(totalAmountHistoriesTable, data.SelectMany(x => x.total_amount_histories).ToList());
+            _coreRepository.FillSystemDataTable(productsTable, data.SelectMany(x => x.products).ToList());
+            _coreRepository.FillSystemDataTable(productsImagesTable, data.SelectMany(x => x.products).SelectMany(y => y.images).ToList());
+            _coreRepository.FillSystemDataTable(productsImagesUrlsTable, data.SelectMany(x => x.products).SelectMany(y => y.image_url).ToList());
+
+            _coreRepository.BulkInsertIntoTableRaw(refundsTable, "untreated");
+            _coreRepository.BulkInsertIntoTableRaw(couldChangeStatusForTable, "untreated");
+            _coreRepository.BulkInsertIntoTableRaw(ordersPaymentsMethodsTable, "untreated");
+            _coreRepository.BulkInsertIntoTableRaw(statusHistoriesTable, "untreated");
+            _coreRepository.BulkInsertIntoTableRaw(totalAmountHistoriesTable, "untreated");
+            _coreRepository.BulkInsertIntoTableRaw(productsTable, "untreated");
+            _coreRepository.BulkInsertIntoTableRaw(productsImagesTable, "untreated");
+            _coreRepository.BulkInsertIntoTableRaw(productsImagesUrlsTable, "untreated");
+
+            //as filhas referenciam o reembolso e as imagens referenciam o produto: merge do pai para os filhos
+            await _coreRepository.CallDbProcMerge("general", refundsTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("general", couldChangeStatusForTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("general", ordersPaymentsMethodsTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("general", statusHistoriesTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("general", totalAmountHistoriesTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("general", productsTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("general", productsImagesTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("general", productsImagesUrlsTable.TableName, parentExecutionGUID);
+
+            return true;
         }
 
         public async Task<List<Domain.AfterSale.Entities.Reads.Refunds.Status.Status?>> GetStatus(string doc_company)

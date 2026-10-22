@@ -6,7 +6,7 @@ public interface IAfterSaleRepository
 {
     /*Select in Database*/
     public Task<IEnumerable<Company?>> GetCompanys();
-    public Task<Company?> GetCompany(string cnpj_emp);
+    public Task<Company?> GetCompany(string doc_company);
 
     /*Insert in Database*/
     public bool InsertIntoAfterSaleRequests(Entities.Writes.Requests.Request request);

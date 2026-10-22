@@ -26,11 +26,11 @@ namespace Domain.AfterSale.Entities.Reads.Reverses.GetReverse
         public bool is_restrict { get; private set; }
 
         public DateTime integrated_or_updated_at { get; private set; }
-        public DateTime ordered_at { get; private set; }
-        public DateTime invoiced_at { get; private set; }
-        public DateTime delivered_at { get; private set; }
-        public DateTime updated_at { get; private set; }
-        public DateTime deleted_at { get; private set; }
+        public DateTime? ordered_at { get; private set; }
+        public DateTime? invoiced_at { get; private set; }
+        public DateTime? delivered_at { get; private set; }
+        public DateTime? updated_at { get; private set; }
+        public DateTime? deleted_at { get; private set; }
 
         public string? order_id { get; private set; }
         public string? invoice_number { get; private set; }
@@ -60,11 +60,11 @@ namespace Domain.AfterSale.Entities.Reads.Reverses.GetReverse
             is_restrict = ConverterValidatorsExtensions.ConvertToBooleanValidation(ecommerceOrderDto.is_restrict);
 
             integrated_or_updated_at = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time"));
-            ordered_at = ConverterValidatorsExtensions.ConvertToDateTimeValidation(ecommerceOrderDto.ordered_at);
-            invoiced_at = ConverterValidatorsExtensions.ConvertToDateTimeValidation(ecommerceOrderDto.invoiced_at);
-            delivered_at = ConverterValidatorsExtensions.ConvertToDateTimeValidation(ecommerceOrderDto.delivered_at);
-            updated_at = ConverterValidatorsExtensions.ConvertToDateTimeValidation(ecommerceOrderDto.updated_at);
-            deleted_at = ConverterValidatorsExtensions.ConvertToDateTimeValidation(ecommerceOrderDto.deleted_at);
+            ordered_at = NullableConverters.ToNullableDateTime(ecommerceOrderDto.ordered_at);
+            invoiced_at = NullableConverters.ToNullableDateTime(ecommerceOrderDto.invoiced_at);
+            delivered_at = NullableConverters.ToNullableDateTime(ecommerceOrderDto.delivered_at);
+            updated_at = NullableConverters.ToNullableDateTime(ecommerceOrderDto.updated_at);
+            deleted_at = NullableConverters.ToNullableDateTime(ecommerceOrderDto.deleted_at);
 
             uuid = ConverterValidatorsExtensions.ConvertToGuidValidation(ecommerceOrderDto.uuid);
 

@@ -15,8 +15,8 @@ namespace Domain.AfterSale.Entities.Reads.Reverses.GetReverse
         public bool is_omnichannel { get; private set; }
 
         public DateTime integrated_or_updated_at { get; private set; }
-        public DateTime address_updated_at { get; private set; }
-        public DateTime address_deleted_at { get; private set; }
+        public DateTime? address_updated_at { get; private set; }
+        public DateTime? address_deleted_at { get; private set; }
 
         public string? ie_number { get; private set; }
         public string? cnpj { get; private set; }
@@ -44,8 +44,8 @@ namespace Domain.AfterSale.Entities.Reads.Reverses.GetReverse
             is_omnichannel = ConverterValidatorsExtensions.ConvertToBooleanValidation(reverseDestinationDto.is_omnichannel);
 
             integrated_or_updated_at = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time"));
-            address_updated_at = ConverterValidatorsExtensions.ConvertToDateTimeValidation(reverseDestinationDto.address.updated_at);
-            address_deleted_at = ConverterValidatorsExtensions.ConvertToDateTimeValidation(reverseDestinationDto.address.deleted_at);
+            address_updated_at = NullableConverters.ToNullableDateTime(reverseDestinationDto.address.updated_at);
+            address_deleted_at = NullableConverters.ToNullableDateTime(reverseDestinationDto.address.deleted_at);
 
             ie_number = reverseDestinationDto.ie_number?.Length > 50 ? reverseDestinationDto.ie_number?.Substring(0, 50) : reverseDestinationDto.ie_number;
             cnpj = reverseDestinationDto.cnpj?.Length > 14 ? reverseDestinationDto.cnpj?.Substring(0, 14) : reverseDestinationDto.cnpj;

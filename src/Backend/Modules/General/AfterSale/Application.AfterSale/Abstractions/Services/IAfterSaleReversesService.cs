@@ -10,6 +10,7 @@ namespace Application.AfterSale.Abstractions.Services
         public Task<bool?> GetTransportations();
         public Task<bool?> GetReverses();
         public Task<bool?> GetReverse();
+        public Task<bool?> GetReverseById(string user_name, string doc_company, long id);
         public Task<bool?> GetCourierAttributes();
 
         public Task<Domain.AfterSale.Dtos.Writes.Reverses.Approve.Response.Root> PostApproveReverseById(string user_name, string doc_company, long id, Domain.AfterSale.Dtos.Writes.Reverses.Approve.Request.Root request);

@@ -104,7 +104,7 @@ Domain.AfterSale/
 * **DTOs** espelham o JSON da API, com propriedades `string` e nomes em `snake_case` iguais aos da API. Cada rota tem uma pasta com um `Root.cs` (objeto raiz do JSON) e um arquivo por objeto aninhado.
 * Nas rotas de escrita, cada pasta tem `Request/` (corpo enviado) e `Response/` (resposta), cada uma com o seu `Root`. As respostas herdam de `Dtos/Writes/Base/ResponseRoot`.
 * **Entidades** têm os tipos fortes das colunas (`Int64`, `DateTime`, `decimal`, `Guid`...), convertem os campos do DTO no construtor com `ConverterValidatorsExtensions` e cortam textos no tamanho da coluna.
-* As entidades de reversas e de reembolsos usadas pelos métodos implementados têm `doc_company` (CNPJ da empresa), que faz parte da chave primária da tabela. Ainda **sem** `doc_company`: `Me` (dados do e-commerce), `Refunds/GetRefund` e `Reverses/History`, cujos métodos estão pendentes (ver [Pendências](#pendências-conhecidas)).
+* As entidades de reversas e de reembolsos usadas pelos métodos implementados têm `doc_company` (CNPJ da empresa), que faz parte da chave primária da tabela. Ainda **sem** `doc_company`: `Me` (dados do e-commerce) e `Reverses/History`, cujo método está pendente (ver [Pendências](#pendências-conhecidas)).
 * Listas filhas usam `[SkipProperty]` para não virarem coluna no bulk insert. O bulk insert mapeia as colunas **pelo nome** da propriedade.
 * `EnumJob` deve ficar em sincronia com o `Script007_Insert_AfterSale_Values_Into_Jobs_Table.sql`.
 
@@ -150,7 +150,8 @@ Application.AfterSale/
 | Método | Rota da API | Tabela(s) | Job | Situação |
 |---|---|---|---|---|
 | `GetReverses` | `GET v3/api/reverses` (último mês, paginado) | `AfterSaleSummarizedReverses` | 5002 | Implementado |
-| `GetReverse` | `GET v3/api/reverses/{id}` | `AfterSaleReverses` e 10 tabelas filhas | 5001 | Implementado |
+| `GetReverse` | `GET v3/api/reverses/{id}` (reversas resumidas ainda sem detalhe, 30 por execução) | `AfterSaleReverses` e 10 tabelas filhas | 5001 | Implementado |
+| `GetReverseById` | `GET v3/api/reverses/{id}` (uma reversa, sob demanda) | `AfterSaleReverses` e 10 tabelas filhas + `AfterSaleRequests` (log) | 5022 | Implementado |
 | `GetStatus` | `GET v3/api/reverses/status` | `AfterSaleStatusReverses` | 5009 | Implementado |
 | `GetTransportations` | `GET v3/api/transportations` | `AfterSaleTransportationsReverses` | 5003 | Implementado |
 | `GetCourierAttributes` | `GET v3/api/reverses/{id}/get-courier-attributes` | `AfterSaleCourierAttributes`, `AfterSaleCourierAttributesFields` | 5004 | Implementado |
@@ -170,7 +171,7 @@ Application.AfterSale/
 | `GetActions` | `GET v3/api/refunds/actions` | `AfterSaleActionsRefunds` | 5014 | Implementado |
 | `GetBanks` | `GET v3/api/refunds/banks` | `AfterSaleBanksRefunds` | 5015 | Implementado |
 | `GetTypes` | `GET v3/api/refunds/types` | `AfterSaleTypesRefunds` (chave pelo nome) | 5016 | Implementado |
-| `GetRefundById` | `GET v3/api/refunds/{id}` | `AfterSaleRefunds` e tabelas filhas | 5011 | **Pendente** (`NotImplementedException`) |
+| `GetRefundById` | `GET v3/api/refunds/{id}` (um reembolso, sob demanda) | `AfterSaleRefunds` e 7 tabelas filhas + `AfterSaleRequests` (log) | 5023 | Implementado |
 | `PostApproveRefundById` | `POST v3/api/refunds/{id}/approve` | `AfterSaleRequests` (log) | 5017 | Implementado |
 | `PostCancelRefundById` | `POST v3/api/refunds/{id}/cancel` | `AfterSaleRequests` (log) | 5018 | Implementado |
 | `PostPayRefundById` | `POST v3/api/refunds/{id}/pay` (multipart, comprovante obrigatório) | `AfterSaleRequests` (log, com o arquivo inteiro) | 5019 | Implementado |
@@ -255,7 +256,6 @@ Executados uma única vez cada, em ordem, pelo DbUp (`Scripts/SQLServer/migrator
 | `Script007_Insert_AfterSale_Values_Into_Jobs_Table.sql` | Jobs em `auditing.Jobs` (ver [Auditoria](#auditoria-jobs)) |
 | `Script008_Insert_Values_Into_AfterSale_Parameters_Table.sql` | Empresas e tokens em `AfterSaleParameters` |
 | `Script009_Create_AfterSale_Requests_Table.sql` | `general.AfterSaleRequests` (log das chamadas de escrita) |
-| `Script010_Rename_CnpjEmp_To_DocCompany_In_AfterSale_Parameters.sql` | Renomeia `cnpj_emp` para `doc_company` em `AfterSaleParameters` nos bancos que rodaram o `Script001` antigo |
 
 Toda tabela de dados existe em dois schemas: `untreated` (recebe o bulk insert, sem chave) e
 `general` (tabela final, com PK). A procedure de merge leva os dados de uma para a outra. A
@@ -274,10 +274,12 @@ Rota base: `AfterSaleJobs/AfterSale`.
 | GET | `Me` | `AfterSaleMeService.GetMe` |
 | GET | `Reverses` | `AfterSaleReversesService.GetReverses` |
 | GET | `Reverse` | `AfterSaleReversesService.GetReverse` |
+| GET | `Reverses/{docCompany}/{id}` (cabeçalho `X-User-Name`) | `AfterSaleReversesService.GetReverseById` |
 | GET | `Status` | `AfterSaleReversesService.GetStatus` |
 | GET | `Transportations` | `AfterSaleReversesService.GetTransportations` |
 | GET | `CourierAttributes` | `AfterSaleReversesService.GetCourierAttributes` |
 | GET | `Refunds` | `AfterSaleRefundsService.GetRefunds` |
+| GET | `Refunds/{docCompany}/{id}` (cabeçalho `X-User-Name`) | `AfterSaleRefundsService.GetRefundById` |
 | GET | `Refunds/Status` | `AfterSaleRefundsService.GetStatus` |
 | GET | `Refunds/Actions` | `AfterSaleRefundsService.GetActions` |
 | GET | `Refunds/Banks` | `AfterSaleRefundsService.GetBanks` |
@@ -333,6 +335,7 @@ ids em `EnumJob`.
 | 5008 | `AfterSaleReverseInvoice` | 5019 | `AfterSalePayRefund` |
 | 5009 | `AfterSaleStatusReverses` | 5020 | `AfterSaleChangeTotalAmountRefund` |
 | 5010 | `AfterSaleHistoriesReverses` | 5021 | `AfterSaleAdministrativeRecordsReverse` |
+| 5022 | `AfterSaleGetReverseById` | 5023 | `AfterSaleGetRefundById` |
 
 Toda execução grava `auditing.Logs` e, conforme o caso, `auditing.Messages` (mensagens e erros de
 validação) e `auditing.Records` (registros integrados).
@@ -364,7 +367,7 @@ JSONs de referência por rota (`Me`, `Refund/*`, `Reverse/*`), usados para monta
 
 ## Pendências conhecidas
 
-* **`GetRefundById`** (`GET v3/api/refunds/{id}`): DTOs, entidades, tabelas e job existem, mas o método ainda lança `NotImplementedException`, não tem endpoint e as entidades ainda não têm `doc_company`.
+* **Job 5011 (`AfterSaleRefund`)**: reservado para uma leitura em lote dos detalhes de reembolsos (como o `GetReverse` faz para reversas); hoje o detalhe só é lido por id (`GetRefundById`, job 5023).
 * **Histórico de reversas**: DTOs, entidade, tabela `AfterSaleHistoriesReverses` (já com `doc_company`) e job 5010 existem, mas não há método nem endpoint, e a entidade ainda não tem `doc_company`.
 * **`Me`**: as entidades e tabelas do e-commerce ainda não têm `doc_company`, então os dados das duas empresas não são separados por CNPJ.
 * **`AfterSaleErrors` nas tabelas de domínio de reembolsos** (`GetStatus`, `GetActions`, `GetBanks`, `GetTypes`): quando a API devolve `success = false`, nada é gravado. A decisão sobre o que gravar está pendente.

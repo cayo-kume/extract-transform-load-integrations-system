@@ -1,30 +1,31 @@
 create table [untreated].AfterSaleRefunds (
 	integrated_or_updated_at datetime,
+	[doc_company] nvarchar(14),
 	id bigint,
-    [type] nvarchar(50),
-    [action] nvarchar(50),
-    bonus_amount decimal(10, 2),
-    bonus_amount_percent decimal(10, 2),
-    requested_shipping_amount decimal(10, 2),
-    shipping_method nvarchar(50),
-    added_taxes_amount decimal(10, 2),
-    requested_raw_amount decimal(10, 2),
-    requested_amount decimal(10, 2),
-    requested_total_amount decimal(10, 2),
-    received_amount decimal(10, 2),
-    received_raw_amount decimal(10, 2),
-    total_amount decimal(10, 2),
-    free_shipping bit,
-    created_at datetime,
-    updated_at datetime,
+	[type] nvarchar(50),
+	[action] nvarchar(50),
+	bonus_amount decimal(10, 2),
+	bonus_amount_percent decimal(10, 2),
+	requested_shipping_amount decimal(10, 2),
+	shipping_method nvarchar(50),
+	added_taxes_amount decimal(10, 2),
+	requested_raw_amount decimal(10, 2),
+	requested_amount decimal(10, 2),
+	requested_total_amount decimal(10, 2),
+	received_amount decimal(10, 2),
+	received_raw_amount decimal(10, 2),
+	total_amount decimal(10, 2),
+	free_shipping bit,
+	created_at datetime,
+	updated_at datetime,
 	refunded_shipping_type nvarchar(50),
-    can_edit_wire_transfer bit,
-    can_edit_email bit,
-    has_wire_transfer_account bit,
-    customer_retention_method_id nvarchar(50),
-    external_order_url nvarchar(300),
+	can_edit_wire_transfer bit,
+	can_edit_email bit,
+	has_wire_transfer_account bit,
+	customer_retention_method_id nvarchar(50),
+	external_order_url nvarchar(300),
 	comments_count int,
-    enable_payment bit,
+	enable_payment bit,
 	insurance_amount decimal(10, 2),
 	customer_id bigint,
 	customer_first_name nvarchar(50),
@@ -34,12 +35,12 @@ create table [untreated].AfterSaleRefunds (
 	status_id int,
 	status_name nvarchar(50),
 	status_description nvarchar(150),
-    seller_info nvarchar(50),
+	seller_info nvarchar(50),
 	cashback_account nvarchar(50),
-    voucher_redemption_code nvarchar(50),
+	voucher_redemption_code nvarchar(50),
 	voucher_giftcard_id nvarchar(50),
 	voucher_expiring_date datetime,
-    should_ask_voucher_code bit,
+	should_ask_voucher_code bit,
 	reverse_updated_at datetime,
 	reverse_reverse_type nvarchar(50),
 	reverse_status_id int,
@@ -51,39 +52,40 @@ create table [untreated].AfterSaleRefunds (
 	reverse_refunds_count int,
 	reverse_ecommerce_order_id bigint,
 	reverse_ecommerce_order nvarchar(50),
-	reverse_ecommerce_order_seller_invoice_number bigint,
+	reverse_ecommerce_order_seller_invoice_number nvarchar(50),
 	reverse_ecommerce_order_seller_invoice_url nvarchar(300),
 	product_price_type nvarchar(50),
-	product_price_type_label nvarchar(50),
+	product_price_type_label nvarchar(50)
 );
 
 create table [general].AfterSaleRefunds (
 	integrated_or_updated_at datetime,
-	id bigint not null primary key,
-    [type] nvarchar(50),
-    [action] nvarchar(50),
-    bonus_amount decimal(10, 2),
-    bonus_amount_percent decimal(10, 2),
-    requested_shipping_amount decimal(10, 2),
-    shipping_method nvarchar(50),
-    added_taxes_amount decimal(10, 2),
-    requested_raw_amount decimal(10, 2),
-    requested_amount decimal(10, 2),
-    requested_total_amount decimal(10, 2),
-    received_amount decimal(10, 2),
-    received_raw_amount decimal(10, 2),
-    total_amount decimal(10, 2),
-    free_shipping bit,
-    created_at datetime,
-    updated_at datetime,
+	[doc_company] nvarchar(14) not null,
+	id bigint not null,
+	[type] nvarchar(50),
+	[action] nvarchar(50),
+	bonus_amount decimal(10, 2),
+	bonus_amount_percent decimal(10, 2),
+	requested_shipping_amount decimal(10, 2),
+	shipping_method nvarchar(50),
+	added_taxes_amount decimal(10, 2),
+	requested_raw_amount decimal(10, 2),
+	requested_amount decimal(10, 2),
+	requested_total_amount decimal(10, 2),
+	received_amount decimal(10, 2),
+	received_raw_amount decimal(10, 2),
+	total_amount decimal(10, 2),
+	free_shipping bit,
+	created_at datetime,
+	updated_at datetime,
 	refunded_shipping_type nvarchar(50),
-    can_edit_wire_transfer bit,
-    can_edit_email bit,
-    has_wire_transfer_account bit,
-    customer_retention_method_id nvarchar(50),
-    external_order_url nvarchar(300),
+	can_edit_wire_transfer bit,
+	can_edit_email bit,
+	has_wire_transfer_account bit,
+	customer_retention_method_id nvarchar(50),
+	external_order_url nvarchar(300),
 	comments_count int,
-    enable_payment bit,
+	enable_payment bit,
 	insurance_amount decimal(10, 2),
 	customer_id bigint,
 	customer_first_name nvarchar(50),
@@ -93,12 +95,12 @@ create table [general].AfterSaleRefunds (
 	status_id int,
 	status_name nvarchar(50),
 	status_description nvarchar(150),
-    seller_info nvarchar(50),
+	seller_info nvarchar(50),
 	cashback_account nvarchar(50),
-    voucher_redemption_code nvarchar(50),
+	voucher_redemption_code nvarchar(50),
 	voucher_giftcard_id nvarchar(50),
 	voucher_expiring_date datetime,
-    should_ask_voucher_code bit,
+	should_ask_voucher_code bit,
 	reverse_updated_at datetime,
 	reverse_reverse_type nvarchar(50),
 	reverse_status_id int,
@@ -110,96 +112,111 @@ create table [general].AfterSaleRefunds (
 	reverse_refunds_count int,
 	reverse_ecommerce_order_id bigint,
 	reverse_ecommerce_order nvarchar(50),
-	reverse_ecommerce_order_seller_invoice_number bigint,
+	reverse_ecommerce_order_seller_invoice_number nvarchar(50),
 	reverse_ecommerce_order_seller_invoice_url nvarchar(300),
 	product_price_type nvarchar(50),
 	product_price_type_label nvarchar(50),
-);
+constraint [PK_AfterSaleRefunds] primary key (
+	doc_company asc,
+	id asc
+));
 
 create table [untreated].AfterSaleRefundsCouldChangeStatusFor (
 	integrated_or_updated_at datetime,
+	[doc_company] nvarchar(14),
 	refund_id bigint,
-	id int, --gerar com incremental no c-sharp
+	id int, --gerado no c-sharp (1, 2, 3...) na ordem da lista da API
 	[description] nvarchar(50)
 );
 
 create table [general].AfterSaleRefundsCouldChangeStatusFor (
 	integrated_or_updated_at datetime,
+	[doc_company] nvarchar(14) not null,
 	refund_id bigint not null,
-	id int not null, --gerar com incremental no c-sharp
-	[description] nvarchar(50)
+	id int not null, --gerado no c-sharp (1, 2, 3...) na ordem da lista da API
+	[description] nvarchar(50),
 constraint [PK_AfterSaleRefundsCouldChangeStatusFor] primary key (
+	doc_company asc,
 	refund_id asc,
 	id asc
 ));
 
 create table [untreated].AfterSaleRefundsOrdersPaymentsMethods (
 	integrated_or_updated_at datetime,
+	[doc_company] nvarchar(14),
 	refund_id bigint,
-	id int, --gerar com incremental no c-sharp
+	id int, --gerado no c-sharp (1, 2, 3...) na ordem da lista da API
 	payment_method nvarchar(50)
 );
 
 create table [general].AfterSaleRefundsOrdersPaymentsMethods (
 	integrated_or_updated_at datetime,
+	[doc_company] nvarchar(14) not null,
 	refund_id bigint not null,
-	id int not null, --gerar com incremental no c-sharp
-	payment_method nvarchar(50)
+	id int not null, --gerado no c-sharp (1, 2, 3...) na ordem da lista da API
+	payment_method nvarchar(50),
 constraint [PK_AfterSaleRefundsOrdersPaymentsMethods] primary key (
+	doc_company asc,
 	refund_id asc,
 	id asc
 ));
 
 create table [untreated].AfterSaleRefundsStatusHistories (
 	integrated_or_updated_at datetime,
+	[doc_company] nvarchar(14),
 	refund_id bigint,
 	status_id int,
-	status_service_code  nvarchar(50),
-	status_name  nvarchar(50),
-	status_description  nvarchar(50),
+	status_service_code nvarchar(50),
+	status_name nvarchar(50),
+	status_description nvarchar(50),
 	[date] datetime,
 	comments nvarchar(300),
-    [user_id] bigint,
-    [user_name] nvarchar(50),
-    user_first_name nvarchar(50),
-    user_last_name nvarchar(100),
-    user_email nvarchar(50),
-    user_mobile_phone nvarchar(20),
-    user_phone nvarchar(20),
-    user_document nvarchar(14),
-    user_wallet nvarchar(50)
+	[user_id] bigint,
+	[user_name] nvarchar(50),
+	user_first_name nvarchar(50),
+	user_last_name nvarchar(100),
+	user_email nvarchar(50),
+	user_mobile_phone nvarchar(20),
+	user_phone nvarchar(20),
+	user_document nvarchar(14),
+	user_wallet nvarchar(50)
 );
 
+--o mesmo status pode se repetir no histórico: a data entra na chave
 create table [general].AfterSaleRefundsStatusHistories (
 	integrated_or_updated_at datetime,
+	[doc_company] nvarchar(14) not null,
 	refund_id bigint not null,
 	status_id int not null,
-	status_service_code  nvarchar(50),
-	status_name  nvarchar(50),
-	status_description  nvarchar(50),
-	[date] datetime,
+	status_service_code nvarchar(50),
+	status_name nvarchar(50),
+	status_description nvarchar(50),
+	[date] datetime not null,
 	comments nvarchar(300),
-    [user_id] bigint,
-    [user_name] nvarchar(50),
-    user_first_name nvarchar(50),
-    user_last_name nvarchar(100),
-    user_email nvarchar(50),
-    user_mobile_phone nvarchar(20),
-    user_phone nvarchar(20),
-    user_document nvarchar(14),
-    user_wallet nvarchar(50)
+	[user_id] bigint,
+	[user_name] nvarchar(50),
+	user_first_name nvarchar(50),
+	user_last_name nvarchar(100),
+	user_email nvarchar(50),
+	user_mobile_phone nvarchar(20),
+	user_phone nvarchar(20),
+	user_document nvarchar(14),
+	user_wallet nvarchar(50),
 constraint [PK_AfterSaleRefundsStatusHistories] primary key (
+	doc_company asc,
 	refund_id asc,
-	status_id asc
+	status_id asc,
+	[date] asc
 ));
 
 create table [untreated].AfterSaleRefundsTotalAmountHistories (
 	integrated_or_updated_at datetime,
+	[doc_company] nvarchar(14),
 	refund_id bigint,
 	id bigint,
-    [user_id] bigint,
-    user_first_name nvarchar(50),
-    user_last_name nvarchar(100),
+	[user_id] bigint,
+	user_first_name nvarchar(50),
+	user_last_name nvarchar(100),
 	total_amount decimal(10, 2),
 	[date] datetime,
 	[type_id] int,
@@ -209,27 +226,30 @@ create table [untreated].AfterSaleRefundsTotalAmountHistories (
 
 create table [general].AfterSaleRefundsTotalAmountHistories (
 	integrated_or_updated_at datetime,
+	[doc_company] nvarchar(14) not null,
 	refund_id bigint not null,
 	id bigint not null,
-    [user_id] bigint,
-    user_first_name nvarchar(50),
-    user_last_name nvarchar(100),
+	[user_id] bigint,
+	user_first_name nvarchar(50),
+	user_last_name nvarchar(100),
 	total_amount decimal(10, 2),
 	[date] datetime,
 	[type_id] int,
 	[type_name] nvarchar(50),
 	type_description nvarchar(150),
 constraint [PK_AfterSaleRefundsTotalAmountHistories] primary key (
+	doc_company asc,
 	refund_id asc,
 	id asc
 ));
 
 create table [untreated].AfterSaleRefundsProducts (
 	integrated_or_updated_at datetime,
+	[doc_company] nvarchar(14),
 	refund_id bigint,
 	id bigint,
-    reverse_id bigint,
-    motive_id bigint,
+	reverse_id bigint,
+	motive_id bigint,
 	reason_id bigint,
 	reason_ecommerce_id bigint,
 	reason_description nvarchar(150),
@@ -248,42 +268,43 @@ create table [untreated].AfterSaleRefundsProducts (
 	subreason_updated_at datetime,
 	subreason_deleted_at datetime,
 	ecommerce_order_product_id bigint,
-    qty int,
-    requested_qty int,
-    received_qty int,
-    product_received_comment nvarchar(300),
-    comments nvarchar(300),
-    reverse_action nvarchar(50),
-    customer_retention_method_id int,
-    protocol nvarchar(50),
+	qty int,
+	requested_qty int,
+	received_qty int,
+	product_received_comment nvarchar(300),
+	comments nvarchar(300),
+	reverse_action nvarchar(50),
+	customer_retention_method_id int,
+	protocol nvarchar(50),
 	is_included_by_admin bit,
 	is_bundle bit,
-    product_id bigint,
-    [hash] uniqueidentifier,
-    [name] nvarchar(300),
-    sku nvarchar(50),
-    reference nvarchar(50),
-    brand nvarchar(50),
-    situation nvarchar(50),
-    bundle_hash nvarchar(50),
-    price decimal(10, 2),
-    selling_price decimal(10, 2),
-    shipping_price decimal(10, 2),
-    [weight] decimal(10, 2),
-    order_id bigint,
-	returned_invoice  nvarchar(50),
-    returned_invoice_url  nvarchar(300),
-    returned_invoice_url_xml  nvarchar(300),
-    invoice nvarchar(50),
-    original_qty int
+	product_id nvarchar(50),
+	[hash] nvarchar(50),
+	[name] nvarchar(300),
+	sku nvarchar(50),
+	reference nvarchar(50),
+	brand nvarchar(50),
+	situation nvarchar(50),
+	bundle_hash nvarchar(50),
+	price decimal(10, 2),
+	selling_price decimal(10, 2),
+	shipping_price decimal(10, 2),
+	[weight] decimal(10, 2),
+	order_id bigint,
+	returned_invoice nvarchar(50),
+	returned_invoice_url nvarchar(300),
+	returned_invoice_url_xml nvarchar(300),
+	invoice nvarchar(50),
+	original_qty int
 );
 
 create table [general].AfterSaleRefundsProducts (
 	integrated_or_updated_at datetime,
+	[doc_company] nvarchar(14) not null,
 	refund_id bigint not null,
 	id bigint not null,
-    reverse_id bigint,
-    motive_id bigint,
+	reverse_id bigint,
+	motive_id bigint,
 	reason_id bigint,
 	reason_ecommerce_id bigint,
 	reason_description nvarchar(150),
@@ -302,92 +323,99 @@ create table [general].AfterSaleRefundsProducts (
 	subreason_updated_at datetime,
 	subreason_deleted_at datetime,
 	ecommerce_order_product_id bigint,
-    qty int,
-    requested_qty int,
-    received_qty int,
-    product_received_comment nvarchar(300),
-    comments nvarchar(300),
-    reverse_action nvarchar(50),
-    customer_retention_method_id int,
-    protocol nvarchar(50),
+	qty int,
+	requested_qty int,
+	received_qty int,
+	product_received_comment nvarchar(300),
+	comments nvarchar(300),
+	reverse_action nvarchar(50),
+	customer_retention_method_id int,
+	protocol nvarchar(50),
 	is_included_by_admin bit,
 	is_bundle bit,
-    product_id bigint,
-    [hash] uniqueidentifier,
-    [name] nvarchar(300),
-    sku nvarchar(50),
-    reference nvarchar(50),
-    brand nvarchar(50),
-    situation nvarchar(50),
-    bundle_hash nvarchar(50),
-    price decimal(10, 2),
-    selling_price decimal(10, 2),
-    shipping_price decimal(10, 2),
-    [weight] decimal(10, 2),
-    order_id bigint,
-	returned_invoice  nvarchar(50),
-    returned_invoice_url  nvarchar(300),
-    returned_invoice_url_xml  nvarchar(300),
-    invoice nvarchar(50),
-    original_qty int,
+	product_id nvarchar(50),
+	[hash] nvarchar(50),
+	[name] nvarchar(300),
+	sku nvarchar(50),
+	reference nvarchar(50),
+	brand nvarchar(50),
+	situation nvarchar(50),
+	bundle_hash nvarchar(50),
+	price decimal(10, 2),
+	selling_price decimal(10, 2),
+	shipping_price decimal(10, 2),
+	[weight] decimal(10, 2),
+	order_id bigint,
+	returned_invoice nvarchar(50),
+	returned_invoice_url nvarchar(300),
+	returned_invoice_url_xml nvarchar(300),
+	invoice nvarchar(50),
+	original_qty int,
 constraint [PK_AfterSaleRefundsProducts] primary key (
+	doc_company asc,
 	refund_id asc,
 	id asc
 ));
 
 create table [untreated].AfterSaleRefundsProductsImages (
 	integrated_or_updated_at datetime,
+	[doc_company] nvarchar(14),
 	refund_id bigint,
+	refund_product_id bigint,
 	id bigint,
 	product_id nvarchar(50),
 	image_path nvarchar(300),
 	image_url nvarchar(300)
 );
 
+--refund_product_id: id do produto do reembolso dono da imagem (product_id é o código do produto vindo da API)
 create table [general].AfterSaleRefundsProductsImages (
 	integrated_or_updated_at datetime,
+	[doc_company] nvarchar(14) not null,
 	refund_id bigint not null,
+	refund_product_id bigint not null,
 	id bigint not null,
 	product_id nvarchar(50),
 	image_path nvarchar(300),
-	image_url nvarchar(300)
+	image_url nvarchar(300),
 constraint [PK_AfterSaleRefundsProductsImages] primary key (
+	doc_company asc,
 	refund_id asc,
-	product_id asc,
+	refund_product_id asc,
 	id asc
 ));
 
 create table [untreated].AfterSaleRefundsProductsImagesUrls (
 	integrated_or_updated_at datetime,
-	refund_id bigint not null,
-	product_id bigint not null,
-	id bigint not null,
+	[doc_company] nvarchar(14),
+	refund_id bigint,
+	product_id bigint,
+	id bigint, --gerado no c-sharp (1, 2, 3...) na ordem da lista da API
 	[url] nvarchar(300)
-constraint [PK_AfterSaleRefundsProductsImagesUrls] primary key (
-	refund_id asc,
-	product_id asc,
-	id asc
-));
+);
 
+--product_id: id do produto do reembolso dono da imagem
 create table [general].AfterSaleRefundsProductsImagesUrls (
 	integrated_or_updated_at datetime,
+	[doc_company] nvarchar(14) not null,
 	refund_id bigint not null,
 	product_id bigint not null,
-	id bigint not null,
-	[url] nvarchar(300)
+	id bigint not null, --gerado no c-sharp (1, 2, 3...) na ordem da lista da API
+	[url] nvarchar(300),
 constraint [PK_AfterSaleRefundsProductsImagesUrls] primary key (
+	doc_company asc,
 	refund_id asc,
 	product_id asc,
 	id asc
 ));
 
-alter table [general].AfterSaleRefundsCouldChangeStatusFor add constraint [FK_AfterSaleRefundsCouldChangeStatusFor] foreign key (refund_id) references [general].AfterSaleRefunds (id);
-alter table [general].AfterSaleRefundsOrdersPaymentsMethods add constraint [FK_AfterSaleRefundsOrdersPaymentsMethods] foreign key (refund_id) references [general].AfterSaleRefunds (id);
-alter table [general].AfterSaleRefundsStatusHistories add constraint [FK_AfterSaleRefundsStatusHistories] foreign key (refund_id) references [general].AfterSaleRefunds (id);
-alter table [general].AfterSaleRefundsTotalAmountHistories add constraint [FK_AfterSaleRefundsTotalAmountHistories] foreign key (refund_id) references [general].AfterSaleRefunds (id);
-alter table [general].AfterSaleRefundsProductsImages add constraint [FK_AfterSaleRefundsProductsImages] foreign key (refund_id, id) references [general].AfterSaleRefundsProducts (refund_id, id);
-alter table [general].AfterSaleRefundsProductsImagesUrls add constraint [FK_AfterSaleRefundsProductsImagesUrls] foreign key (refund_id, product_id) references [general].AfterSaleRefundsProducts (refund_id, id);
-alter table [general].AfterSaleRefundsProducts add constraint [FK_AfterSaleRefundsProducts] foreign key (refund_id) references [general].AfterSaleRefunds (id);
+alter table [general].AfterSaleRefundsCouldChangeStatusFor add constraint [FK_AfterSaleRefundsCouldChangeStatusFor] foreign key (doc_company, refund_id) references [general].AfterSaleRefunds (doc_company, id);
+alter table [general].AfterSaleRefundsOrdersPaymentsMethods add constraint [FK_AfterSaleRefundsOrdersPaymentsMethods] foreign key (doc_company, refund_id) references [general].AfterSaleRefunds (doc_company, id);
+alter table [general].AfterSaleRefundsStatusHistories add constraint [FK_AfterSaleRefundsStatusHistories] foreign key (doc_company, refund_id) references [general].AfterSaleRefunds (doc_company, id);
+alter table [general].AfterSaleRefundsTotalAmountHistories add constraint [FK_AfterSaleRefundsTotalAmountHistories] foreign key (doc_company, refund_id) references [general].AfterSaleRefunds (doc_company, id);
+alter table [general].AfterSaleRefundsProducts add constraint [FK_AfterSaleRefundsProducts] foreign key (doc_company, refund_id) references [general].AfterSaleRefunds (doc_company, id);
+alter table [general].AfterSaleRefundsProductsImages add constraint [FK_AfterSaleRefundsProductsImages] foreign key (doc_company, refund_id, refund_product_id) references [general].AfterSaleRefundsProducts (doc_company, refund_id, id);
+alter table [general].AfterSaleRefundsProductsImagesUrls add constraint [FK_AfterSaleRefundsProductsImagesUrls] foreign key (doc_company, refund_id, product_id) references [general].AfterSaleRefundsProducts (doc_company, refund_id, id);
 
 create table [untreated].AfterSaleSummarizedRefunds (
 	integrated_or_updated_at datetime,

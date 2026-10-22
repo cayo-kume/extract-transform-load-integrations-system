@@ -16,7 +16,7 @@ namespace Domain.AfterSale.Entities.Reads.Reverses.GetReverse
         public Int64 user_id { get; private set; }
 
         public DateTime integrated_or_updated_at { get; private set; }
-        public DateTime date { get; private set; }
+        public DateTime? date { get; private set; }
 
         public string? comments { get; private set; }
         public string? billing_message { get; private set; }
@@ -45,7 +45,7 @@ namespace Domain.AfterSale.Entities.Reads.Reverses.GetReverse
             user_id = ConverterValidatorsExtensions.ConvertToInt64Validation(statusHistoriesDto.user_id);
 
             integrated_or_updated_at = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time"));
-            date = ConverterValidatorsExtensions.ConvertToDateTimeValidation(statusHistoriesDto.date);
+            date = NullableConverters.ToNullableDateTime(statusHistoriesDto.date);
 
             comments = statusHistoriesDto.comments?.Length > 300 ? statusHistoriesDto.comments?.Substring(0, 300) : statusHistoriesDto.comments;
             billing_message = statusHistoriesDto.billing_message?.Length > 800 ? statusHistoriesDto.billing_message?.Substring(0, 800) : statusHistoriesDto.billing_message;

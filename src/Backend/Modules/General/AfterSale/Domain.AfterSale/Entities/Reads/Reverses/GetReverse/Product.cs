@@ -38,12 +38,12 @@ namespace Domain.AfterSale.Entities.Reads.Reverses.GetReverse
         public bool is_bundle { get; private set; }
 
         public DateTime integrated_or_updated_at { get; private set; }
-        public DateTime reason_created_at { get; private set; }
-        public DateTime reason_updated_at { get; private set; }
-        public DateTime reason_deleted_at { get; private set; }
-        public DateTime subreason_created_at { get; private set; }
-        public DateTime subreason_updated_at { get; private set; }
-        public DateTime subreason_deleted_at { get; private set; }
+        public DateTime? reason_created_at { get; private set; }
+        public DateTime? reason_updated_at { get; private set; }
+        public DateTime? reason_deleted_at { get; private set; }
+        public DateTime? subreason_created_at { get; private set; }
+        public DateTime? subreason_updated_at { get; private set; }
+        public DateTime? subreason_deleted_at { get; private set; }
 
         public string? reason_description { get; private set; }
         public string? reason_action { get; private set; }
@@ -102,12 +102,12 @@ namespace Domain.AfterSale.Entities.Reads.Reverses.GetReverse
             is_bundle = ConverterValidatorsExtensions.ConvertToBooleanValidation(productDto.is_bundle);
 
             integrated_or_updated_at = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time"));
-            reason_created_at = ConverterValidatorsExtensions.ConvertToDateTimeValidation(productDto.reason?.created_at);
-            reason_updated_at = ConverterValidatorsExtensions.ConvertToDateTimeValidation(productDto.reason?.updated_at);
-            reason_deleted_at = ConverterValidatorsExtensions.ConvertToDateTimeValidation(productDto.reason?.deleted_at);
-            subreason_created_at = ConverterValidatorsExtensions.ConvertToDateTimeValidation(productDto.subreason?.created_at);
-            subreason_updated_at = ConverterValidatorsExtensions.ConvertToDateTimeValidation(productDto.subreason?.updated_at);
-            subreason_deleted_at = ConverterValidatorsExtensions.ConvertToDateTimeValidation(productDto.subreason?.deleted_at);
+            reason_created_at = NullableConverters.ToNullableDateTime(productDto.reason?.created_at);
+            reason_updated_at = NullableConverters.ToNullableDateTime(productDto.reason?.updated_at);
+            reason_deleted_at = NullableConverters.ToNullableDateTime(productDto.reason?.deleted_at);
+            subreason_created_at = NullableConverters.ToNullableDateTime(productDto.subreason?.created_at);
+            subreason_updated_at = NullableConverters.ToNullableDateTime(productDto.subreason?.updated_at);
+            subreason_deleted_at = NullableConverters.ToNullableDateTime(productDto.subreason?.deleted_at);
 
             reason_description = productDto.reason?.description?.Length > 250 ? productDto.reason?.description?.Substring(0, 250) : productDto.reason?.description;
             reason_action = productDto.reason?.action?.Length > 50 ? productDto.reason?.action?.Substring(0, 50) : productDto.reason?.action;

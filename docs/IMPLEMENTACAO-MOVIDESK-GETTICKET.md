@@ -252,7 +252,7 @@ igual ao AfterSale; o motivo fica no log de auditoria.
 
 ## 6. Empresa por documento
 
-Hoje só existe `GetCompanys()` (todas). Entra uma busca de uma empresa, como o `GetCompany(cnpj_emp)` do AfterSale.
+Hoje só existe `GetCompanys()` (todas). Entra uma busca de uma empresa, como o `GetCompany(doc_company)` do AfterSale.
 
 `Application.Movidesk/Abstractions/Handlers/Commands/IMovideskCommandHandler.cs`
 ```csharp
@@ -270,7 +270,7 @@ public string CreateGetCompanyQuery(string doc_company)
 }
 ```
 O valor entra na query como texto, mas só depois de passar pelo `^\d{14}$` do controller, então não há como injetar
-SQL por ele. A versão do AfterSale monta `CNPJ_EMP = {cnpj_emp}` sem aspas; aqui as aspas ficam, porque a coluna é
+SQL por ele. A versão do AfterSale monta `DOC_COMPANY = {doc_company}` sem aspas; aqui as aspas ficam, porque a coluna é
 `nvarchar` e um CNPJ que começa com zero perderia o zero se fosse comparado como número.
 
 `IMovideskRepository` / `MovideskRepository`

@@ -39,10 +39,10 @@ namespace Domain.AfterSale.Entities.Reads.Reverses.GetReverse
         public bool retry_options_can_retry { get; private set; }
 
         public DateTime integrated_or_updated_at { get; private set; }
-        public DateTime created_at { get; private set; }
-        public DateTime updated_at { get; private set; }
-        public DateTime deleted_at { get; private set; }
-        public DateTime ecommerce_last_order_report_date { get; private set; }
+        public DateTime? created_at { get; private set; }
+        public DateTime? updated_at { get; private set; }
+        public DateTime? deleted_at { get; private set; }
+        public DateTime? ecommerce_last_order_report_date { get; private set; }
 
         public decimal total_amount { get; private set; }
 
@@ -64,7 +64,7 @@ namespace Domain.AfterSale.Entities.Reads.Reverses.GetReverse
         public string? ecommerce_phone { get; private set; }
         public string? ecommerce_email { get; private set; }
         public string? ecommerce_document { get; private set; }
-        public DateTime billing_date { get; private set; }
+        public DateTime? billing_date { get; private set; }
         public string? customer_nfd_attached { get; private set; }
         public string? customer_nfd_xml_attached { get; private set; }
         public string? returned_invoice { get; private set; }
@@ -137,10 +137,10 @@ namespace Domain.AfterSale.Entities.Reads.Reverses.GetReverse
             retry_options_can_retry = ConverterValidatorsExtensions.ConvertToBooleanValidation(reverseDto.retry_options.can_retry);
 
             integrated_or_updated_at = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time"));
-            created_at = ConverterValidatorsExtensions.ConvertToDateTimeValidation(reverseDto.created_at);
-            updated_at = ConverterValidatorsExtensions.ConvertToDateTimeValidation(reverseDto.updated_at);
-            deleted_at = ConverterValidatorsExtensions.ConvertToDateTimeValidation(reverseDto.deleted_at);
-            ecommerce_last_order_report_date = ConverterValidatorsExtensions.ConvertToDateTimeValidation(reverseDto.ecommerce.last_order_report_date);
+            created_at = NullableConverters.ToNullableDateTime(reverseDto.created_at);
+            updated_at = NullableConverters.ToNullableDateTime(reverseDto.updated_at);
+            deleted_at = NullableConverters.ToNullableDateTime(reverseDto.deleted_at);
+            ecommerce_last_order_report_date = NullableConverters.ToNullableDateTime(reverseDto.ecommerce.last_order_report_date);
 
             total_amount = ConverterValidatorsExtensions.ConvertToInt32Validation(reverseDto.total_amount);
 
@@ -162,7 +162,7 @@ namespace Domain.AfterSale.Entities.Reads.Reverses.GetReverse
             ecommerce_phone = reverseDto.ecommerce?.phone?.Length > 20 ? reverseDto.ecommerce?.phone?.Substring(0, 20) : reverseDto.ecommerce?.phone;
             ecommerce_email = reverseDto.ecommerce?.email?.Length > 50 ? reverseDto.ecommerce?.email?.Substring(0, 50) : reverseDto.ecommerce?.email;
             ecommerce_document = reverseDto.ecommerce?.document?.Length > 14 ? reverseDto.ecommerce?.document?.Substring(0, 14) : reverseDto.ecommerce?.document;
-            billing_date = ConverterValidatorsExtensions.ConvertToDateTimeValidation(reverseDto.billing_date);
+            billing_date = NullableConverters.ToNullableDateTime(reverseDto.billing_date);
             customer_nfd_attached = reverseDto.customer_nfd_attached?.Length > 50 ? reverseDto.customer_nfd_attached?.Substring(0, 50) : reverseDto.customer_nfd_attached;
             returned_invoice = reverseDto.returned_invoice?.Length > 50 ? reverseDto.returned_invoice?.Substring(0, 50) : reverseDto.returned_invoice;
             reverse_type_name = reverseDto.reverse_type_name?.Length > 50 ? reverseDto.reverse_type_name?.Substring(0, 50) : reverseDto.reverse_type_name;

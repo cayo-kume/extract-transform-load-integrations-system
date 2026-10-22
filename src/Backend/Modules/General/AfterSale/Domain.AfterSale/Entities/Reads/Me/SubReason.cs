@@ -12,9 +12,9 @@ namespace Domain.AfterSale.Entities.Reads.Me
         public string? description { get; private set; }
         public string? ord { get; private set; }
 
-        public DateTime created_at { get; private set; }
-        public DateTime updated_at { get; private set; }
-        public DateTime deleted_at { get; private set; }
+        public DateTime? created_at { get; private set; }
+        public DateTime? updated_at { get; private set; }
+        public DateTime? deleted_at { get; private set; }
 
         public SubReason() { }
 
@@ -28,9 +28,9 @@ namespace Domain.AfterSale.Entities.Reads.Me
             description = subReasonDto.description?.Length > 50 ? subReasonDto.description.Substring(0, 50) : subReasonDto.description;
             ord = subReasonDto.ord?.Length > 50 ? subReasonDto.ord.Substring(0, 60) : subReasonDto.ord;
 
-            created_at = ConverterValidatorsExtensions.ConvertToDateTimeValidation(subReasonDto.created_at);
-            updated_at = ConverterValidatorsExtensions.ConvertToDateTimeValidation(subReasonDto.updated_at);
-            deleted_at = ConverterValidatorsExtensions.ConvertToDateTimeValidation(subReasonDto.deleted_at);
+            created_at = NullableConverters.ToNullableDateTime(subReasonDto.created_at);
+            updated_at = NullableConverters.ToNullableDateTime(subReasonDto.updated_at);
+            deleted_at = NullableConverters.ToNullableDateTime(subReasonDto.deleted_at);
         }
     }
 }

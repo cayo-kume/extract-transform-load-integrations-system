@@ -16,9 +16,9 @@ namespace Domain.AfterSale.Entities.Reads.Me
         public bool should_approve { get; private set; }
         public bool show_product_grid { get; private set; }
         
-        public DateTime created_at { get; private set; }
-        public DateTime updated_at { get; private set; }
-        public DateTime deleted_at { get; private set; }
+        public DateTime? created_at { get; private set; }
+        public DateTime? updated_at { get; private set; }
+        public DateTime? deleted_at { get; private set; }
 
         [SkipProperty]
         public List<SubReason> subreasons { get; private set; } = [];
@@ -40,9 +40,9 @@ namespace Domain.AfterSale.Entities.Reads.Me
             should_approve = ConverterValidatorsExtensions.ConvertToBooleanValidation(reasonDto.should_approve);
             show_product_grid = ConverterValidatorsExtensions.ConvertToBooleanValidation(reasonDto.show_product_grid);
 
-            created_at = ConverterValidatorsExtensions.ConvertToDateTimeValidation(reasonDto.created_at);
-            updated_at = ConverterValidatorsExtensions.ConvertToDateTimeValidation(reasonDto.updated_at);
-            deleted_at = ConverterValidatorsExtensions.ConvertToDateTimeValidation(reasonDto.deleted_at);
+            created_at = NullableConverters.ToNullableDateTime(reasonDto.created_at);
+            updated_at = NullableConverters.ToNullableDateTime(reasonDto.updated_at);
+            deleted_at = NullableConverters.ToNullableDateTime(reasonDto.deleted_at);
 
             reasonDto.subreasons?.ForEach(x =>
             {

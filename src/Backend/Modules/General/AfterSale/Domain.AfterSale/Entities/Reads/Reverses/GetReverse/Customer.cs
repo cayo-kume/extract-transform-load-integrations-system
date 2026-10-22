@@ -22,10 +22,10 @@ namespace Domain.AfterSale.Entities.Reads.Reverses.GetReverse
         public bool shipping_address_is_erased { get; private set; }
 
         public DateTime integrated_or_updated_at { get; private set; }
-        public DateTime address_updated_at { get; private set; }
-        public DateTime address_deleted_at { get; private set; }
-        public DateTime shipping_address_updated_at { get; private set; }
-        public DateTime shipping_address_deleted_at { get; private set; }
+        public DateTime? address_updated_at { get; private set; }
+        public DateTime? address_deleted_at { get; private set; }
+        public DateTime? shipping_address_updated_at { get; private set; }
+        public DateTime? shipping_address_deleted_at { get; private set; }
 
         public string? first_name { get; private set; }
         public string? last_name { get; private set; }
@@ -85,10 +85,10 @@ namespace Domain.AfterSale.Entities.Reads.Reverses.GetReverse
             shipping_address_is_erased = ConverterValidatorsExtensions.ConvertToBooleanValidation(customerDto.shipping_address.is_erased);
 
             integrated_or_updated_at = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time"));
-            address_updated_at = ConverterValidatorsExtensions.ConvertToDateTimeValidation(customerDto.address?.updated_at);
-            address_deleted_at = ConverterValidatorsExtensions.ConvertToDateTimeValidation(customerDto.address?.deleted_at);
-            shipping_address_updated_at = ConverterValidatorsExtensions.ConvertToDateTimeValidation(customerDto.shipping_address?.updated_at);
-            shipping_address_deleted_at = ConverterValidatorsExtensions.ConvertToDateTimeValidation(customerDto.shipping_address?.deleted_at);
+            address_updated_at = NullableConverters.ToNullableDateTime(customerDto.address?.updated_at);
+            address_deleted_at = NullableConverters.ToNullableDateTime(customerDto.address?.deleted_at);
+            shipping_address_updated_at = NullableConverters.ToNullableDateTime(customerDto.shipping_address?.updated_at);
+            shipping_address_deleted_at = NullableConverters.ToNullableDateTime(customerDto.shipping_address?.deleted_at);
 
             first_name = customerDto.first_name?.Length > 50 ? customerDto.first_name?.Substring(0, 50) : customerDto.first_name;
             last_name = customerDto.last_name?.Length > 250 ? customerDto.last_name?.Substring(0, 250) : customerDto.last_name;

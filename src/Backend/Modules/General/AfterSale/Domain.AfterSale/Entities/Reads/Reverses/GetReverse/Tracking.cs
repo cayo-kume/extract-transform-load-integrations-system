@@ -20,13 +20,13 @@ namespace Domain.AfterSale.Entities.Reads.Reverses.GetReverse
         public bool is_change_collect_to_post { get; private set; }
 
         public DateTime integrated_or_updated_at { get; private set; }
-        public DateTime updated_at { get; private set; }
-        public DateTime deleted_at { get; private set; }
-        public DateTime status_updated_at { get; private set; }
-        public DateTime delivery_deadline { get; private set; }
-        public DateTime requested_collect_date { get; private set; }
-        public DateTime expire_date { get; private set; }
-        public DateTime collect_date { get; private set; }
+        public DateTime? updated_at { get; private set; }
+        public DateTime? deleted_at { get; private set; }
+        public DateTime? status_updated_at { get; private set; }
+        public DateTime? delivery_deadline { get; private set; }
+        public DateTime? requested_collect_date { get; private set; }
+        public DateTime? expire_date { get; private set; }
+        public DateTime? collect_date { get; private set; }
 
         public string? authorization_code { get; private set; }
         public string? tracking_code { get; private set; }
@@ -59,13 +59,13 @@ namespace Domain.AfterSale.Entities.Reads.Reverses.GetReverse
             is_change_collect_to_post = ConverterValidatorsExtensions.ConvertToBooleanValidation(trackingDto.is_change_collect_to_post);
 
             integrated_or_updated_at = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time"));
-            updated_at = ConverterValidatorsExtensions.ConvertToDateTimeValidation(trackingDto.updated_at);
-            deleted_at = ConverterValidatorsExtensions.ConvertToDateTimeValidation(trackingDto.deleted_at);
-            status_updated_at = ConverterValidatorsExtensions.ConvertToDateTimeValidation(trackingDto.status_updated_at);
-            delivery_deadline = ConverterValidatorsExtensions.ConvertToDateTimeValidation(trackingDto.delivery_deadline);
-            requested_collect_date = ConverterValidatorsExtensions.ConvertToDateTimeValidation(trackingDto.requested_collect_date);
-            expire_date = ConverterValidatorsExtensions.ConvertToDateTimeValidation(trackingDto.expire_date);
-            collect_date = ConverterValidatorsExtensions.ConvertToDateTimeValidation(trackingDto.collect_date);
+            updated_at = NullableConverters.ToNullableDateTime(trackingDto.updated_at);
+            deleted_at = NullableConverters.ToNullableDateTime(trackingDto.deleted_at);
+            status_updated_at = NullableConverters.ToNullableDateTime(trackingDto.status_updated_at);
+            delivery_deadline = NullableConverters.ToNullableDateTime(trackingDto.delivery_deadline);
+            requested_collect_date = NullableConverters.ToNullableDateTime(trackingDto.requested_collect_date);
+            expire_date = NullableConverters.ToNullableDateTime(trackingDto.expire_date);
+            collect_date = NullableConverters.ToNullableDateTime(trackingDto.collect_date);
 
             authorization_code = trackingDto.authorization_code?.Length > 50 ? trackingDto.authorization_code?.Substring(0, 50) : trackingDto.authorization_code;
             tracking_code = trackingDto.tracking_code?.Length > 50 ? trackingDto.tracking_code?.Substring(0, 50) : trackingDto.tracking_code;

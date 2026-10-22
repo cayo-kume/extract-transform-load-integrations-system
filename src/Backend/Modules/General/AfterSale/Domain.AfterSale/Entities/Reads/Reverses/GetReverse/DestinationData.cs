@@ -19,8 +19,8 @@ namespace Domain.AfterSale.Entities.Reads.Reverses.GetReverse
         public bool was_manually_changed { get; private set; }
 
         public DateTime integrated_or_updated_at { get; private set; }
-        public DateTime address_deleted_at { get; private set; }
-        public DateTime address_updated_at { get; private set; }
+        public DateTime? address_deleted_at { get; private set; }
+        public DateTime? address_updated_at { get; private set; }
 
         public string? name { get; private set; }
         public string? type { get; private set; }
@@ -34,7 +34,7 @@ namespace Domain.AfterSale.Entities.Reads.Reverses.GetReverse
         public string? address_zip_code { get; private set; }
         public string? address_complement { get; private set; }
         public string? address_neighborhood { get; private set; }
-        public DateTime updated_at { get; private set; }
+        public DateTime? updated_at { get; private set; }
         public string? seller_info { get; private set; }
         public string? label { get; private set; }
 
@@ -54,8 +54,8 @@ namespace Domain.AfterSale.Entities.Reads.Reverses.GetReverse
             was_manually_changed = ConverterValidatorsExtensions.ConvertToBooleanValidation(destinationDataDto.was_manually_changed);
 
             integrated_or_updated_at = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time"));
-            address_deleted_at = ConverterValidatorsExtensions.ConvertToDateTimeValidation(destinationDataDto.address.deleted_at);
-            address_updated_at = ConverterValidatorsExtensions.ConvertToDateTimeValidation(destinationDataDto.address.updated_at);
+            address_deleted_at = NullableConverters.ToNullableDateTime(destinationDataDto.address.deleted_at);
+            address_updated_at = NullableConverters.ToNullableDateTime(destinationDataDto.address.updated_at);
 
             name = destinationDataDto.name?.Length > 250 ? destinationDataDto.name?.Substring(0, 250) : destinationDataDto.name;
             type = destinationDataDto.type?.Length > 50 ? destinationDataDto.type?.Substring(0, 50) : destinationDataDto.type;
@@ -69,7 +69,7 @@ namespace Domain.AfterSale.Entities.Reads.Reverses.GetReverse
             address_zip_code = destinationDataDto.address?.zip_code?.Length > 9 ? destinationDataDto.address?.zip_code?.Substring(0, 9) : destinationDataDto.address?.zip_code;
             address_complement = destinationDataDto.address?.complement?.Length > 50 ? destinationDataDto.address?.complement?.Substring(0, 50) : destinationDataDto.address?.complement;
             address_neighborhood = destinationDataDto.address?.neighborhood?.Length > 50 ? destinationDataDto.address?.neighborhood?.Substring(0, 50) : destinationDataDto.address?.neighborhood;
-            updated_at = ConverterValidatorsExtensions.ConvertToDateTimeValidation(destinationDataDto.updated_at);
+            updated_at = NullableConverters.ToNullableDateTime(destinationDataDto.updated_at);
             seller_info = destinationDataDto.seller_info?.Length > 50 ? destinationDataDto.seller_info?.Substring(0, 50) : destinationDataDto.seller_info;
             label = destinationDataDto.label?.Length > 300 ? destinationDataDto.label?.Substring(0, 300) : destinationDataDto.label;
         }

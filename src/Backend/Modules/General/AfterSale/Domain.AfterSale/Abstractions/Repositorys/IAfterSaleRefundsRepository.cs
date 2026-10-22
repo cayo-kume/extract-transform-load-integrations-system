@@ -18,7 +18,9 @@ namespace Domain.AfterSale.Abstractions.Repositorys
         public Task<List<Entities.Reads.Refunds.Types.Type?>> GetTypes(string doc_company);
         public Task<bool> BulkInsertIntoAfterSaleTypesRefunds(List<Entities.Reads.Refunds.Types.Type> data, Guid? parentExecutionGUID);
 
-        public Task<bool> InsertIntoAfterSaleRefunds();
+        public Task<IEnumerable<Entities.Reads.Refunds.SearchRefunds.Refund?>> GetSummarizedRefundsIdsForGetRefund();
+        public Task<List<Entities.Reads.Refunds.GetRefund.Refund?>> GetRefundsByIds(string doc_company, List<string> refundsIds);
+        public Task<bool> BulkInsertIntoAfterSaleRefunds(List<Entities.Reads.Refunds.GetRefund.Refund> data, Guid? parentExecutionGUID);
 
         public Task<List<Entities.Reads.Refunds.SearchRefunds.Refund?>> GetSummarizedRefundsByIds(string doc_company, List<string> refundsIds);
         public Task<bool> BulkInsertIntoAfterSaleSummarizedRefunds(List<Entities.Reads.Refunds.SearchRefunds.Refund> data, Guid? parentExecutionGUID);

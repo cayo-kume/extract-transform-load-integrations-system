@@ -196,7 +196,7 @@ namespace Application.AfterSale.Services
                    !string.IsNullOrEmpty(x.id) &&
                    summarizedReversesCache.TryGetValue(
                        ConverterValidatorsExtensions.ConvertToInt64Validation(x.id), out var y) &&
-                       ConverterValidatorsExtensions.ConvertToDateTimeValidation(x.updated_at) <= y.updated_at
+                       NullableConverters.ToNullableDateTime(x.updated_at) <= y.updated_at
                 );
 
                 var _listSomenteNovos = new List<Domain.AfterSale.Entities.Reads.Reverses.SearchReverses.Reverse>();
@@ -342,7 +342,7 @@ namespace Application.AfterSale.Services
                    !string.IsNullOrEmpty(x.data.reverse.id) &&
                    reversesCache.TryGetValue(
                        ConverterValidatorsExtensions.ConvertToInt64Validation(x.data.reverse.id), out var y) &&
-                       ConverterValidatorsExtensions.ConvertToDateTimeValidation(x.data.reverse.updated_at) <= y.updated_at
+                       NullableConverters.ToNullableDateTime(x.data.reverse.updated_at) <= y.updated_at
                 );
 
                 var _listSomenteNovos = new List<Domain.AfterSale.Entities.Reads.Reverses.GetReverse.Reverse>();
@@ -391,6 +391,129 @@ namespace Application.AfterSale.Services
             await _logger.CommitAllChanges();
 
             return true;
+        }
+
+        /// <summary>
+        /// busca uma reversa por id, grava nas tabelas de reversas (sempre, sem consultar o cache)
+        /// e registra a chamada em general.AfterSaleRequests
+        /// </summary>
+        public async Task<bool?> GetReverseById(string user_name, string doc_company, long id)
+        {
+            _logger
+               .Clear()
+               .AddLog(EnumJob.AfterSaleGetReverseById);
+
+            var route = $"v3/api/reverses/{id}";
+            bool? result;
+
+            try
+            {
+                var company = (await _afterSaleRepository.GetCompanys()).FirstOrDefault(x => x?.doc_company == doc_company);
+
+                if (company is null)
+                {
+                    // nenhuma chamada à API: não há o que registrar em AfterSaleRequests
+                    _logger.AddMessage($"Empresa {doc_company} não cadastrada em general.AfterSaleParameters.");
+                    return null;
+                }
+
+                string? response;
+
+                try
+                {
+                    response = await _apiClient.GetAsync(
+                        route: route,
+                        headers: new Dictionary<string, string> { { "Authorization", $"Bearer {company.Token}" } }
+                    );
+                }
+                catch (Exception ex)
+                {
+                    // registra a tentativa mesmo quando a chamada não chega a ter resposta (timeout, rede)
+                    _afterSaleService.SaveRequest(_logger.GetExecutionGuid(), EnumJob.AfterSaleGetReverseById, user_name, "GET", route, doc_company, id, null, $"Exceção ao chamar a API: {ex.Message}", false);
+                    throw;
+                }
+
+                Domain.AfterSale.Dtos.Reads.Reverses.GetReverse.Root? root = null;
+
+                try
+                {
+                    root = String.IsNullOrWhiteSpace(response) ? null : Newtonsoft.Json.JsonConvert.DeserializeObject<Domain.AfterSale.Dtos.Reads.Reverses.GetReverse.Root>(response);
+                }
+                catch (Newtonsoft.Json.JsonException)
+                {
+                    // root continua null: tratado abaixo como resposta inválida
+                }
+
+                if (root is null)
+                {
+                    _logger.AddMessage($"Resposta inválida da API AfterSale para a reversa {id} (empresa {doc_company}): {response}");
+                    result = null;
+                }
+                else if (!root.success)
+                {
+                    // reversa inexistente nesta empresa, ou recusada pela API
+                    _logger.AddMessage($"Reversa {id} não encontrada na AfterSale (empresa {doc_company}): {root.message_translated ?? root.message ?? root.error}");
+
+                    await _afterSaleReversesRepository.BulkInsertIntoAfterSaleErrors(
+                        [
+                            new Domain.AfterSale.Entities.Errors.Error(
+                                doc_company,
+                                EnumJob.AfterSaleGetReverseById,
+                                _logger.GetExecutionGuid(),
+                                id,
+                                root.error,
+                                root.error_code,
+                                root.message,
+                                root.message_translated
+                            )
+                        ],
+                        _logger.GetExecutionGuid()
+                    );
+
+                    result = false;
+                }
+                else if (root.data?.reverse is null || ConverterValidatorsExtensions.ConvertToInt64Validation(root.data.reverse.id) != id)
+                {
+                    _logger.AddMessage($"Resposta inválida da API AfterSale para a reversa {id} (empresa {doc_company}): {response}");
+                    result = null;
+                }
+                else
+                {
+                    var validations = _reversesValidator.Validate(root.data.reverse);
+
+                    if (validations.Errors.Count() > 0)
+                    {
+                        var message = String.Empty;
+                        validations.Errors.ForEach(s =>
+                            message += $"{s.ErrorMessage}\n"
+                        );
+
+                        _logger.AddMessage(message);
+                    }
+
+                    var reverse = new Domain.AfterSale.Entities.Reads.Reverses.GetReverse.Reverse(doc_company, root.data.reverse, root.data.customer, root.data.tracking_history);
+
+                    await _afterSaleReversesRepository.BulkInsertIntoAfterSaleReverses([reverse], _logger.GetExecutionGuid());
+
+                    _logger.AddRecord(id.ToString(), JObject.Parse(response!)["data"]?["reverse"]?.ToString() ?? response!);
+
+                    // atualiza o cache do GetReverse, se ele estiver carregado, para a próxima execução não regravar a reversa
+                    if (_cache.TryGetValue($"{ReversesKey}:{doc_company}", out Dictionary<long, Domain.AfterSale.Entities.Reads.Reverses.GetReverse.Reverse>? reversesCache) && reversesCache is not null)
+                        reversesCache[id] = reverse;
+
+                    _logger.AddMessage($"Concluída com sucesso: reversa {id} inserida ou atualizada!");
+                    result = true;
+                }
+
+                _afterSaleService.SaveRequest(_logger.GetExecutionGuid(), EnumJob.AfterSaleGetReverseById, user_name, "GET", route, doc_company, id, null, response, result == true);
+
+                return result;
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
         }
 
         /// <summary>

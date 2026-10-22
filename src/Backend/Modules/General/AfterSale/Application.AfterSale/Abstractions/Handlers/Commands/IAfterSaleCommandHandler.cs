@@ -2,7 +2,7 @@
 {
     public interface IAfterSaleCommandHandler
     {
-        string CreateGetCompanyQuery(string cnpj_emp);
+        string CreateGetCompanyQuery(string doc_company);
         string CreateGetCompanysQuery();
 
         string CreateGetReversesByIdsQuery(string doc_company, List<string> reversesIds);
@@ -10,6 +10,8 @@
 
         string CreateGetSummarizedReversesByIdsQuery(string doc_company, List<string> reversesIds);
         string CreateGetSummarizedRefundsByIdsQuery(string doc_company, List<string> refundsIds);
+        string CreateGetSummarizedRefundsIdsForGetRefundQuery();
+        string CreateGetRefundsByIdsQuery(string doc_company, List<string> refundsIds);
         string CreateGetStatusRefundsQuery(string doc_company);
         string CreateGetActionsRefundsQuery(string doc_company);
         string CreateGetBanksRefundsQuery(string doc_company);

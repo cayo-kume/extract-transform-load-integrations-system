@@ -27,9 +27,9 @@ namespace Domain.AfterSale.Entities.Reads.Refunds.SearchRefunds
         public decimal? bonus_amount_percent { get; private set; }
         public decimal? total_amount { get; private set; }
 
-        public DateTime updated_at { get; private set; }
-        public DateTime created_at { get; private set; }
-        public DateTime last_status_history_date { get; private set; }
+        public DateTime? updated_at { get; private set; }
+        public DateTime? created_at { get; private set; }
+        public DateTime? last_status_history_date { get; private set; }
         
         public string? action { get; private set; }
         public string? reverse_partner_store { get; private set; }
@@ -68,9 +68,9 @@ namespace Domain.AfterSale.Entities.Reads.Refunds.SearchRefunds
             bonus_amount_percent = ConverterValidatorsExtensions.ConvertToDecimalValidation(refundDto.bonus_amount_percent);
             total_amount = ConverterValidatorsExtensions.ConvertToDecimalValidation(refundDto.total_amount);
 
-            updated_at = ConverterValidatorsExtensions.ConvertToDateTimeValidation(refundDto.updated_at);
-            created_at = ConverterValidatorsExtensions.ConvertToDateTimeValidation(refundDto.created_at);
-            last_status_history_date = ConverterValidatorsExtensions.ConvertToDateTimeValidation(refundDto.last_status_history_date);
+            updated_at = NullableConverters.ToNullableDateTime(refundDto.updated_at);
+            created_at = NullableConverters.ToNullableDateTime(refundDto.created_at);
+            last_status_history_date = NullableConverters.ToNullableDateTime(refundDto.last_status_history_date);
 
             action = refundDto.action?.Length > 50 ? refundDto.action?.Substring(0, 50) : refundDto.action;
             reverse_partner_store = refundDto.reverse?.partner_store?.Length > 50 ? refundDto.reverse?.partner_store?.Substring(0, 50) : refundDto.reverse?.partner_store;

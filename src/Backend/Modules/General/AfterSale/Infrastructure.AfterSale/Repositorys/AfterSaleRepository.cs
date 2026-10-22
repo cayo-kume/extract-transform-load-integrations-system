@@ -21,9 +21,9 @@ public class AfterSaleRepository : IAfterSaleRepository
         return await _coreRepository.GetRecords<Company>(sql);
     }
 
-    public async Task<Company?> GetCompany(string cnpj_emp)
+    public async Task<Company?> GetCompany(string doc_company)
     {
-        string sql = _afterSaleCommandHandler.CreateGetCompanyQuery(cnpj_emp);
+        string sql = _afterSaleCommandHandler.CreateGetCompanyQuery(doc_company);
 
         return await _coreRepository.GetRecord<Company>(sql);
     }

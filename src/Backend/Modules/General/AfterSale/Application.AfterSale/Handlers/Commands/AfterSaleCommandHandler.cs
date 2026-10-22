@@ -4,14 +4,14 @@ namespace Application.AfterSale.Handlers.Commands
 {
     public class AfterSaleCommandHandler : IAfterSaleCommandHandler
     {
-        public string CreateGetCompanyQuery(string cnpj_emp)
+        public string CreateGetCompanyQuery(string doc_company)
         {
             return @$"SELECT DISTINCT
                      DOC_COMPANY,
                      TOKEN
                      FROM GENERAL.AFTERSALEPARAMETERS
                      WHERE 
-                     DOC_COMPANY = {cnpj_emp}";
+                     DOC_COMPANY = '{doc_company}'";
         }
 
         public string CreateGetCompanysQuery()
@@ -92,6 +92,34 @@ namespace Application.AfterSale.Handlers.Commands
             }
 
             return $"SELECT ID, DOC_COMPANY, UPDATED_AT FROM [GENERAL].[AFTERSALESUMMARIZEDREFUNDS] (NOLOCK) WHERE DOC_COMPANY = '{doc_company}' AND ID IN ({identificadores})";
+        }
+
+        public string CreateGetSummarizedRefundsIdsForGetRefundQuery()
+        {
+            return @$"SELECT TOP 30
+                        A.DOC_COMPANY,
+                        A.ID
+                      FROM
+                        [GENERAL].[AFTERSALESUMMARIZEDREFUNDS] A (NOLOCK)
+                      LEFT JOIN
+                        [GENERAL].[AFTERSALEREFUNDS] B (NOLOCK) ON A.DOC_COMPANY = B.DOC_COMPANY AND A.ID = B.ID
+                      WHERE
+                        B.ID IS NULL";
+        }
+
+        public string CreateGetRefundsByIdsQuery(string doc_company, List<string> refundsIds)
+        {
+            string identificadores = String.Empty;
+
+            for (int j = 0; j < refundsIds.Count(); j++)
+            {
+                if (j == refundsIds.Count() - 1)
+                    identificadores += $"'{refundsIds[j]}'";
+                else
+                    identificadores += $"'{refundsIds[j]}', ";
+            }
+
+            return $"SELECT ID, DOC_COMPANY, UPDATED_AT FROM [GENERAL].[AFTERSALEREFUNDS] (NOLOCK) WHERE DOC_COMPANY = '{doc_company}' AND ID IN ({identificadores})";
         }
 
         public string CreateGetStatusRefundsQuery(string doc_company)

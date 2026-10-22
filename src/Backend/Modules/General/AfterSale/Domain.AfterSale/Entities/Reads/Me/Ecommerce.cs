@@ -127,9 +127,9 @@ namespace Domain.AfterSale.Entities.Reads.Me
         public bool reverse_actions_customization_offline_exchange { get; private set; }
         public bool reverse_actions_customization_offline_return { get; private set; }
 
-        public DateTime last_order_report_date { get; private set; }
-        public DateTime address_updated_at { get; private set; }
-        public DateTime address_deleted_at { get; private set; }
+        public DateTime? last_order_report_date { get; private set; }
+        public DateTime? address_updated_at { get; private set; }
+        public DateTime? address_deleted_at { get; private set; }
 
         [SkipProperty]
         public MessagePage messages_pages { get; private set; }
@@ -283,9 +283,9 @@ namespace Domain.AfterSale.Entities.Reads.Me
             reverse_actions_customization_offline_exchange = ConverterValidatorsExtensions.ConvertToBooleanValidation(ecommerceDto.reverse_actions_customization?.offline?.exchange);
             reverse_actions_customization_offline_return = ConverterValidatorsExtensions.ConvertToBooleanValidation(ecommerceDto.reverse_actions_customization?.offline?.@return);
 
-            last_order_report_date = ConverterValidatorsExtensions.ConvertToDateTimeValidation(ecommerceDto.last_order_report_date);
-            address_updated_at = ConverterValidatorsExtensions.ConvertToDateTimeValidation(ecommerceDto.address?.updated_at);
-            address_deleted_at = ConverterValidatorsExtensions.ConvertToDateTimeValidation(ecommerceDto.address?.deleted_at);
+            last_order_report_date = NullableConverters.ToNullableDateTime(ecommerceDto.last_order_report_date);
+            address_updated_at = NullableConverters.ToNullableDateTime(ecommerceDto.address?.updated_at);
+            address_deleted_at = NullableConverters.ToNullableDateTime(ecommerceDto.address?.deleted_at);
 
             messages_pages = ecommerceDto.messages?.pages != null ? new MessagePage(ecommerceDto.messages.pages, 1, id) : new MessagePage();
 

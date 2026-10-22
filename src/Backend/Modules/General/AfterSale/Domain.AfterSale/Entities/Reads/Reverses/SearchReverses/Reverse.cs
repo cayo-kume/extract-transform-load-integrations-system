@@ -13,9 +13,9 @@ namespace Domain.AfterSale.Entities.Reads.Reverses.SearchReverses
         public Int64 ecommerce_order_id { get; private set; }
         public Int64 customer_id { get; private set; }
 
-        public DateTime created_at { get; private set; }
-        public DateTime updated_at { get; private set; }
-        public DateTime tracking_delivery_deadline { get; private set; }
+        public DateTime? created_at { get; private set; }
+        public DateTime? updated_at { get; private set; }
+        public DateTime? tracking_delivery_deadline { get; private set; }
 
         public decimal total_amount { get; private set; }
 
@@ -44,9 +44,9 @@ namespace Domain.AfterSale.Entities.Reads.Reverses.SearchReverses
             ecommerce_order_id = ConverterValidatorsExtensions.ConvertToInt64Validation(reverseDto.ecommerce_order_id);
             customer_id = ConverterValidatorsExtensions.ConvertToInt64Validation(reverseDto.customer.id);
 
-            created_at = ConverterValidatorsExtensions.ConvertToDateTimeValidation(reverseDto.created_at);
-            updated_at = ConverterValidatorsExtensions.ConvertToDateTimeValidation(reverseDto.updated_at);
-            tracking_delivery_deadline = ConverterValidatorsExtensions.ConvertToDateTimeValidation(reverseDto.tracking.delivery_deadline);
+            created_at = NullableConverters.ToNullableDateTime(reverseDto.created_at);
+            updated_at = NullableConverters.ToNullableDateTime(reverseDto.updated_at);
+            tracking_delivery_deadline = NullableConverters.ToNullableDateTime(reverseDto.tracking.delivery_deadline);
 
             total_amount = ConverterValidatorsExtensions.ConvertToDecimalValidation(reverseDto.total_amount);
 

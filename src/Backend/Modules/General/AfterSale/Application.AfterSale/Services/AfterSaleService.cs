@@ -18,10 +18,10 @@ namespace Application.AfterSale.Services
             _afterSaleRepository = afterSaleRepository;
 
         /// <summary>
-        /// logs a write call (POST/PUT) made to the AfterSale API in general.AfterSaleRequests
+        /// logs a call made on demand to the AfterSale API (POST/PUT actions and GET by id) in general.AfterSaleRequests
         /// </summary>
         /// <param name="execution">execution of the log (auditing.Logs) opened by the caller</param>
-        public bool SaveRequest(Guid? execution, EnumJob job, string user_name, string httpMethod, string route, string doc_company, long id, string requestBody, string? responseBody, bool isSuccess) =>
+        public bool SaveRequest(Guid? execution, EnumJob job, string user_name, string httpMethod, string route, string doc_company, long id, string? requestBody, string? responseBody, bool isSuccess) =>
             _afterSaleRepository.InsertIntoAfterSaleRequests(
                 new Domain.AfterSale.Entities.Writes.Requests.Request(
                     execution: execution ?? Guid.Empty,

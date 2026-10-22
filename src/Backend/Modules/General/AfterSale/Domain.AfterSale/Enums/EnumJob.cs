@@ -22,6 +22,7 @@
         AfterSaleStatusReverses = 5009,
         AfterSaleHistoriesReverses = 5010,
         AfterSaleAdministrativeRecordsReverse = 5021,
+        AfterSaleGetReverseById = 5022,
 
         /*Refunds*/
         AfterSaleRefund = 5011,
@@ -33,6 +34,7 @@
         AfterSaleApproveRefund = 5017,
         AfterSaleCancelRefund = 5018,
         AfterSalePayRefund = 5019,
-        AfterSaleChangeTotalAmountRefund = 5020
+        AfterSaleChangeTotalAmountRefund = 5020,
+        AfterSaleGetRefundById = 5023
     }
 }

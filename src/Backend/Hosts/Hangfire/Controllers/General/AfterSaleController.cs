@@ -62,6 +62,27 @@ namespace Hangfire.Controllers.General
             return Ok($"Records integrated successfully.");
         }
 
+        /// <summary>
+        /// get one reverse by id (GET v3/api/reverses/{id}) and save it; the call is logged in general.AfterSaleRequests
+        /// </summary>
+        [HttpGet("Reverses/{docCompany}/{id:long:min(1)}")]
+        [Tags("AfterSaleReverses")]
+        public async Task<ActionResult> Reverse(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            long id
+        )
+        {
+            var result = await _afterSaleReversesService.GetReverseById(userName, docCompany, id);
+
+            return result switch
+            {
+                true => Ok($"Reverse {id} integrated successfully."),
+                false => NotFound($"Reverse {id} not found in AfterSale. See general.AfterSaleErrors."),
+                null => UnprocessableEntity("Company not registered or invalid response from AfterSale. See the execution log.")
+            };
+        }
+
         [HttpGet("Status")]
         [Tags("AfterSaleReverses")]
         public async Task<ActionResult> ReversesStatus()
@@ -96,6 +117,36 @@ namespace Hangfire.Controllers.General
             var result = await _afterSaleRefundsService.GetRefunds();
 
             return Ok($"Records integrated successfully.");
+        }
+
+        [HttpGet("Refund")]
+        [Tags("AfterSaleRefunds")]
+        public async Task<ActionResult> RefundsDetails()
+        {
+            var result = await _afterSaleRefundsService.GetRefund();
+
+            return Ok($"Records integrated successfully.");
+        }
+
+        /// <summary>
+        /// get one refund by id (GET v3/api/refunds/{id}) and save it; the call is logged in general.AfterSaleRequests
+        /// </summary>
+        [HttpGet("Refunds/{docCompany}/{id:long:min(1)}")]
+        [Tags("AfterSaleRefunds")]
+        public async Task<ActionResult> Refund(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            long id
+        )
+        {
+            var result = await _afterSaleRefundsService.GetRefundById(userName, docCompany, id);
+
+            return result switch
+            {
+                true => Ok($"Refund {id} integrated successfully."),
+                false => NotFound($"Refund {id} not found in AfterSale. See general.AfterSaleErrors."),
+                null => UnprocessableEntity("Company not registered or invalid response from AfterSale. See the execution log.")
+            };
         }
 
         [HttpGet("Refunds/Status")]

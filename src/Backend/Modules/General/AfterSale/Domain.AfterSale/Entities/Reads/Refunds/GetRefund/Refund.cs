@@ -1,5 +1,4 @@
-﻿using Domain.AfterSale.Dtos.Reads.Refunds.SearchRefunds;
-using Domain.Shared.Extensions;
+﻿using Domain.Shared.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -10,10 +9,12 @@ namespace Domain.AfterSale.Entities.Reads.Refunds.GetRefund
     {
         public DateTime integrated_or_updated_at { get; private set; }
 
+        public string? doc_company { get; private set; }
+
         public Int64 id { get; private set; }
         public Int64 customer_id { get; private set; }
         public Int64 reverse_id { get; private set; }
-        public Int64 reverse_ecommerce_id { get; private set; }
+        public Int64 reverse_ecommerce_order_id { get; private set; }
 
         public decimal bonus_amount { get; private set; }
         public decimal bonus_amount_percent { get; private set; }
@@ -39,8 +40,11 @@ namespace Domain.AfterSale.Entities.Reads.Refunds.GetRefund
         public bool has_wire_transfer_account { get; private set; }
         public bool enable_payment { get; private set; }
 
-        public DateTime created_at { get; private set; }
-        public DateTime updated_at { get; private set; }
+        public DateTime? created_at { get; private set; }
+        public DateTime? updated_at { get; private set; }
+        public DateTime? voucher_expiring_date { get; private set; }
+        public DateTime? reverse_updated_at { get; private set; }
+        public DateTime? reverse_created_at { get; private set; }
 
         [SkipProperty]
         public List<Product> products { get; private set; } = [];
@@ -53,7 +57,7 @@ namespace Domain.AfterSale.Entities.Reads.Refunds.GetRefund
 
         [SkipProperty]
         public List<OrderPaymentMethod> order_payment_methods { get; private set; } = [];
-        
+
         [SkipProperty]
         public List<CouldChangeStatusFor> could_change_status_for { get; private set; } = [];
 
@@ -70,17 +74,14 @@ namespace Domain.AfterSale.Entities.Reads.Refunds.GetRefund
         public string? cashback_account { get; private set; }
         public string? voucher_redemption_code { get; private set; }
         public string? voucher_giftcard_id { get; private set; }
-        public string? voucher_expiring_date { get; private set; }
-        public string? reverse_updated_at { get; private set; }
         public string? reverse_reverse_type { get; private set; }
         public string? reverse_status_service_code { get; private set; }
         public string? reverse_status_name { get; private set; }
         public string? reverse_status_description { get; private set; }
-        public string? reverse_created_at { get; private set; }
-        public string? reverse_ecommerce_order_id { get; private set; }
+        public string? reverse_ecommerce_order { get; private set; }
         public string? reverse_ecommerce_order_seller_invoice_number { get; private set; }
         public string? reverse_ecommerce_order_seller_invoice_url { get; private set; }
-        public string? product_price_type_type { get; private set; }
+        public string? product_price_type { get; private set; }
         public string? product_price_type_label { get; private set; }
         public string? refunded_shipping_type { get; private set; }
         public string? customer_retention_method_id { get; private set; }
@@ -88,13 +89,16 @@ namespace Domain.AfterSale.Entities.Reads.Refunds.GetRefund
 
         public Refund() { }
 
-        public Refund(Dtos.Reads.Refunds.GetRefund.Refund refundDto)
+        public Refund(string doc_company, Dtos.Reads.Refunds.GetRefund.Refund refundDto)
         {
             integrated_or_updated_at = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time"));
+
+            this.doc_company = doc_company?.Length > 14 ? doc_company?.Substring(0, 14) : doc_company;
+
             id = ConverterValidatorsExtensions.ConvertToInt64Validation(refundDto.id);
-            customer_id = ConverterValidatorsExtensions.ConvertToInt64Validation(refundDto.customer.id);
-            reverse_id = ConverterValidatorsExtensions.ConvertToInt64Validation(refundDto.reverse.id);
-            reverse_ecommerce_id = ConverterValidatorsExtensions.ConvertToInt64Validation(refundDto.reverse.ecommerceOrder.id);
+            customer_id = ConverterValidatorsExtensions.ConvertToInt64Validation(refundDto.customer?.id);
+            reverse_id = ConverterValidatorsExtensions.ConvertToInt64Validation(refundDto.reverse?.id);
+            reverse_ecommerce_order_id = ConverterValidatorsExtensions.ConvertToInt64Validation(refundDto.reverse?.ecommerceOrder?.id);
 
             bonus_amount = ConverterValidatorsExtensions.ConvertToDecimalValidation(refundDto.bonus_amount);
             bonus_amount_percent = ConverterValidatorsExtensions.ConvertToDecimalValidation(refundDto.bonus_amount_percent);
@@ -108,9 +112,9 @@ namespace Domain.AfterSale.Entities.Reads.Refunds.GetRefund
             total_amount = ConverterValidatorsExtensions.ConvertToDecimalValidation(refundDto.total_amount);
             insurance_amount = ConverterValidatorsExtensions.ConvertToDecimalValidation(refundDto.insurance_amount);
 
-            status_id = ConverterValidatorsExtensions.ConvertToInt32Validation(refundDto.status.id);
-            reverse_status_id = ConverterValidatorsExtensions.ConvertToInt32Validation(refundDto.reverse.status.id);
-            reverse_refunds_count = ConverterValidatorsExtensions.ConvertToInt32Validation(refundDto.reverse.refunds_count);
+            status_id = ConverterValidatorsExtensions.ConvertToInt32Validation(refundDto.status?.id);
+            reverse_status_id = ConverterValidatorsExtensions.ConvertToInt32Validation(refundDto.reverse?.status?.id);
+            reverse_refunds_count = ConverterValidatorsExtensions.ConvertToInt32Validation(refundDto.reverse?.refunds_count);
             comments_count = ConverterValidatorsExtensions.ConvertToInt32Validation(refundDto.comments_count);
 
             free_shipping = ConverterValidatorsExtensions.ConvertToBooleanValidation(refundDto.free_shipping);
@@ -120,30 +124,11 @@ namespace Domain.AfterSale.Entities.Reads.Refunds.GetRefund
             has_wire_transfer_account = ConverterValidatorsExtensions.ConvertToBooleanValidation(refundDto.has_wire_transfer_account);
             enable_payment = ConverterValidatorsExtensions.ConvertToBooleanValidation(refundDto.enable_payment);
 
-            created_at = ConverterValidatorsExtensions.ConvertToDateTimeValidation(refundDto.created_at);
-            updated_at = ConverterValidatorsExtensions.ConvertToDateTimeValidation(refundDto.updated_at);
-            
-            refundDto.products?.ForEach(x => {
-                products.Add(new Product(x));
-            });
-
-            refundDto.status_histories?.ForEach(x => {
-                status_histories.Add(new StatusHistories(x, id));
-            });
-
-            refundDto.total_amount_histories?.ForEach(x => {
-                total_amount_histories.Add(new TotalAmountHistories(x, id));
-            });
-
-            for (int i = 0; i < refundDto.order_payment_methods?.Count(); i++)
-            {
-                order_payment_methods.Add(new OrderPaymentMethod(id, i++, refundDto.order_payment_methods[i]));
-            }
-
-            for (int i = 0; i < refundDto.could_change_status_for?.Count(); i++)
-            {
-                could_change_status_for.Add(new CouldChangeStatusFor(id, i++, refundDto.could_change_status_for[i]));
-            }
+            created_at = NullableConverters.ToNullableDateTime(refundDto.created_at);
+            updated_at = NullableConverters.ToNullableDateTime(refundDto.updated_at);
+            voucher_expiring_date = NullableConverters.ToNullableDateTime(refundDto.voucher?.expiring_date);
+            reverse_updated_at = NullableConverters.ToNullableDateTime(refundDto.reverse?.updated_at);
+            reverse_created_at = NullableConverters.ToNullableDateTime(refundDto.reverse?.created_at);
 
             type = refundDto.type?.Length > 50 ? refundDto.type?.Substring(0, 50) : refundDto.type;
             action = refundDto.action?.Length > 50 ? refundDto.action?.Substring(0, 50) : refundDto.action;
@@ -151,28 +136,47 @@ namespace Domain.AfterSale.Entities.Reads.Refunds.GetRefund
             customer_first_name = refundDto.customer?.first_name?.Length > 50 ? refundDto.customer?.first_name?.Substring(0, 50) : refundDto.customer?.first_name;
             customer_last_name = refundDto.customer?.last_name?.Length > 100 ? refundDto.customer?.last_name?.Substring(0, 100) : refundDto.customer?.last_name;
             customer_email = refundDto.customer?.email?.Length > 50 ? refundDto.customer?.email?.Substring(0, 50) : refundDto.customer?.email;
-            customer_document = refundDto.customer?.document?.Length > 50 ? refundDto.customer?.document?.Substring(0, 50) : refundDto.customer?.document;
+            customer_document = refundDto.customer?.document?.Length > 14 ? refundDto.customer?.document?.Substring(0, 14) : refundDto.customer?.document;
             status_name = refundDto.status?.name?.Length > 50 ? refundDto.status?.name?.Substring(0, 50) : refundDto.status?.name;
-            status_description = refundDto.status?.description?.Length > 50 ? refundDto.status?.description?.Substring(0, 50) : refundDto.status?.description;
+            status_description = refundDto.status?.description?.Length > 150 ? refundDto.status?.description?.Substring(0, 150) : refundDto.status?.description;
             seller_info = refundDto.seller_info?.Length > 50 ? refundDto.seller_info?.Substring(0, 50) : refundDto.seller_info;
             cashback_account = refundDto.cashback_account?.Length > 50 ? refundDto.cashback_account?.Substring(0, 50) : refundDto.cashback_account;
             voucher_redemption_code = refundDto.voucher?.redemption_code?.Length > 50 ? refundDto.voucher?.redemption_code?.Substring(0, 50) : refundDto.voucher?.redemption_code;
             voucher_giftcard_id = refundDto.voucher?.giftcard_id?.Length > 50 ? refundDto.voucher?.giftcard_id?.Substring(0, 50) : refundDto.voucher?.giftcard_id;
-            voucher_expiring_date = refundDto.voucher?.expiring_date?.Length > 50 ? refundDto.voucher?.expiring_date?.Substring(0, 50) : refundDto.voucher?.expiring_date;
-            reverse_updated_at = refundDto.reverse?.updated_at?.Length > 50 ? refundDto.reverse?.updated_at?.Substring(0, 50) : refundDto.reverse?.updated_at;
             reverse_reverse_type = refundDto.reverse?.reverse_type?.Length > 50 ? refundDto.reverse?.reverse_type?.Substring(0, 50) : refundDto.reverse?.reverse_type;
             reverse_status_service_code = refundDto.reverse?.status?.service_code?.Length > 50 ? refundDto.reverse?.status?.service_code?.Substring(0, 50) : refundDto.reverse?.status?.service_code;
             reverse_status_name = refundDto.reverse?.status?.name?.Length > 50 ? refundDto.reverse?.status?.name?.Substring(0, 50) : refundDto.reverse?.status?.name;
-            reverse_status_description = refundDto.reverse?.status?.description?.Length > 50 ? refundDto.reverse?.status?.description?.Substring(0, 50) : refundDto.reverse?.status?.description;
-            reverse_created_at = refundDto.reverse?.created_at?.Length > 50 ? refundDto.reverse?.created_at?.Substring(0, 50) : refundDto.reverse?.created_at;
-            reverse_ecommerce_order_id = refundDto.reverse?.ecommerceOrder.id?.Length > 50 ? refundDto.reverse?.ecommerceOrder.id?.Substring(0, 50) : refundDto.reverse?.ecommerceOrder.id;
+            reverse_status_description = refundDto.reverse?.status?.description?.Length > 150 ? refundDto.reverse?.status?.description?.Substring(0, 150) : refundDto.reverse?.status?.description;
+            reverse_ecommerce_order = refundDto.reverse?.ecommerceOrder?.order_id?.Length > 50 ? refundDto.reverse?.ecommerceOrder?.order_id?.Substring(0, 50) : refundDto.reverse?.ecommerceOrder?.order_id;
             reverse_ecommerce_order_seller_invoice_number = refundDto.reverse?.ecommerce_order_seller?.invoice_number?.Length > 50 ? refundDto.reverse?.ecommerce_order_seller?.invoice_number?.Substring(0, 50) : refundDto.reverse?.ecommerce_order_seller?.invoice_number;
-            reverse_ecommerce_order_seller_invoice_url = refundDto.reverse?.ecommerce_order_seller?.invoice_url?.Length > 50 ? refundDto.reverse?.ecommerce_order_seller?.invoice_url?.Substring(0, 50) : refundDto.reverse?.ecommerce_order_seller?.invoice_url;
-            product_price_type_type = refundDto.product_price_type?.type?.Length > 50 ? refundDto.product_price_type?.type?.Substring(0, 50) : refundDto.product_price_type?.type;
+            reverse_ecommerce_order_seller_invoice_url = refundDto.reverse?.ecommerce_order_seller?.invoice_url?.Length > 300 ? refundDto.reverse?.ecommerce_order_seller?.invoice_url?.Substring(0, 300) : refundDto.reverse?.ecommerce_order_seller?.invoice_url;
+            product_price_type = refundDto.product_price_type?.type?.Length > 50 ? refundDto.product_price_type?.type?.Substring(0, 50) : refundDto.product_price_type?.type;
             product_price_type_label = refundDto.product_price_type?.label?.Length > 50 ? refundDto.product_price_type?.label?.Substring(0, 50) : refundDto.product_price_type?.label;
             refunded_shipping_type = refundDto.refunded_shipping_type?.Length > 50 ? refundDto.refunded_shipping_type?.Substring(0, 50) : refundDto.refunded_shipping_type;
             customer_retention_method_id = refundDto.customer_retention_method_id?.Length > 50 ? refundDto.customer_retention_method_id?.Substring(0, 50) : refundDto.customer_retention_method_id;
-            external_order_url = refundDto.external_order_url?.Length > 50 ? refundDto.external_order_url?.Substring(0, 50) : refundDto.external_order_url;
+            external_order_url = refundDto.external_order_url?.Length > 300 ? refundDto.external_order_url?.Substring(0, 300) : refundDto.external_order_url;
+
+            refundDto.products?.ForEach(x =>
+            {
+                products.Add(new Product(doc_company, id, x));
+            });
+
+            refundDto.status_histories?.ForEach(x =>
+            {
+                status_histories.Add(new StatusHistories(doc_company, x, id));
+            });
+
+            refundDto.total_amount_histories?.ForEach(x =>
+            {
+                total_amount_histories.Add(new TotalAmountHistories(doc_company, x, id));
+            });
+
+            // ids gerados aqui (1, 2, 3...), na ordem em que a API devolve as listas
+            for (int i = 0; i < (refundDto.order_payment_methods?.Count ?? 0); i++)
+                order_payment_methods.Add(new OrderPaymentMethod(doc_company, id, i + 1, refundDto.order_payment_methods![i]));
+
+            for (int i = 0; i < (refundDto.could_change_status_for?.Count ?? 0); i++)
+                could_change_status_for.Add(new CouldChangeStatusFor(doc_company, id, i + 1, refundDto.could_change_status_for![i]));
         }
     }
 }
