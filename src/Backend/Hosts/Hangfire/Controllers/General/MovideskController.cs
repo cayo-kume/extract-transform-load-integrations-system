@@ -15,9 +15,10 @@ namespace Hangfire.Controllers.General
     {
         private readonly IMovideskTicketsService _movideskTicketsService;
         private readonly IMovideskPeopleService _movideskPeopleService;
+        private readonly IMovideskServicesService _movideskServicesService;
 
-        public MovideskController(IMovideskTicketsService movideskTicketsService, IMovideskPeopleService movideskPeopleService) =>
-            (_movideskTicketsService, _movideskPeopleService) = (movideskTicketsService, movideskPeopleService);
+        public MovideskController(IMovideskTicketsService movideskTicketsService, IMovideskPeopleService movideskPeopleService, IMovideskServicesService movideskServicesService) =>
+            (_movideskTicketsService, _movideskPeopleService, _movideskServicesService) = (movideskTicketsService, movideskPeopleService, movideskServicesService);
 
         [HttpGet("Tickets")]
         [Tags("MovideskTickets")]
@@ -39,7 +40,7 @@ namespace Hangfire.Controllers.General
             long id
         )
         {
-            var result = await _movideskTicketsService.GetTicket(userName, docCompany, id);
+            var result = await _movideskTicketsService.GetTicketById(userName, docCompany, id);
 
             return result switch
             {
@@ -69,7 +70,7 @@ namespace Hangfire.Controllers.General
             [StringLength(64, MinimumLength = 1), RegularExpression(@"^[A-Za-z0-9]+$")] string id
         )
         {
-            var result = await _movideskPeopleService.GetPerson(userName, docCompany, id);
+            var result = await _movideskPeopleService.GetPersonById(userName, docCompany, id);
 
             return result switch
             {
@@ -79,14 +80,34 @@ namespace Hangfire.Controllers.General
             };
         }
 
-        //Volta quando serviços forem implementados (injetar IMovideskServicesService)
-        //[HttpGet("Services")]
-        //[Tags("MovideskServices")]
-        //public async Task<ActionResult> Services()
-        //{
-        //    var result = await _movideskServicesService.GetServices();
+        [HttpGet("Services")]
+        [Tags("MovideskServices")]
+        public async Task<ActionResult> Services()
+        {
+            var result = await _movideskServicesService.GetServices();
 
-        //    return Ok($"Records integrated successfully.");
-        //}
+            return Ok($"Records integrated successfully.");
+        }
+
+        /// <summary>
+        /// get one service by id (GET services?id={id}) and save it; the call is logged in general.MovideskRequests
+        /// </summary>
+        [HttpGet("Services/{docCompany}/{id:int:min(1)}")]
+        [Tags("MovideskServices")]
+        public async Task<ActionResult> Service(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            int id
+        )
+        {
+            var result = await _movideskServicesService.GetServiceById(userName, docCompany, id);
+
+            return result switch
+            {
+                true => Ok($"Service {id} integrated successfully."),
+                false => NotFound($"Service {id} not found in Movidesk."),
+                null => UnprocessableEntity("Company not registered or invalid response from Movidesk. See the execution log.")
+            };
+        }
     }
 }

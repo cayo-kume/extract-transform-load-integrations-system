@@ -1,7 +1,7 @@
 INSERT INTO [auditing].[Jobs] (IdParent, IdJob, Title, [Description], IntervalTimeInMinutes, IdType)
 VALUES
 /*Procedures de Sincronizações*/
-/*Range 3500 - 3999 (tickets: 3500 - 3515, pessoas: 3516 - 3525)*/
+/*Range 3500 - 3999 (tickets: 3500 - 3515, pessoas: 3516 - 3525, serviços: 3526 - 3527)*/
 (3000, 3500, 'sp_MovideskTickets_Sync', 'Procedure de sincronização entre as tabelas MovideskTickets raw e trusted', 3, 1),
 (3000, 3501, 'sp_MovideskTicketsTags_Sync', 'Procedure de sincronização entre as tabelas MovideskTicketsTags raw e trusted', 3, 1),
 (3000, 3502, 'sp_MovideskTicketsClients_Sync', 'Procedure de sincronização entre as tabelas MovideskTicketsClients raw e trusted', 3, 1),
@@ -28,11 +28,16 @@ VALUES
 (3001, 3524, 'sp_MovideskPeopleCustomFieldValuesItems_Sync', 'Procedure de sincronização entre as tabelas MovideskPeopleCustomFieldValuesItems raw e trusted', 3, 1),
 (3001, 3525, 'sp_MovideskPeopleAssets_Sync', 'Procedure de sincronização entre as tabelas MovideskPeopleAssets raw e trusted', 3, 1),
 
+(3004, 3526, 'sp_MovideskServices_Sync', 'Procedure de sincronização entre as tabelas MovideskServices raw e trusted', 120, 1),
+(3004, 3527, 'sp_MovideskServicesCategories_Sync', 'Procedure de sincronização entre as tabelas MovideskServicesCategories raw e trusted', 120, 1),
+
 /*Integrações*/
 /*Range 3000 - 3499*/
 (30, 3000, 'MovideskGetTickets', 'Integração de dados das tabelas MovideskTickets e filhas', 3, 2),
 (30, 3001, 'MovideskGetPeople', 'Integração de dados das tabelas MovideskPeople e filhas', 3, 2),
+(30, 3004, 'MovideskGetServices', 'Integração do catálogo de serviços (MovideskServices e MovideskServicesCategories), a cada 2 horas', 120, 2),
 
 /*Sob demanda - executadas pelo MovideskController, não são recorrentes (IntervalTimeInMinutes = 0)*/
 (30, 3002, 'MovideskGetTicket', 'Integração de um ticket por número (GET Tickets/{docCompany}/{id})', 0, 2),
-(30, 3003, 'MovideskGetPerson', 'Integração de uma pessoa por Cód. Ref. (GET People/{docCompany}/{id})', 0, 2);
+(30, 3003, 'MovideskGetPerson', 'Integração de uma pessoa por Cód. Ref. (GET People/{docCompany}/{id})', 0, 2),
+(30, 3005, 'MovideskGetService', 'Integração de um serviço por id (GET Services/{docCompany}/{id})', 0, 2);

@@ -2,19 +2,20 @@
 {
     public class Service
     {
-        public string id { get; set; }
-        public string name { get; set; }
-        public string description { get; set; }
-        public string parentServiceId { get; set; }
-        public string serviceForTicketType { get; set; }
-        public string isVisible { get; set; }
-        public string allowSelection { get; set; }
-        public string allowFinishTicket { get; set; }
-        public string isActive { get; set; }
-        public string automationMacro { get; set; }
-        public string defaultCategory { get; set; }
-        public string defaultUrgency { get; set; }
-        public string allowAllCategories { get; set; }
-        public string[] categories { get; set; }
+        public string id { get; init; }
+        public string name { get; init; }
+        public string description { get; init; }
+        public string parentServiceId { get; init; }
+        public string serviceForTicketType { get; init; }
+        public string isVisible { get; init; }
+        public string allowSelection { get; init; }
+        public string allowFinishTicket { get; init; }
+        public string isActive { get; init; }
+        public string automationMacro { get; init; }
+        public string defaultCategory { get; init; }
+        public string defaultUrgency { get; init; }
+        public string allowAllCategories { get; init; }
+
+        public List<string> categories { get; init; }
     }
 }

@@ -164,7 +164,7 @@ permitia combinações sem sentido. **Sem FK** em `relatedTicketId`: o ticket re
 | Campo / lista | Motivo |
 |---|---|
 | `satisfactionSurveyResponses` | A documentação diz que está depreciado e **não é mais retornado**. Deve vir da API de Pesquisa de satisfação, em outra tabela. |
-| `serviceFull` | Repete `serviceFirstLevel`, `serviceSecondLevel` e `serviceThirdLevel`, que já são colunas do ticket (confirmado nas respostas reais, seção 11). |
+| `serviceFull` | Repete `serviceFirstLevel`, `serviceSecondLevel` e `serviceThirdLevel`, que já são colunas do ticket (confirmado nas respostas reais, seção 11). Num serviço de 4 níveis, a raiz só aparece no `serviceFull`; o caminho completo sai de `MovideskServices` pela hierarquia a partir de `serviceFirstLevelId` ([IMPLEMENTACAO-MOVIDESK-SERVICES.md](IMPLEMENTACAO-MOVIDESK-SERVICES.md) 3.4). |
 | `assets[].categoryFull` | Mesmo caso: repete `categoryFirstLevel/Second/Third`. |
 | `movideskTicketNumber`, `linkedToIntegratedTicketNumber`, `webhookEvents` | Vêm na resposta real, mas não estão na documentação e vieram `null`, então o tipo é desconhecido. Entram quando aparecer um ticket com valor. |
 | endereço em `clients[]` | Ver 4.2. |
@@ -661,7 +661,7 @@ modelagem acima:
 | 69255 | aberto em 15/10/2026, status Novo | 1 ação, 1 cliente, 16 campos adicionais (formulário atual, regra `132441`), campo do tipo arquivo |
 | 1000 | aberto em 09/11/2021, status Fechado | 2 ações com **anexos**, 2 linhas de responsáveis, 3 de status, 13 campos adicionais (formulário antigo, regra `44550`), datas de resolução/fechamento e tempos preenchidos |
 
-As duas respostas estão em `src/Backend/Modules/General/Movidesk/Responsed Jsons/Ticket/GetTicket/`
+As duas respostas estão em `src/Backend/Modules/General/Movidesk/Responsed Jsons/Ticket/GetTicketById/`
 (`json-returned-by-api-end-point-new-form.json` = 69255 e `...-old-form.json` = 1000), com nomes, e-mails,
 telefones, ids de pessoa, textos, anexos e valores dos campos adicionais trocados por dados de exemplo. A estrutura,
 os tipos, os nulos, as datas e o formato dos valores (vírgula/ponto, quantidade de dígitos) foram mantidos.
@@ -679,7 +679,7 @@ cobriria o que falta.
 | 4.4 históricos sem id | `ownerHistories[]` e `statusHistories[]` não têm `id`; o id gerado é necessário. |
 | 4.4 PK de campos adicionais | Os 16 + 13 campos têm `(customFieldId, customFieldRuleId, line)` únicos dentro de cada ticket. |
 | 4.4 id gerado nos itens | O campo `89318` (arquivo) tem um item sem `customFieldItem`, só com `storageFileGuid`. Não há chave natural. |
-| 4.6 `serviceFull` redundante | Sempre os mesmos valores dos níveis, em ordem inversa (do nível selecionado até o primeiro). Ticket 69255: `["Serviço nível 3", "Serviço nível 2", "Serviço nível 1"]`. Ticket 1000, serviço de 2 níveis: `["Serviço nível 2", "Serviço nível 1"]`, com `serviceThirdLevel = null`. |
+| 4.6 `serviceFull` redundante | Sempre os mesmos valores dos níveis. **Correção (21/10/2026):** o `serviceFull` vai da raiz do catálogo até o serviço selecionado, e a API numera os níveis a partir do selecionado: `serviceFirstLevel` é o serviço selecionado (o mais fundo, o mesmo do `serviceFirstLevelId`), `serviceSecondLevel` é o pai dele e `serviceThirdLevel` o avô. Conferido com o catálogo real e com tickets de serviço no 4º nível. Ticket 69255: `["Serviço nível 3", "Serviço nível 2", "Serviço nível 1"]`. Ticket 1000, serviço de 2 níveis: `["Serviço nível 2", "Serviço nível 1"]`, com `serviceThirdLevel = null`. |
 | 4.7 origem 0 | `actions[].origin` = `0` ("First Action") e `2`, cobertas pela tabela única de origens. |
 | anexos com chave `path` | Ticket 1000: um anexo em cada ação, `path` com 32 caracteres hexadecimais, únicos. `fileName` chega a 57 caracteres; `nvarchar(255)` atende. |
 | históricos com nulos | Ticket 1000: a primeira linha de `ownerHistories` tem `owner = null` e `ownerTeam = null` (ticket ainda sem responsável), e a última de `statusHistories` tem `changedBy = null` (fechamento automático). A linha atual de cada histórico tem `permanencyTime* = null`. Todas essas colunas aceitam nulo. |

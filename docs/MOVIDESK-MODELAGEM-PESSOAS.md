@@ -9,7 +9,7 @@ com base na [documentação da API de Pessoas](https://atendimento.movidesk.com/
 > e os jobs 3516–3525 no `Script005` (com o título do 3001 renomeado para `MovideskGetPeople`). Todos rodaram sem erro num
 > banco temporário local, junto com um teste de dois lotes da exclusão. O código C# (seção 8) ainda não foi alterado.
 
-**Nomenclatura:** `Person` só para uma pessoa (a classe `Person`, a coluna `personId`, `GetPerson`); `People` para o
+**Nomenclatura:** `Person` só para uma pessoa (a classe `Person`, a coluna `personId`, `GetPersonById`); `People` para o
 plural (tabelas `MovideskPeople*`, `GetPeople`, pastas `People`).
 
 ---
@@ -21,7 +21,7 @@ plural (tabelas `MovideskPeople*`, `GetPeople`, pastas `People`).
 | Tabelas | **Nenhuma.** O `people.sql` antigo foi removido junto com os outros scripts fora do padrão. |
 | DTOs (`Dtos/Reads/Person`) | Cobrem o layout da documentação, tudo como `string`. |
 | Entidades (`Entities/Reads/Person`) | No formato antigo: sem `doc_company`, sem `integrated_or_updated_at`, sem tipos anuláveis, e com erros (seção 8). |
-| Service / repositório | `MovideskPeopleService` (com `GetPerson`/`GetPersons`) e `MovideskPeopleRepository` existem vazios, já injetados. |
+| Service / repositório | `MovideskPeopleService` (com `GetPersonById`/`GetPersons`) e `MovideskPeopleRepository` existem vazios, já injetados. |
 | Auditoria | `EnumJob.MovideskGetPersons = 3001` no código e no `Script005`. |
 
 A seção 8 lista as renomeações para seguir a nomenclatura (`GetPersons` → `GetPeople`, pastas `Person` → `People` etc.).
@@ -374,7 +374,7 @@ A faixa 3500–3515 é dos tickets; pessoas começam em 3516.
 |---|---|
 | `EnumJob.MovideskGetPersons` | `EnumJob.MovideskGetPeople` (mesmo valor, 3001) |
 | Título `MovideskGetPersons` no `Script005` | `MovideskGetPeople` |
-| `IMovideskPeopleService.GetPersons()` | `GetPeople()` (o `GetPerson()` continua, é de uma pessoa) |
+| `IMovideskPeopleService.GetPersons()` | `GetPeople()` (o `GetPersonById()` continua, é de uma pessoa) |
 | `Dtos/Reads/Person/`, `Entities/Reads/Person/` | `Dtos/Reads/People/`, `Entities/Reads/People/` (as classes continuam `Person`, `Address` etc.), como `Reads/Tickets` |
 | `Validations/Person/` | `Validations/People/` |
 | Endpoint comentado `Persons` no controller | `People` |
@@ -429,9 +429,9 @@ Consultei em 20/10/2026 três pessoas por id (`GET /persons?id=...`) e uma lista
 
 | Arquivo | Perfil |
 |---|---|
-| `Person/GetPerson/json-returned-by-api-end-point-agent.json` | pessoa, Agente e Cliente, 3 organizações, 2 equipes, 1 contato, 1 e-mail |
-| `Person/GetPerson/json-returned-by-api-end-point-client.json` | pessoa, Cliente, com superior (`bossId`/`bossName`), 2 organizações |
-| `Person/GetPerson/json-returned-by-api-end-point-company.json` | empresa, Cliente, 1 endereço, `changedDate` nulo, relacionamento sem organização |
+| `Person/GetPersonById/json-returned-by-api-end-point-agent.json` | pessoa, Agente e Cliente, 3 organizações, 2 equipes, 1 contato, 1 e-mail |
+| `Person/GetPersonById/json-returned-by-api-end-point-client.json` | pessoa, Cliente, com superior (`bossId`/`bossName`), 2 organizações |
+| `Person/GetPersonById/json-returned-by-api-end-point-company.json` | empresa, Cliente, 1 endereço, `changedDate` nulo, relacionamento sem organização |
 | `People/GetPeople/json-returned-by-api-end-point.json` | listagem com 3 pessoas |
 
 Os ids falsos são os mesmos dos JSONs de tickets (a mesma pessoa tem o mesmo id nos dois); nomes, documentos, e-mails,

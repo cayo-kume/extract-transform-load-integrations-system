@@ -46,11 +46,11 @@ namespace Application.Movidesk.Services
         /// busca uma pessoa pelo Cód. Ref., grava nas tabelas de pessoas (sempre, sem consultar o cache)
         /// e registra a chamada em general.MovideskRequests
         /// </summary>
-        public async Task<bool?> GetPerson(string user_name, string doc_company, string id)
+        public async Task<bool?> GetPersonById(string user_name, string doc_company, string id)
         {
             _logger
                 .Clear()
-                .AddLog(EnumJob.MovideskGetPerson);
+                .AddLog(EnumJob.MovideskGetPersonById);
 
             // rota registrada no log de requisições: sem o token
             var route = $"persons?id={id}";
@@ -62,7 +62,7 @@ namespace Application.Movidesk.Services
 
                 if (company is null)
                 {
-                    // nenhuma chamada à API: não há o que registrar em MovideskRequests (igual ao GetTicket)
+                    // nenhuma chamada à API: não há o que registrar em MovideskRequests (igual ao GetTicketById)
                     _logger.AddMessage($"Empresa {doc_company} não cadastrada em general.MovideskParameters.");
                     return null;
                 }
@@ -86,7 +86,7 @@ namespace Application.Movidesk.Services
                 catch (Exception ex)
                 {
                     // registra a tentativa mesmo quando a chamada não chega a ter resposta (timeout, rede)
-                    _movideskService.SaveRequest(EnumJob.MovideskGetPerson, user_name, "GET", route, doc_company, id, $"Exceção ao chamar a API: {ex.Message}", false);
+                    _movideskService.SaveRequest(EnumJob.MovideskGetPersonById, user_name, "GET", route, doc_company, id, $"Exceção ao chamar a API: {ex.Message}", false);
                     throw;
                 }
 
@@ -128,7 +128,7 @@ namespace Application.Movidesk.Services
                     }
                 }
 
-                _movideskService.SaveRequest(EnumJob.MovideskGetPerson, user_name, "GET", route, doc_company, id, response, result == true);
+                _movideskService.SaveRequest(EnumJob.MovideskGetPersonById, user_name, "GET", route, doc_company, id, response, result == true);
 
                 return result;
             }

@@ -1,12 +1,12 @@
-# Movidesk — Implementação do `GetTicket` (um ticket por id)
+# Movidesk — Implementação do `GetTicketById` (um ticket por id)
 
-Guia para implementar `MovideskTicketsService.GetTicket`: recebe a empresa, o número de um ticket e o usuário que
+Guia para implementar `MovideskTicketsService.GetTicketById`: recebe a empresa, o número de um ticket e o usuário que
 pediu, busca **só esse ticket** na API da Movidesk, grava nas mesmas tabelas do `GetTickets` e registra a chamada numa
 tabela de log, como o AfterSale faz nas rotas de escrita.
 
 > **Implementado em 20/10/2026.** O host `Hangfire` compila com 0 erros; o `Script006` rodou sem erro num banco
 > temporário e as colunas batem com a entidade `Request`; as validações da rota foram testadas com o host rodando
-> (seção 13). O `GetTicket` ainda **não foi executado** contra a API nem o banco. Parte do código atual do `GetTickets`
+> (seção 13). O `GetTicketById` ainda **não foi executado** contra a API nem o banco. Parte do código atual do `GetTickets`
 > ([IMPLEMENTACAO-MOVIDESK-GETTICKETS.md](IMPLEMENTACAO-MOVIDESK-GETTICKETS.md)) e das tabelas de
 > [MOVIDESK-MODELAGEM-TICKETS.md](MOVIDESK-MODELAGEM-TICKETS.md). As decisões de 20/10/2026 estão na seção 11.
 
@@ -16,7 +16,7 @@ Raiz do módulo: `src/Backend/Modules/General/Movidesk/`.
 
 ## 1. Para que serve e como difere do `GetTickets`
 
-| | `GetTickets` (já existe) | `GetTicket` (novo) |
+| | `GetTickets` (já existe) | `GetTicketById` (novo) |
 |---|---|---|
 | Quando roda | Recorrente (job), para todas as empresas | Sob demanda, para uma empresa e um ticket, pedido por um usuário |
 | O que busca | Tickets com `lastUpdate` desde a última execução, paginados | Um ticket pelo número |
@@ -35,7 +35,7 @@ Usos esperados: reprocessar um ticket específico, trazer um ticket antigo (fora
 
 | Situação | Resposta | Como foi verificado |
 |---|---|---|
-| Ticket existe | **200** com um objeto JSON (não uma lista), com todas as listas expandidas e `htmlDescription` preenchido | Tickets 69255 e 1000 (`Responsed Jsons/Ticket/GetTicket`) |
+| Ticket existe | **200** com um objeto JSON (não uma lista), com todas as listas expandidas e `htmlDescription` preenchido | Tickets 69255 e 1000 (`Responsed Jsons/Ticket/GetTicketById`) |
 | Ticket não existe | **404 com corpo vazio** (sem JSON, sem `content-type`) | `GET /tickets?id=999999999` em 20/10/2026 |
 | Token inválido, limite de requisições (429) etc. | Não testado (testar gera bloqueio da API) | Documentação: 3 requisições com erro seguidas bloqueiam por 60 s, depois 120 s e 300 s |
 
@@ -60,7 +60,7 @@ public interface IMovideskTicketsService
     /// busca um ticket por número, grava nas tabelas de tickets e registra a chamada em general.MovideskRequests.
     /// true: gravado | false: o ticket não existe na Movidesk | null: empresa não cadastrada ou resposta inválida da API
     /// </summary>
-    public Task<bool?> GetTicket(string user_name, string doc_company, long id);
+    public Task<bool?> GetTicketById(string user_name, string doc_company, long id);
 
     public Task<bool?> GetTickets();
 }
@@ -103,7 +103,7 @@ public enum EnumJob
 
     MovideskGetTickets = 3000,
     MovideskGetPersons = 3001,
-    MovideskGetTicket = 3002
+    MovideskGetTicketById = 3002
 }
 ```
 O comentário do enum ainda cita `Script002_Insert_Into_Jobs_Table.sql`, que foi renumerado; a correção acima vem junto.
@@ -117,7 +117,7 @@ ações sob demanda, como o AfterSale fez com as rotas POST/PUT (`IntervalTimeIn
 (30, 3001, 'MovideskGetPersons', 'Integração de dados da tabela MovideskPersons', 3, 2),
 
 /*Sob demanda - executadas pelo MovideskController, não são recorrentes (IntervalTimeInMinutes = 0)*/
-(30, 3002, 'MovideskGetTicket', 'Integração de um ticket por número (GET Tickets/{docCompany}/{id})', 0, 2);
+(30, 3002, 'MovideskGetTicketById', 'Integração de um ticket por número (GET Tickets/{docCompany}/{id})', 0, 2);
 ```
 As procedures de merge (3500–3513) não mudam: são as mesmas tabelas. Elas ficam registradas como filhas do job 3000,
 mas a execução é ligada ao log do 3002 pelo `parentExecutionGUID`, como já acontece hoje.
@@ -230,7 +230,7 @@ public bool InsertIntoMovideskRequests(Domain.Movidesk.Entities.Writes.Requests.
 }
 ```
 
-### 5.4 O que é gravado no `GetTicket`
+### 5.4 O que é gravado no `GetTicketById`
 | Coluna | Valor |
 |---|---|
 | `user_name` | cabeçalho `X-User-Name` |
@@ -291,13 +291,13 @@ public async Task<Company?> GetCompany(string doc_company)
 ## 7. `htmlDescription`: preservar o que já foi gravado
 
 **Problema:** a listagem (`GetTickets`) não devolve `htmlDescription`. Quando ela regrava um ticket que já tinha o HTML
-gravado (por um `GetTicket`), o merge faz `update` de todas as colunas e o HTML volta a ficar nulo.
+gravado (por um `GetTicketById`), o merge faz `update` de todas as colunas e o HTML volta a ficar nulo.
 
 **Solução:** antes de gravar, o service completa o `htmlDescription` que veio vazio com o que já está no banco. Não
 custa nenhuma requisição à API (uma consulta ao banco por lote), e vale para os dois métodos:
-- **`GetTicket`:** as ações chegam com o HTML da API, então nada é trocado (só completa uma ação que a API mandar sem HTML).
+- **`GetTicketById`:** as ações chegam com o HTML da API, então nada é trocado (só completa uma ação que a API mandar sem HTML).
 - **`GetTickets`:** as ações já conhecidas mantêm o HTML gravado. **Ações novas** que chegam pela listagem ficam sem
-  HTML até alguém chamar o `GetTicket` daquele ticket; buscar o HTML de cada ação nova na listagem custaria uma
+  HTML até alguém chamar o `GetTicketById` daquele ticket; buscar o HTML de cada ação nova na listagem custaria uma
   requisição por ticket (limite de 10 por minuto) e fica de fora.
 
 ### 7.1 Query
@@ -368,7 +368,7 @@ foreach (var action in _listSomenteNovos.SelectMany(x => x.actions))
 ## 8. Service
 
 ### 8.1 Extrair a gravação comum (`SaveTickets`)
-O `GetTickets` e o `GetTicket` fazem a mesma coisa depois de ter os DTOs: validar, montar as entidades com o horário
+O `GetTickets` e o `GetTicketById` fazem a mesma coisa depois de ter os DTOs: validar, montar as entidades com o horário
 do lote, preservar o `htmlDescription`, gravar, registrar o JSON no log e atualizar o cache. Para não duplicar, esse
 trecho vira um método privado.
 
@@ -435,17 +435,17 @@ totalInseridos += await SaveTickets(company.doc_company, batchTime, tickets, tic
 ```
 A única mudança de comportamento no `GetTickets` é a preservação do `htmlDescription` (seção 7).
 
-### 8.2 `GetTicket`
+### 8.2 `GetTicketById`
 ```csharp
 /// <summary>
 /// busca um ticket por número, grava nas tabelas de tickets (sempre, sem consultar o cache)
 /// e registra a chamada em general.MovideskRequests
 /// </summary>
-public async Task<bool?> GetTicket(string user_name, string doc_company, long id)
+public async Task<bool?> GetTicketById(string user_name, string doc_company, long id)
 {
     _logger
         .Clear()
-        .AddLog(EnumJob.MovideskGetTicket);
+        .AddLog(EnumJob.MovideskGetTicketById);
 
     // rota registrada no log de requisições: sem o token
     var route = $"tickets?id={id}";
@@ -482,7 +482,7 @@ public async Task<bool?> GetTicket(string user_name, string doc_company, long id
         catch (Exception ex)
         {
             // registra a tentativa mesmo quando a chamada não chega a ter resposta (timeout, rede)
-            SaveRequest(EnumJob.MovideskGetTicket, user_name, "GET", route, doc_company, id, $"Exceção ao chamar a API: {ex.Message}", false);
+            SaveRequest(EnumJob.MovideskGetTicketById, user_name, "GET", route, doc_company, id, $"Exceção ao chamar a API: {ex.Message}", false);
             throw;
         }
 
@@ -522,7 +522,7 @@ public async Task<bool?> GetTicket(string user_name, string doc_company, long id
             }
         }
 
-        SaveRequest(EnumJob.MovideskGetTicket, user_name, "GET", route, doc_company, id, response, result == true);
+        SaveRequest(EnumJob.MovideskGetTicketById, user_name, "GET", route, doc_company, id, response, result == true);
 
         return result;
     }
@@ -560,7 +560,7 @@ Pontos do código:
   é tratada como inválida, em vez de gravar algo errado.
 - **Sem consulta ao cache antes de gravar:** a chamada é explícita; mesmo um ticket sem mudanças é regravado (e ganha
   o `htmlDescription`).
-- **Cache depois de gravar:** só é atualizado se já existir (`TryGetValue`). O `GetTicket` não cria o cache da empresa,
+- **Cache depois de gravar:** só é atualizado se já existir (`TryGetValue`). O `GetTicketById` não cria o cache da empresa,
   porque o `GetTickets` o carrega com os ids do lote dele.
 - `using`s: os mesmos que o `MovideskTicketsService` já tem.
 
@@ -582,7 +582,7 @@ public async Task<ActionResult> Ticket(
     long id
 )
 {
-    var result = await _movideskTicketsService.GetTicket(userName, docCompany, id);
+    var result = await _movideskTicketsService.GetTicketById(userName, docCompany, id);
 
     return result switch
     {
@@ -603,15 +603,15 @@ A rota `Tickets` e a nova `Tickets/{docCompany}/{id}` não conflitam: o ASP.NET 
 
 ## 10. Riscos e limitações
 
-- **Execução simultânea com o `GetTickets`:** as procedures de merge usam `sp_TryApplock`. Se um `GetTicket` rodar
+- **Execução simultânea com o `GetTickets`:** as procedures de merge usam `sp_TryApplock`. Se um `GetTicketById` rodar
   enquanto o `GetTickets` está no merge da mesma tabela, a procedure falha com "The process is already running", e o
   `CallDbProcMerge` lança erro: a chamada devolve 500 e o ticket pode ter ficado só na `untreated`. Ele entra no
-  próximo merge (o merge processa tudo que está na `untreated`). Vale reexecutar o `GetTicket` nesse caso.
+  próximo merge (o merge processa tudo que está na `untreated`). Vale reexecutar o `GetTicketById` nesse caso.
 - **Bloqueio da API:** três chamadas com erro seguidas (inclusive ids que não existem, se a Movidesk contar o 404 como
   erro) bloqueiam o token por 60 s. Um sistema externo que chame o endpoint em sequência deve respeitar isso.
 - **Ticket de outra conta:** se o número existir em outra conta Movidesk, mas não na do `docCompany`, a resposta é 404;
   o endpoint responde 404, corretamente.
-- **Ações novas sem HTML:** vindas pelo `GetTickets`, ficam sem `htmlDescription` até um `GetTicket` daquele ticket
+- **Ações novas sem HTML:** vindas pelo `GetTickets`, ficam sem `htmlDescription` até um `GetTicketById` daquele ticket
   (seção 7).
 - **Dados pessoais no log:** `MovideskRequests.response_body` guarda o JSON completo do ticket (seção 5.4).
 
@@ -622,7 +622,7 @@ A rota `Tickets` e a nova `Tickets/{docCompany}/{id}` não conflitam: o ASP.NET 
 | # | Decisão | Onde |
 |---|---|---|
 | 1 | Rota com `docCompany`: `GET Tickets/{docCompany}/{id}` | 3.2, 9 |
-| 2 | Job próprio `MovideskGetTicket = 3002`, sob demanda (`IntervalTimeInMinutes = 0`) | 4 |
+| 2 | Job próprio `MovideskGetTicketById = 3002`, sob demanda (`IntervalTimeInMinutes = 0`) | 4 |
 | 3 | `htmlDescription` tratado já: o `GetTickets` preserva o HTML gravado em vez de sobrescrever com `null` | 7, 8.1 |
 | 4 | Usuário obrigatório pelo cabeçalho `X-User-Name` e log das chamadas em `general.MovideskRequests`, como no AfterSale | 5, 8.2, 9 |
 
@@ -632,16 +632,16 @@ Não há decisões pendentes neste guia.
 
 ## 12. Checklist
 
-- [ ] `EnumJob.MovideskGetTicket = 3002` e comentário apontando para o `Script005`
+- [ ] `EnumJob.MovideskGetTicketById = 3002` e comentário apontando para o `Script005`
 - [ ] Linha do job 3002 no `Script005` (e no banco local, à mão)
 - [ ] `Script006_Create_Movidesk_Requests_Table.sql` (e rodar no banco local)
 - [ ] Entidade `Entities/Writes/Requests/Request.cs`
 - [ ] `IMovideskRepository`: `GetCompany` e `InsertIntoMovideskRequests` + queries e implementação
 - [ ] `IMovideskTicketsRepository.GetActionsHtmlDescriptions` + query (em lotes de 1000)
 - [ ] `Action.KeepHtmlDescription`
-- [ ] `IMovideskTicketsService.GetTicket(string user_name, string doc_company, long id)`
-- [ ] `SaveTickets` privado (com a preservação do HTML), usado pelo `GetTickets` e pelo `GetTicket`
-- [ ] `GetTicket` + `SaveRequest`, com o log de auditoria gravado em todos os casos
+- [ ] `IMovideskTicketsService.GetTicketById(string user_name, string doc_company, long id)`
+- [ ] `SaveTickets` privado (com a preservação do HTML), usado pelo `GetTickets` e pelo `GetTicketById`
+- [ ] `GetTicketById` + `SaveRequest`, com o log de auditoria gravado em todos os casos
 - [ ] Endpoint `GET Tickets/{docCompany}/{id}` com `X-User-Name` e 200/404/422
 - [ ] Compilar o host
 - [ ] Teste: um ticket existente (grava, inclusive `htmlDescription`, e registra em `MovideskRequests`), um inexistente

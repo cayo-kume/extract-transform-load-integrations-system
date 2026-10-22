@@ -1,0 +1,18 @@
+{
+  "id": 200016,
+  "name": "Serviço exemplo 16",
+  "description": "Descrição exemplo do serviço 16",
+  "parentServiceId": 200002,
+  "serviceForTicketType": 2,
+  "isVisible": 3,
+  "allowSelection": 3,
+  "allowFinishTicket": true,
+  "isActive": false,
+  "automationMacro": null,
+  "defaultCategory": "Categoria exemplo 2",
+  "defaultUrgency": "Urgência exemplo",
+  "allowAllCategories": false,
+  "categories": [
+    "Categoria exemplo 2"
+  ]
+}

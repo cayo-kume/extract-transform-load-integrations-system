@@ -7,6 +7,7 @@ using Domain.Shared.Extensions;
 using FluentValidation;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Application.Movidesk.Services
@@ -23,9 +24,14 @@ namespace Application.Movidesk.Services
 
         private const string TicketsKey = "Movidesk:Tickets";
 
-        // limite da API: 10 requisições por minuto -> 1 requisição a cada 6 s
+        // limite da API: 10 requisições por minuto -> 1 requisição a cada 6 s (contados do início da chamada anterior)
         private const int RequestIntervalInMilliseconds = 6 * 1000;
+        // 100 tickets por bloco (faixa de ids): com o $expand em grupos, cada chamada responde em 2 a 8 s (medido em 21/10/2026);
+        // $top com folga para tickets que entram no filtro durante a leitura
         private const int PageSize = 100;
+        private const int BlockTop = 150;
+        // a fase 1 lista só id e lastUpdate; a API devolve no máximo 1.000 por chamada
+        private const int IdsPageSize = 1000;
 
         // $select é obrigatório na listagem: campos do ticket, sem as listas
         private const string TicketsSelect =
@@ -37,14 +43,17 @@ namespace Application.Movidesk.Services
             "slaSolutionDate,slaSolutionDateIsPaused,jiraIssueKey,redmineIssueId,reopenedIn,lastActionDate,lastUpdate," +
             "slaResponseDate,slaRealResponseDate";
 
-        // as listas vêm pelo $expand (o aninhamento de mais de um nível não aparece na documentação: conferir na primeira chamada)
-        private const string TicketsExpand =
-            "owner,createdBy,slaSolutionChangedBy," +
-            "clients($expand=organization)," +
-            "actions($expand=createdBy,timeAppointments($expand=createdBy,createdByTeam),expenses($expand=createdBy,createdByTeam),attachments($expand=createdBy))," +
-            "parentTickets,childrenTickets," +
-            "ownerHistories($expand=owner,changedBy),statusHistories($expand=changedBy)," +
-            "customFieldValues($expand=items),assets";
+        // as listas vêm pelo $expand, dividido em grupos: tudo numa chamada leva ~100 s e chega a dar 504;
+        // em grupos, ~24 s por bloco de 100 (medido em 21/10/2026). O grupo 1 traz os campos; os outros, só id e as listas.
+        // expenses($expand=createdByTeam) faz a API devolver 500: nas despesas só createdBy é expandido
+        private static readonly (string select, string expand)[] TicketsExpandGroups =
+        [
+            (TicketsSelect, "owner,createdBy,slaSolutionChangedBy,parentTickets,childrenTickets"),
+            ("id", "actions($expand=createdBy,timeAppointments($expand=createdBy,createdByTeam),expenses($expand=createdBy),attachments($expand=createdBy))"),
+            ("id", "clients($expand=organization),assets"),
+            ("id", "ownerHistories($expand=owner,changedBy),statusHistories($expand=changedBy)"),
+            ("id", "customFieldValues($expand=items)"),
+        ];
 
         public MovideskTicketsService(
             [FromKeyedServices("MovideskAPI")] IApiClient apiClient,
@@ -62,11 +71,11 @@ namespace Application.Movidesk.Services
         /// busca um ticket por número, grava nas tabelas de tickets (sempre, sem consultar o cache)
         /// e registra a chamada em general.MovideskRequests
         /// </summary>
-        public async Task<bool?> GetTicket(string user_name, string doc_company, long id)
+        public async Task<bool?> GetTicketById(string user_name, string doc_company, long id)
         {
             _logger
                 .Clear()
-                .AddLog(EnumJob.MovideskGetTicket);
+                .AddLog(EnumJob.MovideskGetTicketById);
 
             // rota registrada no log de requisições: sem o token
             var route = $"tickets?id={id}";
@@ -103,7 +112,7 @@ namespace Application.Movidesk.Services
                 catch (Exception ex)
                 {
                     // registra a tentativa mesmo quando a chamada não chega a ter resposta (timeout, rede)
-                    _movideskService.SaveRequest(EnumJob.MovideskGetTicket, user_name, "GET", route, doc_company, id.ToString(), $"Exceção ao chamar a API: {ex.Message}", false);
+                    _movideskService.SaveRequest(EnumJob.MovideskGetTicketById, user_name, "GET", route, doc_company, id.ToString(), $"Exceção ao chamar a API: {ex.Message}", false);
                     throw;
                 }
 
@@ -143,7 +152,7 @@ namespace Application.Movidesk.Services
                     }
                 }
 
-                _movideskService.SaveRequest(EnumJob.MovideskGetTicket, user_name, "GET", route, doc_company, id.ToString(), response, result == true);
+                _movideskService.SaveRequest(EnumJob.MovideskGetTicketById, user_name, "GET", route, doc_company, id.ToString(), response, result == true);
 
                 return result;
             }
@@ -155,7 +164,9 @@ namespace Application.Movidesk.Services
         }
 
         /// <summary>
-        /// sincroniza os tickets atualizados desde a última execução, para cada empresa
+        /// sincroniza os tickets atualizados desde a última execução, para cada empresa.
+        /// Fase 1: lista id e lastUpdate da janela. Fase 2: busca só os alterados, em blocos por faixa de ids,
+        /// com o $expand dividido em grupos, e grava bloco a bloco.
         /// </summary>
         public async Task<bool?> GetTickets()
         {
@@ -166,34 +177,42 @@ namespace Application.Movidesk.Services
             var totalInseridos = 0;
             var companys = await _movideskRepository.GetCompanys();
 
+            // início da última chamada à API: os 6 s do limite contam a partir dele
+            var lastRequestAt = DateTime.MinValue;
+
             foreach (var company in companys)
             {
                 if (company?.doc_company is null)
                     continue;
 
-                // um horário por lote: ticket, filhas e netas gravam o mesmo valor (condição de exclusão do merge)
-                var batchTime = _movideskService.GetBatchTime();
-
                 // lastUpdate é UTC na API; 1 hora de folga para o atraso de replicação. Banco vazio: /tickets só traz até 90 dias
                 var lastUpdate = await _movideskTicketsRepository.GetTicketsLastUpdate(company.doc_company);
                 var since = lastUpdate.HasValue ? lastUpdate.Value.AddHours(-1) : DateTime.UtcNow.AddDays(-89);
 
-                var tickets = new List<Domain.Movidesk.Dtos.Reads.Tickets.Ticket>();
-                var ticketsJson = new Dictionary<long, string>();
+                // fase 1: id e lastUpdate dos tickets da janela, em ordem de id (1.000 por chamada, o máximo da API)
+                var listed = new List<(long id, DateTime? lastUpdate)>();
+                var listFailed = false;
                 var skip = 0;
 
                 while (true)
                 {
+                    // espera o que falta para 6 s desde o início da chamada anterior (limite de 10 requisições por minuto)
+                    var wait = lastRequestAt.AddMilliseconds(RequestIntervalInMilliseconds) - DateTime.UtcNow;
+
+                    if (wait > TimeSpan.Zero)
+                        await Task.Delay(wait);
+
+                    lastRequestAt = DateTime.UtcNow;
+
                     var response = await _apiClient.GetAsync(
                         route: "tickets",
                         queryParams: new Dictionary<string, string>
                         {
                             { "token", company.Token.ToString() },
-                            { "$select", TicketsSelect },
-                            { "$expand", TicketsExpand },
+                            { "$select", "id,lastUpdate" },
                             { "$filter", $"lastUpdate ge {since:yyyy-MM-ddTHH:mm:ss}.00z" },
                             { "$orderby", "id asc" },
-                            { "$top", PageSize.ToString() },
+                            { "$top", IdsPageSize.ToString() },
                             { "$skip", skip.ToString() }
                         }
                     );
@@ -202,64 +221,186 @@ namespace Application.Movidesk.Services
 
                     try
                     {
-                        page = Newtonsoft.Json.JsonConvert.DeserializeObject<List<Domain.Movidesk.Dtos.Reads.Tickets.Ticket>>(response ?? String.Empty);
+                        page = JsonConvert.DeserializeObject<List<Domain.Movidesk.Dtos.Reads.Tickets.Ticket>>(response ?? String.Empty);
                     }
-                    catch (Newtonsoft.Json.JsonException)
+                    catch (JsonException)
                     {
-                        // a API devolve um objeto de erro (ou 429 Too many failed requests) em vez da lista;
-                        // 3 erros seguidos bloqueiam a API, por isso a empresa é interrompida em vez de tentar de novo
-                        _logger.AddMessage($"Resposta inválida da API Movidesk (empresa {company.doc_company}, skip {skip}): {response}");
+                        // a API devolve um objeto de erro (ou 429 Too many failed requests) em vez da lista
+                        _logger.AddMessage($"Resposta inválida da API Movidesk (empresa {company.doc_company}, lista de ids, skip {skip}): {response}");
+                        listFailed = true;
                         break;
                     }
 
                     if (page is null || page.Count == 0)
                         break;
 
-                    tickets.AddRange(page);
+                    listed.AddRange(page
+                        .Select(x => (id: ConverterValidatorsExtensions.ConvertToInt64Validation(x.id), lastUpdate: NullableConverters.ToNullableDateTime(x.lastUpdate)))
+                        .Where(x => x.id != 0));
 
-                    foreach (var item in JArray.Parse(response!))
-                    {
-                        var id = ConverterValidatorsExtensions.ConvertToInt64Validation((string?)item["id"]);
-
-                        if (id != 0)
-                            ticketsJson[id] = item.ToString();
-                    }
-
-                    if (page.Count < PageSize)
+                    if (page.Count < IdsPageSize)
                         break;
 
-                    skip += PageSize;
-                    Thread.Sleep(RequestIntervalInMilliseconds);
+                    skip += IdsPageSize;
                 }
 
-                if (tickets.Count == 0)
+                // erro na lista de ids: nada foi buscado ainda, a empresa fica para a próxima execução
+                if (listFailed || listed.Count == 0)
                     continue;
 
+                // um ticket alterado durante a leitura pode aparecer em duas páginas
+                listed = listed
+                    .GroupBy(x => x.id)
+                    .Select(g => g.Last())
+                    .OrderBy(x => x.id)
+                    .ToList();
+
                 // cache de estado: id -> ticket gravado (com lastUpdate), por empresa
-                var ticketsCache = await _cache.GetOrCreateAsync($"{TicketsKey}:{company.doc_company}", async entry =>
+                var ticketsCache = (await _cache.GetOrCreateAsync($"{TicketsKey}:{company.doc_company}", async entry =>
                 {
                     entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(2);
                     entry.SlidingExpiration = TimeSpan.FromMinutes(30);
 
-                    var list = await _movideskTicketsRepository.GetTicketsByIds(
-                        company.doc_company,
-                        tickets.Select(x => ConverterValidatorsExtensions.ConvertToInt64Validation(x.id)).Distinct().ToList()
-                    );
+                    var list = await _movideskTicketsRepository.GetTicketsByIds(company.doc_company, listed.Select(x => x.id).ToList());
 
                     return list
                         .Where(x => x != null)
                         .GroupBy(x => x!.id)
                         .ToDictionary(g => g.Key, g => g.First()!);
-                });
+                }))!;
 
-                // mantém só os novos ou com lastUpdate mais recente que o gravado
-                tickets.RemoveAll(x =>
-                    !string.IsNullOrEmpty(x.id) &&
-                    ticketsCache!.TryGetValue(ConverterValidatorsExtensions.ConvertToInt64Validation(x.id), out var y) &&
-                    NullableConverters.ToNullableDateTime(x.lastUpdate) <= y.lastUpdate
-                );
+                // só os novos ou com lastUpdate mais recente que o gravado vão para as chamadas caras
+                var changed = listed
+                    .Where(x => !(ticketsCache.TryGetValue(x.id, out var y) && x.lastUpdate <= y.lastUpdate))
+                    .Select(x => x.id)
+                    .ToHashSet();
 
-                totalInseridos += await SaveTickets(company.doc_company, batchTime, tickets, ticketsJson, ticketsCache);
+                // monta os blocos da fase 2 a partir de todos os ids da fase 1 (em ordem). Cada bloco começa num ticket
+                // alterado, tem no máximo PageSize ids e termina no último alterado da janela; assim a faixa
+                // id ge {primeiro} and id le {último} nunca tem mais de PageSize tickets do filtro.
+                var ids = listed.Select(x => x.id).ToList();
+                var blocks = new List<List<long>>();
+                var i = 0;
+
+                while (i < ids.Count)
+                {
+                    if (!changed.Contains(ids[i]))
+                    {
+                        i++;
+                        continue;
+                    }
+
+                    var window = ids.Skip(i).Take(PageSize).ToList();
+                    var lastChanged = window.FindLastIndex(changed.Contains);
+
+                    blocks.Add(window.Take(lastChanged + 1).ToList());
+                    i += lastChanged + 1;
+                }
+
+                var apiFailed = false;
+
+                foreach (var block in blocks)
+                {
+                    // fase 2: busca o bloco com uma chamada por grupo do $expand e junta as respostas por id
+                    var filter = $"id ge {block[0]} and id le {block[^1]} and lastUpdate ge {since:yyyy-MM-ddTHH:mm:ss}.00z";
+                    var merged = new Dictionary<long, JObject>();
+                    var seen = new Dictionary<long, int>();
+                    var blockFull = false;
+
+                    foreach (var (select, expand) in TicketsExpandGroups)
+                    {
+                        // espera o que falta para 6 s desde o início da chamada anterior (limite de 10 requisições por minuto)
+                        var wait = lastRequestAt.AddMilliseconds(RequestIntervalInMilliseconds) - DateTime.UtcNow;
+
+                        if (wait > TimeSpan.Zero)
+                            await Task.Delay(wait);
+
+                        lastRequestAt = DateTime.UtcNow;
+
+                        var response = await _apiClient.GetAsync(
+                            route: "tickets",
+                            queryParams: new Dictionary<string, string>
+                            {
+                                { "token", company.Token.ToString() },
+                                { "$select", select },
+                                { "$expand", expand },
+                                { "$filter", filter },
+                                { "$orderby", "id asc" },
+                                { "$top", BlockTop.ToString() }
+                            }
+                        );
+
+                        JArray page;
+
+                        try
+                        {
+                            // lê a resposta mantendo datas e decimais como vieram (o DTO é todo string); o JArray.Parse padrão
+                            // converteria as datas e mudaria o formato. Lança JsonReaderException quando a resposta não é uma lista.
+                            using var reader = new JsonTextReader(new StringReader(response ?? String.Empty))
+                            {
+                                DateParseHandling = DateParseHandling.None,
+                                FloatParseHandling = FloatParseHandling.Decimal
+                            };
+
+                            page = JArray.Load(reader);
+                        }
+                        catch (JsonReaderException)
+                        {
+                            _logger.AddMessage($"Resposta inválida da API Movidesk (empresa {company.doc_company}, tickets {block[0]} a {block[^1]}, $expand {expand}): {response}");
+                            apiFailed = true;
+                            break;
+                        }
+
+                        // $top cheio: pode ter ficado ticket de fora; o bloco é remontado na próxima execução
+                        if (page.Count >= BlockTop)
+                        {
+                            _logger.AddMessage($"Bloco de tickets {block[0]} a {block[^1]} (empresa {company.doc_company}) com {page.Count} registros: não gravado, será remontado na próxima execução.");
+                            blockFull = true;
+                            break;
+                        }
+
+                        foreach (var item in page.OfType<JObject>())
+                        {
+                            var id = ConverterValidatorsExtensions.ConvertToInt64Validation((string?)item["id"]);
+
+                            // tickets que não mudaram, ou que entraram no filtro depois da fase 1 (chegam na próxima execução)
+                            if (!changed.Contains(id))
+                                continue;
+
+                            if (merged.TryGetValue(id, out var ticket))
+                                ticket.Merge(item, new JsonMergeSettings { MergeArrayHandling = MergeArrayHandling.Replace });
+                            else
+                                merged[id] = item;
+
+                            seen[id] = seen.GetValueOrDefault(id) + 1;
+                        }
+                    }
+
+                    // a API devolveu erro: interrompe a empresa em vez de tentar de novo (3 erros seguidos bloqueiam a API).
+                    // Os blocos anteriores já foram gravados.
+                    if (apiFailed)
+                        break;
+
+                    if (blockFull)
+                        continue;
+
+                    // ticket sem algum grupo não é gravado: o merge apagaria as filhas que faltaram. Volta na próxima execução,
+                    // porque o lastUpdate gravado continua antigo
+                    foreach (var id in merged.Keys.Where(id => seen[id] < TicketsExpandGroups.Length).ToList())
+                    {
+                        _logger.AddMessage($"Ticket {id} (empresa {company.doc_company}) não veio em todos os grupos do $expand: não gravado nesta execução.");
+                        merged.Remove(id);
+                    }
+
+                    if (merged.Count == 0)
+                        continue;
+
+                    var tickets = merged.Values.Select(x => x.ToObject<Domain.Movidesk.Dtos.Reads.Tickets.Ticket>()!).ToList();
+                    var ticketsJson = merged.ToDictionary(x => x.Key, x => x.Value.ToString());
+
+                    // um horário de lote por bloco: ticket, filhas e netas gravam o mesmo valor (condição de exclusão do merge)
+                    totalInseridos += await SaveTickets(company.doc_company, _movideskService.GetBatchTime(), tickets, ticketsJson, ticketsCache);
+                }
             }
 
             _logger.AddMessage(

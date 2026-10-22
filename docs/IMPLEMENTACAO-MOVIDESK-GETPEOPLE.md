@@ -39,7 +39,7 @@ Cada passo compila sobre o anterior; o módulo já compila hoje, então dá para
 | `Domain.Movidesk/Entities/Reads/Person/` | `Domain.Movidesk/Entities/Reads/People/` | `git mv`; namespace `Domain.Movidesk.Entities.Reads.People` |
 | `Application.Movidesk/Validations/Person/` | `Application.Movidesk/Validations/People/` | `git mv`; namespace `Application.Movidesk.Validations.People` |
 | `EnumJob.MovideskGetPersons = 3001` | `EnumJob.MovideskGetPeople = 3001` | mesmo valor; o `Script005` já usa o título novo |
-| `IMovideskPeopleService.GetPersons()` | `GetPeople()` | `GetPerson()` continua (é de uma pessoa) |
+| `IMovideskPeopleService.GetPersons()` | `GetPeople()` | `GetPersonById()` continua (é de uma pessoa) |
 
 As classes continuam no singular (`Person`, `Address`, `Email`...): cada uma representa um item.
 
@@ -534,7 +534,7 @@ Ganha `IValidator` e `IMemoryCache` em relação ao construtor atual; a injeçã
   (`desde = agora − 12 meses`, mesmo filtro). Consequência: pessoas sem nenhuma mudança há mais de 12 meses não entram
   até serem alteradas. Nas respostas reais, o agente responsável pelo ticket 69255 teve a última alteração em 08/2024 e
   ficaria de fora; os tickets continuam com o id dele (sem FK), mas a junção com `MovideskPeople` não encontra a pessoa.
-  Para trazer alguém específico, a saída é uma busca por id (`GetPerson`, ainda stub), como o `GetTicket`.
+  Para trazer alguém específico, a saída é uma busca por id (`GetPersonById`, ainda stub), como o `GetTicketById`.
 - `$orderby=id asc`, `$top=100`, `$skip`, 6 s entre páginas.
 
 ### 6.3 Código
@@ -698,7 +698,7 @@ Pontos do código:
   carga de 12 meses deve ter vários milhares. A API aceitou `$top=1000` (devolveu 1.000 numa página), então o
   `PageSize` pode subir de 100 para 1.000 e reduzir as requisições em 10 vezes; fica a seu critério.
 - **Comparação no cache** pela última mudança (`changedDate`, ou `createdDate` quando nulo), como na janela.
-- `GetPerson()` continua como stub; uma busca por id pode seguir o modelo do `GetTicket` depois.
+- `GetPersonById()` continua como stub; uma busca por id pode seguir o modelo do `GetTicketById` depois.
 
 `using`s do service: os mesmos do `MovideskTicketsService` (`Application.Shared.Abstractions.Services`,
 `Domain.Movidesk.Abstractions.Repositorys`, `Domain.Movidesk.Enums`, `Domain.Shared.Abstractions.Api`,

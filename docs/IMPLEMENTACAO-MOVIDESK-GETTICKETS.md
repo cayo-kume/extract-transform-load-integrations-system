@@ -831,6 +831,10 @@ erro. Eles ficam para os métodos futuros, como nos outros repositórios.
 
 ## 8. Service (`MovideskTicketsService.GetTickets`)
 
+> **Atualizado em 21/10/2026:** a busca em uma chamada por página (`TicketsExpand`, seções 8.2 e 8.4) foi substituída
+> pela busca em duas fases, com o `$expand` dividido em grupos. Ver
+> [IMPLEMENTACAO-MOVIDESK-GETTICKETS-EXPAND-EM-GRUPOS.md](IMPLEMENTACAO-MOVIDESK-GETTICKETS-EXPAND-EM-GRUPOS.md).
+
 `Application.Movidesk/Services/MovideskService.cs` passa a ser `MovideskTicketsService.cs` (`git mv`), com a interface
 `IMovideskTicketsService`. A divisão dos outros métodos está na seção 9.
 
@@ -847,7 +851,7 @@ private const string TicketsKey = "Movidesk:Tickets";
 
 // limite da API: 10 requisições por minuto -> 1 requisição a cada 6 s
 private const int RequestIntervalInMilliseconds = 6 * 1000;
-private const int PageSize = 100;
+private const int PageSize = 25;
 
 public MovideskTicketsService(
     [FromKeyedServices("MovideskAPI")] IApiClient apiClient,
@@ -877,14 +881,14 @@ private const string TicketsSelect =
 private const string TicketsExpand =
     "owner,createdBy,slaSolutionChangedBy," +
     "clients($expand=organization)," +
-    "actions($expand=createdBy,timeAppointments($expand=createdBy,createdByTeam),expenses($expand=createdBy,createdByTeam),attachments($expand=createdBy))," +
+    "actions($expand=createdBy,timeAppointments($expand=createdBy,createdByTeam),expenses($expand=createdBy),attachments($expand=createdBy))," +
     "parentTickets,childrenTickets," +
     "ownerHistories($expand=owner,changedBy),statusHistories($expand=changedBy)," +
     "customFieldValues($expand=items),assets";
 ```
 > **Validar na primeira chamada:** a documentação só mostra `$expand` aninhado de um nível
 > (`actions($expand=timeAppointments($expand=createdBy))`). Se a API recusar algum trecho, compare com a busca por
-> id (`/tickets?id=`), que traz tudo expandido sem `$expand` (ver `Responsed Jsons/Ticket/GetTicket`).
+> id (`/tickets?id=`), que traz tudo expandido sem `$expand` (ver `Responsed Jsons/Ticket/GetTicketById`).
 > `htmlDescription` não vem na listagem.
 
 ### 8.3 Janela de busca (`lastUpdate`)
@@ -1076,9 +1080,9 @@ como o AfterSale (`AfterSaleMeService`, `AfterSaleReversesService`, `AfterSaleRe
 
 | Service (arquivo em `Application.Movidesk/Services/`) | Interface (`Application.Movidesk/Abstractions/Services/`) | Métodos | Estado |
 |---|---|---|---|
-| `MovideskTicketsService.cs` (`git mv` do `MovideskService.cs`) | `IMovideskTicketsService` | `GetTicket`, `GetTickets` | `GetTickets` implementado (seção 8); `GetTicket` continua stub |
-| `MovideskPeopleService.cs` (novo) | `IMovideskPeopleService` | `GetPerson`, `GetPersons` | Os dois como stub |
-| `MovideskServicesService.cs` (novo) | `IMovideskServicesService` | `GetService`, `GetServices` | Os dois como stub |
+| `MovideskTicketsService.cs` (`git mv` do `MovideskService.cs`) | `IMovideskTicketsService` | `GetTicketById`, `GetTickets` | `GetTickets` implementado (seção 8); `GetTicketById` continua stub |
+| `MovideskPeopleService.cs` (novo) | `IMovideskPeopleService` | `GetPersonById`, `GetPersons` | Os dois como stub |
+| `MovideskServicesService.cs` (novo) | `IMovideskServicesService` | `GetServiceById`, `GetServices` | Os dois como stub |
 
 `IMovideskService.cs` é renomeado com `git mv` para `IMovideskTicketsService.cs`, e as outras duas interfaces são
 arquivos novos.
@@ -1089,19 +1093,19 @@ namespace Application.Movidesk.Abstractions.Services
 {
     public interface IMovideskTicketsService
     {
-        public Task<bool?> GetTicket();
+        public Task<bool?> GetTicketById();
         public Task<bool?> GetTickets();
     }
 
     public interface IMovideskPeopleService
     {
-        public Task<bool?> GetPerson();
+        public Task<bool?> GetPersonById();
         public Task<bool?> GetPersons();
     }
 
     public interface IMovideskServicesService
     {
-        public Task<bool?> GetService();
+        public Task<bool?> GetServiceById();
         public Task<bool?> GetServices();
     }
 }
@@ -1142,7 +1146,7 @@ namespace Application.Movidesk.Services
             (_apiClient, _logger, _movideskRepository, _movideskPeopleRepository) =
             (apiClient, logger, movideskRepository, movideskPeopleRepository);
 
-        public Task<bool?> GetPerson() => throw new NotImplementedException();
+        public Task<bool?> GetPersonById() => throw new NotImplementedException();
 
         public Task<bool?> GetPersons() => throw new NotImplementedException();
     }
@@ -1173,7 +1177,7 @@ namespace Application.Movidesk.Services
             (_apiClient, _logger, _movideskRepository, _movideskServicesRepository) =
             (apiClient, logger, movideskRepository, movideskServicesRepository);
 
-        public Task<bool?> GetService() => throw new NotImplementedException();
+        public Task<bool?> GetServiceById() => throw new NotImplementedException();
 
         public Task<bool?> GetServices() => throw new NotImplementedException();
     }

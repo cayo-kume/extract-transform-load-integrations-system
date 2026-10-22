@@ -2,6 +2,6 @@ namespace Domain.Movidesk.Abstractions.Repositorys
 {
     public interface IMovideskServicesRepository
     {
-        // GetServicesByIds, BulkInsertIntoMovideskServices... entram quando as tabelas de serviços forem modeladas
+        public Task<bool> BulkInsertIntoMovideskServices(List<Domain.Movidesk.Entities.Reads.Services.Service> data, Guid? parentExecutionGUID);
     }
 }
