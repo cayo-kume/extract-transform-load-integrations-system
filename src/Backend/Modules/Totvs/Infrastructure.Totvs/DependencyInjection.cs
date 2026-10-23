@@ -2,11 +2,7 @@
 using Application.Totvs.Abstractions.Services;
 using Application.Totvs.Handlers.Commands;
 using Application.Totvs.Services;
-using Application.Totvs.Validations.Fiscal;
-using Application.Totvs.Validations.Person.Customer;
-using Application.Totvs.Validations.Person.LegalEntity;
-using Application.Totvs.Validations.PurchaseOrder;
-using Application.Totvs.Validations.SalesOrder;
+using Application.Totvs.Validations.Sellers;
 using Domain.Shared.Abstractions.Api;
 using Domain.Totvs.Abstractions.Repositorys;
 using FluentValidation;
@@ -16,62 +12,50 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace Infrastructure.Totvs
+namespace Infrastructure.Totvs.DependencyInjection
 {
     public static class DependencyInjection
     {
         public static IServiceCollection AddScopedTotvsServices(this IServiceCollection services, IConfiguration configuration)
         {
+            // homologação é só outro Totvs:BaseUrl no appsettings do ambiente
+            services.AddKeyedScoped<IApiClient>("TotvsAPI", (sp, _) =>
+                new ApiClient(sp.GetRequiredService<IHttpClientFactory>(), sp.GetRequiredService<ILogger<ApiClient>>(), "TotvsAPI"));
             services.AddHttpClient("TotvsAPI", client =>
             {
                 client.BaseAddress = new Uri(configuration["Totvs:BaseUrl"]!);
                 client.Timeout = new TimeSpan(0, 20, 0);
             });
-            services.AddHttpClient("TotvsHmg", client =>
-            {
-                client.BaseAddress = new Uri(configuration["Totvs:BaseUrlHmg"]!);
-                client.Timeout = new TimeSpan(0, 20, 0);
-            });
 
-            services.AddKeyedScoped<IApiClient>("TotvsHmg", (sp, _) =>
-                new ApiClient(sp.GetRequiredService<IHttpClientFactory>(), sp.GetRequiredService<ILogger<ApiClient>>(), "TotvsHmg"));
+            // os services de leitura entram aqui um por vez, à medida que forem reescritos (docs/PROPOSTA-PADRONIZACAO-TOTVS.md §9)
+            services.AddScoped<ITotvsService, TotvsService>();
+            services.AddScoped<ITotvsRepository, TotvsRepository>();
 
-            services.AddScoped<IProductService, ProductService>();
-            services.AddScoped<IProductRepository, ProductRepository>();
-            services.AddScoped<IProductCommandHandler, ProductCommandHandler>();
+            services.AddScoped<ITotvsPeopleService, TotvsPeopleService>();
+            services.AddScoped<ITotvsPeopleRepository, TotvsPeopleRepository>();
 
-            services.AddScoped<IPersonService, PersonService>();
-            services.AddScoped<IPersonRepository, PersonRepository>();
-            services.AddScoped<IPersonCommandHandler, PersonCommandHandler>();
-            services.AddValidatorsFromAssemblyContaining<CustomerValidator>();
-            services.AddValidatorsFromAssemblyContaining<LegalEntityValidator>();
-            services.AddValidatorsFromAssemblyContaining<Application.Totvs.Validations.Person.Branch.BranchValidator>();
+            services.AddScoped<ITotvsSellersService, TotvsSellersService>();
+            services.AddScoped<ITotvsSellersRepository, TotvsSellersRepository>();
 
-            services.AddScoped<IFiscalService, FiscalService>();
-            services.AddScoped<IFiscalRepository, FiscalRepository>();
-            services.AddScoped<IFiscalCommandHandler, FiscalCommandHandler>();
-            services.AddValidatorsFromAssemblyContaining<Application.Totvs.Validations.Fiscal.InvoiceValidator>();
+            services.AddScoped<ITotvsProductsService, TotvsProductsService>();
+            services.AddScoped<ITotvsProductsRepository, TotvsProductsRepository>();
 
-            services.AddScoped<IPurchaseOrderService, PurchaseOrderService>();
-            services.AddScoped<IPurchaseOrderRepository, PurchaseOrderRepository>();
-            services.AddScoped<IPurchaseOrderCommandHandler, PurchaseOrderCommandHandler>();
-            services.AddValidatorsFromAssemblyContaining<PurchaseOrderValidator>();
+            services.AddScoped<ITotvsPurchaseOrdersService, TotvsPurchaseOrdersService>();
+            services.AddScoped<ITotvsPurchaseOrdersRepository, TotvsPurchaseOrdersRepository>();
 
-            services.AddScoped<ISalesOrderService, SalesOrderService>();
-            services.AddScoped<ISalesOrderRepository, SalesOrderRepository>();
-            services.AddScoped<ISalesOrderCommandHandler, SalesOrderCommandHandler>();
-            services.AddValidatorsFromAssemblyContaining<SaleOrderValidator>();
+            services.AddScoped<ITotvsSalesOrdersService, TotvsSalesOrdersService>();
+            services.AddScoped<ITotvsSalesOrdersRepository, TotvsSalesOrdersRepository>();
 
-            services.AddScoped<ISellerService, SellerService>();
-            services.AddScoped<ISellerRepository, SellerRepository>();
-            services.AddScoped<ISellerCommandHandler, SellerCommandHandler>();
-            services.AddValidatorsFromAssemblyContaining<Application.Totvs.Validations.Seller.SellerValidator>();
+            services.AddScoped<ITotvsAccountsPayableService, TotvsAccountsPayableService>();
+            services.AddScoped<ITotvsAccountsPayableRepository, TotvsAccountsPayableRepository>();
 
-            services.AddScoped<IAccountsPayableService, AccountsPayableService>();
-            services.AddScoped<IAccountsPayableRepository, AccountsPayableRepository>();
-            services.AddScoped<IAccountsPayableCommandHandler, AccountsPayableCommandHandler>();
-            services.AddValidatorsFromAssemblyContaining<Application.Totvs.Validations.AccountsPayable.DuplicateValidator>();
-            services.AddValidatorsFromAssemblyContaining<Application.Totvs.Validations.AccountsPayable.ComissionPaidValidator>();
+            services.AddScoped<ITotvsInvoicesService, TotvsInvoicesService>();
+            services.AddScoped<ITotvsInvoicesRepository, TotvsInvoicesRepository>();
+
+            services.AddScoped<ITotvsCommandHandler, TotvsCommandHandler>();
+
+            // registra todos os validadores do assembly numa chamada só, como o Movidesk
+            services.AddValidatorsFromAssemblyContaining<SellerValidator>();
 
             return services;
         }

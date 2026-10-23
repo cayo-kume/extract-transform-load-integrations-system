@@ -9,7 +9,7 @@ using Infrastructure.Movidesk.DependencyInjection;
 //using Infrastructure.Outbound.WebService.DependencyInjection;
 //using Infrastructure.Stone;
 //using Infrastructure.TotalExpress.DependencyInjection;
-//using Infrastructure.Totvs;
+using Infrastructure.Totvs.DependencyInjection;
 //using Microsoft.EntityFrameworkCore;
 using System.Reflection;
 
@@ -32,7 +32,7 @@ namespace Hangfire.Extensions
             //builder.Services.AddScopedDootaxServices(builder.Configuration);
             builder.Services.AddScopedMovideskServices(builder.Configuration);
             //builder.Services.AddScopedOttoServices(builder.Configuration);
-            //builder.Services.AddScopedTotvsServices(builder.Configuration);
+            builder.Services.AddScopedTotvsServices(builder.Configuration);
 
             //Refatorar Aqui (tentar deixar só em uma linha todas as validações da fluent validation)
             //builder.Services.AddValidatorsFromAssembly(Assembly.Load("Application.LinxMicrovix.Outbound"));

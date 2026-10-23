@@ -18,6 +18,8 @@
     <ProjectReference Include="..\..\Modules\General\AfterSale\Infrastructure.AfterSale\Infrastructure.AfterSale.csproj" />
     <ProjectReference Include="..\..\Modules\General\Movidesk\Application.Movidesk\Application.Movidesk.csproj" />
     <ProjectReference Include="..\..\Modules\General\Movidesk\Infrastructure.Movidesk\Infrastructure.Movidesk.csproj" />
+    <ProjectReference Include="..\..\Modules\Totvs\Application.Totvs\Application.Totvs.csproj" />
+    <ProjectReference Include="..\..\Modules\Totvs\Infrastructure.Totvs\Infrastructure.Totvs.csproj" />
   </ItemGroup>
   
 </Project>

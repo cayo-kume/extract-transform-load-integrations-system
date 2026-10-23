@@ -39,3 +39,5 @@ TestResults.xml
 #Test/coverage results
 [Tt]est[Rr]esult*/
 [Cc]overage*/
+# credenciais da Totvs (modelo em Script003_Insert_Values_Into_Totvs_Parameters_Table.sql.example)
+src/Backend/Modules/Totvs/Infrastructure.Totvs/Scripts/SQLServer/Script003_Insert_Values_Into_Totvs_Parameters_Table.sql
