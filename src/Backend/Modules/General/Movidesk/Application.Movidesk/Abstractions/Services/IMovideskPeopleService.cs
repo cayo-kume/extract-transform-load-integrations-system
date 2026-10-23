@@ -3,7 +3,7 @@ namespace Application.Movidesk.Abstractions.Services
     public interface IMovideskPeopleService
     {
         /// <summary>
-        /// busca uma pessoa pelo Cód. Ref., grava nas tabelas de pessoas e registra a chamada em general.MovideskRequests.
+        /// busca uma pessoa pelo Cód. Ref., grava nas tabelas de pessoas e registra a chamada em movidesk.MovideskRequests.
         /// true: gravada | false: a pessoa não existe na Movidesk | null: empresa não cadastrada ou resposta inválida da API
         /// </summary>
         public Task<bool?> GetPersonById(string user_name, string doc_company, string id);
@@ -11,7 +11,7 @@ namespace Application.Movidesk.Abstractions.Services
         public Task<bool?> GetPeople();
 
         /// <summary>
-        /// cria uma pessoa (POST persons?returnAllProperties=true) e registra a chamada em general.MovideskRequests.
+        /// cria uma pessoa (POST persons?returnAllProperties=true) e registra a chamada em movidesk.MovideskRequests.
         /// Se a API devolver a pessoa inteira, ela é gravada; senão, chega pela próxima execução do GetPeople.
         /// </summary>
         public Task<Domain.Movidesk.Dtos.Writes.Result> PostPerson(string user_name, string doc_company, Domain.Movidesk.Dtos.Writes.People.Person person);

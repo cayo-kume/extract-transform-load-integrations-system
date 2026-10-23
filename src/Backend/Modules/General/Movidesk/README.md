@@ -29,8 +29,8 @@ Módulo do sistema de integrações (ETL) responsável por **ler** os dados da A
 | Arquitetura | Clean Architecture em três assemblies: Domain, Application e Infrastructure |
 | API consumida | Movidesk API pública v1 — `https://api.movidesk.com/public/v1/` |
 | Documentação da API | [Tickets](https://atendimento.movidesk.com/kb/article/256/movidesk-ticket-api), [Pessoas](https://atendimento.movidesk.com/kb/article/189/movidesk-person-api), [Serviços](https://atendimento.movidesk.com/kb/article/7440/api-servicos) |
-| Banco de dados | SQL Server (schemas `untreated`, `general` e `auditing`) |
-| Multiempresa | Sim: cada CNPJ cadastrado em `general.MovideskParameters` tem o seu token; o CNPJ (`doc_company`) é a primeira coluna da chave de todas as tabelas |
+| Banco de dados | SQL Server (schemas `untreated`, `movidesk` e `auditing`; o `Script001` cria `movidesk` e `untreated` quando não existem) |
+| Multiempresa | Sim: cada CNPJ cadastrado em `movidesk.MovideskParameters` tem o seu token; o CNPJ (`doc_company`) é a primeira coluna da chave de todas as tabelas |
 | Host | `src/Backend/Hosts/Hangfire` (controller `MovideskController`) |
 
 ### Limites da API
@@ -87,13 +87,13 @@ Domain.Movidesk/
 │       ├── Services/           (Service)
 │       └── Tickets/            (Ticket, Action, Client, Person, OwnerHistory, StatusHistory, TimeAppointment, Expense, Attachment, Asset...)
 ├── Entities/
-│   ├── Parameters/             (Company → general.MovideskParameters)
+│   ├── Parameters/             (Company → movidesk.MovideskParameters)
 │   ├── Reads/                  ← o que é gravado a partir das rotas GET
 │   │   ├── People/
 │   │   ├── Services/
 │   │   └── Tickets/
 │   └── Writes/
-│       └── Requests/           (Request → general.MovideskRequests)
+│       └── Requests/           (Request → movidesk.MovideskRequests)
 └── Enums/                      (EnumJob)
 ```
 
@@ -138,7 +138,7 @@ Application.Movidesk/
 | Método | O que faz |
 |---|---|
 | `GetBatchTime` | Horário do lote (horário de Brasília), gravado igual no registro e em todas as filhas |
-| `SaveRequest` | Grava uma chamada sob demanda em `general.MovideskRequests`, ligada ao `Execution` do log aberto por quem chama. A rota é gravada **sem o token**; nas escritas, o corpo enviado vai em `request_body` |
+| `SaveRequest` | Grava uma chamada sob demanda em `movidesk.MovideskRequests`, ligada ao `Execution` do log aberto por quem chama. A rota é gravada **sem o token**; nas escritas, o corpo enviado vai em `request_body` |
 
 **`MovideskTicketsService`**
 
@@ -182,7 +182,7 @@ Seguem o padrão de [`docs/PADRAO-CACHE-INTEGRACOES.md`](../../../../../docs/PAD
 3. busca as páginas com `$skip` (`$top=100` nas pessoas), esperando 6 segundos entre as chamadas. Os tickets seguem um fluxo próprio, descrito logo abaixo;
 4. monta um cache em memória **por empresa** (`IMemoryCache`, 2 h absoluto / 30 min deslizante) com o que já está gravado e descarta o que não mudou;
 5. valida os DTOs (FluentValidation) e registra as inconsistências em `auditing.Messages`, sem barrar a gravação;
-6. converte para entidades, faz o bulk insert nas tabelas `untreated` e chama as procedures de merge `general.sp_<Tabela>_Sync`, do pai para os filhos;
+6. converte para entidades, faz o bulk insert nas tabelas `untreated` e chama as procedures de merge `movidesk.sp_<Tabela>_Sync`, do pai para os filhos;
 7. grava cada registro integrado (com o JSON recebido) em `auditing.Records`.
 
 **Tickets** com todas as listas expandidas numa chamada levam ~100 s por página e chegam a dar 504. Por isso o `GetTickets` trabalha em duas fases ([detalhes](../../../../../docs/IMPLEMENTACAO-MOVIDESK-GETTICKETS-EXPAND-EM-GRUPOS.md)):
@@ -207,7 +207,7 @@ Seguem o padrão de [`docs/PADRAO-CACHE-INTEGRACOES.md`](../../../../../docs/PAD
 1. abre um log em `auditing.Logs` com o job do método;
 2. busca a empresa pelo CNPJ recebido. Se ela não estiver cadastrada, devolve `null` sem chamar a API;
 3. chama a API com o token da empresa e grava o registro como nas leituras recorrentes (mesmas tabelas e merges);
-4. grava a chamada em `general.MovideskRequests` (via `MovideskService.SaveRequest`). Isso inclui:
+4. grava a chamada em `movidesk.MovideskRequests` (via `MovideskService.SaveRequest`). Isso inclui:
    * usuário (`X-User-Name`), método, rota sem o token, CNPJ, id, resposta e se houve sucesso;
    * também quando a chamada falha antes de ter resposta (timeout, rede);
 5. devolve `true` (gravado), `false` (não existe na Movidesk) ou `null` (empresa não cadastrada ou resposta inválida).
@@ -226,7 +226,7 @@ Detalhes e decisões em [`docs/IMPLEMENTACAO-MOVIDESK-TICKETS-ESCRITA.md`](../..
 
 1. o controller valida o corpo (FluentValidation, `Validations/Writes/Tickets`, `Validations/Writes/People` e `Validations/Writes/Services`) e devolve **400** sem chamar a API, porque 3 erros seguidos bloqueiam a API por 60 s;
 2. o service abre um log com o job da rota, busca a empresa pelo CNPJ e chama a API pelo `IApiClient.SendAsync`, que devolve o status HTTP (PATCH, relacionamentos e DELETE respondem 200 sem corpo);
-3. a chamada vai para `general.MovideskRequests` com o corpo enviado (`request_body`). Nos anexos, só nome, tipo, tamanho e SHA-256 de cada arquivo;
+3. a chamada vai para `movidesk.MovideskRequests` com o corpo enviado (`request_body`). Nos anexos, só nome, tipo, tamanho e SHA-256 de cada arquivo;
 4. o banco é atualizado assim:
    * **POST:** com `returnAllProperties=true` a Movidesk devolve o ticket, a pessoa ou o serviço inteiro, que é gravado na hora pelo `SaveTickets`, `SavePeople` ou `SaveServices`;
    * **PATCH, anexos e relacionamentos:** não há releitura; a alteração chega pela próxima execução do `GetTickets` ou do `GetPeople` (até 3 minutos);
@@ -268,12 +268,12 @@ O DbUp (`Scripts/SQLServer/migrator.csx`) executa cada script uma única vez, em
 
 | Script | Conteúdo |
 |---|---|
-| `Script001_Create_Movidesk_Parameters_Table.sql` | `general.MovideskParameters` (CNPJ + token por empresa) |
+| `Script001_Create_Movidesk_Parameters_Table.sql` | Schemas `movidesk` e `untreated` (só se não existirem) e `movidesk.MovideskParameters` (CNPJ + token por empresa) |
 | `Script002_Create_Movidesk_Tickets_Tables.sql` | `MovideskTickets`, as tabelas filhas e netas (tags, clientes, relacionamentos, históricos, campos adicionais, itens de configuração, ações e seus tags/apontamentos/despesas/anexos), mais os domínios `MovideskTicketsOrigins` e `MovideskTicketsTypes` |
 | `Script003_Create_Movidesk_Sync_Procedures.sql` | Procedures de merge dos tickets |
 | `Script004_Insert_Movidesk_Values_Into_Apps_Table.sql` | App `30 - Movidesk` em `auditing.Apps` |
 | `Script005_Insert_Movidesk_Values_Into_Jobs_Table.sql` | Jobs em `auditing.Jobs` (ver [Auditoria](#auditoria-jobs)) |
-| `Script006_Create_Movidesk_Requests_Table.sql` | `general.MovideskRequests` (log das chamadas sob demanda) |
+| `Script006_Create_Movidesk_Requests_Table.sql` | `movidesk.MovideskRequests` (log das chamadas sob demanda) |
 | `Script007_Create_Movidesk_People_Tables.sql` | `MovideskPeople`, as filhas e netas (endereços, contatos, e-mails, equipes, relacionamentos e seus serviços, campos adicionais, itens de configuração), mais os domínios `MovideskPersonTypes` e `MovideskProfileTypes` |
 | `Script008_Create_Movidesk_People_Sync_Procedures.sql` | Procedures de merge das pessoas |
 | `Script009_Create_Movidesk_Services_Tables.sql` | `MovideskServices`, `MovideskServicesCategories` e os domínios `MovideskServiceTicketTypes` e `MovideskServiceAudiences` |
@@ -282,8 +282,8 @@ O DbUp (`Scripts/SQLServer/migrator.csx`) executa cada script uma única vez, em
 | `Script012_Rename_Movidesk_On_Demand_Jobs.sql` | Renomeia os jobs sob demanda 3002, 3003 e 3005 para `MovideskGetTicketById`, `MovideskGetPersonById` e `MovideskGetServiceById` |
 
 **Regras gerais das tabelas e dos merges:**
-* Toda tabela de dados existe em dois schemas: `untreated` (recebe o bulk insert, sem chave) e `general` (tabela final, com PK). As exceções são `general.MovideskRequests`, que só recebe inserts, e as tabelas de domínio, preenchidas pelos próprios scripts.
-* As procedures `general.sp_<Tabela>_Sync` são geradas por `dbo.sp_Create_Merge_Procedure`, do projeto Shared.
+* Toda tabela de dados existe em dois schemas: `untreated` (recebe o bulk insert, sem chave) e `movidesk` (tabela final, com PK). As exceções são `movidesk.MovideskRequests`, que só recebe inserts, e as tabelas de domínio, preenchidas pelos próprios scripts.
+* As procedures `movidesk.sp_<Tabela>_Sync` são geradas por `dbo.sp_Create_Merge_Procedure`, do projeto Shared.
 * Nas tabelas filhas, o merge **apaga** as linhas que não vieram no lote quando o pai foi regravado (o `integrated_or_updated_at` do pai é mais recente que o da filha). Assim, um item removido na Movidesk também sai do banco.
 * As netas têm FK com `on delete cascade`.
 * Os registros principais (tickets, pessoas e serviços) **nunca são apagados**: um serviço removido do catálogo continua no banco.
@@ -392,7 +392,7 @@ Toda execução grava `auditing.Logs` e, conforme o caso:
 |---|---|---|
 | `appsettings.json` do host | `Movidesk:BaseUrl` | Endereço da API (`https://api.movidesk.com/public/v1/`) |
 | `appsettings.json` do host | `ConnectionStrings` | Conexão com o SQL Server (dados e auditoria) |
-| Banco | `general.MovideskParameters` | CNPJ (`doc_company`) e token de cada empresa |
+| Banco | `movidesk.MovideskParameters` | CNPJ (`doc_company`) e token de cada empresa |
 
 Os tokens ficam só no banco e nunca são gravados em logs: a rota registrada em `MovideskRequests` não inclui o token.
 

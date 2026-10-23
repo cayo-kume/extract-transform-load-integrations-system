@@ -1,7 +1,7 @@
 namespace Domain.Movidesk.Entities.Writes.Requests
 {
     /// <summary>
-    /// log of an on-demand call made to the Movidesk API, table general.MovideskRequests
+    /// log of an on-demand call made to the Movidesk API, table movidesk.MovideskRequests
     /// </summary>
     public class Request
     {

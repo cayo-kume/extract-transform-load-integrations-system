@@ -32,12 +32,12 @@ Movidesk, ao contrário do AfterSale; vale copiar o do AfterSale.
 
 | Regra | Como fica no Movidesk |
 |---|---|
-| Duas tabelas por entidade | `[untreated].X` recebe o bulk insert; `[general].X` é a tabela final. A `sp_X_Sync` gerada por `sp_Create_Merge_Procedure` faz o merge entre elas. |
+| Duas tabelas por entidade | `[untreated].X` recebe o bulk insert; `[movidesk].X` é a tabela final. A `sp_X_Sync` gerada por `sp_Create_Merge_Procedure` faz o merge entre elas. |
 | `integrated_or_updated_at datetime` | Primeira coluna de todas as tabelas. O gerador usa essa coluna para remover duplicados, e no Movidesk ela também decide o que apagar (seção 4.8). |
 | Empresa | **`doc_company nvarchar(14)`** em todas as tabelas, logo depois de `integrated_or_updated_at`, e como **primeira coluna da PK e das FKs**, igual ao AfterSale. Hoje há uma conta Movidesk, mas a modelagem já aceita várias: o mesmo número de ticket pode existir em duas contas. |
-| Chave primária | Só em `general`. O gerador do merge **exige** PK, porque casa os registros por ela. |
+| Chave primária | Só em `movidesk`. O gerador do merge **exige** PK, porque casa os registros por ela. |
 | `untreated` | Mesmas colunas, sem `not null` e sem PK/FK. |
-| Chaves estrangeiras | Só em `general`, criadas no fim do script com `alter table ... add constraint`. |
+| Chaves estrangeiras | Só em `movidesk`, criadas no fim do script com `alter table ... add constraint`. |
 | Nomes das colunas | **Iguais às propriedades da entidade C#, inclusive maiúsculas/minúsculas**, porque o bulk insert mapeia pelo nome. A API da Movidesk é camelCase, então as colunas também ficam em camelCase (`createdDate`, `ownerTeam`...). `doc_company` e `integrated_or_updated_at` seguem o nome usado no resto do sistema. |
 | Texto | `nvarchar` (os scripts antigos usavam `varchar`, e já tinham caracteres corrompidos como `Formul�rio`). |
 
@@ -46,7 +46,7 @@ Hoje o token é lido de `GENERAL.PARAMETROS_MOVIDESK` (`CreateGetTokenQuery`), u
 mesmo formato de `AfterSaleParameters`:
 
 ```sql
-create table [general].MovideskParameters (
+create table [movidesk].MovideskParameters (
 	integrated_or_updated_at	datetime,
 	id							int not null identity primary key,
 	doc_company					nvarchar(14) not null,
@@ -121,7 +121,7 @@ A [API de Pessoas](https://atendimento.movidesk.com/kb/pt-br/article/189/movides
 devolve tudo isso e mais: o mesmo `id` (Cód. Ref., `string(64)`), `businessName`, `corporateName`, `cpfCnpj`,
 `isActive`, e as listas `emails`, `contacts` (onde fica o telefone), `addresses` e `relationships` (as
 organizações). Por isso **`MovideskTicketsPersons` foi retirada**: o service de pessoas vai manter
-`general.MovideskPersons` (e filhas), e os tickets guardam só o id.
+`movidesk.MovideskPersons` (e filhas), e os tickets guardam só o id.
 
 - As colunas de pessoa levam o sufixo `Id`: `ownerId`, `createdById`, `slaSolutionChangedById`, `clientId`,
   `organizationId`, `changedById`.
@@ -180,13 +180,13 @@ qualquer conta, essas duas tabelas **não** têm `doc_company`.
 
 ### 4.8 Itens removidos na Movidesk: `when not matched by source then delete` no gerador
 Na Movidesk, um PATCH **sobrescreve a lista inteira**: se alguém remover uma tag ou um cliente do ticket, a linha
-precisa sair de `general`. O merge gerado hoje só faz *insert* e *update*, então a linha ficaria para sempre.
+precisa sair de `movidesk`. O merge gerado hoje só faz *insert* e *update*, então a linha ficaria para sempre.
 
 A solução é uma opção nova no `sp_Create_Merge_Procedure`, para qualquer tabela que precise dela (detalhes e impacto
 no AfterSale na seção 5).
 
 **Por que não um `delete` simples quando não está no lote:** a `untreated` só tem o lote atual (os tickets
-alterados na última janela). Um `when not matched by source then delete` sem condição apagaria de `general` as
+alterados na última janela). Um `when not matched by source then delete` sem condição apagaria de `movidesk` as
 tags de **todos** os outros tickets. A exclusão precisa se limitar aos tickets que vieram no lote.
 
 **Como limitar:** pelo `integrated_or_updated_at`. O C# passa a gravar **o mesmo valor** (o horário de início da
@@ -202,7 +202,7 @@ Condição usada em todas as filhas e netas (todas têm `ticketId`):
 ```sql
 exists (
 	select 1
-	from [general].MovideskTickets p
+	from [movidesk].MovideskTickets p
 	where p.doc_company = target.doc_company
 	and p.id = target.ticketId
 	and p.integrated_or_updated_at > target.integrated_or_updated_at
@@ -264,10 +264,10 @@ Nada muda no restante: remoção de duplicados, limpeza da `untreated` (as chave
 
 ### 5.2 Chamada para o Movidesk
 ```sql
-declare @delete_by_ticket nvarchar(max) = 'exists (select 1 from [general].MovideskTickets p where p.doc_company = target.doc_company and p.id = target.ticketId and p.integrated_or_updated_at > target.integrated_or_updated_at)';
+declare @delete_by_ticket nvarchar(max) = 'exists (select 1 from [movidesk].MovideskTickets p where p.doc_company = target.doc_company and p.id = target.ticketId and p.integrated_or_updated_at > target.integrated_or_updated_at)';
 
-exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'MovideskTickets', @execute = 1;
-exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'MovideskTicketsTags', @execute = 1, @delete_condition = @delete_by_ticket;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'movidesk', @table_name = 'MovideskTickets', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'movidesk', @table_name = 'MovideskTicketsTags', @execute = 1, @delete_condition = @delete_by_ticket;
 -- ... o mesmo para as outras 12 tabelas
 ```
 
@@ -289,12 +289,12 @@ filtrar o destino por uma CTE.
 
 ---
 
-## 6. DDL proposto (`general`)
+## 6. DDL proposto (`movidesk`)
 
 As tabelas `untreated` são iguais, sem `constraint` e sem `not null`.
 
 ```sql
-create table [general].MovideskTickets (
+create table [movidesk].MovideskTickets (
 	integrated_or_updated_at	datetime,
 	doc_company					nvarchar(14) not null,
 	id							bigint not null,
@@ -349,14 +349,14 @@ create table [general].MovideskTickets (
 	redmineIssueId				int,
 constraint [PK_MovideskTickets] primary key (doc_company asc, id asc));
 
-create table [general].MovideskTicketsTags (
+create table [movidesk].MovideskTicketsTags (
 	integrated_or_updated_at	datetime,
 	doc_company					nvarchar(14) not null,
 	ticketId					bigint not null,
 	tag							nvarchar(128) not null,
 constraint [PK_MovideskTicketsTags] primary key (doc_company asc, ticketId asc, tag asc));
 
-create table [general].MovideskTicketsClients (
+create table [movidesk].MovideskTicketsClients (
 	integrated_or_updated_at	datetime,
 	doc_company					nvarchar(14) not null,
 	ticketId					bigint not null,
@@ -365,7 +365,7 @@ create table [general].MovideskTicketsClients (
 	isDeleted					bit,
 constraint [PK_MovideskTicketsClients] primary key (doc_company asc, ticketId asc, clientId asc));
 
-create table [general].MovideskTicketsRelationships (
+create table [movidesk].MovideskTicketsRelationships (
 	integrated_or_updated_at	datetime,
 	doc_company					nvarchar(14) not null,
 	ticketId					bigint not null,
@@ -375,7 +375,7 @@ create table [general].MovideskTicketsRelationships (
 	isDeleted					bit,
 constraint [PK_MovideskTicketsRelationships] primary key (doc_company asc, ticketId asc, relatedTicketId asc));
 
-create table [general].MovideskTicketsOwnerHistories (
+create table [movidesk].MovideskTicketsOwnerHistories (
 	integrated_or_updated_at	datetime,
 	doc_company					nvarchar(14) not null,
 	ticketId					bigint not null,
@@ -388,7 +388,7 @@ create table [general].MovideskTicketsOwnerHistories (
 	changedDate					datetime,
 constraint [PK_MovideskTicketsOwnerHistories] primary key (doc_company asc, ticketId asc, id asc));
 
-create table [general].MovideskTicketsStatusHistories (
+create table [movidesk].MovideskTicketsStatusHistories (
 	integrated_or_updated_at	datetime,
 	doc_company					nvarchar(14) not null,
 	ticketId					bigint not null,
@@ -401,7 +401,7 @@ create table [general].MovideskTicketsStatusHistories (
 	changedDate					datetime,
 constraint [PK_MovideskTicketsStatusHistories] primary key (doc_company asc, ticketId asc, id asc));
 
-create table [general].MovideskTicketsCustomFieldValues (
+create table [movidesk].MovideskTicketsCustomFieldValues (
 	integrated_or_updated_at	datetime,
 	doc_company					nvarchar(14) not null,
 	ticketId					bigint not null,
@@ -411,7 +411,7 @@ create table [general].MovideskTicketsCustomFieldValues (
 	[value]						nvarchar(max),
 constraint [PK_MovideskTicketsCustomFieldValues] primary key (doc_company asc, ticketId asc, customFieldId asc, customFieldRuleId asc, line asc));
 
-create table [general].MovideskTicketsCustomFieldValuesItems (
+create table [movidesk].MovideskTicketsCustomFieldValuesItems (
 	integrated_or_updated_at	datetime,
 	doc_company					nvarchar(14) not null,
 	ticketId					bigint not null,
@@ -427,7 +427,7 @@ create table [general].MovideskTicketsCustomFieldValuesItems (
 	[fileName]					nvarchar(255),	-- não documentado: campo adicional do tipo arquivo
 constraint [PK_MovideskTicketsCustomFieldValuesItems] primary key (doc_company asc, ticketId asc, customFieldId asc, customFieldRuleId asc, line asc, id asc));
 
-create table [general].MovideskTicketsAssets (
+create table [movidesk].MovideskTicketsAssets (
 	integrated_or_updated_at	datetime,
 	doc_company					nvarchar(14) not null,
 	ticketId					bigint not null,
@@ -441,7 +441,7 @@ create table [general].MovideskTicketsAssets (
 	isDeleted					bit,
 constraint [PK_MovideskTicketsAssets] primary key (doc_company asc, ticketId asc, id asc));
 
-create table [general].MovideskTicketsActions (
+create table [movidesk].MovideskTicketsActions (
 	integrated_or_updated_at	datetime,
 	doc_company					nvarchar(14) not null,
 	ticketId					bigint not null,
@@ -457,7 +457,7 @@ create table [general].MovideskTicketsActions (
 	isDeleted					bit,
 constraint [PK_MovideskTicketsActions] primary key (doc_company asc, ticketId asc, id asc));
 
-create table [general].MovideskTicketsActionsTags (
+create table [movidesk].MovideskTicketsActionsTags (
 	integrated_or_updated_at	datetime,
 	doc_company					nvarchar(14) not null,
 	ticketId					bigint not null,
@@ -465,7 +465,7 @@ create table [general].MovideskTicketsActionsTags (
 	tag							nvarchar(128) not null,
 constraint [PK_MovideskTicketsActionsTags] primary key (doc_company asc, ticketId asc, actionId asc, tag asc));
 
-create table [general].MovideskTicketsActionsTimeAppointments (
+create table [movidesk].MovideskTicketsActionsTimeAppointments (
 	integrated_or_updated_at	datetime,
 	doc_company					nvarchar(14) not null,
 	ticketId					bigint not null,
@@ -483,7 +483,7 @@ create table [general].MovideskTicketsActionsTimeAppointments (
 	createdByTeamName			nvarchar(128),
 constraint [PK_MovideskTicketsActionsTimeAppointments] primary key (doc_company asc, ticketId asc, actionId asc, id asc));
 
-create table [general].MovideskTicketsActionsExpenses (
+create table [movidesk].MovideskTicketsActionsExpenses (
 	integrated_or_updated_at	datetime,
 	doc_company					nvarchar(14) not null,
 	ticketId					bigint not null,
@@ -499,7 +499,7 @@ create table [general].MovideskTicketsActionsExpenses (
 	[value]						decimal(18,2),
 constraint [PK_MovideskTicketsActionsExpenses] primary key (doc_company asc, ticketId asc, actionId asc, id asc));
 
-create table [general].MovideskTicketsActionsAttachments (
+create table [movidesk].MovideskTicketsActionsAttachments (
 	integrated_or_updated_at	datetime,
 	doc_company					nvarchar(14) not null,
 	ticketId					bigint not null,
@@ -515,30 +515,30 @@ constraint [PK_MovideskTicketsActionsAttachments] primary key (doc_company asc, 
 
 ```sql
 -- filhas -> ticket (sem cascade: o ticket nunca é apagado por este fluxo)
-alter table [general].MovideskTicketsTags              add constraint [FK_MovideskTicketsTags]              foreign key (doc_company, ticketId) references [general].MovideskTickets (doc_company, id);
-alter table [general].MovideskTicketsClients           add constraint [FK_MovideskTicketsClients]           foreign key (doc_company, ticketId) references [general].MovideskTickets (doc_company, id);
-alter table [general].MovideskTicketsRelationships     add constraint [FK_MovideskTicketsRelationships]     foreign key (doc_company, ticketId) references [general].MovideskTickets (doc_company, id);
-alter table [general].MovideskTicketsOwnerHistories    add constraint [FK_MovideskTicketsOwnerHistories]    foreign key (doc_company, ticketId) references [general].MovideskTickets (doc_company, id);
-alter table [general].MovideskTicketsStatusHistories   add constraint [FK_MovideskTicketsStatusHistories]   foreign key (doc_company, ticketId) references [general].MovideskTickets (doc_company, id);
-alter table [general].MovideskTicketsCustomFieldValues add constraint [FK_MovideskTicketsCustomFieldValues] foreign key (doc_company, ticketId) references [general].MovideskTickets (doc_company, id);
-alter table [general].MovideskTicketsAssets            add constraint [FK_MovideskTicketsAssets]            foreign key (doc_company, ticketId) references [general].MovideskTickets (doc_company, id);
-alter table [general].MovideskTicketsActions           add constraint [FK_MovideskTicketsActions]           foreign key (doc_company, ticketId) references [general].MovideskTickets (doc_company, id);
+alter table [movidesk].MovideskTicketsTags              add constraint [FK_MovideskTicketsTags]              foreign key (doc_company, ticketId) references [movidesk].MovideskTickets (doc_company, id);
+alter table [movidesk].MovideskTicketsClients           add constraint [FK_MovideskTicketsClients]           foreign key (doc_company, ticketId) references [movidesk].MovideskTickets (doc_company, id);
+alter table [movidesk].MovideskTicketsRelationships     add constraint [FK_MovideskTicketsRelationships]     foreign key (doc_company, ticketId) references [movidesk].MovideskTickets (doc_company, id);
+alter table [movidesk].MovideskTicketsOwnerHistories    add constraint [FK_MovideskTicketsOwnerHistories]    foreign key (doc_company, ticketId) references [movidesk].MovideskTickets (doc_company, id);
+alter table [movidesk].MovideskTicketsStatusHistories   add constraint [FK_MovideskTicketsStatusHistories]   foreign key (doc_company, ticketId) references [movidesk].MovideskTickets (doc_company, id);
+alter table [movidesk].MovideskTicketsCustomFieldValues add constraint [FK_MovideskTicketsCustomFieldValues] foreign key (doc_company, ticketId) references [movidesk].MovideskTickets (doc_company, id);
+alter table [movidesk].MovideskTicketsAssets            add constraint [FK_MovideskTicketsAssets]            foreign key (doc_company, ticketId) references [movidesk].MovideskTickets (doc_company, id);
+alter table [movidesk].MovideskTicketsActions           add constraint [FK_MovideskTicketsActions]           foreign key (doc_company, ticketId) references [movidesk].MovideskTickets (doc_company, id);
 
 -- netas -> nível do meio (com cascade: ver 4.8)
-alter table [general].MovideskTicketsCustomFieldValuesItems  add constraint [FK_MovideskTicketsCustomFieldValuesItems]  foreign key (doc_company, ticketId, customFieldId, customFieldRuleId, line) references [general].MovideskTicketsCustomFieldValues (doc_company, ticketId, customFieldId, customFieldRuleId, line) on delete cascade;
-alter table [general].MovideskTicketsActionsTags             add constraint [FK_MovideskTicketsActionsTags]             foreign key (doc_company, ticketId, actionId) references [general].MovideskTicketsActions (doc_company, ticketId, id) on delete cascade;
-alter table [general].MovideskTicketsActionsTimeAppointments add constraint [FK_MovideskTicketsActionsTimeAppointments] foreign key (doc_company, ticketId, actionId) references [general].MovideskTicketsActions (doc_company, ticketId, id) on delete cascade;
-alter table [general].MovideskTicketsActionsExpenses         add constraint [FK_MovideskTicketsActionsExpenses]         foreign key (doc_company, ticketId, actionId) references [general].MovideskTicketsActions (doc_company, ticketId, id) on delete cascade;
-alter table [general].MovideskTicketsActionsAttachments      add constraint [FK_MovideskTicketsActionsAttachments]      foreign key (doc_company, ticketId, actionId) references [general].MovideskTicketsActions (doc_company, ticketId, id) on delete cascade;
+alter table [movidesk].MovideskTicketsCustomFieldValuesItems  add constraint [FK_MovideskTicketsCustomFieldValuesItems]  foreign key (doc_company, ticketId, customFieldId, customFieldRuleId, line) references [movidesk].MovideskTicketsCustomFieldValues (doc_company, ticketId, customFieldId, customFieldRuleId, line) on delete cascade;
+alter table [movidesk].MovideskTicketsActionsTags             add constraint [FK_MovideskTicketsActionsTags]             foreign key (doc_company, ticketId, actionId) references [movidesk].MovideskTicketsActions (doc_company, ticketId, id) on delete cascade;
+alter table [movidesk].MovideskTicketsActionsTimeAppointments add constraint [FK_MovideskTicketsActionsTimeAppointments] foreign key (doc_company, ticketId, actionId) references [movidesk].MovideskTicketsActions (doc_company, ticketId, id) on delete cascade;
+alter table [movidesk].MovideskTicketsActionsExpenses         add constraint [FK_MovideskTicketsActionsExpenses]         foreign key (doc_company, ticketId, actionId) references [movidesk].MovideskTicketsActions (doc_company, ticketId, id) on delete cascade;
+alter table [movidesk].MovideskTicketsActionsAttachments      add constraint [FK_MovideskTicketsActionsAttachments]      foreign key (doc_company, ticketId, actionId) references [movidesk].MovideskTicketsActions (doc_company, ticketId, id) on delete cascade;
 ```
 
 Sem FK de propósito: colunas de pessoa (4.2), `relatedTicketId` (4.5), `origin`/`type` (4.7).
 
-### Tabelas de valores (só `general`, sem merge, sem `doc_company`)
+### Tabelas de valores (só `movidesk`, sem merge, sem `doc_company`)
 
 ```sql
-create table [general].MovideskTicketsOrigins (id int not null primary key, [name] nvarchar(60) not null, [description] nvarchar(128));
-create table [general].MovideskTicketsTypes   (id int not null primary key, [description] nvarchar(60) not null); -- 1 Interno, 2 Público (vale para ticket e ação)
+create table [movidesk].MovideskTicketsOrigins (id int not null primary key, [name] nvarchar(60) not null, [description] nvarchar(128));
+create table [movidesk].MovideskTicketsTypes   (id int not null primary key, [description] nvarchar(60) not null); -- 1 Interno, 2 Público (vale para ticket e ação)
 ```
 Os valores de origem (0 a 25) estão na seção "Ações" da documentação.
 
@@ -552,8 +552,8 @@ comentado e nenhum script de tabela existe ainda, a renumeração não tem impac
 
 | Arquivo | Conteúdo |
 |---|---|
-| `Script001_Create_Movidesk_Parameters_Table.sql` | `general.MovideskParameters` (seção 2) |
-| `Script002_Create_Movidesk_Tickets_Tables.sql` | seção 6 (untreated + general + FKs + valores) |
+| `Script001_Create_Movidesk_Parameters_Table.sql` | `movidesk.MovideskParameters` (seção 2) |
+| `Script002_Create_Movidesk_Tickets_Tables.sql` | seção 6 (untreated + movidesk + FKs + valores) |
 | `Script003_Create_Movidesk_Sync_Procedures.sql` | `sp_Create_Merge_Procedure` das 14 tabelas (seção 5.2) |
 | `Script004_Insert_Movidesk_Values_Into_Apps_Table.sql` | atual `Script001` |
 | `Script005_Insert_Movidesk_Values_Into_Jobs_Table.sql` | atual `Script002`, descomentado e atualizado |
@@ -611,7 +611,7 @@ de 3515.
 
 | Antes | Agora |
 |---|---|
-| Só `general` | `untreated` + `general` + merge gerado |
+| Só `movidesk` | `untreated` + `movidesk` + merge gerado |
 | Sem empresa | `doc_company` em todas as tabelas, na PK e nas FKs |
 | `varchar` | `nvarchar` |
 | `ticketId varchar(10)` | `bigint` |

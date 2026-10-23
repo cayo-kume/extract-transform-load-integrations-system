@@ -54,7 +54,7 @@ namespace Application.Movidesk.Services
 
         /// <summary>
         /// busca uma pessoa pelo Cód. Ref., grava nas tabelas de pessoas (sempre, sem consultar o cache)
-        /// e registra a chamada em general.MovideskRequests
+        /// e registra a chamada em movidesk.MovideskRequests
         /// </summary>
         public async Task<bool?> GetPersonById(string user_name, string doc_company, string id)
         {
@@ -73,7 +73,7 @@ namespace Application.Movidesk.Services
                 if (company is null)
                 {
                     // nenhuma chamada à API: não há o que registrar em MovideskRequests (igual ao GetTicketById)
-                    _logger.AddMessage($"Empresa {doc_company} não cadastrada em general.MovideskParameters.");
+                    _logger.AddMessage($"Empresa {doc_company} não cadastrada em movidesk.MovideskParameters.");
                     return null;
                 }
 
@@ -337,7 +337,7 @@ namespace Application.Movidesk.Services
 
         /// <summary>
         /// fluxo comum das rotas de escrita de pessoas (mesmo desenho do SendTicket): empresa, chamada à API, registro em
-        /// general.MovideskRequests (com o corpo enviado) e, depois do sucesso, gravação da pessoa devolvida pelo POST
+        /// movidesk.MovideskRequests (com o corpo enviado) e, depois do sucesso, gravação da pessoa devolvida pelo POST
         /// ou exclusão local da pessoa excluída pelo DELETE
         /// </summary>
         private async Task<Domain.Movidesk.Dtos.Writes.Result> SendPerson(
@@ -368,7 +368,7 @@ namespace Application.Movidesk.Services
                 if (company is null)
                 {
                     // nenhuma chamada à API: não há o que registrar em MovideskRequests (igual ao GetPersonById)
-                    var notFound = $"Empresa {doc_company} não cadastrada em general.MovideskParameters.";
+                    var notFound = $"Empresa {doc_company} não cadastrada em movidesk.MovideskParameters.";
                     _logger.AddMessage(notFound);
 
                     return new Domain.Movidesk.Dtos.Writes.Result { success = false, id = id, message = notFound };

@@ -1,4 +1,4 @@
-/****** Serviços: tabelas untreated e general (docs/IMPLEMENTACAO-MOVIDESK-SERVICES.md) ******/
+/****** Serviços: tabelas untreated e movidesk (docs/IMPLEMENTACAO-MOVIDESK-SERVICES.md) ******/
 
 create table [untreated].MovideskServices (
 	integrated_or_updated_at datetime,
@@ -18,7 +18,7 @@ create table [untreated].MovideskServices (
 	allowAllCategories       bit
 );
 
-create table [general].MovideskServices (
+create table [movidesk].MovideskServices (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14) not null,
 	id                       int not null,
@@ -46,7 +46,7 @@ create table [untreated].MovideskServicesCategories (
 	category                 nvarchar(128)
 );
 
-create table [general].MovideskServicesCategories (
+create table [movidesk].MovideskServicesCategories (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14) not null,
 	serviceId                int not null,
@@ -59,28 +59,28 @@ constraint [PK_MovideskServicesCategories] primary key (
 
 /****** Chave estrangeira: categorias -> serviço (sem FK em parentServiceId: pai e filho chegam no mesmo lote) ******/
 
-alter table [general].MovideskServicesCategories add constraint [FK_MovideskServicesCategories] foreign key (doc_company, serviceId) references [general].MovideskServices (doc_company, id);
+alter table [movidesk].MovideskServicesCategories add constraint [FK_MovideskServicesCategories] foreign key (doc_company, serviceId) references [movidesk].MovideskServices (doc_company, id);
 
 
 /****** Tabelas de valores (iguais para qualquer conta Movidesk, sem doc_company e sem merge) ******/
-create table [general].MovideskServiceTicketTypes (
+create table [movidesk].MovideskServiceTicketTypes (
 	id				int not null primary key,
 	[description]	nvarchar(60) not null
 );
 
-create table [general].MovideskServiceAudiences (
+create table [movidesk].MovideskServiceAudiences (
 	id				int not null primary key,
 	[description]	nvarchar(60) not null
 );
 
-insert into [general].MovideskServiceTicketTypes (id, [description])
+insert into [movidesk].MovideskServiceTicketTypes (id, [description])
 values
 (0, N'Público'),
 (1, N'Interno'),
 (2, N'Públicos e internos');
 
 --usada por isVisible e allowSelection
-insert into [general].MovideskServiceAudiences (id, [description])
+insert into [movidesk].MovideskServiceAudiences (id, [description])
 values
 (0, N'Ninguém (não documentado)'),
 (1, N'Agente'),

@@ -28,7 +28,7 @@ namespace Infrastructure.Movidesk.Repositorys
         }
 
         /// <summary>
-        /// log table of the on-demand calls: insert-only, so it goes straight to the general schema (no untreated/merge)
+        /// log table of the on-demand calls: insert-only, so it goes straight to the movidesk schema (no untreated/merge)
         /// </summary>
         public bool InsertIntoMovideskRequests(Domain.Movidesk.Entities.Writes.Requests.Request request)
         {
@@ -36,7 +36,7 @@ namespace Infrastructure.Movidesk.Repositorys
 
             _coreRepository.FillSystemDataTable(requestsTable, [request]);
 
-            return _coreRepository.BulkInsertIntoTableRaw(requestsTable, "general");
+            return _coreRepository.BulkInsertIntoTableRaw(requestsTable, "movidesk");
         }
     }
 }

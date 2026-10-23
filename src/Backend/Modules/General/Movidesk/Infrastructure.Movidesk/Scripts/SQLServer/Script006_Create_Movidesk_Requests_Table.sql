@@ -1,6 +1,6 @@
 --log das chamadas sob demanda feitas pelo MovideskController na API da Movidesk.
---tabela somente de inserção: gravada direto no schema general, sem untreated nem procedure de merge.
-create table [general].MovideskRequests (
+--tabela somente de inserção: gravada direto no schema movidesk, sem untreated nem procedure de merge.
+create table [movidesk].MovideskRequests (
 	id bigint identity(1,1) not null,
 	request_date datetime not null,
 	execution uniqueidentifier not null, --auditing.Logs.Execution da chamada
@@ -17,5 +17,5 @@ constraint [PK_MovideskRequests] primary key (
 	id asc
 ));
 
-create nonclustered index [IX_MovideskRequests_Company_Key] on [general].MovideskRequests ([doc_company], field_key_value);
-create nonclustered index [IX_MovideskRequests_User_Date] on [general].MovideskRequests ([user_name], request_date);
+create nonclustered index [IX_MovideskRequests_Company_Key] on [movidesk].MovideskRequests ([doc_company], field_key_value);
+create nonclustered index [IX_MovideskRequests_User_Date] on [movidesk].MovideskRequests ([user_name], request_date);

@@ -81,7 +81,7 @@ namespace Infrastructure.Movidesk.Repositorys
             // o merge roda mesmo para tabelas sem linhas no lote: é ele que apaga as filhas removidas
             // (ex.: o ticket ficou sem tags -> nenhuma linha em untreated.MovideskTicketsTags, mas as tags antigas saem)
             foreach (var (table, _) in tables)
-                await _coreRepository.CallDbProcMerge("general", table.TableName, parentExecutionGUID);
+                await _coreRepository.CallDbProcMerge("movidesk", table.TableName, parentExecutionGUID);
 
             return true;
         }

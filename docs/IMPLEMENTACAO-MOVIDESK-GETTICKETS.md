@@ -118,7 +118,7 @@ até o service de pessoas.
 
 ## 3. Empresas e parâmetros
 
-A tabela `general.MovideskParameters (doc_company, token)` já existe no `Script001`.
+A tabela `movidesk.MovideskParameters (doc_company, token)` já existe no `Script001`.
 
 **Remover** `Domain.Movidesk/Entities/Parameters.cs` e **criar** `Domain.Movidesk/Entities/Parameters/Company.cs`,
 igual ao `Company` do AfterSale:
@@ -142,7 +142,7 @@ public string CreateGetCompanysQuery()
     return @$"SELECT DISTINCT
              DOC_COMPANY AS DOC_COMPANY,
              TOKEN AS TOKEN
-             FROM GENERAL.MOVIDESKPARAMETERS";
+             FROM MOVIDESK.MOVIDESKPARAMETERS";
 }
 ```
 
@@ -589,7 +589,7 @@ public string CreateGetTicketsByIdsQuery(string doc_company, List<long> ids);
 public string CreateGetTicketsLastUpdateQuery(string doc_company)
 {
     return @$"SELECT MAX(LASTUPDATE)
-             FROM GENERAL.MOVIDESKTICKETS
+             FROM MOVIDESK.MOVIDESKTICKETS
              WHERE DOC_COMPANY = '{doc_company}'";
 }
 
@@ -597,7 +597,7 @@ public string CreateGetTicketsByIdsQuery(string doc_company, List<long> ids)
 {
     // com lista vazia o IN () é SQL inválido; o repositório não chama a query nesse caso
     return @$"SELECT DOC_COMPANY, ID, LASTUPDATE
-             FROM GENERAL.MOVIDESKTICKETS
+             FROM MOVIDESK.MOVIDESKTICKETS
              WHERE DOC_COMPANY = '{doc_company}'
              AND ID IN ({String.Join(", ", ids)})";
 }
@@ -735,7 +735,7 @@ namespace Infrastructure.Movidesk.Repositorys
             // o merge roda mesmo para tabelas sem linhas no lote: é ele que apaga as filhas removidas
             // (ex.: o ticket ficou sem tags -> nenhuma linha em untreated.MovideskTicketsTags, mas as tags antigas saem)
             foreach (var (table, _) in tables)
-                await _coreRepository.CallDbProcMerge("general", table.TableName, parentExecutionGUID);
+                await _coreRepository.CallDbProcMerge("movidesk", table.TableName, parentExecutionGUID);
 
             return true;
         }
@@ -1318,7 +1318,7 @@ Os 5 `AddValidatorsFromAssemblyContaining` atuais registram o mesmo assembly 5 v
       métodos de fatura removidos
 - [ ] 10. DI, host e endpoint `GET MovideskJobs/Movidesk/Tickets`
 - [ ] Compilar o host
-- [ ] Inserir uma empresa em `general.MovideskParameters` (o token não vai para o git; o `Script008` do AfterSale tem
+- [ ] Inserir uma empresa em `movidesk.MovideskParameters` (o token não vai para o git; o `Script008` do AfterSale tem
       os tokens commitados e não deve ser seguido)
 - [ ] Primeira execução: conferir o `$expand` (8.2) e comparar um ticket gravado com a busca por id
 

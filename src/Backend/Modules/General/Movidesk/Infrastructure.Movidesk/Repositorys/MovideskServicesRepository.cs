@@ -33,7 +33,7 @@ namespace Infrastructure.Movidesk.Repositorys
 
             // o merge das categorias roda mesmo sem linhas no lote: é ele que apaga as categorias removidas
             foreach (var (table, _) in tables)
-                await _coreRepository.CallDbProcMerge("general", table.TableName, parentExecutionGUID);
+                await _coreRepository.CallDbProcMerge("movidesk", table.TableName, parentExecutionGUID);
 
             return true;
         }

@@ -2,7 +2,7 @@
 
 Guia para implementar `MovideskPeopleService.GetPersonById`: recebe a empresa, o Cód. Ref. de uma pessoa e o usuário que
 pediu, busca **só essa pessoa** na API da Movidesk, grava nas mesmas tabelas do `GetPeople` e registra a chamada em
-`general.MovideskRequests`. É o equivalente do `GetTicketById` para pessoas
+`movidesk.MovideskRequests`. É o equivalente do `GetTicketById` para pessoas
 ([IMPLEMENTACAO-MOVIDESK-GETTICKET.md](IMPLEMENTACAO-MOVIDESK-GETTICKET.md)).
 
 > **Implementado em 21/10/2026.** O host `Hangfire` compila com 0 erros; o host sobe e o Swagger lista
@@ -24,7 +24,7 @@ Raiz do módulo: `src/Backend/Modules/General/Movidesk/`. Uma classe por arquivo
 | O que busca | Pessoas criadas ou alteradas desde a última execução (12 meses no banco vazio) | Uma pessoa pelo Cód. Ref. |
 | Chamada na API | `GET /persons?$filter=changedDate ge ... or createdDate ge ...` | `GET /persons?token=...&id=...` |
 | Cache de estado | Descarta quem não mudou | **Sempre grava** |
-| Log de requisição | Não | **Sim**, em `general.MovideskRequests`, com o `X-User-Name` |
+| Log de requisição | Não | **Sim**, em `movidesk.MovideskRequests`, com o `X-User-Name` |
 
 **Uso principal:** trazer pessoas que ficaram fora da primeira carga de 12 meses. Nas respostas reais, o agente
 responsável pelo ticket 69255 teve a última alteração em 08/2024: o `GetPeople` não o traz, mas os tickets apontam para
@@ -60,7 +60,7 @@ como resposta inválida (422) em vez de não encontrado (404). Por isso a checag
 public interface IMovideskPeopleService
 {
     /// <summary>
-    /// busca uma pessoa pelo Cód. Ref., grava nas tabelas de pessoas e registra a chamada em general.MovideskRequests.
+    /// busca uma pessoa pelo Cód. Ref., grava nas tabelas de pessoas e registra a chamada em movidesk.MovideskRequests.
     /// true: gravada | false: a pessoa não existe na Movidesk | null: empresa não cadastrada ou resposta inválida da API
     /// </summary>
     public Task<bool?> GetPersonById(string user_name, string doc_company, string id);
@@ -114,7 +114,7 @@ não roda de novo onde já rodou).
 
 ## 5. Log de requisições
 
-Reaproveita tudo o que o `GetTicketById` criou: a tabela `general.MovideskRequests` (`Script006`), a entidade
+Reaproveita tudo o que o `GetTicketById` criou: a tabela `movidesk.MovideskRequests` (`Script006`), a entidade
 `Entities/Writes/Requests/Request` e o `IMovideskRepository.InsertIntoMovideskRequests`. Nada novo no banco.
 
 | Coluna | Valor |
@@ -141,7 +141,7 @@ Um service novo do módulo, injetado nos outros, com o que hoje se repete entre 
 | Método | O que faz | Usado por |
 |---|---|---|
 | `GetBatchTime()` | Horário do lote no fuso `E. South America Standard Time` (o mesmo valor para o registro e todas as filhas) | `GetTickets`, `GetTicketById`, `GetPeople`, `GetPersonById` |
-| `SaveRequest(...)` | Grava uma chamada sob demanda em `general.MovideskRequests`, com a chave como texto | `GetTicketById`, `GetPersonById` |
+| `SaveRequest(...)` | Grava uma chamada sob demanda em `movidesk.MovideskRequests`, com a chave como texto | `GetTicketById`, `GetPersonById` |
 
 `Application.Movidesk/Abstractions/Services/IMovideskService.cs`
 ```csharp
@@ -160,7 +160,7 @@ namespace Application.Movidesk.Abstractions.Services
         public DateTime GetBatchTime();
 
         /// <summary>
-        /// registra uma chamada sob demanda à API da Movidesk em general.MovideskRequests (a rota nunca leva o token)
+        /// registra uma chamada sob demanda à API da Movidesk em movidesk.MovideskRequests (a rota nunca leva o token)
         /// </summary>
         public void SaveRequest(EnumJob job, string user_name, string httpMethod, string route, string doc_company, string field_key_value, string? responseBody, bool isSuccess);
     }
@@ -288,7 +288,7 @@ O comportamento do `GetPeople` não muda; a linha do `batchTime` passa a ser `va
 ```csharp
 /// <summary>
 /// busca uma pessoa pelo Cód. Ref., grava nas tabelas de pessoas (sempre, sem consultar o cache)
-/// e registra a chamada em general.MovideskRequests
+/// e registra a chamada em movidesk.MovideskRequests
 /// </summary>
 public async Task<bool?> GetPersonById(string user_name, string doc_company, string id)
 {
@@ -307,7 +307,7 @@ public async Task<bool?> GetPersonById(string user_name, string doc_company, str
         if (company is null)
         {
             // nenhuma chamada à API: não há o que registrar em MovideskRequests (igual ao GetTicketById)
-            _logger.AddMessage($"Empresa {doc_company} não cadastrada em general.MovideskParameters.");
+            _logger.AddMessage($"Empresa {doc_company} não cadastrada em movidesk.MovideskParameters.");
             return null;
         }
 
@@ -402,7 +402,7 @@ Pontos do código:
 `src/Backend/Hosts/Hangfire/Controllers/General/MovideskController.cs`, depois do endpoint `People`:
 ```csharp
 /// <summary>
-/// get one person by Cód. Ref. (GET persons?id={id}) and save it; the call is logged in general.MovideskRequests
+/// get one person by Cód. Ref. (GET persons?id={id}) and save it; the call is logged in movidesk.MovideskRequests
 /// </summary>
 [HttpGet("People/{docCompany}/{id}")]
 [Tags("MovideskPeople")]

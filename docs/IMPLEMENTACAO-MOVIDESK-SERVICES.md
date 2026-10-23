@@ -60,7 +60,7 @@ filho), em `Responsed Jsons/Services/GetServices/json-returned-by-api-end-point.
 ## 3. Modelagem
 
 ### 3.1 Tabelas
-Mesmas regras de tickets e pessoas: `untreated` + `general` com merge gerado, `integrated_or_updated_at` e
+Mesmas regras de tickets e pessoas: `untreated` + `movidesk` com merge gerado, `integrated_or_updated_at` e
 `doc_company` (primeira coluna da PK), `nvarchar`, nomes iguais às propriedades das entidades.
 
 | Tabela | Origem na API | Chave primária |
@@ -69,7 +69,7 @@ Mesmas regras de tickets e pessoas: `untreated` + `general` com merge gerado, `i
 | `MovideskServicesCategories` | `categories[]` | `doc_company, serviceId, category` |
 
 ```sql
-create table [general].MovideskServices (
+create table [movidesk].MovideskServices (
 	integrated_or_updated_at	datetime,
 	doc_company					nvarchar(14) not null,
 	id							int not null,
@@ -87,14 +87,14 @@ create table [general].MovideskServices (
 	allowAllCategories			bit,
 constraint [PK_MovideskServices] primary key (doc_company asc, id asc));
 
-create table [general].MovideskServicesCategories (
+create table [movidesk].MovideskServicesCategories (
 	integrated_or_updated_at	datetime,
 	doc_company					nvarchar(14) not null,
 	serviceId					int not null,
 	category					nvarchar(128) not null,
 constraint [PK_MovideskServicesCategories] primary key (doc_company asc, serviceId asc, category asc));
 
-alter table [general].MovideskServicesCategories add constraint [FK_MovideskServicesCategories] foreign key (doc_company, serviceId) references [general].MovideskServices (doc_company, id);
+alter table [movidesk].MovideskServicesCategories add constraint [FK_MovideskServicesCategories] foreign key (doc_company, serviceId) references [movidesk].MovideskServices (doc_company, id);
 ```
 - **Sem FK em `parentServiceId`:** o pai e o filho chegam no mesmo lote, e a ordem de inserção dentro do merge não é
   garantida. A hierarquia fica por junção (`parentServiceId = id`).
@@ -103,18 +103,18 @@ alter table [general].MovideskServicesCategories add constraint [FK_MovideskServ
 ### 3.2 Tabelas de valores (decidido: criar)
 Para leitura dos códigos, no mesmo padrão das origens de ticket e tipos de pessoa (sem FK, sem `doc_company`):
 ```sql
-create table [general].MovideskServiceTicketTypes (id int not null primary key, [description] nvarchar(60) not null);
-insert into [general].MovideskServiceTicketTypes (id, [description]) values (0, N'Público'), (1, N'Interno'), (2, N'Públicos e internos');
+create table [movidesk].MovideskServiceTicketTypes (id int not null primary key, [description] nvarchar(60) not null);
+insert into [movidesk].MovideskServiceTicketTypes (id, [description]) values (0, N'Público'), (1, N'Interno'), (2, N'Públicos e internos');
 
-create table [general].MovideskServiceAudiences (id int not null primary key, [description] nvarchar(60) not null);
-insert into [general].MovideskServiceAudiences (id, [description]) values (0, N'Ninguém (não documentado)'), (1, N'Agente'), (2, N'Cliente'), (3, N'Agente e Cliente');
+create table [movidesk].MovideskServiceAudiences (id int not null primary key, [description] nvarchar(60) not null);
+insert into [movidesk].MovideskServiceAudiences (id, [description]) values (0, N'Ninguém (não documentado)'), (1, N'Agente'), (2, N'Cliente'), (3, N'Agente e Cliente');
 ```
 `MovideskServiceAudiences` serve para `isVisible` e `allowSelection`, que usam os mesmos códigos.
 
 ### 3.3 Serviços apagados e itens removidos (decidido: manter)
 - **Categorias removidas** de um serviço: mesma condição de exclusão dos tickets e pessoas, pelo serviço pai:
   ```sql
-  exists (select 1 from [general].MovideskServices p where p.doc_company = target.doc_company and p.id = target.serviceId and p.integrated_or_updated_at > target.integrated_or_updated_at)
+  exists (select 1 from [movidesk].MovideskServices p where p.doc_company = target.doc_company and p.id = target.serviceId and p.integrated_or_updated_at > target.integrated_or_updated_at)
   ```
 - **Serviços apagados** na Movidesk (`DELETE /services`): **ficam** em `MovideskServices`. Os tickets antigos continuam
   apontando para eles (`serviceFirstLevelId`), e apagar quebraria a junção. Um serviço que não deve mais ser usado
@@ -139,12 +139,12 @@ Com `MovideskServices` carregada, o caminho completo sai da hierarquia a partir 
 ```sql
 with caminho as (
 	select s.doc_company, s.id, s.parentServiceId, s.[name], 1 as nivel_a_partir_do_selecionado
-	from [general].MovideskServices s
-	join [general].MovideskTickets t on t.doc_company = s.doc_company and t.serviceFirstLevelId = s.id
+	from [movidesk].MovideskServices s
+	join [movidesk].MovideskTickets t on t.doc_company = s.doc_company and t.serviceFirstLevelId = s.id
 	where t.id = @ticketId
 	union all
 	select p.doc_company, p.id, p.parentServiceId, p.[name], c.nivel_a_partir_do_selecionado + 1
-	from [general].MovideskServices p
+	from [movidesk].MovideskServices p
 	join caminho c on c.doc_company = p.doc_company and c.parentServiceId = p.id
 )
 select * from caminho order by nivel_a_partir_do_selecionado desc;   -- da raiz até o selecionado
@@ -158,7 +158,7 @@ modelagem de tickets foi corrigida com essa leitura dos níveis.
 
 | Arquivo | Conteúdo |
 |---|---|
-| `Script009_Create_Movidesk_Services_Tables.sql` | 3.1 (untreated + general + FK) e as tabelas de valores de 3.2 |
+| `Script009_Create_Movidesk_Services_Tables.sql` | 3.1 (untreated + movidesk + FK) e as tabelas de valores de 3.2 |
 | `Script010_Create_Movidesk_Services_Sync_Procedures.sql` | `sp_Create_Merge_Procedure` de `MovideskServices` (sem `@delete_condition`) e de `MovideskServicesCategories` (com a condição de 3.3) |
 | `Script005_Insert_Movidesk_Values_Into_Jobs_Table.sql` | acrescentar os jobs abaixo (mesma decisão de pessoas) |
 
@@ -355,7 +355,7 @@ public async Task<bool?> GetServices()
   JSON de cada serviço (`_logger.AddRecord(id.ToString(), json)`) e devolve a quantidade.
 
 ### 5.7 `GetServiceById` (um serviço por id)
-Mesmo desenho do `GetTicketById`: `X-User-Name` obrigatório, registro em `general.MovideskRequests` pelo
+Mesmo desenho do `GetTicketById`: `X-User-Name` obrigatório, registro em `movidesk.MovideskRequests` pelo
 `_movideskService.SaveRequest`, job 3005.
 ```csharp
 public Task<bool?> GetServiceById(string user_name, string doc_company, int id);
@@ -389,7 +389,7 @@ public async Task<ActionResult> Services()
 }
 
 /// <summary>
-/// get one service by id (GET services?id={id}) and save it; the call is logged in general.MovideskRequests
+/// get one service by id (GET services?id={id}) and save it; the call is logged in movidesk.MovideskRequests
 /// </summary>
 [HttpGet("Services/{docCompany}/{id:int:min(1)}")]
 [Tags("MovideskServices")]

@@ -3,7 +3,7 @@
 Proposta para implementar as três rotas de escrita da API de tickets: criar um ticket, alterar um ticket e enviar
 anexos para uma ação. Segue o padrão já usado nas rotas de escrita do AfterSale (`SendReverseAction`, log em
 `AfterSaleRequests`, cabeçalho `X-User-Name`) e nas leituras sob demanda da Movidesk (`GetTicketById`,
-`general.MovideskRequests`).
+`movidesk.MovideskRequests`).
 
 > **Implementado em 22/10/2026**, com as decisões da seção 10, e testado na API real com o roteiro da seção 9
 > (ticket 69369, cancelado ao final). As rotas e regras da seção 1 vêm da
@@ -218,7 +218,7 @@ público, como o `SaveTickets`.
    arquivo, seção 6.3);
 4. chama `_apiClient.SendAsync`. Se a chamada não chegar a ter resposta (timeout, rede), grava a tentativa em
    `MovideskRequests` e relança a exceção, como as leituras sob demanda;
-5. grava a chamada em `general.MovideskRequests` com `MovideskService.SaveRequest`:
+5. grava a chamada em `movidesk.MovideskRequests` com `MovideskService.SaveRequest`:
    * usuário (`X-User-Name`), método (`POST`/`PATCH`), rota **sem o token**, CNPJ;
    * `field_key_value`: o número do ticket (no POST, o id devolvido pela API; vazio se a criação falhar);
    * `request_body` (corpo enviado), `response_body` e se houve sucesso pelo **status HTTP**;
@@ -383,7 +383,7 @@ Na rota de anexos, a resposta **400** também cobre arquivo acima de 25 MB (seç
 
   O DbUp não executa de novo um script que já rodou: as linhas entram nos bancos criados a partir de agora. Num banco
   que já rodou o `Script005`, os três jobs precisam ser inseridos à mão.
-* **Tabelas:** nenhuma nova. O log das escritas vai para `general.MovideskRequests`, que já tem `request_body`.
+* **Tabelas:** nenhuma nova. O log das escritas vai para `movidesk.MovideskRequests`, que já tem `request_body`.
 * **Tamanho dos anexos (decisão 5):** o limite é o da Movidesk, **25 MB por anexo**.
   * O controller recusa com **400** qualquer arquivo acima de 25 MB (26.214.400 bytes), sem chamar a API.
   * Como a rota aceita vários arquivos numa requisição, o limite da requisição inteira sobe acima dos 30 MB padrão do
@@ -441,7 +441,7 @@ Respostas às perguntas da seção 9:
   usa o `message` do JSON quando existir e, senão, o corpo como veio.
 
 Depois do roteiro, o `GetTickets` trouxe o ticket cancelado com o assunto original e o anexo, e os 4 registros ficaram
-em `general.MovideskRequests` (jobs 3006, 3007, 3008 e 3007) com o corpo enviado. No anexo, o log tem só nome, tipo,
+em `movidesk.MovideskRequests` (jobs 3006, 3007, 3008 e 3007) com o corpo enviado. No anexo, o log tem só nome, tipo,
 tamanho e SHA-256.
 
 ---

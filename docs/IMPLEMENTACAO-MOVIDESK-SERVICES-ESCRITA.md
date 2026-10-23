@@ -8,7 +8,7 @@ Proposta para implementar as rotas de escrita do catálogo de serviços:
 Segue o que já foi feito e testado na escrita de tickets e de pessoas
 ([IMPLEMENTACAO-MOVIDESK-TICKETS-ESCRITA.md](IMPLEMENTACAO-MOVIDESK-TICKETS-ESCRITA.md),
 [IMPLEMENTACAO-MOVIDESK-PESSOAS-ESCRITA.md](IMPLEMENTACAO-MOVIDESK-PESSOAS-ESCRITA.md)):
-`IApiClient.SendAsync`, o `Result` comum (`Dtos/Writes/Result.cs`), log em `general.MovideskRequests` com o corpo
+`IApiClient.SendAsync`, o `Result` comum (`Dtos/Writes/Result.cs`), log em `movidesk.MovideskRequests` com o corpo
 enviado, validação antes de chamar a API e as rotas sob demanda com `X-User-Name`. A leitura do catálogo está em
 [IMPLEMENTACAO-MOVIDESK-SERVICES.md](IMPLEMENTACAO-MOVIDESK-SERVICES.md).
 
@@ -174,7 +174,7 @@ Um método privado `SendService` no `MovideskServicesService`, com o mesmo desen
 3. monta o corpo (JSON sem nulos; nenhum no DELETE) e o `requestBody` do log;
 4. chama `_apiClient.SendAsync`. Se a chamada não chegar a ter resposta, grava a tentativa em `MovideskRequests` e
    relança a exceção;
-5. grava a chamada em `general.MovideskRequests`. O `field_key_value` é o id do serviço: no POST, o devolvido pela API;
+5. grava a chamada em `movidesk.MovideskRequests`. O `field_key_value` é o id do serviço: no POST, o devolvido pela API;
    nas outras, o da rota;
 6. depois do sucesso na Movidesk:
    * **remove o hash do catálogo** do cache (`Movidesk:ServicesHash:<cnpj>`), em todas as rotas;
@@ -257,7 +257,7 @@ Respostas pelo mesmo `WriteResponse` de tickets e pessoas:
 * **`EnumJob`:** `MovideskPostService = 3013`, `MovideskPatchServiceById = 3014`, `MovideskDeleteServiceById = 3015`.
 * **`Script005`:** três linhas novas no bloco sob demanda, como na escrita de tickets e pessoas. O comentário de faixas
   passa a citar a escrita de serviços (3013–3015). Num banco que já rodou o `Script005`, os jobs são inseridos à mão.
-* **Tabelas:** nenhuma nova; o log vai para `general.MovideskRequests`.
+* **Tabelas:** nenhuma nova; o log vai para `movidesk.MovideskRequests`.
 
 ---
 
@@ -295,7 +295,7 @@ Roteiro executado pelas rotas novas do host, na empresa `38367316000199`:
 Respostas às perguntas da seção 9:
 
 * **POST sem `id`:** a Movidesk aceitou e gerou o id `1465796` (decisão 2). Com `returnAllProperties=true`, a resposta
-  traz o **serviço inteiro**, que foi gravado na hora em `general.MovideskServices`. O serviço não tem datas, então não
+  traz o **serviço inteiro**, que foi gravado na hora em `movidesk.MovideskServices`. O serviço não tem datas, então não
   há o problema do `Z` dos tickets.
 * **PATCH:** 200 sem corpo. A releitura gravou a `description` nova no banco local logo depois (decisão 1).
 * **DELETE:** 200 sem corpo. Depois dele, o `GET services?id=` devolve **404 com corpo vazio**, o mesmo formato que o
@@ -304,7 +304,7 @@ Respostas às perguntas da seção 9:
 * **Validações locais:** `isVisible = 0`, categorias repetidas, categoria padrão fora da lista e `allowSelection = 4`
   voltaram 400; um `id` enviado no POST foi ignorado (a chamada seguiu para o service).
 
-Os 3 registros ficaram em `general.MovideskRequests` (jobs 3013, 3014 e 3015) com o corpo enviado; o do DELETE com
+Os 3 registros ficaram em `movidesk.MovideskRequests` (jobs 3013, 3014 e 3015) com o corpo enviado; o do DELETE com
 `request_body` nulo.
 
 ---

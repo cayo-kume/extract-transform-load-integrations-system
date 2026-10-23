@@ -7,7 +7,7 @@ Proposta para implementar as rotas de escrita da API de pessoas:
 * excluir uma pessoa, incluída pela decisão 5 para encerrar o teste real.
 
 Segue o que já foi feito e testado na escrita de tickets ([IMPLEMENTACAO-MOVIDESK-TICKETS-ESCRITA.md](IMPLEMENTACAO-MOVIDESK-TICKETS-ESCRITA.md)):
-`IApiClient.SendAsync`, `Result`, log em `general.MovideskRequests` com o corpo enviado, validação antes de chamar a
+`IApiClient.SendAsync`, `Result`, log em `movidesk.MovideskRequests` com o corpo enviado, validação antes de chamar a
 API e as rotas sob demanda com `X-User-Name`.
 
 > **Implementado em 22/10/2026**, com as 7 decisões da seção 10, e testado na API real com o roteiro da seção 9 (pessoa
@@ -229,7 +229,7 @@ como o AfterSale faz com `SendReverseAction` e `SendRefundAction`:
 3. monta o corpo (JSON sem nulos; nenhum no DELETE) e o `requestBody` do log;
 4. chama `_apiClient.SendAsync`. Se a chamada não chegar a ter resposta, grava a tentativa em `MovideskRequests` e
    relança a exceção;
-5. grava a chamada em `general.MovideskRequests`. O `field_key_value` é o Cód. Ref. da pessoa: no POST, o devolvido pela
+5. grava a chamada em `movidesk.MovideskRequests`. O `field_key_value` é o Cód. Ref. da pessoa: no POST, o devolvido pela
    API; nas outras, o da rota;
 6. depois do sucesso na Movidesk:
    * **POST:** se a resposta trouxer a pessoa inteira, grava com o `SavePeople` (seção 6.1);
@@ -263,14 +263,14 @@ com `MovideskPeopleCustomFieldValues`. Por isso o comando apaga as filhas antes 
 public string CreateDeletePersonQuery() =>
     @"set xact_abort on;
       begin transaction;
-      delete from [general].MovideskPeopleAddresses where doc_company = @doc_company and personId = @id;
-      delete from [general].MovideskPeopleContacts where doc_company = @doc_company and personId = @id;
-      delete from [general].MovideskPeopleEmails where doc_company = @doc_company and personId = @id;
-      delete from [general].MovideskPeopleTeams where doc_company = @doc_company and personId = @id;
-      delete from [general].MovideskPeopleRelationships where doc_company = @doc_company and personId = @id;
-      delete from [general].MovideskPeopleCustomFieldValues where doc_company = @doc_company and personId = @id;
-      delete from [general].MovideskPeopleAssets where doc_company = @doc_company and personId = @id;
-      delete from [general].MovideskPeople where doc_company = @doc_company and id = @id;
+      delete from [movidesk].MovideskPeopleAddresses where doc_company = @doc_company and personId = @id;
+      delete from [movidesk].MovideskPeopleContacts where doc_company = @doc_company and personId = @id;
+      delete from [movidesk].MovideskPeopleEmails where doc_company = @doc_company and personId = @id;
+      delete from [movidesk].MovideskPeopleTeams where doc_company = @doc_company and personId = @id;
+      delete from [movidesk].MovideskPeopleRelationships where doc_company = @doc_company and personId = @id;
+      delete from [movidesk].MovideskPeopleCustomFieldValues where doc_company = @doc_company and personId = @id;
+      delete from [movidesk].MovideskPeopleAssets where doc_company = @doc_company and personId = @id;
+      delete from [movidesk].MovideskPeople where doc_company = @doc_company and id = @id;
       commit transaction;";
 ```
 
@@ -352,7 +352,7 @@ Respostas iguais às da escrita de tickets, pelo mesmo `WriteResponse` (agora co
   * O comentário de faixas passa a citar a escrita de pessoas (3009–3012).
   * Num banco que já rodou o `Script005`, os jobs são inseridos à mão (no banco de desenvolvimento, como foi feito com
     3006–3008).
-* **Tabelas:** nenhuma nova; o log vai para `general.MovideskRequests`.
+* **Tabelas:** nenhuma nova; o log vai para `movidesk.MovideskRequests`.
 
 ---
 
@@ -378,7 +378,7 @@ Durante o roteiro, conferir:
 * **Se o `POST /persons/relationships` atualiza o `changedDate`** (seção 6.1). Um `GET persons?id={id}` antes do DELETE
   mostra se o relacionamento entrou e se a data mudou.
 * **Depois do DELETE:** o que o `GET persons?id={id}` devolve (404, como a leitura por id já trata?), e se a pessoa e as
-  filhas sumiram de `general.MovideskPeople`, `MovideskPeopleRelationships` e `MovideskPeopleRelationshipsServices` no
+  filhas sumiram de `movidesk.MovideskPeople`, `MovideskPeopleRelationships` e `MovideskPeopleRelationshipsServices` no
   banco de desenvolvimento.
 
 Não provocar erros de propósito, por causa do bloqueio de 60 s.
@@ -416,7 +416,7 @@ Respostas às perguntas da seção 9:
   service. Nas validações locais, um POST com `password` passou normalmente para o service (respondeu 422 só por usar uma
   empresa não cadastrada). O roteiro real não enviou senha.
 
-Os 4 registros ficaram em `general.MovideskRequests` (jobs 3009 a 3012) com o corpo enviado; o do DELETE com
+Os 4 registros ficaram em `movidesk.MovideskRequests` (jobs 3009 a 3012) com o corpo enviado; o do DELETE com
 `request_body` nulo.
 
 ---

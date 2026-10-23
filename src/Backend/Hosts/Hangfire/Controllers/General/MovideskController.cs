@@ -56,7 +56,7 @@ namespace Hangfire.Controllers.General
         }
 
         /// <summary>
-        /// get one ticket by number (GET tickets?id={id}) and save it; the call is logged in general.MovideskRequests
+        /// get one ticket by number (GET tickets?id={id}) and save it; the call is logged in movidesk.MovideskRequests
         /// </summary>
         [HttpGet("Tickets/{docCompany}/{id:long:min(1)}")]
         [Tags("MovideskTickets")]
@@ -184,7 +184,7 @@ namespace Hangfire.Controllers.General
         }
 
         /// <summary>
-        /// get one person by Cód. Ref. (GET persons?id={id}) and save it; the call is logged in general.MovideskRequests
+        /// get one person by Cód. Ref. (GET persons?id={id}) and save it; the call is logged in movidesk.MovideskRequests
         /// </summary>
         [HttpGet("People/{docCompany}/{id}")]
         [Tags("MovideskPeople")]
@@ -286,7 +286,7 @@ namespace Hangfire.Controllers.General
         }
 
         /// <summary>
-        /// get one service by id (GET services?id={id}) and save it; the call is logged in general.MovideskRequests
+        /// get one service by id (GET services?id={id}) and save it; the call is logged in movidesk.MovideskRequests
         /// </summary>
         [HttpGet("Services/{docCompany}/{id:int:min(1)}")]
         [Tags("MovideskServices")]

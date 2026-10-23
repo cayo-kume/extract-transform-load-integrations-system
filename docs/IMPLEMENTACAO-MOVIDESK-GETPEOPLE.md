@@ -386,7 +386,7 @@ public string CreateGetPeopleLastChangeQuery(string doc_company)
 {
     // quem nunca foi alterado tem changedDate nulo: a última mudança é a criação
     return @$"SELECT MAX(COALESCE(CHANGEDDATE, CREATEDDATE))
-             FROM GENERAL.MOVIDESKPEOPLE
+             FROM MOVIDESK.MOVIDESKPEOPLE
              WHERE DOC_COMPANY = '{doc_company}'";
 }
 
@@ -395,7 +395,7 @@ public string CreateGetPeopleByIdsQuery(string doc_company, List<string> ids)
     // o Cód. Ref. é alfanumérico: entra entre aspas, com as aspas internas dobradas
     // com lista vazia o IN () é SQL inválido; o repositório não chama a query nesse caso
     return @$"SELECT DOC_COMPANY, ID, CREATEDDATE, CHANGEDDATE
-             FROM GENERAL.MOVIDESKPEOPLE
+             FROM MOVIDESK.MOVIDESKPEOPLE
              WHERE DOC_COMPANY = '{doc_company}'
              AND ID IN ({String.Join(", ", ids.Select(id => $"'{id.Replace("'", "''")}'"))})";
 }
@@ -484,7 +484,7 @@ namespace Infrastructure.Movidesk.Repositorys
 
             // o merge roda mesmo para tabelas sem linhas no lote: é ele que apaga as filhas removidas
             foreach (var (table, _) in tables)
-                await _coreRepository.CallDbProcMerge("general", table.TableName, parentExecutionGUID);
+                await _coreRepository.CallDbProcMerge("movidesk", table.TableName, parentExecutionGUID);
 
             return true;
         }

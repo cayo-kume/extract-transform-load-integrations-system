@@ -9,7 +9,7 @@ namespace Application.Movidesk.Handlers.Commands
             return @$"SELECT DISTINCT
                      DOC_COMPANY AS DOC_COMPANY,
                      TOKEN AS TOKEN
-                     FROM GENERAL.MOVIDESKPARAMETERS";
+                     FROM MOVIDESK.MOVIDESKPARAMETERS";
         }
 
         public string CreateGetCompanyQuery(string doc_company)
@@ -18,14 +18,14 @@ namespace Application.Movidesk.Handlers.Commands
             return @$"SELECT DISTINCT
                      DOC_COMPANY AS DOC_COMPANY,
                      TOKEN AS TOKEN
-                     FROM GENERAL.MOVIDESKPARAMETERS
+                     FROM MOVIDESK.MOVIDESKPARAMETERS
                      WHERE DOC_COMPANY = '{doc_company}'";
         }
 
         public string CreateGetTicketsLastUpdateQuery(string doc_company)
         {
             return @$"SELECT MAX(LASTUPDATE)
-                     FROM GENERAL.MOVIDESKTICKETS
+                     FROM MOVIDESK.MOVIDESKTICKETS
                      WHERE DOC_COMPANY = '{doc_company}'";
         }
 
@@ -33,7 +33,7 @@ namespace Application.Movidesk.Handlers.Commands
         {
             // com lista vazia o IN () é SQL inválido; o repositório não chama a query nesse caso
             return @$"SELECT DOC_COMPANY, ID, LASTUPDATE
-                     FROM GENERAL.MOVIDESKTICKETS
+                     FROM MOVIDESK.MOVIDESKTICKETS
                      WHERE DOC_COMPANY = '{doc_company}'
                      AND ID IN ({String.Join(", ", ids)})";
         }
@@ -42,7 +42,7 @@ namespace Application.Movidesk.Handlers.Commands
         {
             // com lista vazia o IN () é SQL inválido; o repositório não chama a query nesse caso
             return @$"SELECT DOC_COMPANY, TICKETID, ID, HTMLDESCRIPTION
-                     FROM GENERAL.MOVIDESKTICKETSACTIONS
+                     FROM MOVIDESK.MOVIDESKTICKETSACTIONS
                      WHERE DOC_COMPANY = '{doc_company}'
                      AND TICKETID IN ({String.Join(", ", ticketIds)})
                      AND HTMLDESCRIPTION IS NOT NULL";
@@ -52,7 +52,7 @@ namespace Application.Movidesk.Handlers.Commands
         {
             // quem nunca foi alterado tem changedDate nulo: a última mudança é a criação
             return @$"SELECT MAX(COALESCE(CHANGEDDATE, CREATEDDATE))
-                     FROM GENERAL.MOVIDESKPEOPLE
+                     FROM MOVIDESK.MOVIDESKPEOPLE
                      WHERE DOC_COMPANY = '{doc_company}'";
         }
 
@@ -61,7 +61,7 @@ namespace Application.Movidesk.Handlers.Commands
             // o Cód. Ref. é alfanumérico: entra entre aspas, com as aspas internas dobradas
             // com lista vazia o IN () é SQL inválido; o repositório não chama a query nesse caso
             return @$"SELECT DOC_COMPANY, ID, CREATEDDATE, CHANGEDDATE
-                     FROM GENERAL.MOVIDESKPEOPLE
+                     FROM MOVIDESK.MOVIDESKPEOPLE
                      WHERE DOC_COMPANY = '{doc_company}'
                      AND ID IN ({String.Join(", ", ids.Select(id => $"'{id.Replace("'", "''")}'"))})";
         }
@@ -73,14 +73,14 @@ namespace Application.Movidesk.Handlers.Commands
             // campos adicionais) caem em cascata com o nível do meio. Valores por parâmetro (@doc_company, @id)
             return @"SET XACT_ABORT ON;
                      BEGIN TRANSACTION;
-                     DELETE FROM [GENERAL].MOVIDESKPEOPLEADDRESSES WHERE DOC_COMPANY = @doc_company AND PERSONID = @id;
-                     DELETE FROM [GENERAL].MOVIDESKPEOPLECONTACTS WHERE DOC_COMPANY = @doc_company AND PERSONID = @id;
-                     DELETE FROM [GENERAL].MOVIDESKPEOPLEEMAILS WHERE DOC_COMPANY = @doc_company AND PERSONID = @id;
-                     DELETE FROM [GENERAL].MOVIDESKPEOPLETEAMS WHERE DOC_COMPANY = @doc_company AND PERSONID = @id;
-                     DELETE FROM [GENERAL].MOVIDESKPEOPLERELATIONSHIPS WHERE DOC_COMPANY = @doc_company AND PERSONID = @id;
-                     DELETE FROM [GENERAL].MOVIDESKPEOPLECUSTOMFIELDVALUES WHERE DOC_COMPANY = @doc_company AND PERSONID = @id;
-                     DELETE FROM [GENERAL].MOVIDESKPEOPLEASSETS WHERE DOC_COMPANY = @doc_company AND PERSONID = @id;
-                     DELETE FROM [GENERAL].MOVIDESKPEOPLE WHERE DOC_COMPANY = @doc_company AND ID = @id;
+                     DELETE FROM [MOVIDESK].MOVIDESKPEOPLEADDRESSES WHERE DOC_COMPANY = @doc_company AND PERSONID = @id;
+                     DELETE FROM [MOVIDESK].MOVIDESKPEOPLECONTACTS WHERE DOC_COMPANY = @doc_company AND PERSONID = @id;
+                     DELETE FROM [MOVIDESK].MOVIDESKPEOPLEEMAILS WHERE DOC_COMPANY = @doc_company AND PERSONID = @id;
+                     DELETE FROM [MOVIDESK].MOVIDESKPEOPLETEAMS WHERE DOC_COMPANY = @doc_company AND PERSONID = @id;
+                     DELETE FROM [MOVIDESK].MOVIDESKPEOPLERELATIONSHIPS WHERE DOC_COMPANY = @doc_company AND PERSONID = @id;
+                     DELETE FROM [MOVIDESK].MOVIDESKPEOPLECUSTOMFIELDVALUES WHERE DOC_COMPANY = @doc_company AND PERSONID = @id;
+                     DELETE FROM [MOVIDESK].MOVIDESKPEOPLEASSETS WHERE DOC_COMPANY = @doc_company AND PERSONID = @id;
+                     DELETE FROM [MOVIDESK].MOVIDESKPEOPLE WHERE DOC_COMPANY = @doc_company AND ID = @id;
                      COMMIT TRANSACTION;";
         }
     }

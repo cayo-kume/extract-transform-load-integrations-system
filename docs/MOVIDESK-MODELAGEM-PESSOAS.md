@@ -32,7 +32,7 @@ A seção 8 lista as renomeações para seguir a nomenclatura (`GetPersons` → 
 
 | Regra | Como fica |
 |---|---|
-| Duas tabelas por entidade | `[untreated].X` + `[general].X`, merge pela `sp_X_Sync` gerada por `sp_Create_Merge_Procedure`. |
+| Duas tabelas por entidade | `[untreated].X` + `[movidesk].X`, merge pela `sp_X_Sync` gerada por `sp_Create_Merge_Procedure`. |
 | `integrated_or_updated_at datetime` | Primeira coluna. **Um horário por lote** (a pessoa e todas as filhas do lote gravam o mesmo valor). |
 | `doc_company nvarchar(14)` | Em todas as tabelas, primeira coluna da PK e das FKs. O mesmo Cód. Ref. pode existir em duas contas Movidesk. |
 | Nomes das colunas | Iguais às propriedades da entidade C# (camelCase da API). |
@@ -157,7 +157,7 @@ pessoa:
 ```sql
 exists (
 	select 1
-	from [general].MovideskPeople p
+	from [movidesk].MovideskPeople p
 	where p.doc_company = target.doc_company
 	and p.id = target.personId
 	and p.integrated_or_updated_at > target.integrated_or_updated_at
@@ -169,12 +169,12 @@ exists (
 
 ---
 
-## 6. DDL proposto (`general`)
+## 6. DDL proposto (`movidesk`)
 
 As tabelas `untreated` são iguais, sem `constraint` e sem `not null`.
 
 ```sql
-create table [general].MovideskPeople (
+create table [movidesk].MovideskPeople (
 	integrated_or_updated_at	datetime,
 	doc_company					nvarchar(14) not null,
 	id							nvarchar(64) not null,
@@ -202,7 +202,7 @@ create table [general].MovideskPeople (
 	observations				nvarchar(max),
 constraint [PK_MovideskPeople] primary key (doc_company asc, id asc));
 
-create table [general].MovideskPeopleAddresses (
+create table [movidesk].MovideskPeopleAddresses (
 	integrated_or_updated_at	datetime,
 	doc_company					nvarchar(14) not null,
 	personId					nvarchar(64) not null,
@@ -221,7 +221,7 @@ create table [general].MovideskPeopleAddresses (
 	isDefault					bit,
 constraint [PK_MovideskPeopleAddresses] primary key (doc_company asc, personId asc, id asc));
 
-create table [general].MovideskPeopleContacts (
+create table [movidesk].MovideskPeopleContacts (
 	integrated_or_updated_at	datetime,
 	doc_company					nvarchar(14) not null,
 	personId					nvarchar(64) not null,
@@ -231,7 +231,7 @@ create table [general].MovideskPeopleContacts (
 	isDefault					bit,
 constraint [PK_MovideskPeopleContacts] primary key (doc_company asc, personId asc, id asc));
 
-create table [general].MovideskPeopleEmails (
+create table [movidesk].MovideskPeopleEmails (
 	integrated_or_updated_at	datetime,
 	doc_company					nvarchar(14) not null,
 	personId					nvarchar(64) not null,
@@ -241,14 +241,14 @@ create table [general].MovideskPeopleEmails (
 	isDefault					bit,
 constraint [PK_MovideskPeopleEmails] primary key (doc_company asc, personId asc, id asc));
 
-create table [general].MovideskPeopleTeams (
+create table [movidesk].MovideskPeopleTeams (
 	integrated_or_updated_at	datetime,
 	doc_company					nvarchar(14) not null,
 	personId					nvarchar(64) not null,
 	team						nvarchar(128) not null,
 constraint [PK_MovideskPeopleTeams] primary key (doc_company asc, personId asc, team asc));
 
-create table [general].MovideskPeopleRelationships (
+create table [movidesk].MovideskPeopleRelationships (
 	integrated_or_updated_at			datetime,
 	doc_company							nvarchar(14) not null,
 	personId							nvarchar(64) not null,
@@ -261,7 +261,7 @@ create table [general].MovideskPeopleRelationships (
 	loadChildOrganizations				bit,
 constraint [PK_MovideskPeopleRelationships] primary key (doc_company asc, personId asc, id asc));
 
-create table [general].MovideskPeopleRelationshipsServices (
+create table [movidesk].MovideskPeopleRelationshipsServices (
 	integrated_or_updated_at	datetime,
 	doc_company					nvarchar(14) not null,
 	personId					nvarchar(64) not null,
@@ -271,7 +271,7 @@ create table [general].MovideskPeopleRelationshipsServices (
 	copyToChildren				bit,
 constraint [PK_MovideskPeopleRelationshipsServices] primary key (doc_company asc, personId asc, relationshipId asc, id asc));
 
-create table [general].MovideskPeopleCustomFieldValues (
+create table [movidesk].MovideskPeopleCustomFieldValues (
 	integrated_or_updated_at	datetime,
 	doc_company					nvarchar(14) not null,
 	personId					nvarchar(64) not null,
@@ -281,7 +281,7 @@ create table [general].MovideskPeopleCustomFieldValues (
 	[value]						nvarchar(max),
 constraint [PK_MovideskPeopleCustomFieldValues] primary key (doc_company asc, personId asc, customFieldId asc, customFieldRuleId asc, line asc));
 
-create table [general].MovideskPeopleCustomFieldValuesItems (
+create table [movidesk].MovideskPeopleCustomFieldValuesItems (
 	integrated_or_updated_at	datetime,
 	doc_company					nvarchar(14) not null,
 	personId					nvarchar(64) not null,
@@ -297,7 +297,7 @@ create table [general].MovideskPeopleCustomFieldValuesItems (
 	[fileName]					nvarchar(255),	-- idem
 constraint [PK_MovideskPeopleCustomFieldValuesItems] primary key (doc_company asc, personId asc, customFieldId asc, customFieldRuleId asc, line asc, id asc));
 
-create table [general].MovideskPeopleAssets (
+create table [movidesk].MovideskPeopleAssets (
 	integrated_or_updated_at	datetime,
 	doc_company					nvarchar(14) not null,
 	personId					nvarchar(64) not null,
@@ -310,29 +310,29 @@ constraint [PK_MovideskPeopleAssets] primary key (doc_company asc, personId asc,
 ### Chaves estrangeiras
 ```sql
 -- filhas -> pessoa (sem cascade: a pessoa nunca é apagada por este fluxo)
-alter table [general].MovideskPeopleAddresses         add constraint [FK_MovideskPeopleAddresses]         foreign key (doc_company, personId) references [general].MovideskPeople (doc_company, id);
-alter table [general].MovideskPeopleContacts          add constraint [FK_MovideskPeopleContacts]          foreign key (doc_company, personId) references [general].MovideskPeople (doc_company, id);
-alter table [general].MovideskPeopleEmails            add constraint [FK_MovideskPeopleEmails]            foreign key (doc_company, personId) references [general].MovideskPeople (doc_company, id);
-alter table [general].MovideskPeopleTeams             add constraint [FK_MovideskPeopleTeams]             foreign key (doc_company, personId) references [general].MovideskPeople (doc_company, id);
-alter table [general].MovideskPeopleRelationships     add constraint [FK_MovideskPeopleRelationships]     foreign key (doc_company, personId) references [general].MovideskPeople (doc_company, id);
-alter table [general].MovideskPeopleCustomFieldValues add constraint [FK_MovideskPeopleCustomFieldValues] foreign key (doc_company, personId) references [general].MovideskPeople (doc_company, id);
-alter table [general].MovideskPeopleAssets            add constraint [FK_MovideskPeopleAssets]            foreign key (doc_company, personId) references [general].MovideskPeople (doc_company, id);
+alter table [movidesk].MovideskPeopleAddresses         add constraint [FK_MovideskPeopleAddresses]         foreign key (doc_company, personId) references [movidesk].MovideskPeople (doc_company, id);
+alter table [movidesk].MovideskPeopleContacts          add constraint [FK_MovideskPeopleContacts]          foreign key (doc_company, personId) references [movidesk].MovideskPeople (doc_company, id);
+alter table [movidesk].MovideskPeopleEmails            add constraint [FK_MovideskPeopleEmails]            foreign key (doc_company, personId) references [movidesk].MovideskPeople (doc_company, id);
+alter table [movidesk].MovideskPeopleTeams             add constraint [FK_MovideskPeopleTeams]             foreign key (doc_company, personId) references [movidesk].MovideskPeople (doc_company, id);
+alter table [movidesk].MovideskPeopleRelationships     add constraint [FK_MovideskPeopleRelationships]     foreign key (doc_company, personId) references [movidesk].MovideskPeople (doc_company, id);
+alter table [movidesk].MovideskPeopleCustomFieldValues add constraint [FK_MovideskPeopleCustomFieldValues] foreign key (doc_company, personId) references [movidesk].MovideskPeople (doc_company, id);
+alter table [movidesk].MovideskPeopleAssets            add constraint [FK_MovideskPeopleAssets]            foreign key (doc_company, personId) references [movidesk].MovideskPeople (doc_company, id);
 
 -- netas -> nível do meio (com cascade)
-alter table [general].MovideskPeopleRelationshipsServices  add constraint [FK_MovideskPeopleRelationshipsServices]  foreign key (doc_company, personId, relationshipId) references [general].MovideskPeopleRelationships (doc_company, personId, id) on delete cascade;
-alter table [general].MovideskPeopleCustomFieldValuesItems add constraint [FK_MovideskPeopleCustomFieldValuesItems] foreign key (doc_company, personId, customFieldId, customFieldRuleId, line) references [general].MovideskPeopleCustomFieldValues (doc_company, personId, customFieldId, customFieldRuleId, line) on delete cascade;
+alter table [movidesk].MovideskPeopleRelationshipsServices  add constraint [FK_MovideskPeopleRelationshipsServices]  foreign key (doc_company, personId, relationshipId) references [movidesk].MovideskPeopleRelationships (doc_company, personId, id) on delete cascade;
+alter table [movidesk].MovideskPeopleCustomFieldValuesItems add constraint [FK_MovideskPeopleCustomFieldValuesItems] foreign key (doc_company, personId, customFieldId, customFieldRuleId, line) references [movidesk].MovideskPeopleCustomFieldValues (doc_company, personId, customFieldId, customFieldRuleId, line) on delete cascade;
 ```
 Sem FK de propósito: `bossId`, `createdById`, `changedById` e os `id` de organização em `MovideskPeopleRelationships`
 (outra pessoa, que pode não estar carregada), `itemPersonId`/`itemClientId`, `personType`/`profileType`, e qualquer
 ligação com os tickets (4.2).
 
-### Tabelas de valores (só `general`, sem merge, sem `doc_company`)
+### Tabelas de valores (só `movidesk`, sem merge, sem `doc_company`)
 ```sql
-create table [general].MovideskPersonTypes (id int not null primary key, [description] nvarchar(60) not null);
-insert into [general].MovideskPersonTypes (id, [description]) values (1, N'Pessoa'), (2, N'Empresa'), (4, N'Departamento');
+create table [movidesk].MovideskPersonTypes (id int not null primary key, [description] nvarchar(60) not null);
+insert into [movidesk].MovideskPersonTypes (id, [description]) values (1, N'Pessoa'), (2, N'Empresa'), (4, N'Departamento');
 
-create table [general].MovideskProfileTypes (id int not null primary key, [description] nvarchar(60) not null);
-insert into [general].MovideskProfileTypes (id, [description]) values (1, N'Agente'), (2, N'Cliente'), (3, N'Agente e Cliente');
+create table [movidesk].MovideskProfileTypes (id int not null primary key, [description] nvarchar(60) not null);
+insert into [movidesk].MovideskProfileTypes (id, [description]) values (1, N'Agente'), (2, N'Cliente'), (3, N'Agente e Cliente');
 ```
 
 ---
@@ -342,7 +342,7 @@ insert into [general].MovideskProfileTypes (id, [description]) values (1, N'Agen
 ### Arquivos
 | Arquivo | Conteúdo |
 |---|---|
-| `Script007_Create_Movidesk_People_Tables.sql` | seção 6 (untreated + general + FKs + valores) |
+| `Script007_Create_Movidesk_People_Tables.sql` | seção 6 (untreated + movidesk + FKs + valores) |
 | `Script008_Create_Movidesk_People_Sync_Procedures.sql` | `sp_Create_Merge_Procedure` das 10 tabelas; as 9 filhas com `@delete_condition` (seção 5) |
 | `Script005_Insert_Movidesk_Values_Into_Jobs_Table.sql` | **acrescentar** os jobs abaixo (decidido) |
 
@@ -414,7 +414,7 @@ A faixa 3500–3515 é dos tickets; pessoas começam em 3516.
 
 | Antes | Agora |
 |---|---|
-| Tabelas `MovideskPersons*`, só `general`, sem empresa | `MovideskPeople*`, `untreated` + `general` + merge, `doc_company` em todas |
+| Tabelas `MovideskPersons*`, só `general`, sem empresa | `MovideskPeople*`, `untreated` + `movidesk` + merge, `doc_company` em todas |
 | `varchar` | `nvarchar` |
 | Ids gerados sem exclusão | Ids gerados com exclusão limitada pela pessoa |
 | Sem tratamento de itens removidos | `@delete_condition` + `on delete cascade` nas netas |

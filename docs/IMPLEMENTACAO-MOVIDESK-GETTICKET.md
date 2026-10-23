@@ -24,7 +24,7 @@ Raiz do módulo: `src/Backend/Modules/General/Movidesk/`.
 | `htmlDescription` das ações | Não vem na listagem; passa a **preservar** o que já está gravado (seção 7) | **Vem** |
 | Limite de 90 dias | Sim (`/tickets` só lista `lastUpdate` de até 90 dias) | Não: a busca por id devolveu o ticket 1000, de 2021 |
 | Cache de estado | Descarta os que não mudaram | **Sempre grava**: quem chamou quer o ticket atualizado |
-| Log de requisição (`general.MovideskRequests`) | Não | **Sim**, com o usuário (`X-User-Name`) |
+| Log de requisição (`movidesk.MovideskRequests`) | Não | **Sim**, com o usuário (`X-User-Name`) |
 
 Usos esperados: reprocessar um ticket específico, trazer um ticket antigo (fora da janela de 90 dias), preencher o
 `htmlDescription` das ações e, no futuro, ser chamado por um webhook da Movidesk.
@@ -57,7 +57,7 @@ Consequências para o código:
 public interface IMovideskTicketsService
 {
     /// <summary>
-    /// busca um ticket por número, grava nas tabelas de tickets e registra a chamada em general.MovideskRequests.
+    /// busca um ticket por número, grava nas tabelas de tickets e registra a chamada em movidesk.MovideskRequests.
     /// true: gravado | false: o ticket não existe na Movidesk | null: empresa não cadastrada ou resposta inválida da API
     /// </summary>
     public Task<bool?> GetTicketById(string user_name, string doc_company, long id);
@@ -127,18 +127,18 @@ Sem ela, o insert do log falha na chave estrangeira para `auditing.Jobs`.
 
 ---
 
-## 5. Log de requisições (`general.MovideskRequests`)
+## 5. Log de requisições (`movidesk.MovideskRequests`)
 
-Cópia do `general.AfterSaleRequests` (AfterSale `Script009`): mesmas colunas, mesmos índices, mesma entidade e mesma
-forma de gravar. Tabela só de inserção: gravada direto no `general`, sem `untreated` nem procedure de merge.
+Cópia do `aftersale.AfterSaleRequests` (AfterSale `Script009`): mesmas colunas, mesmos índices, mesma entidade e mesma
+forma de gravar. Tabela só de inserção: gravada direto no `movidesk`, sem `untreated` nem procedure de merge.
 
 ### 5.1 Script
 Novo arquivo `Infrastructure.Movidesk/Scripts/SQLServer/Script006_Create_Movidesk_Requests_Table.sql` (o DbUp roda em
 ordem alfabética, então ele entra depois do `Script005` sem renumerar nada):
 ```sql
 --log das chamadas sob demanda feitas pelo MovideskController na API da Movidesk.
---tabela somente de inserção: gravada direto no schema general, sem untreated nem procedure de merge.
-create table [general].MovideskRequests (
+--tabela somente de inserção: gravada direto no schema movidesk, sem untreated nem procedure de merge.
+create table [movidesk].MovideskRequests (
 	id bigint identity(1,1) not null,
 	request_date datetime not null,
 	execution uniqueidentifier not null, --auditing.Logs.Execution da chamada
@@ -155,8 +155,8 @@ constraint [PK_MovideskRequests] primary key (
 	id asc
 ));
 
-create nonclustered index [IX_MovideskRequests_Company_Key] on [general].MovideskRequests ([doc_company], field_key_value);
-create nonclustered index [IX_MovideskRequests_User_Date] on [general].MovideskRequests ([user_name], request_date);
+create nonclustered index [IX_MovideskRequests_Company_Key] on [movidesk].MovideskRequests ([doc_company], field_key_value);
+create nonclustered index [IX_MovideskRequests_User_Date] on [movidesk].MovideskRequests ([user_name], request_date);
 ```
 
 ### 5.2 Entidade
@@ -167,7 +167,7 @@ comentário trocados:
 namespace Domain.Movidesk.Entities.Writes.Requests
 {
     /// <summary>
-    /// log of an on-demand call made to the Movidesk API, table general.MovideskRequests
+    /// log of an on-demand call made to the Movidesk API, table movidesk.MovideskRequests
     /// </summary>
     public class Request
     {
@@ -218,7 +218,7 @@ public bool InsertIntoMovideskRequests(Domain.Movidesk.Entities.Writes.Requests.
 ```
 ```csharp
 /// <summary>
-/// log table of the on-demand calls: insert-only, so it goes straight to the general schema (no untreated/merge)
+/// log table of the on-demand calls: insert-only, so it goes straight to the movidesk schema (no untreated/merge)
 /// </summary>
 public bool InsertIntoMovideskRequests(Domain.Movidesk.Entities.Writes.Requests.Request request)
 {
@@ -226,7 +226,7 @@ public bool InsertIntoMovideskRequests(Domain.Movidesk.Entities.Writes.Requests.
 
     _coreRepository.FillSystemDataTable(requestsTable, [request]);
 
-    return _coreRepository.BulkInsertIntoTableRaw(requestsTable, "general");
+    return _coreRepository.BulkInsertIntoTableRaw(requestsTable, "movidesk");
 }
 ```
 
@@ -265,7 +265,7 @@ public string CreateGetCompanyQuery(string doc_company)
     return @$"SELECT DISTINCT
              DOC_COMPANY AS DOC_COMPANY,
              TOKEN AS TOKEN
-             FROM GENERAL.MOVIDESKPARAMETERS
+             FROM MOVIDESK.MOVIDESKPARAMETERS
              WHERE DOC_COMPANY = '{doc_company}'";
 }
 ```
@@ -310,7 +310,7 @@ public string CreateGetActionsHtmlDescriptionsQuery(string doc_company, List<lon
 {
     // com lista vazia o IN () é SQL inválido; o repositório não chama a query nesse caso
     return @$"SELECT DOC_COMPANY, TICKETID, ID, HTMLDESCRIPTION
-             FROM GENERAL.MOVIDESKTICKETSACTIONS
+             FROM MOVIDESK.MOVIDESKTICKETSACTIONS
              WHERE DOC_COMPANY = '{doc_company}'
              AND TICKETID IN ({String.Join(", ", ticketIds)})
              AND HTMLDESCRIPTION IS NOT NULL";
@@ -439,7 +439,7 @@ A única mudança de comportamento no `GetTickets` é a preservação do `htmlDe
 ```csharp
 /// <summary>
 /// busca um ticket por número, grava nas tabelas de tickets (sempre, sem consultar o cache)
-/// e registra a chamada em general.MovideskRequests
+/// e registra a chamada em movidesk.MovideskRequests
 /// </summary>
 public async Task<bool?> GetTicketById(string user_name, string doc_company, long id)
 {
@@ -458,7 +458,7 @@ public async Task<bool?> GetTicketById(string user_name, string doc_company, lon
         if (company is null)
         {
             // nenhuma chamada à API: não há o que registrar em MovideskRequests (igual ao AfterSale)
-            _logger.AddMessage($"Empresa {doc_company} não cadastrada em general.MovideskParameters.");
+            _logger.AddMessage($"Empresa {doc_company} não cadastrada em movidesk.MovideskParameters.");
             return null;
         }
 
@@ -572,7 +572,7 @@ Pontos do código:
 `X-User-Name` igual ao `AfterSaleController`:
 ```csharp
 /// <summary>
-/// get one ticket by number (GET tickets?id={id}) and save it; the call is logged in general.MovideskRequests
+/// get one ticket by number (GET tickets?id={id}) and save it; the call is logged in movidesk.MovideskRequests
 /// </summary>
 [HttpGet("Tickets/{docCompany}/{id:long:min(1)}")]
 [Tags("MovideskTickets")]
@@ -624,7 +624,7 @@ A rota `Tickets` e a nova `Tickets/{docCompany}/{id}` não conflitam: o ASP.NET 
 | 1 | Rota com `docCompany`: `GET Tickets/{docCompany}/{id}` | 3.2, 9 |
 | 2 | Job próprio `MovideskGetTicketById = 3002`, sob demanda (`IntervalTimeInMinutes = 0`) | 4 |
 | 3 | `htmlDescription` tratado já: o `GetTickets` preserva o HTML gravado em vez de sobrescrever com `null` | 7, 8.1 |
-| 4 | Usuário obrigatório pelo cabeçalho `X-User-Name` e log das chamadas em `general.MovideskRequests`, como no AfterSale | 5, 8.2, 9 |
+| 4 | Usuário obrigatório pelo cabeçalho `X-User-Name` e log das chamadas em `movidesk.MovideskRequests`, como no AfterSale | 5, 8.2, 9 |
 
 Não há decisões pendentes neste guia.
 

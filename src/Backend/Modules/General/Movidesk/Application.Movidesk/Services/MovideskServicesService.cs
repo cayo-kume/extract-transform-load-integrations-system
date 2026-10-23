@@ -47,7 +47,7 @@ namespace Application.Movidesk.Services
             (apiClient, logger, movideskService, movideskRepository, movideskServicesRepository, serviceValidator, cache);
 
         /// <summary>
-        /// busca um serviço por id, grava nas tabelas de serviços e registra a chamada em general.MovideskRequests
+        /// busca um serviço por id, grava nas tabelas de serviços e registra a chamada em movidesk.MovideskRequests
         /// </summary>
         public async Task<bool?> GetServiceById(string user_name, string doc_company, int id)
         {
@@ -66,7 +66,7 @@ namespace Application.Movidesk.Services
                 if (company is null)
                 {
                     // nenhuma chamada à API: não há o que registrar em MovideskRequests (igual ao GetTicketById)
-                    _logger.AddMessage($"Empresa {doc_company} não cadastrada em general.MovideskParameters.");
+                    _logger.AddMessage($"Empresa {doc_company} não cadastrada em movidesk.MovideskParameters.");
                     return null;
                 }
 
@@ -266,7 +266,7 @@ namespace Application.Movidesk.Services
 
         /// <summary>
         /// fluxo comum das rotas de escrita de serviços (mesmo desenho do SendTicket e do SendPerson): empresa, chamada à API,
-        /// registro em general.MovideskRequests (com o corpo enviado) e, depois do sucesso, hash do catálogo fora do cache,
+        /// registro em movidesk.MovideskRequests (com o corpo enviado) e, depois do sucesso, hash do catálogo fora do cache,
         /// gravação do serviço devolvido pelo POST e releitura do serviço alterado pelo PATCH
         /// </summary>
         private async Task<Domain.Movidesk.Dtos.Writes.Result> SendService(
@@ -297,7 +297,7 @@ namespace Application.Movidesk.Services
                 if (company is null)
                 {
                     // nenhuma chamada à API: não há o que registrar em MovideskRequests (igual ao GetServiceById)
-                    var notFound = $"Empresa {doc_company} não cadastrada em general.MovideskParameters.";
+                    var notFound = $"Empresa {doc_company} não cadastrada em movidesk.MovideskParameters.";
                     _logger.AddMessage(notFound);
 
                     return new Domain.Movidesk.Dtos.Writes.Result { success = false, id = id?.ToString(), message = notFound };
