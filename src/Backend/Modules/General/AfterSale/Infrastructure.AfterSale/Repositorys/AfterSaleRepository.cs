@@ -29,7 +29,7 @@ public class AfterSaleRepository : IAfterSaleRepository
     }
 
     /// <summary>
-    /// log table of the write calls: insert-only, so it goes straight to the general schema (no untreated/merge)
+    /// log table of the write calls: insert-only, so it goes straight to the aftersale schema (no untreated/merge)
     /// </summary>
     public bool InsertIntoAfterSaleRequests(Domain.AfterSale.Entities.Writes.Requests.Request request)
     {
@@ -37,6 +37,6 @@ public class AfterSaleRepository : IAfterSaleRepository
 
         _coreRepository.FillSystemDataTable(requestsTable, [request]);
 
-        return _coreRepository.BulkInsertIntoTableRaw(requestsTable, "general");
+        return _coreRepository.BulkInsertIntoTableRaw(requestsTable, "aftersale");
     }
 }

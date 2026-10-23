@@ -10,7 +10,7 @@ O padrão de referência são as rotas de escrita de reversas, já implementadas
 - endpoint no `AfterSaleController` com o CNPJ na rota e o cabeçalho obrigatório `X-User-Name`;
 - DTOs em `Dtos/Writes/<recurso>/<rota>/{Request,Response}`, com `Root` em arquivo próprio;
 - um fluxo comum (`SendReverseAction`) que pega o token da empresa, chama a API, grava a chamada em
-  `general.AfterSaleRequests` (usuário, rota, request e response), grava um erro em
+  `aftersale.AfterSaleRequests` (usuário, rota, request e response), grava um erro em
   `AfterSaleErrors` quando a API não devolve sucesso e registra o log da auditoria;
 - resposta 200 quando `success = true`, 422 quando não.
 
@@ -22,7 +22,7 @@ O padrão de referência são as rotas de escrita de reversas, já implementadas
 | `PostChangeTotalAmountRefundById` | `POST v3/api/refunds/{id}/change-total-amount` | JSON | `AfterSaleChangeTotalAmountRefund = 5020` | `POST Refunds/{docCompany}/{id}/ChangeTotalAmount` |
 
 Os quatro jobs já estão no bloco de ações do `Script007` (`IntervalTimeInMinutes = 0`, `IdType = 2`)
-e os valores do `EnumJob` já existem. A tabela `general.AfterSaleRequests` (`Script009`) já serve
+e os valores do `EnumJob` já existem. A tabela `aftersale.AfterSaleRequests` (`Script009`) já serve
 para reembolsos: `field_key_value` recebe o id do reembolso. **Nada a inserir em banco.**
 
 ---
@@ -308,7 +308,7 @@ linhas 15–18 → substituir por:
 
         /// <summary>
         /// common flow of the refund write routes: resolves the company token, calls the API,
-        /// logs the call in general.AfterSaleRequests (user, request and response) and saves an
+        /// logs the call in aftersale.AfterSaleRequests (user, request and response) and saves an
         /// AfterSaleErrors record when the API does not return success
         /// </summary>
         private async Task<TResponse> SendRefundAction<TResponse>(EnumJob job, string user_name, string doc_company, long id, string httpMethod, string route, string requestBody, Func<Dictionary<string, string>, Task<string?>> send)

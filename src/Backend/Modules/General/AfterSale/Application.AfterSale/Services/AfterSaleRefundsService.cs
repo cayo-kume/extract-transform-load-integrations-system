@@ -555,7 +555,7 @@ namespace Application.AfterSale.Services
 
         /// <summary>
         /// busca um reembolso por id, grava nas tabelas de reembolsos (sempre, sem consultar cache)
-        /// e registra a chamada em general.AfterSaleRequests
+        /// e registra a chamada em aftersale.AfterSaleRequests
         /// </summary>
         public async Task<bool?> GetRefundById(string user_name, string doc_company, long id)
         {
@@ -573,7 +573,7 @@ namespace Application.AfterSale.Services
                 if (company is null)
                 {
                     // nenhuma chamada à API: não há o que registrar em AfterSaleRequests
-                    _logger.AddMessage($"Empresa {doc_company} não cadastrada em general.AfterSaleParameters.");
+                    _logger.AddMessage($"Empresa {doc_company} não cadastrada em aftersale.AfterSaleParameters.");
                     return null;
                 }
 
@@ -956,7 +956,7 @@ namespace Application.AfterSale.Services
 
         /// <summary>
         /// common flow of the refund write routes: resolves the company token, calls the API,
-        /// logs the call in general.AfterSaleRequests (user, request and response) and saves an
+        /// logs the call in aftersale.AfterSaleRequests (user, request and response) and saves an
         /// AfterSaleErrors record when the API does not return success
         /// </summary>
         private async Task<TResponse> SendRefundAction<TResponse>(EnumJob job, string user_name, string doc_company, long id, string httpMethod, string route, string requestBody, Func<Dictionary<string, string>, Task<string?>> send)

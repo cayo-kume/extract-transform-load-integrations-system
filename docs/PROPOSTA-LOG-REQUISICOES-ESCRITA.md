@@ -26,7 +26,7 @@ Cada uma dessas chamadas já passa pelo `SendReverseAction` (em `AfterSaleRevers
 1. abre um log em `auditing.Logs` com o job da ação (`IdJob` + `IdType = 2`, Integração);
 2. grava em `auditing.Records` um registro com `{ "request": ..., "response": ... }`;
 3. grava mensagens em `auditing.Messages` e, se a API não devolver sucesso, um erro em
-   `general.AfterSaleErrors`.
+   `aftersale.AfterSaleErrors`.
 
 **O que falta:** o **usuário** que pediu a alteração, e um lugar próprio e consultável para a
 requisição. Hoje o JSON vai misturado no `RecordText` de `auditing.Records`, que é a mesma tabela
@@ -39,7 +39,7 @@ usada pelos jobs de leitura para guardar cada registro integrado.
 | Opção | Como | Prós | Contras |
 |---|---|---|---|
 | **A. Tabela nova em `auditing` (recomendada)** | `auditing.Requests`, genérica, com FK para `auditing.Logs` | Fica junto da auditoria, com o mesmo `Execution` do log; serve para qualquer módulo (os POSTs de reembolso e de outras integrações já podem usar); é gravada pelo logger, num ponto só | Exige mudança no projeto Shared (entidade, logger e repositório) |
-| B. Tabela nova em `general`, só do AfterSale | `general.AfterSaleReversesRequests`, pelo fluxo `untreated` → merge | Isolada no módulo | O fluxo `untreated` + procedure de merge não faz sentido para um log que só recebe inserts; cada módulo novo precisaria da sua tabela |
+| B. Tabela nova em `general`, só do AfterSale | `aftersale.AfterSaleReversesRequests`, pelo fluxo `untreated` → merge | Isolada no módulo | O fluxo `untreated` + procedure de merge não faz sentido para um log que só recebe inserts; cada módulo novo precisaria da sua tabela |
 | C. Reaproveitar `auditing.Records` | Colocar o usuário dentro do JSON do `RecordText` | Nenhuma tabela nova | Usuário não fica em coluna própria (não dá para filtrar/indexar), e mistura com os registros dos jobs de leitura |
 
 **Recomendação: opção A.**

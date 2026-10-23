@@ -63,7 +63,7 @@ namespace Hangfire.Controllers.General
         }
 
         /// <summary>
-        /// get one reverse by id (GET v3/api/reverses/{id}) and save it; the call is logged in general.AfterSaleRequests
+        /// get one reverse by id (GET v3/api/reverses/{id}) and save it; the call is logged in aftersale.AfterSaleRequests
         /// </summary>
         [HttpGet("Reverses/{docCompany}/{id:long:min(1)}")]
         [Tags("AfterSaleReverses")]
@@ -78,7 +78,7 @@ namespace Hangfire.Controllers.General
             return result switch
             {
                 true => Ok($"Reverse {id} integrated successfully."),
-                false => NotFound($"Reverse {id} not found in AfterSale. See general.AfterSaleErrors."),
+                false => NotFound($"Reverse {id} not found in AfterSale. See aftersale.AfterSaleErrors."),
                 null => UnprocessableEntity("Company not registered or invalid response from AfterSale. See the execution log.")
             };
         }
@@ -129,7 +129,7 @@ namespace Hangfire.Controllers.General
         }
 
         /// <summary>
-        /// get one refund by id (GET v3/api/refunds/{id}) and save it; the call is logged in general.AfterSaleRequests
+        /// get one refund by id (GET v3/api/refunds/{id}) and save it; the call is logged in aftersale.AfterSaleRequests
         /// </summary>
         [HttpGet("Refunds/{docCompany}/{id:long:min(1)}")]
         [Tags("AfterSaleRefunds")]
@@ -144,7 +144,7 @@ namespace Hangfire.Controllers.General
             return result switch
             {
                 true => Ok($"Refund {id} integrated successfully."),
-                false => NotFound($"Refund {id} not found in AfterSale. See general.AfterSaleErrors."),
+                false => NotFound($"Refund {id} not found in AfterSale. See aftersale.AfterSaleErrors."),
                 null => UnprocessableEntity("Company not registered or invalid response from AfterSale. See the execution log.")
             };
         }

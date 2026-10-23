@@ -39,12 +39,12 @@ namespace Infrastructure.AfterSale.Repositorys
             _coreRepository.BulkInsertIntoTableRaw(subReasonsTable);
             _coreRepository.BulkInsertIntoTableRaw(stringValuesTable);
 
-            await _coreRepository.CallDbProcMerge("general", ecommercesTable.TableName, parentExecutionGUID);
-            await _coreRepository.CallDbProcMerge("general", messagesPagesTable.TableName, parentExecutionGUID);
-            await _coreRepository.CallDbProcMerge("general", messagesMailsTable.TableName, parentExecutionGUID);
-            await _coreRepository.CallDbProcMerge("general", reasonsTable.TableName, parentExecutionGUID);
-            await _coreRepository.CallDbProcMerge("general", subReasonsTable.TableName, parentExecutionGUID);
-            await _coreRepository.CallDbProcMerge("general", stringValuesTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("aftersale", ecommercesTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("aftersale", messagesPagesTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("aftersale", messagesMailsTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("aftersale", reasonsTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("aftersale", subReasonsTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("aftersale", stringValuesTable.TableName, parentExecutionGUID);
 
             return true;
         }

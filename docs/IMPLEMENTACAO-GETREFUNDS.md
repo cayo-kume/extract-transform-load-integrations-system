@@ -7,8 +7,8 @@ real salva em
 [`Responsed Jsons/Refund/SearchRefunds/json-returned-by-api-end-point.json`](../src/Backend/Modules/General/AfterSale/Responsed%20Jsons/Refund/SearchRefunds/json-returned-by-api-end-point.json).
 
 O desenho é o mesmo do `AfterSaleReversesService.GetReverses`, que lê a lista resumida de
-reversas e grava em `general.AfterSaleSummarizedReverses`. Aqui a lista resumida de reembolsos vai
-para `general.AfterSaleSummarizedRefunds`:
+reversas e grava em `aftersale.AfterSaleSummarizedReverses`. Aqui a lista resumida de reembolsos vai
+para `aftersale.AfterSaleSummarizedRefunds`:
 
 | | Reversas (referência) | Reembolsos (este guia) |
 |---|---|---|
@@ -135,7 +135,7 @@ Arquivo: [`Infrastructure.AfterSale/Scripts/SQLServer/Script003_Create_Refunds_T
 
 Mesma regra das reversas: o mesmo id pode existir nos dois CNPJs, então o CNPJ entra na PK.
 
-**`[general].AfterSaleSummarizedRefunds` — linhas 424–454:**
+**`[aftersale].AfterSaleSummarizedRefunds` — linhas 424–454:**
 
 - Após a linha 425 (`integrated_or_updated_at datetime,`): `[doc_company] nvarchar(14) not null,`
 - Linha 426: `id bigint not null primary key,` → `id bigint not null,`
@@ -180,7 +180,7 @@ logo após o `CreateGetSummarizedReversesByIdsQuery` (que termina na linha 80):
                     identificadores += $"'{refundsIds[j]}', ";
             }
 
-            return $"SELECT ID, DOC_COMPANY, UPDATED_AT FROM [GENERAL].[AFTERSALESUMMARIZEDREFUNDS] (NOLOCK) WHERE DOC_COMPANY = '{doc_company}' AND ID IN ({identificadores})";
+            return $"SELECT ID, DOC_COMPANY, UPDATED_AT FROM [AFTERSALE].[AFTERSALESUMMARIZEDREFUNDS] (NOLOCK) WHERE DOC_COMPANY = '{doc_company}' AND ID IN ({identificadores})";
         }
 ```
 
@@ -240,7 +240,7 @@ Os três métodos são cópias dos equivalentes de `AfterSaleReversesRepository`
 
             _coreRepository.BulkInsertIntoTableRaw(summarizedRefundsTable, "untreated");
 
-            await _coreRepository.CallDbProcMerge("general", summarizedRefundsTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("aftersale", summarizedRefundsTable.TableName, parentExecutionGUID);
 
             return true;
         }
@@ -253,7 +253,7 @@ Os três métodos são cópias dos equivalentes de `AfterSaleReversesRepository`
 
             _coreRepository.BulkInsertIntoTableRaw(errosTable, "untreated");
 
-            await _coreRepository.CallDbProcMerge("general", errosTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("aftersale", errosTable.TableName, parentExecutionGUID);
 
             return true;
         }
@@ -549,7 +549,7 @@ Nada a inserir: o job da integração e o da procedure de sincronização já es
 - [ ] 7. `AfterSaleController`: `GET Refunds`
 - [ ] Compilar
 - [ ] Recriar as tabelas `AfterSaleSummarizedRefunds` e a procedure `sp_AfterSaleSummarizedRefunds_Sync` no banco local
-- [ ] Chamar `GET AfterSaleJobs/AfterSale/Refunds` e conferir `general.AfterSaleSummarizedRefunds` com `doc_company` preenchido para as duas empresas
+- [ ] Chamar `GET AfterSaleJobs/AfterSale/Refunds` e conferir `aftersale.AfterSaleSummarizedRefunds` com `doc_company` preenchido para as duas empresas
 
 ## 4. Pontos de atenção
 

@@ -112,7 +112,7 @@ create table [untreated].AfterSaleEcommerces (
 	address_deleted_at datetime
 );
 
-create table [general].AfterSaleEcommerces (
+create table [aftersale].AfterSaleEcommerces (
 	integrated_or_updated_at datetime,
 	id int primary key not null,
 	uuid uniqueidentifier,
@@ -307,7 +307,7 @@ create table [untreated].AfterSaleEcommercesMessagesPages (
     refund_nps_required_commentary bit,
 );
 
-create table [general].AfterSaleEcommercesMessagesPages (
+create table [aftersale].AfterSaleEcommercesMessagesPages (
 	integrated_or_updated_at datetime,
 	id int not null, --gerar no c-sharp
 	ecommerce_id int not null,
@@ -761,7 +761,7 @@ create table [untreated].AfterSaleEcommercesMessagesMails (
     compensation_wire_transfer_ask_transfer_bank_account_info_from_agent_origin_enabled bit
 );
 
-create table [general].AfterSaleEcommercesMessagesMails (
+create table [aftersale].AfterSaleEcommercesMessagesMails (
 	integrated_or_updated_at datetime,
     id int not null, --gerar no c-sharp
 	ecommerce_id int not null,
@@ -1149,7 +1149,7 @@ create table [untreated].AfterSaleEcommercesReasons (
     deleted_at datetime
 );
 
-create table [general].AfterSaleEcommercesReasons (
+create table [aftersale].AfterSaleEcommercesReasons (
 	integrated_or_updated_at datetime,
     id int not null,
     ecommerce_id int not null,
@@ -1179,7 +1179,7 @@ create table [untreated].AfterSaleEcommercesSubReasons (
     deleted_at datetime
 );
 
-create table [general].AfterSaleEcommercesSubReasons (
+create table [aftersale].AfterSaleEcommercesSubReasons (
 	integrated_or_updated_at datetime,
     id int not null,
     reason_id int not null,
@@ -1202,7 +1202,7 @@ create table [untreated].AfterSaleEcommercesStringValues (
     [value] nvarchar(300)
 );
 
-create table [general].AfterSaleEcommercesStringValues (
+create table [aftersale].AfterSaleEcommercesStringValues (
 	integrated_or_updated_at datetime,
     id bigint not null,
     ecommerce_id int not null,
@@ -1212,8 +1212,8 @@ constraint [PK_AfterSaleEcommercesStringValues] primary key (
     ecommerce_id asc
 ));
 
-alter table [general].AfterSaleEcommercesMessagesPages add constraint [FK_AfterSaleEcommercesMessagesPages] foreign key (ecommerce_id) references [general].AfterSaleEcommerces (id);
-alter table [general].AfterSaleEcommercesMessagesMails add constraint [FK_AfterSaleEcommercesMessagesMails] foreign key (ecommerce_id) references [general].AfterSaleEcommerces (id);
-alter table [general].AfterSaleEcommercesStringValues add constraint [FK_AfterSaleEcommercesStringValues] foreign key (ecommerce_id) references [general].AfterSaleEcommerces (id);
-alter table [general].AfterSaleEcommercesReasons add constraint [FK_AfterSaleEcommercesReasons] foreign key (ecommerce_id) references [general].AfterSaleEcommerces (id);
-alter table [general].AfterSaleEcommercesSubReasons add constraint [FK_AfterSaleEcommercesSubReasons] foreign key (reason_id, ecommerce_id) references [general].AfterSaleEcommercesReasons (id, ecommerce_id);
+alter table [aftersale].AfterSaleEcommercesMessagesPages add constraint [FK_AfterSaleEcommercesMessagesPages] foreign key (ecommerce_id) references [aftersale].AfterSaleEcommerces (id);
+alter table [aftersale].AfterSaleEcommercesMessagesMails add constraint [FK_AfterSaleEcommercesMessagesMails] foreign key (ecommerce_id) references [aftersale].AfterSaleEcommerces (id);
+alter table [aftersale].AfterSaleEcommercesStringValues add constraint [FK_AfterSaleEcommercesStringValues] foreign key (ecommerce_id) references [aftersale].AfterSaleEcommerces (id);
+alter table [aftersale].AfterSaleEcommercesReasons add constraint [FK_AfterSaleEcommercesReasons] foreign key (ecommerce_id) references [aftersale].AfterSaleEcommerces (id);
+alter table [aftersale].AfterSaleEcommercesSubReasons add constraint [FK_AfterSaleEcommercesSubReasons] foreign key (reason_id, ecommerce_id) references [aftersale].AfterSaleEcommercesReasons (id, ecommerce_id);

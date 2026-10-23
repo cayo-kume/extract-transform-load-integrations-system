@@ -5,7 +5,7 @@ create table [untreated].AfterSaleCourierAttributes (
 	fill_form_from_file nvarchar(max)
 );
 
-create table [general].AfterSaleCourierAttributes (
+create table [aftersale].AfterSaleCourierAttributes (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
 	reverse_id bigint not null,
@@ -27,7 +27,7 @@ create table [untreated].AfterSaleCourierAttributesFields (
 	reverse_id bigint
 );
 
-create table [general].AfterSaleCourierAttributesFields (
+create table [aftersale].AfterSaleCourierAttributesFields (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
 	[required] bit,
@@ -49,7 +49,7 @@ create table [untreated].AfterSaleTransportationsReverses (
 	transportation nvarchar(50)
 );
 
-create table [general].AfterSaleTransportationsReverses (
+create table [aftersale].AfterSaleTransportationsReverses (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
 	transportation nvarchar(50) not null,
@@ -66,7 +66,7 @@ create table [untreated].AfterSaleHistoriesReverses(
 	link nvarchar(250)
 );
 
-create table [general].AfterSaleHistoriesReverses(
+create table [aftersale].AfterSaleHistoriesReverses(
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
 	id bigint not null,
@@ -85,7 +85,7 @@ create table [untreated].AfterSaleStatusReverses (
 	[description] nvarchar(250)
 );
 
-create table [general].AfterSaleStatusReverses (
+create table [aftersale].AfterSaleStatusReverses (
 	integrated_or_updated_at datetime,
 	id int not null,
 	[doc_company] nvarchar(14) not null,
@@ -120,7 +120,7 @@ create table [untreated].AfterSaleSummarizedReverses (
 	tracking_code nvarchar(50)
 );
 
-create table [general].AfterSaleSummarizedReverses (
+create table [aftersale].AfterSaleSummarizedReverses (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
 	id bigint not null,
@@ -131,7 +131,7 @@ create table [general].AfterSaleSummarizedReverses (
 	customer_first_name nvarchar(50),
 	customer_last_name nvarchar(100), 
 	status_id int,
-	status_name nvarchar(50), uni
+	status_name nvarchar(50),
 	status_description nvarchar(300), 
 	refunds_count int,
 	total_amount decimal(10, 2), 
@@ -216,7 +216,7 @@ create table [untreated].[AfterSaleReverses] (
 	retry_options_can_retry bit
 );
 
-create table [general].[AfterSaleReverses] (
+create table [aftersale].[AfterSaleReverses] (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
 	id bigint not null,
@@ -345,7 +345,7 @@ create table [untreated].[AfterSaleReversesCustomers] (
 	shipping_address_is_erased bit
 );
 
-create table [general].[AfterSaleReversesCustomers] (
+create table [aftersale].[AfterSaleReversesCustomers] (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
 	reverse_id bigint not null,
@@ -437,7 +437,7 @@ create table [untreated].[AfterSaleReversesDestinationsData] (
 	[label] nvarchar(300)
 );
 
-create table [general].[AfterSaleReversesDestinationsData] (
+create table [aftersale].[AfterSaleReversesDestinationsData] (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
 	reverse_id bigint not null,
@@ -500,7 +500,7 @@ create table [untreated].[AfterSaleReversesTrackings] (
 	deleted_at datetime
 );
 
-create table [general].[AfterSaleReversesTrackings] (
+create table [aftersale].[AfterSaleReversesTrackings] (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
 	reverse_id bigint not null,
@@ -549,7 +549,7 @@ create table [untreated].[AfterSaleReversesTrackingHistories] (
 	deleted_at datetime
 );
 
-create table [general].[AfterSaleReversesTrackingHistories] (
+create table [aftersale].[AfterSaleReversesTrackingHistories] (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
 	id bigint not null,
@@ -591,7 +591,7 @@ create table [untreated].[AfterSaleReversesDestinations] (
 	address_deleted_at datetime
 );
 
-create table [general].[AfterSaleReversesDestinations] (
+create table [aftersale].[AfterSaleReversesDestinations] (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
 	reverse_id bigint not null,
@@ -645,7 +645,7 @@ create table [untreated].[AfterSaleReversesEcommerceOrders] (
 	is_restrict bit
 );
 
-create table [general].[AfterSaleReversesEcommerceOrders] (
+create table [aftersale].[AfterSaleReversesEcommerceOrders] (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
 	reverse_id bigint not null,
@@ -685,7 +685,7 @@ create table [untreated].[AfterSaleReversesEcommerceOrdersPaymentsMethods] (
 	payment_method nvarchar(50)
 );
 
-create table [general].[AfterSaleReversesEcommerceOrdersPaymentsMethods] (
+create table [aftersale].[AfterSaleReversesEcommerceOrdersPaymentsMethods] (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
 	reverse_id bigint not null,
@@ -752,7 +752,7 @@ create table [untreated].[AfterSaleReversesProducts](
     original_qty int
 );
 
-create table [general].[AfterSaleReversesProducts](
+create table [aftersale].[AfterSaleReversesProducts](
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
 	id bigint not null,
@@ -820,7 +820,7 @@ create table [untreated].[AfterSaleReversesProductsImages](
 	image_url nvarchar(300)
 );
 
-create table [general].[AfterSaleReversesProductsImages](
+create table [aftersale].[AfterSaleReversesProductsImages](
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
 	id bigint not null,
@@ -862,7 +862,7 @@ create table [untreated].[AfterSaleReversesStatusHistories](
 	user_wallet nvarchar(50)
 );
 
-create table [general].[AfterSaleReversesStatusHistories](
+create table [aftersale].[AfterSaleReversesStatusHistories](
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
 	id bigint not null,
@@ -890,14 +890,14 @@ constraint [PK_AfterSaleReversesStatusHistories] primary key (
 	reverse_id asc
 ));
 
-alter table [general].AfterSaleCourierAttributesFields add constraint [FK_AfterSaleCourierAttributesFields] foreign key (doc_company, reverse_id) references [general].[AfterSaleCourierAttributes] (doc_company, reverse_id);
-alter table [general].[AfterSaleReversesCustomers] add constraint [FK_AfterSaleReversesCustomers] foreign key (doc_company, reverse_id) references [general].[AfterSaleReverses] (doc_company, id);
-alter table [general].[AfterSaleReversesDestinationsData] add constraint [FK_AfterSaleReversesDestinationsData] foreign key (doc_company, reverse_id) references [general].[AfterSaleReverses] (doc_company, id);
-alter table [general].[AfterSaleReversesTrackings] add constraint [FK_AfterSaleReversesTrackings] foreign key (doc_company, reverse_id) references [general].[AfterSaleReverses] (doc_company, id);
-alter table [general].[AfterSaleReversesTrackingHistories] add constraint [FK_AfterSaleReversesTrackingHistories] foreign key (doc_company, tracking_id) references [general].[AfterSaleReversesTrackings] (doc_company, id);
-alter table [general].[AfterSaleReversesDestinations] add constraint [FK_AfterSaleReversesDestinations] foreign key (doc_company, reverse_id) references [general].[AfterSaleReverses] (doc_company, id);
-alter table [general].[AfterSaleReversesEcommerceOrders] add constraint [FK_AfterSaleReversesEcommerceOrders] foreign key (doc_company, reverse_id) references [general].[AfterSaleReverses] (doc_company, id);
-alter table [general].[AfterSaleReversesEcommerceOrdersPaymentsMethods] add constraint [FK_AfterSaleReversesEcommerceOrdersPaymentsMethods] foreign key (doc_company, ecommerce_order_id) references [general].[AfterSaleReversesEcommerceOrders] (doc_company, id);
-alter table [general].[AfterSaleReversesProducts] add constraint [FK_AfterSaleReversesProducts] foreign key (doc_company, reverse_id) references [general].[AfterSaleReverses] (doc_company, id);
-alter table [general].[AfterSaleReversesProductsImages] add constraint [FK_AfterSaleReversesProductsImages] foreign key (doc_company, reverse_product_id, reverse_id) references [general].[AfterSaleReversesProducts] (doc_company, id, reverse_id);
-alter table [general].[AfterSaleReversesStatusHistories] add constraint [FK_AfterSaleReversesStatusHistories] foreign key (doc_company, reverse_id) references [general].[AfterSaleReverses] (doc_company, id);
+alter table [aftersale].AfterSaleCourierAttributesFields add constraint [FK_AfterSaleCourierAttributesFields] foreign key (doc_company, reverse_id) references [aftersale].[AfterSaleCourierAttributes] (doc_company, reverse_id);
+alter table [aftersale].[AfterSaleReversesCustomers] add constraint [FK_AfterSaleReversesCustomers] foreign key (doc_company, reverse_id) references [aftersale].[AfterSaleReverses] (doc_company, id);
+alter table [aftersale].[AfterSaleReversesDestinationsData] add constraint [FK_AfterSaleReversesDestinationsData] foreign key (doc_company, reverse_id) references [aftersale].[AfterSaleReverses] (doc_company, id);
+alter table [aftersale].[AfterSaleReversesTrackings] add constraint [FK_AfterSaleReversesTrackings] foreign key (doc_company, reverse_id) references [aftersale].[AfterSaleReverses] (doc_company, id);
+alter table [aftersale].[AfterSaleReversesTrackingHistories] add constraint [FK_AfterSaleReversesTrackingHistories] foreign key (doc_company, tracking_id) references [aftersale].[AfterSaleReversesTrackings] (doc_company, id);
+alter table [aftersale].[AfterSaleReversesDestinations] add constraint [FK_AfterSaleReversesDestinations] foreign key (doc_company, reverse_id) references [aftersale].[AfterSaleReverses] (doc_company, id);
+alter table [aftersale].[AfterSaleReversesEcommerceOrders] add constraint [FK_AfterSaleReversesEcommerceOrders] foreign key (doc_company, reverse_id) references [aftersale].[AfterSaleReverses] (doc_company, id);
+alter table [aftersale].[AfterSaleReversesEcommerceOrdersPaymentsMethods] add constraint [FK_AfterSaleReversesEcommerceOrdersPaymentsMethods] foreign key (doc_company, ecommerce_order_id) references [aftersale].[AfterSaleReversesEcommerceOrders] (doc_company, id);
+alter table [aftersale].[AfterSaleReversesProducts] add constraint [FK_AfterSaleReversesProducts] foreign key (doc_company, reverse_id) references [aftersale].[AfterSaleReverses] (doc_company, id);
+alter table [aftersale].[AfterSaleReversesProductsImages] add constraint [FK_AfterSaleReversesProductsImages] foreign key (doc_company, reverse_product_id, reverse_id) references [aftersale].[AfterSaleReversesProducts] (doc_company, id, reverse_id);
+alter table [aftersale].[AfterSaleReversesStatusHistories] add constraint [FK_AfterSaleReversesStatusHistories] foreign key (doc_company, reverse_id) references [aftersale].[AfterSaleReverses] (doc_company, id);

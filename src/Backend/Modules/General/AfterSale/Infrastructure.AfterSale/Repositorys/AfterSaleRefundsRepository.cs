@@ -79,14 +79,14 @@ namespace Infrastructure.AfterSale.Repositorys
             _coreRepository.BulkInsertIntoTableRaw(productsImagesUrlsTable, "untreated");
 
             //as filhas referenciam o reembolso e as imagens referenciam o produto: merge do pai para os filhos
-            await _coreRepository.CallDbProcMerge("general", refundsTable.TableName, parentExecutionGUID);
-            await _coreRepository.CallDbProcMerge("general", couldChangeStatusForTable.TableName, parentExecutionGUID);
-            await _coreRepository.CallDbProcMerge("general", ordersPaymentsMethodsTable.TableName, parentExecutionGUID);
-            await _coreRepository.CallDbProcMerge("general", statusHistoriesTable.TableName, parentExecutionGUID);
-            await _coreRepository.CallDbProcMerge("general", totalAmountHistoriesTable.TableName, parentExecutionGUID);
-            await _coreRepository.CallDbProcMerge("general", productsTable.TableName, parentExecutionGUID);
-            await _coreRepository.CallDbProcMerge("general", productsImagesTable.TableName, parentExecutionGUID);
-            await _coreRepository.CallDbProcMerge("general", productsImagesUrlsTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("aftersale", refundsTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("aftersale", couldChangeStatusForTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("aftersale", ordersPaymentsMethodsTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("aftersale", statusHistoriesTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("aftersale", totalAmountHistoriesTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("aftersale", productsTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("aftersale", productsImagesTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("aftersale", productsImagesUrlsTable.TableName, parentExecutionGUID);
 
             return true;
         }
@@ -108,7 +108,7 @@ namespace Infrastructure.AfterSale.Repositorys
 
             _coreRepository.BulkInsertIntoTableRaw(statusRefundsTable, "untreated");
 
-            await _coreRepository.CallDbProcMerge("general", statusRefundsTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("aftersale", statusRefundsTable.TableName, parentExecutionGUID);
 
             return true;
         }
@@ -130,7 +130,7 @@ namespace Infrastructure.AfterSale.Repositorys
 
             _coreRepository.BulkInsertIntoTableRaw(actionsRefundsTable, "untreated");
 
-            await _coreRepository.CallDbProcMerge("general", actionsRefundsTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("aftersale", actionsRefundsTable.TableName, parentExecutionGUID);
 
             return true;
         }
@@ -152,7 +152,7 @@ namespace Infrastructure.AfterSale.Repositorys
 
             _coreRepository.BulkInsertIntoTableRaw(banksRefundsTable, "untreated");
 
-            await _coreRepository.CallDbProcMerge("general", banksRefundsTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("aftersale", banksRefundsTable.TableName, parentExecutionGUID);
 
             return true;
         }
@@ -174,7 +174,7 @@ namespace Infrastructure.AfterSale.Repositorys
 
             _coreRepository.BulkInsertIntoTableRaw(typesRefundsTable, "untreated");
 
-            await _coreRepository.CallDbProcMerge("general", typesRefundsTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("aftersale", typesRefundsTable.TableName, parentExecutionGUID);
 
             return true;
         }
@@ -214,7 +214,7 @@ namespace Infrastructure.AfterSale.Repositorys
 
             _coreRepository.BulkInsertIntoTableRaw(summarizedRefundsTable, "untreated");
 
-            await _coreRepository.CallDbProcMerge("general", summarizedRefundsTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("aftersale", summarizedRefundsTable.TableName, parentExecutionGUID);
 
             return true;
         }
@@ -227,7 +227,7 @@ namespace Infrastructure.AfterSale.Repositorys
 
             _coreRepository.BulkInsertIntoTableRaw(errosTable, "untreated");
 
-            await _coreRepository.CallDbProcMerge("general", errosTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("aftersale", errosTable.TableName, parentExecutionGUID);
 
             return true;
         }

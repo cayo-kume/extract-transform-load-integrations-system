@@ -57,9 +57,9 @@ logo depois do `CreateGetSummarizedRefundsByIdsQuery` (começa na linha 82):
                         A.DOC_COMPANY,
                         A.ID
                       FROM
-                        [GENERAL].[AFTERSALESUMMARIZEDREFUNDS] A (NOLOCK)
+                        [AFTERSALE].[AFTERSALESUMMARIZEDREFUNDS] A (NOLOCK)
                       LEFT JOIN
-                        [GENERAL].[AFTERSALEREFUNDS] B (NOLOCK) ON A.DOC_COMPANY = B.DOC_COMPANY AND A.ID = B.ID
+                        [AFTERSALE].[AFTERSALEREFUNDS] B (NOLOCK) ON A.DOC_COMPANY = B.DOC_COMPANY AND A.ID = B.ID
                       WHERE
                         B.ID IS NULL";
         }
@@ -76,7 +76,7 @@ logo depois do `CreateGetSummarizedRefundsByIdsQuery` (começa na linha 82):
                     identificadores += $"'{refundsIds[j]}', ";
             }
 
-            return $"SELECT ID, DOC_COMPANY, UPDATED_AT FROM [GENERAL].[AFTERSALEREFUNDS] (NOLOCK) WHERE DOC_COMPANY = '{doc_company}' AND ID IN ({identificadores})";
+            return $"SELECT ID, DOC_COMPANY, UPDATED_AT FROM [AFTERSALE].[AFTERSALEREFUNDS] (NOLOCK) WHERE DOC_COMPANY = '{doc_company}' AND ID IN ({identificadores})";
         }
 ```
 

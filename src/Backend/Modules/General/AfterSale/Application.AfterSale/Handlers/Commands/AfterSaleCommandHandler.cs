@@ -9,7 +9,7 @@ namespace Application.AfterSale.Handlers.Commands
             return @$"SELECT DISTINCT
                      DOC_COMPANY,
                      TOKEN
-                     FROM GENERAL.AFTERSALEPARAMETERS
+                     FROM AFTERSALE.AFTERSALEPARAMETERS
                      WHERE 
                      DOC_COMPANY = '{doc_company}'";
         }
@@ -19,7 +19,7 @@ namespace Application.AfterSale.Handlers.Commands
             return @$"SELECT DISTINCT
                     DOC_COMPANY,
                     TOKEN AS TOKEN
-                    FROM GENERAL.AFTERSALEPARAMETERS
+                    FROM AFTERSALE.AFTERSALEPARAMETERS
                     --WHERE DOC_COMPANY = '38367316000199'";
         }
 
@@ -35,7 +35,7 @@ namespace Application.AfterSale.Handlers.Commands
                     identificadores += $"'{reversesIds[j]}', ";
             }
 
-            return $"SELECT ID, DOC_COMPANY, UPDATED_AT FROM [GENERAL].[AFTERSALEREVERSES] (NOLOCK) WHERE DOC_COMPANY = '{doc_company}' AND ID IN ({identificadores})";
+            return $"SELECT ID, DOC_COMPANY, UPDATED_AT FROM [AFTERSALE].[AFTERSALEREVERSES] (NOLOCK) WHERE DOC_COMPANY = '{doc_company}' AND ID IN ({identificadores})";
         }
 
         public string CreateGetSummarizedReversesIdsForGetReverseQuery()
@@ -44,9 +44,9 @@ namespace Application.AfterSale.Handlers.Commands
                         A.DOC_COMPANY,
                         A.ID
                       FROM
-                        [GENERAL].[AFTERSALESUMMARIZEDREVERSES] A (NOLOCK)
+                        [AFTERSALE].[AFTERSALESUMMARIZEDREVERSES] A (NOLOCK)
                       LEFT JOIN
-                        [GENERAL].[AFTERSALEREVERSES] B (NOLOCK) ON A.DOC_COMPANY = B.DOC_COMPANY AND A.ID = B.ID
+                        [AFTERSALE].[AFTERSALEREVERSES] B (NOLOCK) ON A.DOC_COMPANY = B.DOC_COMPANY AND A.ID = B.ID
                       WHERE
                         B.ID IS NULL";
         }
@@ -57,9 +57,9 @@ namespace Application.AfterSale.Handlers.Commands
                         A.DOC_COMPANY,
                         A.ID
                       FROM
-                        [GENERAL].[AFTERSALESUMMARIZEDREVERSES] A (NOLOCK)
+                        [AFTERSALE].[AFTERSALESUMMARIZEDREVERSES] A (NOLOCK)
                       LEFT JOIN
-                        [GENERAL].[AFTERSALECOURIERATTRIBUTES] B (NOLOCK) ON A.DOC_COMPANY = B.DOC_COMPANY AND A.ID = B.REVERSE_ID
+                        [AFTERSALE].[AFTERSALECOURIERATTRIBUTES] B (NOLOCK) ON A.DOC_COMPANY = B.DOC_COMPANY AND A.ID = B.REVERSE_ID
                       WHERE
                         B.REVERSE_ID IS NULL";
         }
@@ -76,7 +76,7 @@ namespace Application.AfterSale.Handlers.Commands
                     identificadores += $"'{reversesIds[j]}', ";
             }
 
-            return $"SELECT ID, DOC_COMPANY, UPDATED_AT FROM [GENERAL].[AFTERSALESUMMARIZEDREVERSES] (NOLOCK) WHERE DOC_COMPANY = '{doc_company}' AND ID IN ({identificadores})";
+            return $"SELECT ID, DOC_COMPANY, UPDATED_AT FROM [AFTERSALE].[AFTERSALESUMMARIZEDREVERSES] (NOLOCK) WHERE DOC_COMPANY = '{doc_company}' AND ID IN ({identificadores})";
         }
 
         public string CreateGetSummarizedRefundsByIdsQuery(string doc_company, List<string> refundsIds)
@@ -91,7 +91,7 @@ namespace Application.AfterSale.Handlers.Commands
                     identificadores += $"'{refundsIds[j]}', ";
             }
 
-            return $"SELECT ID, DOC_COMPANY, UPDATED_AT FROM [GENERAL].[AFTERSALESUMMARIZEDREFUNDS] (NOLOCK) WHERE DOC_COMPANY = '{doc_company}' AND ID IN ({identificadores})";
+            return $"SELECT ID, DOC_COMPANY, UPDATED_AT FROM [AFTERSALE].[AFTERSALESUMMARIZEDREFUNDS] (NOLOCK) WHERE DOC_COMPANY = '{doc_company}' AND ID IN ({identificadores})";
         }
 
         public string CreateGetSummarizedRefundsIdsForGetRefundQuery()
@@ -100,9 +100,9 @@ namespace Application.AfterSale.Handlers.Commands
                         A.DOC_COMPANY,
                         A.ID
                       FROM
-                        [GENERAL].[AFTERSALESUMMARIZEDREFUNDS] A (NOLOCK)
+                        [AFTERSALE].[AFTERSALESUMMARIZEDREFUNDS] A (NOLOCK)
                       LEFT JOIN
-                        [GENERAL].[AFTERSALEREFUNDS] B (NOLOCK) ON A.DOC_COMPANY = B.DOC_COMPANY AND A.ID = B.ID
+                        [AFTERSALE].[AFTERSALEREFUNDS] B (NOLOCK) ON A.DOC_COMPANY = B.DOC_COMPANY AND A.ID = B.ID
                       WHERE
                         B.ID IS NULL";
         }
@@ -119,37 +119,37 @@ namespace Application.AfterSale.Handlers.Commands
                     identificadores += $"'{refundsIds[j]}', ";
             }
 
-            return $"SELECT ID, DOC_COMPANY, UPDATED_AT FROM [GENERAL].[AFTERSALEREFUNDS] (NOLOCK) WHERE DOC_COMPANY = '{doc_company}' AND ID IN ({identificadores})";
+            return $"SELECT ID, DOC_COMPANY, UPDATED_AT FROM [AFTERSALE].[AFTERSALEREFUNDS] (NOLOCK) WHERE DOC_COMPANY = '{doc_company}' AND ID IN ({identificadores})";
         }
 
         public string CreateGetStatusRefundsQuery(string doc_company)
         {
-            return @$"SELECT * FROM [GENERAL].[AFTERSALESTATUSREFUNDS] A (NOLOCK) WHERE DOC_COMPANY = '{doc_company}'";
+            return @$"SELECT * FROM [AFTERSALE].[AFTERSALESTATUSREFUNDS] A (NOLOCK) WHERE DOC_COMPANY = '{doc_company}'";
         }
 
         public string CreateGetActionsRefundsQuery(string doc_company)
         {
-            return @$"SELECT * FROM [GENERAL].[AFTERSALEACTIONSREFUNDS] A (NOLOCK) WHERE DOC_COMPANY = '{doc_company}'";
+            return @$"SELECT * FROM [AFTERSALE].[AFTERSALEACTIONSREFUNDS] A (NOLOCK) WHERE DOC_COMPANY = '{doc_company}'";
         }
 
         public string CreateGetBanksRefundsQuery(string doc_company)
         {
-            return @$"SELECT * FROM [GENERAL].[AFTERSALEBANKSREFUNDS] A (NOLOCK) WHERE DOC_COMPANY = '{doc_company}'";
+            return @$"SELECT * FROM [AFTERSALE].[AFTERSALEBANKSREFUNDS] A (NOLOCK) WHERE DOC_COMPANY = '{doc_company}'";
         }
 
         public string CreateGetTypesRefundsQuery(string doc_company)
         {
-            return @$"SELECT * FROM [GENERAL].[AFTERSALETYPESREFUNDS] A (NOLOCK) WHERE DOC_COMPANY = '{doc_company}'";
+            return @$"SELECT * FROM [AFTERSALE].[AFTERSALETYPESREFUNDS] A (NOLOCK) WHERE DOC_COMPANY = '{doc_company}'";
         }
 
         public string CreateGetStatusQuery(string doc_company)
         {
-            return @$"SELECT * FROM [GENERAL].[AFTERSALESTATUSREVERSES] A (NOLOCK) WHERE DOC_COMPANY = '{doc_company}'";
+            return @$"SELECT * FROM [AFTERSALE].[AFTERSALESTATUSREVERSES] A (NOLOCK) WHERE DOC_COMPANY = '{doc_company}'";
         }
 
         public string CreateGetTransportationsQuery(string doc_company)
         {
-            return @$"SELECT DOC_COMPANY, TRANSPORTATION FROM [GENERAL].[AFTERSALETRANSPORTATIONSREVERSES] A (NOLOCK) WHERE DOC_COMPANY = '{doc_company}'";
+            return @$"SELECT DOC_COMPANY, TRANSPORTATION FROM [AFTERSALE].[AFTERSALETRANSPORTATIONSREVERSES] A (NOLOCK) WHERE DOC_COMPANY = '{doc_company}'";
         }
 
         public string CreateGetCourierAttributesByReverseIdQuery(string doc_company, List<Int64> reversesIds)
@@ -164,7 +164,7 @@ namespace Application.AfterSale.Handlers.Commands
                     identificadores += $"'{reversesIds[j]}', ";
             }
 
-            return $"SELECT REVERSE_ID, DOC_COMPANY, FILL_FORM_FROM_FILE FROM [GENERAL].[AFTERSALECOURIERATTRIBUTES] (NOLOCK) WHERE DOC_COMPANY = '{doc_company}' AND REVERSE_ID IN ({identificadores})";
+            return $"SELECT REVERSE_ID, DOC_COMPANY, FILL_FORM_FROM_FILE FROM [AFTERSALE].[AFTERSALECOURIERATTRIBUTES] (NOLOCK) WHERE DOC_COMPANY = '{doc_company}' AND REVERSE_ID IN ({identificadores})";
 
         }
     }

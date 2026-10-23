@@ -68,7 +68,7 @@ namespace Infrastructure.AfterSale.Repositorys
 
             _coreRepository.BulkInsertIntoTableRaw(summarizedReversesTable);
 
-            await _coreRepository.CallDbProcMerge("general", summarizedReversesTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("aftersale", summarizedReversesTable.TableName, parentExecutionGUID);
 
             return true;
         }
@@ -139,17 +139,17 @@ namespace Infrastructure.AfterSale.Repositorys
             _coreRepository.BulkInsertIntoTableRaw(productsImagesTable);
             _coreRepository.BulkInsertIntoTableRaw(statusHistoriesTable);
 
-            await _coreRepository.CallDbProcMerge("general", reversesTable.TableName, parentExecutionGUID);
-            await _coreRepository.CallDbProcMerge("general", customersTable.TableName, parentExecutionGUID);
-            await _coreRepository.CallDbProcMerge("general", destinationsDataTable.TableName, parentExecutionGUID);
-            await _coreRepository.CallDbProcMerge("general", trackingsTable.TableName, parentExecutionGUID);
-            await _coreRepository.CallDbProcMerge("general", trackingsHistoriesTable.TableName, parentExecutionGUID);
-            await _coreRepository.CallDbProcMerge("general", destinationsTable.TableName, parentExecutionGUID);
-            await _coreRepository.CallDbProcMerge("general", ecommerceOrdersTable.TableName, parentExecutionGUID);
-            await _coreRepository.CallDbProcMerge("general", ecommerceOrdersPaymentsMethodsTable.TableName, parentExecutionGUID);
-            await _coreRepository.CallDbProcMerge("general", productsTable.TableName, parentExecutionGUID);
-            await _coreRepository.CallDbProcMerge("general", productsImagesTable.TableName, parentExecutionGUID);
-            await _coreRepository.CallDbProcMerge("general", statusHistoriesTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("aftersale", reversesTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("aftersale", customersTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("aftersale", destinationsDataTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("aftersale", trackingsTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("aftersale", trackingsHistoriesTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("aftersale", destinationsTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("aftersale", ecommerceOrdersTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("aftersale", ecommerceOrdersPaymentsMethodsTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("aftersale", productsTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("aftersale", productsImagesTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("aftersale", statusHistoriesTable.TableName, parentExecutionGUID);
 
             return true;
         }
@@ -171,7 +171,7 @@ namespace Infrastructure.AfterSale.Repositorys
 
             _coreRepository.BulkInsertIntoTableRaw(statusReversesTable);
 
-            await _coreRepository.CallDbProcMerge("general", statusReversesTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("aftersale", statusReversesTable.TableName, parentExecutionGUID);
 
             return true;
         }
@@ -193,7 +193,7 @@ namespace Infrastructure.AfterSale.Repositorys
 
             _coreRepository.BulkInsertIntoTableRaw(transportationsReversesTable);
 
-            await _coreRepository.CallDbProcMerge("general", transportationsReversesTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("aftersale", transportationsReversesTable.TableName, parentExecutionGUID);
 
             return true;
         }
@@ -238,8 +238,8 @@ namespace Infrastructure.AfterSale.Repositorys
             _coreRepository.BulkInsertIntoTableRaw(fieldsTable);
 
             //a tabela de campos referencia a de courier attributes, por isso o merge da pai vem primeiro
-            await _coreRepository.CallDbProcMerge("general", courierAttributesTable.TableName, parentExecutionGUID);
-            await _coreRepository.CallDbProcMerge("general", fieldsTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("aftersale", courierAttributesTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("aftersale", fieldsTable.TableName, parentExecutionGUID);
 
             return true;
         }
@@ -252,7 +252,7 @@ namespace Infrastructure.AfterSale.Repositorys
 
             _coreRepository.BulkInsertIntoTableRaw(errosTable);
 
-            await _coreRepository.CallDbProcMerge("general", errosTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("aftersale", errosTable.TableName, parentExecutionGUID);
 
             return true;
         }
@@ -270,7 +270,7 @@ namespace Infrastructure.AfterSale.Repositorys
 
         //    _coreRepository.BulkInsertIntoTableRaw(statusReversesTable);
 
-        //    await _coreRepository.CallDbProcMerge("general", statusReversesTable.TableName, parentExecutionGUID);
+        //    await _coreRepository.CallDbProcMerge("aftersale", statusReversesTable.TableName, parentExecutionGUID);
 
         //    return true;
         //}
@@ -283,7 +283,7 @@ namespace Infrastructure.AfterSale.Repositorys
 
         //    _coreRepository.BulkInsertIntoTableRaw(transportationsTable);
 
-        //    await _coreRepository.CallDbProcMerge("general", transportationsTable.TableName, parentExecutionGUID);
+        //    await _coreRepository.CallDbProcMerge("aftersale", transportationsTable.TableName, parentExecutionGUID);
 
         //    return true;
         //}
@@ -296,7 +296,7 @@ namespace Infrastructure.AfterSale.Repositorys
 
         //    _coreRepository.BulkInsertIntoTableRaw(transportationsTable);
 
-        //    await _coreRepository.CallDbProcMerge("general", transportationsTable.TableName, parentExecutionGUID);
+        //    await _coreRepository.CallDbProcMerge("aftersale", transportationsTable.TableName, parentExecutionGUID);
 
         //    return true;
         //}

@@ -81,7 +81,7 @@ Caminhos relativos a `src/Backend/Modules/General/AfterSale/Domain.AfterSale/Ent
 |---|---|
 | `integrated_or_updated_at` (todas as entidades, inclusive `Errors/Error.cs`) | Data gerada pelo sistema (horário de Brasília), nunca nula. Igual ao Movidesk. |
 | `Writes/Requests/Request.request_date` | Data gerada pelo sistema. |
-| `Refunds/GetRefund/StatusHistories.date` | Faz parte da chave primária de `general.AfterSaleRefundsStatusHistories` (`[date] datetime not null`, `Script003`). Uma PK não aceita `NULL`, então o fallback `01/01/1990` continua necessário. |
+| `Refunds/GetRefund/StatusHistories.date` | Faz parte da chave primária de `aftersale.AfterSaleRefundsStatusHistories` (`[date] datetime not null`, `Script003`). Uma PK não aceita `NULL`, então o fallback `01/01/1990` continua necessário. |
 
 > O `[date]` de `AfterSaleReversesStatusHistories` (`Script004`) não está na PK e aceita nulo, por isso entra na lista acima.
 
@@ -123,7 +123,7 @@ As procedures de merge (`sp_<Tabela>_Sync`, geradas por `dbo.sp_Create_Merge_Pro
 Os registros já gravados continuam com `1990-01-01`. Eles serão corrigidos aos poucos, conforme forem reintegrados. Para corrigir tudo de uma vez, um script avulso (fora do DbUp, já que a decisão de não alterar o banco existente continua valendo) por tabela/coluna:
 
 ```sql
-update [general].[AfterSaleReverses]
+update [aftersale].[AfterSaleReverses]
 set deleted_at = null
 where deleted_at = '1990-01-01';
 -- repetir para cada coluna da tabela do Passo 1

@@ -12,7 +12,7 @@ Resumo do que muda:
 | 2 | `AfterSaleReversesService.cs` | Reescrita do `GetStatus` (preenche `doc_company`, corrige duplicatas, filtro, cache e `break`) |
 | 3 | `AfterSaleReversesRepository.cs` | Descomentar o parâmetro `doc_company` |
 | 4 | `AfterSaleCommandHandler.cs` | Filtrar a query por `DOC_COMPANY` |
-| 5 | `Script004_Create_Reverses_Tables.sql` | PK composta `(id, doc_company)` em `[general].AfterSaleStatusReverses` |
+| 5 | `Script004_Create_Reverses_Tables.sql` | PK composta `(id, doc_company)` em `[aftersale].AfterSaleStatusReverses` |
 | 6 | Novo script SQL (bancos já existentes) | `ALTER` da PK + recriar a procedure de merge |
 
 ---
@@ -213,14 +213,14 @@ Arquivo: [AfterSaleCommandHandler.cs](../src/Backend/Modules/General/AfterSale/A
 Antes:
 
 ```csharp
-            return @$"SELECT * FROM [GENERAL].[AFTERSALESTATUSREVERSES] A (NOLOCK)";
-            //return @$"SELECT * FROM [GENERAL].[AFTERSALESTATUSREVERSES] A (NOLOCK) --WHERE DOC_COMPANY = '{doc_company}'";
+            return @$"SELECT * FROM [AFTERSALE].[AFTERSALESTATUSREVERSES] A (NOLOCK)";
+            //return @$"SELECT * FROM [AFTERSALE].[AFTERSALESTATUSREVERSES] A (NOLOCK) --WHERE DOC_COMPANY = '{doc_company}'";
 ```
 
 Depois:
 
 ```csharp
-            return @$"SELECT * FROM [GENERAL].[AFTERSALESTATUSREVERSES] A (NOLOCK) WHERE DOC_COMPANY = '{doc_company}'";
+            return @$"SELECT * FROM [AFTERSALE].[AFTERSALESTATUSREVERSES] A (NOLOCK) WHERE DOC_COMPANY = '{doc_company}'";
 ```
 
 > A assinatura em `IAfterSaleCommandHandler` (linha 16) já recebe `doc_company`; nada a mudar lá.
@@ -239,7 +239,7 @@ ver `Script003_Create_Merge_Procedure.sql`, linha 76) sobrescreveria um com o ou
 `AfterSaleCourierAttributesFields`, linhas 31–34):
 
 ```sql
-create table [general].AfterSaleStatusReverses (
+create table [aftersale].AfterSaleStatusReverses (
 	integrated_or_updated_at datetime,
 	id int not null,
 	[doc_company] nvarchar(14) not null,
@@ -263,24 +263,24 @@ já foi executado. Se a tabela já existe em algum ambiente, crie um novo script
 
 ```sql
 -- registros antigos foram gravados sem doc_company (o service só processava a 1ª empresa)
-delete from [general].AfterSaleStatusReverses where doc_company is null;
+delete from [aftersale].AfterSaleStatusReverses where doc_company is null;
 delete from [untreated].AfterSaleStatusReverses where doc_company is null;
 
 declare @pk_name nvarchar(128) = (
 	select name from sys.key_constraints
-	where type = 'PK' and parent_object_id = object_id('[general].AfterSaleStatusReverses')
+	where type = 'PK' and parent_object_id = object_id('[aftersale].AfterSaleStatusReverses')
 );
 
 if @pk_name is not null
-	exec('alter table [general].AfterSaleStatusReverses drop constraint [' + @pk_name + ']');
+	exec('alter table [aftersale].AfterSaleStatusReverses drop constraint [' + @pk_name + ']');
 
-alter table [general].AfterSaleStatusReverses alter column [doc_company] nvarchar(14) not null;
+alter table [aftersale].AfterSaleStatusReverses alter column [doc_company] nvarchar(14) not null;
 
-alter table [general].AfterSaleStatusReverses
+alter table [aftersale].AfterSaleStatusReverses
 	add constraint [PK_AfterSaleStatusReverses] primary key (id asc, doc_company asc);
 
 -- a procedure de merge é gerada a partir da PK; recriar para que passe a casar por (id, doc_company)
-exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'AfterSaleStatusReverses', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'aftersale', @table_name = 'AfterSaleStatusReverses', @execute = 1;
 ```
 
 > Antes de rodar, confira se o `sp_Create_Merge_Procedure` recria (`create or alter` / `drop`) a
@@ -298,7 +298,7 @@ exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'Afte
 - [ ] 2. Service: método `GetStatus` substituído (linhas 487–590)
 - [ ] 3. Repository: parâmetro `doc_company` descomentado (linhas 157 e 159)
 - [ ] 4. Command handler: query com `WHERE DOC_COMPANY` (linhas 83–84)
-- [ ] 5. `Script004`: PK composta em `[general].AfterSaleStatusReverses` (linhas 72–78)
+- [ ] 5. `Script004`: PK composta em `[aftersale].AfterSaleStatusReverses` (linhas 72–78)
 - [ ] 6. Novo script de `ALTER` para bancos existentes + recriação da procedure de merge
 - [ ] Compilar a solução
 - [ ] Rodar o job `AfterSaleStatusReverses` e conferir na tabela trusted um conjunto de status por empresa

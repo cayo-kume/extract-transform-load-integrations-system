@@ -58,7 +58,7 @@ create table [untreated].AfterSaleRefunds (
 	product_price_type_label nvarchar(50)
 );
 
-create table [general].AfterSaleRefunds (
+create table [aftersale].AfterSaleRefunds (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
 	id bigint not null,
@@ -129,7 +129,7 @@ create table [untreated].AfterSaleRefundsCouldChangeStatusFor (
 	[description] nvarchar(50)
 );
 
-create table [general].AfterSaleRefundsCouldChangeStatusFor (
+create table [aftersale].AfterSaleRefundsCouldChangeStatusFor (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
 	refund_id bigint not null,
@@ -149,7 +149,7 @@ create table [untreated].AfterSaleRefundsOrdersPaymentsMethods (
 	payment_method nvarchar(50)
 );
 
-create table [general].AfterSaleRefundsOrdersPaymentsMethods (
+create table [aftersale].AfterSaleRefundsOrdersPaymentsMethods (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
 	refund_id bigint not null,
@@ -183,7 +183,7 @@ create table [untreated].AfterSaleRefundsStatusHistories (
 );
 
 --o mesmo status pode se repetir no histórico: a data entra na chave
-create table [general].AfterSaleRefundsStatusHistories (
+create table [aftersale].AfterSaleRefundsStatusHistories (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
 	refund_id bigint not null,
@@ -224,7 +224,7 @@ create table [untreated].AfterSaleRefundsTotalAmountHistories (
 	type_description nvarchar(150)
 );
 
-create table [general].AfterSaleRefundsTotalAmountHistories (
+create table [aftersale].AfterSaleRefundsTotalAmountHistories (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
 	refund_id bigint not null,
@@ -298,7 +298,7 @@ create table [untreated].AfterSaleRefundsProducts (
 	original_qty int
 );
 
-create table [general].AfterSaleRefundsProducts (
+create table [aftersale].AfterSaleRefundsProducts (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
 	refund_id bigint not null,
@@ -369,7 +369,7 @@ create table [untreated].AfterSaleRefundsProductsImages (
 );
 
 --refund_product_id: id do produto do reembolso dono da imagem (product_id é o código do produto vindo da API)
-create table [general].AfterSaleRefundsProductsImages (
+create table [aftersale].AfterSaleRefundsProductsImages (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
 	refund_id bigint not null,
@@ -395,7 +395,7 @@ create table [untreated].AfterSaleRefundsProductsImagesUrls (
 );
 
 --product_id: id do produto do reembolso dono da imagem
-create table [general].AfterSaleRefundsProductsImagesUrls (
+create table [aftersale].AfterSaleRefundsProductsImagesUrls (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
 	refund_id bigint not null,
@@ -409,13 +409,13 @@ constraint [PK_AfterSaleRefundsProductsImagesUrls] primary key (
 	id asc
 ));
 
-alter table [general].AfterSaleRefundsCouldChangeStatusFor add constraint [FK_AfterSaleRefundsCouldChangeStatusFor] foreign key (doc_company, refund_id) references [general].AfterSaleRefunds (doc_company, id);
-alter table [general].AfterSaleRefundsOrdersPaymentsMethods add constraint [FK_AfterSaleRefundsOrdersPaymentsMethods] foreign key (doc_company, refund_id) references [general].AfterSaleRefunds (doc_company, id);
-alter table [general].AfterSaleRefundsStatusHistories add constraint [FK_AfterSaleRefundsStatusHistories] foreign key (doc_company, refund_id) references [general].AfterSaleRefunds (doc_company, id);
-alter table [general].AfterSaleRefundsTotalAmountHistories add constraint [FK_AfterSaleRefundsTotalAmountHistories] foreign key (doc_company, refund_id) references [general].AfterSaleRefunds (doc_company, id);
-alter table [general].AfterSaleRefundsProducts add constraint [FK_AfterSaleRefundsProducts] foreign key (doc_company, refund_id) references [general].AfterSaleRefunds (doc_company, id);
-alter table [general].AfterSaleRefundsProductsImages add constraint [FK_AfterSaleRefundsProductsImages] foreign key (doc_company, refund_id, refund_product_id) references [general].AfterSaleRefundsProducts (doc_company, refund_id, id);
-alter table [general].AfterSaleRefundsProductsImagesUrls add constraint [FK_AfterSaleRefundsProductsImagesUrls] foreign key (doc_company, refund_id, product_id) references [general].AfterSaleRefundsProducts (doc_company, refund_id, id);
+alter table [aftersale].AfterSaleRefundsCouldChangeStatusFor add constraint [FK_AfterSaleRefundsCouldChangeStatusFor] foreign key (doc_company, refund_id) references [aftersale].AfterSaleRefunds (doc_company, id);
+alter table [aftersale].AfterSaleRefundsOrdersPaymentsMethods add constraint [FK_AfterSaleRefundsOrdersPaymentsMethods] foreign key (doc_company, refund_id) references [aftersale].AfterSaleRefunds (doc_company, id);
+alter table [aftersale].AfterSaleRefundsStatusHistories add constraint [FK_AfterSaleRefundsStatusHistories] foreign key (doc_company, refund_id) references [aftersale].AfterSaleRefunds (doc_company, id);
+alter table [aftersale].AfterSaleRefundsTotalAmountHistories add constraint [FK_AfterSaleRefundsTotalAmountHistories] foreign key (doc_company, refund_id) references [aftersale].AfterSaleRefunds (doc_company, id);
+alter table [aftersale].AfterSaleRefundsProducts add constraint [FK_AfterSaleRefundsProducts] foreign key (doc_company, refund_id) references [aftersale].AfterSaleRefunds (doc_company, id);
+alter table [aftersale].AfterSaleRefundsProductsImages add constraint [FK_AfterSaleRefundsProductsImages] foreign key (doc_company, refund_id, refund_product_id) references [aftersale].AfterSaleRefundsProducts (doc_company, refund_id, id);
+alter table [aftersale].AfterSaleRefundsProductsImagesUrls add constraint [FK_AfterSaleRefundsProductsImagesUrls] foreign key (doc_company, refund_id, product_id) references [aftersale].AfterSaleRefundsProducts (doc_company, refund_id, id);
 
 create table [untreated].AfterSaleSummarizedRefunds (
 	integrated_or_updated_at datetime,
@@ -450,7 +450,7 @@ create table [untreated].AfterSaleSummarizedRefunds (
 	last_status_history_date datetime
 );
 
-create table [general].AfterSaleSummarizedRefunds (
+create table [aftersale].AfterSaleSummarizedRefunds (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
 	id bigint not null,
@@ -494,7 +494,7 @@ create table [untreated].AfterSaleStatusRefunds (
 	[description] nvarchar(250)
 );
 
-create table [general].AfterSaleStatusRefunds (
+create table [aftersale].AfterSaleStatusRefunds (
 	integrated_or_updated_at datetime,
 	id int not null,
 	[doc_company] nvarchar(14) not null,
@@ -513,7 +513,7 @@ create table [untreated].AfterSaleActionsRefunds (
 	[description] nvarchar(250)
 );
 
-create table [general].AfterSaleActionsRefunds (
+create table [aftersale].AfterSaleActionsRefunds (
 	integrated_or_updated_at datetime,
 	id int not null,
 	[doc_company] nvarchar(14) not null,
@@ -532,7 +532,7 @@ create table [untreated].AfterSaleBanksRefunds (
 	[description] nvarchar(250)
 );
 
-create table [general].AfterSaleBanksRefunds (
+create table [aftersale].AfterSaleBanksRefunds (
 	integrated_or_updated_at datetime,
 	id int not null,
 	[doc_company] nvarchar(14) not null,
@@ -551,7 +551,7 @@ create table [untreated].AfterSaleTypesRefunds (
 );
 
 --a API não devolve id para os tipos de reembolso: a chave é o nome dentro da empresa
-create table [general].AfterSaleTypesRefunds (
+create table [aftersale].AfterSaleTypesRefunds (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
 	[name] nvarchar(50) not null,

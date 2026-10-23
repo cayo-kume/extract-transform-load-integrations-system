@@ -189,7 +189,7 @@ create table [untreated].AfterSaleTypesRefunds (
 	[description] nvarchar(250)
 );
 
-create table [general].AfterSaleTypesRefunds (
+create table [aftersale].AfterSaleTypesRefunds (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
 	[name] nvarchar(50) not null,
@@ -211,7 +211,7 @@ create table [untreated].AfterSaleBanksRefunds (
 	[description] nvarchar(250)
 );
 
-create table [general].AfterSaleBanksRefunds (
+create table [aftersale].AfterSaleBanksRefunds (
 	integrated_or_updated_at datetime,
 	id int not null,
 	[doc_company] nvarchar(14) not null,
@@ -248,22 +248,22 @@ após o `CreateGetSummarizedRefundsByIdsQuery` (termina na linha 95):
 ```csharp
         public string CreateGetStatusRefundsQuery(string doc_company)
         {
-            return @$"SELECT * FROM [GENERAL].[AFTERSALESTATUSREFUNDS] A (NOLOCK) WHERE DOC_COMPANY = '{doc_company}'";
+            return @$"SELECT * FROM [AFTERSALE].[AFTERSALESTATUSREFUNDS] A (NOLOCK) WHERE DOC_COMPANY = '{doc_company}'";
         }
 
         public string CreateGetActionsRefundsQuery(string doc_company)
         {
-            return @$"SELECT * FROM [GENERAL].[AFTERSALEACTIONSREFUNDS] A (NOLOCK) WHERE DOC_COMPANY = '{doc_company}'";
+            return @$"SELECT * FROM [AFTERSALE].[AFTERSALEACTIONSREFUNDS] A (NOLOCK) WHERE DOC_COMPANY = '{doc_company}'";
         }
 
         public string CreateGetBanksRefundsQuery(string doc_company)
         {
-            return @$"SELECT * FROM [GENERAL].[AFTERSALEBANKSREFUNDS] A (NOLOCK) WHERE DOC_COMPANY = '{doc_company}'";
+            return @$"SELECT * FROM [AFTERSALE].[AFTERSALEBANKSREFUNDS] A (NOLOCK) WHERE DOC_COMPANY = '{doc_company}'";
         }
 
         public string CreateGetTypesRefundsQuery(string doc_company)
         {
-            return @$"SELECT * FROM [GENERAL].[AFTERSALETYPESREFUNDS] A (NOLOCK) WHERE DOC_COMPANY = '{doc_company}'";
+            return @$"SELECT * FROM [AFTERSALE].[AFTERSALETYPESREFUNDS] A (NOLOCK) WHERE DOC_COMPANY = '{doc_company}'";
         }
 ```
 
@@ -310,7 +310,7 @@ sem parâmetro e sem uso) por:
 
             _coreRepository.BulkInsertIntoTableRaw(statusRefundsTable, "untreated");
 
-            await _coreRepository.CallDbProcMerge("general", statusRefundsTable.TableName, parentExecutionGUID);
+            await _coreRepository.CallDbProcMerge("aftersale", statusRefundsTable.TableName, parentExecutionGUID);
 
             return true;
         }

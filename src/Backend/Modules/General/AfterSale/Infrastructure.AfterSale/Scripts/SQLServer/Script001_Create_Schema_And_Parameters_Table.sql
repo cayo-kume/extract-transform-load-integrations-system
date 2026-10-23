@@ -1,9 +1,14 @@
 /****** Create Schemas ******/
+--as tabelas finais do AfterSale ficam no schema aftersale; o untreated (bulk insert antes da merge) também é criado
+--pelos scripts do Shared, mas a conferência aqui deixa os scripts do AfterSale independentes da ordem de execução
+if not exists (select 1 from sys.schemas where name = 'aftersale')
+    exec('create schema aftersale');
 
-if not exists (select 1 from sys.schemas where name = 'general')
-    exec('create schema general');
+if not exists (select 1 from sys.schemas where name = 'untreated')
+    exec('create schema untreated');
+GO
 
-create table [general].AfterSaleParameters (
+create table [aftersale].AfterSaleParameters (
 	integrated_or_updated_at datetime,
 	id int not null identity primary key, 
 	[doc_company] nvarchar(14) not null,
@@ -22,7 +27,7 @@ create table [untreated].AfterSaleErrors (
 	message_translated nvarchar(50),
 );
 
-create table [general].AfterSaleErrors (
+create table [aftersale].AfterSaleErrors (
 	integrated_or_updated_at datetime,
 	id_job bigint, 
 	execution uniqueidentifier not null primary key, 

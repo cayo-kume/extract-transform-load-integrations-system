@@ -31,8 +31,8 @@ Módulo do sistema de integrações (ETL) responsável por:
 | Arquitetura | Clean Architecture em três assemblies: Domain, Application e Infrastructure |
 | API consumida | Send4 / AfterSale — `https://api.send4.com.br/` |
 | Documentação da API | [AfterSale Public API 1.0.8 (SwaggerHub)](https://app.swaggerhub.com/apis/send42/public-api/1.0.8) |
-| Banco de dados | SQL Server (schemas `untreated`, `general` e `auditing`) |
-| Multiempresa | Sim: cada CNPJ cadastrado em `general.AfterSaleParameters` tem o seu token; o CNPJ (`doc_company`) faz parte da chave das tabelas |
+| Banco de dados | SQL Server (schemas `untreated`, `aftersale` e `auditing`; o `Script001` cria `aftersale` e `untreated` quando não existem) |
+| Multiempresa | Sim: cada CNPJ cadastrado em `aftersale.AfterSaleParameters` tem o seu token; o CNPJ (`doc_company`) faz parte da chave das tabelas |
 | Host | `src/Backend/Hosts/Hangfire` (controller `AfterSaleController`) |
 
 ### Disclaimer sobre a documentação da API
@@ -89,14 +89,14 @@ Domain.AfterSale/
 │       ├── Refunds/            (Approve, Cancel, Pay, ChangeTotalAmount)
 │       └── Reverses/           (AdministrativeRecords, Approve, Invoice, ReceiveProducts, ReturnedInvoice)
 ├── Entities/
-│   ├── Errors/                 (Error → general.AfterSaleErrors)
-│   ├── Parameters/             (Company → general.AfterSaleParameters)
+│   ├── Errors/                 (Error → aftersale.AfterSaleErrors)
+│   ├── Parameters/             (Company → aftersale.AfterSaleParameters)
 │   ├── Reads/                  ← o que é gravado a partir das rotas GET
 │   │   ├── Me/
 │   │   ├── Refunds/
 │   │   └── Reverses/
 │   └── Writes/
-│       └── Requests/           (Request → general.AfterSaleRequests)
+│       └── Requests/           (Request → aftersale.AfterSaleRequests)
 └── Enums/                      (EnumJob)
 ```
 
@@ -143,7 +143,7 @@ Application.AfterSale/
 
 | Método | O que faz |
 |---|---|
-| `SaveRequest` | Grava uma chamada de escrita (POST/PUT) em `general.AfterSaleRequests`, ligada ao `Execution` do log aberto por quem chama |
+| `SaveRequest` | Grava uma chamada de escrita (POST/PUT) em `aftersale.AfterSaleRequests`, ligada ao `Execution` do log aberto por quem chama |
 
 **`AfterSaleMeService`**
 
@@ -193,8 +193,8 @@ Todas as leituras seguem o mesmo desenho, documentado em [`docs/PADRAO-CACHE-INT
 3. monta um cache em memória (`IMemoryCache`, 2h absoluto / 30 min deslizante) **por empresa**, com o que já está gravado no banco;
 4. descarta o que não mudou (por `updated_at` nas listas de reversas/reembolsos, ou por comparação dos campos nas tabelas de domínio);
 5. valida os DTOs (FluentValidation) e registra as inconsistências em `auditing.Messages`;
-6. converte para entidades, faz bulk insert na tabela `untreated` e chama a procedure de merge `general.sp_<Tabela>_Sync`;
-7. grava cada registro integrado em `auditing.Records` e, quando a API não devolve sucesso, um erro em `general.AfterSaleErrors`.
+6. converte para entidades, faz bulk insert na tabela `untreated` e chama a procedure de merge `aftersale.sp_<Tabela>_Sync`;
+7. grava cada registro integrado em `auditing.Records` e, quando a API não devolve sucesso, um erro em `aftersale.AfterSaleErrors`.
 
 | Chave de cache | Usada por |
 |---|---|
@@ -226,8 +226,8 @@ As ações passam por um fluxo comum em cada service (`SendReverseAction` / `Sen
 1. abre um log em `auditing.Logs` com o job da ação;
 2. busca a empresa pelo CNPJ recebido e usa o token dela;
 3. envia o corpo à API **sem os campos nulos** (para a API não interpretar `null` como "limpar");
-4. grava a chamada em `general.AfterSaleRequests` (via `AfterSaleService.SaveRequest`): usuário (`X-User-Name`), método, rota, CNPJ, id do registro, corpo enviado, resposta e se houve sucesso — inclusive quando a chamada falha antes de ter resposta (timeout, rede);
-5. quando a API não devolve `success = true`, grava um erro em `general.AfterSaleErrors`;
+4. grava a chamada em `aftersale.AfterSaleRequests` (via `AfterSaleService.SaveRequest`): usuário (`X-User-Name`), método, rota, CNPJ, id do registro, corpo enviado, resposta e se houve sucesso — inclusive quando a chamada falha antes de ter resposta (timeout, rede);
+5. quando a API não devolve `success = true`, grava um erro em `aftersale.AfterSaleErrors`;
 6. devolve a resposta da API, que o controller transforma em **200** (sucesso) ou **422** (sem sucesso).
 
 Nas rotas com arquivo, o arquivo é gravado inteiro em `request_body`: o XML da nota (`InvoiceXml`) como texto, e o comprovante do `Pay` como texto (XML/texto) ou base64 (binário).
@@ -263,19 +263,19 @@ Executados uma única vez cada, em ordem, pelo DbUp (`Scripts/SQLServer/migrator
 
 | Script | Conteúdo |
 |---|---|
-| `Script001_Create_Schema_And_Parameters_Table.sql` | Schema `general`, `AfterSaleParameters` (CNPJ + token por empresa) e `AfterSaleErrors` |
+| `Script001_Create_Schema_And_Parameters_Table.sql` | Schemas `aftersale` e `untreated` (só se não existirem), `AfterSaleParameters` (CNPJ + token por empresa) e `AfterSaleErrors` |
 | `Script002_Create_Me_Tables.sql` | `AfterSaleEcommerces`, `...MessagesPages`, `...MessagesMails`, `...Reasons`, `...SubReasons`, `...StringValues` |
 | `Script003_Create_Refunds_Tables.sql` | `AfterSaleRefunds` e filhas (`CouldChangeStatusFor`, `OrdersPaymentsMethods`, `StatusHistories`, `TotalAmountHistories`, `Products`, `ProductsImages`, `ProductsImagesUrls`), `AfterSaleSummarizedRefunds`, `AfterSaleStatusRefunds`, `AfterSaleActionsRefunds`, `AfterSaleBanksRefunds`, `AfterSaleTypesRefunds` |
 | `Script004_Create_Reverses_Tables.sql` | `AfterSaleSummarizedReverses`, `AfterSaleReverses` e 10 filhas, `AfterSaleStatusReverses`, `AfterSaleTransportationsReverses`, `AfterSaleHistoriesReverses`, `AfterSaleCourierAttributes`, `AfterSaleCourierAttributesFields`, com PKs e FKs compostas por `doc_company` |
-| `Script005_Create_AfterSale_Sync_Procedures.sql` | Gera as procedures de merge `general.sp_<Tabela>_Sync` (via `dbo.sp_Create_Merge_Procedure`) |
+| `Script005_Create_AfterSale_Sync_Procedures.sql` | Gera as procedures de merge `aftersale.sp_<Tabela>_Sync` (via `dbo.sp_Create_Merge_Procedure`) |
 | `Script006_Insert_AfterSale_Values_Into_Apps_Table.sql` | App `50 - AfterSale` em `auditing.Apps` |
 | `Script007_Insert_AfterSale_Values_Into_Jobs_Table.sql` | Jobs em `auditing.Jobs` (ver [Auditoria](#auditoria-jobs)) |
 | `Script008_Insert_Values_Into_AfterSale_Parameters_Table.sql` | Empresas e tokens em `AfterSaleParameters` |
-| `Script009_Create_AfterSale_Requests_Table.sql` | `general.AfterSaleRequests` (log das chamadas de escrita) |
+| `Script009_Create_AfterSale_Requests_Table.sql` | `aftersale.AfterSaleRequests` (log das chamadas de escrita) |
 
 Toda tabela de dados existe em dois schemas: `untreated` (recebe o bulk insert, sem chave) e
-`general` (tabela final, com PK). A procedure de merge leva os dados de uma para a outra. A
-exceção é `general.AfterSaleRequests`, que só recebe inserts e é gravada direto no `general`.
+`aftersale` (tabela final, com PK). A procedure de merge leva os dados de uma para a outra. A
+exceção é `aftersale.AfterSaleRequests`, que só recebe inserts e é gravada direto no `aftersale`.
 
 ---
 
@@ -365,7 +365,7 @@ validação) e `auditing.Records` (registros integrados).
 |---|---|---|
 | `appsettings.json` do host | `AfterSale:BaseUrl` | Endereço da API (`https://api.send4.com.br/`) |
 | `appsettings.json` do host | `ConnectionStrings` | Conexão com o SQL Server (dados e auditoria) |
-| Banco | `general.AfterSaleParameters` | CNPJ (`doc_company`) e token de cada empresa |
+| Banco | `aftersale.AfterSaleParameters` | CNPJ (`doc_company`) e token de cada empresa |
 
 ---
 

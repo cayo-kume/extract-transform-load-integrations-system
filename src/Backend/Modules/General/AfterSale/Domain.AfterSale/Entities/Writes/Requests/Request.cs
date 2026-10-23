@@ -3,7 +3,7 @@
 namespace Domain.AfterSale.Entities.Writes.Requests
 {
     /// <summary>
-    /// log of a write call (POST/PUT) made to the AfterSale API, table general.AfterSaleRequests
+    /// log of a write call (POST/PUT) made to the AfterSale API, table aftersale.AfterSaleRequests
     /// </summary>
     public class Request
     {

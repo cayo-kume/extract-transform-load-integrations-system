@@ -197,14 +197,14 @@ entidade vir completa.
 Antes:
 
 ```csharp
-            return @$"SELECT TRANSPORTATION FROM [GENERAL].[AFTERSALETRANSPORTATIONSREVERSES] A (NOLOCK)";
-            //return @$"SELECT TRANSPORTATION FROM [GENERAL].[AFTERSALETRANSPORTATIONSREVERSES] A (NOLOCK) --WHERE DOC_COMPANY = '{doc_company}'";
+            return @$"SELECT TRANSPORTATION FROM [AFTERSALE].[AFTERSALETRANSPORTATIONSREVERSES] A (NOLOCK)";
+            //return @$"SELECT TRANSPORTATION FROM [AFTERSALE].[AFTERSALETRANSPORTATIONSREVERSES] A (NOLOCK) --WHERE DOC_COMPANY = '{doc_company}'";
 ```
 
 Depois:
 
 ```csharp
-            return @$"SELECT DOC_COMPANY, TRANSPORTATION FROM [GENERAL].[AFTERSALETRANSPORTATIONSREVERSES] A (NOLOCK) WHERE DOC_COMPANY = '{doc_company}'";
+            return @$"SELECT DOC_COMPANY, TRANSPORTATION FROM [AFTERSALE].[AFTERSALETRANSPORTATIONSREVERSES] A (NOLOCK) WHERE DOC_COMPANY = '{doc_company}'";
 ```
 
 > A assinatura em `IAfterSaleCommandHandler` (linha 18) já recebe `doc_company`; nada a mudar lá.
@@ -231,7 +231,7 @@ create table [untreated].AfterSaleTransportationsReverses (
 	transportation nvarchar(50)
 );
 
-create table [general].AfterSaleTransportationsReverses (
+create table [aftersale].AfterSaleTransportationsReverses (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
 	transportation nvarchar(50) not null,
@@ -252,28 +252,28 @@ você já criou o `Script009` do `GetStatus`, use o próximo número, por exempl
 
 ```sql
 -- registros antigos foram gravados sem doc_company e/ou sem id válido
-delete from [general].AfterSaleTransportationsReverses where doc_company is null or transportation is null;
+delete from [aftersale].AfterSaleTransportationsReverses where doc_company is null or transportation is null;
 delete from [untreated].AfterSaleTransportationsReverses where doc_company is null or transportation is null;
 
 declare @pk_name nvarchar(128) = (
 	select name from sys.key_constraints
-	where type = 'PK' and parent_object_id = object_id('[general].AfterSaleTransportationsReverses')
+	where type = 'PK' and parent_object_id = object_id('[aftersale].AfterSaleTransportationsReverses')
 );
 
 if @pk_name is not null
-	exec('alter table [general].AfterSaleTransportationsReverses drop constraint [' + @pk_name + ']');
+	exec('alter table [aftersale].AfterSaleTransportationsReverses drop constraint [' + @pk_name + ']');
 
-alter table [general].AfterSaleTransportationsReverses drop column id;
+alter table [aftersale].AfterSaleTransportationsReverses drop column id;
 alter table [untreated].AfterSaleTransportationsReverses drop column id;
 
-alter table [general].AfterSaleTransportationsReverses alter column [doc_company] nvarchar(14) not null;
-alter table [general].AfterSaleTransportationsReverses alter column transportation nvarchar(50) not null;
+alter table [aftersale].AfterSaleTransportationsReverses alter column [doc_company] nvarchar(14) not null;
+alter table [aftersale].AfterSaleTransportationsReverses alter column transportation nvarchar(50) not null;
 
-alter table [general].AfterSaleTransportationsReverses
+alter table [aftersale].AfterSaleTransportationsReverses
 	add constraint [PK_AfterSaleTransportationsReverses] primary key (doc_company asc, transportation asc);
 
 -- a procedure de merge é gerada a partir da PK; recriar para que passe a casar por (doc_company, transportation)
-exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'AfterSaleTransportationsReverses', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'aftersale', @table_name = 'AfterSaleTransportationsReverses', @execute = 1;
 ```
 
 > Assim como no `GetStatus`, confira antes se o `sp_Create_Merge_Procedure` recria a procedure
@@ -282,7 +282,7 @@ exec dbo.sp_Create_Merge_Procedure @schema_name = 'general', @table_name = 'Afte
 >
 > Se a trusted tiver transportadoras repetidas para a mesma empresa (possível, já que o `id` vinha
 > nulo/sem controle), o `add constraint` vai falhar. Nesse caso, remova as duplicatas antes, por
-> exemplo com um `;with cte as (select *, row_number() over (partition by doc_company, transportation order by integrated_or_updated_at desc) rn from [general].AfterSaleTransportationsReverses) delete from cte where rn > 1;`.
+> exemplo com um `;with cte as (select *, row_number() over (partition by doc_company, transportation order by integrated_or_updated_at desc) rn from [aftersale].AfterSaleTransportationsReverses) delete from cte where rn > 1;`.
 
 ---
 
