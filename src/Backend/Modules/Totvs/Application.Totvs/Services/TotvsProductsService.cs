@@ -43,6 +43,9 @@ namespace Application.Totvs.Services
         // com o expand completo, 1000 por página levou 105 s numa marca e deu 502 (timeout do gateway da Totvs) na outra; 200 respondeu (testado)
         private const int ReferencesPageSize = 200;
 
+        // referência inteira na busca por código: a paginação é por produto e 1000 é o máximo da rota (102 produtos vieram numa página)
+        private const int ReferencePageSize = 1000;
+
         // a carga inicial (10 meses) tem ~20 mil referências por marca: a janela é lida em fatias e cada fatia é gravada ao terminar,
         // para uma falha da API não descartar a carga inteira (a próxima execução continua do MAX(maxChangeFilterDate))
         private const int WindowDays = 7;
@@ -98,8 +101,9 @@ namespace Application.Totvs.Services
                         {
                             var windowEnd = windowStart.AddDays(windowDays) < endDate ? windowStart.AddDays(windowDays) : endDate;
 
-                            var references = new List<Domain.Totvs.Dtos.Reads.Products.Reference>();
-                            var referencesJson = new Dictionary<int, string>();
+                            // a paginação da rota é por produto (count = produtos), e uma referência cujos produtos cruzam o limite da página
+                            // vem em partes: as partes são unidas aqui por referenceId antes de virar entidade (decisão 34)
+                            var merged = new Dictionary<int, JObject>();
                             var page = 1;
                             var totalPages = 1;
                             var failed = false;
@@ -199,26 +203,24 @@ namespace Application.Totvs.Services
                                     break;
                                 }
 
-                                Page<Domain.Totvs.Dtos.Reads.Products.Reference>? result = null;
+                                JArray? items = null;
+                                var pages = 0;
 
                                 try
                                 {
-                                    result = JsonConvert.DeserializeObject<Page<Domain.Totvs.Dtos.Reads.Products.Reference>>(response.Content ?? String.Empty);
+                                    // DateParseHandling.None: senão o JObject converte as datas e o ToObject as devolve na cultura do servidor
+                                    using var reader = new JsonTextReader(new StringReader(response.Content ?? String.Empty)) { DateParseHandling = DateParseHandling.None };
+                                    var root = JObject.Load(reader);
 
-                                    foreach (var item in (JObject.Parse(response.Content!)["items"] as JArray) ?? [])
-                                    {
-                                        var referenceId = ConverterValidatorsExtensions.ConvertToInt32Validation((string?)item["referenceId"]);
-
-                                        if (referenceId != 0)
-                                            referencesJson[referenceId] = item.ToString(Formatting.None);
-                                    }
+                                    items = root["items"] as JArray;
+                                    pages = (int?)root["totalPages"] ?? 0;
                                 }
                                 catch (JsonException)
                                 {
-                                    // result continua null: tratado abaixo como resposta inválida (já veio resposta truncada no teste)
+                                    // items continua null: tratado abaixo como resposta inválida (já veio resposta truncada no teste)
                                 }
 
-                                if (result?.items is null)
+                                if (items is null)
                                 {
                                     var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
                                     _logger.AddMessage($"Resposta inválida da API Totvs em product/v2/references/search (empresa {company.doc_company}, matriz {baseBranchCode}, página {page}): {body}");
@@ -227,11 +229,28 @@ namespace Application.Totvs.Services
                                     break;
                                 }
 
-                                references.AddRange(result.items);
+                                foreach (var item in items.OfType<JObject>())
+                                {
+                                    var referenceId = ConverterValidatorsExtensions.ConvertToInt32Validation((string?)item["referenceId"]);
 
-                                // a página volta com menos itens que o pageSize (o filtro de ativo/acabado é aplicado depois da paginação, testado):
-                                // o fim é o totalPages, não uma página curta
-                                totalPages = result.totalPages;
+                                    if (referenceId == 0)
+                                        continue;
+
+                                    if (!merged.TryGetValue(referenceId, out var existing))
+                                    {
+                                        merged[referenceId] = item;
+                                        continue;
+                                    }
+
+                                    // a parte seguinte da mesma referência: soma cores, produtos e medidas, e fica o maior maxChangeFilterDate
+                                    MergeColors(existing, item);
+
+                                    if (NullableConverters.ToNullableDateTime((string?)item["maxChangeFilterDate"]) > NullableConverters.ToNullableDateTime((string?)existing["maxChangeFilterDate"]))
+                                        existing["maxChangeFilterDate"] = item["maxChangeFilterDate"];
+                                }
+
+                                // items são as referências dos produtos da página, então vêm menos itens que o pageSize: o fim é o totalPages
+                                totalPages = pages;
                                 page++;
                             }
 
@@ -239,8 +258,11 @@ namespace Application.Totvs.Services
                             if (failed)
                                 break;
 
-                            if (references.Count == 0)
+                            if (merged.Count == 0)
                                 continue;
+
+                            var references = merged.Values.Select(x => x.ToObject<Domain.Totvs.Dtos.Reads.Products.Reference>()).Where(x => x is not null).Select(x => x!).ToList();
+                            var referencesJson = merged.ToDictionary(x => x.Key, x => x.Value.ToString(Formatting.None));
 
                             // cache de estado: referência -> referência gravada (com o maxChangeFilterDate), por empresa e matriz
                             var skusCache = await _cache.GetOrCreateAsync($"{SkusKey}:{company.doc_company}:{baseBranchCode}", async entry =>
@@ -286,6 +308,337 @@ namespace Application.Totvs.Services
         }
 
         /// <summary>
+        /// busca a referência de um produto por código, grava nas tabelas de produtos (sempre, sem consultar o cache) e registra
+        /// as chamadas em totvs.TotvsRequests. Duas etapas, porque a busca por productCodeList devolve a referência só com o
+        /// produto filtrado (gravar assim apagaria os irmãos no merge): 1) productCodeList nas matrizes das marcas, na ordem de
+        /// BaseBranchCodes, para achar a referência; 2) referenceCodeList (igualdade exata) sem filter.change, para a referência
+        /// inteira. A paginação da rota é por produto (count = produtos), então as páginas são unidas por cor e produto.
+        /// Sem o change o maxChangeFilterDate vem nulo: a referência fica sem a data, e o job a regrava quando ela mudar
+        /// </summary>
+        public async Task<bool?> GetProductByCode(string user_name, string doc_company, int code)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsGetProductByCode);
+
+            // rota registrada no log de requisições (sem o token); o filtro vai no corpo
+            const string route = "product/v2/references/search";
+
+            try
+            {
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                {
+                    // nenhuma chamada à API: não há o que registrar em TotvsRequests (igual ao Movidesk)
+                    _logger.AddMessage($"Empresa {doc_company} não cadastrada em totvs.TotvsParameters.");
+                    return null;
+                }
+
+                // uma chamada à busca, com o mesmo option do job; null quando o login falhou. Quem chama registra em TotvsRequests
+                async Task<(ApiResponse? response, string requestBody)> Search(object filter, int baseBranchCode, int page, int pageSize)
+                {
+                    var requestBody = JsonConvert.SerializeObject(new
+                    {
+                        filter,
+                        option = new
+                        {
+                            branchInfoCode = baseBranchCode,
+                            measurementTableOmniType = 2
+                        },
+                        page,
+                        pageSize,
+                        expand = Expand
+                    });
+
+                    // uma nova tentativa: 401 renova o token, 429 espera o Retry-After e 502/503/504 espera 10 s
+                    ApiResponse? response = null;
+
+                    try
+                    {
+                        for (var attempt = 1; attempt <= 2; attempt++)
+                        {
+                            var token = await _totvsService.GetToken(company);
+
+                            if (token is null)
+                                break;   // a mensagem do login já foi para o log
+
+                            using var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
+
+                            response = await _apiClient.SendAsync(
+                                HttpMethod.Post,
+                                route,
+                                content,
+                                headers: new Dictionary<string, string> { { "Authorization", $"Bearer {token}" } }
+                            );
+
+                            if (attempt == 1 && response.StatusCode == 401)
+                            {
+                                _totvsService.RemoveToken(company);
+                                continue;
+                            }
+
+                            if (attempt == 1 && response.StatusCode == 429)
+                            {
+                                var seconds = response.Headers.TryGetValue("Retry-After", out var retryAfter) && int.TryParse(retryAfter, out var value) ? value : 5;
+                                await Task.Delay(TimeSpan.FromSeconds(Math.Clamp(seconds, 1, 60)));
+                                continue;
+                            }
+
+                            if (attempt == 1 && response.StatusCode is 502 or 503 or 504)
+                            {
+                                await Task.Delay(TimeSpan.FromSeconds(10));
+                                continue;
+                            }
+
+                            break;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // registra a tentativa mesmo quando a chamada não chega a ter resposta (timeout, rede)
+                        _totvsService.SaveRequest(EnumJob.TotvsGetProductByCode, user_name, "POST", route, doc_company, code.ToString(), $"Exceção ao chamar a API: {ex.Message}", false, requestBody);
+                        throw;
+                    }
+
+                    return (response, requestBody);
+                }
+
+                // 1) a referência do produto: a primeira marca em que ele existe
+                var referenceId = 0;
+                string? referenceCode = null;
+                var foundBaseBranchCode = 0;
+
+                foreach (var (baseBranchCode, brandClassificationCode) in BaseBranchCodes)
+                {
+                    // sem lojas da marca em TotvsBranches o job não roda para ela; aqui a busca por código não precisa delas
+                    var (response, requestBody) = await Search(new
+                    {
+                        productCodeList = new[] { code },
+                        branchInfo = new
+                        {
+                            branchCode = baseBranchCode,
+                            isActive = true,
+                            isFinishedProduct = true
+                        },
+                        classifications = new[]
+                        {
+                            new
+                            {
+                                type = BrandClassificationType,
+                                codeList = new[] { brandClassificationCode }
+                            }
+                        }
+                    }, baseBranchCode, 1, 1);
+
+                    if (response is null)
+                    {
+                        // login falhou: nenhuma chamada à busca
+                        _totvsService.SaveRequest(EnumJob.TotvsGetProductByCode, user_name, "POST", route, doc_company, code.ToString(), null, false, requestBody);
+                        return null;
+                    }
+
+                    if (!response.IsSuccess)
+                    {
+                        var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
+                        _logger.AddMessage($"Erro da API Totvs em {route} (empresa {doc_company}, matriz {baseBranchCode}, produto {code}): {response.StatusCode} {body}");
+
+                        _totvsService.SaveRequest(EnumJob.TotvsGetProductByCode, user_name, "POST", route, doc_company, code.ToString(), response.Content, false, requestBody);
+                        return null;
+                    }
+
+                    Page<Domain.Totvs.Dtos.Reads.Products.Reference>? page = null;
+
+                    try
+                    {
+                        page = JsonConvert.DeserializeObject<Page<Domain.Totvs.Dtos.Reads.Products.Reference>>(response.Content ?? String.Empty);
+                    }
+                    catch (JsonException)
+                    {
+                        // page continua null: tratado abaixo como resposta inválida
+                    }
+
+                    if (page?.items is null)
+                    {
+                        _logger.AddMessage($"Resposta inválida da API Totvs em {route} (empresa {doc_company}, matriz {baseBranchCode}, produto {code}): {response.Content}");
+
+                        _totvsService.SaveRequest(EnumJob.TotvsGetProductByCode, user_name, "POST", route, doc_company, code.ToString(), response.Content, false, requestBody);
+                        return null;
+                    }
+
+                    var reference = page.items.FirstOrDefault(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.referenceId) != 0);
+
+                    // 200 com items vazio: o produto não é desta marca (ou não existe)
+                    _totvsService.SaveRequest(EnumJob.TotvsGetProductByCode, user_name, "POST", route, doc_company, code.ToString(), response.Content, reference is not null, requestBody);
+
+                    if (reference is null)
+                        continue;
+
+                    referenceId = ConverterValidatorsExtensions.ConvertToInt32Validation(reference.referenceId);
+                    referenceCode = reference.ReferenceCode;
+                    foundBaseBranchCode = baseBranchCode;
+                    break;
+                }
+
+                if (referenceId == 0)
+                {
+                    _logger.AddMessage($"Produto {code} não encontrado na Totvs (empresa {doc_company}).");
+                    return false;
+                }
+
+                if (String.IsNullOrWhiteSpace(referenceCode))
+                {
+                    _logger.AddMessage($"Produto {code} (referência {referenceId}, matriz {foundBaseBranchCode}): a referência veio sem ReferenceCode, não dá para lê-la inteira.");
+                    return null;
+                }
+
+                // 2) a referência inteira, página a página (1000 produtos por página, o máximo da rota), unindo cores e produtos
+                JObject? merged = null;
+                var pageNumber = 1;
+                var totalPages = 1;
+
+                while (pageNumber <= totalPages)
+                {
+                    var (response, requestBody) = await Search(new
+                    {
+                        referenceCodeList = new[] { referenceCode },
+                        branchInfo = new
+                        {
+                            branchCode = foundBaseBranchCode,
+                            isActive = true,
+                            isFinishedProduct = true
+                        },
+                        classifications = new[]
+                        {
+                            new
+                            {
+                                type = BrandClassificationType,
+                                codeList = new[] { BaseBranchCodes[foundBaseBranchCode] }
+                            }
+                        }
+                    }, foundBaseBranchCode, pageNumber, ReferencePageSize);
+
+                    if (response is null)
+                    {
+                        _totvsService.SaveRequest(EnumJob.TotvsGetProductByCode, user_name, "POST", route, doc_company, code.ToString(), null, false, requestBody);
+                        return null;
+                    }
+
+                    if (!response.IsSuccess)
+                    {
+                        var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
+                        _logger.AddMessage($"Erro da API Totvs em {route} (empresa {doc_company}, matriz {foundBaseBranchCode}, referência {referenceCode}, página {pageNumber}): {response.StatusCode} {body}");
+
+                        _totvsService.SaveRequest(EnumJob.TotvsGetProductByCode, user_name, "POST", route, doc_company, code.ToString(), response.Content, false, requestBody);
+                        return null;
+                    }
+
+                    JObject? item = null;
+                    var pages = 0;
+
+                    try
+                    {
+                        // sem DateParseHandling.None o JObject converte as datas em DateTime e o ToObject as devolve como string na
+                        // cultura do servidor, e os validadores e conversores (en-US) as rejeitam (testado: 20 mensagens, uma por produto)
+                        using var reader = new JsonTextReader(new StringReader(response.Content ?? String.Empty)) { DateParseHandling = DateParseHandling.None };
+                        var root = JObject.Load(reader);
+
+                        pages = (int?)root["totalPages"] ?? 0;
+                        item = ((root["items"] as JArray) ?? [])
+                            .OfType<JObject>()
+                            .FirstOrDefault(x => ConverterValidatorsExtensions.ConvertToInt32Validation((string?)x["referenceId"]) == referenceId);
+                    }
+                    catch (JsonException)
+                    {
+                        // item continua null: tratado abaixo como resposta inválida
+                    }
+
+                    _totvsService.SaveRequest(EnumJob.TotvsGetProductByCode, user_name, "POST", route, doc_company, code.ToString(), response.Content, item is not null, requestBody);
+
+                    if (item is null)
+                    {
+                        _logger.AddMessage($"Resposta inválida da API Totvs em {route} (empresa {doc_company}, matriz {foundBaseBranchCode}): a referência {referenceCode} ({referenceId}) não veio na página {pageNumber}.");
+                        return null;
+                    }
+
+                    if (merged is null)
+                        merged = item;
+                    else
+                        MergeColors(merged, item);
+
+                    totalPages = pages;
+                    pageNumber++;
+                }
+
+                var dto = merged!.ToObject<Domain.Totvs.Dtos.Reads.Products.Reference>();
+
+                if (dto is null)
+                {
+                    _logger.AddMessage($"Resposta inválida da API Totvs em {route} (empresa {doc_company}): a referência {referenceCode} ({referenceId}) não pôde ser lida.");
+                    return null;
+                }
+
+                // atualiza o cache do PostSearchReferences da matriz, se ele estiver carregado
+                _cache.TryGetValue($"{SkusKey}:{doc_company}:{foundBaseBranchCode}", out Dictionary<int, Domain.Totvs.Entities.Reads.Products.Sku>? skusCache);
+
+                await SaveReferences(doc_company, foundBaseBranchCode, _totvsService.GetBatchTime(), [dto], new Dictionary<int, string> { { referenceId, merged.ToString(Formatting.None) } }, skusCache);
+
+                var products = (dto.colors ?? []).Sum(c => c.products?.Count ?? 0);
+                _logger.AddMessage($"Concluída com sucesso: produto {code} (referência {referenceCode} / {referenceId}, matriz {foundBaseBranchCode}, {products} produto(s)) inserido ou atualizado, sem maxChangeFilterDate!");
+
+                return true;
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        /// <summary>
+        /// une numa referência as cores e os produtos de outra página da mesma referência (cor por code, produto por code,
+        /// medida por sku); as outras listas vêm inteiras em toda página e ficam as da primeira
+        /// </summary>
+        private static void MergeColors(JObject target, JObject source)
+        {
+            if (target["colors"] is not JArray targetColors)
+            {
+                targetColors = [];
+                target["colors"] = targetColors;
+            }
+
+            foreach (var color in (source["colors"] as JArray ?? []).OfType<JObject>())
+            {
+                var code = (string?)color["code"];
+                var existing = targetColors.OfType<JObject>().FirstOrDefault(c => (string?)c["code"] == code);
+
+                if (existing is null)
+                {
+                    targetColors.Add(color.DeepClone());
+                    continue;
+                }
+
+                MergeList(existing, color, "products", "code");
+                MergeList(existing, color, "measurementTableOmni", "sku");
+            }
+        }
+
+        private static void MergeList(JObject target, JObject source, string listName, string keyName)
+        {
+            if (target[listName] is not JArray targetList)
+            {
+                targetList = [];
+                target[listName] = targetList;
+            }
+
+            var keys = targetList.OfType<JObject>().Select(x => (string?)x[keyName]).ToHashSet();
+
+            foreach (var item in (source[listName] as JArray ?? []).OfType<JObject>())
+                if (keys.Add((string?)item[keyName]))
+                    targetList.Add(item.DeepClone());
+        }
+
+        /// <summary>
         /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa e matriz.
         /// Devolve a quantidade de referências gravadas.
         /// </summary>
@@ -299,7 +652,7 @@ namespace Application.Totvs.Services
         {
             var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.Products.Sku>();
 
-            // a mesma referência pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
+            // as páginas da mesma referência já foram unidas por quem chamou; o GroupBy só protege a PK
             foreach (var reference in references.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.referenceId) != 0).GroupBy(x => x.referenceId).Select(g => g.Last()))
             {
                 var validations = _referenceValidator.Validate(reference);

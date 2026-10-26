@@ -141,6 +141,27 @@ namespace Hangfire.Controllers.Totvs
         }
 
         /// <summary>
+        /// busca a referência de um produto por código (POST product/v2/references/search com productCodeList, nas matrizes das marcas) e grava; as chamadas ficam em totvs.TotvsRequests
+        /// </summary>
+        [HttpGet("Products/{docCompany}/{code:int:min(1)}")]
+        [Tags("TotvsProducts")]
+        public async Task<ActionResult> Product(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            int code
+        )
+        {
+            var result = await _totvsProductsService.GetProductByCode(userName, docCompany, code);
+
+            return result switch
+            {
+                true => Ok($"Product {code} integrated successfully."),
+                false => NotFound($"Product {code} not found in Totvs."),
+                null => UnprocessableEntity("Company not registered or invalid response from Totvs. See the execution log.")
+            };
+        }
+
+        /// <summary>
         /// sincroniza os pedidos de compra de todas as lojas da holding (POST purchase-order/v2/search)
         /// </summary>
         [HttpPost("PurchaseOrders")]
@@ -162,6 +183,28 @@ namespace Hangfire.Controllers.Totvs
             var result = await _totvsSalesOrdersService.PostSearchSalesOrders();
 
             return Ok($"Records integrated successfully.");
+        }
+
+        /// <summary>
+        /// busca um pedido de venda por loja + número (POST sales-order/v2/orders/search com branchCodeList + orderCodeList) e grava; a chamada fica em totvs.TotvsRequests
+        /// </summary>
+        [HttpGet("SalesOrders/{docCompany}/{branchCode:int:min(1)}/{orderCode:int:min(1)}")]
+        [Tags("TotvsSalesOrders")]
+        public async Task<ActionResult> SalesOrder(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            int branchCode,
+            int orderCode
+        )
+        {
+            var result = await _totvsSalesOrdersService.GetSalesOrderByKey(userName, docCompany, branchCode, orderCode);
+
+            return result switch
+            {
+                true => Ok($"Sales order {branchCode}/{orderCode} integrated successfully."),
+                false => NotFound($"Sales order {branchCode}/{orderCode} not found in Totvs."),
+                null => UnprocessableEntity("Company not registered or invalid response from Totvs. See the execution log.")
+            };
         }
 
         /// <summary>
@@ -198,6 +241,28 @@ namespace Hangfire.Controllers.Totvs
             var result = await _totvsInvoicesService.PostSearchInvoices();
 
             return Ok($"Records integrated successfully.");
+        }
+
+        /// <summary>
+        /// busca uma nota fiscal por loja + sequência (POST fiscal/v2/invoices/search com branchCodeList + invoiceSequenceList) e grava; a chamada fica em totvs.TotvsRequests
+        /// </summary>
+        [HttpGet("Invoices/{docCompany}/{branchCode:int:min(1)}/{invoiceSequence:int:min(1)}")]
+        [Tags("TotvsInvoices")]
+        public async Task<ActionResult> Invoice(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            int branchCode,
+            int invoiceSequence
+        )
+        {
+            var result = await _totvsInvoicesService.GetInvoiceByKey(userName, docCompany, branchCode, invoiceSequence);
+
+            return result switch
+            {
+                true => Ok($"Invoice {branchCode}/{invoiceSequence} integrated successfully."),
+                false => NotFound($"Invoice {branchCode}/{invoiceSequence} not found in Totvs."),
+                null => UnprocessableEntity("Company not registered or invalid response from Totvs. See the execution log.")
+            };
         }
     }
 }

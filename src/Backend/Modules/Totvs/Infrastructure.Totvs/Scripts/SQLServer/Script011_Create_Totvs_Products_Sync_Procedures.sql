@@ -12,10 +12,12 @@ exec dbo.sp_Create_Merge_Procedure @schema_name = 'totvs', @table_name = 'TotvsS
 exec dbo.sp_Create_Merge_Procedure @schema_name = 'totvs', @table_name = 'TotvsSkusCompositions', @execute = 1, @delete_condition = @delete_by_reference;
 exec dbo.sp_Create_Merge_Procedure @schema_name = 'totvs', @table_name = 'TotvsSkusReferenceCategories', @execute = 1, @delete_condition = @delete_by_reference;
 exec dbo.sp_Create_Merge_Procedure @schema_name = 'totvs', @table_name = 'TotvsSkusIntegrationGroupCodes', @execute = 1, @delete_condition = @delete_by_reference;
-exec dbo.sp_Create_Merge_Procedure @schema_name = 'totvs', @table_name = 'TotvsSkusColors', @execute = 1, @delete_condition = @delete_by_reference;
+--cores e produtos sem exclusão (decisão 34): a API devolve a referência só com os produtos alterados na janela, então "não veio"
+--não é "foi excluído"; um produto excluído ou inativado na Totvs fica no banco, como a nota com invoiceStatus = Deleted
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'totvs', @table_name = 'TotvsSkusColors', @execute = 1;
 exec dbo.sp_Create_Merge_Procedure @schema_name = 'totvs', @table_name = 'TotvsSkusColorsMeasurementsTableOmni', @execute = 1, @delete_condition = @delete_by_reference;
 exec dbo.sp_Create_Merge_Procedure @schema_name = 'totvs', @table_name = 'TotvsSkusColorsMeasurementsTableOmniMedidas', @execute = 1, @delete_condition = @delete_by_reference;
-exec dbo.sp_Create_Merge_Procedure @schema_name = 'totvs', @table_name = 'TotvsSkusColorsProducts', @execute = 1, @delete_condition = @delete_by_reference;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'totvs', @table_name = 'TotvsSkusColorsProducts', @execute = 1;
 exec dbo.sp_Create_Merge_Procedure @schema_name = 'totvs', @table_name = 'TotvsProductsBarCodes', @execute = 1, @delete_condition = @delete_by_product;
 exec dbo.sp_Create_Merge_Procedure @schema_name = 'totvs', @table_name = 'TotvsProductsClassifications', @execute = 1, @delete_condition = @delete_by_product;
 exec dbo.sp_Create_Merge_Procedure @schema_name = 'totvs', @table_name = 'TotvsProductsAdditionalFields', @execute = 1, @delete_condition = @delete_by_product;

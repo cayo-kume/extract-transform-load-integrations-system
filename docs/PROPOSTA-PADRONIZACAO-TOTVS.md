@@ -585,7 +585,11 @@ enviados, como nas notas. Os enums vêm pelo nome na resposta (`"Female"`, `"Not
     em 1 dia, ~100. A carga inicial (desde 2000) é lida em **fatias de 30 dias** e as execuções seguintes em fatias
     de 7 dias; cada fatia é gravada ao terminar:
     uma falha interrompe só o resto, e a próxima execução continua do `MAX(maxChangeFilterDate)`;
-  * **A página volta com menos itens que o `pageSize`** (675 de 1000, 177 de 200, 88 de 106): o fim da leitura é o
+  * **A página volta com menos itens que o `pageSize`** (675 de 1000, 177 de 200, 88 de 106), porque a **paginação é
+    por produto** (`count` é o total de produtos; `items` são as referências dos produtos da página, descoberto na fase
+    3): uma referência pode vir partida em duas páginas, e com `change` vem só com os produtos alterados na janela. O
+    job une as partes por `referenceId` (`MergeColors`) antes de gravar, e cores e produtos não têm exclusão no merge
+    (decisão 34). O fim da leitura é o
     `totalPages`, não uma página curta;
   * **Sem filtro de marca, as duas chamadas trazem o mesmo catálogo.** Numa janela de 1 dia, as 56 referências da
     matriz 1 vieram também na matriz 101, com `isActive` e `isFinishedProduct` nulos na cópia da Open Era; o filtro
@@ -758,6 +762,10 @@ exec dbo.sp_Create_Merge_Procedure @schema_name = 'totvs', @table_name = 'TotvsB
 
 (Exemplo com filiais, o primeiro recurso. Nas notas a condição usa a chave da §5.2.1:
 `p.doc_company = target.doc_company and p.branchCode = target.branchCode and p.invoiceSequence = target.invoiceSequence and p.invoiceDate = target.invoiceDate`.)
+
+Exceção: `TotvsSkusColors` e `TotvsSkusColorsProducts` **não têm** `@delete_condition` (decisão 34), porque a API devolve a
+referência só com os produtos alterados na janela; os netos do produto continuam com `@delete_by_product`, porque o
+produto que vem traz os netos inteiros. Um produto excluído ou inativado na Totvs fica no banco.
 
 Hoje não há como remover uma filha excluída na Totvs (um telefone apagado continua no banco para sempre).
 
@@ -1153,12 +1161,63 @@ para cada service, que só é ligado no host e no controller quando está pronto
   empresa não cadastrada devolve `null` sem chamar a API, e cada chamada gera um registro de `TotvsRequests`;
 * **não verificado:** `Script028`/`029` em banco e as rotas pelo host.
 
+**Fase 3, parte 2: `GetSalesOrderByKey` e `GetInvoiceByKey` implementados (26/10/2026)**, ainda sem commit:
+
+* `TotvsSalesOrdersService.GetSalesOrderByKey(branchCode, orderCode)`: `POST orders/search` com `branchCodeList` +
+  `orderCodeList`, `pageSize` 1, o `expand` do job e `filter.change` desde 01/01/2025 (a carga inicial do job; a rota de
+  pedidos aceita janela maior que 6 meses e sem o `change` o `maxChangeFilterDate` vem nulo, testado). Grava pelo
+  `SaveSalesOrders` do job e atualiza o cache dele se estiver carregado;
+* `TotvsInvoicesService.GetInvoiceByKey(branchCode, invoiceSequence)`: `POST invoices/search` com `branchCodeList` +
+  `invoiceSequenceList` (a sequência é única por loja: a busca devolve uma nota, e a data da chave vem na resposta).
+  **A rota de notas limita o `filter.change` a 6 meses** (`400 DateInterval`, testado), então são até duas chamadas: a
+  primeira com `change` dos últimos 6 meses (traz o `maxChangeFilterDate`); se vier vazia, a segunda sem `change`, e a
+  nota é gravada sem a data, com mensagem no log (o job a regrava se ela voltar numa janela). As duas chamadas vão para
+  `TotvsRequests`; `items` vazio na segunda é "não existe" (`false`);
+* `EnumJob` 13012 e 13013, `Script030` (jobs sob demanda, intervalo 0), rotas `GET TotvsJobs/Totvs/SalesOrders/{docCompany}/{branchCode}/{orderCode}`
+  e `GET .../Invoices/{docCompany}/{branchCode}/{invoiceSequence}` com `X-User-Name` e `int:min(1)`;
+* conferido com o console descartável rodando os métodos de verdade (API real, repositório e log falsos): pedido 7/231
+  gravado com 5 itens e `maxChangeFilterDate`; nota 1/41981 (recente) gravada na primeira chamada com 76 itens e
+  `maxChangeFilterDate`; nota 1/978871 (alterada em 01/2026) gravada na segunda chamada, sem a data e com a mensagem;
+  chaves inexistentes devolvem `false` sem gravar; empresa não cadastrada devolve `null` sem chamar a API;
+* **não verificado:** `Script030` em banco e as rotas pelo host.
+
+**Fase 3, parte 3: `GetProductByCode` implementado (26/10/2026)**, ainda sem commit:
+
+* `TotvsProductsService.GetProductByCode(code)` em **duas etapas**, porque a busca por `productCodeList` devolve a
+  referência **só com o produto filtrado** (testado: referência 6187 veio com 1 de 20 produtos), e gravar assim apagaria os
+  irmãos no merge de `TotvsSkusColorsProducts`: 1) `references/search` com `productCodeList = [code]` nas matrizes das
+  marcas, na ordem de `BaseBranchCodes` (`pageSize` 1, sem `change`), para achar `referenceId` e `ReferenceCode`;
+  2) `references/search` com `referenceCodeList = [ReferenceCode]` (igualdade exata, sensível a maiúsculas, testado) na
+  matriz encontrada, sem `change`, `pageSize` 1000, unindo as páginas por cor (`code`) e produto (`code`) e medida (`sku`)
+  no JSON antes de desserializar (`MergeColors`). Grava pelo `SaveReferences` do job e atualiza o cache da matriz;
+* sem `change` o `maxChangeFilterDate` vem nulo (com `change` a API devolve só os produtos alterados na janela): a
+  referência é gravada **sem a data**, com mensagem, e o job a regrava quando ela mudar (o validador registra a
+  mensagem do `maxChangeFilterDate` vazio). O JSON unido é lido com `DateParseHandling.None`: sem isso o `JObject`
+  converte as datas em `DateTime` e o `ToObject` as devolve na cultura do servidor, e validadores e conversores
+  (en-US) as rejeitam (testado: 20 mensagens, uma por produto, e as datas iriam erradas para o banco);
+* `EnumJob` 13014, `Script031` (job sob demanda, intervalo 0), rota `GET TotvsJobs/Totvs/Products/{docCompany}/{code}` com
+  `X-User-Name` e `code:int:min(1)`;
+* conferido com o console descartável rodando o método de verdade (API real, repositório e log falsos): produto 13984 →
+  referência 6187 da Open Era gravada inteira (4 cores, 20 produtos, 3 chamadas: Misha vazia, Open Era, referência);
+  produto 488 → referência 6434 com 18 cores e **102 produtos** numa página; código inexistente → `false` em 2 chamadas;
+  empresa não cadastrada → `null` sem chamada; `MergeColors` conferido com duas páginas sintéticas;
+* **não verificado:** `Script031` em banco e a rota pelo host.
+
+**Achado no caminho (afeta o `PostSearchReferences` da fase 2, pendência 6 da §10.2):** a paginação do
+`references/search` é **por produto**, não por referência: `count` é o total de produtos, `totalItems` o de produtos
+da página, e `items` são as referências dos produtos daquela página. Testado: a referência 6434 com `pageSize` 50 veio
+em 3 páginas (50 + 50 + 2 produtos, sem repetição), e com `change` na janela veio com 8 produtos (os alterados), contra
+102 sem `change`. No job isso tem duas consequências: uma referência cujos produtos cruzam o limite de página chega em
+duas versões parciais, e o `GroupBy(...).Last()` fica só com a última; e a referência alterada vem **só com os
+produtos alterados na janela**, e a `@delete_by_reference` de `TotvsSkusColors`/`TotvsSkusColorsProducts` apaga os
+outros. É o que explica a "página com menos itens que o `pageSize`" da §5.2.4.
+
 | Fase | Entrega | Resultado |
 |---|---|---|
 | **1. Base** | §2 (csproj, nomes de classes, namespaces), `TotvsService` comum (§4.1: horário do lote, parâmetros e token em cache), remoção da `TotvsBaseSyncService`, §5.0–5.1 e `Script001`–`003` (schema, parâmetros com a holding, app), §6.1–6.3 (DI, `ISharedRepository`, host). Os services ainda não migrados ficam fora do DI e do controller | Módulo compila no Shared e sobe no host |
 | **2. Um service por vez** | Para o service da vez: o fluxo da §4.2 escrito no próprio método (janela pelo banco, lojas de `TotvsBranches`, `SendAsync`, `finally`), DTOs `Reads` e entidades (§3), validadores (§4.3), cache (§4.4), queries (§4.5), repositório (§6.2), trio de scripts (§5.4), job (§7), rota no controller (§6.4) e as correções de §8 que tocam nele | Recurso lido no padrão, auditável e incremental |
 | **3. Sob demanda e valores** (decidida em 26/10/2026) | Leituras sob demanda por chave (§6.4: PF, PJ, pedido de venda, nota e produto, com `X-User-Name`, CNPJ por `^\d{14}$` e `totvs.TotvsRequests`); preços, custos e saldos como jobs de 3 min (`prices`, `costs` e `balances/search`, uma chamada por marca como as referências); operações descartada | Registro único gravado sob demanda e auditado; valores por produto incrementais |
-| **4. Docs** | `README.md` do módulo no formato do Movidesk (arquitetura, services, fluxo, scripts, endpoints, jobs, configuração) e pasta `Responsed Jsons` com uma resposta de exemplo por rota (dados fictícios) | — |
+| **4. Docs** | `README.md` do módulo no formato do Movidesk (arquitetura, services, fluxo, scripts, endpoints, jobs, configuração) e pasta `Responsed Jsons` com uma resposta de exemplo por rota (dados fictícios) | **Implementada** (26/10/2026) |
 
 ---
 
@@ -1179,8 +1238,8 @@ Ordem da fase 3 (a base sob demanda entra com o primeiro):
 | Ordem | Entrega | Observação |
 |---|---|---|
 | 1 | `TotvsRequests` + `GetCustomerByCode` e `GetLegalEntityByCode` | **Implementados** (falta rodar em banco). `Script028`/`029`, jobs 13010 e 13011 |
-| 2 | `GetSalesOrderByKey` e `GetInvoiceByKey` | Reusam `SaveSalesOrders`/`SaveInvoices`; jobs 13012 e 13013 |
-| 3 | `GetProductByCode` | `products/search` com `productCodeList`, grava em `TotvsSkus` e filhas; job 13014 |
+| 2 | `GetSalesOrderByKey` e `GetInvoiceByKey` | **Implementados** (falta rodar em banco). Reusam `SaveSalesOrders`/`SaveInvoices`; `Script030`, jobs 13012 e 13013; notas em até duas chamadas por causa do limite de 6 meses do `change` |
+| 3 | `GetProductByCode` | **Implementado** (falta rodar em banco). `references/search` em duas etapas (`productCodeList` para achar a referência, `referenceCodeList` para lê-la inteira, páginas unidas); `Script031`, job 13014 |
 | 4 | `PostSearchPrices` | `prices/search` com `change.inPrice`, `option.prices` por loja; tabelas `TotvsPrices` e filhas; job 13015 |
 | 5 | `PostSearchCosts` | `costs/search` com `change.inCost`; `TotvsCosts`; job 13016 |
 | 6 | `PostSearchBalances` | `balances/search` com `change.inStock`; `TotvsBalances` e `TotvsBalancesLocations`; job 13017 |
@@ -1227,6 +1286,9 @@ Ordem da fase 3 (a base sob demanda entra com o primeiro):
 | 29 | Preços, custos e saldos | **Os três entram como jobs de 3 min** no padrão da fase 2 (`PostSearchPrices`, `PostSearchCosts`, `PostSearchBalances`) | §7, §9 |
 | 30 | Operações (`TotvsOperations`) | **Descartada**: não existe rota de operações em nenhum swagger da Totvs; o `SearchOperations` do código antigo nunca existiu | §6.4 |
 | 31 | `filter.change` nas buscas por chave | **Enviado desde 2000 com as flags da busca por janela**, para o `maxChangeFilterDate` vir preenchido (sem ele a pessoa seria regravada pelo job; sem as flags a API responde 400) | §9 |
+| 32 | `filter.change` no pedido e na nota por chave | Pedido: **desde 01/01/2025** (a carga inicial do job). Nota: **últimos 6 meses** (o máximo da rota) e, se não vier, **segunda chamada sem `change`**, gravando sem `maxChangeFilterDate` | §9 |
+| 33 | Produto por código | **`references/search` em duas etapas** (`productCodeList` acha a referência; `referenceCodeList` exato, sem `change`, lê a referência inteira com as páginas unidas), gravando em `TotvsSkus` e filhas sem `maxChangeFilterDate`. O `products/search` (outro modelo, `ProductDataModel`) não é usado | §9 |
+| 34 | Paginação por produto no `PostSearchReferences` | **Opção (a)**: as páginas da mesma referência são unidas por `referenceId` dentro da fatia (`MergeColors`, maior `maxChangeFilterDate`), e `TotvsSkusColors`/`TotvsSkusColorsProducts` ficam **sem `@delete_condition`** no `Script011` (editado, porque ainda não rodou em banco). Descartada a opção (b), reler cada referência inteira: não resolve a carga inicial por fatias e põe ~40 mil chamadas a mais nela | §5.2.4, §5.3 |
 
 ### 10.2 Pendentes
 
@@ -1241,6 +1303,10 @@ O que falta é só execução, não implementação:
 | 3 | Cargas iniciais que não foram rodadas: 188 mil PF (`PostSearchCustomers`), produtos e vendedores desde 2000, notas e pedidos de venda desde 01/01/2025, 10 meses de duplicatas (observar tempo e tamanho das páginas) | 2 |
 | 4 | Comissões pagas nunca foram lidas com dados reais (só o registro sintético do swagger); conferir quando houver fechamento | 2 |
 | 5 | `referencedInvoices` comentado no `expand` das notas: `TotvsInvoicesItemsProductsReferenced` fica vazia até a Totvs corrigir o 400 ou o contorno ser religado (§5.2.1) | Totvs |
+| 6 | `PostSearchReferences`: paginação por produto e produtos parciais (achado da fase 3, §9). **Resolvido pela decisão 34** (opção a, 26/10/2026): páginas unidas por referência e cores/produtos sem exclusão no merge; falta só rodar o `Script011` alterado em banco | 1 |
 
-Fase 3 iniciada em 26/10/2026 (parte 1 implementada; partes 2 a 6 na ordem da §9). Fase 4 (README e `Responsed Jsons`)
-continua opcional e não iniciada.
+Fase 3 iniciada em 26/10/2026 (partes 1 a 3 implementadas; partes 4 a 6, preços, custos e saldos, ainda não). Fase 4
+implementada em 26/10/2026: `src/Backend/Modules/Totvs/README.md` e a pasta `Responsed Jsons` (11 respostas reais, uma por
+rota, anonimizadas por regra: textos, documentos, códigos e valores fictícios; ficam só booleanos, enums, UFs, datas de
+registro e o envelope da página). O README já lista preços, custos e saldos como pendentes; precisa ser atualizado quando
+as partes 4 a 6 entrarem.

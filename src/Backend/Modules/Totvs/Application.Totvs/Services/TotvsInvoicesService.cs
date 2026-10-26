@@ -309,6 +309,178 @@ namespace Application.Totvs.Services
         }
 
         /// <summary>
+        /// busca uma nota fiscal por loja + sequência, grava nas tabelas de notas (sempre, sem consultar o cache)
+        /// e registra a chamada em totvs.TotvsRequests. A API limita o filter.change a 6 meses, então a nota é procurada
+        /// primeiro nos últimos 6 meses (com maxChangeFilterDate) e, se não vier, sem o change (gravada sem a data)
+        /// </summary>
+        public async Task<bool?> GetInvoiceByKey(string user_name, string doc_company, int branchCode, int invoiceSequence)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsGetInvoiceByKey);
+
+            // rota registrada no log de requisições (sem o token); o filtro vai no corpo
+            const string route = "fiscal/v2/invoices/search";
+            var key = $"{branchCode}|{invoiceSequence}";
+            bool? result = null;
+
+            try
+            {
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                {
+                    // nenhuma chamada à API: não há o que registrar em TotvsRequests (igual ao Movidesk)
+                    _logger.AddMessage($"Empresa {doc_company} não cadastrada em totvs.TotvsParameters.");
+                    return null;
+                }
+
+                var batchTime = _totvsService.GetBatchTime();
+
+                foreach (var withChange in new[] { true, false })
+                {
+                    // 1ª tentativa: change dos últimos 6 meses (o máximo da rota, testado), que preenche o maxChangeFilterDate;
+                    // 2ª: sem change, para notas mais antigas (o job as regrava se voltarem numa janela, porque ficam sem a data)
+                    var requestBody = JsonConvert.SerializeObject(new
+                    {
+                        filter = new
+                        {
+                            branchCodeList = new[] { branchCode },
+                            invoiceSequenceList = new[] { invoiceSequence },
+                            change = withChange
+                                ? new { startDate = $"{batchTime.AddMonths(-6).AddDays(1):yyyy-MM-ddTHH:mm:ss}", endDate = $"{batchTime:yyyy-MM-ddTHH:mm:ss}" }
+                                : null
+                        },
+                        page = 1,
+                        pageSize = 1,
+                        expand = Expand
+                    }, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
+
+                    // uma nova tentativa: 401 renova o token, 429 espera o Retry-After e 502/503/504 espera 10 s
+                    ApiResponse? response = null;
+
+                    try
+                    {
+                        for (var attempt = 1; attempt <= 2; attempt++)
+                        {
+                            var token = await _totvsService.GetToken(company);
+    
+                            if (token is null)
+                                break;   // a mensagem do login já foi para o log
+    
+                            using var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
+    
+                            response = await _apiClient.SendAsync(
+                                HttpMethod.Post,
+                                route,
+                                content,
+                                headers: new Dictionary<string, string> { { "Authorization", $"Bearer {token}" } }
+                            );
+    
+                            if (attempt == 1 && response.StatusCode == 401)
+                            {
+                                _totvsService.RemoveToken(company);
+                                continue;
+                            }
+    
+                            if (attempt == 1 && response.StatusCode == 429)
+                            {
+                                var seconds = response.Headers.TryGetValue("Retry-After", out var retryAfter) && int.TryParse(retryAfter, out var value) ? value : 5;
+                                await Task.Delay(TimeSpan.FromSeconds(Math.Clamp(seconds, 1, 60)));
+                                continue;
+                            }
+    
+                            if (attempt == 1 && response.StatusCode is 502 or 503 or 504)
+                            {
+                                await Task.Delay(TimeSpan.FromSeconds(10));
+                                continue;
+                            }
+    
+                            break;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // registra a tentativa mesmo quando a chamada não chega a ter resposta (timeout, rede)
+                        _totvsService.SaveRequest(EnumJob.TotvsGetInvoiceByKey, user_name, "POST", route, doc_company, key, $"Exceção ao chamar a API: {ex.Message}", false, requestBody);
+                        throw;
+                    }
+
+                    if (response is null)
+                    {
+                        // login falhou: nenhuma chamada à busca
+                        _totvsService.SaveRequest(EnumJob.TotvsGetInvoiceByKey, user_name, "POST", route, doc_company, key, null, false, requestBody);
+                        return null;
+                    }
+
+                    if (!response.IsSuccess)
+                    {
+                        var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
+                        _logger.AddMessage($"Erro da API Totvs em {route} (empresa {doc_company}, nota {key}): {response.StatusCode} {body}");
+
+                        _totvsService.SaveRequest(EnumJob.TotvsGetInvoiceByKey, user_name, "POST", route, doc_company, key, response.Content, false, requestBody);
+                        return null;
+                    }
+
+                    Page<Domain.Totvs.Dtos.Reads.Invoices.Invoice>? page = null;
+                    string? json = null;
+
+                    try
+                    {
+                        page = JsonConvert.DeserializeObject<Page<Domain.Totvs.Dtos.Reads.Invoices.Invoice>>(response.Content ?? String.Empty);
+                        json = ((JObject.Parse(response.Content!)["items"] as JArray) ?? []).FirstOrDefault()?.ToString(Formatting.None);
+                    }
+                    catch (JsonException)
+                    {
+                        // page continua null: tratado abaixo como resposta inválida
+                    }
+
+                    var invoice = page?.items?.FirstOrDefault(x => Key(x).branchCode == branchCode && Key(x).invoiceSequence == invoiceSequence && IsValidKey(Key(x)));
+
+                    if (page?.items is null)
+                    {
+                        _logger.AddMessage($"Resposta inválida da API Totvs em {route} (empresa {doc_company}, nota {key}): {response.Content}");
+                        result = null;
+                    }
+                    else if (invoice is null || json is null)
+                    {
+                        // 200 com items vazio: não está na janela (1ª tentativa) ou não existe (2ª)
+                        if (!withChange)
+                            _logger.AddMessage($"Nota {key} não encontrada na Totvs (empresa {doc_company}).");
+
+                        result = false;
+                    }
+                    else
+                    {
+                        if (!withChange)
+                            _logger.AddMessage($"Nota {key} está fora dos últimos 6 meses de alteração: gravada sem maxChangeFilterDate.");
+
+                        // atualiza o cache do PostSearchInvoices, se ele estiver carregado, para a próxima execução não regravar a nota
+                        _cache.TryGetValue($"{InvoicesKey}:{doc_company}", out Dictionary<(int branchCode, int invoiceSequence, DateTime invoiceDate), Domain.Totvs.Entities.Reads.Invoices.Invoice>? invoicesCache);
+
+                        await SaveInvoices(doc_company, _totvsService.GetBatchTime(), [invoice], new Dictionary<(int, int, DateTime), string> { { Key(invoice), json } }, invoicesCache);
+
+                        _logger.AddMessage($"Concluída com sucesso: nota {key} de {Key(invoice).invoiceDate:dd/MM/yyyy} inserida ou atualizada!");
+                        result = true;
+                    }
+
+                    _totvsService.SaveRequest(EnumJob.TotvsGetInvoiceByKey, user_name, "POST", route, doc_company, key, response.Content, result == true, requestBody);
+
+                    // só a 1ª tentativa sem resultado passa para a 2ª
+                    if (result != false)
+                        break;
+                }
+
+                return result;
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        /// <summary>
         /// sinaliza o 400 do expand referencedInvoices para o ReadPage reler a página em partes
         /// </summary>
         private sealed class ReferencedInvoicesException : Exception { }

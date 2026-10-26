@@ -22,6 +22,9 @@
 
         // sob demanda (TotvsController, com X-User-Name; não recorrentes): a partir de 13010
         TotvsGetCustomerByCode = 13010,   //Script029_Insert_Totvs_On_Demand_People_Jobs_Into_Jobs_Table.sql
-        TotvsGetLegalEntityByCode = 13011   //Script029_Insert_Totvs_On_Demand_People_Jobs_Into_Jobs_Table.sql
+        TotvsGetLegalEntityByCode = 13011,   //Script029_Insert_Totvs_On_Demand_People_Jobs_Into_Jobs_Table.sql
+        TotvsGetSalesOrderByKey = 13012,   //Script030_Insert_Totvs_On_Demand_Documents_Jobs_Into_Jobs_Table.sql
+        TotvsGetInvoiceByKey = 13013,   //Script030_Insert_Totvs_On_Demand_Documents_Jobs_Into_Jobs_Table.sql
+        TotvsGetProductByCode = 13014   //Script031_Insert_Totvs_On_Demand_Products_Jobs_Into_Jobs_Table.sql
     }
 }
