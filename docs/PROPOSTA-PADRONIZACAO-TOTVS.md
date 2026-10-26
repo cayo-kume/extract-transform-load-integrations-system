@@ -919,7 +919,7 @@ dos erros de compilação).
 **Decidido:** a implementação é feita **um service de cada vez**. A fase 1 deixa a base pronta; a fase 2 se repete
 para cada service, que só é ligado no host e no controller quando está pronto.
 
-**Fase 1 implementada (23/10/2026)**, ainda sem commit:
+**Fase 1 implementada (23/10/2026)** (commit `f615deb`, 26/10/2026):
 
 * `.csproj` como na §2.1 (`Caching.Memory` saiu do Domain e entrou na Application; `Microsoft.Extensions.Http` saiu
   da Infrastructure, que passou a referenciar o Domain);
@@ -942,7 +942,7 @@ para cada service, que só é ligado no host e no controller quando está pronto
 * `dotnet build` do host Hangfire: **0 erros**. Os avisos que sobram são de nulidade nos DTOs antigos, que mudam na
   fase 2 (§3.2). O login e a leitura de `TotvsParameters` ainda não rodaram contra um banco.
 
-**Fase 2, service 1: `GetBranchesList` implementado (23/10/2026)**, ainda sem commit:
+**Fase 2, service 1: `GetBranchesList` implementado (23/10/2026)** (commit `f615deb`, 26/10/2026):
 
 * `ITotvsPeopleService`/`TotvsPeopleService.GetBranchesList`, com o fluxo da §4.2 escrito no próprio método: log,
   empresas e token do `ITotvsService`, janela por `MAX(maxChangeFilterDate) - 1 h` (banco vazio: desde 2000),
@@ -966,7 +966,7 @@ para cada service, que só é ligado no host e no controller quando está pronto
 * **não verificado:** os scripts e as procedures não rodaram em banco, e o método não rodou pelo host (bulk, merges,
   `auditing` e cache dependem do banco).
 
-**Fase 2, service 2: `PostSearchSellers` implementado (23/10/2026)**, ainda sem commit:
+**Fase 2, service 2: `PostSearchSellers` implementado (23/10/2026)** (commit `f615deb`, 26/10/2026):
 
 * `ITotvsSellersService`/`TotvsSellersService.PostSearchSellers`, no mesmo desenho do `GetBranchesList`:
   `POST seller/v2/search` com `branchCodeList` = **todas as lojas de `TotvsBranches`** (sem lojas, a empresa é
@@ -986,7 +986,7 @@ para cada service, que só é ligado no host e no controller quando está pronto
   1.567 informações por loja, nenhuma loja fora da lista, e as três `DataTable` com as colunas do `Script007`;
 * **não verificado:** scripts, procedures e execução pelo host, como no `GetBranchesList`.
 
-**Fase 2, service 3: `PostSearchReferences` implementado (23/10/2026)**, ainda sem commit:
+**Fase 2, service 3: `PostSearchReferences` implementado (23/10/2026)** (commit `f615deb`, 26/10/2026):
 
 * `ITotvsProductsService`/`TotvsProductsService.PostSearchReferences`: para cada matriz (`1` e `101`, mapa no
   service com o setor da marca), `option.branchInfoCode` e `filter.branchInfo.branchCode` = a matriz,
@@ -1011,7 +1011,7 @@ para cada service, que só é ligado no host e no controller quando está pronto
 * **não verificado:** scripts, procedures (incluindo as FKs em cascata) e execução pelo host; a carga inicial de 10
   meses não foi rodada (pelo volume medido, deve levar horas na primeira execução).
 
-**Fase 2, service 4: `PostSearchCustomers` e `PostSearchLegalEntity` implementados (23/10/2026)**, ainda sem commit:
+**Fase 2, service 4: `PostSearchCustomers` e `PostSearchLegalEntity` implementados (23/10/2026)** (commit `f615deb`, 26/10/2026):
 
 * os dois métodos no `TotvsPeopleService` (junto do `GetBranchesList`), no mesmo desenho dos anteriores: `change`
   com todos os `in*`, `option.branchStaticDataList` = todas as lojas de `TotvsBranches` (sem ele as estatísticas
@@ -1037,7 +1037,7 @@ para cada service, que só é ligado no host e no controller quando está pronto
 * **não verificado:** scripts, procedures e execução pelo host; a carga inicial das 188 mil PF não foi rodada (pelo
   tempo medido, deve levar algumas horas na primeira execução).
 
-**Fase 2, service 5: `PostSearchPurchaseOrders` e `PostSearchSalesOrders` implementados (23/10/2026)**, ainda sem commit:
+**Fase 2, service 5: `PostSearchPurchaseOrders` e `PostSearchSalesOrders` implementados (23/10/2026)** (commit `f615deb`, 26/10/2026):
 
 * `TotvsPurchaseOrdersService` e `TotvsSalesOrdersService`, no mesmo desenho dos anteriores: `branchCodeList`
   (obrigatório) = todas as lojas de `TotvsBranches`, `expand` da documentação (compra: `items,requests`; venda: os 10
@@ -1058,7 +1058,7 @@ para cada service, que só é ligado no host e no controller quando está pronto
   colunas das 14 `DataTable` iguais às dos scripts;
 * **não verificado:** scripts, procedures e execução pelo host.
 
-**Fase 2, service 6: `PostSearchDuplicates` e `PostSearchComissionsPaid` implementados (23/10/2026)**, ainda sem commit:
+**Fase 2, service 6: `PostSearchDuplicates` e `PostSearchComissionsPaid` implementados (23/10/2026)** (commit `f615deb`, 26/10/2026):
 
 * `TotvsAccountsPayableService` com os dois métodos. **Duplicatas**, no mesmo desenho dos anteriores:
   `branchCodeList` = todas as lojas, `expand=classifications` (o `expense` vem sempre), `pageSize` 100, janela por
@@ -1081,7 +1081,7 @@ para cada service, que só é ligado no host e no controller quando está pronto
   no formato do swagger, porque não há fechamento real; as colunas das 5 `DataTable` iguais às do `Script022`;
 * **não verificado:** scripts, procedures e execução pelo host; as comissões nunca foram lidas com dados reais.
 
-**Fase 2, service 7: `PostSearchInvoices` implementado (23/10/2026)**, ainda sem commit. Com ele a fase 2 está completa:
+**Fase 2, service 7: `PostSearchInvoices` implementado (23/10/2026)** (commit `f615deb`, 26/10/2026). Com ele a fase 2 está completa:
 
 * `TotvsInvoicesService.PostSearchInvoices` no mesmo desenho dos anteriores: `branchCodeList` = todas as lojas,
   `expand` da documentação, `pageSize` 100, janela por `MAX(maxChangeFilterDate) - 1 h` (banco vazio: 5 meses) em
@@ -1164,4 +1164,16 @@ Ordem sugerida dos services (filiais primeiro, porque as outras buscas leem as f
 
 ### 10.2 Pendentes
 
-Nada pendente no momento.
+Conferido em 26/10/2026: a entrega da fase 2 (fluxo da §4.2, DTOs, entidades, validadores, cache, queries,
+repositório, trio de scripts, job, rota e correções da §8) está no código para os 10 métodos, no commit `f615deb`.
+O que falta é só execução, não implementação:
+
+| # | Pendência | Depende de |
+|---|---|---|
+| 1 | Rodar os scripts `001`–`027` num banco (DbUp) e conferir as 85 procedures geradas por `sp_Create_Merge_Procedure`, incluindo as FKs em cascata (produtos, pedidos de venda e notas) | Banco com o `Script003` real (credenciais novas, decisão 8) |
+| 2 | Rodar cada rota pelo host Hangfire, na ordem da §9 (`Branches` primeiro), e conferir bulk, merges, `auditing.Logs/Messages/Records` e a segunda execução incremental (janela por `MAX(maxChangeFilterDate)`) | 1 |
+| 3 | Cargas iniciais que não foram rodadas: 188 mil PF (`PostSearchCustomers`), 10 meses de produtos e duplicatas, 5 meses de notas (observar tempo e tamanho das páginas) | 2 |
+| 4 | Comissões pagas nunca foram lidas com dados reais (só o registro sintético do swagger); conferir quando houver fechamento | 2 |
+| 5 | `referencedInvoices` comentado no `expand` das notas: `TotvsInvoicesItemsProductsReferenced` fica vazia até a Totvs corrigir o 400 ou o contorno ser religado (§5.2.1) | Totvs |
+
+Fases 3 (sob demanda) e 4 (README e `Responsed Jsons`) continuam opcionais e não iniciadas.
