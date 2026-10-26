@@ -47,6 +47,9 @@ namespace Application.Totvs.Services
         // para uma falha da API não descartar a carga inteira (a próxima execução continua do MAX(maxChangeFilterDate))
         private const int WindowDays = 7;
 
+        // primeira carga da matriz (sem registros): janela de 30 dias, como em notas, pedidos e pessoas; depois volta para 7
+        private const int InitialWindowDays = 30;
+
         private const string Expand = "observations,details,barCodes,classifications,additionalFields,composition,suppliers,manufacturers," +
             "referenceCodeSequences,webData,webDetail,referenceCategories,measurementTableOmni,branchesProductBlocked,conservationInstructions,integrationGroupCodes";
 
@@ -86,13 +89,14 @@ namespace Application.Totvs.Services
 
                         var endDate = _totvsService.GetBatchTime();
 
-                        // as datas da Totvs são do horário local, sem fuso (o "Z" é ignorado pela API, testado). Banco vazio: 10 meses
+                        // as datas da Totvs são do horário local, sem fuso (o "Z" é ignorado pela API, testado). Banco vazio: desde 2000
                         var lastChange = await _totvsProductsRepository.GetSkusLastChange(company.doc_company!, baseBranchCode);
-                        var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : endDate.AddMonths(-10);
+                        var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : new DateTime(2000, 1, 1);
+                        var windowDays = lastChange.HasValue ? WindowDays : InitialWindowDays;
 
-                        for (var windowStart = since; windowStart < endDate; windowStart = windowStart.AddDays(WindowDays))
+                        for (var windowStart = since; windowStart < endDate; windowStart = windowStart.AddDays(windowDays))
                         {
-                            var windowEnd = windowStart.AddDays(WindowDays) < endDate ? windowStart.AddDays(WindowDays) : endDate;
+                            var windowEnd = windowStart.AddDays(windowDays) < endDate ? windowStart.AddDays(windowDays) : endDate;
 
                             var references = new List<Domain.Totvs.Dtos.Reads.Products.Reference>();
                             var referencesJson = new Dictionary<int, string>();

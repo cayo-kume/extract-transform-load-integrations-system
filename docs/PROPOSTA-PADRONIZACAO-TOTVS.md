@@ -208,15 +208,17 @@ Cada método segue o mesmo desenho do `GetTickets`/`GetServices` do Movidesk, es
    `ITotvsService.GetToken` (credenciais e token em cache, ver §4.4);
 3. calcula a janela **a partir do banco**: `MAX(maxChangeFilterDate)` do recurso para a empresa, menos uma folga
    (ex.: 1 hora). É o mesmo desenho do `GetTicketsLastUpdate` do Movidesk. Hoje clientes e pessoas jurídicas
-   releem **tudo desde 2000** a cada execução. Com o banco vazio, vale a carga inicial **decidida: as janelas de
-   hoje**:
+   releem **tudo desde 2000** a cada execução. Com o banco vazio, vale a carga inicial **decidida** (revisada em
+   26/10/2026, decisão 3 da §10.1):
 
    | Recurso | Carga inicial (banco vazio) |
    |---|---|
-   | Clientes PF e pessoas jurídicas | desde `2000-01-01` |
-   | Produtos e duplicatas | últimos 10 meses |
+   | Clientes PF, pessoas jurídicas e vendedores | desde `2000-01-01` |
+   | Produtos | desde `2000-01-01`, em fatias de **30 dias** na carga inicial e de 7 dias nas execuções seguintes (§5.2.4) |
+   | Notas fiscais e pedidos de venda | desde `2025-01-01` |
+   | Pedidos de compra | últimos 5 meses |
+   | Duplicatas | últimos 10 meses |
    | Comissões pagas | últimos 10 meses **pela data do fechamento** (a rota não tem filtro de alteração; a janela é relida a cada execução, §5.2.7) |
-   | Notas fiscais, pedidos de compra, pedidos de venda e vendedores | últimos 5 meses |
    | Filiais | desde `2000-01-01` (a rota aceita `StartChangeDate`/`EndChangeDate`, §5.2.2) |
 
 4. pagina a busca com **todas as lojas da holding** (multiempresa), lidas de `totvs.TotvsBranches`
@@ -580,7 +582,8 @@ enviados, como nas notas. Os enums vêm pelo nome na resposta (`"Female"`, `"Not
     ~50 s. Também veio um 502 em 13 s e uma resposta truncada no meio do JSON. Por isso: `pageSize` **200**, uma
     nova tentativa em 502/503/504 (aplicada também a filiais e vendedores) e resposta inválida tratada como falha;
   * **Volume da carga inicial.** Em 5 meses o `count` é de ~20 mil referências por marca (com ou sem `inBranchInfo`);
-    em 1 dia, ~100. A carga inicial (10 meses) é lida em **fatias de 7 dias**, e cada fatia é gravada ao terminar:
+    em 1 dia, ~100. A carga inicial (desde 2000) é lida em **fatias de 30 dias** e as execuções seguintes em fatias
+    de 7 dias; cada fatia é gravada ao terminar:
     uma falha interrompe só o resto, e a próxima execução continua do `MAX(maxChangeFilterDate)`;
   * **A página volta com menos itens que o `pageSize`** (675 de 1000, 177 de 200, 88 de 106): o fim da leitura é o
     `totalPages`, não uma página curta;
@@ -971,7 +974,7 @@ para cada service, que só é ligado no host e no controller quando está pronto
 * `ITotvsSellersService`/`TotvsSellersService.PostSearchSellers`, no mesmo desenho do `GetBranchesList`:
   `POST seller/v2/search` com `branchCodeList` = **todas as lojas de `TotvsBranches`** (sem lojas, a empresa é
   pulada com mensagem: o `GetBranchesList` tem de rodar antes), janela por `MAX(maxChangeFilterDate) - 1 h` (banco
-  vazio: 5 meses), datas sem fuso, `pageSize` 500, sem `expand` (a rota não tem), 401/429 com uma nova tentativa,
+  vazio: desde 2000), datas sem fuso, `pageSize` 500, sem `expand` (a rota não tem), 401/429 com uma nova tentativa,
   cache `Totvs:Sellers:<doc_company>`, validação, gravação, `auditing.Records` e `finally`;
 * `ITotvsService.GetBranchCodes` + `ITotvsRepository.GetBranchCodes` + `CreateGetBranchCodesQuery`, sem cache, para
   os próximos services usarem as lojas do mesmo jeito;
@@ -993,7 +996,8 @@ para cada service, que só é ligado no host e no controller quando está pronto
   `filter.classifications` = classificação 6000 com o setor da marca (`2` Misha, `4` Open Era), `change.branchInfoCodeList` = as
   lojas da marca (`ITotvsService.GetBrandBranchCodes`: mesma raiz de CNPJ da matriz em `TotvsBranches`), `expand`
   completo com `measurementTableOmniType = 2`, `pageSize` 200, janela por `MAX(maxChangeFilterDate)` da matriz - 1 h
-  (banco vazio: 10 meses) lida em fatias de 7 dias, cada fatia gravada com o seu horário de lote, cache
+  (banco vazio: desde 2000) lida em fatias de 30 dias na carga inicial e de 7 dias depois, cada fatia gravada com o
+  seu horário de lote, cache
   `Totvs:Skus:<doc_company>:<matriz>`, validação, `auditing.Records` (chave `matriz|referenceId`) e `finally`;
 * 21 DTOs em `Dtos/Reads/Products`, 22 entidades em `Entities/Reads/Products` (uma por tabela, com `doc_company`,
   horário do lote, `branchInfoCode` e anuláveis), 19 validadores em `Validations/Products`;
@@ -1042,8 +1046,8 @@ para cada service, que só é ligado no host e no controller quando está pronto
 * `TotvsPurchaseOrdersService` e `TotvsSalesOrdersService`, no mesmo desenho dos anteriores: `branchCodeList`
   (obrigatório) = todas as lojas de `TotvsBranches`, `expand` da documentação (compra: `items,requests`; venda: os 10
   grupos, que já batiam no código antigo), `pageSize` 100 (compra) e 500 (venda), janela por
-  `MAX(maxChangeFilterDate) - 1 h` (banco vazio: 5 meses) em fatias de 30 dias, nova tentativa em 401/429/502/503/504,
-  cache `Totvs:PurchaseOrders` / `Totvs:SalesOrders` por empresa com chave (loja, número), validação,
+  `MAX(maxChangeFilterDate) - 1 h` (banco vazio: 5 meses na compra, desde 01/01/2025 na venda) em fatias de 30 dias,
+  nova tentativa em 401/429/502/503/504, cache `Totvs:PurchaseOrders` / `Totvs:SalesOrders` por empresa com chave (loja, número), validação,
   `auditing.Records` (chave `loja|número`) e `finally`;
 * DTOs, entidades e validadores em `Dtos/Reads`, `Entities/Reads` e `Validations` de `PurchaseOrders` (3 tabelas) e
   `SalesOrders` (11 tabelas), gerados de uma especificação só, como em pessoas; repositórios
@@ -1084,7 +1088,7 @@ para cada service, que só é ligado no host e no controller quando está pronto
 **Fase 2, service 7: `PostSearchInvoices` implementado (23/10/2026)** (commit `f615deb`, 26/10/2026). Com ele a fase 2 está completa:
 
 * `TotvsInvoicesService.PostSearchInvoices` no mesmo desenho dos anteriores: `branchCodeList` = todas as lojas,
-  `expand` da documentação, `pageSize` 100, janela por `MAX(maxChangeFilterDate) - 1 h` (banco vazio: 5 meses) em
+  `expand` da documentação, `pageSize` 100, janela por `MAX(maxChangeFilterDate) - 1 h` (banco vazio: desde 01/01/2025) em
   fatias de 30 dias, chave loja + sequência + data, cache `Totvs:Invoices:<doc_company>`, nova tentativa em
   401/429/502/503/504, validação, `auditing.Records` e `finally`. `referencedInvoices` fica **comentado** no
   `expand` por causa do `400` da API; o contorno (reler a página em partes, §5.2.1, com as funções locais `Search` e
@@ -1134,7 +1138,7 @@ Ordem sugerida dos services (filiais primeiro, porque as outras buscas leem as f
 |---|---|---|---|
 | 1 | Schema das tabelas | Novo schema **`totvs`** (`totvs.Totvs*`), com bulk em `untreated` | §5.0 |
 | 2 | Scripts `001`/`002` já rodaram? | **Não**: numeração refeita no formato do Movidesk, com scripts por service | §5.4 |
-| 3 | Carga inicial (banco vazio) | **Janelas de hoje**: pessoas desde 2000, produtos e contas a pagar 10 meses, demais 5 meses | §4.2 |
+| 3 | Carga inicial (banco vazio) | Decidido em 23/10: as janelas de hoje. **Revisado em 26/10/2026**: pessoas, vendedores e produtos desde 2000 (produtos em fatias de 30 dias na carga inicial); notas e pedidos de venda desde 01/01/2025; pedidos de compra 5 meses; duplicatas e comissões 10 meses | §4.2 |
 | 4 | Filiais lidas | **Todas as da empresa**, lidas de `totvs.TotvsBranches` (sem coluna de filiais em `TotvsParameters`) | §4.2, §5.1 |
 | 5 | Chave das notas fiscais | **`doc_company` + `branchCode` + `invoiceSequence` + `invoiceDate`**, conferida no swagger da API Fiscal | §5.2.1 |
 | 6 | `[Authorize]` no controller | **Comentado**, como Movidesk e AfterSale | §6.4 |
@@ -1172,7 +1176,7 @@ O que falta é só execução, não implementação:
 |---|---|---|
 | 1 | Rodar os scripts `001`–`027` num banco (DbUp) e conferir as 85 procedures geradas por `sp_Create_Merge_Procedure`, incluindo as FKs em cascata (produtos, pedidos de venda e notas) | Banco com o `Script003` real (credenciais novas, decisão 8) |
 | 2 | Rodar cada rota pelo host Hangfire, na ordem da §9 (`Branches` primeiro), e conferir bulk, merges, `auditing.Logs/Messages/Records` e a segunda execução incremental (janela por `MAX(maxChangeFilterDate)`) | 1 |
-| 3 | Cargas iniciais que não foram rodadas: 188 mil PF (`PostSearchCustomers`), 10 meses de produtos e duplicatas, 5 meses de notas (observar tempo e tamanho das páginas) | 2 |
+| 3 | Cargas iniciais que não foram rodadas: 188 mil PF (`PostSearchCustomers`), produtos e vendedores desde 2000, notas e pedidos de venda desde 01/01/2025, 10 meses de duplicatas (observar tempo e tamanho das páginas) | 2 |
 | 4 | Comissões pagas nunca foram lidas com dados reais (só o registro sintético do swagger); conferir quando houver fechamento | 2 |
 | 5 | `referencedInvoices` comentado no `expand` das notas: `TotvsInvoicesItemsProductsReferenced` fica vazia até a Totvs corrigir o 400 ou o contorno ser religado (§5.2.1) | Totvs |
 
