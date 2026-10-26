@@ -1,0 +1,221 @@
+{
+  "count": 10140,
+  "totalPages": 5070,
+  "hasNext": true,
+  "totalItems": 2,
+  "items": [
+    {
+      "ReferenceCode": "Exemplo Ref",
+      "referenceId": 1231,
+      "lastReferenceCode": "000",
+      "insertDate": "2026-10-19T14:07:38",
+      "maxChangeFilterDate": "2026-10-19T14:21:54",
+      "name": "Exemplo name",
+      "description": null,
+      "descriptive": null,
+      "gridCode": 1238,
+      "grid": [
+        "00",
+        "00"
+      ],
+      "weight": 855.47,
+      "height": null,
+      "width": null,
+      "length": null,
+      "packWeight": 507.04,
+      "packHeight": null,
+      "packWidth": null,
+      "packLength": null,
+      "observations": [
+        {
+          "observation": "Exemplo observation"
+        },
+        {
+          "observation": "Exemplo observation"
+        }
+      ],
+      "details": [],
+      "composition": [],
+      "referenceCategories": [],
+      "integrationGroupCodes": [],
+      "colors": [
+        {
+          "code": "000",
+          "name": "Exemplo name",
+          "groupName": null,
+          "auxiliaryCode": null,
+          "auxiliaryName": null,
+          "pantoneCode": null,
+          "configurableField": "",
+          "products": [
+            {
+              "code": 1245,
+              "sku": "4329003527031",
+              "name": "Exemplo name",
+              "ncm": "72766507",
+              "cst": "0",
+              "cest": null,
+              "prefixEanGtin": null,
+              "measuredUnit": "PC",
+              "size": "00",
+              "weight": 855.47,
+              "isActive": true,
+              "insertDate": "2026-10-19T14:07:39",
+              "isFinishedProduct": true,
+              "isRawMaterial": false,
+              "isBulkMaterial": false,
+              "isOwnProduction": false,
+              "isKit": false,
+              "integrationProductCode": null,
+              "minimumStockAmount": null,
+              "maximumStockAmount": null,
+              "idealStockAmount": null,
+              "SalesStartDate": null,
+              "SalesEndDate": null,
+              "BillingForecastDate": null,
+              "isBlocked": false,
+              "balanceValidationType": null,
+              "barCodes": [
+                {
+                  "code": "0492256563161",
+                  "quantity": 1,
+                  "isMainCode": true
+                }
+              ],
+              "classifications": [
+                {
+                  "typeCode": 1252,
+                  "typeName": "Exemplo ",
+                  "typeNameAux": null,
+                  "code": "0",
+                  "name": "Exemplo ",
+                  "nameAux": null
+                },
+                {
+                  "typeCode": 1259,
+                  "typeName": "Exemplo typeName",
+                  "typeNameAux": null,
+                  "code": "0",
+                  "name": "Exemplo ",
+                  "nameAux": null
+                }
+              ],
+              "additionalFields": [],
+              "suppliers": [
+                {
+                  "code": 1266,
+                  "cpfCnpj": "57873625454832",
+                  "name": "Exemplo name",
+                  "originalCode": null,
+                  "isDefault": true
+                }
+              ],
+              "manufacturers": [],
+              "referenceCodeSequences": [
+                {
+                  "code": "Exemplo ",
+                  "name": "Exemplo ",
+                  "referenceId": 1273,
+                  "parentCode": 1280
+                },
+                {
+                  "code": "Exemplo ",
+                  "name": "Exemplo ",
+                  "referenceId": 1287,
+                  "parentCode": 1280
+                }
+              ],
+              "webData": [],
+              "webDetail": [],
+              "branchesProductBlocked": [],
+              "conservationInstructions": []
+            },
+            {
+              "code": 1294,
+              "sku": "3801301984769",
+              "name": "Exemplo name",
+              "ncm": "72766507",
+              "cst": "0",
+              "cest": null,
+              "prefixEanGtin": null,
+              "measuredUnit": "PC",
+              "size": "00",
+              "weight": 855.47,
+              "isActive": true,
+              "insertDate": "2026-10-19T14:07:39",
+              "isFinishedProduct": true,
+              "isRawMaterial": false,
+              "isBulkMaterial": false,
+              "isOwnProduction": false,
+              "isKit": false,
+              "integrationProductCode": null,
+              "minimumStockAmount": null,
+              "maximumStockAmount": null,
+              "idealStockAmount": null,
+              "SalesStartDate": null,
+              "SalesEndDate": null,
+              "BillingForecastDate": null,
+              "isBlocked": false,
+              "balanceValidationType": null,
+              "barCodes": [
+                {
+                  "code": "1121294748407",
+                  "quantity": 1,
+                  "isMainCode": true
+                }
+              ],
+              "classifications": [
+                {
+                  "typeCode": 1252,
+                  "typeName": "Exemplo ",
+                  "typeNameAux": null,
+                  "code": "0",
+                  "name": "Exemplo ",
+                  "nameAux": null
+                },
+                {
+                  "typeCode": 1259,
+                  "typeName": "Exemplo typeName",
+                  "typeNameAux": null,
+                  "code": "0",
+                  "name": "Exemplo ",
+                  "nameAux": null
+                }
+              ],
+              "additionalFields": [],
+              "suppliers": [
+                {
+                  "code": 1266,
+                  "cpfCnpj": "57873625454832",
+                  "name": "Exemplo name",
+                  "originalCode": null,
+                  "isDefault": true
+                }
+              ],
+              "manufacturers": [],
+              "referenceCodeSequences": [
+                {
+                  "code": "Exemplo ",
+                  "name": "Exemplo ",
+                  "referenceId": 1273,
+                  "parentCode": 1280
+                },
+                {
+                  "code": "Exemplo ",
+                  "name": "Exemplo ",
+                  "referenceId": 1287,
+                  "parentCode": 1280
+                }
+              ],
+              "webData": [],
+              "webDetail": [],
+              "branchesProductBlocked": [],
+              "conservationInstructions": []
+            }
+          ],
+          "measurementTableOmni": []
+        }
+      ]
+    }
+  ]
+}

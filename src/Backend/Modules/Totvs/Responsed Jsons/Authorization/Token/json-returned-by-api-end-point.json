@@ -1,0 +1,6 @@
+{
+  "access_token": "Exemplo access_to",
+  "token_type": "Bearer",
+  "expires_in": 3600,
+  "refresh_token": "Exemplo refresh_token"
+}

@@ -1,0 +1,70 @@
+{
+  "count": 25,
+  "totalPages": 13,
+  "hasNext": true,
+  "totalItems": 2,
+  "items": [
+    {
+      "code": 1,
+      "description": "Exemplo descripti",
+      "cnpj": "10293451001044",
+      "personCode": 1000,
+      "personName": "Exemplo personNam",
+      "fantasyName": "Exemplo fantasy",
+      "branchGroupName": "Exemplo branchGro",
+      "lastchange": "2022-01-01T00:00:00",
+      "maxChangeFilterDate": "2026-02-12T09:42:36",
+      "addresses": [
+        {
+          "sequenceCode": 1,
+          "addressTypeCode": 0,
+          "addressType": "Commercial",
+          "publicPlace": "Exemplo ",
+          "address": "Exemplo ",
+          "addressNumber": 1007,
+          "complement": "Exemplo complement",
+          "neighborhood": "Exemplo ne",
+          "ibgeCityCode": 1014,
+          "cityName": "Exemplo c",
+          "stateAbbreviation": "SP",
+          "cep": "26183392",
+          "bcbCountryCode": 1021,
+          "countryName": "Exemplo ",
+          "postOfficeBox": null,
+          "reference": null
+        }
+      ]
+    },
+    {
+      "code": 2,
+      "description": "Exemplo description",
+      "cnpj": "55247564181220",
+      "personCode": 1028,
+      "personName": "Exemplo personName",
+      "fantasyName": "Exemplo fantasyName",
+      "branchGroupName": "Exemplo branchGroupNam",
+      "lastchange": "2026-02-12T10:21:07",
+      "maxChangeFilterDate": "2026-02-12T10:21:07",
+      "addresses": [
+        {
+          "sequenceCode": 1,
+          "addressTypeCode": 0,
+          "addressType": "Commercial",
+          "publicPlace": "Exemplo ",
+          "address": "Exemplo address",
+          "addressNumber": 1035,
+          "complement": "Exemplo comp",
+          "neighborhood": "Exemplo neighborhoo",
+          "ibgeCityCode": 1014,
+          "cityName": "Exemplo c",
+          "stateAbbreviation": "SP",
+          "cep": "72420806",
+          "bcbCountryCode": 1021,
+          "countryName": "Exemplo ",
+          "postOfficeBox": null,
+          "reference": null
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "count": 135,
+  "totalPages": 68,
+  "hasNext": true,
+  "totalItems": 2,
+  "items": [
+    {
+      "sellerCode": 1,
+      "sellerName": "Exemplo sellerN",
+      "personCode": null,
+      "personName": null,
+      "maxChangeFilterDate": "2026-10-06T17:58:16",
+      "branchInformations": [
+        {
+          "branchCode": 1,
+          "auxiliaryCode": 1,
+          "isInactive": false,
+          "sellerTypeCode": 1,
+          "sellerTypeDescription": "Exemplo "
+        },
+        {
+          "branchCode": 2,
+          "auxiliaryCode": 1,
+          "isInactive": false,
+          "sellerTypeCode": 1,
+          "sellerTypeDescription": "Exemplo "
+        }
+      ],
+      "customers": []
+    },
+    {
+      "sellerCode": 2,
+      "sellerName": "Exemplo sellerNam",
+      "personCode": null,
+      "personName": null,
+      "maxChangeFilterDate": "2026-07-27T13:46:24",
+      "branchInformations": [
+        {
+          "branchCode": 1042,
+          "auxiliaryCode": 2,
+          "isInactive": false,
+          "sellerTypeCode": 1,
+          "sellerTypeDescription": "Exemplo "
+        },
+        {
+          "branchCode": 1049,
+          "auxiliaryCode": 2,
+          "isInactive": false,
+          "sellerTypeCode": 1,
+          "sellerTypeDescription": "Exemplo "
+        }
+      ],
+      "customers": []
+    }
+  ]
+}

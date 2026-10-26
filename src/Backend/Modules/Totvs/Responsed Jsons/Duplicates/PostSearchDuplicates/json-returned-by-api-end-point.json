@@ -1,0 +1,79 @@
+{
+  "count": 722,
+  "totalPages": 361,
+  "hasNext": true,
+  "totalItems": 2,
+  "items": [
+    {
+      "maxChangeFilterDate": "2026-10-19T17:31:25",
+      "branchCode": 1,
+      "duplicateCode": 1686,
+      "supplierCode": 1693,
+      "supplierCpfCnpj": "71713433743046",
+      "installmentCode": 1,
+      "bearerCode": 1700,
+      "entryDate": "2026-10-19T00:00:00",
+      "issueDate": "2026-09-25T00:00:00",
+      "dueDate": "2026-09-25T00:00:00",
+      "settlementDate": "2026-09-25T00:00:00",
+      "arrivalDate": "2026-09-25T00:00:00",
+      "status": "N",
+      "duplicateValue": 261.66,
+      "feesValue": null,
+      "discountValue": null,
+      "paidValue": 781.0,
+      "expense": [
+        {
+          "expenseCode": 1707,
+          "expenseName": "Exemplo expenseName",
+          "costCenterCode": 1714,
+          "proratedPercentage": 463.54,
+          "proratedValue": 313.77
+        },
+        {
+          "expenseCode": 1721,
+          "expenseName": "Exemplo expenseName",
+          "costCenterCode": 1714,
+          "proratedPercentage": 864.34,
+          "proratedValue": 709.57
+        }
+      ],
+      "classifications": [],
+      "inclusionType": 2,
+      "userInclusionCode": 1728,
+      "userInclusionName": "Exemplo userInclusionName"
+    },
+    {
+      "maxChangeFilterDate": "2026-10-23T08:45:34",
+      "branchCode": 1,
+      "duplicateCode": 1735,
+      "supplierCode": 1742,
+      "supplierCpfCnpj": "50591485365800",
+      "installmentCode": 4,
+      "bearerCode": 1700,
+      "entryDate": "2026-10-22T00:00:00",
+      "issueDate": "2026-10-20T00:00:00",
+      "dueDate": "2027-02-17T00:00:00",
+      "settlementDate": null,
+      "arrivalDate": "2026-10-22T00:00:00",
+      "status": "N",
+      "duplicateValue": 408.72,
+      "feesValue": null,
+      "discountValue": null,
+      "paidValue": 0,
+      "expense": [
+        {
+          "expenseCode": 1749,
+          "expenseName": "Exemplo expenseName",
+          "costCenterCode": 6,
+          "proratedPercentage": 1756,
+          "proratedValue": 923.33
+        }
+      ],
+      "classifications": [],
+      "inclusionType": 2,
+      "userInclusionCode": 1763,
+      "userInclusionName": "Exemplo userInclusionName"
+    }
+  ]
+}
