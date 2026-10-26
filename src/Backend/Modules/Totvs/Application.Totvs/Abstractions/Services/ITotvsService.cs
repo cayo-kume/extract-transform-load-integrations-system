@@ -18,6 +18,11 @@ namespace Application.Totvs.Abstractions.Services
         public Task<IEnumerable<Company>> GetCompanys();
 
         /// <summary>
+        /// uma empresa de totvs.TotvsParameters pelo CNPJ (rotas sob demanda); null quando não está cadastrada
+        /// </summary>
+        public Task<Company?> GetCompany(string doc_company);
+
+        /// <summary>
         /// códigos das lojas da empresa em totvs.TotvsBranches (gravadas pelo GetBranchesList), para o branchCodeList das buscas.
         /// Sem cache: uma loja nova vale já na próxima execução
         /// </summary>
@@ -38,5 +43,11 @@ namespace Application.Totvs.Abstractions.Services
         /// tira o token da empresa do cache (ex.: depois de um 401), para o próximo GetToken fazer um novo login
         /// </summary>
         public void RemoveToken(Company company);
+
+        /// <summary>
+        /// registra uma chamada sob demanda à API da Totvs em totvs.TotvsRequests (a rota nunca leva o token; as buscas são POST,
+        /// então o filtro enviado vai em request_body)
+        /// </summary>
+        public void SaveRequest(Domain.Totvs.Enums.EnumJob job, string user_name, string httpMethod, string route, string doc_company, string field_key_value, string? responseBody, bool isSuccess, string? requestBody = null);
     }
 }

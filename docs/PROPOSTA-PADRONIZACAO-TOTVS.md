@@ -787,7 +787,9 @@ escopo.
 ### 5.5 Log de requisições (`totvs.TotvsRequests`)
 
 O Movidesk e o AfterSale só gravam em `*Requests` as chamadas **sob demanda** (com `X-User-Name`). O Totvs não
-tem rotas sob demanda; a tabela entra só se a fase 3 (§9) entrar.
+tinha rotas sob demanda; elas entram na fase 3 (§9), e com elas a tabela `totvs.TotvsRequests` (`Script028`), igual
+à `MovideskRequests`: só inserção, direto no schema `totvs`, com `request_body` sempre preenchido porque as buscas da
+Totvs são `POST` com filtro. A rota gravada nunca leva o token.
 
 ---
 
@@ -849,8 +851,22 @@ está ativo), `[Tags]` por recurso e resposta `Ok("Records integrated successful
 | POST | `ComissionsPaid` | `TotvsAccountsPayable` | `PostSearchComissionsPaid` |
 
 As rotas comentadas `TotvsOperations`, `TotvsPrices`, `TotvsCosts` e `TotvsBalances` chamam métodos que não
-existem (`SearchOperations`, `PostSearchPrices`...) e o `IGeneralService`, que não é do módulo. Elas saem, e
-os recursos entram depois como novos métodos se forem necessários (§9).
+existem (`SearchOperations`, `PostSearchPrices`...) e o `IGeneralService`, que não é do módulo. Elas saem; preços,
+custos e saldos voltam na fase 3 como jobs (§9), e operações é descartada (não existe em nenhum swagger da Totvs,
+decisão 30).
+
+**Rotas sob demanda (fase 3)**, no desenho do `GET Tickets/{docCompany}/{id}` do Movidesk: cabeçalho `X-User-Name`
+obrigatório (até 100), `docCompany` por `^\d{14}$`, resposta `200` gravado, `404` não existe na Totvs e `422` empresa
+não cadastrada ou resposta inválida. Como a API da Totvs não tem rota por chave, cada uma usa a busca `POST ...search`
+com a lista de chave (`personCodeList`, `branchCodeList` + `orderCodeList`...) e `pageSize` 1:
+
+| Verbo | Rota | Busca na API | Método do service |
+|---|---|---|---|
+| GET | `Customers/{docCompany}/{code}` | `individuals/search` com `personCodeList` | `GetCustomerByCode` |
+| GET | `LegalEntities/{docCompany}/{code}` | `legal-entities/search` com `personCodeList` | `GetLegalEntityByCode` |
+| GET | `SalesOrders/{docCompany}/{branchCode}/{orderCode}` | `orders/search` com `branchCodeList` + `orderCodeList` | `GetSalesOrderByKey` |
+| GET | `Invoices/{docCompany}/{branchCode}/{invoiceSequence}` | `invoices/search` com `branchCodeList` + `invoiceSequenceList` | `GetInvoiceByKey` |
+| GET | `Products/{docCompany}/{code}` | `products/search` com `productCodeList` | `GetProductByCode` |
 
 ---
 
@@ -875,7 +891,17 @@ intervalo do job, como no Movidesk).
 | 13007 | `TotvsGetBranchesList` | cadastro | 120 min | `1907` comentado |
 | 13008 | `TotvsPostSearchDuplicates` | documento | 3 min | `1908` comentado |
 | 13009 | `TotvsPostSearchComissionsPaid` | documento | 3 min | `1909` comentado |
+| 13010 | `TotvsGetCustomerByCode` | sob demanda | 0 | fase 3 |
+| 13011 | `TotvsGetLegalEntityByCode` | sob demanda | 0 | fase 3 |
+| 13012 | `TotvsGetSalesOrderByKey` | sob demanda | 0 | fase 3 |
+| 13013 | `TotvsGetInvoiceByKey` | sob demanda | 0 | fase 3 |
+| 13014 | `TotvsGetProductByCode` | sob demanda | 0 | fase 3 |
+| 13015 | `TotvsPostSearchPrices` | cadastro | 3 min | fase 3 |
+| 13016 | `TotvsPostSearchCosts` | cadastro | 3 min | fase 3 |
+| 13017 | `TotvsPostSearchBalances` | documento | 3 min | fase 3 |
 | 13500+ | `sp_Totvs<Tabela>_Sync` | procedure | o do job de origem | não existem (`IdType = 1`, `IdParent` = job de origem) |
+
+Os jobs sob demanda têm `IntervalTimeInMinutes = 0` (não são recorrentes), como no Movidesk.
 
 O nome do job é `Totvs` + o nome do método (mantido, §2.3), como no Movidesk (`MovideskGetTickets`). Os ids
 ficam reservados agora, mas cada job só entra no banco junto com o seu service (§5.4).
@@ -1107,11 +1133,31 @@ para cada service, que só é ligado no host e no controller quando está pronto
   10 tabelas (7.745 itens, 35.560 impostos, 1.765 pagamentos) e as colunas das 10 `DataTable` iguais às do `Script025`;
 * **não verificado:** scripts, procedures e execução pelo host.
 
+**Fase 3, parte 1: base sob demanda, `GetCustomerByCode` e `GetLegalEntityByCode` implementados (26/10/2026)**, ainda sem commit:
+
+* escopo da fase 3 decidido (decisões 28 a 31 da §10.1): cinco leituras sob demanda (PF, PJ, pedido de venda, nota e
+  produto, §6.4), preços, custos e saldos como jobs de 3 min no padrão da fase 2, e operações descartada;
+* base: `Entities/Writes/Requests/Request` → `totvs.TotvsRequests` (`Script028`), `ITotvsRepository.InsertIntoTotvsRequests`,
+  `ITotvsService.GetCompany(doc_company)` (filtra o `GetCompanys` em cache) e `ITotvsService.SaveRequest` (igual ao
+  Movidesk, com `requestBody`);
+* `TotvsPeopleService.GetCustomerByCode` e `GetLegalEntityByCode`: `POST .../search` com `personCodeList = [code]`,
+  `pageSize` 1, o mesmo `expand` e `option.branchStaticDataList` da busca por janela, e **`filter.change` desde 2000 com
+  as mesmas flags**: sem ele o `maxChangeFilterDate` vem nulo e a pessoa seria regravada na próxima execução do job
+  (testado; sem as flags a API responde 400). A pessoa é gravada sempre pelo mesmo `SaveCustomers`/`SaveLegalEntities`
+  do job (validação, `auditing.Records`) e atualiza o cache do job se ele estiver carregado; `items` vazio é "não
+  existe" (`false`); a chamada vai para `TotvsRequests` em todos os caminhos que chegam à API, inclusive exceção;
+* `EnumJob` 13010 e 13011, `Script029` (jobs sob demanda, intervalo 0), rotas `GET TotvsJobs/Totvs/Customers/{docCompany}/{code}`
+  e `GET .../LegalEntities/{docCompany}/{code}` com `X-User-Name` e `code:int:min(1)`;
+* conferido com o console descartável rodando os métodos de verdade (API real, repositório e log falsos): PF 58509 e
+  PJ 58631 gravadas com filhas e `maxChangeFilterDate` preenchido, código inexistente devolve `false` sem gravar,
+  empresa não cadastrada devolve `null` sem chamar a API, e cada chamada gera um registro de `TotvsRequests`;
+* **não verificado:** `Script028`/`029` em banco e as rotas pelo host.
+
 | Fase | Entrega | Resultado |
 |---|---|---|
 | **1. Base** | §2 (csproj, nomes de classes, namespaces), `TotvsService` comum (§4.1: horário do lote, parâmetros e token em cache), remoção da `TotvsBaseSyncService`, §5.0–5.1 e `Script001`–`003` (schema, parâmetros com a holding, app), §6.1–6.3 (DI, `ISharedRepository`, host). Os services ainda não migrados ficam fora do DI e do controller | Módulo compila no Shared e sobe no host |
 | **2. Um service por vez** | Para o service da vez: o fluxo da §4.2 escrito no próprio método (janela pelo banco, lojas de `TotvsBranches`, `SendAsync`, `finally`), DTOs `Reads` e entidades (§3), validadores (§4.3), cache (§4.4), queries (§4.5), repositório (§6.2), trio de scripts (§5.4), job (§7), rota no controller (§6.4) e as correções de §8 que tocam nele | Recurso lido no padrão, auditável e incremental |
-| **3. Opcional** | Leituras sob demanda por código (`GET Customers/{docCompany}/{code}`, com `X-User-Name`, CNPJ por `^\d{14}$` e `totvs.TotvsRequests`); recursos das rotas removidas (operações, preços, custos, saldos) | — |
+| **3. Sob demanda e valores** (decidida em 26/10/2026) | Leituras sob demanda por chave (§6.4: PF, PJ, pedido de venda, nota e produto, com `X-User-Name`, CNPJ por `^\d{14}$` e `totvs.TotvsRequests`); preços, custos e saldos como jobs de 3 min (`prices`, `costs` e `balances/search`, uma chamada por marca como as referências); operações descartada | Registro único gravado sob demanda e auditado; valores por produto incrementais |
 | **4. Docs** | `README.md` do módulo no formato do Movidesk (arquitetura, services, fluxo, scripts, endpoints, jobs, configuração) e pasta `Responsed Jsons` com uma resposta de exemplo por rota (dados fictícios) | — |
 
 ---
@@ -1127,6 +1173,17 @@ Ordem sugerida dos services (filiais primeiro, porque as outras buscas leem as f
 | 5 | `PostSearchPurchaseOrders` e `PostSearchSalesOrders` | **Implementados** (falta rodar em banco). Compra: `requests` no `expand` (§5.2.6). Venda: o `expand` do código bate com o swagger, e o `pageSize` aceita até 500 (hoje 100) |
 | 6 | `PostSearchDuplicates` e `PostSearchComissionsPaid` | **Implementados** (falta rodar em banco). Duplicatas com a chave por parcela; comissões refeitas pelo schema (§5.2.7) |
 | 7 | `PostSearchInvoices` | **Implementado** (falta rodar em banco). Chave e `expand` do swagger, com `referencedInvoices` comentado por causa do `400` da API (§5.2.1) |
+
+Ordem da fase 3 (a base sob demanda entra com o primeiro):
+
+| Ordem | Entrega | Observação |
+|---|---|---|
+| 1 | `TotvsRequests` + `GetCustomerByCode` e `GetLegalEntityByCode` | **Implementados** (falta rodar em banco). `Script028`/`029`, jobs 13010 e 13011 |
+| 2 | `GetSalesOrderByKey` e `GetInvoiceByKey` | Reusam `SaveSalesOrders`/`SaveInvoices`; jobs 13012 e 13013 |
+| 3 | `GetProductByCode` | `products/search` com `productCodeList`, grava em `TotvsSkus` e filhas; job 13014 |
+| 4 | `PostSearchPrices` | `prices/search` com `change.inPrice`, `option.prices` por loja; tabelas `TotvsPrices` e filhas; job 13015 |
+| 5 | `PostSearchCosts` | `costs/search` com `change.inCost`; `TotvsCosts`; job 13016 |
+| 6 | `PostSearchBalances` | `balances/search` com `change.inStock`; `TotvsBalances` e `TotvsBalancesLocations`; job 13017 |
 
 ---
 
@@ -1166,6 +1223,11 @@ Ordem sugerida dos services (filiais primeiro, porque as outras buscas leem as f
 
 | 27 | Separação das marcas nos produtos | **Filtro pela classificação 6000 (SETOR)** em cada chamada; códigos conferidos na API: `2` Misha, `4` Open Era (não `1`/`101`) | §5.2.4 |
 
+| 28 | Escopo das leituras sob demanda (fase 3, 26/10/2026) | **PF e PJ por código, pedido de venda por loja + número, nota por loja + sequência e produto por código**, via as buscas `POST ...search` com lista de chave | §6.4, §9 |
+| 29 | Preços, custos e saldos | **Os três entram como jobs de 3 min** no padrão da fase 2 (`PostSearchPrices`, `PostSearchCosts`, `PostSearchBalances`) | §7, §9 |
+| 30 | Operações (`TotvsOperations`) | **Descartada**: não existe rota de operações em nenhum swagger da Totvs; o `SearchOperations` do código antigo nunca existiu | §6.4 |
+| 31 | `filter.change` nas buscas por chave | **Enviado desde 2000 com as flags da busca por janela**, para o `maxChangeFilterDate` vir preenchido (sem ele a pessoa seria regravada pelo job; sem as flags a API responde 400) | §9 |
+
 ### 10.2 Pendentes
 
 Conferido em 26/10/2026: a entrega da fase 2 (fluxo da §4.2, DTOs, entidades, validadores, cache, queries,
@@ -1180,4 +1242,5 @@ O que falta é só execução, não implementação:
 | 4 | Comissões pagas nunca foram lidas com dados reais (só o registro sintético do swagger); conferir quando houver fechamento | 2 |
 | 5 | `referencedInvoices` comentado no `expand` das notas: `TotvsInvoicesItemsProductsReferenced` fica vazia até a Totvs corrigir o 400 ou o contorno ser religado (§5.2.1) | Totvs |
 
-Fases 3 (sob demanda) e 4 (README e `Responsed Jsons`) continuam opcionais e não iniciadas.
+Fase 3 iniciada em 26/10/2026 (parte 1 implementada; partes 2 a 6 na ordem da §9). Fase 4 (README e `Responsed Jsons`)
+continua opcional e não iniciada.

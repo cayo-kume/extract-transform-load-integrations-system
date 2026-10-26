@@ -19,5 +19,17 @@
         /// sincroniza as pessoas jurídicas pelo POST person/v2/legal-entities/search, com as estatísticas de todas as lojas; só grava as novas ou alteradas
         /// </summary>
         public Task<bool?> PostSearchLegalEntity();
+
+        /// <summary>
+        /// busca uma pessoa física por código (POST person/v2/individuals/search com personCodeList) e grava sempre, sem consultar
+        /// o cache; a chamada é registrada em totvs.TotvsRequests. true gravada, false não existe na Totvs, null empresa não
+        /// cadastrada ou resposta inválida
+        /// </summary>
+        public Task<bool?> GetCustomerByCode(string user_name, string doc_company, int code);
+
+        /// <summary>
+        /// busca uma pessoa jurídica por código (POST person/v2/legal-entities/search com personCodeList); mesmo contrato do GetCustomerByCode
+        /// </summary>
+        public Task<bool?> GetLegalEntityByCode(string user_name, string doc_company, int code);
     }
 }

@@ -33,5 +33,17 @@ namespace Infrastructure.Totvs.Repositorys
 
             return (await _coreRepository.GetRecords<int>(sql)).ToList();
         }
+
+        /// <summary>
+        /// log das chamadas sob demanda: só inserção, então vai direto para o schema totvs (sem untreated/merge)
+        /// </summary>
+        public bool InsertIntoTotvsRequests(Domain.Totvs.Entities.Writes.Requests.Request request)
+        {
+            var requestsTable = _coreRepository.CreateSystemDataTable(entity: new Domain.Totvs.Entities.Writes.Requests.Request(), tableName: "TotvsRequests");
+
+            _coreRepository.FillSystemDataTable(requestsTable, [request]);
+
+            return _coreRepository.BulkInsertIntoTableRaw(requestsTable, "totvs");
+        }
     }
 }

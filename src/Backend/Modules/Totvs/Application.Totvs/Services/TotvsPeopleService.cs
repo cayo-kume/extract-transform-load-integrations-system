@@ -653,6 +653,360 @@ namespace Application.Totvs.Services
         }
 
         /// <summary>
+        /// busca uma pessoa física por código, grava nas tabelas de pessoas (sempre, sem consultar o cache)
+        /// e registra a chamada em totvs.TotvsRequests
+        /// </summary>
+        public async Task<bool?> GetCustomerByCode(string user_name, string doc_company, int code)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsGetCustomerByCode);
+
+            // rota registrada no log de requisições (sem o token); o filtro vai no corpo
+            const string route = "person/v2/individuals/search";
+            bool? result;
+
+            try
+            {
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                {
+                    // nenhuma chamada à API: não há o que registrar em TotvsRequests (igual ao Movidesk)
+                    _logger.AddMessage($"Empresa {doc_company} não cadastrada em totvs.TotvsParameters.");
+                    return null;
+                }
+
+                // as estatísticas só vêm com option.branchStaticDataList: todas as lojas da holding (sem lojas, a pessoa vem sem estatísticas)
+                var branchCodes = await _totvsService.GetBranchCodes(company);
+
+                // o change desde 2000 (com as mesmas flags da busca por janela) é o que faz o maxChangeFilterDate vir preenchido (testado):
+                // sem ele a pessoa seria regravada na próxima execução do job
+                var requestBody = JsonConvert.SerializeObject(new
+                {
+                    filter = new
+                    {
+                        personCodeList = new[] { code },
+                        change = new
+                        {
+                            startDate = "2000-01-01T00:00:00",
+                            endDate = $"{_totvsService.GetBatchTime():yyyy-MM-ddTHH:mm:ss}",
+                            inClassification = true,
+                            inAddress = true,
+                            inPhone = true,
+                            inObservation = true,
+                            inPerson = true,
+                            inCustomer = true,
+                            inSupplier = true,
+                            inRepresentative = true,
+                            inPurchasingGuide = true,
+                            inShippingCompany = true,
+                            inReference = true,
+                            inContact = true,
+                            inStatistic = true,
+                            inCustomerObservation = true,
+                            inEmployee = true,
+                            inPreference = true
+                        }
+                    },
+                    option = new { branchStaticDataList = branchCodes },
+                    page = 1,
+                    pageSize = 1,
+                    expand = CustomersExpand
+                });
+
+                // uma nova tentativa: 401 renova o token, 429 espera o Retry-After e 502/503/504 espera 10 s
+                ApiResponse? response = null;
+
+                try
+                {
+                    for (var attempt = 1; attempt <= 2; attempt++)
+                    {
+                        var token = await _totvsService.GetToken(company);
+
+                        if (token is null)
+                            break;   // a mensagem do login já foi para o log
+
+                        using var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
+
+                        response = await _apiClient.SendAsync(
+                            HttpMethod.Post,
+                            route,
+                            content,
+                            headers: new Dictionary<string, string> { { "Authorization", $"Bearer {token}" } }
+                        );
+
+                        if (attempt == 1 && response.StatusCode == 401)
+                        {
+                            _totvsService.RemoveToken(company);
+                            continue;
+                        }
+
+                        if (attempt == 1 && response.StatusCode == 429)
+                        {
+                            var seconds = response.Headers.TryGetValue("Retry-After", out var retryAfter) && int.TryParse(retryAfter, out var value) ? value : 5;
+                            await Task.Delay(TimeSpan.FromSeconds(Math.Clamp(seconds, 1, 60)));
+                            continue;
+                        }
+
+                        if (attempt == 1 && response.StatusCode is 502 or 503 or 504)
+                        {
+                            await Task.Delay(TimeSpan.FromSeconds(10));
+                            continue;
+                        }
+
+                        break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // registra a tentativa mesmo quando a chamada não chega a ter resposta (timeout, rede)
+                    _totvsService.SaveRequest(EnumJob.TotvsGetCustomerByCode, user_name, "POST", route, doc_company, code.ToString(), $"Exceção ao chamar a API: {ex.Message}", false, requestBody);
+                    throw;
+                }
+
+                if (response is null)
+                {
+                    // login falhou: nenhuma chamada à busca
+                    _totvsService.SaveRequest(EnumJob.TotvsGetCustomerByCode, user_name, "POST", route, doc_company, code.ToString(), null, false, requestBody);
+                    return null;
+                }
+
+                if (!response.IsSuccess)
+                {
+                    var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
+                    _logger.AddMessage($"Erro da API Totvs em {route} (empresa {doc_company}, pessoa física {code}): {response.StatusCode} {body}");
+
+                    _totvsService.SaveRequest(EnumJob.TotvsGetCustomerByCode, user_name, "POST", route, doc_company, code.ToString(), response.Content, false, requestBody);
+                    return null;
+                }
+
+                Page<Domain.Totvs.Dtos.Reads.People.Customers.Customer>? page = null;
+                string? json = null;
+
+                try
+                {
+                    page = JsonConvert.DeserializeObject<Page<Domain.Totvs.Dtos.Reads.People.Customers.Customer>>(response.Content ?? String.Empty);
+                    json = ((JObject.Parse(response.Content!)["items"] as JArray) ?? []).FirstOrDefault()?.ToString(Formatting.None);
+                }
+                catch (JsonException)
+                {
+                    // page continua null: tratado abaixo como resposta inválida
+                }
+
+                var person = page?.items?.FirstOrDefault(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.code) == code);
+
+                if (page?.items is null)
+                {
+                    _logger.AddMessage($"Resposta inválida da API Totvs em {route} (empresa {doc_company}, pessoa física {code}): {response.Content}");
+                    result = null;
+                }
+                else if (person is null || json is null)
+                {
+                    // a busca responde 200 com items vazio quando o código não existe
+                    _logger.AddMessage($"Pessoa física {code} não encontrada na Totvs (empresa {doc_company}).");
+                    result = false;
+                }
+                else
+                {
+                    // atualiza o cache do PostSearchCustomers, se ele estiver carregado, para a próxima execução não regravar a pessoa
+                    _cache.TryGetValue($"{CustomersKey}:{doc_company}", out Dictionary<int, Domain.Totvs.Entities.Reads.People.Customers.Customer>? peopleCache);
+
+                    await SaveCustomers(doc_company, _totvsService.GetBatchTime(), [person], new Dictionary<int, string> { { code, json } }, peopleCache);
+
+                    _logger.AddMessage($"Concluída com sucesso: pessoa física {code} inserida ou atualizada!");
+                    result = true;
+                }
+
+                _totvsService.SaveRequest(EnumJob.TotvsGetCustomerByCode, user_name, "POST", route, doc_company, code.ToString(), response.Content, result == true, requestBody);
+
+                return result;
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        /// <summary>
+        /// busca uma pessoa jurídica por código, grava nas tabelas de pessoas (sempre, sem consultar o cache)
+        /// e registra a chamada em totvs.TotvsRequests
+        /// </summary>
+        public async Task<bool?> GetLegalEntityByCode(string user_name, string doc_company, int code)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsGetLegalEntityByCode);
+
+            // rota registrada no log de requisições (sem o token); o filtro vai no corpo
+            const string route = "person/v2/legal-entities/search";
+            bool? result;
+
+            try
+            {
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                {
+                    // nenhuma chamada à API: não há o que registrar em TotvsRequests (igual ao Movidesk)
+                    _logger.AddMessage($"Empresa {doc_company} não cadastrada em totvs.TotvsParameters.");
+                    return null;
+                }
+
+                // as estatísticas só vêm com option.branchStaticDataList: todas as lojas da holding (sem lojas, a pessoa vem sem estatísticas)
+                var branchCodes = await _totvsService.GetBranchCodes(company);
+
+                // o change desde 2000 (com as mesmas flags da busca por janela) é o que faz o maxChangeFilterDate vir preenchido (testado):
+                // sem ele a pessoa seria regravada na próxima execução do job
+                var requestBody = JsonConvert.SerializeObject(new
+                {
+                    filter = new
+                    {
+                        personCodeList = new[] { code },
+                        change = new
+                        {
+                            startDate = "2000-01-01T00:00:00",
+                            endDate = $"{_totvsService.GetBatchTime():yyyy-MM-ddTHH:mm:ss}",
+                            inClassification = true,
+                            inAddress = true,
+                            inPhone = true,
+                            inObservation = true,
+                            inPerson = true,
+                            inCustomer = true,
+                            inSupplier = true,
+                            inRepresentative = true,
+                            inPurchasingGuide = true,
+                            inShippingCompany = true,
+                            inReference = true,
+                            inContact = true,
+                            inStatistic = true,
+                            inCustomerObservation = true,
+                            inEmployee = true,
+                            inPreference = true
+                        }
+                    },
+                    option = new { branchStaticDataList = branchCodes },
+                    page = 1,
+                    pageSize = 1,
+                    expand = LegalEntitiesExpand
+                });
+
+                // uma nova tentativa: 401 renova o token, 429 espera o Retry-After e 502/503/504 espera 10 s
+                ApiResponse? response = null;
+
+                try
+                {
+                    for (var attempt = 1; attempt <= 2; attempt++)
+                    {
+                        var token = await _totvsService.GetToken(company);
+
+                        if (token is null)
+                            break;   // a mensagem do login já foi para o log
+
+                        using var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
+
+                        response = await _apiClient.SendAsync(
+                            HttpMethod.Post,
+                            route,
+                            content,
+                            headers: new Dictionary<string, string> { { "Authorization", $"Bearer {token}" } }
+                        );
+
+                        if (attempt == 1 && response.StatusCode == 401)
+                        {
+                            _totvsService.RemoveToken(company);
+                            continue;
+                        }
+
+                        if (attempt == 1 && response.StatusCode == 429)
+                        {
+                            var seconds = response.Headers.TryGetValue("Retry-After", out var retryAfter) && int.TryParse(retryAfter, out var value) ? value : 5;
+                            await Task.Delay(TimeSpan.FromSeconds(Math.Clamp(seconds, 1, 60)));
+                            continue;
+                        }
+
+                        if (attempt == 1 && response.StatusCode is 502 or 503 or 504)
+                        {
+                            await Task.Delay(TimeSpan.FromSeconds(10));
+                            continue;
+                        }
+
+                        break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // registra a tentativa mesmo quando a chamada não chega a ter resposta (timeout, rede)
+                    _totvsService.SaveRequest(EnumJob.TotvsGetLegalEntityByCode, user_name, "POST", route, doc_company, code.ToString(), $"Exceção ao chamar a API: {ex.Message}", false, requestBody);
+                    throw;
+                }
+
+                if (response is null)
+                {
+                    // login falhou: nenhuma chamada à busca
+                    _totvsService.SaveRequest(EnumJob.TotvsGetLegalEntityByCode, user_name, "POST", route, doc_company, code.ToString(), null, false, requestBody);
+                    return null;
+                }
+
+                if (!response.IsSuccess)
+                {
+                    var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
+                    _logger.AddMessage($"Erro da API Totvs em {route} (empresa {doc_company}, pessoa jurídica {code}): {response.StatusCode} {body}");
+
+                    _totvsService.SaveRequest(EnumJob.TotvsGetLegalEntityByCode, user_name, "POST", route, doc_company, code.ToString(), response.Content, false, requestBody);
+                    return null;
+                }
+
+                Page<Domain.Totvs.Dtos.Reads.People.LegalEntities.LegalEntity>? page = null;
+                string? json = null;
+
+                try
+                {
+                    page = JsonConvert.DeserializeObject<Page<Domain.Totvs.Dtos.Reads.People.LegalEntities.LegalEntity>>(response.Content ?? String.Empty);
+                    json = ((JObject.Parse(response.Content!)["items"] as JArray) ?? []).FirstOrDefault()?.ToString(Formatting.None);
+                }
+                catch (JsonException)
+                {
+                    // page continua null: tratado abaixo como resposta inválida
+                }
+
+                var person = page?.items?.FirstOrDefault(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.code) == code);
+
+                if (page?.items is null)
+                {
+                    _logger.AddMessage($"Resposta inválida da API Totvs em {route} (empresa {doc_company}, pessoa jurídica {code}): {response.Content}");
+                    result = null;
+                }
+                else if (person is null || json is null)
+                {
+                    // a busca responde 200 com items vazio quando o código não existe
+                    _logger.AddMessage($"Pessoa jurídica {code} não encontrada na Totvs (empresa {doc_company}).");
+                    result = false;
+                }
+                else
+                {
+                    // atualiza o cache do PostSearchLegalEntity, se ele estiver carregado, para a próxima execução não regravar a pessoa
+                    _cache.TryGetValue($"{LegalEntitiesKey}:{doc_company}", out Dictionary<int, Domain.Totvs.Entities.Reads.People.LegalEntities.LegalEntity>? peopleCache);
+
+                    await SaveLegalEntities(doc_company, _totvsService.GetBatchTime(), [person], new Dictionary<int, string> { { code, json } }, peopleCache);
+
+                    _logger.AddMessage($"Concluída com sucesso: pessoa jurídica {code} inserida ou atualizada!");
+                    result = true;
+                }
+
+                _totvsService.SaveRequest(EnumJob.TotvsGetLegalEntityByCode, user_name, "POST", route, doc_company, code.ToString(), response.Content, result == true, requestBody);
+
+                return result;
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        /// <summary>
         /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
         /// Devolve a quantidade de filiais gravadas.
         /// </summary>

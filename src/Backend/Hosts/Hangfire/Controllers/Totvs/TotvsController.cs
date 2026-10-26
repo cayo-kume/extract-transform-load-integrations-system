@@ -1,12 +1,14 @@
 ﻿using Application.Totvs.Abstractions.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
 
 namespace Hangfire.Controllers.Totvs
 {
     /// <summary>
     /// rotas que disparam as leituras da Totvs. Cada rota entra junto com o seu service, um por vez
-    /// (docs/PROPOSTA-PADRONIZACAO-TOTVS.md §6.4 e §9), com o verbo da documentação oficial: POST nas buscas, GET em Branches
+    /// (docs/PROPOSTA-PADRONIZACAO-TOTVS.md §6.4 e §9), com o verbo da documentação oficial: POST nas buscas, GET em Branches.
+    /// As rotas sob demanda (fase 3) são GET por chave, com o cabeçalho X-User-Name, e ficam registradas em totvs.TotvsRequests
     /// </summary>
     [ApiController]
     //[Authorize]
@@ -61,6 +63,27 @@ namespace Hangfire.Controllers.Totvs
         }
 
         /// <summary>
+        /// busca uma pessoa física por código (POST person/v2/individuals/search com personCodeList) e grava; a chamada fica em totvs.TotvsRequests
+        /// </summary>
+        [HttpGet("Customers/{docCompany}/{code:int:min(1)}")]
+        [Tags("TotvsPeople")]
+        public async Task<ActionResult> Customer(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            int code
+        )
+        {
+            var result = await _totvsPeopleService.GetCustomerByCode(userName, docCompany, code);
+
+            return result switch
+            {
+                true => Ok($"Customer {code} integrated successfully."),
+                false => NotFound($"Customer {code} not found in Totvs."),
+                null => UnprocessableEntity("Company not registered or invalid response from Totvs. See the execution log.")
+            };
+        }
+
+        /// <summary>
         /// sincroniza as pessoas jurídicas (POST person/v2/legal-entities/search)
         /// </summary>
         [HttpPost("LegalEntities")]
@@ -70,6 +93,27 @@ namespace Hangfire.Controllers.Totvs
             var result = await _totvsPeopleService.PostSearchLegalEntity();
 
             return Ok($"Records integrated successfully.");
+        }
+
+        /// <summary>
+        /// busca uma pessoa jurídica por código (POST person/v2/legal-entities/search com personCodeList) e grava; a chamada fica em totvs.TotvsRequests
+        /// </summary>
+        [HttpGet("LegalEntities/{docCompany}/{code:int:min(1)}")]
+        [Tags("TotvsPeople")]
+        public async Task<ActionResult> LegalEntity(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            int code
+        )
+        {
+            var result = await _totvsPeopleService.GetLegalEntityByCode(userName, docCompany, code);
+
+            return result switch
+            {
+                true => Ok($"Legal entity {code} integrated successfully."),
+                false => NotFound($"Legal entity {code} not found in Totvs."),
+                null => UnprocessableEntity("Company not registered or invalid response from Totvs. See the execution log.")
+            };
         }
 
         /// <summary>

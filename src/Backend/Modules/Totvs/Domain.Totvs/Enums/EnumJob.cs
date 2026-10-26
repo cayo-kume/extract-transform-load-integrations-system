@@ -18,6 +18,10 @@
         TotvsPostSearchSellers = 13006,   //Script009_Insert_Totvs_Sellers_Jobs_Into_Jobs_Table.sql
         TotvsGetBranchesList = 13007,      //Script006_Insert_Totvs_Branches_Jobs_Into_Jobs_Table.sql
         TotvsPostSearchDuplicates = 13008,   //Script024_Insert_Totvs_Accounts_Payable_Jobs_Into_Jobs_Table.sql
-        TotvsPostSearchComissionsPaid = 13009   //Script024_Insert_Totvs_Accounts_Payable_Jobs_Into_Jobs_Table.sql
+        TotvsPostSearchComissionsPaid = 13009,   //Script024_Insert_Totvs_Accounts_Payable_Jobs_Into_Jobs_Table.sql
+
+        // sob demanda (TotvsController, com X-User-Name; não recorrentes): a partir de 13010
+        TotvsGetCustomerByCode = 13010,   //Script029_Insert_Totvs_On_Demand_People_Jobs_Into_Jobs_Table.sql
+        TotvsGetLegalEntityByCode = 13011   //Script029_Insert_Totvs_On_Demand_People_Jobs_Into_Jobs_Table.sql
     }
 }

@@ -51,6 +51,9 @@ namespace Application.Totvs.Services
             return companys;
         }
 
+        public async Task<Company?> GetCompany(string doc_company) =>
+            (await GetCompanys()).FirstOrDefault(x => x.doc_company == doc_company);
+
         public async Task<List<int>> GetBranchCodes(Company company) =>
             (await _totvsRepository.GetBranchCodes(company.doc_company!)).ToList();
 
@@ -111,5 +114,21 @@ namespace Application.Totvs.Services
 
         public void RemoveToken(Company company) =>
             _cache.Remove($"{TokenKey}:{company.doc_company}");
+
+        public void SaveRequest(Domain.Totvs.Enums.EnumJob job, string user_name, string httpMethod, string route, string doc_company, string field_key_value, string? responseBody, bool isSuccess, string? requestBody = null) =>
+            _totvsRepository.InsertIntoTotvsRequests(
+                new Domain.Totvs.Entities.Writes.Requests.Request(
+                    execution: _logger.GetExecutionGuid() ?? Guid.Empty,
+                    job: job,
+                    user_name: user_name,
+                    http_method: httpMethod,
+                    route: route,
+                    doc_company: doc_company,
+                    field_key_value: field_key_value,
+                    request_body: requestBody,
+                    response_body: responseBody,
+                    is_success: isSuccess
+                )
+            );
     }
 }
