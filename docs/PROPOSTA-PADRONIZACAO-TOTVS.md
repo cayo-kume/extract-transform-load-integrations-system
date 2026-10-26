@@ -1212,6 +1212,15 @@ duas versões parciais, e o `GroupBy(...).Last()` fica só com a última; e a re
 produtos alterados na janela**, e a `@delete_by_reference` de `TotvsSkusColors`/`TotvsSkusColorsProducts` apaga os
 outros. É o que explica a "página com menos itens que o `pageSize`" da §5.2.4.
 
+**Correção do `PostSearchReferences` (opção a, decisão 34) conferida em 26/10/2026**, commit `445b4ab`: o job rodou de
+verdade com o console descartável (API real, repositório e log falsos) numa janela de 20 dias, em 6 fatias de 7 dias
+e 64 páginas (~10 min). **403 referências vieram partidas** entre páginas da mesma fatia (ex.: 6488 com 4 + 63
+produtos; 4550 espalhada por 7 páginas), e todas foram gravadas inteiras (6488 com os 67 produtos, em 11 cores). Nas
+1.706 referências gravadas, os produtos batem com os das páginas da fatia: **nenhuma diferença**. Uma referência que
+volta em duas fatias grava a versão de cada uma (6486 com 52 e depois 72 produtos), e sem a exclusão no merge o banco
+fica com a soma. Com o código anterior, o `GroupBy(...).Last()` teria ficado só com a última parte dessas 403, e a
+`@delete_by_reference` apagaria o resto.
+
 | Fase | Entrega | Resultado |
 |---|---|---|
 | **1. Base** | §2 (csproj, nomes de classes, namespaces), `TotvsService` comum (§4.1: horário do lote, parâmetros e token em cache), remoção da `TotvsBaseSyncService`, §5.0–5.1 e `Script001`–`003` (schema, parâmetros com a holding, app), §6.1–6.3 (DI, `ISharedRepository`, host). Os services ainda não migrados ficam fora do DI e do controller | Módulo compila no Shared e sobe no host |
@@ -1303,7 +1312,7 @@ O que falta é só execução, não implementação:
 | 3 | Cargas iniciais que não foram rodadas: 188 mil PF (`PostSearchCustomers`), produtos e vendedores desde 2000, notas e pedidos de venda desde 01/01/2025, 10 meses de duplicatas (observar tempo e tamanho das páginas) | 2 |
 | 4 | Comissões pagas nunca foram lidas com dados reais (só o registro sintético do swagger); conferir quando houver fechamento | 2 |
 | 5 | `referencedInvoices` comentado no `expand` das notas: `TotvsInvoicesItemsProductsReferenced` fica vazia até a Totvs corrigir o 400 ou o contorno ser religado (§5.2.1) | Totvs |
-| 6 | `PostSearchReferences`: paginação por produto e produtos parciais (achado da fase 3, §9). **Resolvido pela decisão 34** (opção a, 26/10/2026): páginas unidas por referência e cores/produtos sem exclusão no merge; falta só rodar o `Script011` alterado em banco | 1 |
+| 6 | `PostSearchReferences`: paginação por produto e produtos parciais (achado da fase 3, §9). **Resolvido pela decisão 34** (opção a, 26/10/2026): páginas unidas por referência e cores/produtos sem exclusão no merge; conferido com 20 dias reais (403 referências partidas, nenhuma diferença, §9); falta só rodar o `Script011` alterado em banco | 1 |
 
 Fase 3 iniciada em 26/10/2026 (partes 1 a 3 implementadas; partes 4 a 6, preços, custos e saldos, ainda não). Fase 4
 implementada em 26/10/2026: `src/Backend/Modules/Totvs/README.md` e a pasta `Responsed Jsons` (11 respostas reais, uma por
