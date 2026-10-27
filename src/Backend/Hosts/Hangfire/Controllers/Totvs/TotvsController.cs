@@ -28,6 +28,7 @@ namespace Hangfire.Controllers.Totvs
         private readonly ITotvsSalesOrdersService _totvsSalesOrdersService;
         private readonly ITotvsAccountsPayableService _totvsAccountsPayableService;
         private readonly ITotvsInvoicesService _totvsInvoicesService;
+        private readonly ITotvsPersonCatalogsService _totvsPersonCatalogsService;
         private readonly IValidator<Domain.Totvs.Dtos.Writes.AccountsPayable.ChangeInstallmentStage> _changeInstallmentStageValidator;
 
         public TotvsController(
@@ -38,10 +39,11 @@ namespace Hangfire.Controllers.Totvs
             ITotvsSalesOrdersService totvsSalesOrdersService,
             ITotvsAccountsPayableService totvsAccountsPayableService,
             ITotvsInvoicesService totvsInvoicesService,
+            ITotvsPersonCatalogsService totvsPersonCatalogsService,
             IValidator<Domain.Totvs.Dtos.Writes.AccountsPayable.ChangeInstallmentStage> changeInstallmentStageValidator
         ) =>
-            (_totvsPeopleService, _totvsSellersService, _totvsProductsService, _totvsPurchaseOrdersService, _totvsSalesOrdersService, _totvsAccountsPayableService, _totvsInvoicesService, _changeInstallmentStageValidator) =
-            (totvsPeopleService, totvsSellersService, totvsProductsService, totvsPurchaseOrdersService, totvsSalesOrdersService, totvsAccountsPayableService, totvsInvoicesService, changeInstallmentStageValidator);
+            (_totvsPeopleService, _totvsSellersService, _totvsProductsService, _totvsPurchaseOrdersService, _totvsSalesOrdersService, _totvsAccountsPayableService, _totvsInvoicesService, _totvsPersonCatalogsService, _changeInstallmentStageValidator) =
+            (totvsPeopleService, totvsSellersService, totvsProductsService, totvsPurchaseOrdersService, totvsSalesOrdersService, totvsAccountsPayableService, totvsInvoicesService, totvsPersonCatalogsService, changeInstallmentStageValidator);
 
         /// <summary>
         /// sincroniza as empresas (lojas) da holding (GET person/v2/branchesList)
@@ -119,6 +121,54 @@ namespace Hangfire.Controllers.Totvs
                 false => NotFound($"Legal entity {code} not found in Totvs."),
                 null => UnprocessableEntity("Company not registered or invalid response from Totvs. See the execution log.")
             };
+        }
+
+        /// <summary>
+        /// sincroniza o catálogo de classificações (GET person/v2/classifications)
+        /// </summary>
+        [HttpGet("People/Classifications")]
+        [Tags("TotvsPersonCatalogs")]
+        public async Task<ActionResult> Classifications()
+        {
+            var result = await _totvsPersonCatalogsService.GetClassifications();
+
+            return Ok($"Records integrated successfully.");
+        }
+
+        /// <summary>
+        /// sincroniza o catálogo de tipos de e-mail (GET person/v2/email-types)
+        /// </summary>
+        [HttpGet("People/EmailTypes")]
+        [Tags("TotvsPersonCatalogs")]
+        public async Task<ActionResult> EmailTypes()
+        {
+            var result = await _totvsPersonCatalogsService.GetEmailTypes();
+
+            return Ok($"Records integrated successfully.");
+        }
+
+        /// <summary>
+        /// sincroniza o catálogo de tipos de telefone (GET person/v2/phone-types)
+        /// </summary>
+        [HttpGet("People/PhoneTypes")]
+        [Tags("TotvsPersonCatalogs")]
+        public async Task<ActionResult> PhoneTypes()
+        {
+            var result = await _totvsPersonCatalogsService.GetPhoneTypes();
+
+            return Ok($"Records integrated successfully.");
+        }
+
+        /// <summary>
+        /// sincroniza o catálogo de tipos de contato (GET person/v2/contact-types)
+        /// </summary>
+        [HttpGet("People/ContactTypes")]
+        [Tags("TotvsPersonCatalogs")]
+        public async Task<ActionResult> ContactTypes()
+        {
+            var result = await _totvsPersonCatalogsService.GetContactTypes();
+
+            return Ok($"Records integrated successfully.");
         }
 
         /// <summary>

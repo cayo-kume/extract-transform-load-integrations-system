@@ -353,17 +353,19 @@ token); utilidade para o negócio (PE2).
 
 ### 3.2 Catálogos
 
-Quatro `GET` de domínio pequeno, mesmo desenho: job de **120 min**, leitura **completa** a cada execução (um registro
-apagado na Totvs fica no banco, como os registros principais), com `StartChangeDate` 01/01/2000 e `EndChangeDate` agora
-para o `maxChangeFilterDate` vir preenchido; hash do JSON de cada item no cache `Totvs:<Catálogo>Hash:<cnpj>` e só os
-itens que mudaram vão para o merge (como as comissões). `PageSize` 1000.
+Quatro `GET` de domínio pequeno, mesmo desenho: job de **120 min**. **Implementado na fase PE-1 (§10.2)** pela T9: como a
+resposta traz o `maxChangeFilterDate`, a janela sai do banco (`MAX(maxChangeFilterDate)` − 1 h; banco vazio, desde 2000),
+como nas filiais, em vez da leitura completa com hash proposta aqui. Um registro apagado na Totvs fica no banco. `PageSize` 1000.
 
 | Método | Rota da API | Rota do controller | Tabela (chave) | Colunas | Job |
 |---|---|---|---|---|---|
-| `GetClassifications` | `GET classifications` | `GET Classifications` | `TotvsClassifications` (`doc_company`, `typeCode`, `code`) | `typeDescription` (40), `code` (10), `description` (60), `maxChangeFilterDate` | 13032 |
-| `GetEmailTypes` | `GET email-types` | `GET EmailTypes` | `TotvsEmailTypes` (`doc_company`, `code`) | `description` (40), `isDefault`, `maxChangeFilterDate` | 13033 |
-| `GetPhoneTypes` | `GET phone-types` | `GET PhoneTypes` | `TotvsPhoneTypes` (`doc_company`, `code`) | `description` (60), `isDefault`, `maxChangeFilterDate` | 13034 |
-| `GetContactTypes` | `GET contact-types` | `GET ContactTypes` | `TotvsContactTypes` (`doc_company`, `code`) | `description` (60), `isDefault`, `maxChangeFilterDate` | 13035 |
+| `GetClassifications` | `GET classifications` | `GET People/Classifications` | `TotvsPersonClassifications` (`doc_company`, `typeCode`, `code`) | `typeDescription` (40), `code` (10), `description` (60), `maxChangeFilterDate` | 13032 |
+| `GetEmailTypes` | `GET email-types` | `GET People/EmailTypes` | `TotvsEmailTypes` (`doc_company`, `code`) | `description` (40), `isDefault`, `maxChangeFilterDate` | 13033 |
+| `GetPhoneTypes` | `GET phone-types` | `GET People/PhoneTypes` | `TotvsPhoneTypes` (`doc_company`, `code`) | `description` (60), `isDefault`, `maxChangeFilterDate` | 13034 |
+| `GetContactTypes` | `GET contact-types` | `GET People/ContactTypes` | `TotvsContactTypes` (`doc_company`, `code`) | `typeName` (60; ver abaixo), `maxChangeFilterDate` | 13035 |
+
+Rotas e tabela de classificação com o prefixo da API (T13): `GET Classifications` e `TotvsClassifications` colidiriam com os
+catálogos de classificação de Product e de Sales Order.
 
 Uso: dão nome aos códigos que as escritas de cliente recebem (`phones.typeCode`, `emails.typeCode`, `contacts.typeCode`,
 `classifications`) e servem para validar esses códigos no passo 3 da §1.2 (PE6).
@@ -876,7 +878,7 @@ para descartar o que não mudou, bulk em `untreated` e `sp_<Tabela>_Sync`. Um jo
 | Método | Rota da API | Rota no controller | Tabelas (chave) | Job |
 |---|---|---|---|---|
 | `GetClassificationType` | `GET classificationType` (`PageSize` máx. 100) | `GET Products/ClassificationTypes` | `TotvsClassificationTypes` (`doc_company`, `code`) | 13080 |
-| `GetClassifications` | `GET classifications` (sem `TypeCodeList`: todos) | `GET Products/Classifications` | `TotvsClassifications` (`doc_company`, `typeCode`, `code`) | 13081 |
+| `GetClassifications` | `GET classifications` (sem `TypeCodeList`: todos) | `GET Products/Classifications` | `TotvsProductClassifications` (`doc_company`, `typeCode`, `code`; T13, para não colidir com `TotvsPersonClassifications`) | 13081 |
 | `GetCategory` | `GET category` | `GET Products/Categories` | `TotvsCategories` (`doc_company`, `code`) | 13082 |
 | `GetGrid` | `GET grid` | `GET Products/Grids` | `TotvsGrids` (`doc_company`, `code`); `TotvsGridsSizes` (`doc_company`, `gridCode`, `sequence`) | 13083 |
 | `GetMeasurementUnit` | `GET measurement-unit`, `Expand=additionalVariations` | `GET Products/MeasurementUnits` | `TotvsMeasurementUnits` (`doc_company`, `code`); `TotvsMeasurementUnitsVariations` (`doc_company`, `measurementUnitCode`, `code`) | 13084 |
@@ -2227,7 +2229,7 @@ casos particulares delas apontam para cá.
 | T10 | **Onde ficam os métodos novos** | PE9, PR12, F7 | Um service por grupo de recurso (ex.: `TotvsRepresentativesService`, `TotvsPersonCatalogsService`, `TotvsBonusService`, `TotvsProductCatalogsService`, `TotvsProductPricesService`), para os services atuais não passarem de mil linhas e para isolar o que tem efeito financeiro |
 | T11 | **Leitura sob demanda sem persistência** | §3.3, PR14, §7.3, §8.1 | Devolve o corpo da Totvs em `Result.data` (arquivo como `application/pdf` ou JSON, F8) e registra em `TotvsRequests` |
 | T12 | **Parâmetros `ValidationResult.*`** | §3–§8 | Aparecem como query em quase todos os `GET`: é o modelo interno da Totvs vazando no swagger. Nunca são enviados |
-| T13 | **Nomes de job únicos** | §6, SO9 | O método segue a decisão 18 da proposta; quando o nome se repete entre APIs (`GetClassifications` em Person, Product e Sales Order; `PostOrdersChangeStatus`, `PostQuantityItems`...), o job leva a API: `TotvsPersonGetClassifications`, `TotvsSalesOrderPostQuantityItems` |
+| T13 | **Nomes de job, rota e tabela únicos** | §6, SO9 | O método segue a decisão 18 da proposta; quando o nome se repete entre APIs (`GetClassifications` em Person, Product e Sales Order; `PostOrdersChangeStatus`, `PostQuantityItems`...), o job leva a API: `TotvsPersonGetClassifications`, `TotvsSalesOrderPostQuantityItems` |
 | T14 | **Rotas que dependem do uso pelo negócio** | DS2, PE2, PR5, PR6, DP6, SO2, F1, DP1, SO1 | **Respondida (27/10/2026):** **implementar todas**, mesmo que a Newbloomers não use, para o código já ficar pronto para futuros clientes. Vale também para as escritas que esperavam "um consumidor definido" (DP1, SO1). Ficam fora só `products/search` (PR1, coberta pelas referências) e `digital-certificates` (F2, expõe a senha do certificado), que não dependem de uso |
 
 ### 9.2 Decisões por API
@@ -2291,7 +2293,7 @@ onda 2 que entrar monta a base das leituras sem persistência (T11, §8.1).
 
 | Fase | Onda | Service | Métodos | Jobs | Depende de |
 |---|---|---|---|---|---|
-| PE-1 | 1 | `TotvsPersonCatalogsService` | `GetClassifications`, `GetEmailTypes`, `GetPhoneTypes`, `GetContactTypes` | 13032–13035 | — |
+| PE-1 | 1 | `TotvsPersonCatalogsService` | `GetClassifications`, `GetEmailTypes`, `GetPhoneTypes`, `GetContactTypes` | 13032–13035 | — **Implementada em 27/10/2026** (§10.2) |
 | PE-2 | 1 | `TotvsRepresentativesService` | `PostSearchRepresentatives`; `GetRepresentativeByCode` (PE10); `GetSearchReceptionSale` (PE2) | 13030, 13039, 13031 | — |
 | PE-3 | 2 | `TotvsPeopleService` | `GetBranches`, `GetPersonStatistics` | 13036, 13037 | base T11 |
 | PE-4 | 2 | `TotvsBonusService` | token por loja (PE3) + `PostListBalanceBonus` | 13038 | PE-3 |
@@ -2398,3 +2400,30 @@ escrita por API, e as fases acima a cortam pelas ondas.
 * a **chamada real em homologação** (§2.5, teste 2): precisa do token de um usuário do ERP de homologação. O login com o usuário
   pessoal funcionou, mas o teste fica para quando houver o usuário de integração (§1.3), ou para você rodar com o seu;
 * o `Script032` em banco e a rota pelo host.
+
+### 10.2 Fase PE-1: catálogos da API Person (27/10/2026)
+
+**O que entrou:**
+* `TotvsPersonCatalogsService` (novo, T10) com `GetClassifications`, `GetEmailTypes`, `GetPhoneTypes` e `GetContactTypes`,
+  cada um com a própria chamada à API (decisão 15 da proposta), no desenho do `GetBranchesList`: janela pelo banco
+  (`MAX(maxChangeFilterDate)` − 1 h; banco vazio, desde 2000), nova tentativa em 401/429/502/503/504, cache de estado
+  `Totvs:<Catálogo>:<cnpj>` montado com a tabela inteira da empresa (catálogo pequeno), validação, `auditing.Records` e
+  `finally`;
+* DTOs, entidades e validadores em `People/Catalogs`, `ITotvsPersonCatalogsRepository`/`TotvsPersonCatalogsRepository` e
+  as queries no `TotvsCommandHandler`;
+* tabelas `TotvsPersonClassifications` (`doc_company`, `typeCode`, `code`), `TotvsEmailTypes`, `TotvsPhoneTypes` e
+  `TotvsContactTypes` (`doc_company`, `code`): `Script033` (tabelas), `Script034` (procedures, sem exclusão) e `Script035`
+  (jobs 13032–13035, 120 min, e procedures **13585–13588**);
+* rotas `GET TotvsJobs/Totvs/People/Classifications`, `.../People/EmailTypes`, `.../People/PhoneTypes` e `.../People/ContactTypes`.
+
+**Achados na chamada real (27/10/2026):**
+* `contact-types` **não** devolve o `PhoneTypeModel` declarado no swagger: vem `code`, `typeName` e `maxChangeFilterDate`.
+  O DTO e a tabela seguem a resposta real (`typeName`, tamanho 60 por falta de documentação; o maior valor real tem 10);
+* `maxChangeFilterDate` só vem com `StartChangeDate`/`EndChangeDate`, como nas filiais;
+* a base tem 6 classificações de pessoa (2 tipos), 2 tipos de e-mail, 4 de telefone e 3 de contato.
+
+**Conferido com o console descartável** (os 4 métodos de verdade, API real e banco falso), duas execuções: a 1ª grava 15
+registros (6 + 2 + 4 + 3) sem mensagem de validação; a 2ª, com o banco falso preenchido, não regrava nada (0 nos quatro).
+As colunas das 4 `DataTable` batem com o `Script033`.
+
+**Não verificado:** os scripts `033`–`035` em banco e as rotas pelo host.

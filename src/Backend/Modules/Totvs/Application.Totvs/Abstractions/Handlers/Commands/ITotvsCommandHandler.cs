@@ -31,6 +31,15 @@
         public string CreateGetInvoicesLastChangeQuery(string doc_company);
         public string CreateGetInvoicesByKeysQuery(string doc_company, List<(int branchCode, int invoiceSequence, DateTime invoiceDate)> keys);
 
+        public string CreateGetPersonClassificationsLastChangeQuery(string doc_company);
+        public string CreateGetPersonClassificationsQuery(string doc_company);
+        public string CreateGetEmailTypesLastChangeQuery(string doc_company);
+        public string CreateGetEmailTypesQuery(string doc_company);
+        public string CreateGetPhoneTypesLastChangeQuery(string doc_company);
+        public string CreateGetPhoneTypesQuery(string doc_company);
+        public string CreateGetContactTypesLastChangeQuery(string doc_company);
+        public string CreateGetContactTypesQuery(string doc_company);
+
         public string CreateGetSkusLastChangeQuery(string doc_company, int branchInfoCode);
         public string CreateGetSkusByIdsQuery(string doc_company, int branchInfoCode, List<int> referenceIds);
     }

@@ -27,6 +27,12 @@
         TotvsGetInvoiceByKey = 13013,   //Script030_Insert_Totvs_On_Demand_Documents_Jobs_Into_Jobs_Table.sql
         TotvsGetProductByCode = 13014,   //Script031_Insert_Totvs_On_Demand_Products_Jobs_Into_Jobs_Table.sql
 
+        // catálogos da API Person (fase PE-1), a cada 2 horas
+        TotvsPersonGetClassifications = 13032,   //Script035_Insert_Totvs_Person_Catalogs_Jobs_Into_Jobs_Table.sql
+        TotvsGetEmailTypes = 13033,   //Script035_Insert_Totvs_Person_Catalogs_Jobs_Into_Jobs_Table.sql
+        TotvsGetPhoneTypes = 13034,   //Script035_Insert_Totvs_Person_Catalogs_Jobs_Into_Jobs_Table.sql
+        TotvsGetContactTypes = 13035,   //Script035_Insert_Totvs_Person_Catalogs_Jobs_Into_Jobs_Table.sql
+
         // escritas (TotvsController, com X-User-Name; não recorrentes): docs/PLANO-TOTVS-METODOS-FALTANTES.md §9.4
         TotvsPostDuplicates = 13018,   //Script032_Insert_Totvs_Accounts_Payable_Writes_Jobs_Into_Jobs_Table.sql (fase AP-2)
         TotvsPostGroupDuplicates = 13019,   //Script032_Insert_Totvs_Accounts_Payable_Writes_Jobs_Into_Jobs_Table.sql (fase AP-2)

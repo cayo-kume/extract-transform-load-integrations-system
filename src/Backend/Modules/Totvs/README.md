@@ -170,6 +170,10 @@ Os nomes dos métodos são os da **documentação oficial** (`PostSearch*`, `Get
 | `TotvsAccountsPayableService` | `PostSearchDuplicates` | `POST accounts-payable/v2/duplicates/search` | `TotvsDuplicates` e 2 filhas | 13008 | 3 min |
 | `TotvsAccountsPayableService` | `PostSearchComissionsPaid` | `POST accounts-payable/v2/comissions-paid/search` (uma chamada por loja) | `TotvsCommissionsPaid` e movimentos | 13009 | 3 min |
 | `TotvsInvoicesService` | `PostSearchInvoices` | `POST fiscal/v2/invoices/search` | `TotvsInvoices` e 9 filhas/netas | 13003 | 3 min |
+| `TotvsPersonCatalogsService` | `GetClassifications` | `GET person/v2/classifications` | `TotvsPersonClassifications` | 13032 | 120 min |
+| `TotvsPersonCatalogsService` | `GetEmailTypes` | `GET person/v2/email-types` | `TotvsEmailTypes` | 13033 | 120 min |
+| `TotvsPersonCatalogsService` | `GetPhoneTypes` | `GET person/v2/phone-types` | `TotvsPhoneTypes` | 13034 | 120 min |
+| `TotvsPersonCatalogsService` | `GetContactTypes` | `GET person/v2/contact-types` | `TotvsContactTypes` | 13035 | 120 min |
 
 **Escritas** (sistema externo, com `X-User-Name`)
 
@@ -275,6 +279,7 @@ O DbUp executa cada script uma única vez, em ordem alfabética. Alterar um scri
 | `Script028` | `totvs.TotvsRequests` (log das chamadas sob demanda) |
 | `Script029`–`031` | Jobs das leituras sob demanda |
 | `Script032` | Jobs das escritas de contas a pagar (13018–13020) |
+| `Script033`–`035` | Catálogos da API Person (classificações e tipos de e-mail, telefone e contato) |
 
 **Regras gerais das tabelas e dos merges:**
 * Toda tabela de dados existe em dois schemas: `untreated` (recebe o bulk insert, sem chave) e `totvs` (tabela final, com PK). A exceção é `totvs.TotvsRequests`, que só recebe inserts.
@@ -303,6 +308,10 @@ Rota base: `TotvsJobs/Totvs`. O verbo segue a documentação oficial: `POST` nas
 | POST | `Duplicates` | `TotvsAccountsPayableService.PostSearchDuplicates` |
 | POST | `ComissionsPaid` | `TotvsAccountsPayableService.PostSearchComissionsPaid` |
 | POST | `Invoices` | `TotvsInvoicesService.PostSearchInvoices` |
+| GET | `People/Classifications` | `TotvsPersonCatalogsService.GetClassifications` |
+| GET | `People/EmailTypes` | `TotvsPersonCatalogsService.GetEmailTypes` |
+| GET | `People/PhoneTypes` | `TotvsPersonCatalogsService.GetPhoneTypes` |
+| GET | `People/ContactTypes` | `TotvsPersonCatalogsService.GetContactTypes` |
 
 ### Leituras sob demanda (chamadas por sistema externo)
 
@@ -354,7 +363,7 @@ Os jobs ficam em `auditing.Jobs`, com os mesmos ids em `EnumJob`.
 | Faixa | Tipo (`IdType`) | Conteúdo |
 |---|---|---|
 | 13000–13499 | 2 (Integração) | Leituras, com `IdParent = 130` (app Totvs) |
-| 13500–13999 | 1 (Procedure) | Procedures `sp_<Tabela>_Sync` (13500–13584), com `IdParent` = job da leitura e o mesmo intervalo |
+| 13500–13999 | 1 (Procedure) | Procedures `sp_<Tabela>_Sync` (13500–13588), com `IdParent` = job da leitura e o mesmo intervalo |
 
 | Id | Job | Intervalo |
 |---|---|---|
@@ -373,6 +382,10 @@ Os jobs ficam em `auditing.Jobs`, com os mesmos ids em `EnumJob`.
 | 13012 | `TotvsGetSalesOrderByKey` | sob demanda |
 | 13013 | `TotvsGetInvoiceByKey` | sob demanda |
 | 13014 | `TotvsGetProductByCode` | sob demanda |
+| 13032 | `TotvsPersonGetClassifications` | 120 min |
+| 13033 | `TotvsGetEmailTypes` | 120 min |
+| 13034 | `TotvsGetPhoneTypes` | 120 min |
+| 13035 | `TotvsGetContactTypes` | 120 min |
 | 13018 | `TotvsPostDuplicates` | escrita (reservado, fase AP-2) |
 | 13019 | `TotvsPostGroupDuplicates` | escrita (reservado, fase AP-2) |
 | 13020 | `TotvsPostDuplicatesInstallmentsStage` | escrita |
