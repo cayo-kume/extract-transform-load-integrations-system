@@ -5,6 +5,7 @@
         public string CreateGetCompanysQuery();
         public string CreateGetBranchCodesQuery(string doc_company);
         public string CreateGetBrandBranchCodesQuery(string doc_company, int baseBranchCode);
+        public string CreateGetBranchCodeByCnpjQuery(string doc_company, string cnpj);
 
         public string CreateGetBranchesLastChangeQuery(string doc_company);
         public string CreateGetBranchesByCodesQuery(string doc_company, List<int> codes);

@@ -34,6 +34,13 @@ namespace Infrastructure.Totvs.Repositorys
             return (await _coreRepository.GetRecords<int>(sql)).ToList();
         }
 
+        public async Task<int?> GetBranchCodeByCnpj(string doc_company, string cnpj)
+        {
+            string sql = _totvsCommandHandler.CreateGetBranchCodeByCnpjQuery(doc_company, cnpj);
+
+            return await _coreRepository.GetRecord<int?>(sql);
+        }
+
         /// <summary>
         /// log das chamadas sob demanda: só inserção, então vai direto para o schema totvs (sem untreated/merge)
         /// </summary>

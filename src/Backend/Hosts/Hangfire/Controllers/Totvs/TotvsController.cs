@@ -1,4 +1,5 @@
 ﻿using Application.Totvs.Abstractions.Services;
+using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
@@ -8,7 +9,9 @@ namespace Hangfire.Controllers.Totvs
     /// <summary>
     /// rotas que disparam as leituras da Totvs. Cada rota entra junto com o seu service, um por vez
     /// (docs/PROPOSTA-PADRONIZACAO-TOTVS.md §6.4 e §9), com o verbo da documentação oficial: POST nas buscas, GET em Branches.
-    /// As rotas sob demanda (fase 3) são GET por chave, com o cabeçalho X-User-Name, e ficam registradas em totvs.TotvsRequests
+    /// As rotas sob demanda (fase 3) são GET por chave, com o cabeçalho X-User-Name, e ficam registradas em totvs.TotvsRequests.
+    /// As escritas (docs/PLANO-TOTVS-METODOS-FALTANTES.md) validam o corpo aqui, antes de chamar a Totvs, e só rodam com
+    /// Totvs:Writes:&lt;grupo&gt;:Enabled = true
     /// </summary>
     [ApiController]
     //[Authorize]
@@ -25,6 +28,7 @@ namespace Hangfire.Controllers.Totvs
         private readonly ITotvsSalesOrdersService _totvsSalesOrdersService;
         private readonly ITotvsAccountsPayableService _totvsAccountsPayableService;
         private readonly ITotvsInvoicesService _totvsInvoicesService;
+        private readonly IValidator<Domain.Totvs.Dtos.Writes.AccountsPayable.ChangeInstallmentStage> _changeInstallmentStageValidator;
 
         public TotvsController(
             ITotvsPeopleService totvsPeopleService,
@@ -33,10 +37,11 @@ namespace Hangfire.Controllers.Totvs
             ITotvsPurchaseOrdersService totvsPurchaseOrdersService,
             ITotvsSalesOrdersService totvsSalesOrdersService,
             ITotvsAccountsPayableService totvsAccountsPayableService,
-            ITotvsInvoicesService totvsInvoicesService
+            ITotvsInvoicesService totvsInvoicesService,
+            IValidator<Domain.Totvs.Dtos.Writes.AccountsPayable.ChangeInstallmentStage> changeInstallmentStageValidator
         ) =>
-            (_totvsPeopleService, _totvsSellersService, _totvsProductsService, _totvsPurchaseOrdersService, _totvsSalesOrdersService, _totvsAccountsPayableService, _totvsInvoicesService) =
-            (totvsPeopleService, totvsSellersService, totvsProductsService, totvsPurchaseOrdersService, totvsSalesOrdersService, totvsAccountsPayableService, totvsInvoicesService);
+            (_totvsPeopleService, _totvsSellersService, _totvsProductsService, _totvsPurchaseOrdersService, _totvsSalesOrdersService, _totvsAccountsPayableService, _totvsInvoicesService, _changeInstallmentStageValidator) =
+            (totvsPeopleService, totvsSellersService, totvsProductsService, totvsPurchaseOrdersService, totvsSalesOrdersService, totvsAccountsPayableService, totvsInvoicesService, changeInstallmentStageValidator);
 
         /// <summary>
         /// sincroniza as empresas (lojas) da holding (GET person/v2/branchesList)
@@ -232,6 +237,26 @@ namespace Hangfire.Controllers.Totvs
         }
 
         /// <summary>
+        /// troca o estágio de uma parcela a pagar (POST accounts-payable/v2/duplicates/installments/stage). A Totvs valida a
+        /// transição (1 → 5 ou 2; 5 → 2 ou 1; 2 → 1 ou 5); a chamada fica em totvs.TotvsRequests
+        /// </summary>
+        [HttpPost("Duplicates/{docCompany}/Installments/Stage")]
+        [Tags("TotvsAccountsPayable")]
+        public async Task<ActionResult> DuplicatesInstallmentsStage(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.AccountsPayable.ChangeInstallmentStage body
+        )
+        {
+            var validation = await _changeInstallmentStageValidator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsAccountsPayableService.PostDuplicatesInstallmentsStage(userName, docCompany, body));
+        }
+
+        /// <summary>
         /// sincroniza as notas fiscais de todas as lojas da holding (POST fiscal/v2/invoices/search)
         /// </summary>
         [HttpPost("Invoices")]
@@ -263,6 +288,30 @@ namespace Hangfire.Controllers.Totvs
                 false => NotFound($"Invoice {branchCode}/{invoiceSequence} not found in Totvs."),
                 null => UnprocessableEntity("Company not registered or invalid response from Totvs. See the execution log.")
             };
+        }
+
+        /// <summary>
+        /// resposta das escritas (docs/PLANO-TOTVS-METODOS-FALTANTES.md §1.2): 200 aceita; 429 com Retry-After; 502 quando a
+        /// Totvs foi chamada e não respondeu ou respondeu 5xx (a escrita pode ter sido feita); 422 nos demais (empresa ou loja
+        /// não cadastrada, escrita desligada, recusa da Totvs)
+        /// </summary>
+        private ActionResult WriteResponse(Domain.Totvs.Dtos.Writes.Result result)
+        {
+            if (result.success)
+                return Ok(result);
+
+            if (result.statusCode == StatusCodes.Status429TooManyRequests)
+            {
+                if (result.retryAfterSeconds is int seconds)
+                    Response.Headers.RetryAfter = seconds.ToString();
+
+                return StatusCode(StatusCodes.Status429TooManyRequests, result);
+            }
+
+            if (result.apiCalled && (result.statusCode == 0 || result.statusCode >= 500))
+                return StatusCode(StatusCodes.Status502BadGateway, result);
+
+            return UnprocessableEntity(result);
         }
     }
 }

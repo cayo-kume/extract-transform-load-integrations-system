@@ -35,6 +35,15 @@ namespace Application.Totvs.Handlers.Commands
                      ORDER BY B.CODE";
         }
 
+        public string CreateGetBranchCodeByCnpjQuery(string doc_company, string cnpj)
+        {
+            // loja da empresa pelo CNPJ (escritas: o corpo da Totvs identifica a loja pelo CNPJ). O cnpj chega validado (14 dígitos)
+            return @$"SELECT CODE
+                     FROM TOTVS.TOTVSBRANCHES
+                     WHERE DOC_COMPANY = '{doc_company}'
+                     AND CNPJ = '{cnpj}'";
+        }
+
         public string CreateGetBranchesLastChangeQuery(string doc_company)
         {
             // doc_company vem de TotvsParameters; com aspas porque a coluna é nvarchar (CNPJ pode começar com zero)

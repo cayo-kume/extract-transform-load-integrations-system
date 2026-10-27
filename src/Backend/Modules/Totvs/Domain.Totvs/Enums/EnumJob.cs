@@ -25,6 +25,11 @@
         TotvsGetLegalEntityByCode = 13011,   //Script029_Insert_Totvs_On_Demand_People_Jobs_Into_Jobs_Table.sql
         TotvsGetSalesOrderByKey = 13012,   //Script030_Insert_Totvs_On_Demand_Documents_Jobs_Into_Jobs_Table.sql
         TotvsGetInvoiceByKey = 13013,   //Script030_Insert_Totvs_On_Demand_Documents_Jobs_Into_Jobs_Table.sql
-        TotvsGetProductByCode = 13014   //Script031_Insert_Totvs_On_Demand_Products_Jobs_Into_Jobs_Table.sql
+        TotvsGetProductByCode = 13014,   //Script031_Insert_Totvs_On_Demand_Products_Jobs_Into_Jobs_Table.sql
+
+        // escritas (TotvsController, com X-User-Name; não recorrentes): docs/PLANO-TOTVS-METODOS-FALTANTES.md §9.4
+        TotvsPostDuplicates = 13018,   //Script032_Insert_Totvs_Accounts_Payable_Writes_Jobs_Into_Jobs_Table.sql (fase AP-2)
+        TotvsPostGroupDuplicates = 13019,   //Script032_Insert_Totvs_Accounts_Payable_Writes_Jobs_Into_Jobs_Table.sql (fase AP-2)
+        TotvsPostDuplicatesInstallmentsStage = 13020   //Script032_Insert_Totvs_Accounts_Payable_Writes_Jobs_Into_Jobs_Table.sql
     }
 }

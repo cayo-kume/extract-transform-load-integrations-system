@@ -2284,7 +2284,7 @@ onda 2 que entrar monta a base das leituras sem persistência (T11, §8.1).
 
 | Fase | Onda | Métodos | Jobs | Depende de |
 |---|---|---|---|---|
-| AP-1 | 3 | Base de escrita (§1.1) + `PostDuplicatesInstallmentsStage` | 13020 | T1 (a publicação em produção espera a T2) |
+| AP-1 | 3 | Base de escrita (§1.1) + `PostDuplicatesInstallmentsStage` | 13020 | T1 (a publicação em produção espera a T2). **Implementada em 27/10/2026** (§10) |
 | AP-2 | 4 | `PostDuplicates`, `PostGroupDuplicates` | 13018, 13019 | AP-1 (o agrupamento é testado com duplicatas do `PostDuplicates`) |
 
 #### Person (§3)
@@ -2355,3 +2355,46 @@ escrita por API, e as fases acima a cortam pelas ondas.
 * **Scripts:** o próximo é o **Script032**. Como o DbUp roda em ordem alfabética e nenhum script que já rodou é editado,
   os números são dados **na implementação**, na ordem em que cada parte entrar (os `Script0NN` das seções são
   provisórios).
+
+---
+
+## 10. Execução
+
+### 10.1 Fase AP-1: base de escrita e `PostDuplicatesInstallmentsStage` (27/10/2026)
+
+**Base de escrita (§1.1), usada por todas as escritas daqui em diante:**
+
+| Peça | Onde |
+|---|---|
+| `Result` (`success`, `key`, `statusCode`, `apiCalled`, `message`, `response`, `retryAfterSeconds`) | `Domain.Totvs/Dtos/Writes/Result.cs` |
+| `WriteResponse`: 200 aceita; 429 com `Retry-After`; **502** quando a Totvs foi chamada e não respondeu ou respondeu 5xx; 422 nos demais | `TotvsController` |
+| Chave de configuração por grupo (T4): `ITotvsService.IsWriteEnabled(grupo)` lê `Totvs:Writes:<grupo>:Enabled`; ausente ou `false` = desligada. O `appsettings.json` traz `AccountsPayable` desligado | `TotvsService`, `appsettings.json` |
+| Loja pelo CNPJ (passo 3 da §1.2): `ITotvsService.GetBranchCodeByCnpj` → `CreateGetBranchCodeByCnpjQuery` | `TotvsService`, `TotvsRepository`, `TotvsCommandHandler` |
+| Enum como número (D6/T3): o Newtonsoft já serializa `enum` como número; o enum do DTO usa os números da descrição do swagger | `ChangeInstallmentStageType` |
+| Validação no controller, antes do service: corpo inválido volta 400 com `field`/`message` | `TotvsController` |
+
+**`PostDuplicatesInstallmentsStage`** (§2.3): DTO `ChangeInstallmentStage`, `ChangeInstallmentStageValidator`, método no
+`TotvsAccountsPayableService` (chamada escrita no próprio método, D5), rota `POST TotvsJobs/Totvs/Duplicates/{docCompany}/Installments/Stage`,
+`EnumJob` 13018–13020 e `Script032` (os três jobs de escrita de contas a pagar; 13018 e 13019 ficam para a AP-2).
+
+**O que mudou em relação ao plano:**
+* **D4 não se aplica:** a busca de duplicatas (`DuplicateOutModel`) não devolve o estágio da parcela, então não há como
+  conferir a transição pelo banco. A Totvs valida e responde 400, que vira 422 com a mensagem dela.
+* **T5 (trava de repetição) e T6 (mascaramento) ficam para a primeira rota que precisa delas:** a troca de estágio grava um
+  valor absoluto (repetir não muda nada) e o corpo não tem dado pessoal. A T5 entra na AP-2 (`PostDuplicates` não é
+  idempotente) e a T6 na PE-6 (clientes).
+
+**Conferido sem a API** (console descartável com uma API falsa):
+* validador: corpo válido; sem fornecedor e com os dois fornecedores; CNPJ com pontuação, parcela de 4 dígitos e duplicata de
+  11; estágio fora do enum; corpo vazio. Cada caso com a mensagem certa;
+* serialização: `{"branchCnpj":"...","supplierCode":10,"duplicateCode":5001,"installmentCode":1,"newStage":5}` (o fornecedor
+  não informado fica fora; o enum vai como número), e o corpo recebido pelo `System.Text.Json` do host lê `newStage` numérico;
+* fluxo: 200 → 200; 400 da Totvs → 422 com `code: message`; 401 → token renovado → 200 (2 chamadas); 429 duas vezes → 429
+  com `Retry-After`; 502 → 502 **sem nova tentativa** (1 chamada); exceção de rede → 502; escrita desligada, empresa não
+  cadastrada e loja de outra empresa → 422 **sem chamar a API**. Cada chamada à API gera um registro em `TotvsRequests` com
+  o corpo enviado.
+
+**Não verificado:**
+* a **chamada real em homologação** (§2.5, teste 2): precisa do token de um usuário do ERP de homologação. O login com o usuário
+  pessoal funcionou, mas o teste fica para quando houver o usuário de integração (§1.3), ou para você rodar com o seu;
+* o `Script032` em banco e a rota pelo host.

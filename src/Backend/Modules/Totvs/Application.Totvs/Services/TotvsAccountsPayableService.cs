@@ -40,6 +40,9 @@ namespace Application.Totvs.Services
         // as comissões não têm filtro de alteração: os últimos 10 meses pela data do fechamento são relidos a cada execução
         private const int CommissionsPaidMonths = 10;
 
+        // grupo das escritas desta API na configuração (Totvs:Writes:AccountsPayable:Enabled, T4)
+        private const string WritesGroup = "AccountsPayable";
+
         public TotvsAccountsPayableService(
             [FromKeyedServices("TotvsAPI")] IApiClient apiClient,
             ILoggerService logger,
@@ -525,6 +528,166 @@ namespace Application.Totvs.Services
             }
 
             return _listSomenteNovos.Count;
+        }
+
+        /// <summary>
+        /// troca o estágio de uma parcela (docs/PLANO-TOTVS-METODOS-FALTANTES.md §1.2 e §2.3). A Totvs valida a transição: a
+        /// busca de duplicatas não devolve o estágio, então não há como conferir antes pelo banco (D4)
+        /// </summary>
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostDuplicatesInstallmentsStage(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.AccountsPayable.ChangeInstallmentStage body)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsPostDuplicatesInstallmentsStage);
+
+            // rota registrada no log de requisições (sem o token)
+            const string route = "accounts-payable/v2/duplicates/installments/stage";
+            var key = $"{body.branchCnpj}|{(String.IsNullOrEmpty(body.supplierCpfCnpj) ? body.supplierCode.ToString() : body.supplierCpfCnpj)}|{body.duplicateCode}|{body.installmentCode}";
+
+            try
+            {
+                if (!_totvsService.IsWriteEnabled(WritesGroup))
+                {
+                    var disabled = $"Escritas de contas a pagar desligadas (Totvs:Writes:{WritesGroup}:Enabled).";
+                    _logger.AddMessage(disabled);
+
+                    return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, message = disabled };
+                }
+
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                {
+                    // nenhuma chamada à API: não há o que registrar em TotvsRequests (igual às leituras sob demanda)
+                    var notFound = $"Empresa {doc_company} não cadastrada em totvs.TotvsParameters.";
+                    _logger.AddMessage(notFound);
+
+                    return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, message = notFound };
+                }
+
+                if (await _totvsService.GetBranchCodeByCnpj(company, body.branchCnpj!) is null)
+                {
+                    var branchNotFound = $"CNPJ {body.branchCnpj} não é uma loja da empresa {doc_company} em totvs.TotvsBranches.";
+                    _logger.AddMessage(branchNotFound);
+
+                    return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, message = branchNotFound };
+                }
+
+                // nulos não vão: o fornecedor que não foi informado fica fora do corpo; o enum vai como número
+                var requestBody = JsonConvert.SerializeObject(body, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
+
+                // uma nova tentativa só em 401 (renova o token) e 429 (espera o Retry-After): nos dois a Totvs não processou o
+                // pedido. Em 502/503/504 não há nova tentativa: a escrita pode ter sido feita antes de o gateway cair
+                ApiResponse? response = null;
+
+                try
+                {
+                    for (var attempt = 1; attempt <= 2; attempt++)
+                    {
+                        var token = await _totvsService.GetToken(company);
+
+                        if (token is null)
+                            break;   // a mensagem do login já foi para o log
+
+                        using var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
+
+                        response = await _apiClient.SendAsync(
+                            HttpMethod.Post,
+                            route,
+                            content,
+                            headers: new Dictionary<string, string> { { "Authorization", $"Bearer {token}" } }
+                        );
+
+                        if (attempt == 1 && response.StatusCode == 401)
+                        {
+                            _totvsService.RemoveToken(company);
+                            continue;
+                        }
+
+                        if (attempt == 1 && response.StatusCode == 429)
+                        {
+                            var seconds = response.Headers.TryGetValue("Retry-After", out var retryAfter) && int.TryParse(retryAfter, out var value) ? value : 5;
+                            await Task.Delay(TimeSpan.FromSeconds(Math.Clamp(seconds, 1, 60)));
+                            continue;
+                        }
+
+                        break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // sem resposta (timeout, rede): a escrita pode ter sido feita; conferir antes de repetir
+                    var failure = $"Exceção ao chamar a API: {ex.Message.TrimEnd('.')}";
+                    _totvsService.SaveRequest(EnumJob.TotvsPostDuplicatesInstallmentsStage, user_name, "POST", route, doc_company, key, failure, false, requestBody);
+                    _logger.AddMessage($"Parcela {key} (empresa {doc_company}): {failure}. Confira o estágio na Totvs antes de repetir.");
+
+                    return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, apiCalled = true, message = $"{failure}. Confira o estágio na Totvs antes de repetir." };
+                }
+
+                if (response is null)
+                {
+                    // login falhou: nenhuma chamada à rota
+                    _totvsService.SaveRequest(EnumJob.TotvsPostDuplicatesInstallmentsStage, user_name, "POST", route, doc_company, key, null, false, requestBody);
+
+                    return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, message = $"Falha na autenticação da Totvs (empresa {doc_company}). Veja o log da execução." };
+                }
+
+                _totvsService.SaveRequest(EnumJob.TotvsPostDuplicatesInstallmentsStage, user_name, "POST", route, doc_company, key, response.Content, response.IsSuccess, requestBody);
+
+                if (!response.IsSuccess)
+                {
+                    var message = TotvsMessage(response);
+                    _logger.AddMessage($"Parcela {key} (empresa {doc_company}): {response.StatusCode} {message}");
+
+                    return new Domain.Totvs.Dtos.Writes.Result
+                    {
+                        success = false,
+                        key = key,
+                        statusCode = response.StatusCode,
+                        apiCalled = true,
+                        message = response.StatusCode >= 500 ? $"{message.TrimEnd('.')}. Confira o estágio na Totvs antes de repetir." : message,
+                        response = response.Content,
+                        retryAfterSeconds = response.Headers.TryGetValue("Retry-After", out var retryAfter) && int.TryParse(retryAfter, out var seconds) ? seconds : null
+                    };
+                }
+
+                // o banco local não é atualizado aqui: a busca de duplicatas não traz o estágio (§2.3)
+                _logger.AddMessage($"Concluída com sucesso: parcela {key} (empresa {doc_company}) passou para o estágio {(int)body.newStage!}.");
+
+                return new Domain.Totvs.Dtos.Writes.Result { success = true, key = key, statusCode = response.StatusCode, apiCalled = true, response = response.Content };
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        /// <summary>
+        /// mensagens da Totvs num erro: o 400 traz DomainNotificationMessage[] (code, message, detailedMessage); outro corpo vai
+        /// como veio, cortado
+        /// </summary>
+        private static string TotvsMessage(ApiResponse response)
+        {
+            try
+            {
+                if (!String.IsNullOrWhiteSpace(response.Content) && JToken.Parse(response.Content) is JArray messages)
+                {
+                    var text = String.Join(" | ", messages.OfType<JObject>().Select(m => $"{m["code"]}: {m["message"]}").Where(m => m != ": "));
+
+                    if (!String.IsNullOrEmpty(text))
+                        return text;
+                }
+            }
+            catch (JsonReaderException)
+            {
+                // corpo em texto: usa o corpo como veio
+            }
+
+            if (String.IsNullOrWhiteSpace(response.Content))
+                return $"A Totvs devolveu {response.StatusCode} sem corpo.";
+
+            return response.Content.Length > 800 ? response.Content[..800] : response.Content;
         }
     }
 }

@@ -5,6 +5,7 @@ using Domain.Totvs.Abstractions.Repositorys;
 using Domain.Totvs.Dtos.Reads.Authorization;
 using Domain.Totvs.Entities.Parameters;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 
@@ -20,12 +21,13 @@ namespace Application.Totvs.Services
         private readonly ILoggerService _logger;
         private readonly IMemoryCache _cache;
         private readonly ITotvsRepository _totvsRepository;
+        private readonly IConfiguration _configuration;
 
         private const string ParametersKey = "Totvs:Parameters";
         private const string TokenKey = "Totvs:Token";
 
-        public TotvsService([FromKeyedServices("TotvsAPI")] IApiClient apiClient, ILoggerService logger, IMemoryCache cache, ITotvsRepository totvsRepository) =>
-            (_apiClient, _logger, _cache, _totvsRepository) = (apiClient, logger, cache, totvsRepository);
+        public TotvsService([FromKeyedServices("TotvsAPI")] IApiClient apiClient, ILoggerService logger, IMemoryCache cache, ITotvsRepository totvsRepository, IConfiguration configuration) =>
+            (_apiClient, _logger, _cache, _totvsRepository, _configuration) = (apiClient, logger, cache, totvsRepository, configuration);
 
         public DateTime GetBatchTime() =>
             TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time"));
@@ -59,6 +61,13 @@ namespace Application.Totvs.Services
 
         public async Task<List<int>> GetBrandBranchCodes(Company company, int baseBranchCode) =>
             (await _totvsRepository.GetBrandBranchCodes(company.doc_company!, baseBranchCode)).ToList();
+
+        public async Task<int?> GetBranchCodeByCnpj(Company company, string cnpj) =>
+            await _totvsRepository.GetBranchCodeByCnpj(company.doc_company!, cnpj);
+
+        // sem o pacote de binder: a chave ausente ou inválida conta como desligada
+        public bool IsWriteEnabled(string group) =>
+            bool.TryParse(_configuration[$"Totvs:Writes:{group}:Enabled"], out var enabled) && enabled;
 
         public async Task<string?> GetToken(Company company)
         {

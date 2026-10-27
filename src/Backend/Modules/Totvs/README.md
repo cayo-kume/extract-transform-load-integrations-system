@@ -19,7 +19,7 @@ Módulo do sistema de integrações (ETL) responsável por **ler** os dados da A
 * de forma **recorrente**, pelos jobs do Hangfire, com leitura incremental por data de alteração;
 * **sob demanda**, a partir de um sistema externo, buscando um único registro por chave e registrando quem pediu cada chamada.
 
-O módulo **não escreve** na Totvs.
+O módulo começou a **escrever** na Totvs (plano em [`docs/PLANO-TOTVS-METODOS-FALTANTES.md`](../../../../docs/PLANO-TOTVS-METODOS-FALTANTES.md)): por enquanto, só a troca de estágio de uma parcela a pagar. Toda escrita é validada antes de chamar a API, fica registrada em `totvs.TotvsRequests` e só roda com a chave de configuração do seu grupo ligada.
 
 | Item | Valor |
 |---|---|
@@ -171,6 +171,12 @@ Os nomes dos métodos são os da **documentação oficial** (`PostSearch*`, `Get
 | `TotvsAccountsPayableService` | `PostSearchComissionsPaid` | `POST accounts-payable/v2/comissions-paid/search` (uma chamada por loja) | `TotvsCommissionsPaid` e movimentos | 13009 | 3 min |
 | `TotvsInvoicesService` | `PostSearchInvoices` | `POST fiscal/v2/invoices/search` | `TotvsInvoices` e 9 filhas/netas | 13003 | 3 min |
 
+**Escritas** (sistema externo, com `X-User-Name`)
+
+| Service | Método | Rota da API | Job | Chave de configuração |
+|---|---|---|---|---|
+| `TotvsAccountsPayableService` | `PostDuplicatesInstallmentsStage` | `POST accounts-payable/v2/duplicates/installments/stage` | 13020 | `Totvs:Writes:AccountsPayable:Enabled` |
+
 **Leituras sob demanda** (um registro por chave)
 
 | Service | Método | Busca na API | Job |
@@ -268,6 +274,7 @@ O DbUp executa cada script uma única vez, em ordem alfabética. Alterar um scri
 | `Script025`–`027` | Notas fiscais |
 | `Script028` | `totvs.TotvsRequests` (log das chamadas sob demanda) |
 | `Script029`–`031` | Jobs das leituras sob demanda |
+| `Script032` | Jobs das escritas de contas a pagar (13018–13020) |
 
 **Regras gerais das tabelas e dos merges:**
 * Toda tabela de dados existe em dois schemas: `untreated` (recebe o bulk insert, sem chave) e `totvs` (tabela final, com PK). A exceção é `totvs.TotvsRequests`, que só recebe inserts.
@@ -318,7 +325,25 @@ Todas exigem:
 | **404** | O registro não existe na Totvs |
 | **422** | Empresa não cadastrada ou resposta inválida da API (detalhes no log da execução) |
 
-> O `[Authorize]` do controller está comentado, como no Movidesk e no AfterSale, porque o host ainda não tem um esquema de autenticação configurado.
+### Escritas (chamadas por sistema externo)
+
+Mesmas exigências das leituras sob demanda (`X-User-Name` e `{docCompany}`), com o corpo validado **antes** de chamar a Totvs.
+
+| Método | Rota | Corpo | Service |
+|---|---|---|---|
+| POST | `Duplicates/{docCompany}/Installments/Stage` | `branchCnpj` (loja da empresa), `supplierCpfCnpj` **ou** `supplierCode`, `duplicateCode`, `installmentCode`, `newStage` (1 título não conferido, 2 liberado para pagamento, 5 título aceito) | `PostDuplicatesInstallmentsStage` |
+
+| Código | Quando |
+|---|---|
+| **200** | Escrita aceita pela Totvs (chave e resposta da Totvs no corpo) |
+| **400** | Corpo inválido (lista de campos e mensagens), sem chamar a Totvs |
+| **422** | Escrita desligada na configuração, empresa ou loja não cadastrada, ou a Totvs recusou (mensagens da Totvs no corpo) |
+| **429** | A Totvs limitou as chamadas também na nova tentativa (`Retry-After`) |
+| **502** | A Totvs foi chamada e não respondeu ou respondeu 5xx: **a escrita pode ter sido feita**, confira antes de repetir |
+
+Diferente das leituras, uma escrita só tenta de novo em 401 (renova o token) e 429; em 502/503/504 não, porque a Totvs pode ter gravado antes de o gateway cair.
+
+> O `[Authorize]` do controller está comentado, como no Movidesk e no AfterSale. A autenticação dos endpoints de inbound vai ser outro mecanismo, ainda a definir; até lá, as escritas ficam desligadas por configuração em produção.
 
 ---
 
@@ -348,6 +373,9 @@ Os jobs ficam em `auditing.Jobs`, com os mesmos ids em `EnumJob`.
 | 13012 | `TotvsGetSalesOrderByKey` | sob demanda |
 | 13013 | `TotvsGetInvoiceByKey` | sob demanda |
 | 13014 | `TotvsGetProductByCode` | sob demanda |
+| 13018 | `TotvsPostDuplicates` | escrita (reservado, fase AP-2) |
+| 13019 | `TotvsPostGroupDuplicates` | escrita (reservado, fase AP-2) |
+| 13020 | `TotvsPostDuplicatesInstallmentsStage` | escrita |
 
 Toda execução grava `auditing.Logs` e, conforme o caso:
 * `auditing.Messages`, com mensagens e erros de validação;
@@ -360,6 +388,7 @@ Toda execução grava `auditing.Logs` e, conforme o caso:
 | Onde | Chave | Uso |
 |---|---|---|
 | `appsettings.json` do host | `Totvs:BaseUrl` | Endereço da API; homologação é só outro valor no `appsettings` do ambiente |
+| `appsettings.json` do host | `Totvs:Writes:<grupo>:Enabled` | Liga as escritas de um grupo (`AccountsPayable`...). Sem a chave, ou com `false`, a rota devolve 422 sem chamar a Totvs |
 | `appsettings.json` do host | `ConnectionStrings` | Conexão com o SQL Server (dados e auditoria) |
 | Banco | `totvs.TotvsParameters` | CNPJ (`doc_company`) e credenciais (`client_id`, `client_secret`, `username`, `password`) de cada empresa |
 
@@ -400,6 +429,7 @@ As leituras sob demanda usam as mesmas buscas, com a lista de chave; a resposta 
 * **Preços, custos e saldos** (`PostSearchPrices`, `PostSearchCosts`, `PostSearchBalances`, jobs 13015–13017): decididos, ainda não implementados (fase 3, partes 4 a 6).
 * **Execução em banco:** os scripts e as rotas ainda não rodaram pelo host; a modelagem foi conferida com chamadas reais à API, sem banco.
 * **`referencedInvoices`:** comentado no `expand` das notas até a Totvs corrigir o erro 400.
+* **Escritas:** só a troca de estágio da parcela está implementada; as demais seguem as fases do plano (`docs/PLANO-TOTVS-METODOS-FALTANTES.md`, §9.4). A primeira chamada real em homologação ainda não foi feita.
 
 ---
 

@@ -34,6 +34,17 @@ namespace Application.Totvs.Abstractions.Services
         public Task<List<int>> GetBrandBranchCodes(Company company, int baseBranchCode);
 
         /// <summary>
+        /// código da loja da empresa pelo CNPJ, em totvs.TotvsBranches; null quando o CNPJ não é de uma loja dela. Sem cache
+        /// </summary>
+        public Task<int?> GetBranchCodeByCnpj(Company company, string cnpj);
+
+        /// <summary>
+        /// escritas ligadas por configuração (T4 do docs/PLANO-TOTVS-METODOS-FALTANTES.md): Totvs:Writes:&lt;grupo&gt;:Enabled,
+        /// desligada quando a chave não existe
+        /// </summary>
+        public bool IsWriteEnabled(string group);
+
+        /// <summary>
         /// access_token do authorization/v2/token da empresa, em cache até perto do expires_in.
         /// null quando o login falha (a mensagem vai para o log da execução)
         /// </summary>
