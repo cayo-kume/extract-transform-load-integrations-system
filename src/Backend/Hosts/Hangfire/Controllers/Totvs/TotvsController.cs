@@ -231,6 +231,18 @@ namespace Hangfire.Controllers.Totvs
         }
 
         /// <summary>
+        /// sincroniza as regiões de atuação, com estados, CEPs e cidades (GET seller/v2/operational-area*)
+        /// </summary>
+        [HttpGet("OperationalAreas")]
+        [Tags("TotvsSellers")]
+        public async Task<ActionResult> OperationalAreas()
+        {
+            var result = await _totvsSellersService.GetOperationalArea();
+
+            return Ok($"Records integrated successfully.");
+        }
+
+        /// <summary>
         /// sincroniza as referências e produtos das marcas (POST product/v2/references/search), uma chamada por matriz
         /// </summary>
         [HttpPost("Products")]

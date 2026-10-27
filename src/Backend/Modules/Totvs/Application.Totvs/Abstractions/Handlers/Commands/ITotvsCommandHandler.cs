@@ -18,6 +18,7 @@
 
         public string CreateGetSellersLastChangeQuery(string doc_company);
         public string CreateGetSellersByCodesQuery(string doc_company, List<int> codes);
+        public string CreateGetOperationalAreasHashesQuery(string doc_company);
 
         public string CreateGetPurchaseOrdersLastChangeQuery(string doc_company);
         public string CreateGetPurchaseOrdersByKeysQuery(string doc_company, List<(int branchCode, int orderCode)> keys);

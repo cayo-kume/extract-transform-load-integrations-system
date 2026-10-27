@@ -60,5 +60,36 @@ namespace Infrastructure.Totvs.Repositorys
 
             return true;
         }
+
+        public async Task<IEnumerable<OperationalArea?>> GetOperationalAreasHashes(string doc_company)
+        {
+            string sql = _totvsCommandHandler.CreateGetOperationalAreasHashesQuery(doc_company);
+
+            return await _coreRepository.GetRecords<OperationalArea>(sql);
+        }
+
+        public async Task<bool> BulkInsertIntoTotvsOperationalAreas(List<OperationalArea> data, Guid? parentExecutionGUID)
+        {
+            // ordem = ordem dos merges: região antes das filhas (FKs e condição de exclusão do merge)
+            var tables = new List<(DataTable table, IList rows)>
+            {
+                (_coreRepository.CreateSystemDataTable(entity: new OperationalArea(), tableName: "TotvsOperationalAreas"), data),
+                (_coreRepository.CreateSystemDataTable(entity: new OperationalAreaState(), tableName: "TotvsOperationalAreasStates"), data.SelectMany(x => x.states).ToList()),
+                (_coreRepository.CreateSystemDataTable(entity: new OperationalAreaCep(), tableName: "TotvsOperationalAreasCeps"), data.SelectMany(x => x.ceps).ToList()),
+                (_coreRepository.CreateSystemDataTable(entity: new OperationalAreaCity(), tableName: "TotvsOperationalAreasCities"), data.SelectMany(x => x.cities).ToList()),
+            };
+
+            foreach (var (table, rows) in tables)
+            {
+                _coreRepository.FillSystemDataTable(table, rows.Cast<object>().ToList());
+                _coreRepository.BulkInsertIntoTableRaw(table, "untreated");
+            }
+
+            // o merge das filhas roda mesmo sem linhas no lote: é ele que apaga as que saíram da região
+            foreach (var (table, _) in tables)
+                await _coreRepository.CallDbProcMerge("totvs", table.TableName, parentExecutionGUID);
+
+            return true;
+        }
     }
 }

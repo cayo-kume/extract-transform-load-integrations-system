@@ -38,6 +38,9 @@
         TotvsGetPhoneTypes = 13034,   //Script035_Insert_Totvs_Person_Catalogs_Jobs_Into_Jobs_Table.sql
         TotvsGetContactTypes = 13035,   //Script035_Insert_Totvs_Person_Catalogs_Jobs_Into_Jobs_Table.sql
 
+        // regiões de atuação da API Seller (fase SE-1), a cada 2 horas
+        TotvsGetOperationalArea = 13070,   //Script044_Insert_Totvs_Operational_Areas_Jobs_Into_Jobs_Table.sql
+
         // escritas (TotvsController, com X-User-Name; não recorrentes): docs/PLANO-TOTVS-METODOS-FALTANTES.md §9.4
         TotvsPostDuplicates = 13018,   //Script032_Insert_Totvs_Accounts_Payable_Writes_Jobs_Into_Jobs_Table.sql (fase AP-2)
         TotvsPostGroupDuplicates = 13019,   //Script032_Insert_Totvs_Accounts_Payable_Writes_Jobs_Into_Jobs_Table.sql (fase AP-2)

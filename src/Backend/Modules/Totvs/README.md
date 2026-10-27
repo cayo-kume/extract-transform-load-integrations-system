@@ -164,6 +164,7 @@ Os nomes dos métodos são os da **documentação oficial** (`PostSearch*`, `Get
 | `TotvsPeopleService` | `PostSearchCustomers` | `POST person/v2/individuals/search` | `TotvsPeople` e 12 filhas | 13002 | 3 min |
 | `TotvsPeopleService` | `PostSearchLegalEntity` | `POST person/v2/legal-entities/search` | `TotvsLegalEntities` e 15 filhas | 13001 | 3 min |
 | `TotvsSellersService` | `PostSearchSellers` | `POST seller/v2/search` | `TotvsSellers` e 2 filhas | 13006 | 120 min |
+| `TotvsSellersService` | `GetOperationalArea` | `GET seller/v2/operational-area`, `-state`, `-cep` e `-city` (inteiras, com hash por região) | `TotvsOperationalAreas` e 3 filhas | 13070 | 120 min |
 | `TotvsProductsService` | `PostSearchReferences` | `POST product/v2/references/search` (uma chamada por marca) | `TotvsSkus` e 21 filhas/netas | 13000 | 120 min |
 | `TotvsPurchaseOrdersService` | `PostSearchPurchaseOrders` | `POST purchase-order/v2/search` | `TotvsPurchaseOrders` e 2 filhas | 13004 | 3 min |
 | `TotvsSalesOrdersService` | `PostSearchSalesOrders` | `POST sales-order/v2/orders/search` | `TotvsSaleOrders` e 10 filhas/netas | 13005 | 3 min |
@@ -285,6 +286,7 @@ O DbUp executa cada script uma única vez, em ordem alfabética. Alterar um scri
 | `Script033`–`035` | Catálogos da API Person (classificações e tipos de e-mail, telefone e contato) |
 | `Script036`–`038` | Representantes |
 | `Script039`–`041` | Recepção de venda |
+| `Script042`–`044` | Regiões de atuação |
 
 **Regras gerais das tabelas e dos merges:**
 * Toda tabela de dados existe em dois schemas: `untreated` (recebe o bulk insert, sem chave) e `totvs` (tabela final, com PK). A exceção é `totvs.TotvsRequests`, que só recebe inserts.
@@ -307,6 +309,7 @@ Rota base: `TotvsJobs/Totvs`. O verbo segue a documentação oficial: `POST` nas
 | POST | `Customers` | `TotvsPeopleService.PostSearchCustomers` |
 | POST | `LegalEntities` | `TotvsPeopleService.PostSearchLegalEntity` |
 | POST | `Sellers` | `TotvsSellersService.PostSearchSellers` |
+| GET | `OperationalAreas` | `TotvsSellersService.GetOperationalArea` |
 | POST | `Products` | `TotvsProductsService.PostSearchReferences` |
 | POST | `PurchaseOrders` | `TotvsPurchaseOrdersService.PostSearchPurchaseOrders` |
 | POST | `SalesOrders` | `TotvsSalesOrdersService.PostSearchSalesOrders` |
@@ -371,7 +374,7 @@ Os jobs ficam em `auditing.Jobs`, com os mesmos ids em `EnumJob`.
 | Faixa | Tipo (`IdType`) | Conteúdo |
 |---|---|---|
 | 13000–13499 | 2 (Integração) | Leituras, com `IdParent = 130` (app Totvs) |
-| 13500–13999 | 1 (Procedure) | Procedures `sp_<Tabela>_Sync` (13500–13601), com `IdParent` = job da leitura e o mesmo intervalo |
+| 13500–13999 | 1 (Procedure) | Procedures `sp_<Tabela>_Sync` (13500–13605), com `IdParent` = job da leitura e o mesmo intervalo |
 
 | Id | Job | Intervalo |
 |---|---|---|
@@ -397,6 +400,7 @@ Os jobs ficam em `auditing.Jobs`, com os mesmos ids em `EnumJob`.
 | 13030 | `TotvsPostSearchRepresentatives` | 120 min |
 | 13031 | `TotvsGetSearchReceptionSale` | 3 min |
 | 13039 | `TotvsGetRepresentativeByCode` | sob demanda |
+| 13070 | `TotvsGetOperationalArea` | 120 min |
 | 13018 | `TotvsPostDuplicates` | escrita (reservado, fase AP-2) |
 | 13019 | `TotvsPostGroupDuplicates` | escrita (reservado, fase AP-2) |
 | 13020 | `TotvsPostDuplicatesInstallmentsStage` | escrita |

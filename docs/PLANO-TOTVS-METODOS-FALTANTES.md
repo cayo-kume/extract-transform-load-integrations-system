@@ -698,7 +698,8 @@ comissões pagas (`Totvs:CommissionsPaidHash`).
    empresa (nada é gravado dela nesta execução: a abrangência incompleta apagaria filhas);
 3. agrupa por `operationalAreaCode`: a região com os seus estados, CEPs e cidades, cada lista ordenada pela chave;
 4. calcula o hash do JSON agrupado de cada região e compara com o cache `Totvs:OperationalAreasHash:<cnpj>` (memória,
-   2 h / 30 min, como as comissões: depois de reiniciar o host, a primeira execução regrava tudo);
+   2 h / 30 min, como as comissões: depois de reiniciar o host, a primeira execução regrava tudo). **Na implementação
+   (§10.4)**, pela T9, o hash fica na coluna `json_hash` de `TotvsOperationalAreas`, lido do banco, sem cache de memória;
 5. as regiões que mudaram vão para `untreated` e `sp_TotvsOperationalAreas*_Sync`, pai e filhas com o mesmo horário de
    lote: o merge apaga a filha que saiu da região (regra geral das filhas do README);
 6. uma filha cujo `operationalAreaCode` não veio na rota `operational-area` é registrada em `auditing.Messages` e
@@ -2308,7 +2309,7 @@ onda 2 que entrar monta a base das leituras sem persistência (T11, §8.1).
 
 | Fase | Onda | Métodos | Jobs | Depende de |
 |---|---|---|---|---|
-| SE-1 | 1 | `GetOperationalArea` (as 4 rotas num job, DS1) | 13070 | — (DS2: implementada mesmo sem regiões na base) |
+| SE-1 | 1 | `GetOperationalArea` (as 4 rotas num job, DS1) | 13070 | — (DS2: implementada mesmo sem regiões na base) **Implementada em 27/10/2026** (§10.4) |
 
 #### Product (§5)
 
@@ -2467,3 +2468,34 @@ As colunas das 4 `DataTable` batem com o `Script033`.
 * as colunas das 13 `DataTable` batem com os scripts `036` e `039`.
 
 **Não verificado:** os scripts `036`–`041` em banco e as rotas pelo host.
+
+### 10.4 Fase SE-1: regiões de atuação (27/10/2026)
+
+**O que entrou:**
+* `TotvsSellersService.GetOperationalArea` (job **13070**, 120 min, DS1 opção A): lê as quatro rotas
+  `GET seller/v2/operational-area`, `-state`, `-cep` e `-city` inteiras (`Page`/`PageSize` 1000, sem filtro de data), uma
+  depois da outra; qualquer página com erro interrompe a empresa sem gravar nada. Não precisa de lojas;
+* estados, CEPs e cidades são agrupados por `operationalAreaCode`, cada lista ordenada pela chave, e o hash SHA-256 do JSON
+  agrupado (sem o `maxChangeFilterDate`, que preenchido mudaria o hash a cada execução) vai na coluna `json_hash`, comparado
+  com o do banco (T9, sem cache de memória). Só a região nova ou com hash diferente é regravada, com as filhas;
+* filha de região que não veio em `operational-area` vai para `auditing.Messages` e é descartada (a FK recusaria);
+  `auditing.Records` leva a chave `operationalAreaCode` e o JSON agrupado;
+* tabelas `TotvsOperationalAreas`, `TotvsOperationalAreasStates`, `TotvsOperationalAreasCeps` e
+  `TotvsOperationalAreasCities` (`Script042`–`044`: tabelas com FKs, procedures com exclusão das filhas quando a região é
+  regravada, job 13070 e procedures **13602–13605**);
+* rota `GET TotvsJobs/Totvs/OperationalAreas`. Os validadores ficam em `Validations/Sellers`, junto dos de vendedor (o plano
+  dizia `Validations/Reads/Sellers`, pasta que não existe).
+
+**Achados na chamada real (27/10/2026):** as quatro rotas respondem 200 com `count = 0`, com e sem filtro de data: a base não
+tem regiões de atuação. Implementada pela T14 (DS2); o formato do `cep`, a unicidade do `operationalAreaCode` entre tipos e
+os tamanhos dos textos continuam **a confirmar** quando houver dados, e o exemplo em `Responsed Jsons` fica para então.
+
+**Conferido com o console descartável** (API real e respostas sintéticas, banco falso):
+* contra a API: 4 chamadas, nada gravado;
+* sintético (3 regiões, a principal em 2 páginas; um estado de região inexistente; um CEP repetido; um CEP e um tipo
+  inválidos): a 1ª execução grava as 3 regiões (2 estados, 3 CEPs, 2 cidades), registra a órfã e as duas validações; a 2ª não
+  regrava nada; a 3ª, com as listas em outra ordem e o `maxChangeFilterDate` preenchido, também não; a 4ª, com uma cidade
+  alterada, regrava só a região dela; a 5ª, com a rota de CEP respondendo 500, não grava nada e registra o erro;
+* as colunas das 4 `DataTable` batem com o `Script042`.
+
+**Não verificado:** os scripts `042`–`044` em banco e a rota pelo host.
