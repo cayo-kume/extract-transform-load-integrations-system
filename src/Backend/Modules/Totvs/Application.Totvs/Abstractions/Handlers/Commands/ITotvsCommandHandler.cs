@@ -40,6 +40,11 @@
         public string CreateGetContactTypesLastChangeQuery(string doc_company);
         public string CreateGetContactTypesQuery(string doc_company);
 
+        public string CreateGetRepresentativesLastChangeQuery(string doc_company);
+        public string CreateGetRepresentativesByCodesQuery(string doc_company, List<int> codes);
+        public string CreateGetReceptionSalesLastMovementDateQuery(string doc_company);
+        public string CreateGetReceptionSalesHashesQuery(string doc_company, DateTime startMovementDate, DateTime endMovementDate);
+
         public string CreateGetSkusLastChangeQuery(string doc_company, int branchInfoCode);
         public string CreateGetSkusByIdsQuery(string doc_company, int branchInfoCode, List<int> referenceIds);
     }

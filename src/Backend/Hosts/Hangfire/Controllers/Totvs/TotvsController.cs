@@ -29,6 +29,7 @@ namespace Hangfire.Controllers.Totvs
         private readonly ITotvsAccountsPayableService _totvsAccountsPayableService;
         private readonly ITotvsInvoicesService _totvsInvoicesService;
         private readonly ITotvsPersonCatalogsService _totvsPersonCatalogsService;
+        private readonly ITotvsRepresentativesService _totvsRepresentativesService;
         private readonly IValidator<Domain.Totvs.Dtos.Writes.AccountsPayable.ChangeInstallmentStage> _changeInstallmentStageValidator;
 
         public TotvsController(
@@ -40,10 +41,11 @@ namespace Hangfire.Controllers.Totvs
             ITotvsAccountsPayableService totvsAccountsPayableService,
             ITotvsInvoicesService totvsInvoicesService,
             ITotvsPersonCatalogsService totvsPersonCatalogsService,
+            ITotvsRepresentativesService totvsRepresentativesService,
             IValidator<Domain.Totvs.Dtos.Writes.AccountsPayable.ChangeInstallmentStage> changeInstallmentStageValidator
         ) =>
-            (_totvsPeopleService, _totvsSellersService, _totvsProductsService, _totvsPurchaseOrdersService, _totvsSalesOrdersService, _totvsAccountsPayableService, _totvsInvoicesService, _totvsPersonCatalogsService, _changeInstallmentStageValidator) =
-            (totvsPeopleService, totvsSellersService, totvsProductsService, totvsPurchaseOrdersService, totvsSalesOrdersService, totvsAccountsPayableService, totvsInvoicesService, totvsPersonCatalogsService, changeInstallmentStageValidator);
+            (_totvsPeopleService, _totvsSellersService, _totvsProductsService, _totvsPurchaseOrdersService, _totvsSalesOrdersService, _totvsAccountsPayableService, _totvsInvoicesService, _totvsPersonCatalogsService, _totvsRepresentativesService, _changeInstallmentStageValidator) =
+            (totvsPeopleService, totvsSellersService, totvsProductsService, totvsPurchaseOrdersService, totvsSalesOrdersService, totvsAccountsPayableService, totvsInvoicesService, totvsPersonCatalogsService, totvsRepresentativesService, changeInstallmentStageValidator);
 
         /// <summary>
         /// sincroniza as empresas (lojas) da holding (GET person/v2/branchesList)
@@ -167,6 +169,51 @@ namespace Hangfire.Controllers.Totvs
         public async Task<ActionResult> ContactTypes()
         {
             var result = await _totvsPersonCatalogsService.GetContactTypes();
+
+            return Ok($"Records integrated successfully.");
+        }
+
+        /// <summary>
+        /// sincroniza os representantes, com clientes, tabelas de preço, regiões de venda e parâmetros (POST person/v2/representatives/search)
+        /// </summary>
+        [HttpPost("Representatives")]
+        [Tags("TotvsRepresentatives")]
+        public async Task<ActionResult> Representatives()
+        {
+            var result = await _totvsRepresentativesService.PostSearchRepresentatives();
+
+            return Ok($"Records integrated successfully.");
+        }
+
+        /// <summary>
+        /// busca um representante por código (POST person/v2/representatives/search com representativeCodeList) e grava; a chamada fica em totvs.TotvsRequests
+        /// </summary>
+        [HttpGet("Representatives/{docCompany}/{code:int:min(1)}")]
+        [Tags("TotvsRepresentatives")]
+        public async Task<ActionResult> Representative(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            int code
+        )
+        {
+            var result = await _totvsRepresentativesService.GetRepresentativeByCode(userName, docCompany, code);
+
+            return result switch
+            {
+                true => Ok($"Representative {code} integrated successfully."),
+                false => NotFound($"Representative {code} not found in Totvs."),
+                null => UnprocessableEntity("Company not registered or invalid response from Totvs. See the execution log.")
+            };
+        }
+
+        /// <summary>
+        /// sincroniza as recepções de venda (GET person/v2/reception-sale/search), pela data do movimento
+        /// </summary>
+        [HttpGet("ReceptionSales")]
+        [Tags("TotvsRepresentatives")]
+        public async Task<ActionResult> ReceptionSales()
+        {
+            var result = await _totvsRepresentativesService.GetSearchReceptionSale();
 
             return Ok($"Records integrated successfully.");
         }

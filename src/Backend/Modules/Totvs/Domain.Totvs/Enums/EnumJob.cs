@@ -27,6 +27,11 @@
         TotvsGetInvoiceByKey = 13013,   //Script030_Insert_Totvs_On_Demand_Documents_Jobs_Into_Jobs_Table.sql
         TotvsGetProductByCode = 13014,   //Script031_Insert_Totvs_On_Demand_Products_Jobs_Into_Jobs_Table.sql
 
+        // representantes (120 min), recepção de venda (3 min) e representante por código (sob demanda): fase PE-2
+        TotvsPostSearchRepresentatives = 13030,   //Script038_Insert_Totvs_Representatives_Jobs_Into_Jobs_Table.sql
+        TotvsGetSearchReceptionSale = 13031,   //Script041_Insert_Totvs_Reception_Sales_Jobs_Into_Jobs_Table.sql
+        TotvsGetRepresentativeByCode = 13039,   //Script038_Insert_Totvs_Representatives_Jobs_Into_Jobs_Table.sql
+
         // catálogos da API Person (fase PE-1), a cada 2 horas
         TotvsPersonGetClassifications = 13032,   //Script035_Insert_Totvs_Person_Catalogs_Jobs_Into_Jobs_Table.sql
         TotvsGetEmailTypes = 13033,   //Script035_Insert_Totvs_Person_Catalogs_Jobs_Into_Jobs_Table.sql

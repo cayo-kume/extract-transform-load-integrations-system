@@ -304,7 +304,9 @@ Jobs: intervalo **13030–13069**. 13030–13039 leituras, 13040–13049 escrita
 * `pageSize` 500 (máximo do swagger), `order` `maxChangeFilterDate`.
 * Sem filtro de loja obrigatório no swagger (diferente das buscas de documentos).
 
-**Tabelas** (`untreated` + `totvs`, filhas com `representativeCode` e exclusão no merge quando o pai é regravado):
+**Tabelas** (`untreated` + `totvs`, exclusão no merge quando o pai é regravado). **Na implementação (§10.3)** a coluna das
+filhas é `personCode` (o representante é uma pessoa do PESFM010), e as seis filhas comuns com a PF reusam os DTOs, entidades e
+validadores de `People/Persons` com as mesmas colunas das `TotvsPeople*`:
 
 | Tabela | Chave | Origem |
 |---|---|---|
@@ -337,9 +339,10 @@ Recepção de venda (`PESFL023`: entrada do cliente na loja, com vendedor, repre
 `Page`, `PageSize` 1000. Os `ValidationResult.*` da lista de parâmetros são lixo do swagger e não vão.
 
 **Janela:** a resposta **não tem `maxChangeFilterDate` nem a data de cadastro**, então o estado não sai do banco. Proposta:
-reler a cada execução o movimento de **D-2 até hoje** (`StartMovementDate`), com hash do JSON de cada recepção
-(`Totvs:ReceptionSalesHash:<cnpj>`, como as comissões) para só regravar o que mudou. Carga inicial desde 01/01/2025, em
-fatias de 30 dias.
+reler a cada execução o movimento de **D-2 até hoje** (`StartMovementDate`), com hash do JSON de cada recepção para só
+regravar o que mudou. Carga inicial desde 01/01/2025, em fatias de 30 dias. **Na implementação (§10.3)**, pela T9, o hash fica
+numa coluna `json_hash` da própria tabela, lido do banco para a fatia, e a janela começa 2 dias antes do maior movimento
+gravado.
 
 **Tabelas:** `TotvsReceptionSales` (`doc_company`, `branchCode`, `movementDate`, `sequence`; `customerCode`,
 `customerName`, `sellerCode`/`Name`, `representativeCode`/`Name`, `guideCode`/`Name`, `receptionType`, `checkInTime`,
@@ -2294,7 +2297,7 @@ onda 2 que entrar monta a base das leituras sem persistência (T11, §8.1).
 | Fase | Onda | Service | Métodos | Jobs | Depende de |
 |---|---|---|---|---|---|
 | PE-1 | 1 | `TotvsPersonCatalogsService` | `GetClassifications`, `GetEmailTypes`, `GetPhoneTypes`, `GetContactTypes` | 13032–13035 | — **Implementada em 27/10/2026** (§10.2) |
-| PE-2 | 1 | `TotvsRepresentativesService` | `PostSearchRepresentatives`; `GetRepresentativeByCode` (PE10); `GetSearchReceptionSale` (PE2) | 13030, 13039, 13031 | — |
+| PE-2 | 1 | `TotvsRepresentativesService` | `PostSearchRepresentatives`; `GetRepresentativeByCode` (PE10); `GetSearchReceptionSale` (PE2) | 13030, 13039, 13031 | — **Implementada em 27/10/2026** (§10.3) |
 | PE-3 | 2 | `TotvsPeopleService` | `GetBranches`, `GetPersonStatistics` | 13036, 13037 | base T11 |
 | PE-4 | 2 | `TotvsBonusService` | token por loja (PE3) + `PostListBalanceBonus` | 13038 | PE-3 |
 | PE-5 | 3 | `TotvsPeopleService` | `PostMessages`, `PutChangeMessages`, `DeleteMessages` | 13044–13046 | AP-1 |
@@ -2427,3 +2430,40 @@ registros (6 + 2 + 4 + 3) sem mensagem de validação; a 2ª, com o banco falso 
 As colunas das 4 `DataTable` batem com o `Script033`.
 
 **Não verificado:** os scripts `033`–`035` em banco e as rotas pelo host.
+
+### 10.3 Fase PE-2: representantes e recepção de venda (27/10/2026)
+
+**O que entrou:**
+* `TotvsRepresentativesService` (novo, T10) com três métodos, cada um com a própria chamada à API:
+  * `PostSearchRepresentatives` (job 13030, 120 min): `POST person/v2/representatives/search` com `filter.change` e todas as
+    flags `in*`, o `expand` da documentação, `option.branchRepresentativeParameterList` com as lojas da empresa e `pageSize`
+    500. Janela pelo banco (`MAX(maxChangeFilterDate)` − 1 h; banco vazio, desde 2000), **lida inteira, sem fatias**: a base tem
+    20 representantes. Cache `Totvs:Representatives:<cnpj>`;
+  * `GetRepresentativeByCode` (job 13039, sob demanda, PE10): `representativeCodeList` com `pageSize` 1 e `filter.change` desde
+    2000 com as flags, para o `maxChangeFilterDate` vir preenchido (como o `GetCustomerByCode`); rota
+    `GET TotvsJobs/Totvs/Representatives/{docCompany}/{code}` com `X-User-Name`, registrada em `TotvsRequests`;
+  * `GetSearchReceptionSale` (job 13031, 3 min, PE2/T14): janela pela **data do movimento** (banco vazio, desde 01/01/2025, em
+    fatias de 30 dias; depois, desde 2 dias antes do maior movimento gravado). Sem data de alteração na resposta, o hash SHA-256
+    do JSON de cada recepção vai na coluna `json_hash` e é comparado com o do banco para a fatia (T9). Os telefones do cliente
+    não são gravados (já estão em `TotvsPeoplePhones`);
+* tabelas `TotvsRepresentatives` e 10 filhas (`Script036`–`038`: tabelas com FKs, procedures com exclusão das filhas e jobs
+  13030 e 13039, procedures **13589–13599**) e `TotvsReceptionSales` + `TotvsReceptionSalesDocumentTypes` (`Script039`–`041`,
+  job 13031, procedures **13600–13601**);
+* rotas `POST TotvsJobs/Totvs/Representatives`, `GET .../Representatives/{docCompany}/{code}` e `GET .../ReceptionSales`.
+
+**Achados na chamada real (27/10/2026):**
+* a busca aceita `filter.change` desde 2000 (sem limite de período, ao contrário de notas e produtos) e devolve os 20
+  representantes da base, cada um só com um endereço (nenhum cliente, tabela de preço, região ou parâmetro cadastrado);
+* sem `filter.change` o `maxChangeFilterDate` vem nulo, como nas outras buscas de pessoa;
+* a recepção de venda está **vazia** na base (nenhuma recepção em nenhum filtro) e responde 200 com `items` vazio, não o 404
+  declarado no swagger. Implementada pela T14; a lógica de gravação e de hash foi conferida com respostas sintéticas.
+
+**Conferido com o console descartável** (API real, banco falso):
+* representantes: 1ª execução grava 20 (20 endereços), sem mensagem de validação; a 2ª não regrava nada;
+* por código: o representante 1 é gravado e registrado em `TotvsRequests`; o 999999999 devolve `false`;
+* recepção: contra a API, 23 chamadas na carga inicial (fatias de 30 dias desde 01/01/2025), nada gravado; com duas recepções
+  sintéticas, a 1ª execução grava as 2 (e 2 formas de pagamento), a 2ª não regrava nada (hash igual, 1 chamada na janela de
+  2 dias) e a 3ª, com uma observação alterada, regrava só 1;
+* as colunas das 13 `DataTable` batem com os scripts `036` e `039`.
+
+**Não verificado:** os scripts `036`–`041` em banco e as rotas pelo host.
