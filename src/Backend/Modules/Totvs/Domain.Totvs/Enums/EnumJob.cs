@@ -41,6 +41,20 @@
         // regiões de atuação da API Seller (fase SE-1), a cada 2 horas
         TotvsGetOperationalArea = 13070,   //Script044_Insert_Totvs_Operational_Areas_Jobs_Into_Jobs_Table.sql
 
+        // catálogos da API Product (fase PR-1), a cada 2 horas
+        TotvsGetClassificationType = 13080,   //Script047_Insert_Totvs_Product_Catalogs_Jobs_Into_Jobs_Table.sql
+        TotvsProductGetClassifications = 13081,   //Script047_Insert_Totvs_Product_Catalogs_Jobs_Into_Jobs_Table.sql
+        TotvsGetCategory = 13082,   //Script047_Insert_Totvs_Product_Catalogs_Jobs_Into_Jobs_Table.sql
+        TotvsGetGrid = 13083,   //Script047_Insert_Totvs_Product_Catalogs_Jobs_Into_Jobs_Table.sql
+        TotvsGetMeasurementUnit = 13084,   //Script047_Insert_Totvs_Product_Catalogs_Jobs_Into_Jobs_Table.sql
+        TotvsPostSearchColors = 13085,   //Script047_Insert_Totvs_Product_Catalogs_Jobs_Into_Jobs_Table.sql
+        TotvsGetAdditionalFieldsTypes = 13086,   //Script047_Insert_Totvs_Product_Catalogs_Jobs_Into_Jobs_Table.sql
+        TotvsGetProductGrouperConfiguration = 13087,   //Script047_Insert_Totvs_Product_Catalogs_Jobs_Into_Jobs_Table.sql
+        TotvsGetInstructionItems = 13088,   //Script047_Insert_Totvs_Product_Catalogs_Jobs_Into_Jobs_Table.sql
+        TotvsPostCompositions = 13089,   //Script047_Insert_Totvs_Product_Catalogs_Jobs_Into_Jobs_Table.sql
+        TotvsGetPriceTablesHeaders = 13090,   //Script047_Insert_Totvs_Product_Catalogs_Jobs_Into_Jobs_Table.sql
+        TotvsGetPriceTableScales = 13091,   //Script047_Insert_Totvs_Product_Catalogs_Jobs_Into_Jobs_Table.sql
+
         // escritas (TotvsController, com X-User-Name; não recorrentes): docs/PLANO-TOTVS-METODOS-FALTANTES.md §9.4
         TotvsPostDuplicates = 13018,   //Script032_Insert_Totvs_Accounts_Payable_Writes_Jobs_Into_Jobs_Table.sql (fase AP-2)
         TotvsPostGroupDuplicates = 13019,   //Script032_Insert_Totvs_Accounts_Payable_Writes_Jobs_Into_Jobs_Table.sql (fase AP-2)

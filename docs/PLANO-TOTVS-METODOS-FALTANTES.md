@@ -900,11 +900,12 @@ Detalhes que não são óbvios:
   `maxChangeFilterDate`, embora o filtro aceite `change`. Proposta: leitura **completa** a cada execução e o desenho das
   comissões — hash do JSON de cada cor em `Totvs:ColorsHash:<cnpj>`, só regrava a cor cujo hash mudou. As cores das
   referências (`TotvsSkusColors`) continuam como estão; esta tabela é o cadastro mestre (PRDFL025), com as informações por
-  empresa.
+  empresa. **Na implementação (§10.5)**, pela T9, o hash fica na coluna `json_hash` de `TotvsColors`, lido do banco, e a
+  leitura usa `filter: {}` (o `filter` é obrigatório; vazio, devolve todas as cores).
 * **Grade:** `grid` é lista de textos (tamanhos), sem chave: `sequence` = posição. Mesmo dado de `TotvsSkusGrids`, mas
   por grade, não por referência; serve para validar `sizeName` no `PostReferences`.
 * **Unidade de medida:** a chave da variação (`code`, até 40) é suposição — a confirmar com chamada real; se repetir, usar
-  `sequence`.
+  `sequence`. **Conferido (§10.5):** a base tem uma variação só (`PAR` → `PAIR`); fica `code`.
 * **Classificações:** `TypeCodeList` aceita até 120 itens; sem ele vêm todas. Uma troca de nome do tipo (PRDFL011) talvez
   não mude a `maxChangeFilterDate` da classificação (PRDFL012): o nome do tipo vale o de `TotvsClassificationTypes`.
 * **Cabeçalho de tabela de preço:** filhas `TotvsPriceTablesSalesOrderClassifications` (`typeCode`, `code`),
@@ -2315,7 +2316,7 @@ onda 2 que entrar monta a base das leituras sem persistência (T11, §8.1).
 
 | Fase | Onda | Service | Métodos | Jobs | Depende de |
 |---|---|---|---|---|---|
-| PR-1 | 1 | `TotvsProductCatalogsService` | `GetClassificationType`, `GetClassifications`, `GetCategory`, `GetGrid`, `GetMeasurementUnit`, `PostSearchColors`, `GetAdditionalFieldsTypes`, `GetProductGrouperConfiguration`, `GetInstructionItems`, `PostCompositions`; `GetPriceTablesHeaders`, `GetPriceTableScales` (PR5) | 13080–13091 | — |
+| PR-1 | 1 | `TotvsProductCatalogsService` | `GetClassificationType`, `GetClassifications`, `GetCategory`, `GetGrid`, `GetMeasurementUnit`, `PostSearchColors`, `GetAdditionalFieldsTypes`, `GetProductGrouperConfiguration`, `GetInstructionItems`, `PostCompositions`; `GetPriceTablesHeaders`, `GetPriceTableScales` (PR5) | 13080–13091 | — **Implementada em 27/10/2026** (§10.5) |
 | PR-2 | 1 | `TotvsProductPricesService`, `TotvsProductsService` | fase 3, partes 4 a 6 (`PostSearchPrices`, `PostSearchCosts`, `PostSearchBalances`, com a escolha da PR2 sobre `PostOmniChangedBalances`); `PostSearchPriceTables`, `GetPromotion` (PR5); `GetSimilar`; `PostSearchBatch` (PR6); `PostSearchProductCodes` (PR3) | 13015–13017, 13092–13097 | PR-1 (cabeçalhos das tabelas de preço) |
 | PR-3 | 2 | `TotvsProductsService` | `GetProducts`, `GetKardexMovement`, `GetGridFrequency`, `GetMeasurementConversions`, `GetCompositionProduct`, `GetCompositionGroupProduct` | 13100–13105 | base T11 |
 | PR-4 | 3 | `TotvsProductCatalogsService` | `PostColors`, `PostGrids` | 13124, 13126 | AP-1, PR-1 |
@@ -2499,3 +2500,62 @@ os tamanhos dos textos continuam **a confirmar** quando houver dados, e o exempl
 * as colunas das 4 `DataTable` batem com o `Script042`.
 
 **Não verificado:** os scripts `042`–`044` em banco e a rota pelo host.
+
+### 10.5 Fase PR-1: catálogos da API Product (27/10/2026)
+
+**O que entrou:**
+* `TotvsProductCatalogsService` (novo, PR12) com os 12 catálogos, um job de 120 min cada (PR4):
+
+| Método | Job | Rota da API | Rota no controller | Tabelas |
+|---|---|---|---|---|
+| `GetClassificationType` | 13080 `TotvsGetClassificationType` | `GET classificationType` | `GET Products/ClassificationTypes` | `TotvsClassificationTypes` |
+| `GetClassifications` | 13081 `TotvsProductGetClassifications` | `GET classifications` | `GET Products/Classifications` | `TotvsProductClassifications` |
+| `GetCategory` | 13082 `TotvsGetCategory` | `GET category` | `GET Products/Categories` | `TotvsCategories` |
+| `GetGrid` | 13083 `TotvsGetGrid` | `GET grid` | `GET Products/Grids` | `TotvsGrids` + `TotvsGridsSizes` |
+| `GetMeasurementUnit` | 13084 `TotvsGetMeasurementUnit` | `GET measurement-unit` | `GET Products/MeasurementUnits` | `TotvsMeasurementUnits` + `TotvsMeasurementUnitsVariations` |
+| `PostSearchColors` | 13085 `TotvsPostSearchColors` | `POST colors/search` | `POST Products/Colors` | `TotvsColors` + `TotvsColorsAdditionalInformation` |
+| `GetAdditionalFieldsTypes` | 13086 `TotvsGetAdditionalFieldsTypes` | `GET additional-fields-types` | `GET Products/AdditionalFieldsTypes` | `TotvsAdditionalFieldsTypes` |
+| `GetProductGrouperConfiguration` | 13087 `TotvsGetProductGrouperConfiguration` | `GET product-grouper-configuration` | `GET Products/GrouperConfigurations` | `TotvsProductGrouperConfigurations` + `TotvsProductGrouperConfigurationsItems` |
+| `GetInstructionItems` | 13088 `TotvsGetInstructionItems` | `GET instruction-items` | `GET Products/InstructionItems` | `TotvsInstructionItems` |
+| `PostCompositions` | 13089 `TotvsPostCompositions` | `POST compositions` | `POST Products/Compositions` | `TotvsCompositions` + `TotvsCompositionsFibers` |
+| `GetPriceTablesHeaders` | 13090 `TotvsGetPriceTablesHeaders` | `GET price-tables-headers` | `GET Products/PriceTablesHeaders` | `TotvsPriceTables` + `TotvsPriceTablesSalesOrderClassifications`, `TotvsPriceTablesPersonClassifications`, `TotvsPriceTablesPaymentConditions`, `TotvsPriceTablesAveragePeriods`, `TotvsPriceTablesAveragePeriodQuantities` |
+| `GetPriceTableScales` | 13091 `TotvsGetPriceTableScales` | `GET price-table-scales` | `GET Products/PriceTableScales` | `TotvsPriceTableScales` + `TotvsPriceTableScalesItems` |
+
+* onze catálogos seguem o desenho das filiais e da PE-1: janela pelo banco (`MAX(maxChangeFilterDate)` − 1 h; banco vazio,
+  desde 2000), uma leitura paginada sem fatias, cache de estado `Totvs:<Catálogo>:<cnpj>` montado com a tabela inteira da
+  empresa e só o registro novo ou com data mais recente é gravado. As filhas são apagadas no merge quando o pai é regravado;
+* as cores não têm data de alteração na resposta: são lidas inteiras com `filter: {}` e o SHA-256 do JSON de cada cor vai
+  na coluna `json_hash` (T9), comparado com o do banco;
+* a paginação e a repetição (401, 429, 502/503/504) ficam num helper privado do service, `GetCatalogPages<T>`, que devolve
+  cada item com o seu JSON; a chamada, a janela e a gravação continuam em cada método (decisão 15);
+* filhas sem chave na API (os tamanhos da grade e os prazos médios por quantidade) levam `sequence`, a posição na lista;
+* DTOs, entidades e validadores em `Products/Catalogs` (o `Products` já tem `Color`, `Composition` e `Classification` das
+  referências), repositório `TotvsProductCatalogsRepository`, `Script045`–`047` (23 tabelas com FKs, procedures
+  **13606–13628**, jobs 13080–13091).
+
+**Achados na chamada real (27/10/2026):**
+* com janela, todos trazem `maxChangeFilterDate`, menos as cores (como o swagger indicava); sem janela, nenhum traz;
+* volume: 46 tipos de classificação, 609 classificações, 24 grades (264 tamanhos), 24 unidades de medida (1 variação), 632
+  cores (2 páginas, nenhuma com informação adicional), 4 tipos de campo adicional e 24 composições (45 fibras). Categorias,
+  agrupadores, itens de instrução, tabelas de preço e escalas estão **vazios** na base: implementados pela T14 e conferidos
+  com respostas sintéticas;
+* `colors/search` sem `filter` responde 400 (`EmptyField`); com `filter: {}` devolve tudo;
+* `additional-fields-types` devolve o `type` como **número** (1), não pelo nome do enum do swagger: a coluna guarda o que
+  vier (texto);
+* uma grade pode repetir um tamanho (as grades 1 e 17), por isso a chave é a posição;
+* nenhuma chave repetida nos catálogos com dados; os textos cabem nos tamanhos do `Script045`.
+
+**Conferido com o console descartável** (API real e respostas sintéticas, banco falso):
+* 1ª execução grava 46 tipos, 609 classificações, 24 grades com 264 tamanhos, 24 unidades com 1 variação, 632 cores, 4 tipos
+  de campo adicional e 24 composições com 45 fibras, com 1 chamada por catálogo (2 nas cores); a 2ª não grava nada;
+* cores: com um nome alterado só aquela cor é regravada; a execução seguinte não regrava, e a volta ao nome original regrava;
+* grade com data nova e um tamanho a menos: regravada com os tamanhos restantes;
+* sintéticos: tabela de preço com as 5 filhas (classificação de pedido repetida e condição de pagamento sem código
+  descartadas; prazos por quantidade pela posição) e outra sem filhas; escala com 2 itens; agrupador com 1 item; item de
+  instrução; categoria sem `maxChangeFilterDate` (registrada no log e regravada a cada execução, como na PE-1). A 2ª execução
+  de cada um não grava nada;
+* as colunas das 23 `DataTable` batem com o `Script045`.
+
+**Não verificado:** os scripts `045`–`047` em banco e as rotas pelo host. Continua a confirmar se a alteração só numa filha
+(tamanho da grade, fibra, filhas da tabela de preço) muda o `maxChangeFilterDate` do pai; se não mudar, o catálogo passa
+para o desenho de hash das cores.

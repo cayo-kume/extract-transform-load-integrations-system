@@ -177,6 +177,18 @@ Os nomes dos métodos são os da **documentação oficial** (`PostSearch*`, `Get
 | `TotvsPersonCatalogsService` | `GetEmailTypes` | `GET person/v2/email-types` | `TotvsEmailTypes` | 13033 | 120 min |
 | `TotvsPersonCatalogsService` | `GetPhoneTypes` | `GET person/v2/phone-types` | `TotvsPhoneTypes` | 13034 | 120 min |
 | `TotvsPersonCatalogsService` | `GetContactTypes` | `GET person/v2/contact-types` | `TotvsContactTypes` | 13035 | 120 min |
+| `TotvsProductCatalogsService` | `GetClassificationType` | `GET product/v2/classificationType` | `TotvsClassificationTypes` | 13080 | 120 min |
+| `TotvsProductCatalogsService` | `GetClassifications` | `GET product/v2/classifications` | `TotvsProductClassifications` | 13081 | 120 min |
+| `TotvsProductCatalogsService` | `GetCategory` | `GET product/v2/category` | `TotvsCategories` | 13082 | 120 min |
+| `TotvsProductCatalogsService` | `GetGrid` | `GET product/v2/grid` | `TotvsGrids` e 1 filha | 13083 | 120 min |
+| `TotvsProductCatalogsService` | `GetMeasurementUnit` | `GET product/v2/measurement-unit` | `TotvsMeasurementUnits` e 1 filha | 13084 | 120 min |
+| `TotvsProductCatalogsService` | `PostSearchColors` | `POST product/v2/colors/search` (inteira, com hash) | `TotvsColors` e 1 filha | 13085 | 120 min |
+| `TotvsProductCatalogsService` | `GetAdditionalFieldsTypes` | `GET product/v2/additional-fields-types` | `TotvsAdditionalFieldsTypes` | 13086 | 120 min |
+| `TotvsProductCatalogsService` | `GetProductGrouperConfiguration` | `GET product/v2/product-grouper-configuration` | `TotvsProductGrouperConfigurations` e 1 filha | 13087 | 120 min |
+| `TotvsProductCatalogsService` | `GetInstructionItems` | `GET product/v2/instruction-items` | `TotvsInstructionItems` | 13088 | 120 min |
+| `TotvsProductCatalogsService` | `PostCompositions` | `POST product/v2/compositions` | `TotvsCompositions` e 1 filha | 13089 | 120 min |
+| `TotvsProductCatalogsService` | `GetPriceTablesHeaders` | `GET product/v2/price-tables-headers` | `TotvsPriceTables` e 5 filhas | 13090 | 120 min |
+| `TotvsProductCatalogsService` | `GetPriceTableScales` | `GET product/v2/price-table-scales` | `TotvsPriceTableScales` e 1 filha | 13091 | 120 min |
 
 **Escritas** (sistema externo, com `X-User-Name`)
 
@@ -287,6 +299,7 @@ O DbUp executa cada script uma única vez, em ordem alfabética. Alterar um scri
 | `Script036`–`038` | Representantes |
 | `Script039`–`041` | Recepção de venda |
 | `Script042`–`044` | Regiões de atuação |
+| `Script045`–`047` | Catálogos da API Product |
 
 **Regras gerais das tabelas e dos merges:**
 * Toda tabela de dados existe em dois schemas: `untreated` (recebe o bulk insert, sem chave) e `totvs` (tabela final, com PK). A exceção é `totvs.TotvsRequests`, que só recebe inserts.
@@ -322,6 +335,18 @@ Rota base: `TotvsJobs/Totvs`. O verbo segue a documentação oficial: `POST` nas
 | GET | `People/EmailTypes` | `TotvsPersonCatalogsService.GetEmailTypes` |
 | GET | `People/PhoneTypes` | `TotvsPersonCatalogsService.GetPhoneTypes` |
 | GET | `People/ContactTypes` | `TotvsPersonCatalogsService.GetContactTypes` |
+| GET | `Products/ClassificationTypes` | `TotvsProductCatalogsService.GetClassificationType` |
+| GET | `Products/Classifications` | `TotvsProductCatalogsService.GetClassifications` |
+| GET | `Products/Categories` | `TotvsProductCatalogsService.GetCategory` |
+| GET | `Products/Grids` | `TotvsProductCatalogsService.GetGrid` |
+| GET | `Products/MeasurementUnits` | `TotvsProductCatalogsService.GetMeasurementUnit` |
+| POST | `Products/Colors` | `TotvsProductCatalogsService.PostSearchColors` |
+| GET | `Products/AdditionalFieldsTypes` | `TotvsProductCatalogsService.GetAdditionalFieldsTypes` |
+| GET | `Products/GrouperConfigurations` | `TotvsProductCatalogsService.GetProductGrouperConfiguration` |
+| GET | `Products/InstructionItems` | `TotvsProductCatalogsService.GetInstructionItems` |
+| POST | `Products/Compositions` | `TotvsProductCatalogsService.PostCompositions` |
+| GET | `Products/PriceTablesHeaders` | `TotvsProductCatalogsService.GetPriceTablesHeaders` |
+| GET | `Products/PriceTableScales` | `TotvsProductCatalogsService.GetPriceTableScales` |
 
 ### Leituras sob demanda (chamadas por sistema externo)
 
@@ -374,7 +399,7 @@ Os jobs ficam em `auditing.Jobs`, com os mesmos ids em `EnumJob`.
 | Faixa | Tipo (`IdType`) | Conteúdo |
 |---|---|---|
 | 13000–13499 | 2 (Integração) | Leituras, com `IdParent = 130` (app Totvs) |
-| 13500–13999 | 1 (Procedure) | Procedures `sp_<Tabela>_Sync` (13500–13605), com `IdParent` = job da leitura e o mesmo intervalo |
+| 13500–13999 | 1 (Procedure) | Procedures `sp_<Tabela>_Sync` (13500–13628), com `IdParent` = job da leitura e o mesmo intervalo |
 
 | Id | Job | Intervalo |
 |---|---|---|
@@ -401,6 +426,18 @@ Os jobs ficam em `auditing.Jobs`, com os mesmos ids em `EnumJob`.
 | 13031 | `TotvsGetSearchReceptionSale` | 3 min |
 | 13039 | `TotvsGetRepresentativeByCode` | sob demanda |
 | 13070 | `TotvsGetOperationalArea` | 120 min |
+| 13080 | `TotvsGetClassificationType` | 120 min |
+| 13081 | `TotvsProductGetClassifications` | 120 min |
+| 13082 | `TotvsGetCategory` | 120 min |
+| 13083 | `TotvsGetGrid` | 120 min |
+| 13084 | `TotvsGetMeasurementUnit` | 120 min |
+| 13085 | `TotvsPostSearchColors` | 120 min |
+| 13086 | `TotvsGetAdditionalFieldsTypes` | 120 min |
+| 13087 | `TotvsGetProductGrouperConfiguration` | 120 min |
+| 13088 | `TotvsGetInstructionItems` | 120 min |
+| 13089 | `TotvsPostCompositions` | 120 min |
+| 13090 | `TotvsGetPriceTablesHeaders` | 120 min |
+| 13091 | `TotvsGetPriceTableScales` | 120 min |
 | 13018 | `TotvsPostDuplicates` | escrita (reservado, fase AP-2) |
 | 13019 | `TotvsPostGroupDuplicates` | escrita (reservado, fase AP-2) |
 | 13020 | `TotvsPostDuplicatesInstallmentsStage` | escrita |

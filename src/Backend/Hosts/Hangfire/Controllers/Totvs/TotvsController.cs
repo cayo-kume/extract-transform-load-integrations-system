@@ -30,6 +30,7 @@ namespace Hangfire.Controllers.Totvs
         private readonly ITotvsInvoicesService _totvsInvoicesService;
         private readonly ITotvsPersonCatalogsService _totvsPersonCatalogsService;
         private readonly ITotvsRepresentativesService _totvsRepresentativesService;
+        private readonly ITotvsProductCatalogsService _totvsProductCatalogsService;
         private readonly IValidator<Domain.Totvs.Dtos.Writes.AccountsPayable.ChangeInstallmentStage> _changeInstallmentStageValidator;
 
         public TotvsController(
@@ -42,10 +43,11 @@ namespace Hangfire.Controllers.Totvs
             ITotvsInvoicesService totvsInvoicesService,
             ITotvsPersonCatalogsService totvsPersonCatalogsService,
             ITotvsRepresentativesService totvsRepresentativesService,
+            ITotvsProductCatalogsService totvsProductCatalogsService,
             IValidator<Domain.Totvs.Dtos.Writes.AccountsPayable.ChangeInstallmentStage> changeInstallmentStageValidator
         ) =>
-            (_totvsPeopleService, _totvsSellersService, _totvsProductsService, _totvsPurchaseOrdersService, _totvsSalesOrdersService, _totvsAccountsPayableService, _totvsInvoicesService, _totvsPersonCatalogsService, _totvsRepresentativesService, _changeInstallmentStageValidator) =
-            (totvsPeopleService, totvsSellersService, totvsProductsService, totvsPurchaseOrdersService, totvsSalesOrdersService, totvsAccountsPayableService, totvsInvoicesService, totvsPersonCatalogsService, totvsRepresentativesService, changeInstallmentStageValidator);
+            (_totvsPeopleService, _totvsSellersService, _totvsProductsService, _totvsPurchaseOrdersService, _totvsSalesOrdersService, _totvsAccountsPayableService, _totvsInvoicesService, _totvsPersonCatalogsService, _totvsRepresentativesService, _totvsProductCatalogsService, _changeInstallmentStageValidator) =
+            (totvsPeopleService, totvsSellersService, totvsProductsService, totvsPurchaseOrdersService, totvsSalesOrdersService, totvsAccountsPayableService, totvsInvoicesService, totvsPersonCatalogsService, totvsRepresentativesService, totvsProductCatalogsService, changeInstallmentStageValidator);
 
         /// <summary>
         /// sincroniza as empresas (lojas) da holding (GET person/v2/branchesList)
@@ -250,6 +252,150 @@ namespace Hangfire.Controllers.Totvs
         public async Task<ActionResult> Products()
         {
             var result = await _totvsProductsService.PostSearchReferences();
+
+            return Ok($"Records integrated successfully.");
+        }
+
+        /// <summary>
+        /// sincroniza o catálogo de tipos de classificação de produto (GET product/v2/classificationType)
+        /// </summary>
+        [HttpGet("Products/ClassificationTypes")]
+        [Tags("TotvsProductCatalogs")]
+        public async Task<ActionResult> ProductClassificationTypes()
+        {
+            var result = await _totvsProductCatalogsService.GetClassificationType();
+
+            return Ok($"Records integrated successfully.");
+        }
+
+        /// <summary>
+        /// sincroniza o catálogo de classificações de produto (GET product/v2/classifications)
+        /// </summary>
+        [HttpGet("Products/Classifications")]
+        [Tags("TotvsProductCatalogs")]
+        public async Task<ActionResult> ProductClassifications()
+        {
+            var result = await _totvsProductCatalogsService.GetClassifications();
+
+            return Ok($"Records integrated successfully.");
+        }
+
+        /// <summary>
+        /// sincroniza o catálogo de categorias de produto (GET product/v2/category)
+        /// </summary>
+        [HttpGet("Products/Categories")]
+        [Tags("TotvsProductCatalogs")]
+        public async Task<ActionResult> ProductCategories()
+        {
+            var result = await _totvsProductCatalogsService.GetCategory();
+
+            return Ok($"Records integrated successfully.");
+        }
+
+        /// <summary>
+        /// sincroniza o catálogo de grades (GET product/v2/grid)
+        /// </summary>
+        [HttpGet("Products/Grids")]
+        [Tags("TotvsProductCatalogs")]
+        public async Task<ActionResult> ProductGrids()
+        {
+            var result = await _totvsProductCatalogsService.GetGrid();
+
+            return Ok($"Records integrated successfully.");
+        }
+
+        /// <summary>
+        /// sincroniza o catálogo de unidades de medida (GET product/v2/measurement-unit)
+        /// </summary>
+        [HttpGet("Products/MeasurementUnits")]
+        [Tags("TotvsProductCatalogs")]
+        public async Task<ActionResult> ProductMeasurementUnits()
+        {
+            var result = await _totvsProductCatalogsService.GetMeasurementUnit();
+
+            return Ok($"Records integrated successfully.");
+        }
+
+        /// <summary>
+        /// sincroniza o catálogo de cores (POST product/v2/colors/search)
+        /// </summary>
+        [HttpPost("Products/Colors")]
+        [Tags("TotvsProductCatalogs")]
+        public async Task<ActionResult> ProductColors()
+        {
+            var result = await _totvsProductCatalogsService.PostSearchColors();
+
+            return Ok($"Records integrated successfully.");
+        }
+
+        /// <summary>
+        /// sincroniza o catálogo de tipos de campo adicional (GET product/v2/additional-fields-types)
+        /// </summary>
+        [HttpGet("Products/AdditionalFieldsTypes")]
+        [Tags("TotvsProductCatalogs")]
+        public async Task<ActionResult> ProductAdditionalFieldsTypes()
+        {
+            var result = await _totvsProductCatalogsService.GetAdditionalFieldsTypes();
+
+            return Ok($"Records integrated successfully.");
+        }
+
+        /// <summary>
+        /// sincroniza o catálogo de configurações de agrupador de produto (GET product/v2/product-grouper-configuration)
+        /// </summary>
+        [HttpGet("Products/GrouperConfigurations")]
+        [Tags("TotvsProductCatalogs")]
+        public async Task<ActionResult> ProductGrouperConfigurations()
+        {
+            var result = await _totvsProductCatalogsService.GetProductGrouperConfiguration();
+
+            return Ok($"Records integrated successfully.");
+        }
+
+        /// <summary>
+        /// sincroniza o catálogo de itens de instrução (GET product/v2/instruction-items)
+        /// </summary>
+        [HttpGet("Products/InstructionItems")]
+        [Tags("TotvsProductCatalogs")]
+        public async Task<ActionResult> ProductInstructionItems()
+        {
+            var result = await _totvsProductCatalogsService.GetInstructionItems();
+
+            return Ok($"Records integrated successfully.");
+        }
+
+        /// <summary>
+        /// sincroniza o catálogo de composições (POST product/v2/compositions)
+        /// </summary>
+        [HttpPost("Products/Compositions")]
+        [Tags("TotvsProductCatalogs")]
+        public async Task<ActionResult> ProductCompositions()
+        {
+            var result = await _totvsProductCatalogsService.PostCompositions();
+
+            return Ok($"Records integrated successfully.");
+        }
+
+        /// <summary>
+        /// sincroniza o catálogo de cabeçalhos de tabela de preço (GET product/v2/price-tables-headers)
+        /// </summary>
+        [HttpGet("Products/PriceTablesHeaders")]
+        [Tags("TotvsProductCatalogs")]
+        public async Task<ActionResult> ProductPriceTablesHeaders()
+        {
+            var result = await _totvsProductCatalogsService.GetPriceTablesHeaders();
+
+            return Ok($"Records integrated successfully.");
+        }
+
+        /// <summary>
+        /// sincroniza o catálogo de escalas de tabela de preço (GET product/v2/price-table-scales)
+        /// </summary>
+        [HttpGet("Products/PriceTableScales")]
+        [Tags("TotvsProductCatalogs")]
+        public async Task<ActionResult> ProductPriceTableScales()
+        {
+            var result = await _totvsProductCatalogsService.GetPriceTableScales();
 
             return Ok($"Records integrated successfully.");
         }
