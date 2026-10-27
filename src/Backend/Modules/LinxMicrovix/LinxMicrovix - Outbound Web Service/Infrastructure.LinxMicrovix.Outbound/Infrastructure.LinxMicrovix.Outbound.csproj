@@ -7,13 +7,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Azure.Storage.Blobs" VersionOverride="12.19.1" />
-  </ItemGroup>
-
-  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\Shared\Infrastructure.Shared\Infrastructure.Shared.csproj" />
     <ProjectReference Include="..\Application.LinxMicrovix.Outbound\Application.LinxMicrovix.Outbound.csproj" />
     <ProjectReference Include="..\Domain.LinxMicrovix.Outbound\Domain.LinxMicrovix.Outbound.csproj" />
-    <ProjectReference Include="..\..\..\..\..\newbloomers-core-dlls\src\Infrastructure.Core\Infrastructure.Core.csproj" />
   </ItemGroup>
 
 </Project>

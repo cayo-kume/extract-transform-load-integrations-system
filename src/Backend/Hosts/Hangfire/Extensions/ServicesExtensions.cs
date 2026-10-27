@@ -4,9 +4,9 @@ using Infrastructure.Shared;
 //using Infrastructure.Dootax;
 //using Infrastructure.Jadlog.DependencyInjection;
 //using Infrastructure.LinxCommerce.DependencyInjection;
+using Infrastructure.LinxMicrovix.Outbound.DependencyInjection;
 using Infrastructure.Movidesk.DependencyInjection;
 //using Infrastructure.Oto;
-//using Infrastructure.Outbound.WebService.DependencyInjection;
 //using Infrastructure.Stone;
 //using Infrastructure.TotalExpress.DependencyInjection;
 using Infrastructure.Totvs.DependencyInjection;
@@ -22,8 +22,7 @@ namespace Hangfire.Extensions
             builder.Services.AddScopedSharedServices();
 
             //builder.Services.AddScopedLinxCommerceServices(builder.Configuration);
-            //builder.Services.AddScopedLinxMicrovixServices();
-            //builder.Services.AddScopedB2CLinxMicrovixServices();
+            builder.Services.AddScopedLinxMicrovixServices(builder.Configuration);
             //builder.Services.AddScopedFlashCourierServices(builder.Configuration);
             //builder.Services.AddScopedTotalExpressServices(builder.Configuration);
             builder.Services.AddScopedAfterSaleServices(builder.Configuration);
@@ -33,9 +32,6 @@ namespace Hangfire.Extensions
             builder.Services.AddScopedMovideskServices(builder.Configuration);
             //builder.Services.AddScopedOttoServices(builder.Configuration);
             builder.Services.AddScopedTotvsServices(builder.Configuration);
-
-            //Refatorar Aqui (tentar deixar só em uma linha todas as validações da fluent validation)
-            //builder.Services.AddValidatorsFromAssembly(Assembly.Load("Application.LinxMicrovix.Outbound"));
 
             //builder.Services.AddHangfireService(builder);
 

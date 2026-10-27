@@ -21,8 +21,6 @@ namespace Hangfire.Extensions
             app.UseAuthorization();
 
             //app.UseHangfireDashboard();
-            //LinxMicrovixERPRecurringJobsExtensions.AddRecurringJobs();
-            //LinxMicrovixB2CRecurringJobsExtensions.AddRecurringJobs();
             return app;
         }
     }

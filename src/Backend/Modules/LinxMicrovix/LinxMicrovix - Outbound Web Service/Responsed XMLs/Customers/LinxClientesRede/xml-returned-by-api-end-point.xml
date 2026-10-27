@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><Microvix><ResponseData /><ResponseResult><ResponseSuccess>False</ResponseSuccess><ResponseError><Message>Ocorreu um erro na execução da integração, verifique o nome da consulta e os parâmetros informados.</Message><Message>
+	**************************************************************************
+	O portal 15133 não é o portal centralizador da rotina Central de Clientes.
+	**************************************************************************
+	. Stack:   at Linx.Microvix.WebApi.Data.AdoNet.ClientPortal.runQuery(String sql, String dbParameters, DbProviderFactory dbFactory, comando_usuario comandoUsuario) in C:\a\9\s\Source\LinxMicrovix WebApi Solution\Linx.Microvix.WebApi.Data\AdoNet\ClientPortal.cs:line 286
+   at Linx.Microvix.WebApi.Data.AdoNet.ClientPortal.ExecuteCommand(IDictionary`2 userParameters, String strCommand, Nullable`1 idPortal, String ipRequest) in C:\a\9\s\Source\LinxMicrovix WebApi Solution\Linx.Microvix.WebApi.Data\AdoNet\ClientPortal.cs:line 65
+   at Linx.Microvix.WebApi.Business.Microvix.ClientPortalAdoAdapter.ExecuteDatabaseIntegration() in C:\a\9\s\Source\LinxMicrovix WebApi Solution\Linx.Microvix.WebApi.Business\Microvix\ClientPortalAdoAdapter.cs:line 41
+   at Linx.Microvix.WebApi.Business.IntegrationBusiness.generateIntegrationResponse(usuario user, ApiXmlRequest request) in C:\a\9\s\Source\LinxMicrovix WebApi Solution\Linx.Microvix.WebApi.Business\IntegrationBusiness.cs:line 184</Message></ResponseError></ResponseResult></Microvix>

@@ -1,0 +1,7 @@
+--modelo do Script003: copie para Script003_Insert_Values_Into_LinxMicrovix_Parameters_Table.sql (fora do git, no .gitignore)
+--e troque os valores pelas chaves de cada cliente. As chaves nunca entram em documento, comentário ou appsettings.
+--o DbUp só lê arquivos .sql: este modelo nunca é executado.
+--uma linha por cliente; um cliente só com ERP (ou só com B2C) deixa as colunas da outra API nulas
+INSERT INTO [linxmicrovix].[LinxMicrovixParameters] (integrated_or_updated_at, [doc_company], [grupo], erp_chave, erp_user_name, erp_password, b2c_chave, b2c_user_name, b2c_password)
+VALUES
+(SYSDATETIMEOFFSET() AT TIME ZONE 'E. South America Standard Time', '44065634000106', NULL, '<chave do ERP>', 'linx_export', 'linx_export', '<chave do B2C>', 'linx_b2c', 'linx_b2c'); --HOLDING NEWBLOOMERS
