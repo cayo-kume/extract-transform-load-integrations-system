@@ -31,6 +31,7 @@ namespace Hangfire.Controllers.Totvs
         private readonly ITotvsPersonCatalogsService _totvsPersonCatalogsService;
         private readonly ITotvsRepresentativesService _totvsRepresentativesService;
         private readonly ITotvsProductCatalogsService _totvsProductCatalogsService;
+        private readonly ITotvsProductPricesService _totvsProductPricesService;
         private readonly IValidator<Domain.Totvs.Dtos.Writes.AccountsPayable.ChangeInstallmentStage> _changeInstallmentStageValidator;
 
         public TotvsController(
@@ -44,10 +45,11 @@ namespace Hangfire.Controllers.Totvs
             ITotvsPersonCatalogsService totvsPersonCatalogsService,
             ITotvsRepresentativesService totvsRepresentativesService,
             ITotvsProductCatalogsService totvsProductCatalogsService,
+            ITotvsProductPricesService totvsProductPricesService,
             IValidator<Domain.Totvs.Dtos.Writes.AccountsPayable.ChangeInstallmentStage> changeInstallmentStageValidator
         ) =>
-            (_totvsPeopleService, _totvsSellersService, _totvsProductsService, _totvsPurchaseOrdersService, _totvsSalesOrdersService, _totvsAccountsPayableService, _totvsInvoicesService, _totvsPersonCatalogsService, _totvsRepresentativesService, _totvsProductCatalogsService, _changeInstallmentStageValidator) =
-            (totvsPeopleService, totvsSellersService, totvsProductsService, totvsPurchaseOrdersService, totvsSalesOrdersService, totvsAccountsPayableService, totvsInvoicesService, totvsPersonCatalogsService, totvsRepresentativesService, totvsProductCatalogsService, changeInstallmentStageValidator);
+            (_totvsPeopleService, _totvsSellersService, _totvsProductsService, _totvsPurchaseOrdersService, _totvsSalesOrdersService, _totvsAccountsPayableService, _totvsInvoicesService, _totvsPersonCatalogsService, _totvsRepresentativesService, _totvsProductCatalogsService, _totvsProductPricesService, _changeInstallmentStageValidator) =
+            (totvsPeopleService, totvsSellersService, totvsProductsService, totvsPurchaseOrdersService, totvsSalesOrdersService, totvsAccountsPayableService, totvsInvoicesService, totvsPersonCatalogsService, totvsRepresentativesService, totvsProductCatalogsService, totvsProductPricesService, changeInstallmentStageValidator);
 
         /// <summary>
         /// sincroniza as empresas (lojas) da holding (GET person/v2/branchesList)
@@ -252,6 +254,42 @@ namespace Hangfire.Controllers.Totvs
         public async Task<ActionResult> Products()
         {
             var result = await _totvsProductsService.PostSearchReferences();
+
+            return Ok($"Records integrated successfully.");
+        }
+
+        /// <summary>
+        /// sincroniza os preços de todos os tipos, por loja de cada marca (POST product/v2/prices/search)
+        /// </summary>
+        [HttpPost("Products/Prices")]
+        [Tags("TotvsProducts")]
+        public async Task<ActionResult> ProductPrices()
+        {
+            var result = await _totvsProductPricesService.PostSearchPrices();
+
+            return Ok($"Records integrated successfully.");
+        }
+
+        /// <summary>
+        /// sincroniza os custos de todos os tipos, por loja de cada marca (POST product/v2/costs/search)
+        /// </summary>
+        [HttpPost("Products/Costs")]
+        [Tags("TotvsProducts")]
+        public async Task<ActionResult> ProductCosts()
+        {
+            var result = await _totvsProductPricesService.PostSearchCosts();
+
+            return Ok($"Records integrated successfully.");
+        }
+
+        /// <summary>
+        /// sincroniza os saldos de todos os tipos, por loja de cada marca, com pendentes e locais (POST product/v2/balances/search)
+        /// </summary>
+        [HttpPost("Products/Balances")]
+        [Tags("TotvsProducts")]
+        public async Task<ActionResult> ProductBalances()
+        {
+            var result = await _totvsProductsService.PostSearchBalances();
 
             return Ok($"Records integrated successfully.");
         }

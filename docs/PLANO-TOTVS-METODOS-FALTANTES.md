@@ -2317,7 +2317,7 @@ onda 2 que entrar monta a base das leituras sem persistência (T11, §8.1).
 | Fase | Onda | Service | Métodos | Jobs | Depende de |
 |---|---|---|---|---|---|
 | PR-1 | 1 | `TotvsProductCatalogsService` | `GetClassificationType`, `GetClassifications`, `GetCategory`, `GetGrid`, `GetMeasurementUnit`, `PostSearchColors`, `GetAdditionalFieldsTypes`, `GetProductGrouperConfiguration`, `GetInstructionItems`, `PostCompositions`; `GetPriceTablesHeaders`, `GetPriceTableScales` (PR5) | 13080–13091 | — **Implementada em 27/10/2026** (§10.5) |
-| PR-2 | 1 | `TotvsProductPricesService`, `TotvsProductsService` | fase 3, partes 4 a 6 (`PostSearchPrices`, `PostSearchCosts`, `PostSearchBalances`, com a escolha da PR2 sobre `PostOmniChangedBalances`); `PostSearchPriceTables`, `GetPromotion` (PR5); `GetSimilar`; `PostSearchBatch` (PR6); `PostSearchProductCodes` (PR3) | 13015–13017, 13092–13097 | PR-1 (cabeçalhos das tabelas de preço) |
+| PR-2 | 1 | `TotvsProductPricesService`, `TotvsProductsService` | fase 3, partes 4 a 6 (`PostSearchPrices`, `PostSearchCosts`, `PostSearchBalances`, com a escolha da PR2 sobre `PostOmniChangedBalances`); `PostSearchPriceTables`, `GetPromotion` (PR5); `GetSimilar`; `PostSearchBatch` (PR6); `PostSearchProductCodes` (PR3) | 13015–13017, 13092–13097 | PR-1 (cabeçalhos das tabelas de preço). **Parte 1 (preços, custos e saldos) implementada em 27/10/2026** (§10.6) |
 | PR-3 | 2 | `TotvsProductsService` | `GetProducts`, `GetKardexMovement`, `GetGridFrequency`, `GetMeasurementConversions`, `GetCompositionProduct`, `GetCompositionGroupProduct` | 13100–13105 | base T11 |
 | PR-4 | 3 | `TotvsProductCatalogsService` | `PostColors`, `PostGrids` | 13124, 13126 | AP-1, PR-1 |
 | PR-5 | 4 | `TotvsProductCatalogsService`, `TotvsProductsService` | `PostClassifications`, `PostCreateClassificationRelationship`, `PostUpdateClassificationRelationship` (sem a classificação 6000, PR10), `PostBarcodes`, `PostUpdateBarcodes`, `PostReferences` (sem `values`, PR11); lote: `PostCreateBatch`, `PutBatchInfo`, `PostBatchPreferentialSalesOrder` (PR6) | 13120–13123, 13125, 13127, 13135–13137 | PR-4 |
@@ -2559,3 +2559,68 @@ os tamanhos dos textos continuam **a confirmar** quando houver dados, e o exempl
 **Não verificado:** os scripts `045`–`047` em banco e as rotas pelo host. Continua a confirmar se a alteração só numa filha
 (tamanho da grade, fibra, filhas da tabela de preço) muda o `maxChangeFilterDate` do pai; se não mudar, o catálogo passa
 para o desenho de hash das cores.
+
+### 10.6 Fase PR-2, parte 1: preços, custos e saldos (27/10/2026)
+
+A PR-2 foi dividida em partes, como a fase 3: esta entrega as partes 4 a 6 da fase 3 (`PostSearchPrices`, `PostSearchCosts`,
+`PostSearchBalances`); `PostSearchPriceTables`, `GetPromotion`, `GetSimilar`, `PostSearchBatch` e `PostSearchProductCodes` ficam
+para as próximas.
+
+**Decisão do usuário (27/10/2026):** os três leem **todos** os códigos do cadastro (preço, custo e saldo), em vez de um
+subconjunto; volume e tempo se resolvem no desenho (abaixo).
+
+**O que entrou:**
+* `TotvsProductPricesService` (novo, PR12) com `PostSearchPrices` (job 13015) e `PostSearchCosts` (13016), e
+  `TotvsProductsService.PostSearchBalances` (13017), todos de 3 min (decisão 29 da proposta);
+* **códigos descobertos pela própria API**, em cache de 2 h / 30 min (`Totvs:PriceCodes`, `Totvs:CostCodes`,
+  `Totvs:StockCodes`): preço e custo mandam os códigos de 1 a 999 numa chamada e a API responde 400 com
+  `Price N not found`/`Cost N not found` para cada um que não existe (o resto é a lista: hoje 1–6 e 1–8); o saldo pede os 999
+  para um produto e a API devolve todos, mas só os que existem vêm com `stockDescription` (hoje 1–17). Um código novo no ERP
+  entra sem mudar o código;
+* **uma chamada por loja** de cada marca (`GetBrandBranchCodes`, as mesmas lojas das referências), filtrada pela classificação
+  6000 da marca e ordenada por produto. As marcas (matrizes 1 e 101, códigos 2 e 4) foram para `TotvsProductBrands`, usada também
+  pelo `PostSearchReferences`;
+* **carga inicial por produto**: o `filter.change` aceita no máximo 1 ano, então a loja sem `maxChangeFilterDate` gravado é lida
+  inteira, sem `change`, de `startProductCode` = maior produto gravado + 1 até 999999999, e cada página é gravada ao chegar. Se
+  falhar, a próxima execução continua do maior produto gravado. Depois, a janela vai do maior `maxChangeFilterDate` − 1 h (ou do
+  começo da carga inicial − 1 h) até agora, em fatias de 30 dias, com cache de estado por loja
+  (`Totvs:<Prices|Costs|Balances>:<cnpj>:<loja>`);
+* preço: `inPrice` + `inPromotionalPrice` (a mudança de promoção não entra no `inPrice`), `isPromotionalPrice` e `expand`
+  `promotionalInformation,informationOtherPromotions`; a promoção vigente vira colunas do preço (decisão 26) e as outras
+  promoções vão para `TotvsPricesOtherPromotions`. O preço programado fica de fora (não tem campo próprio na resposta);
+* custo: `inCost` com `costCodeList` (o swagger pede `priceCodeList`, provável erro, §5.9);
+* saldo: `inStock` e também `inSalesOrder`, `inTransaction` e `inPurchaseOrder`, porque os pendentes de pedido de venda,
+  transação, pedido de compra e ordem de produção são lidos; `expand=locations` (`TotvsBalancesLocations`). O lote de
+  planejamento (exige a lista de ciclos) e a `measurementConversion` ficam de fora;
+* tabelas `TotvsPrices`, `TotvsPricesOtherPromotions`, `TotvsCosts`, `TotvsBalances` e `TotvsBalancesLocations`, uma linha por
+  loja + produto + código, com `branchCode` antes do produto na chave (`Script048`–`050`, procedures **13629–13633**). Os dados do
+  produto (nome, SKU, cor, tamanho) já estão em `TotvsSkus` e não são repetidos;
+* rotas `POST TotvsJobs/Totvs/Products/Prices`, `.../Products/Costs` e `.../Products/Balances`.
+
+**Achados na chamada real (27/10/2026):**
+* a API devolve todo produto × loja × código pedido, com zero quando não há valor, e o saldo devolve até o código que não existe
+  (sem descrição): por isso só os códigos existentes vão no pedido;
+* tempo de resposta cresce com produtos × lojas × códigos por página: saldo de 1 loja com 17 códigos, 100 produtos em ~16 s e
+  1000 em ~60 s; 15 lojas com 100 produtos deram 502 depois de 196 s; custo de 15 lojas, 165 produtos em ~29 s. Daí uma chamada
+  por loja e página de 100;
+* `startProductCode` exige `endProductCode`; com `change` de mais de 1 ano a API responde 400 `GeneralGreaterThanOneYear`;
+* volume: 10 287 produtos na Misha e 11 613 na Open Era. **Estimativa da carga inicial** (sem banco, pelas medições): preço
+  ~2 s por página de 100, ~3,5 min por loja; custo parecido; saldo ~16 s por página, ~27 min por loja, perto de 11 h para as
+  25 lojas. A carga é retomável por loja e por produto.
+
+**Conferido com o console descartável** (API real, banco falso, só a loja 1 da Misha; a Open Era sem lojas, com a mensagem no log;
+o estado da loja semeado para a carga inicial começar nos últimos 250 produtos, a partir do 31125):
+* descoberta: preço 1–6, custo 1–8 e saldo 1–17, uma chamada cada;
+* 1ª execução: carga inicial em 3 páginas e a janela da última hora; preço grava 320 produtos (1 920 linhas, os 250 da faixa e os
+  alterados na última hora), custo 252 (2 016) e saldo 257 (4 369), em 11 s, 4 s e 50 s. A 2ª execução faz 1 chamada (a janela) e
+  não regrava nada, a não ser um saldo alterado entre as duas;
+* janela forçada de 2 dias: preço regrava 82 produtos (2 páginas), custo 209 (2 páginas) e saldo 704 (8 páginas, 113 s); as flags
+  `inSalesOrder`, `inTransaction` e `inPurchaseOrder` foram aceitas;
+* falha: com 500 na 2ª página da carga inicial de custo, a 1ª página (100 produtos, até o 31331) fica gravada e a loja para; a
+  execução seguinte continua do 31332 e completa os 252;
+* nenhuma mensagem de validação; nenhuma outra promoção nem local nos produtos lidos (as tabelas ficam vazias no teste);
+* as colunas das 5 `DataTable` batem com o `Script048`.
+
+**Não verificado:** os scripts `048`–`050` em banco, as rotas pelo host e a carga inicial inteira (o teste semeou o estado da loja
+1 perto do último produto). Os jobs da Totvs ainda não estão registrados no Hangfire; quando forem, a carga inicial dos saldos
+(horas) precisa de proteção contra execução simultânea do mesmo job.

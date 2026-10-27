@@ -61,6 +61,9 @@ namespace Infrastructure.Totvs.DependencyInjection
             services.AddScoped<ITotvsProductCatalogsService, TotvsProductCatalogsService>();
             services.AddScoped<ITotvsProductCatalogsRepository, TotvsProductCatalogsRepository>();
 
+            services.AddScoped<ITotvsProductPricesService, TotvsProductPricesService>();
+            services.AddScoped<ITotvsProductPricesRepository, TotvsProductPricesRepository>();
+
             services.AddScoped<ITotvsCommandHandler, TotvsCommandHandler>();
 
             // registra todos os validadores do assembly numa chamada só, como o Movidesk

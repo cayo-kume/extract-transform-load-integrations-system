@@ -72,5 +72,12 @@
         public string CreateGetPriceTablesQuery(string doc_company);
         public string CreateGetPriceTableScalesLastChangeQuery(string doc_company);
         public string CreateGetPriceTableScalesQuery(string doc_company);
+
+        public string CreateGetPricesStateQuery(string doc_company, int branchCode);
+        public string CreateGetPricesChangesQuery(string doc_company, int branchCode, List<int> productCodes);
+        public string CreateGetCostsStateQuery(string doc_company, int branchCode);
+        public string CreateGetCostsChangesQuery(string doc_company, int branchCode, List<int> productCodes);
+        public string CreateGetBalancesStateQuery(string doc_company, int branchCode);
+        public string CreateGetBalancesChangesQuery(string doc_company, int branchCode, List<int> productCodes);
     }
 }

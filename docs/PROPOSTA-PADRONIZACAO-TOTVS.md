@@ -1249,9 +1249,9 @@ Ordem da fase 3 (a base sob demanda entra com o primeiro):
 | 1 | `TotvsRequests` + `GetCustomerByCode` e `GetLegalEntityByCode` | **Implementados** (falta rodar em banco). `Script028`/`029`, jobs 13010 e 13011 |
 | 2 | `GetSalesOrderByKey` e `GetInvoiceByKey` | **Implementados** (falta rodar em banco). Reusam `SaveSalesOrders`/`SaveInvoices`; `Script030`, jobs 13012 e 13013; notas em até duas chamadas por causa do limite de 6 meses do `change` |
 | 3 | `GetProductByCode` | **Implementado** (falta rodar em banco). `references/search` em duas etapas (`productCodeList` para achar a referência, `referenceCodeList` para lê-la inteira, páginas unidas); `Script031`, job 13014 |
-| 4 | `PostSearchPrices` | `prices/search` com `change.inPrice`, `option.prices` por loja; tabelas `TotvsPrices` e filhas; job 13015 |
-| 5 | `PostSearchCosts` | `costs/search` com `change.inCost`; `TotvsCosts`; job 13016 |
-| 6 | `PostSearchBalances` | `balances/search` com `change.inStock`; `TotvsBalances` e `TotvsBalancesLocations`; job 13017 |
+| 4 | `PostSearchPrices` | **Implementado** (falta rodar em banco), na fase PR-2 do `docs/PLANO-TOTVS-METODOS-FALTANTES.md` (§10.6): todos os códigos de preço, uma chamada por loja, carga inicial por produto; `TotvsPrices` e `TotvsPricesOtherPromotions`; `Script048`–`050`, job 13015 |
+| 5 | `PostSearchCosts` | **Implementado** (falta rodar em banco), idem: todos os códigos de custo; `TotvsCosts`; job 13016 |
+| 6 | `PostSearchBalances` | **Implementado** (falta rodar em banco), idem: todos os códigos de saldo, com os pendentes e os locais; `TotvsBalances` e `TotvsBalancesLocations`; job 13017 |
 
 ---
 

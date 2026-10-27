@@ -166,6 +166,9 @@ Os nomes dos métodos são os da **documentação oficial** (`PostSearch*`, `Get
 | `TotvsSellersService` | `PostSearchSellers` | `POST seller/v2/search` | `TotvsSellers` e 2 filhas | 13006 | 120 min |
 | `TotvsSellersService` | `GetOperationalArea` | `GET seller/v2/operational-area`, `-state`, `-cep` e `-city` (inteiras, com hash por região) | `TotvsOperationalAreas` e 3 filhas | 13070 | 120 min |
 | `TotvsProductsService` | `PostSearchReferences` | `POST product/v2/references/search` (uma chamada por marca) | `TotvsSkus` e 21 filhas/netas | 13000 | 120 min |
+| `TotvsProductPricesService` | `PostSearchPrices` | `POST product/v2/prices/search` (todos os códigos, uma chamada por loja; carga inicial por produto) | `TotvsPrices` e outras promoções | 13015 | 3 min |
+| `TotvsProductPricesService` | `PostSearchCosts` | `POST product/v2/costs/search` (idem) | `TotvsCosts` | 13016 | 3 min |
+| `TotvsProductsService` | `PostSearchBalances` | `POST product/v2/balances/search` (idem, com pendentes e locais) | `TotvsBalances` e locais | 13017 | 3 min |
 | `TotvsPurchaseOrdersService` | `PostSearchPurchaseOrders` | `POST purchase-order/v2/search` | `TotvsPurchaseOrders` e 2 filhas | 13004 | 3 min |
 | `TotvsSalesOrdersService` | `PostSearchSalesOrders` | `POST sales-order/v2/orders/search` | `TotvsSaleOrders` e 10 filhas/netas | 13005 | 3 min |
 | `TotvsAccountsPayableService` | `PostSearchDuplicates` | `POST accounts-payable/v2/duplicates/search` | `TotvsDuplicates` e 2 filhas | 13008 | 3 min |
@@ -300,6 +303,7 @@ O DbUp executa cada script uma única vez, em ordem alfabética. Alterar um scri
 | `Script039`–`041` | Recepção de venda |
 | `Script042`–`044` | Regiões de atuação |
 | `Script045`–`047` | Catálogos da API Product |
+| `Script048`–`050` | Preços, custos e saldos |
 
 **Regras gerais das tabelas e dos merges:**
 * Toda tabela de dados existe em dois schemas: `untreated` (recebe o bulk insert, sem chave) e `totvs` (tabela final, com PK). A exceção é `totvs.TotvsRequests`, que só recebe inserts.
@@ -324,6 +328,9 @@ Rota base: `TotvsJobs/Totvs`. O verbo segue a documentação oficial: `POST` nas
 | POST | `Sellers` | `TotvsSellersService.PostSearchSellers` |
 | GET | `OperationalAreas` | `TotvsSellersService.GetOperationalArea` |
 | POST | `Products` | `TotvsProductsService.PostSearchReferences` |
+| POST | `Products/Prices` | `TotvsProductPricesService.PostSearchPrices` |
+| POST | `Products/Costs` | `TotvsProductPricesService.PostSearchCosts` |
+| POST | `Products/Balances` | `TotvsProductsService.PostSearchBalances` |
 | POST | `PurchaseOrders` | `TotvsPurchaseOrdersService.PostSearchPurchaseOrders` |
 | POST | `SalesOrders` | `TotvsSalesOrdersService.PostSearchSalesOrders` |
 | POST | `Duplicates` | `TotvsAccountsPayableService.PostSearchDuplicates` |
@@ -399,7 +406,7 @@ Os jobs ficam em `auditing.Jobs`, com os mesmos ids em `EnumJob`.
 | Faixa | Tipo (`IdType`) | Conteúdo |
 |---|---|---|
 | 13000–13499 | 2 (Integração) | Leituras, com `IdParent = 130` (app Totvs) |
-| 13500–13999 | 1 (Procedure) | Procedures `sp_<Tabela>_Sync` (13500–13628), com `IdParent` = job da leitura e o mesmo intervalo |
+| 13500–13999 | 1 (Procedure) | Procedures `sp_<Tabela>_Sync` (13500–13633), com `IdParent` = job da leitura e o mesmo intervalo |
 
 | Id | Job | Intervalo |
 |---|---|---|
@@ -418,6 +425,9 @@ Os jobs ficam em `auditing.Jobs`, com os mesmos ids em `EnumJob`.
 | 13012 | `TotvsGetSalesOrderByKey` | sob demanda |
 | 13013 | `TotvsGetInvoiceByKey` | sob demanda |
 | 13014 | `TotvsGetProductByCode` | sob demanda |
+| 13015 | `TotvsPostSearchPrices` | 3 min |
+| 13016 | `TotvsPostSearchCosts` | 3 min |
+| 13017 | `TotvsPostSearchBalances` | 3 min |
 | 13032 | `TotvsPersonGetClassifications` | 120 min |
 | 13033 | `TotvsGetEmailTypes` | 120 min |
 | 13034 | `TotvsGetPhoneTypes` | 120 min |
@@ -491,7 +501,7 @@ As leituras sob demanda usam as mesmas buscas, com a lista de chave; a resposta 
 
 ## Pendências
 
-* **Preços, custos e saldos** (`PostSearchPrices`, `PostSearchCosts`, `PostSearchBalances`, jobs 13015–13017): decididos, ainda não implementados (fase 3, partes 4 a 6).
+* **Preços, custos e saldos** (jobs 13015–13017): implementados (fase PR-2, parte 1); a carga inicial dos saldos leva horas (~27 min por loja, estimado) e precisa de proteção contra execução simultânea quando os jobs da Totvs forem registrados no Hangfire.
 * **Execução em banco:** os scripts e as rotas ainda não rodaram pelo host; a modelagem foi conferida com chamadas reais à API, sem banco.
 * **`referencedInvoices`:** comentado no `expand` das notas até a Totvs corrigir o erro 400.
 * **Escritas:** só a troca de estágio da parcela está implementada; as demais seguem as fases do plano (`docs/PLANO-TOTVS-METODOS-FALTANTES.md`, §9.4). A primeira chamada real em homologação ainda não foi feita.

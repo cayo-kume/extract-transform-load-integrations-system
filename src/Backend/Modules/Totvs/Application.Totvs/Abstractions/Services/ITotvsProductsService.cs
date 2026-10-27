@@ -3,6 +3,12 @@
     public interface ITotvsProductsService
     {
         /// <summary>
+        /// sincroniza os saldos de todos os tipos, por loja de cada marca, pelo POST product/v2/balances/search (carga inicial por produto,
+        /// depois janela de alteração), com os pendentes e os locais; só grava os produtos novos ou alterados
+        /// </summary>
+        public Task<bool?> PostSearchBalances();
+
+        /// <summary>
         /// sincroniza as referências e produtos pelo POST product/v2/references/search, uma chamada por marca (matrizes 1 e 101
         /// como empresa base, filtradas pela classificação 6000 da marca); só grava as novas ou alteradas
         /// </summary>

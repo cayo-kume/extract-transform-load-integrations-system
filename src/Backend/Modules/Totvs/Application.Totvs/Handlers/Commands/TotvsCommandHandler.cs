@@ -469,5 +469,65 @@ namespace Application.Totvs.Handlers.Commands
                      FROM TOTVS.TOTVSPRICETABLESCALES
                      WHERE DOC_COMPANY = '{doc_company}'";
         }
+
+        public string CreateGetPricesStateQuery(string doc_company, int branchCode)
+        {
+            // estado da loja: maior alteração (null só com a carga inicial), maior produto (onde a carga inicial continua) e começo da carga
+            return @$"SELECT MAX(MAXCHANGEFILTERDATE) AS LASTCHANGE, MAX(PRODUCTCODE) AS MAXPRODUCTCODE, MIN(INTEGRATED_OR_UPDATED_AT) AS FIRSTINTEGRATED
+                     FROM TOTVS.TOTVSPRICES
+                     WHERE DOC_COMPANY = '{doc_company}'
+                     AND BRANCHCODE = {branchCode}";
+        }
+
+        public string CreateGetPricesChangesQuery(string doc_company, int branchCode, List<int> productCodes)
+        {
+            // com lista vazia o IN () é SQL inválido; o repositório não chama a query nesse caso
+            return @$"SELECT PRODUCTCODE, MAX(MAXCHANGEFILTERDATE) AS MAXCHANGEFILTERDATE
+                     FROM TOTVS.TOTVSPRICES
+                     WHERE DOC_COMPANY = '{doc_company}'
+                     AND BRANCHCODE = {branchCode}
+                     AND PRODUCTCODE IN ({String.Join(", ", productCodes)})
+                     GROUP BY PRODUCTCODE";
+        }
+
+        public string CreateGetCostsStateQuery(string doc_company, int branchCode)
+        {
+            // estado da loja: maior alteração (null só com a carga inicial), maior produto (onde a carga inicial continua) e começo da carga
+            return @$"SELECT MAX(MAXCHANGEFILTERDATE) AS LASTCHANGE, MAX(PRODUCTCODE) AS MAXPRODUCTCODE, MIN(INTEGRATED_OR_UPDATED_AT) AS FIRSTINTEGRATED
+                     FROM TOTVS.TOTVSCOSTS
+                     WHERE DOC_COMPANY = '{doc_company}'
+                     AND BRANCHCODE = {branchCode}";
+        }
+
+        public string CreateGetCostsChangesQuery(string doc_company, int branchCode, List<int> productCodes)
+        {
+            // com lista vazia o IN () é SQL inválido; o repositório não chama a query nesse caso
+            return @$"SELECT PRODUCTCODE, MAX(MAXCHANGEFILTERDATE) AS MAXCHANGEFILTERDATE
+                     FROM TOTVS.TOTVSCOSTS
+                     WHERE DOC_COMPANY = '{doc_company}'
+                     AND BRANCHCODE = {branchCode}
+                     AND PRODUCTCODE IN ({String.Join(", ", productCodes)})
+                     GROUP BY PRODUCTCODE";
+        }
+
+        public string CreateGetBalancesStateQuery(string doc_company, int branchCode)
+        {
+            // estado da loja: maior alteração (null só com a carga inicial), maior produto (onde a carga inicial continua) e começo da carga
+            return @$"SELECT MAX(MAXCHANGEFILTERDATE) AS LASTCHANGE, MAX(PRODUCTCODE) AS MAXPRODUCTCODE, MIN(INTEGRATED_OR_UPDATED_AT) AS FIRSTINTEGRATED
+                     FROM TOTVS.TOTVSBALANCES
+                     WHERE DOC_COMPANY = '{doc_company}'
+                     AND BRANCHCODE = {branchCode}";
+        }
+
+        public string CreateGetBalancesChangesQuery(string doc_company, int branchCode, List<int> productCodes)
+        {
+            // com lista vazia o IN () é SQL inválido; o repositório não chama a query nesse caso
+            return @$"SELECT PRODUCTCODE, MAX(MAXCHANGEFILTERDATE) AS MAXCHANGEFILTERDATE
+                     FROM TOTVS.TOTVSBALANCES
+                     WHERE DOC_COMPANY = '{doc_company}'
+                     AND BRANCHCODE = {branchCode}
+                     AND PRODUCTCODE IN ({String.Join(", ", productCodes)})
+                     GROUP BY PRODUCTCODE";
+        }
     }
 }

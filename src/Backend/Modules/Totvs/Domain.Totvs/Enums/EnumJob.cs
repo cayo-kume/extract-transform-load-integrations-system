@@ -27,6 +27,11 @@
         TotvsGetInvoiceByKey = 13013,   //Script030_Insert_Totvs_On_Demand_Documents_Jobs_Into_Jobs_Table.sql
         TotvsGetProductByCode = 13014,   //Script031_Insert_Totvs_On_Demand_Products_Jobs_Into_Jobs_Table.sql
 
+        // preços, custos e saldos (fase 3, partes 4 a 6, entregues na fase PR-2), a cada 3 minutos
+        TotvsPostSearchPrices = 13015,   //Script050_Insert_Totvs_Product_Values_Jobs_Into_Jobs_Table.sql
+        TotvsPostSearchCosts = 13016,   //Script050_Insert_Totvs_Product_Values_Jobs_Into_Jobs_Table.sql
+        TotvsPostSearchBalances = 13017,   //Script050_Insert_Totvs_Product_Values_Jobs_Into_Jobs_Table.sql
+
         // representantes (120 min), recepção de venda (3 min) e representante por código (sob demanda): fase PE-2
         TotvsPostSearchRepresentatives = 13030,   //Script038_Insert_Totvs_Representatives_Jobs_Into_Jobs_Table.sql
         TotvsGetSearchReceptionSale = 13031,   //Script041_Insert_Totvs_Reception_Sales_Jobs_Into_Jobs_Table.sql

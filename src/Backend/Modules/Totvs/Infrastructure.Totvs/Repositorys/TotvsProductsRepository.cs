@@ -1,4 +1,5 @@
-﻿using Application.Totvs.Abstractions.Handlers.Commands;
+﻿using Domain.Totvs.Entities.Reads.Products.Values;
+using Application.Totvs.Abstractions.Handlers.Commands;
 using Domain.Shared.Abstractions.Repositorys;
 using Domain.Totvs.Abstractions.Repositorys;
 using Domain.Totvs.Entities.Reads.Products;
@@ -80,6 +81,51 @@ namespace Infrastructure.Totvs.Repositorys
             }
 
             // o merge das filhas roda mesmo sem linhas no lote: é ele que apaga as que saíram da referência ou do produto
+            foreach (var (table, _) in tables)
+                await _coreRepository.CallDbProcMerge("totvs", table.TableName, parentExecutionGUID);
+
+            return true;
+        }
+
+        public async Task<ValueState?> GetBalancesState(string doc_company, int branchCode)
+        {
+            string sql = _totvsCommandHandler.CreateGetBalancesStateQuery(doc_company, branchCode);
+
+            return await _coreRepository.GetRecord<ValueState>(sql);
+        }
+
+        public async Task<IEnumerable<ValueChange?>> GetBalancesChanges(string doc_company, int branchCode, List<int> productCodes)
+        {
+            var result = new List<ValueChange?>();
+
+            // lotes de 1000 códigos, como no GetPeopleByIds do Movidesk
+            foreach (var chunk in productCodes.Distinct().Chunk(1000))
+            {
+                string sql = _totvsCommandHandler.CreateGetBalancesChangesQuery(doc_company, branchCode, chunk.ToList());
+
+                result.AddRange(await _coreRepository.GetRecords<ValueChange>(sql));
+            }
+
+            return result;
+        }
+
+        public async Task<bool> BulkInsertIntoTotvsBalances(List<Balance> data, List<BalanceLocation> locations, Guid? parentExecutionGUID)
+        {
+            // ordem = ordem dos merges: o saldo antes dos locais do produto (condição de exclusão do merge)
+            var tables = new List<(DataTable table, IList rows)>
+            {
+                (_coreRepository.CreateSystemDataTable(entity: new Balance(), tableName: "TotvsBalances"), data),
+                (_coreRepository.CreateSystemDataTable(entity: new BalanceLocation(), tableName: "TotvsBalancesLocations"), locations),
+            };
+
+            foreach (var (table, rows) in tables)
+            {
+                // FillSystemDataTable lê as propriedades do tipo real do primeiro item, então List<object> funciona
+                _coreRepository.FillSystemDataTable(table, rows.Cast<object>().ToList());
+                _coreRepository.BulkInsertIntoTableRaw(table, "untreated");
+            }
+
+            // o merge dos locais roda mesmo sem linhas no lote: é ele que apaga os que saíram do produto
             foreach (var (table, _) in tables)
                 await _coreRepository.CallDbProcMerge("totvs", table.TableName, parentExecutionGUID);
 
