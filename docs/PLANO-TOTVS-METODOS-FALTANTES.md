@@ -2310,7 +2310,7 @@ onda 2 que entrar monta a base das leituras sem persistência (T11, §8.1).
 | PE-2 | 1 | `TotvsRepresentativesService` | `PostSearchRepresentatives`; `GetRepresentativeByCode` (PE10); `GetSearchReceptionSale` (PE2) | 13030, 13039, 13031 | — **Implementada em 27/10/2026** (§10.3) |
 | PE-3 | 2 | `TotvsPeopleService` | `GetBranches`, `GetPersonStatistics` | 13036, 13037 | base T11 **Implementada em 28/10/2026** (§10.13) |
 | PE-4 | 2 | `TotvsBonusService` | token por loja (PE3) + `PostListBalanceBonus` | 13038 | PE-3 **Implementada em 28/10/2026** (§10.13) |
-| PE-5 | 3 | `TotvsPeopleService` | `PostMessages`, `PutChangeMessages`, `DeleteMessages` | 13044–13046 | AP-1 |
+| PE-5 | 3 | `TotvsPeopleService` | `PostMessages`, `PutChangeMessages`, `DeleteMessages` | 13044–13046 | AP-1 **Implementada em 28/10/2026** (§10.14), com a base comum das escritas e a trava T5 |
 | PE-6 | 4 | `TotvsPeopleService`, `TotvsRepresentativesService` | `PostRemoveClassificationRelationship`, `PostCustomerRepresentatives`, `PostIndividualCustomers`, `PostLegalCustomers` | 13040–13043 | PE-1 (valida os códigos nos catálogos), PE-5, T3 e T6 |
 | PE-7 | 5 | `TotvsBonusService` | `PostBonusDueDate`, `PostBonusConsume` | 13047, 13048 | PE-4 (saldo antes do consumo, PE4), T4, T5 |
 
@@ -2924,3 +2924,48 @@ filtro de situação e de pedido inexistente (404); itens pendentes vazios (200)
 
 **Onda 2 concluída** (PE-3, PE-4, PR-3, PO-1, SO-2 e FI-2), menos o teste da F3. A onda 3 (escritas de baixo risco: PE-5, PR-4, PO-2 e
 SO-3; a AP-1 já está feita) depende da T1/T2 (homologação e autenticação dos endpoints de inbound).
+
+### 10.14 Fase PE-5: mensagens da pessoa e a base comum das escritas (28/10/2026)
+
+**Base comum das escritas** (no `ITotvsService`, para as fases daqui em diante; a `PostDuplicatesInstallmentsStage` da AP-1 continua com
+a chamada no próprio método):
+* `Write(company, job, user, key, method, route, body, checkHint, repeatLock)`: o fluxo da §1.2 inteiro (corpo sem os nulos, nova tentativa
+  só em 401 e 429, registro em `TotvsRequests` com o corpo enviado, o recebido e o status, mensagens da Totvs no `Result`). `checkHint`
+  completa a mensagem quando não dá para saber se a Totvs gravou (5xx, exceção); `body` nulo manda a chamada sem corpo (os `DELETE`, com os
+  campos na query, que fica na rota gravada);
+* `WriteDisabled(grupo, key)`: o 422 da escrita desligada (T4), sem chamada;
+* **trava de repetição (T5)**, ligada por `repeatLock` nas escritas não idempotentes: a mesma rota + chave + corpo nos últimos 10 minutos
+  que a Totvs aceitou, ou que ficou sem resposta certa (5xx ou exceção), volta **409** sem chamar a API. A recusa da Totvs (4xx) e o login
+  que falhou não travam: nada foi gravado. A consulta (`CreateGetRecentRequestsQuery`) filtra por empresa, chave, rota e data (o índice
+  `IX_TotvsRequests_Company_Key` atende) e o corpo é comparado no service, sem entrar no SQL;
+* `Script066`: coluna `status_code` em `totvs.TotvsRequests` (status da Totvs; **0** quando a chamada lançou exceção; nulo sem chamada à
+  rota e nos registros anteriores). As leituras sob demanda (`ReadOnDemand`) passam a gravar o status também;
+* `WriteResponse` do controller devolve **409** na repetição recusada; as rotas novas recebem o validador por `[FromServices]`, sem
+  aumentar o construtor do controller.
+
+**PE-5** (§3.4.4, no `TotvsPeopleService`, grupo `Totvs:Writes:People:Enabled`, desligado no `appsettings.json`; jobs no `Script067`):
+* `PostMessages` (13044): `POST TotvsJobs/Totvs/Messages/{docCompany}` com o `InsertMessagePerson` → `POST person/v2/messages`; chave = pessoa
+  (código ou CPF/CNPJ); **com a trava T5** (repetir inclui as mensagens de novo). A resposta (201, as `sequence`) volta em `response` e fica
+  em `TotvsRequests`, a única fonte das `sequence` (PE8);
+* `PutChangeMessages` (13045): `PUT .../Messages/{docCompany}/Change` com o `UpdateMessagePerson` → `PUT person/v2/messages/change`; chave =
+  pessoa `|` `sequence`; sem trava (valores absolutos); `status` vai como número (`MessageStatusType` 1, 2, 3);
+* `DeleteMessages` (13046): `DELETE .../Messages/{docCompany}/{personCode}/{sequence}` → `DELETE person/v2/messages?PersonCode=&Sequence=`,
+  sem corpo e sem o `LastChangeUser`; chave = `personCode|sequence`;
+* validadores `InsertMessagePersonValidator` (pessoa: exatamente um entre código, até 9 dígitos, e CPF/CNPJ, 11 ou 14 dígitos; pelo menos uma
+  mensagem; `description` obrigatória e até 200; **`priority` obrigatória** e maior que zero, porque o swagger a declara inteiro não anulável
+  e a omissão mandaria 0) e `UpdateMessagePersonValidator` (`filter` com a pessoa e a `sequence`; pelo menos um entre `description`,
+  `status` e `priority`; `description` até 200, o tamanho do `POST`).
+
+**Conferido sem a API** (console descartável com uma Totvs falsa e `TotvsRequests` em memória, o `TotvsService` de verdade):
+* validadores: 10 corpos (válidos, sem pessoa, as duas pessoas, CPF curto, sem mensagens, descrição de 201 sem prioridade, `PUT` sem
+  `filter`, sem `sequence` e sem campo, `status` 9), cada um com a mensagem certa;
+* corpo enviado sem nulos (`{"personCode":12345,"messages":[...]}`) e `status` como número no `PUT`; `DELETE` com os campos na query e
+  sem corpo;
+* fluxo: 201 → 200 com a resposta e `status_code` 201 gravado; **o mesmo corpo de novo → 409 sem chamar**; outro corpo da mesma pessoa →
+  chama; 400 → mensagem `code: message` e a repetição **não** trava; 502 → 1 chamada só e a repetição → 409 ("pode ter sido feita");
+  exceção → `status_code` 0 e a repetição → 409; 401 → token renovado; 429 duas vezes → 429 com `Retry-After`; login que falhou → sem
+  chamar a rota e sem travar a próxima; escrita desligada e empresa não cadastrada → sem chamada e sem registro; `PUT` repetido chama
+  de novo (sem trava).
+
+**Não verificado:** a chamada real em homologação (T1: precisa do usuário de integração, §1.3), o formato do `status` (número, D6) e se
+a `priority` é mesmo obrigatória; o `Script066`/`Script067` em banco e as rotas pelo host.

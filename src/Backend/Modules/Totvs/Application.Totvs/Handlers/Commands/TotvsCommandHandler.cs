@@ -44,6 +44,21 @@ namespace Application.Totvs.Handlers.Commands
                      AND CNPJ = '{cnpj}'";
         }
 
+        public string CreateGetRecentRequestsQuery(string doc_company, string route, string field_key_value, DateTime since)
+        {
+            // trava de repetição das escritas (T5): o corpo é comparado no service, não na query (é texto de quem chamou). Rota e chave
+            // cortadas como na gravação (400) e com as aspas dobradas; o índice IX_TotvsRequests_Company_Key atende o filtro
+            static string Text(string value) => (value.Length > 400 ? value[..400] : value).Replace("'", "''");
+
+            return @$"SELECT REQUEST_DATE, REQUEST_BODY, IS_SUCCESS, STATUS_CODE
+                     FROM TOTVS.TOTVSREQUESTS
+                     WHERE DOC_COMPANY = '{doc_company}'
+                     AND FIELD_KEY_VALUE = N'{Text(field_key_value)}'
+                     AND [ROUTE] = N'{Text(route)}'
+                     AND REQUEST_DATE >= '{since:yyyy-MM-ddTHH:mm:ss}'
+                     ORDER BY REQUEST_DATE DESC";
+        }
+
         public string CreateGetBranchesLastChangeQuery(string doc_company)
         {
             // doc_company vem de TotvsParameters; com aspas porque a coluna é nvarchar (CNPJ pode começar com zero)

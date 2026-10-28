@@ -52,5 +52,12 @@ namespace Infrastructure.Totvs.Repositorys
 
             return _coreRepository.BulkInsertIntoTableRaw(requestsTable, "totvs");
         }
+
+        public async Task<IEnumerable<Domain.Totvs.Entities.Writes.Requests.RequestCheck?>> GetRecentRequests(string doc_company, string route, string field_key_value, DateTime since)
+        {
+            string sql = _totvsCommandHandler.CreateGetRecentRequestsQuery(doc_company, route, field_key_value, since);
+
+            return await _coreRepository.GetRecords<Domain.Totvs.Entities.Writes.Requests.RequestCheck>(sql);
+        }
     }
 }

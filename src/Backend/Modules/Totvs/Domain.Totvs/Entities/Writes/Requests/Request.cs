@@ -20,9 +20,13 @@
 
         public bool is_success { get; private set; }
 
+        // status da Totvs; 0 quando a chamada lançou exceção (sem saber se a Totvs gravou) e null sem chamada à rota (login que falhou).
+        // A trava de repetição das escritas (T5) usa para separar a recusa da Totvs da dúvida
+        public int? status_code { get; private set; }
+
         public Request() { }
 
-        public Request(Guid execution, Enum job, string user_name, string http_method, string route, string doc_company, string? field_key_value, string? request_body, string? response_body, bool is_success)
+        public Request(Guid execution, Enum job, string user_name, string http_method, string route, string doc_company, string? field_key_value, string? request_body, string? response_body, bool is_success, int? status_code = null)
         {
             request_date = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time"));
 
@@ -39,6 +43,7 @@
             this.response_body = response_body;
 
             this.is_success = is_success;
+            this.status_code = status_code;
         }
     }
 }

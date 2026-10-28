@@ -76,6 +76,19 @@ namespace Application.Totvs.Abstractions.Services
         /// </summary>
         public Domain.Totvs.Dtos.Writes.Result BranchNotFound(string doc_company, string key, IEnumerable<string> branches);
 
-        public void SaveRequest(Domain.Totvs.Enums.EnumJob job, string user_name, string httpMethod, string route, string doc_company, string field_key_value, string? responseBody, bool isSuccess, string? requestBody = null);
+        /// <summary>
+        /// escrita na Totvs (docs/PLANO-TOTVS-METODOS-FALTANTES.md §1.2): serializa o corpo sem os nulos, chama a rota com uma nova tentativa
+        /// só em 401 e 429 (nunca em 5xx: a escrita pode ter sido feita), registra em totvs.TotvsRequests o corpo enviado, o recebido e o status
+        /// e devolve o Result. Com repeatLock, recusa com 409 (sem chamar a API) a mesma rota + chave + corpo dos últimos 10 minutos que a Totvs
+        /// aceitou ou que ficou sem resposta certa (T5). checkHint completa a mensagem quando não dá para saber se a Totvs gravou
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> Write(Company company, Domain.Totvs.Enums.EnumJob job, string user_name, string key, HttpMethod method, string route, object? body, string checkHint, bool repeatLock = false);
+
+        /// <summary>
+        /// Result da escrita desligada por configuração (T4: 422 sem chamar a API)
+        /// </summary>
+        public Domain.Totvs.Dtos.Writes.Result WriteDisabled(string group, string key);
+
+        public void SaveRequest(Domain.Totvs.Enums.EnumJob job, string user_name, string httpMethod, string route, string doc_company, string field_key_value, string? responseBody, bool isSuccess, string? requestBody = null, int? statusCode = null);
     }
 }

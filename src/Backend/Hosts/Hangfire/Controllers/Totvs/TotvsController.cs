@@ -1058,6 +1058,62 @@ namespace Hangfire.Controllers.Totvs
             ReadResponse(await _totvsSalesOrdersService.GetChangedBatchItems(userName, docCompany, branchCode, orderCode, batchCode, startDate, endDate));
 
         /// <summary>
+        /// inclui mensagens para uma pessoa (POST person/v2/messages), exibidas ao atender o cliente. A resposta traz a sequence de cada
+        /// mensagem, a única fonte para alterar ou excluir depois (PE8); o mesmo corpo em 10 minutos volta 409
+        /// </summary>
+        [HttpPost("Messages/{docCompany}")]
+        [Tags("TotvsPeople")]
+        public async Task<ActionResult> Messages(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.People.Messages.InsertMessagePerson body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.People.Messages.InsertMessagePerson> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsPeopleService.PostMessages(userName, docCompany, body));
+        }
+
+        /// <summary>
+        /// altera uma mensagem da pessoa (PUT person/v2/messages/change) pela pessoa e sequence: descrição, situação (3 = cancelada, o
+        /// caminho normal para tirar uma mensagem) ou prioridade
+        /// </summary>
+        [HttpPut("Messages/{docCompany}/Change")]
+        [Tags("TotvsPeople")]
+        public async Task<ActionResult> ChangeMessages(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.People.Messages.UpdateMessagePerson body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.People.Messages.UpdateMessagePerson> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsPeopleService.PutChangeMessages(userName, docCompany, body));
+        }
+
+        /// <summary>
+        /// exclui uma mensagem da pessoa em definitivo (DELETE person/v2/messages). Sem leitura de mensagens na API para conferir antes:
+        /// prefira o PUT com status 3 (cancelada)
+        /// </summary>
+        [HttpDelete("Messages/{docCompany}/{personCode:int:range(1,999999999)}/{sequence:int:min(1)}")]
+        [Tags("TotvsPeople")]
+        public async Task<ActionResult> DeleteMessages(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            int personCode,
+            int sequence
+        ) =>
+            WriteResponse(await _totvsPeopleService.DeleteMessages(userName, docCompany, personCode, sequence));
+
+        /// <summary>
         /// resposta das leituras sem persistência (docs/PLANO-TOTVS-METODOS-FALTANTES.md §8.1, T11): 200 com o JSON ou o arquivo; 404 quando
         /// a Totvs não acha; 429 com Retry-After; 502 para 5xx, falta de resposta ou JSON inválido; 422 nos demais (empresa não cadastrada,
         /// 400 da Totvs)
@@ -1074,9 +1130,9 @@ namespace Hangfire.Controllers.Totvs
         }
 
         /// <summary>
-        /// resposta das escritas (docs/PLANO-TOTVS-METODOS-FALTANTES.md §1.2): 200 aceita; 429 com Retry-After; 502 quando a
-        /// Totvs foi chamada e não respondeu ou respondeu 5xx (a escrita pode ter sido feita); 422 nos demais (empresa ou loja
-        /// não cadastrada, escrita desligada, recusa da Totvs)
+        /// resposta das escritas (docs/PLANO-TOTVS-METODOS-FALTANTES.md §1.2): 200 aceita; 429 com Retry-After; 409 na repetição recusada
+        /// (T5); 502 quando a Totvs foi chamada e não respondeu ou respondeu 5xx (a escrita pode ter sido feita); 422 nos demais (empresa
+        /// ou loja não cadastrada, escrita desligada, recusa da Totvs)
         /// </summary>
         private ActionResult WriteResponse(Domain.Totvs.Dtos.Writes.Result result)
         {
@@ -1090,6 +1146,9 @@ namespace Hangfire.Controllers.Totvs
 
                 return StatusCode(StatusCodes.Status429TooManyRequests, result);
             }
+
+            if (result.statusCode == StatusCodes.Status409Conflict)
+                return Conflict(result);
 
             if (result.apiCalled && (result.statusCode == 0 || result.statusCode >= 500))
                 return StatusCode(StatusCodes.Status502BadGateway, result);

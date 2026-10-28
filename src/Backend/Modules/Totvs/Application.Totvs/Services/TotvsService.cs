@@ -26,6 +26,9 @@ namespace Application.Totvs.Services
         private const string ParametersKey = "Totvs:Parameters";
         private const string TokenKey = "Totvs:Token";
 
+        // janela da trava de repetição das escritas não idempotentes (T5)
+        private const int RepeatLockMinutes = 10;
+
         public TotvsService([FromKeyedServices("TotvsAPI")] IApiClient apiClient, ILoggerService logger, IMemoryCache cache, ITotvsRepository totvsRepository, IConfiguration configuration) =>
             (_apiClient, _logger, _cache, _totvsRepository, _configuration) = (apiClient, logger, cache, totvsRepository, configuration);
 
@@ -124,7 +127,7 @@ namespace Application.Totvs.Services
         public void RemoveToken(Company company) =>
             _cache.Remove($"{TokenKey}:{company.doc_company}");
 
-        public void SaveRequest(Domain.Totvs.Enums.EnumJob job, string user_name, string httpMethod, string route, string doc_company, string field_key_value, string? responseBody, bool isSuccess, string? requestBody = null) =>
+        public void SaveRequest(Domain.Totvs.Enums.EnumJob job, string user_name, string httpMethod, string route, string doc_company, string field_key_value, string? responseBody, bool isSuccess, string? requestBody = null, int? statusCode = null) =>
             _totvsRepository.InsertIntoTotvsRequests(
                 new Domain.Totvs.Entities.Writes.Requests.Request(
                     execution: _logger.GetExecutionGuid() ?? Guid.Empty,
@@ -136,7 +139,8 @@ namespace Application.Totvs.Services
                     field_key_value: field_key_value,
                     request_body: requestBody,
                     response_body: responseBody,
-                    is_success: isSuccess
+                    is_success: isSuccess,
+                    status_code: statusCode
                 )
             );
 
@@ -201,9 +205,9 @@ namespace Application.Totvs.Services
 
             if (!response.IsSuccess)
             {
-                SaveRequest(job, user_name, method.Method, route, company.doc_company!, key, response.Content, false, requestBody);
+                SaveRequest(job, user_name, method.Method, route, company.doc_company!, key, response.Content, false, requestBody, response.StatusCode);
 
-                var message = OnDemandMessage(response);
+                var message = TotvsMessage(response);
                 _logger.AddMessage($"Erro da API Totvs em {routeName} ({key}): {response.StatusCode} {message}");
 
                 return new Domain.Totvs.Dtos.Writes.Result
@@ -236,7 +240,7 @@ namespace Application.Totvs.Services
             var empty = emptyListProperty is not null && data.ValueKind == System.Text.Json.JsonValueKind.Object && data.TryGetProperty(emptyListProperty, out var list)
                 && list.ValueKind == System.Text.Json.JsonValueKind.Array && list.GetArrayLength() == 0;
 
-            SaveRequest(job, user_name, method.Method, route, company.doc_company!, key, response.Content, !empty, requestBody);
+            SaveRequest(job, user_name, method.Method, route, company.doc_company!, key, response.Content, !empty, requestBody, response.StatusCode);
 
             if (empty)
             {
@@ -247,6 +251,128 @@ namespace Application.Totvs.Services
             _logger.AddMessage($"Concluída com sucesso: {routeName} ({key}) devolvido.");
 
             return new Domain.Totvs.Dtos.Writes.Result { success = true, key = key, statusCode = 200, apiCalled = true, data = data };
+        }
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> Write(Company company, Domain.Totvs.Enums.EnumJob job, string user_name, string key, HttpMethod method, string route, object? body, string checkHint, bool repeatLock = false)
+        {
+            var routeName = route.Split('?')[0];
+
+            // nulos não vão (os campos dos DTOs de escrita são anuláveis); enums como número, salvo os que declaram outro formato (T3)
+            var requestBody = body is null ? null : JsonConvert.SerializeObject(body, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
+
+            if (repeatLock && await RepeatedWrite(company, key, route, requestBody, checkHint) is { } repeated)
+                return repeated;
+
+            ApiResponse? response = null;
+
+            try
+            {
+                // uma nova tentativa só em 401 (renova o token) e 429 (espera o Retry-After): nos dois a Totvs não processou o pedido. Em
+                // 502/503/504 não há nova tentativa: a escrita pode ter sido feita antes de o gateway cair
+                for (var attempt = 1; attempt <= 2; attempt++)
+                {
+                    var token = await GetToken(company);
+
+                    if (token is null)
+                        break;   // a mensagem do login já foi para o log
+
+                    using var content = requestBody is null ? null : new StringContent(requestBody, System.Text.Encoding.UTF8, "application/json");
+
+                    response = await _apiClient.SendAsync(
+                        method,
+                        route,
+                        content,
+                        headers: new Dictionary<string, string> { { "Authorization", $"Bearer {token}" } }
+                    );
+
+                    if (attempt == 1 && response.StatusCode == 401)
+                    {
+                        RemoveToken(company);
+                        continue;
+                    }
+
+                    if (attempt == 1 && response.StatusCode == 429)
+                    {
+                        var seconds = response.Headers.TryGetValue("Retry-After", out var retryAfter) && int.TryParse(retryAfter, out var value) ? value : 5;
+                        await Task.Delay(TimeSpan.FromSeconds(Math.Clamp(seconds, 1, 60)));
+                        continue;
+                    }
+
+                    break;
+                }
+            }
+            catch (Exception ex)
+            {
+                // sem resposta (timeout, rede): a escrita pode ter sido feita. O status 0 marca a dúvida para a trava de repetição
+                var failure = $"Exceção ao chamar a API: {ex.Message.TrimEnd('.')}";
+                SaveRequest(job, user_name, method.Method, route, company.doc_company!, key, failure, false, requestBody, 0);
+                _logger.AddMessage($"{routeName} ({key}, empresa {company.doc_company}): {failure}. {checkHint}");
+
+                return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, apiCalled = true, message = $"{failure}. {checkHint}" };
+            }
+
+            if (response is null)
+            {
+                // login falhou: nenhuma chamada à rota
+                SaveRequest(job, user_name, method.Method, route, company.doc_company!, key, null, false, requestBody);
+
+                return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, message = $"Falha na autenticação da Totvs (empresa {company.doc_company}). Veja o log da execução." };
+            }
+
+            SaveRequest(job, user_name, method.Method, route, company.doc_company!, key, response.Content, response.IsSuccess, requestBody, response.StatusCode);
+
+            if (!response.IsSuccess)
+            {
+                var message = TotvsMessage(response);
+                _logger.AddMessage($"{routeName} ({key}, empresa {company.doc_company}): {response.StatusCode} {message}");
+
+                return new Domain.Totvs.Dtos.Writes.Result
+                {
+                    success = false,
+                    key = key,
+                    statusCode = response.StatusCode,
+                    apiCalled = true,
+                    message = response.StatusCode >= 500 ? $"{message.TrimEnd('.')}. {checkHint}" : message,
+                    response = response.Content,
+                    retryAfterSeconds = response.Headers.TryGetValue("Retry-After", out var retryAfter) && int.TryParse(retryAfter, out var seconds) ? seconds : null
+                };
+            }
+
+            // o banco local não é atualizado aqui: o registro volta pela leitura recorrente (T7)
+            _logger.AddMessage($"Concluída com sucesso: {routeName} ({key}, empresa {company.doc_company}).");
+
+            return new Domain.Totvs.Dtos.Writes.Result { success = true, key = key, statusCode = response.StatusCode, apiCalled = true, response = response.Content };
+        }
+
+        public Domain.Totvs.Dtos.Writes.Result WriteDisabled(string group, string key)
+        {
+            // nenhuma chamada à API: não há o que registrar em TotvsRequests
+            var message = $"Escritas do grupo {group} desligadas (Totvs:Writes:{group}:Enabled).";
+            _logger.AddMessage(message);
+
+            return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, message = message };
+        }
+
+        // trava de repetição (T5): a mesma rota + chave + corpo nos últimos 10 minutos, aceita pela Totvs ou sem saber se ela gravou (5xx ou
+        // exceção), volta 409 sem chamar a API. A recusa da Totvs (4xx) e o login que falhou não travam: nada foi gravado
+        private async Task<Domain.Totvs.Dtos.Writes.Result?> RepeatedWrite(Company company, string key, string route, string? requestBody, string checkHint)
+        {
+            // request_date é gravado no horário de Brasília (Request)
+            var since = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time")).AddMinutes(-RepeatLockMinutes);
+
+            var previous = (await _totvsRepository.GetRecentRequests(company.doc_company!, route, key, since))
+                .FirstOrDefault(x => x is not null && x.request_body == requestBody && (x.is_success || x.status_code == 0 || x.status_code >= 500));
+
+            if (previous is null)
+                return null;
+
+            var message = previous.is_success
+                ? $"A mesma escrita foi aceita pela Totvs às {previous.request_date:HH:mm:ss}: repetir em menos de {RepeatLockMinutes} minutos é recusado."
+                : $"A mesma escrita ficou sem resposta certa às {previous.request_date:HH:mm:ss} e pode ter sido feita. {checkHint}";
+
+            _logger.AddMessage($"{route.Split('?')[0]} ({key}, empresa {company.doc_company}): repetição recusada. {message}");
+
+            return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, statusCode = 409, message = message };
         }
 
         public Domain.Totvs.Dtos.Writes.Result CompanyNotFound(string doc_company, string key)
@@ -287,7 +413,7 @@ namespace Application.Totvs.Services
         }
 
         // as mensagens da Totvs (lista de DomainNotificationMessage), como no TotvsAccountsPayableService
-        private static string OnDemandMessage(ApiResponse response)
+        private static string TotvsMessage(ApiResponse response)
         {
             try
             {

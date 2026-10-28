@@ -209,6 +209,9 @@ Os nomes dos métodos são os da **documentação oficial** (`PostSearch*`, `Get
 | Service | Método | Rota da API | Job | Chave de configuração |
 |---|---|---|---|---|
 | `TotvsAccountsPayableService` | `PostDuplicatesInstallmentsStage` | `POST accounts-payable/v2/duplicates/installments/stage` | 13020 | `Totvs:Writes:AccountsPayable:Enabled` |
+| `TotvsPeopleService` | `PostMessages` | `POST person/v2/messages` (com a trava de repetição) | 13044 | `Totvs:Writes:People:Enabled` |
+| `TotvsPeopleService` | `PutChangeMessages` | `PUT person/v2/messages/change` | 13045 | `Totvs:Writes:People:Enabled` |
+| `TotvsPeopleService` | `DeleteMessages` | `DELETE person/v2/messages` | 13046 | `Totvs:Writes:People:Enabled` |
 
 **Leituras sob demanda** (um registro por chave)
 
@@ -333,6 +336,8 @@ O DbUp executa cada script uma única vez, em ordem alfabética. Alterar um scri
 | `Script063` | Jobs das leituras sem persistência da API Fiscal (XML, DANFE, impressão) |
 | `Script064` | Jobs das leituras sem persistência da API Fiscal (itens, condicional, produtos das notas) |
 | `Script065` | Jobs das leituras sob demanda do resto da onda 2 (pessoa, bônus, produto, pedido de compra e de venda) |
+| `Script066` | Coluna `status_code` em `totvs.TotvsRequests` (trava de repetição das escritas) |
+| `Script067` | Jobs das escritas da API Person (mensagens, 13044–13046) |
 
 **Regras gerais das tabelas e dos merges:**
 * Toda tabela de dados existe em dois schemas: `untreated` (recebe o bulk insert, sem chave) e `totvs` (tabela final, com PK). A exceção é `totvs.TotvsRequests`, que só recebe inserts.
@@ -457,11 +462,15 @@ Mesmas exigências das leituras sob demanda (`X-User-Name` e `{docCompany}`), co
 | Método | Rota | Corpo | Service |
 |---|---|---|---|
 | POST | `Duplicates/{docCompany}/Installments/Stage` | `branchCnpj` (loja da empresa), `supplierCpfCnpj` **ou** `supplierCode`, `duplicateCode`, `installmentCode`, `newStage` (1 título não conferido, 2 liberado para pagamento, 5 título aceito) | `PostDuplicatesInstallmentsStage` |
+| POST | `Messages/{docCompany}` | `personCode` **ou** `personCpfCnpj`; `messages` (`description` até 200, `priority`) | `PostMessages` (devolve as `sequence`) |
+| PUT | `Messages/{docCompany}/Change` | `filter` (`personCode` **ou** `personCpfCnpj`, `sequence`); `description`, `status` (1 não lida, 2 lida, 3 cancelada) ou `priority` | `PutChangeMessages` |
+| DELETE | `Messages/{docCompany}/{personCode}/{sequence}` | — (exclusão definitiva; prefira o `PUT` com `status` 3) | `DeleteMessages` |
 
 | Código | Quando |
 |---|---|
 | **200** | Escrita aceita pela Totvs (chave e resposta da Totvs no corpo) |
 | **400** | Corpo inválido (lista de campos e mensagens), sem chamar a Totvs |
+| **409** | A mesma escrita não idempotente (rota + chave + corpo) foi aceita ou ficou sem resposta certa nos últimos 10 minutos: recusada sem chamar a Totvs |
 | **422** | Escrita desligada na configuração, empresa ou loja não cadastrada, ou a Totvs recusou (mensagens da Totvs no corpo) |
 | **429** | A Totvs limitou as chamadas também na nova tentativa (`Retry-After`) |
 | **502** | A Totvs foi chamada e não respondeu ou respondeu 5xx: **a escrita pode ter sido feita**, confira antes de repetir |
@@ -545,6 +554,7 @@ Os jobs ficam em `auditing.Jobs`, com os mesmos ids em `EnumJob`.
 | 13018 | `TotvsPostDuplicates` | escrita (reservado, fase AP-2) |
 | 13019 | `TotvsPostGroupDuplicates` | escrita (reservado, fase AP-2) |
 | 13020 | `TotvsPostDuplicatesInstallmentsStage` | escrita |
+| 13044–13046 | `TotvsPostMessages`, `TotvsPutChangeMessages`, `TotvsDeleteMessages` | escrita |
 
 Toda execução grava `auditing.Logs` e, conforme o caso:
 * `auditing.Messages`, com mensagens e erros de validação;
@@ -557,7 +567,7 @@ Toda execução grava `auditing.Logs` e, conforme o caso:
 | Onde | Chave | Uso |
 |---|---|---|
 | `appsettings.json` do host | `Totvs:BaseUrl` | Endereço da API; homologação é só outro valor no `appsettings` do ambiente |
-| `appsettings.json` do host | `Totvs:Writes:<grupo>:Enabled` | Liga as escritas de um grupo (`AccountsPayable`...). Sem a chave, ou com `false`, a rota devolve 422 sem chamar a Totvs |
+| `appsettings.json` do host | `Totvs:Writes:<grupo>:Enabled` | Liga as escritas de um grupo (`AccountsPayable`, `People`...). Sem a chave, ou com `false`, a rota devolve 422 sem chamar a Totvs |
 | `appsettings.json` do host | `ConnectionStrings` | Conexão com o SQL Server (dados e auditoria) |
 | Banco | `totvs.TotvsParameters` | CNPJ (`doc_company`) e credenciais (`client_id`, `client_secret`, `username`, `password`) de cada empresa |
 

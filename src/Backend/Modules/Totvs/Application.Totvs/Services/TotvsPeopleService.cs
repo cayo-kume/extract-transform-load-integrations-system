@@ -51,6 +51,9 @@ namespace Application.Totvs.Services
         private const string LegalEntitiesExpand = "phones,addresses,emails,classifications,additionalFields,references,observations,relateds,partners,shippingCompany," +
             "contacts,statistics,paymentMethods,preferences,socialNetworks,representatives,customerObservations";
 
+        // grupo das escritas desta API na configuração (Totvs:Writes:People:Enabled, T4)
+        private const string WritesGroup = "People";
+
         public TotvsPeopleService(
             [FromKeyedServices("TotvsAPI")] IApiClient apiClient,
             ILoggerService logger,
@@ -1196,6 +1199,97 @@ namespace Application.Totvs.Services
                     return _totvsService.BranchNotFound(doc_company, key, outside.Select(x => x.ToString()));
 
                 return await _totvsService.ReadOnDemand(company, EnumJob.TotvsGetPersonStatistics, user_name, key, HttpMethod.Get, TotvsQuery.Route("person/v2/person-statistics", ("CustomerCode", customerCode), ("CustomerCpfCnpj", customerCpfCnpj), ("BranchCode", branchCodes)), null, null);
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostMessages(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.People.Messages.InsertMessagePerson body)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsPostMessages);
+
+            var key = body.personCode?.ToString() ?? body.personCpfCnpj!;
+
+            try
+            {
+                if (!_totvsService.IsWriteEnabled(WritesGroup))
+                    return _totvsService.WriteDisabled(WritesGroup, key);
+
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return _totvsService.CompanyNotFound(doc_company, key);
+
+                // não há leitura de mensagens na API: as sequence ficam só na resposta, guardada em TotvsRequests (PE8). Repetir inclui as
+                // mensagens de novo, daí a trava (T5)
+                return await _totvsService.Write(company, EnumJob.TotvsPostMessages, user_name, key, HttpMethod.Post, "person/v2/messages", body,
+                    "Confira as mensagens da pessoa na Totvs antes de repetir.", repeatLock: true);
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PutChangeMessages(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.People.Messages.UpdateMessagePerson body)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsPutChangeMessages);
+
+            var key = $"{body.filter!.personCode?.ToString() ?? body.filter.personCpfCnpj}|{body.filter.sequence}";
+
+            try
+            {
+                if (!_totvsService.IsWriteEnabled(WritesGroup))
+                    return _totvsService.WriteDisabled(WritesGroup, key);
+
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return _totvsService.CompanyNotFound(doc_company, key);
+
+                // grava valores absolutos: repetir não muda nada, sem trava
+                return await _totvsService.Write(company, EnumJob.TotvsPutChangeMessages, user_name, key, HttpMethod.Put, "person/v2/messages/change", body,
+                    "Confira a mensagem na Totvs antes de repetir.");
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> DeleteMessages(string user_name, string doc_company, int personCode, int sequence)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsDeleteMessages);
+
+            var key = $"{personCode}|{sequence}";
+
+            try
+            {
+                if (!_totvsService.IsWriteEnabled(WritesGroup))
+                    return _totvsService.WriteDisabled(WritesGroup, key);
+
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return _totvsService.CompanyNotFound(doc_company, key);
+
+                // sem corpo: os campos vão na query (a rota gravada em TotvsRequests os leva). LastChangeUser não vai: é um código de usuário
+                // da Totvs sem descrição no swagger (§3.4.4)
+                var route = TotvsQuery.Route("person/v2/messages", ("PersonCode", personCode), ("Sequence", sequence));
+
+                return await _totvsService.Write(company, EnumJob.TotvsDeleteMessages, user_name, key, HttpMethod.Delete, route, null,
+                    "Confira a mensagem na Totvs antes de repetir.");
             }
             finally
             {
