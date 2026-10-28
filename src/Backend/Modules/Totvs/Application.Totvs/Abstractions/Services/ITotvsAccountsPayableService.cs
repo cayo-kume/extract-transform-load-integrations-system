@@ -27,7 +27,7 @@
 
         /// <summary>
         /// agrupa parcelas numa duplicata nova pelo POST accounts-payable/v2/group-duplicates; a resposta traz loja, fornecedor, duplicata e
-        /// parcela gerados. Não idempotente: o mesmo corpo em 10 minutos volta 409 (T5)
+        /// parcela gerados. Só parcelas reais (as de previsão a Totvs recusa). Não idempotente: o mesmo corpo em 10 minutos volta 409 (T5)
         /// </summary>
         public Task<Domain.Totvs.Dtos.Writes.Result> PostGroupDuplicates(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.AccountsPayable.GroupDuplicate body);
     }

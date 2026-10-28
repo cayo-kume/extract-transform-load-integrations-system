@@ -3321,3 +3321,33 @@ o `Script074` em banco e as rotas pelo host.
 
 **Onda 4 implementada** (AP-2, PE-6, PR-5, PO-3 e SO-4), conferida só com a Totvs falsa: falta a rodada em homologação, que cria registros
 de verdade (duplicata, cliente, referência, lote, pedido de compra e itens de pedido de venda).
+
+### 10.25 Rodada da onda 4 em homologação (28/10/2026)
+
+Mesmo console da §10.19 (usuário pessoal `cayo.kume`, services de verdade, tabelas em memória), três rodadas. A descoberta só leu a
+homologação; as escritas esperaram confirmação e usaram dados marcados como teste.
+
+| Fase | Rota | Resultado |
+|---|---|---|
+| AP-2 | `POST duplicates` | 201, com 2 parcelas de R$ 1,00 copiando fornecedor, portador, despesa e centro de custo de uma duplicata real; datas, enums e rateio aceitos. Repetida: **409 sem chamar** |
+| AP-2 | `POST group-duplicates` | Parcelas de **previsão**: **400 `InvalidFieldValue ... Prevision - Forecast`**. Parcelas reais: 201, com `branchCode`, `supplierCode`, `duplicateCode` e `installmentCode` gerados. Regra anotada no controller, na interface e no README |
+| PE-6 | `POST individual-customers` | Sem endereço: **400 `ParameterRequiredList`** (parâmetro `IN_OBRIGATORIO_ENDERECO` do ERP; anotado). Com endereço: 200 com o `customerCode`. Alteração de um campo: 200. **`""` zera a ocupação e `NotInformed` zera o sexo** (relido vazio). **Enums pelo nome aceitos** (PE6). Classificação incluída pela própria escrita de cliente |
+| PE-6 | `POST classification-relationship/remove` | 201, tirando a classificação incluída |
+| PE-6 | `POST customer-representatives` | 201 |
+| PE-6 | `POST legal-customers` | 200 com o `customerCode`, sem `isCommercialExp` |
+| PR-5 | `POST classifications` | Tipo novo sem classificações: 201. Classificações no tipo (códigos `T1`/`T2` e `1`/`2`, com o tipo novo e com ele já criado): **400 `ORA-02291` (PRD_TIPOCLAS_PRD_CLASSIFICACAO)**, erro do banco da Totvs na homologação, sem relação com o corpo |
+| PR-5 | `POST classification-relationship/create` e `/update` | Sem classificação no tipo de teste: 400 `NotFound` com a mensagem certa; o sucesso não foi verificado |
+| PR-5 | `POST barcodes`, `POST barcodes/update` | 201 e 200: código `TST...` (não padrão) incluído no produto 15687 e a quantidade da embalagem alterada para 2 (decimal aceito) |
+| PO-3 | `POST orders` | 201 com `branchCode` e `orderCode` (pedido 1\|141, **bloqueado**, observação interna de teste). Repetido: **409** |
+| PO-3 | `POST quantity-items` | 200, de 1 para 2 no pedido criado |
+| SO-4 | `POST orders/change-status` | **Situação pelo nome aceita**: `Blocked` e de volta `InProgress` no pedido 106\|266 |
+| SO-4 | `POST items`, `POST quantity-items`, `DELETE items` | 200 nos três: produto incluído (1 a R$ 100), aumentado para 2 e removido pela query; o pedido relido terminou como estava |
+
+**Ficaram na homologação:** a duplicata 9033017908 (previsão), as duplicatas reais 9063293509 e a agrupadora 9063293510 (R$ 2,00), os
+clientes 58243 (PF) e 58245 (PJ, com CPF/CNPJ gerados) e o vínculo do 58243 com o representante 1, o tipo de classificação de produto
+9001 (sem classificações), o código de barras de teste no produto 15687 e o pedido de compra 1\|141 bloqueado.
+
+**Não verificado em homologação:** a inclusão de referência (a máscara não vem em nenhuma leitura; precisa de uma máscara e dos grupos de um
+produto de teste), as rotas de lote (`batch/create`, `batch-info`, `batch-preferentialsalesorder`, `batch-link`, vínculo e remoção de
+itens de lote no pedido de venda) e as contagens e a sugestão por nuance (sem dados na homologação), a capa do pedido de venda, a
+classificação de produto com sucesso (depende da `ORA-02291`) e o tipo de classificação 6000 recusado (só no validador).

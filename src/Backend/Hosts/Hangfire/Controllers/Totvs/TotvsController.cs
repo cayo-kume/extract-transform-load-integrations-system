@@ -686,7 +686,7 @@ namespace Hangfire.Controllers.Totvs
 
         /// <summary>
         /// agrupa duas ou mais parcelas numa duplicata nova (POST accounts-payable/v2/group-duplicates); a resposta traz a chave da duplicata
-        /// gerada. O mesmo corpo em 10 minutos volta 409
+        /// gerada. Só parcelas reais: a Totvs recusa as de previsão (testado em homologação). O mesmo corpo em 10 minutos volta 409
         /// </summary>
         [HttpPost("GroupDuplicates/{docCompany}")]
         [Tags("TotvsAccountsPayable")]
@@ -1157,7 +1157,8 @@ namespace Hangfire.Controllers.Totvs
 
         /// <summary>
         /// cria ou altera um cliente pessoa física pelo cpf (POST person/v2/individual-customers); a resposta traz o customerCode. Campo ausente
-        /// não muda; "" e 0 zeram; os enums vão pelo nome. Altera cliente em uso nas lojas, inclusive bloqueio e limite de crédito
+        /// não muda; "" e 0 zeram; os enums vão pelo nome. Altera cliente em uso nas lojas, inclusive bloqueio e limite de crédito. Com o
+        /// parâmetro IN_OBRIGATORIO_ENDERECO do ERP, a inclusão exige pelo menos um endereço (a Totvs recusa com 400)
         /// </summary>
         [HttpPost("IndividualCustomers/{docCompany}")]
         [Tags("TotvsPeople")]
