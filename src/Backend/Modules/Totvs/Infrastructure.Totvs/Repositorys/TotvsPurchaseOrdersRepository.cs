@@ -67,5 +67,19 @@ namespace Infrastructure.Totvs.Repositorys
 
             return await _coreRepository.GetRecord<string?>(sql);
         }
+
+        public async Task<int?> GetPurchaseOrderBySupplierOrderCode(string doc_company, int branchCode, int? supplierCode, string? supplierCpfCnpj, string supplierOrderCode)
+        {
+            string sql = _totvsCommandHandler.CreateGetPurchaseOrderBySupplierOrderCodeQuery(doc_company, branchCode, supplierCode, supplierCpfCnpj, supplierOrderCode);
+
+            return await _coreRepository.GetRecord<int?>(sql);
+        }
+
+        public async Task<IEnumerable<Domain.Totvs.Entities.Writes.PurchaseOrders.OrderProductQuantity?>> GetPurchaseOrderProducts(string doc_company, int branchCode, int orderCode)
+        {
+            string sql = _totvsCommandHandler.CreateGetPurchaseOrderProductsQuery(doc_company, branchCode, orderCode);
+
+            return await _coreRepository.GetRecords<Domain.Totvs.Entities.Writes.PurchaseOrders.OrderProductQuantity>(sql);
+        }
     }
 }

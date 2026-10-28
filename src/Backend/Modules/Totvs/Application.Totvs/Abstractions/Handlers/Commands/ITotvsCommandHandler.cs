@@ -103,5 +103,7 @@
         public string CreateGetCostCentersHashesQuery(string doc_company);
         public string CreateGetBillingSuggestionsByKeysQuery(string doc_company, List<(int branchCode, int suggestionCode)> keys);
         public string CreateGetPurchaseOrderStatusQuery(string doc_company, int branchCode, int orderCode);
+        public string CreateGetPurchaseOrderBySupplierOrderCodeQuery(string doc_company, int branchCode, int? supplierCode, string? supplierCpfCnpj, string supplierOrderCode);
+        public string CreateGetPurchaseOrderProductsQuery(string doc_company, int branchCode, int orderCode);
     }
 }

@@ -510,5 +510,142 @@ namespace Application.Totvs.Services
                 await _logger.CommitAllChanges();
             }
         }
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostPurchaseOrders(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.PurchaseOrders.InsertPurchaseOrder body)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsPostPurchaseOrders);
+
+            var key = $"{body.branchCode}|{(object?)body.supplierCode ?? body.supplierCpfCnpj}|{body.supplierOrderCode}";
+
+            try
+            {
+                if (!_totvsService.IsWriteEnabled(WritesGroup))
+                    return _totvsService.WriteDisabled(WritesGroup, key);
+
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return _totvsService.CompanyNotFound(doc_company, key);
+
+                if (!(await _totvsService.GetBranchCodes(company)).Contains(body.branchCode!.Value))
+                    return _totvsService.BranchNotFound(doc_company, key, [body.branchCode.Value.ToString()]);
+
+                // DP2: um pedido do mesmo fornecedor com o mesmo supplierOrderCode já gravado é a repetição de uma inclusão (depois de um 502, por
+                // exemplo); a trava T5 cobre os 10 minutos, o banco cobre depois que o job de pedidos trouxe o pedido
+                var existing = await _totvsPurchaseOrdersRepository.GetPurchaseOrderBySupplierOrderCode(doc_company, body.branchCode.Value, body.supplierCode, body.supplierCpfCnpj, body.supplierOrderCode!);
+
+                if (existing is not null)
+                {
+                    var refused = $"Já existe o pedido de compra {body.branchCode}|{existing} do fornecedor com o pedido {body.supplierOrderCode} em totvs.TotvsPurchaseOrders.";
+                    _logger.AddMessage(refused);
+
+                    return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, message = refused };
+                }
+
+                return await _totvsService.Write(company, EnumJob.TotvsPostPurchaseOrders, user_name, key, HttpMethod.Post, "purchase-order/v2/orders", body,
+                    "Confira o pedido pelo GET PurchaseOrders/{docCompany}/{branchCode}/{orderCode} ou pelo supplierOrderCode antes de repetir.", repeatLock: true);
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostPurchaseOrdersQuantityItems(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.PurchaseOrders.RequestedQuantity body)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsPostPurchaseOrdersQuantityItems);
+
+            var key = $"{body.branchCode}|{body.orderCode}";
+
+            try
+            {
+                if (!_totvsService.IsWriteEnabled(WritesGroup))
+                    return _totvsService.WriteDisabled(WritesGroup, key);
+
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return _totvsService.CompanyNotFound(doc_company, key);
+
+                if (!(await _totvsService.GetBranchCodes(company)).Contains(body.branchCode!.Value))
+                    return _totvsService.BranchNotFound(doc_company, key, [body.branchCode.Value.ToString()]);
+
+                // conferência local (DP7), só com o pedido no banco: atendido ou cancelado não muda; o produto precisa estar no pedido e a quantidade
+                // nova não fica abaixo da já recebida
+                var current = await _totvsPurchaseOrdersRepository.GetPurchaseOrderStatus(doc_company, body.branchCode.Value, body.orderCode!.Value);
+                string? refused = null;
+
+                if (current is "4" or "6")
+                    refused = $"O pedido de compra {key} está {StatusName(current)} em totvs.TotvsPurchaseOrders: a quantidade não muda.";
+                else if (!String.IsNullOrEmpty(current))
+                {
+                    var products = (await _totvsPurchaseOrdersRepository.GetPurchaseOrderProducts(doc_company, body.branchCode.Value, body.orderCode.Value))
+                        .Where(x => x is not null)
+                        .ToDictionary(x => x!.productCode, x => x!.settledQuantity ?? 0);
+                    var missing = body.items!.Where(x => !products.ContainsKey(x.productCode!.Value)).Select(x => x.productCode).ToList();
+                    var below = body.items!.Where(x => products.TryGetValue(x.productCode!.Value, out var settled) && x.quantity < settled)
+                        .Select(x => $"{x.productCode} (recebido {products[x.productCode!.Value]:0.###})").ToList();
+
+                    if (missing.Count > 0)
+                        refused = $"Produto(s) {String.Join(", ", missing)} fora do pedido de compra {key} em totvs.TotvsPurchaseOrdersProducts.";
+                    else if (below.Count > 0)
+                        refused = $"Quantidade abaixo da já recebida no pedido de compra {key}: {String.Join(", ", below)}.";
+                }
+
+                if (refused is not null)
+                {
+                    _logger.AddMessage(refused);
+
+                    return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, message = refused };
+                }
+
+                // quantidade absoluta: repetir não muda nada, sem trava
+                return await _totvsService.Write(company, EnumJob.TotvsPostPurchaseOrdersQuantityItems, user_name, key, HttpMethod.Post, "purchase-order/v2/quantity-items", body,
+                    "Confira as quantidades do pedido na Totvs antes de repetir.");
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostPurchaseOrderBatchLink(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.PurchaseOrders.BatchLink body)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsPostPurchaseOrderBatchLink);
+
+            var key = $"{body.branchCode}|{(body.batchItemBarCode ?? $"{body.batchCode}|{body.sequence}")}|{body.orderCode}";
+
+            try
+            {
+                if (!_totvsService.IsWriteEnabled(WritesGroup))
+                    return _totvsService.WriteDisabled(WritesGroup, key);
+
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return _totvsService.CompanyNotFound(doc_company, key);
+
+                // a loja do corpo é a do lote; a do pedido a Totvs procura (§6.5)
+                if (!(await _totvsService.GetBranchCodes(company)).Contains(body.branchCode!.Value))
+                    return _totvsService.BranchNotFound(doc_company, key, [body.branchCode.Value.ToString()]);
+
+                // cria ou troca o vínculo: repetir dá no mesmo, sem trava. 404 e 409 da Totvs voltam como 404 e 409 (DP5)
+                return await _totvsService.Write(company, EnumJob.TotvsPostPurchaseOrderBatchLink, user_name, key, HttpMethod.Post, "purchase-order/v2/purchase-order/batch-link", body,
+                    "Confira o vínculo do item de lote antes de repetir.");
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
     }
 }

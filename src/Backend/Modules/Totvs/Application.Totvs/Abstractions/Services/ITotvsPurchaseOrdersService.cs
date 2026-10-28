@@ -18,5 +18,22 @@
         /// em andamento → bloqueado e bloqueado → em andamento chegam à Totvs (DP7)
         /// </summary>
         public Task<Domain.Totvs.Dtos.Writes.Result> PostPurchaseOrdersChangeStatus(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.PurchaseOrders.UpdateOrderStatus body);
+
+        /// <summary>
+        /// inclui um pedido de compra (POST purchase-order/v2/orders); a resposta traz loja e número. Recusa (422) um supplierOrderCode do mesmo
+        /// fornecedor já gravado (DP2) e, por 10 minutos, o mesmo corpo (409, T5)
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PostPurchaseOrders(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.PurchaseOrders.InsertPurchaseOrder body);
+
+        /// <summary>
+        /// troca a quantidade pedida dos itens (POST purchase-order/v2/quantity-items). Com o pedido no banco: atendido ou cancelado, produto fora
+        /// do pedido e quantidade abaixo da recebida voltam 422 sem chamar a Totvs (DP7)
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PostPurchaseOrdersQuantityItems(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.PurchaseOrders.RequestedQuantity body);
+
+        /// <summary>
+        /// cria ou troca o vínculo de um item de lote com um pedido de compra (POST purchase-order/v2/purchase-order/batch-link)
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PostPurchaseOrderBatchLink(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.PurchaseOrders.BatchLink body);
     }
 }

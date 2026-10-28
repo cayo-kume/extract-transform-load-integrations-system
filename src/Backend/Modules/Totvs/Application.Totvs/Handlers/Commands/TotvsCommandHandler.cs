@@ -711,5 +711,30 @@ namespace Application.Totvs.Handlers.Commands
                      AND BRANCHCODE = {branchCode}
                      AND ORDERCODE = {orderCode}";
         }
+
+        public string CreateGetPurchaseOrderBySupplierOrderCodeQuery(string doc_company, int branchCode, int? supplierCode, string? supplierCpfCnpj, string supplierOrderCode)
+        {
+            // pedido já gravado com o mesmo pedido do fornecedor (DP2); o texto vem do corpo, com as aspas dobradas
+            var supplier = supplierCode is not null
+                ? $"SUPPLIERCODE = {supplierCode}"
+                : $"SUPPLIERCPFCNPJ = N'{supplierCpfCnpj!.Replace("'", "''")}'";
+
+            return @$"SELECT TOP 1 ORDERCODE
+                     FROM TOTVS.TOTVSPURCHASEORDERS
+                     WHERE DOC_COMPANY = '{doc_company}'
+                     AND BRANCHCODE = {branchCode}
+                     AND {supplier}
+                     AND SUPPLIERORDERCODE = N'{supplierOrderCode.Replace("'", "''")}'
+                     ORDER BY ORDERCODE DESC";
+        }
+
+        public string CreateGetPurchaseOrderProductsQuery(string doc_company, int branchCode, int orderCode)
+        {
+            return @$"SELECT PRODUCTCODE AS productCode, SETTLEDQUANTITY AS settledQuantity
+                     FROM TOTVS.TOTVSPURCHASEORDERSPRODUCTS
+                     WHERE DOC_COMPANY = '{doc_company}'
+                     AND BRANCHCODE = {branchCode}
+                     AND ORDERCODE = {orderCode}";
+        }
     }
 }

@@ -124,7 +124,10 @@
         TotvsPostCreateBatch = 13135,   //Script072_Insert_Totvs_Products_Catalog_Writes_Jobs_Into_Jobs_Table.sql
         TotvsPutBatchInfo = 13136,   //Script072_Insert_Totvs_Products_Catalog_Writes_Jobs_Into_Jobs_Table.sql
         TotvsPostBatchPreferentialSalesOrder = 13137,   //Script072_Insert_Totvs_Products_Catalog_Writes_Jobs_Into_Jobs_Table.sql
+        TotvsPostPurchaseOrders = 13180,   //Script073_Insert_Totvs_Purchase_Orders_Documents_Writes_Jobs_Into_Jobs_Table.sql
+        TotvsPostPurchaseOrdersQuantityItems = 13181,   //Script073_Insert_Totvs_Purchase_Orders_Documents_Writes_Jobs_Into_Jobs_Table.sql
         TotvsPostPurchaseOrdersChangeStatus = 13182,   //Script069_Insert_Totvs_Purchase_Orders_Writes_Jobs_Into_Jobs_Table.sql
+        TotvsPostPurchaseOrderBatchLink = 13184,   //Script073_Insert_Totvs_Purchase_Orders_Documents_Writes_Jobs_Into_Jobs_Table.sql
         TotvsPostSalesOrderAdditionalOrder = 13201,   //Script070_Insert_Totvs_Sales_Orders_Writes_Jobs_Into_Jobs_Table.sql
         TotvsPostSalesOrderShippingOrder = 13202,   //Script070_Insert_Totvs_Sales_Orders_Writes_Jobs_Into_Jobs_Table.sql
         TotvsPostSalesOrderObservationsOrder = 13203,   //Script070_Insert_Totvs_Sales_Orders_Writes_Jobs_Into_Jobs_Table.sql

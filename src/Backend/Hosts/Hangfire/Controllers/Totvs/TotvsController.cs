@@ -1483,6 +1483,67 @@ namespace Hangfire.Controllers.Totvs
         }
 
         /// <summary>
+        /// inclui um pedido de compra (POST purchase-order/v2/orders); a resposta traz loja e número. O supplierOrderCode é obrigatório: um pedido
+        /// do mesmo fornecedor com ele já gravado volta 422, e o mesmo corpo em 10 minutos volta 409
+        /// </summary>
+        [HttpPost("PurchaseOrders/{docCompany}")]
+        [Tags("TotvsPurchaseOrders")]
+        public async Task<ActionResult> PostPurchaseOrders(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.PurchaseOrders.InsertPurchaseOrder body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.PurchaseOrders.InsertPurchaseOrder> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsPurchaseOrdersService.PostPurchaseOrders(userName, docCompany, body));
+        }
+        /// <summary>
+        /// troca a quantidade pedida dos itens de um pedido de compra (POST purchase-order/v2/quantity-items). Com o pedido no banco, atendido ou
+        /// cancelado, produto fora do pedido e quantidade abaixo da recebida voltam 422 sem chamar a Totvs
+        /// </summary>
+        [HttpPost("PurchaseOrders/{docCompany}/QuantityItems")]
+        [Tags("TotvsPurchaseOrders")]
+        public async Task<ActionResult> PurchaseOrdersQuantityItems(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.PurchaseOrders.RequestedQuantity body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.PurchaseOrders.RequestedQuantity> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsPurchaseOrdersService.PostPurchaseOrdersQuantityItems(userName, docCompany, body));
+        }
+        /// <summary>
+        /// cria ou troca o vínculo de um item de lote com um pedido de compra (POST purchase-order/v2/purchase-order/batch-link). Lote, pedido ou nota
+        /// não encontrados voltam 404; conflito de vínculo, 409
+        /// </summary>
+        [HttpPost("PurchaseOrders/{docCompany}/BatchLink")]
+        [Tags("TotvsPurchaseOrders")]
+        public async Task<ActionResult> PurchaseOrderBatchLink(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.PurchaseOrders.BatchLink body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.PurchaseOrders.BatchLink> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsPurchaseOrdersService.PostPurchaseOrderBatchLink(userName, docCompany, body));
+        }
+
+        /// <summary>
         /// altera os dados adicionais de um pedido de venda (POST sales-order/v2/additional-order): rastreio, estágio do e-commerce, entrega
         /// antecipada (entryType N ou S), tipo de experiência. O pedido vai por orderId ou por branchCode + orderCode
         /// </summary>
@@ -1602,6 +1663,10 @@ namespace Hangfire.Controllers.Totvs
 
             if (result.statusCode == StatusCodes.Status409Conflict)
                 return Conflict(result);
+
+            // a Totvs disse que o registro não existe (lote, pedido ou nota do batch-link, DP5)
+            if (result.apiCalled && result.statusCode == StatusCodes.Status404NotFound)
+                return NotFound(result);
 
             if (result.apiCalled && (result.statusCode == 0 || result.statusCode >= 500))
                 return StatusCode(StatusCodes.Status502BadGateway, result);

@@ -2338,7 +2338,7 @@ onda 2 que entrar monta a base das leituras sem persistência (T11, §8.1).
 |---|---|---|---|---|
 | PO-1 | 2 | `GetPurchaseOrderByKey` (DP4: sob demanda **com** persistência, como o `GetSalesOrderByKey`) | 13185 | — **Implementada em 28/10/2026** (§10.13) |
 | PO-2 | 3 | `PostPurchaseOrdersChangeStatus` | 13182 | AP-1 **Implementada em 28/10/2026** (§10.16) |
-| PO-3 | 4 | `PostPurchaseOrdersQuantityItems`, `PostPurchaseOrders` (com `supplierOrderCode` obrigatório, DP2); `PostPurchaseOrderBatchLink` (DP6) | 13181, 13180, 13184 | PO-2 |
+| PO-3 | 4 | `PostPurchaseOrdersQuantityItems`, `PostPurchaseOrders` (com `supplierOrderCode` obrigatório, DP2); `PostPurchaseOrderBatchLink` (DP6) | 13181, 13180, 13184 | PO-2. **Implementada em 28/10/2026** (§10.23) |
 | PO-4 | 5 | `PostPurchaseOrdersCancel` (com conferência do fornecedor, DP3) | 13183 | PO-3 |
 
 #### Sales Order (`TotvsSalesOrdersService`, §7)
@@ -3247,3 +3247,38 @@ repetido (409), loja de fora (422). Itens de lote: válido, pelos dois jeitos, s
 preferenciais: válido, item e pedido pelos dois jeitos, pedido repetido; trocados; pedido em loja de fora (422).
 
 **Não verificado:** a chamada em homologação; o `Script072` em banco e as rotas pelo host (inclusive o `?clear=true`).
+
+### 10.23 Fase PO-3: inclusão de pedido de compra, quantidade dos itens e vínculo com lote (28/10/2026)
+
+| Peça | Onde |
+|---|---|
+| DTOs `InsertPurchaseOrder` e filhos (`PurchaseOrderItem`, `PurchaseOrderItemValue`, `PurchaseOrderExpense`, `PurchaseOrderClassification`, `PurchaseOrderObservation`, `PurchaseOrderDiscount`, `PurchaseOrderAdditionalField`, `PurchaseOrderAdditionalData`), `RequestedQuantity`, `BatchLink`, `InvoiceIdentification`; enums `StatusOrderCreateType`, `PaymentType`, `FreightType`, `VisualizationObservationType`, `OrderSettleType` | `Domain.Totvs/Dtos/Writes/PurchaseOrders` |
+| `InsertPurchaseOrderValidator`, `PurchaseOrderItemValidator`, `PurchaseOrderExpenseValidator`, `RequestedQuantityValidator`, `BatchLinkValidator` | `Application.Totvs/Validations/Writes/PurchaseOrders` |
+| `GetPurchaseOrderBySupplierOrderCode` e `GetPurchaseOrderProducts` (entidade `OrderProductQuantity`) | `ITotvsPurchaseOrdersRepository`, `TotvsCommandHandler` |
+| `PostPurchaseOrders` (13180), `PostPurchaseOrdersQuantityItems` (13181), `PostPurchaseOrderBatchLink` (13184) | `TotvsPurchaseOrdersService` |
+| Rotas `POST PurchaseOrders/{docCompany}`, `.../QuantityItems`, `.../BatchLink`; 404 da Totvs repassado no `WriteResponse` (DP5) | `TotvsController` |
+| `Script073` (jobs) | `Infrastructure.Totvs/Scripts/SQLServer` |
+
+**Regras:**
+* **Inclusão:** fornecedor e comprador por código **ou** CPF/CNPJ; no máximo uma transportadora; item por `productCode` **ou**
+  `productSku` (o DTO aceita só o SKU, como a descrição), sem repetição, com pelo menos um `itemsValues` (`C` ou `P`). O total contra os
+  itens, a soma dos rateios e os tipos de valor do `DS_LST_VLR_PED_COMPRA` ficam com a Totvs. Os enums opcionais são anuláveis (o
+  `OrderSettleType` 0 só vai quando pedido).
+* **DP2:** o `supplierOrderCode` é obrigatório na rota; um pedido do mesmo fornecedor com ele em `totvs.TotvsPurchaseOrders` volta 422 sem
+  chamar a Totvs, e a trava T5 cobre os 10 minutos antes de o job trazer o pedido. Chave em `TotvsRequests`: `loja|fornecedor|supplierOrderCode`
+  (o número gerado vem na resposta).
+* **Quantidade dos itens (DP7):** com o pedido no banco, atendido (4) ou cancelado (6) volta 422; cada produto precisa estar em
+  `totvs.TotvsPurchaseOrdersProducts` e a quantidade nova não fica abaixo da `settledQuantity`. Fora do banco, a Totvs decide.
+* **Vínculo com lote:** item por lote + sequência **ou** barra; nota por chave de acesso **ou** série e número; a loja conferida é a do lote.
+  404 e 409 da Totvs voltam como 404 e 409 (DP5: o `WriteResponse` ganhou o 404; o 409 já passava).
+* **Trava (T5):** só na inclusão; quantidade e vínculo são valores absolutos.
+
+**Testes (console de rascunho, Totvs falsa):** pedido válido; vazio; dois fornecedores, comprador com documento ruim, duas
+transportadoras, situação 3, frete 9, produto repetido, item pelos dois jeitos e sem valores; tipo de valor X, classificação pela metade,
+despesa sem percentual, desconto de 101%. Incluído (loja e número na resposta, enums como número), repetido (409), `supplierOrderCode` já
+gravado (422 com o pedido existente), loja de fora (422). Quantidades válidas (0 passa); inválidas; com o pedido fora do banco (chama), em
+andamento acima do recebido (chama), produto fora do pedido, abaixo do recebido e pedido cancelado (422 sem chamar). Vínculo válido e
+inválido; feito; 404 e 409 da Totvs repassados.
+
+**Não verificado:** a chamada em homologação (cria pedido de verdade); se a quantidade 0 cancela o item e se a Totvs procura o pedido do
+vínculo na loja do lote; o `Script073` em banco e as rotas pelo host.
