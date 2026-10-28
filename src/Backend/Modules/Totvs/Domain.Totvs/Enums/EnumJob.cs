@@ -47,6 +47,12 @@
         TotvsGetBranches = 13036,   //Script065_Insert_Totvs_On_Demand_Wave_2_Jobs_Into_Jobs_Table.sql
         TotvsGetPersonStatistics = 13037,   //Script065_Insert_Totvs_On_Demand_Wave_2_Jobs_Into_Jobs_Table.sql
         TotvsPostListBalanceBonus = 13038,   //Script065_Insert_Totvs_On_Demand_Wave_2_Jobs_Into_Jobs_Table.sql
+        TotvsGetProducts = 13100,   //Script065_Insert_Totvs_On_Demand_Wave_2_Jobs_Into_Jobs_Table.sql
+        TotvsGetKardexMovement = 13101,   //Script065_Insert_Totvs_On_Demand_Wave_2_Jobs_Into_Jobs_Table.sql
+        TotvsGetGridFrequency = 13102,   //Script065_Insert_Totvs_On_Demand_Wave_2_Jobs_Into_Jobs_Table.sql
+        TotvsGetMeasurementConversions = 13103,   //Script065_Insert_Totvs_On_Demand_Wave_2_Jobs_Into_Jobs_Table.sql
+        TotvsGetCompositionProduct = 13104,   //Script065_Insert_Totvs_On_Demand_Wave_2_Jobs_Into_Jobs_Table.sql
+        TotvsGetCompositionGroupProduct = 13105,   //Script065_Insert_Totvs_On_Demand_Wave_2_Jobs_Into_Jobs_Table.sql
 
         // regiões de atuação da API Seller (fase SE-1), a cada 2 horas
         TotvsGetOperationalArea = 13070,   //Script044_Insert_Totvs_Operational_Areas_Jobs_Into_Jobs_Table.sql

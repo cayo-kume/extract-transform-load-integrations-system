@@ -1729,5 +1729,164 @@ namespace Application.Totvs.Services
 
             return _listSomenteNovos.Count;
         }
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> GetProducts(string user_name, string doc_company, string code, int? branchCode)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsGetProducts);
+
+            var key = code;
+
+            try
+            {
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return _totvsService.CompanyNotFound(doc_company, key);
+
+                // resolve um código lido (produto, pack, barras, RFID, item de lote) para o produto; o caminho oficial tem {branchCode}, mas a rota
+                // responde igual com ele na query ou sem ele (testado). Não grava: o produto vem pelo GetProductByCode
+                return await _totvsService.ReadOnDemand(company, EnumJob.TotvsGetProducts, user_name, key, HttpMethod.Get, TotvsQuery.Route($"product/v2/products/{Uri.EscapeDataString(code)}", ("branchCode", branchCode)), null, "items");
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> GetKardexMovement(string user_name, string doc_company, int productCode, int branchCode, DateTime startDate, DateTime endDate, int balanceType)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsGetKardexMovement);
+
+            var key = $"{productCode}|{branchCode}|{startDate:yyyy-MM-dd}|{endDate:yyyy-MM-dd}";
+
+            try
+            {
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return _totvsService.CompanyNotFound(doc_company, key);
+
+                // a loja precisa ser da empresa (422 sem chamar a API)
+                var companyBranches = await _totvsService.GetBranchCodes(company);
+                var outside = new[] { branchCode }.Where(x => !companyBranches.Contains(x)).ToList();
+
+                if (outside.Count > 0)
+                    return _totvsService.BranchNotFound(doc_company, key, outside.Select(x => x.ToString()));
+
+                // histórico de estoque para consulta: uma loja e um produto por chamada, até 180 dias (400 PeriodExceeds180Days, testado)
+                return await _totvsService.ReadOnDemand(company, EnumJob.TotvsGetKardexMovement, user_name, key, HttpMethod.Get, TotvsQuery.Route("product/v2/kardex-movement", ("ProductCode", productCode), ("BranchCode", branchCode), ("StartDate", $"{startDate:yyyy-MM-dd}"), ("EndDate", $"{endDate:yyyy-MM-dd}"), ("BalanceType", balanceType)), null, null);
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> GetGridFrequency(string user_name, string doc_company, int productCode, int page, int pageSize)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsGetGridFrequency);
+
+            var key = $"{productCode}";
+
+            try
+            {
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return _totvsService.CompanyNotFound(doc_company, key);
+
+                return await _totvsService.ReadOnDemand(company, EnumJob.TotvsGetGridFrequency, user_name, key, HttpMethod.Get, TotvsQuery.Route("product/v2/grid-frequency", ("ProductCode", productCode), ("Page", page), ("PageSize", pageSize)), null, "items");
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> GetMeasurementConversions(string user_name, string doc_company, int? productCode, int? groupSequence, bool? onlyDefault)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsGetMeasurementConversions);
+
+            var key = productCode is not null ? $"{productCode}" : $"g:{groupSequence}";
+
+            try
+            {
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return _totvsService.CompanyNotFound(doc_company, key);
+
+                // ProductCode ou GroupSequence, um dos dois (400 MeasurementConversionExclusiveFilter / MissingFilter, testado)
+                return await _totvsService.ReadOnDemand(company, EnumJob.TotvsGetMeasurementConversions, user_name, key, HttpMethod.Get, TotvsQuery.Route("product/v2/measurement-conversions", ("ProductCode", productCode), ("GroupSequence", groupSequence), ("OnlyDefault", onlyDefault)), null, "products");
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> GetCompositionProduct(string user_name, string doc_company, List<int>? productCodeList, List<int>? groupCodeList, List<string>? referenceCodeList, int page, int pageSize)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsGetCompositionProduct);
+
+            var key = $"{String.Join(",", productCodeList ?? [])};{String.Join(",", groupCodeList ?? [])};{String.Join(",", referenceCodeList ?? [])}";
+
+            try
+            {
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return _totvsService.CompanyNotFound(doc_company, key);
+
+                // uma das três listas é obrigatória (400 EnterOneOfTheFields, testado); GroupCodeList é o groupSequenceCode (inteiro), e o código
+                // do grupo (MI26 99 000002) vai em ReferenceCodeList. As referências já trazem a composição: só consulta
+                return await _totvsService.ReadOnDemand(company, EnumJob.TotvsGetCompositionProduct, user_name, key, HttpMethod.Get, TotvsQuery.Route("product/v2/composition-product", ("ProductCodeList", productCodeList), ("GroupCodeList", groupCodeList), ("ReferenceCodeList", referenceCodeList), ("Page", page), ("PageSize", pageSize)), null, "items");
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> GetCompositionGroupProduct(string user_name, string doc_company, List<int>? productCodeList, List<int>? groupCodeList, List<string>? referenceCodeList, int page, int pageSize)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsGetCompositionGroupProduct);
+
+            var key = $"{String.Join(",", productCodeList ?? [])};{String.Join(",", groupCodeList ?? [])};{String.Join(",", referenceCodeList ?? [])}";
+
+            try
+            {
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return _totvsService.CompanyNotFound(doc_company, key);
+
+                // uma das três listas é obrigatória (400 EnterOneOfTheFields, testado); GroupCodeList é o groupSequenceCode (inteiro), e o código
+                // do grupo (MI26 99 000002) vai em ReferenceCodeList. As referências já trazem a composição: só consulta
+                return await _totvsService.ReadOnDemand(company, EnumJob.TotvsGetCompositionGroupProduct, user_name, key, HttpMethod.Get, TotvsQuery.Route("product/v2/composition-group-product", ("ProductCodeList", productCodeList), ("GroupCodeList", groupCodeList), ("ReferenceCodeList", referenceCodeList), ("Page", page), ("PageSize", pageSize)), null, "items");
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
     }
 }

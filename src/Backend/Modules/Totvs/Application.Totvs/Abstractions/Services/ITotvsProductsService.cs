@@ -37,5 +37,35 @@
         /// true gravada, false não existe na Totvs, null empresa não cadastrada ou resposta inválida
         /// </summary>
         public Task<bool?> GetProductByCode(string user_name, string doc_company, int code);
+
+        /// <summary>
+        /// resolve um código (produto, pack, barras, RFID, item de lote) para o produto (GET product/v2/products/{code}), sem gravar
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> GetProducts(string user_name, string doc_company, string code, int? branchCode);
+
+        /// <summary>
+        /// devolve o kardex de um produto numa loja, até 180 dias (GET product/v2/kardex-movement), sem gravar
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> GetKardexMovement(string user_name, string doc_company, int productCode, int branchCode, DateTime startDate, DateTime endDate, int balanceType);
+
+        /// <summary>
+        /// devolve a grade de frequência de um produto (GET product/v2/grid-frequency), sem gravar
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> GetGridFrequency(string user_name, string doc_company, int productCode, int page, int pageSize);
+
+        /// <summary>
+        /// devolve as conversões de unidade de um produto ou grupo (GET product/v2/measurement-conversions), sem gravar
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> GetMeasurementConversions(string user_name, string doc_company, int? productCode, int? groupSequence, bool? onlyDefault);
+
+        /// <summary>
+        /// devolve a composição por produto (GET product/v2/composition-product), sem gravar
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> GetCompositionProduct(string user_name, string doc_company, List<int>? productCodeList, List<int>? groupCodeList, List<string>? referenceCodeList, int page, int pageSize);
+
+        /// <summary>
+        /// devolve a composição por grupo (GET product/v2/composition-group-product), sem gravar
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> GetCompositionGroupProduct(string user_name, string doc_company, List<int>? productCodeList, List<int>? groupCodeList, List<string>? referenceCodeList, int page, int pageSize);
     }
 }

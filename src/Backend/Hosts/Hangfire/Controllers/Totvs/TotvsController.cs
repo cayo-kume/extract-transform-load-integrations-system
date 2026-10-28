@@ -884,6 +884,115 @@ namespace Hangfire.Controllers.Totvs
         }
 
         /// <summary>
+        /// resolve um código (produto, pack, barras, RFID, item de lote) para o produto (GET product/v2/products/{code}), sem gravar
+        /// </summary>
+        [HttpGet("Products/{docCompany}/Codes/{code}")]
+        [Tags("TotvsProducts")]
+        public async Task<ActionResult> ProductByAnyCode(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [StringLength(40)] string code,
+            [FromQuery, Range(1, 9999)] int? branchCode
+        ) =>
+            ReadResponse(await _totvsProductsService.GetProducts(userName, docCompany, code, branchCode));
+
+        /// <summary>
+        /// devolve o kardex de um produto numa loja (GET product/v2/kardex-movement): todos os parâmetros obrigatórios, até 180 dias
+        /// </summary>
+        [HttpGet("Products/{docCompany}/Kardex")]
+        [Tags("TotvsProducts")]
+        public async Task<ActionResult> ProductKardex(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromQuery, Required, Range(1, int.MaxValue)] int productCode,
+            [FromQuery, Required, Range(1, 9999)] int branchCode,
+            [FromQuery, Required] DateTime startDate,
+            [FromQuery, Required] DateTime endDate,
+            [FromQuery, Required, Range(1, 999)] int balanceType
+        )
+        {
+            if (startDate.Date > endDate.Date || (endDate.Date - startDate.Date).TotalDays > 180)
+                return BadRequest(new[] { new { field = "startDate", message = "O período vai do startDate ao endDate, com no máximo 180 dias." } });
+
+            return ReadResponse(await _totvsProductsService.GetKardexMovement(userName, docCompany, productCode, branchCode, startDate.Date, endDate.Date, balanceType));
+        }
+
+        /// <summary>
+        /// devolve a grade de frequência de um produto (GET product/v2/grid-frequency), uma página por chamada
+        /// </summary>
+        [HttpGet("Products/{docCompany}/{productCode:int:min(1)}/GridFrequency")]
+        [Tags("TotvsProducts")]
+        public async Task<ActionResult> ProductGridFrequency(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            int productCode,
+            [FromQuery, Range(1, int.MaxValue)] int page = 1,
+            [FromQuery, Range(1, 100)] int pageSize = 100
+        ) =>
+            ReadResponse(await _totvsProductsService.GetGridFrequency(userName, docCompany, productCode, page, pageSize));
+
+        /// <summary>
+        /// devolve as conversões de unidade de um produto ou grupo (GET product/v2/measurement-conversions): productCode ou groupSequence
+        /// </summary>
+        [HttpGet("Products/{docCompany}/MeasurementConversions")]
+        [Tags("TotvsProducts")]
+        public async Task<ActionResult> ProductMeasurementConversions(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromQuery, Range(1, int.MaxValue)] int? productCode,
+            [FromQuery, Range(1, int.MaxValue)] int? groupSequence,
+            [FromQuery] bool? onlyDefault
+        )
+        {
+            if ((productCode is null) == (groupSequence is null))
+                return BadRequest(new[] { new { field = "productCode", message = "Informe productCode ou groupSequence, um dos dois." } });
+
+            return ReadResponse(await _totvsProductsService.GetMeasurementConversions(userName, docCompany, productCode, groupSequence, onlyDefault));
+        }
+
+        /// <summary>
+        /// devolve a composição por produto (GET product/v2/composition-product): pelo menos uma das listas
+        /// </summary>
+        [HttpGet("Products/{docCompany}/CompositionProduct")]
+        [Tags("TotvsProducts")]
+        public async Task<ActionResult> ProductCompositionProduct(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromQuery] List<int>? productCodeList,
+            [FromQuery] List<int>? groupCodeList,
+            [FromQuery] List<string>? referenceCodeList,
+            [FromQuery, Range(1, int.MaxValue)] int page = 1,
+            [FromQuery, Range(1, 100)] int pageSize = 100
+        )
+        {
+            if ((productCodeList?.Count ?? 0) + (groupCodeList?.Count ?? 0) + (referenceCodeList?.Count ?? 0) == 0)
+                return BadRequest(new[] { new { field = "productCodeList", message = "Informe productCodeList, groupCodeList ou referenceCodeList." } });
+
+            return ReadResponse(await _totvsProductsService.GetCompositionProduct(userName, docCompany, productCodeList, groupCodeList, referenceCodeList, page, pageSize));
+        }
+
+        /// <summary>
+        /// devolve a composição por grupo (GET product/v2/composition-group-product): pelo menos uma das listas
+        /// </summary>
+        [HttpGet("Products/{docCompany}/CompositionGroupProduct")]
+        [Tags("TotvsProducts")]
+        public async Task<ActionResult> ProductCompositionGroupProduct(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromQuery] List<int>? productCodeList,
+            [FromQuery] List<int>? groupCodeList,
+            [FromQuery] List<string>? referenceCodeList,
+            [FromQuery, Range(1, int.MaxValue)] int page = 1,
+            [FromQuery, Range(1, 100)] int pageSize = 100
+        )
+        {
+            if ((productCodeList?.Count ?? 0) + (groupCodeList?.Count ?? 0) + (referenceCodeList?.Count ?? 0) == 0)
+                return BadRequest(new[] { new { field = "productCodeList", message = "Informe productCodeList, groupCodeList ou referenceCodeList." } });
+
+            return ReadResponse(await _totvsProductsService.GetCompositionGroupProduct(userName, docCompany, productCodeList, groupCodeList, referenceCodeList, page, pageSize));
+        }
+
+        /// <summary>
         /// resposta das leituras sem persistência (docs/PLANO-TOTVS-METODOS-FALTANTES.md §8.1, T11): 200 com o JSON ou o arquivo; 404 quando
         /// a Totvs não acha; 429 com Retry-After; 502 para 5xx, falta de resposta ou JSON inválido; 422 nos demais (empresa não cadastrada,
         /// 400 da Totvs)
