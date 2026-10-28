@@ -33,8 +33,9 @@ namespace Application.Totvs.Validations.Sellers
                 .MustBeValidInt32()
                 .When(x => !string.IsNullOrEmpty(x.stateCode));
 
+            // a Totvs manda a sigla com espaço à direita ("AP ", testado); a gravação já corta em 2
             RuleFor(x => x.stateAbbreviation)
-                .MaximumLength(2)
+                .Must(x => x!.TrimEnd().Length <= 2)
                 .WithMessage("O campo 'stateAbbreviation' deve ter no máximo 2 caracteres.")
                 .When(x => !string.IsNullOrEmpty(x.stateAbbreviation));
 

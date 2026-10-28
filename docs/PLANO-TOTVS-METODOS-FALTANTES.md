@@ -3691,3 +3691,27 @@ PEDFC022 e a máscara de referência lida no PRDFM236 (código nível 1 "PRODUTO
 **Sem mudança no código** além dos comentários da interface. A conferir no ERP: a referência OA24 BE 97159 no PRDFM236, uma contagem sem
 pedido, um pedido de venda em andamento na loja 1, uma localização de lote cadastrada, o PESFM006 da região "TESTE", o recebimento de 1 un
 do 1\|143 (CMPFM092) e o `TP_BONUS_DESCONTO` da loja 1 (ADMFM014).
+
+### 10.40 Terceira rodada com dados do ERP: lotes nos pedidos e regiões (28/10/2026)
+
+Com o PESFM006 da região "TESTE" cadastrado e o item 1 no lote 1/223436545 (produto 15687 controlado por lote na loja 1). Modos `erp3` e
+`clean`.
+
+| Ponto | Resultado |
+|---|---|
+| SE-1: regiões | As quatro rotas com dado: região "TESTE", estado ALAGOAS, CEP 83900000 e a cidade CANTANZAL/AMAPA. Os textos cabem nas colunas do `Script042`, mas a **sigla do estado vem com espaço à direita** (`"AP "`, 3 caracteres): a gravação já cortava em 2, e o `OperationalAreaCityValidator` acusaria erro a cada carga. **Corrigido:** o validador ignora o espaço à direita (conferido na Totvs falsa) |
+| `batch-info` | **200** alterando só a nuance (sem localização) |
+| `batch-preferentialsalesorder` | **200** com o pedido 106\|266 (outra loja) e com o 1\|979: `insertedRecords` 1; a lista vazia apaga (`deletedRecords` 1) |
+| `relationship-batch-items` | **200** nos dois pedidos. O pedido 1\|979 (bloqueado) passou para em andamento, recebeu o produto 15687, teve o vínculo, perdeu o produto (200, o vínculo foi junto) e voltou a bloqueado |
+| `DELETE batch-items` | **200** no 106\|266 com a sequência 1 (antes do vínculo, a mesma chamada dava 404): a remoção funciona. **Nenhuma leitura mostra o vínculo**: o `GET batch-items` é o catálogo de lotes de pedidos, e o `changed-batch-items` voltou `items` vazio antes e depois |
+| `batch/create` | **201** com as datas de fabricação e de validade |
+| `suggest-batch-items-nuance` | **503 sem corpo** de novo (~1,5 min), agora com lote e com o produto no pedido: parece falha da Totvs |
+| PR-5: referência | Com o CST, o peso e o CEST do produto base: **500 sem corpo** de novo. Com o último nível sem código: **400 `GeneralMessage: Object reference not set` (`ReferenceRepository.GetByParentReference`)**: a API não numera o último nível. Os testes mandaram a descrição (`groupName`) só do nível novo, e o validador exige a de todos os níveis: falta tentar com as descrições dos grupos OA24 e BE |
+
+**Ficou na homologação:** o lote novo do produto 15687 na loja 1, a nuance "T1" no item 1 do lote 223436545 e o pedido 1\|979 como
+estava (bloqueado, sem o produto).
+
+**Verificados em homologação:** `batch-info`, `batch-preferentialsalesorder`, `relationship-batch-items`, `DELETE batch-items` e
+`batch/create`. **Seguem abertos:** a sugestão por nuance (503, a levar à Totvs), a referência (as descrições dos grupos OA24 e BE), o
+`batch-link` do pedido de compra (precisa da nota de entrada do 1\|143), a contagem sem pedido e o saldo de bônus (o `TP_BONUS_DESCONTO`
+da loja 1 é 14, como pede o consumo).
