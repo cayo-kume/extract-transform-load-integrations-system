@@ -400,7 +400,9 @@ registra em `totvs.TotvsRequests` e **devolve o corpo da Totvs** (200; 404 quand
 **Riscos / a confirmar (`list-balance-bonus`):** a API valida o parâmetro de empresa `TP_BONUS_DESCONTO` (3 ou 14) e
 exige o atributo **`Branch` na requisição do token**. O `TotvsService.GetToken` de hoje não manda loja e guarda um token
 por CNPJ (`Totvs:Token:<cnpj>`): é preciso um `GetToken(company, branchCode)` com cache `Totvs:Token:<cnpj>:<loja>` (PE3).
-O nome exato do campo no formulário do token é a confirmar. Leitura sem efeito, mas expõe saldo de cliente.
+O nome exato do campo no formulário do token é a confirmar. Leitura sem efeito, mas expõe saldo de cliente. **Conferido (§10.13):** o
+`list-balance-bonus` responde com o token comum da empresa, e com a loja no formulário do token (`branch`, `Branch`, `branchCode`
+ou `BranchCode`) o resultado é o mesmo: o token por loja da PE3 não foi preciso para a leitura (fica a conferir nas escritas da PE-7).
 
 ---
 
@@ -2306,8 +2308,8 @@ onda 2 que entrar monta a base das leituras sem persistência (T11, §8.1).
 |---|---|---|---|---|---|
 | PE-1 | 1 | `TotvsPersonCatalogsService` | `GetClassifications`, `GetEmailTypes`, `GetPhoneTypes`, `GetContactTypes` | 13032–13035 | — **Implementada em 27/10/2026** (§10.2) |
 | PE-2 | 1 | `TotvsRepresentativesService` | `PostSearchRepresentatives`; `GetRepresentativeByCode` (PE10); `GetSearchReceptionSale` (PE2) | 13030, 13039, 13031 | — **Implementada em 27/10/2026** (§10.3) |
-| PE-3 | 2 | `TotvsPeopleService` | `GetBranches`, `GetPersonStatistics` | 13036, 13037 | base T11 |
-| PE-4 | 2 | `TotvsBonusService` | token por loja (PE3) + `PostListBalanceBonus` | 13038 | PE-3 |
+| PE-3 | 2 | `TotvsPeopleService` | `GetBranches`, `GetPersonStatistics` | 13036, 13037 | base T11 **Implementada em 28/10/2026** (§10.13) |
+| PE-4 | 2 | `TotvsBonusService` | token por loja (PE3) + `PostListBalanceBonus` | 13038 | PE-3 **Implementada em 28/10/2026** (§10.13) |
 | PE-5 | 3 | `TotvsPeopleService` | `PostMessages`, `PutChangeMessages`, `DeleteMessages` | 13044–13046 | AP-1 |
 | PE-6 | 4 | `TotvsPeopleService`, `TotvsRepresentativesService` | `PostRemoveClassificationRelationship`, `PostCustomerRepresentatives`, `PostIndividualCustomers`, `PostLegalCustomers` | 13040–13043 | PE-1 (valida os códigos nos catálogos), PE-5, T3 e T6 |
 | PE-7 | 5 | `TotvsBonusService` | `PostBonusDueDate`, `PostBonusConsume` | 13047, 13048 | PE-4 (saldo antes do consumo, PE4), T4, T5 |
@@ -2324,7 +2326,7 @@ onda 2 que entrar monta a base das leituras sem persistência (T11, §8.1).
 |---|---|---|---|---|---|
 | PR-1 | 1 | `TotvsProductCatalogsService` | `GetClassificationType`, `GetClassifications`, `GetCategory`, `GetGrid`, `GetMeasurementUnit`, `PostSearchColors`, `GetAdditionalFieldsTypes`, `GetProductGrouperConfiguration`, `GetInstructionItems`, `PostCompositions`; `GetPriceTablesHeaders`, `GetPriceTableScales` (PR5) | 13080–13091 | — **Implementada em 27/10/2026** (§10.5) |
 | PR-2 | 1 | `TotvsProductPricesService`, `TotvsProductsService` | fase 3, partes 4 a 6 (`PostSearchPrices`, `PostSearchCosts`, `PostSearchBalances`, com a escolha da PR2 sobre `PostOmniChangedBalances`); `PostSearchPriceTables`, `GetPromotion` (PR5); `GetSimilar`; `PostSearchBatch` (PR6); `PostSearchProductCodes` (PR3) | 13015–13017, 13092–13097 | PR-1 (cabeçalhos das tabelas de preço). **Parte 1 (preços, custos e saldos) implementada em 27/10/2026** (§10.6); **parte 2 (`PostSearchPriceTables`, `GetPromotion`) em 27/10/2026** (§10.7); **parte 3 (`GetSimilar`, `PostSearchBatch`, `PostSearchProductCodes`) em 27/10/2026** (§10.8): fase concluída, menos o `PostOmniChangedBalances` (13096 reservado, PR2) |
-| PR-3 | 2 | `TotvsProductsService` | `GetProducts`, `GetKardexMovement`, `GetGridFrequency`, `GetMeasurementConversions`, `GetCompositionProduct`, `GetCompositionGroupProduct` | 13100–13105 | base T11 |
+| PR-3 | 2 | `TotvsProductsService` | `GetProducts`, `GetKardexMovement`, `GetGridFrequency`, `GetMeasurementConversions`, `GetCompositionProduct`, `GetCompositionGroupProduct` | 13100–13105 | base T11 **Implementada em 28/10/2026** (§10.13) |
 | PR-4 | 3 | `TotvsProductCatalogsService` | `PostColors`, `PostGrids` | 13124, 13126 | AP-1, PR-1 |
 | PR-5 | 4 | `TotvsProductCatalogsService`, `TotvsProductsService` | `PostClassifications`, `PostCreateClassificationRelationship`, `PostUpdateClassificationRelationship` (sem a classificação 6000, PR10), `PostBarcodes`, `PostUpdateBarcodes`, `PostReferences` (sem `values`, PR11); lote: `PostCreateBatch`, `PutBatchInfo`, `PostBatchPreferentialSalesOrder` (PR6) | 13120–13123, 13125, 13127, 13135–13137 | PR-4 |
 | PR-6 | 5 | `TotvsProductsService`, `TotvsProductPricesService` | `PutProducts`, `PutBranchInfo`, `PutData` (só listas de produto, PR9); `PostCreateValues`, `PostUpdateValues`, `PostUpdatePromotionValues`, `PostPromotionItems` (PR7) | 13128–13134 | PR-2 (preços e custos lidos antes de escrever), T4, T5 |
@@ -2334,7 +2336,7 @@ onda 2 que entrar monta a base das leituras sem persistência (T11, §8.1).
 
 | Fase | Onda | Métodos | Jobs | Depende de |
 |---|---|---|---|---|
-| PO-1 | 2 | `GetPurchaseOrderByKey` (DP4: sob demanda **com** persistência, como o `GetSalesOrderByKey`) | 13185 | — |
+| PO-1 | 2 | `GetPurchaseOrderByKey` (DP4: sob demanda **com** persistência, como o `GetSalesOrderByKey`) | 13185 | — **Implementada em 28/10/2026** (§10.13) |
 | PO-2 | 3 | `PostPurchaseOrdersChangeStatus` | 13182 | AP-1 |
 | PO-3 | 4 | `PostPurchaseOrdersQuantityItems`, `PostPurchaseOrders` (com `supplierOrderCode` obrigatório, DP2); `PostPurchaseOrderBatchLink` (DP6) | 13181, 13180, 13184 | PO-2 |
 | PO-4 | 5 | `PostPurchaseOrdersCancel` (com conferência do fornecedor, DP3) | 13183 | PO-3 |
@@ -2344,7 +2346,7 @@ onda 2 que entrar monta a base das leituras sem persistência (T11, §8.1).
 | Fase | Onda | Métodos | Jobs | Depende de |
 |---|---|---|---|---|
 | SO-1 | 1 | `GetDiscountType`, `GetClassifications`; `GetBatchItems`, `GetChangedBatchItems`, `GetBillingSuggestions` (SO2) | 13190–13194 | — **Implementada em 27/10/2026** (§10.9), sem o `GetChangedBatchItems`: a rota exige `BranchCode` e `OrderCode` e passou para a SO-2 |
-| SO-2 | 2 | `GetInvoices`, `GetPendingItems`; `GetChangedBatchItems` (vindo da SO-1: sob demanda por loja + pedido) | 13195, 13196, 13193 | base T11 |
+| SO-2 | 2 | `GetInvoices`, `GetPendingItems`; `GetChangedBatchItems` (vindo da SO-1: sob demanda por loja + pedido) | 13195, 13196, 13193 | base T11 **Implementada em 28/10/2026** (§10.13) |
 | SO-3 | 3 | trava de repetição (T5) + `PostAdditionalOrder`, `PostAdditionalItems`, `PostObservationsOrder`, `PostShippingOrder` | 13201, 13207, 13203, 13202 | AP-1 |
 | SO-4 | 4 | `PostOrdersChangeStatus`, `PostHeader` (SO8), `PostQuantityItems`, `PostItems`, `DeleteItems`; lote e contagem: `PostRelationshipBatchItems`, `DeleteBatchItems`, `PostSuggestBatchItemsNuance`, `PostRelationshipCounts` (SO2) | 13199, 13200, 13208, 13205, 13206, 13211–13214 | SO-3 |
 | SO-5 | 5 | `PostPriceItems`, `PostCancelItems`, `PostB2COrders` (com a conferência do `orderId`, SO5), `PostOrdersCancel`, `PostPdvTransactions` | 13209, 13210, 13197, 13198, 13204 | SO-4, T4 |
@@ -2870,3 +2872,55 @@ lojas, sem `filter`).
 **Pendente:** o teste da F3 (se o `item-detail-search` traz as `referencedInvoices` das devoluções que dão 400 no `invoices/search`):
 precisa de uma nota de devolução que falhe, que não apareceu nesta conferência. **Não verificado:** o `Script064` em banco e as rotas pelo
 host.
+
+### 10.13 Fases PE-3, PE-4, PR-3, PO-1 e SO-2: o resto da onda 2 (28/10/2026)
+
+**Base T11 compartilhada:** a leitura sem persistência saiu do `TotvsInvoicesService` (FI-2) para o `ITotvsService`, onde os outros
+services a usam: `ReadOnDemand` (nova tentativa em 401, 429 e 502/503/504; `TotvsRequests` com o corpo enviado e o recebido; o JSON em
+`Result.data`; o 404 e o 400 `KeyNotFound`, `NotFound` ou `PathParamNotFound` viram 404; com `emptyListProperty`, a lista vazia também),
+`CompanyNotFound` e `BranchNotFound`. O `TotvsQuery` monta a query string na própria rota (valores codificados, listas repetidas,
+nulos de fora), porque os parâmetros de query do `IApiClient` são um dicionário. O `TotvsInvoicesService` continua com a cópia da FI-2
+(mesmo comportamento); passar a usar a base comum é uma limpeza à parte.
+
+**O que entrou** (jobs sob demanda no `Script065`, `IntervalTimeInMinutes` 0):
+
+| Fase | Método (service) | Rota | Job | Observação |
+|---|---|---|---|---|
+| PE-3 | `GetBranches` (`TotvsPeopleService`) | `GET Branches/{docCompany}/{branchId}` (código de 1 a 4 dígitos ou CNPJ) | 13036 | não grava (PE1) |
+| PE-3 | `GetPersonStatistics` (`TotvsPeopleService`) | `GET PersonStatistics/{docCompany}?customerCode=` ou `customerCpfCnpj=`, `&branchCode=` repetido | 13037 | `BranchCode` é obrigatório na Totvs: sem lojas informadas, vão as da empresa; loja de fora, 422 |
+| PE-4 | `PostListBalanceBonus` (`TotvsBonusService`, novo, PE9) | `POST ListBalanceBonus/{docCompany}` com `ListBalanceBonus` validado | 13038 | lojas por código ou CNPJ, conferidas na empresa; token comum (acima) |
+| PR-3 | `GetProducts` | `GET Products/{docCompany}/Codes/{code}?branchCode=` | 13100 | `products/{code}` responde igual com a loja no caminho, na query ou sem ela |
+| PR-3 | `GetKardexMovement` | `GET Products/{docCompany}/Kardex?productCode&branchCode&startDate&endDate&balanceType` | 13101 | todos obrigatórios na Totvs; até 180 dias (400 na rota antes de chamar) |
+| PR-3 | `GetGridFrequency` | `GET Products/{docCompany}/{productCode}/GridFrequency?page&pageSize` | 13102 | uma página por chamada (quem chama pagina), em vez de ler todas |
+| PR-3 | `GetMeasurementConversions` | `GET Products/{docCompany}/MeasurementConversions?productCode=` ou `groupSequence=` | 13103 | um dos dois (a Totvs recusa nenhum e os dois); `products` vazio, 404 |
+| PR-3 | `GetCompositionProduct`, `GetCompositionGroupProduct` | `GET Products/{docCompany}/CompositionProduct` e `.../CompositionGroupProduct` | 13104, 13105 | uma das listas; `groupCodeList` é o `groupSequenceCode` (inteiro) |
+| PO-1 | `GetPurchaseOrderByKey` (`TotvsPurchaseOrdersService`) | `GET PurchaseOrders/{docCompany}/{branchCode}/{orderCode}` | 13185 | **grava** (DP4), cópia do `GetSalesOrderByKey`, com o `change` desde 2000 para o `maxChangeFilterDate` vir preenchido |
+| SO-2 | `GetInvoices` (`TotvsSalesOrdersService`) | `GET SalesOrders/{docCompany}/{branchCode}/{orderCode}/Invoices?invoiceStatus=` | 13195 | sem notas, 404 |
+| SO-2 | `GetPendingItems` | `GET .../PendingItems` | 13196 | sem pendência é 200 com `items` vazio (é a resposta) |
+| SO-2 | `GetChangedBatchItems` (vindo da SO-1) | `GET .../ChangedBatchItems?batchCode&startDate&endDate` | 13193 | a Totvs exige loja, pedido e período: sem período, desde 2000; sem itens, 404 |
+
+**Achados na chamada real (28/10/2026):**
+* `branches/{id}` aceita o código e o CNPJ; loja inexistente dá 404 `PathParamNotFound`;
+* `person-statistics` exige `BranchCode` (400 `EmptyField`) e um entre `CustomerCode` e `CustomerCpfCnpj` (os dois, ou nenhum: 400
+  `CannotBeInformed`); cliente inexistente, 404;
+* `list-balance-bonus`: responde com o token comum; CPF inexistente dá 400 `NotFound` (404 aqui); a loja pode ir por código ou CNPJ;
+* `products/{code}`: código inexistente, 404 `PathParamNotFound`; `kardex-movement` exige `BalanceType` e recusa mais de 180 dias
+  (400 `PeriodExceeds180Days`); `measurement-conversions` exige um entre `ProductCode` e `GroupSequence`; as composições exigem uma das
+  listas, e `GroupCodeList` é inteiro (o código do grupo em texto dá 400);
+* `purchase-order/v2/search` aceita `orderCodeList` e o `change` desde 2000 (com ele o `maxChangeFilterDate` vem preenchido; sem ele,
+  nulo);
+* `sales-order/v2/invoices` com pedido inexistente dá 400 `KeyNotFound` (404 aqui); `changed-batch-items` aceita o período desde 2000 e
+  não há item de lote ligado a pedido na base.
+
+**Conferido com o console descartável** (API real, com o `TotvsService` de verdade sobre um repositório falso, para a base comum entrar
+no teste): 32 cenários, todos com o status esperado — loja por código, por CNPJ e inexistente; estatísticas sem lojas (todas as da
+empresa), pelo CPF com lojas, de cliente inexistente e com loja de fora (422 sem chamada); bônus por código e CNPJ, de CPF inexistente
+(404) e com loja e CNPJ de fora (422); o validador do bônus com 3 corpos; produto por código, com loja e inexistente; kardex e kardex
+com loja de fora; grade de frequência; conversões vazias (404); as duas composições; pedido de compra 1/55 gravado com o
+`maxChangeFilterDate`; o 1/999999999, que **existe** na base (pedido de 29/09/2026), gravado; notas do pedido de venda 1/2293, com
+filtro de situação e de pedido inexistente (404); itens pendentes vazios (200); itens de lote vazios (404); empresa não cadastrada (422).
+
+**Não verificado:** o `Script065` em banco e as rotas pelo host.
+
+**Onda 2 concluída** (PE-3, PE-4, PR-3, PO-1, SO-2 e FI-2), menos o teste da F3. A onda 3 (escritas de baixo risco: PE-5, PR-4, PO-2 e
+SO-3; a AP-1 já está feita) depende da T1/T2 (homologação e autenticação dos endpoints de inbound).

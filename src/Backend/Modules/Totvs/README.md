@@ -224,6 +224,11 @@ Os nomes dos métodos são os da **documentação oficial** (`PostSearch*`, `Get
 | `TotvsInvoicesService` | `GetSearchInvoicesItemDetail` | `GET fiscal/v2/invoices/item-detail-search` (sem gravar) | 13255 |
 | `TotvsInvoicesService` | `GetInvoicesPendingConditionalProducts` | `GET fiscal/v2/invoices/pending-conditional-products` (sem gravar) | 13256 |
 | `TotvsInvoicesService` | `PostSearchInvoiceProducts` | `POST fiscal/v2/invoice-products/search` (sem gravar) | 13257 |
+| `TotvsPurchaseOrdersService` | `GetPurchaseOrderByKey` | `purchase-order/v2/search` com `branchCodeList` + `orderCodeList` (grava) | 13185 |
+| `TotvsPeopleService` | `GetBranches`, `GetPersonStatistics` | `GET person/v2/branches/{branchId}`, `GET person/v2/person-statistics` (sem gravar) | 13036, 13037 |
+| `TotvsBonusService` | `PostListBalanceBonus` | `POST person/v2/list-balance-bonus` (sem gravar) | 13038 |
+| `TotvsProductsService` | `GetProducts`, `GetKardexMovement`, `GetGridFrequency`, `GetMeasurementConversions`, `GetCompositionProduct`, `GetCompositionGroupProduct` | `product/v2/products/{code}`, `kardex-movement`, `grid-frequency`, `measurement-conversions`, `composition-product`, `composition-group-product` (sem gravar) | 13100–13105 |
+| `TotvsSalesOrdersService` | `GetInvoices`, `GetPendingItems`, `GetChangedBatchItems` | `sales-order/v2/invoices`, `pending-items`, `changed-batch-items` (sem gravar) | 13195, 13196, 13193 |
 | `TotvsRepresentativesService` | `GetRepresentativeByCode` | `representatives/search` com `representativeCodeList` | 13039 |
 | `TotvsProductsService` | `GetProductByCode` | `references/search` com `productCodeList` (acha a referência) e `referenceCodeList` (lê a referência inteira) | 13014 |
 
@@ -327,6 +332,7 @@ O DbUp executa cada script uma única vez, em ordem alfabética. Alterar um scri
 | `Script060`–`062` | Inutilizações e centros de custo da API Fiscal |
 | `Script063` | Jobs das leituras sem persistência da API Fiscal (XML, DANFE, impressão) |
 | `Script064` | Jobs das leituras sem persistência da API Fiscal (itens, condicional, produtos das notas) |
+| `Script065` | Jobs das leituras sob demanda do resto da onda 2 (pessoa, bônus, produto, pedido de compra e de venda) |
 
 **Regras gerais das tabelas e dos merges:**
 * Toda tabela de dados existe em dois schemas: `untreated` (recebe o bulk insert, sem chave) e `totvs` (tabela final, com PK). A exceção é `totvs.TotvsRequests`, que só recebe inserts.
@@ -401,6 +407,7 @@ Todas exigem:
 | GET | `Customers/{docCompany}/{code}` | `GetCustomerByCode` |
 | GET | `LegalEntities/{docCompany}/{code}` | `GetLegalEntityByCode` |
 | GET | `SalesOrders/{docCompany}/{branchCode}/{orderCode}` | `GetSalesOrderByKey` |
+| GET | `PurchaseOrders/{docCompany}/{branchCode}/{orderCode}` | `GetPurchaseOrderByKey` |
 | GET | `Invoices/{docCompany}/{branchCode}/{invoiceSequence}` | `GetInvoiceByKey` |
 | GET | `Products/{docCompany}/{code}` | `GetProductByCode` |
 | GET | `Representatives/{docCompany}/{code}` | `GetRepresentativeByCode` |
@@ -423,6 +430,17 @@ sem gravar tabela; a chamada fica em `totvs.TotvsRequests` (nas de arquivo, só 
 | GET | `ElectronicInvoices/{docCompany}/{accessKey}/Items` | `GetSearchInvoicesItemDetail` |
 | GET | `ConditionalProducts/{docCompany}/{branchCode}?personCode=N` (ou `personCpfCnpj`) | `GetInvoicesPendingConditionalProducts` (404 sem saldo) |
 | POST | `InvoiceProducts/{docCompany}/Search` (filtro no corpo; produto, nota ou chave de acesso obrigatórios) | `PostSearchInvoiceProducts` |
+| GET | `Branches/{docCompany}/{branchId}` (código ou CNPJ) | `GetBranches` |
+| GET | `PersonStatistics/{docCompany}?customerCode=N` (ou `customerCpfCnpj`), `&branchCode=` | `GetPersonStatistics` |
+| POST | `ListBalanceBonus/{docCompany}` (`personCpf` e `branchList` no corpo) | `PostListBalanceBonus` (404 para CPF inexistente) |
+| GET | `Products/{docCompany}/Codes/{code}?branchCode=` | `GetProducts` (código, pack, barras, RFID, item de lote) |
+| GET | `Products/{docCompany}/Kardex?productCode&branchCode&startDate&endDate&balanceType` | `GetKardexMovement` (até 180 dias) |
+| GET | `Products/{docCompany}/{productCode}/GridFrequency?page&pageSize` | `GetGridFrequency` |
+| GET | `Products/{docCompany}/MeasurementConversions?productCode=` (ou `groupSequence`) | `GetMeasurementConversions` |
+| GET | `Products/{docCompany}/CompositionProduct` e `.../CompositionGroupProduct` (`productCodeList`, `groupCodeList` = `groupSequenceCode`, `referenceCodeList`) | `GetCompositionProduct`, `GetCompositionGroupProduct` |
+| GET | `SalesOrders/{docCompany}/{branchCode}/{orderCode}/Invoices?invoiceStatus=` | `GetInvoices` |
+| GET | `SalesOrders/{docCompany}/{branchCode}/{orderCode}/PendingItems` | `GetPendingItems` (200 mesmo sem pendência) |
+| GET | `SalesOrders/{docCompany}/{branchCode}/{orderCode}/ChangedBatchItems?startDate&endDate&batchCode` | `GetChangedBatchItems` |
 
 | Código | Quando |
 |---|---|
@@ -520,6 +538,10 @@ Os jobs ficam em `auditing.Jobs`, com os mesmos ids em `EnumJob`.
 | 13255 | `TotvsGetSearchInvoicesItemDetail` | sob demanda, sem gravar |
 | 13256 | `TotvsGetInvoicesPendingConditionalProducts` | sob demanda, sem gravar |
 | 13257 | `TotvsPostSearchInvoiceProducts` | sob demanda, sem gravar |
+| 13036–13038 | `TotvsGetBranches`, `TotvsGetPersonStatistics`, `TotvsPostListBalanceBonus` | sob demanda, sem gravar |
+| 13100–13105 | `TotvsGetProducts`, `TotvsGetKardexMovement`, `TotvsGetGridFrequency`, `TotvsGetMeasurementConversions`, `TotvsGetCompositionProduct`, `TotvsGetCompositionGroupProduct` | sob demanda, sem gravar |
+| 13185 | `TotvsGetPurchaseOrderByKey` | sob demanda |
+| 13193, 13195, 13196 | `TotvsGetSalesOrderChangedBatchItems`, `TotvsGetSalesOrderInvoices`, `TotvsGetSalesOrderPendingItems` | sob demanda, sem gravar |
 | 13018 | `TotvsPostDuplicates` | escrita (reservado, fase AP-2) |
 | 13019 | `TotvsPostGroupDuplicates` | escrita (reservado, fase AP-2) |
 | 13020 | `TotvsPostDuplicatesInstallmentsStage` | escrita |
