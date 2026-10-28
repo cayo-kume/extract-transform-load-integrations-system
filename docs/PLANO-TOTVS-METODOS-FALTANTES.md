@@ -3733,3 +3733,19 @@ referência só combina grupos que já existem. Modos `erp2`, `erp3`, `clean` e 
 descrição de todos os níveis. A PR-5 fica verificada em homologação, menos a classificação no tipo 9001 (`ORA-02291`).
 
 **Ficou na homologação:** a referência `OA24 BL 11405` "TESTE INTEGRACAO BL 11405" com o produto 31219 (cor 107, tamanho PP).
+
+### 10.42 Leitura em produção para os pontos que a homologação não fecha (28/10/2026)
+
+Com a liberação do usuário, a URL de produção foi usada **só para leitura**: um script com lista fechada de rotas de leitura (token, buscas
+e `GET`), que recusa qualquer outra antes de chamar; nada foi incluído, alterado ou excluído.
+
+| Ponto | Produção |
+|---|---|
+| F3: `referencedInvoices` | **O mesmo 400** (`GetReferencedInvoices`) já na primeira janela de 5 dias; a nota que falha sozinha é a **6/41422 de 18/10/2026**, devolução de venda (entrada, CFOP 1202), e o `item-detail-search` dela também traz `referencedInvoices` **vazio**. Confirma: falha da Totvs, sem contorno; o campo continua comentado |
+| SE-1: regiões | **Nenhuma região** cadastrada em produção (as quatro rotas vazias): os tamanhos ficam conferidos com o cadastro da homologação (§10.40) |
+| Lotes | **Nenhum lote** em nenhuma das 25 lojas: as rotas de lote (inclusive a sugestão por nuance, que dá 503 na homologação) não têm uso hoje |
+| Contagens | **Usadas:** 99 dos 100 pedidos de venda da primeira página (90 dias) têm contagem, encerradas (`statusCount` `Closed`). O vínculo com contagem real continua importante; na homologação, precisa de uma contagem sem pedido |
+| Pedido de compra parcialmente recebido | **Existe:** 11 dos 100 pedidos da primeira página (365 dias) estão na situação 3. Bloquear e cancelar nessa situação (PO-2/PO-4) continua a testar na homologação, com um recebimento |
+| PE-7: saldo de bônus | **A leitura traz valor:** 7 de 40 clientes de notas recentes têm saldo (de 20,96 a 99,80). O `list-balance-bonus` e a leitura do saldo no consumo funcionam; o saldo zero da homologação é do cadastro, não do código. Falta só o consumo com sucesso, que pede um cliente com saldo na homologação |
+
+**Sem mudança no código.** As credenciais de produção não aparecem no repositório nem na saída (documentos mascarados).
