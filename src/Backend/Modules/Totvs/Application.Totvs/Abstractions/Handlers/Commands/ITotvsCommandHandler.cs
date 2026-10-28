@@ -102,5 +102,6 @@
         public string CreateGetInvoicesDisableQuery(string doc_company);
         public string CreateGetCostCentersHashesQuery(string doc_company);
         public string CreateGetBillingSuggestionsByKeysQuery(string doc_company, List<(int branchCode, int suggestionCode)> keys);
+        public string CreateGetPurchaseOrderStatusQuery(string doc_company, int branchCode, int orderCode);
     }
 }

@@ -60,5 +60,12 @@ namespace Infrastructure.Totvs.Repositorys
 
             return true;
         }
+
+        public async Task<string?> GetPurchaseOrderStatus(string doc_company, int branchCode, int orderCode)
+        {
+            string sql = _totvsCommandHandler.CreateGetPurchaseOrderStatusQuery(doc_company, branchCode, orderCode);
+
+            return await _coreRepository.GetRecord<string?>(sql);
+        }
     }
 }

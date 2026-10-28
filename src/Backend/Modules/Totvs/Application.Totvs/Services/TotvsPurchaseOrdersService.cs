@@ -38,6 +38,18 @@ namespace Application.Totvs.Services
         // expand da documentação; requests (solicitações de compra) não vinha no código antigo
         private const string Expand = "items,requests";
 
+        // grupo das escritas desta API na configuração (Totvs:Writes:PurchaseOrders:Enabled, T4)
+        private const string WritesGroup = "PurchaseOrders";
+
+        // situações do pedido de compra (StatusOrderType), pelo número gravado em totvs.TotvsPurchaseOrders.status
+        private static readonly Dictionary<string, string> StatusNames = new()
+        {
+            ["1"] = "em andamento", ["2"] = "liberado para baixa", ["3"] = "parcialmente recebido", ["4"] = "atendido",
+            ["5"] = "bloqueado", ["6"] = "cancelado", ["7"] = "distribuído", ["8"] = "pré-pedido"
+        };
+
+        private static string StatusName(string status) => StatusNames.TryGetValue(status, out var name) ? $"{name} ({status})" : status;
+
         public TotvsPurchaseOrdersService(
             [FromKeyedServices("TotvsAPI")] IApiClient apiClient,
             ILoggerService logger,
@@ -442,6 +454,55 @@ namespace Application.Totvs.Services
                 _totvsService.SaveRequest(EnumJob.TotvsGetPurchaseOrderByKey, user_name, "POST", route, doc_company, key, response.Content, result == true, requestBody);
 
                 return result;
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostPurchaseOrdersChangeStatus(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.PurchaseOrders.UpdateOrderStatus body)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsPostPurchaseOrdersChangeStatus);
+
+            var key = $"{body.branchCode}|{body.orderCode}";
+
+            try
+            {
+                if (!_totvsService.IsWriteEnabled(WritesGroup))
+                    return _totvsService.WriteDisabled(WritesGroup, key);
+
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return _totvsService.CompanyNotFound(doc_company, key);
+
+                // passo 3 da §1.2: a loja do pedido precisa ser da empresa
+                if (!(await _totvsService.GetBranchCodes(company)).Contains(body.branchCode!.Value))
+                    return _totvsService.BranchNotFound(doc_company, key, [body.branchCode.Value.ToString()]);
+
+                // conferência local (DP7), só com o pedido no banco (até 3 min atrasado): a troca só vale entre em andamento e bloqueado. A busca
+                // devolve a situação como número (StatusOrderType), gravado assim em status
+                var current = await _totvsPurchaseOrdersRepository.GetPurchaseOrderStatus(doc_company, body.branchCode.Value, body.orderCode!.Value);
+                var to = ((int)body.status!.Value).ToString();
+                var from = body.status == Domain.Totvs.Dtos.Writes.PurchaseOrders.StatusOrderChange.Blocked ? "1" : "5";
+
+                if (!String.IsNullOrEmpty(current) && current != from)
+                {
+                    var refused = current == to
+                        ? $"O pedido de compra {key} já está {StatusName(to)} em totvs.TotvsPurchaseOrders."
+                        : $"O pedido de compra {key} está {StatusName(current)} em totvs.TotvsPurchaseOrders: a troca só vale de {StatusName(from)} para {StatusName(to)}.";
+                    _logger.AddMessage(refused);
+
+                    return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, message = refused };
+                }
+
+                // valor absoluto: repetir não muda nada, sem trava
+                return await _totvsService.Write(company, EnumJob.TotvsPostPurchaseOrdersChangeStatus, user_name, key, HttpMethod.Post, "purchase-order/v2/orders/change-status", body,
+                    "Confira a situação do pedido na Totvs antes de repetir.");
             }
             finally
             {

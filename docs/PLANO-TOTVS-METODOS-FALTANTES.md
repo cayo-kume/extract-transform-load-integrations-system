@@ -2337,7 +2337,7 @@ onda 2 que entrar monta a base das leituras sem persistência (T11, §8.1).
 | Fase | Onda | Métodos | Jobs | Depende de |
 |---|---|---|---|---|
 | PO-1 | 2 | `GetPurchaseOrderByKey` (DP4: sob demanda **com** persistência, como o `GetSalesOrderByKey`) | 13185 | — **Implementada em 28/10/2026** (§10.13) |
-| PO-2 | 3 | `PostPurchaseOrdersChangeStatus` | 13182 | AP-1 |
+| PO-2 | 3 | `PostPurchaseOrdersChangeStatus` | 13182 | AP-1 **Implementada em 28/10/2026** (§10.16) |
 | PO-3 | 4 | `PostPurchaseOrdersQuantityItems`, `PostPurchaseOrders` (com `supplierOrderCode` obrigatório, DP2); `PostPurchaseOrderBatchLink` (DP6) | 13181, 13180, 13184 | PO-2 |
 | PO-4 | 5 | `PostPurchaseOrdersCancel` (com conferência do fornecedor, DP3) | 13183 | PO-3 |
 
@@ -2991,3 +2991,27 @@ aceita com o `gridCode` na resposta, repetida (**409 sem chamar**) e com código
 
 **Não verificado:** a chamada real em homologação (T1); se a Totvs numera a grade sem `gridCode` (o swagger declara o campo como inteiro
 não anulável); o `Script068` em banco e as rotas pelo host.
+
+### 10.16 Fase PO-2: situação do pedido de compra (28/10/2026)
+
+**O que entrou** (§6.3, no `TotvsPurchaseOrdersService`, pela base da §10.14; grupo `Totvs:Writes:PurchaseOrders:Enabled`, desligado; job no
+`Script069`):
+* `PostPurchaseOrdersChangeStatus` (13182): `POST TotvsJobs/Totvs/PurchaseOrders/{docCompany}/ChangeStatus` com o `UpdateOrderStatus`
+  (`branchCode`, `orderCode`, `status` 1 em andamento ou 5 bloqueado, como número) → `POST purchase-order/v2/orders/change-status`; chave =
+  `branchCode|orderCode`; sem trava (valor absoluto);
+* a loja precisa ser da empresa (422 sem chamar); **conferência local (DP7)** pela nova `GetPurchaseOrderStatus` (situação em
+  `totvs.TotvsPurchaseOrders`): com o pedido no banco, só em andamento (1) → bloqueado (5) e bloqueado → em andamento chegam à Totvs; a
+  situação igual à pedida ou qualquer outra (atendido, cancelado, parcialmente recebido...) volta 422 com o nome da situação;
+* `UpdateOrderStatusValidator`: `branchCode` (até 4 dígitos), `orderCode` (até 9) e `status` (1 ou 5) obrigatórios, embora o swagger não
+  marque nenhum.
+
+**Achado na leitura real (28/10/2026):** o `purchase-order/v2/search` devolve a situação como **número** (`StatusOrderType`: nos 116 pedidos
+da loja 1 alterados em 2026, `4` 60, `1` 17, `3` 11, `5` 11 e `6` 1), diferente das outras APIs, que devolvem o nome; é o número que fica
+em `TotvsPurchaseOrders.status`, e a conferência local compara por ele. O `Responsed Jsons` do pedido de compra já mostrava `"status": 5`.
+
+**Conferido sem a API** (mesmo console da §10.14): 3 corpos no validador; corpo com a situação como número; pedido fora do banco (chama);
+em andamento → bloquear e bloqueado → desbloquear (chamam); bloqueado → bloquear, atendido → desbloquear e atendido → bloquear (422 sem
+chamar, com as situações por extenso); loja de outra empresa (422 sem chamar); pedido inexistente (400 da Totvs como mensagem).
+
+**Não verificado:** a chamada real em homologação (T1); se a Totvs aceita bloquear um pedido parcialmente recebido ou liberado para baixa
+(hoje a conferência local recusa); o `Script069` em banco e a rota pelo host.

@@ -12,5 +12,11 @@
         /// fica em totvs.TotvsRequests. true gravado; false não encontrado na Totvs; null empresa não cadastrada ou resposta inválida
         /// </summary>
         public Task<bool?> GetPurchaseOrderByKey(string user_name, string doc_company, int branchCode, int orderCode);
+
+        /// <summary>
+        /// põe um pedido de compra em andamento ou bloqueado (POST purchase-order/v2/orders/change-status). Com o pedido no banco, só
+        /// em andamento → bloqueado e bloqueado → em andamento chegam à Totvs (DP7)
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PostPurchaseOrdersChangeStatus(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.PurchaseOrders.UpdateOrderStatus body);
     }
 }

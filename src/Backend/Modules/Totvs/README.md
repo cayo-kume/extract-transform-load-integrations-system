@@ -214,6 +214,7 @@ Os nomes dos métodos são os da **documentação oficial** (`PostSearch*`, `Get
 | `TotvsPeopleService` | `DeleteMessages` | `DELETE person/v2/messages` | 13046 | `Totvs:Writes:People:Enabled` |
 | `TotvsProductCatalogsService` | `PostColors` | `POST product/v2/colors` (inclusão e alteração) | 13124 | `Totvs:Writes:Products:Enabled` |
 | `TotvsProductCatalogsService` | `PostGrids` | `POST product/v2/grids` (com a trava de repetição) | 13126 | `Totvs:Writes:Products:Enabled` |
+| `TotvsPurchaseOrdersService` | `PostPurchaseOrdersChangeStatus` | `POST purchase-order/v2/orders/change-status` | 13182 | `Totvs:Writes:PurchaseOrders:Enabled` |
 
 **Leituras sob demanda** (um registro por chave)
 
@@ -341,6 +342,7 @@ O DbUp executa cada script uma única vez, em ordem alfabética. Alterar um scri
 | `Script066` | Coluna `status_code` em `totvs.TotvsRequests` (trava de repetição das escritas) |
 | `Script067` | Jobs das escritas da API Person (mensagens, 13044–13046) |
 | `Script068` | Jobs das escritas da API Product (cores e grades, 13124 e 13126) |
+| `Script069` | Jobs das escritas da API Purchase Order (situação do pedido, 13182) |
 
 **Regras gerais das tabelas e dos merges:**
 * Toda tabela de dados existe em dois schemas: `untreated` (recebe o bulk insert, sem chave) e `totvs` (tabela final, com PK). A exceção é `totvs.TotvsRequests`, que só recebe inserts.
@@ -470,6 +472,7 @@ Mesmas exigências das leituras sob demanda (`X-User-Name` e `{docCompany}`), co
 | DELETE | `Messages/{docCompany}/{personCode}/{sequence}` | — (exclusão definitiva; prefira o `PUT` com `status` 3) | `DeleteMessages` |
 | POST | `Products/{docCompany}/Colors` | `code` (10), `name` (40); `colorInfoAdditionals` por loja da empresa (`branchCode`, `auxiliaryCode`, `auxiliaryName`, `pantoneCode`, usos) | `PostColors` (um `code` existente é renomeado em todas as referências) |
 | POST | `Products/{docCompany}/Grids` | `gridCode` (opcional, 6), `name` (40), `type`; `gridSizes` (`name` até 10, sem repetição) | `PostGrids` (devolve o `gridCode`) |
+| POST | `PurchaseOrders/{docCompany}/ChangeStatus` | `branchCode` (loja da empresa), `orderCode`, `status` (1 em andamento, 5 bloqueado) | `PostPurchaseOrdersChangeStatus` (com o pedido no banco, só entre essas duas situações) |
 
 | Código | Quando |
 |---|---|
@@ -561,6 +564,7 @@ Os jobs ficam em `auditing.Jobs`, com os mesmos ids em `EnumJob`.
 | 13020 | `TotvsPostDuplicatesInstallmentsStage` | escrita |
 | 13044–13046 | `TotvsPostMessages`, `TotvsPutChangeMessages`, `TotvsDeleteMessages` | escrita |
 | 13124, 13126 | `TotvsPostColors`, `TotvsPostGrids` | escrita |
+| 13182 | `TotvsPostPurchaseOrdersChangeStatus` | escrita |
 
 Toda execução grava `auditing.Logs` e, conforme o caso:
 * `auditing.Messages`, com mensagens e erros de validação;
@@ -573,7 +577,7 @@ Toda execução grava `auditing.Logs` e, conforme o caso:
 | Onde | Chave | Uso |
 |---|---|---|
 | `appsettings.json` do host | `Totvs:BaseUrl` | Endereço da API; homologação é só outro valor no `appsettings` do ambiente |
-| `appsettings.json` do host | `Totvs:Writes:<grupo>:Enabled` | Liga as escritas de um grupo (`AccountsPayable`, `People`, `Products`...). Sem a chave, ou com `false`, a rota devolve 422 sem chamar a Totvs |
+| `appsettings.json` do host | `Totvs:Writes:<grupo>:Enabled` | Liga as escritas de um grupo (`AccountsPayable`, `People`, `Products`, `PurchaseOrders`...). Sem a chave, ou com `false`, a rota devolve 422 sem chamar a Totvs |
 | `appsettings.json` do host | `ConnectionStrings` | Conexão com o SQL Server (dados e auditoria) |
 | Banco | `totvs.TotvsParameters` | CNPJ (`doc_company`) e credenciais (`client_id`, `client_secret`, `username`, `password`) de cada empresa |
 

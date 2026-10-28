@@ -701,5 +701,15 @@ namespace Application.Totvs.Handlers.Commands
                      FROM TOTVS.TOTVSCOSTCENTERS
                      WHERE DOC_COMPANY = '{doc_company}'";
         }
+
+        public string CreateGetPurchaseOrderStatusQuery(string doc_company, int branchCode, int orderCode)
+        {
+            // situação gravada pela leitura (nome do StatusOrderType); sem linha, o pedido ainda não chegou ao banco
+            return @$"SELECT [STATUS]
+                     FROM TOTVS.TOTVSPURCHASEORDERS
+                     WHERE DOC_COMPANY = '{doc_company}'
+                     AND BRANCHCODE = {branchCode}
+                     AND ORDERCODE = {orderCode}";
+        }
     }
 }

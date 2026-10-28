@@ -1156,6 +1156,27 @@ namespace Hangfire.Controllers.Totvs
         }
 
         /// <summary>
+        /// põe um pedido de compra em andamento (1) ou bloqueado (5) (POST purchase-order/v2/orders/change-status). Com o pedido no banco, a
+        /// troca só vale entre essas duas situações (422 sem chamar a Totvs nos demais casos)
+        /// </summary>
+        [HttpPost("PurchaseOrders/{docCompany}/ChangeStatus")]
+        [Tags("TotvsPurchaseOrders")]
+        public async Task<ActionResult> PurchaseOrdersChangeStatus(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.PurchaseOrders.UpdateOrderStatus body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.PurchaseOrders.UpdateOrderStatus> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsPurchaseOrdersService.PostPurchaseOrdersChangeStatus(userName, docCompany, body));
+        }
+
+        /// <summary>
         /// resposta das leituras sem persistência (docs/PLANO-TOTVS-METODOS-FALTANTES.md §8.1, T11): 200 com o JSON ou o arquivo; 404 quando
         /// a Totvs não acha; 429 com Retry-After; 502 para 5xx, falta de resposta ou JSON inválido; 422 nos demais (empresa não cadastrada,
         /// 400 da Totvs)
