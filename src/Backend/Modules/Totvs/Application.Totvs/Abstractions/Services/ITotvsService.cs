@@ -59,6 +59,23 @@ namespace Application.Totvs.Abstractions.Services
         /// registra uma chamada sob demanda à API da Totvs em totvs.TotvsRequests (a rota nunca leva o token; as buscas são POST,
         /// então o filtro enviado vai em request_body)
         /// </summary>
+        /// <summary>
+        /// leitura sob demanda sem persistência (T11, docs/PLANO-TOTVS-METODOS-FALTANTES.md §8.1): chama a Totvs com uma nova tentativa
+        /// (401, 429, 502/503/504), registra em totvs.TotvsRequests o corpo enviado e o recebido e devolve o JSON em Result.data. O 404 e o
+        /// 400 com KeyNotFound, NotFound ou PathParamNotFound viram 404; com emptyListProperty, essa lista vazia também
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> ReadOnDemand(Company company, Domain.Totvs.Enums.EnumJob job, string user_name, string key, HttpMethod method, string route, string? requestBody = null, string? emptyListProperty = null);
+
+        /// <summary>
+        /// Result da empresa não cadastrada em totvs.TotvsParameters (422 sem chamar a API)
+        /// </summary>
+        public Domain.Totvs.Dtos.Writes.Result CompanyNotFound(string doc_company, string key);
+
+        /// <summary>
+        /// Result da loja fora de totvs.TotvsBranches da empresa (422 sem chamar a API)
+        /// </summary>
+        public Domain.Totvs.Dtos.Writes.Result BranchNotFound(string doc_company, string key, IEnumerable<string> branches);
+
         public void SaveRequest(Domain.Totvs.Enums.EnumJob job, string user_name, string httpMethod, string route, string doc_company, string field_key_value, string? responseBody, bool isSuccess, string? requestBody = null);
     }
 }

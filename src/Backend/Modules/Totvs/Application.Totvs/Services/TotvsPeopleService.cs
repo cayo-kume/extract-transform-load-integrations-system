@@ -1140,5 +1140,68 @@ namespace Application.Totvs.Services
 
             return _listSomenteNovos.Count;
         }
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> GetBranches(string user_name, string doc_company, string branchId)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsGetBranches);
+
+            var key = branchId;
+
+            try
+            {
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return _totvsService.CompanyNotFound(doc_company, key);
+
+                // devolve o corpo: TotvsBranches é mantida pelo job de 120 min, e o BranchOutDto não tem description, branchGroupName nem datas (PE1)
+                return await _totvsService.ReadOnDemand(company, EnumJob.TotvsGetBranches, user_name, key, HttpMethod.Get, $"person/v2/branches/{branchId}", null, null);
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> GetPersonStatistics(string user_name, string doc_company, int? customerCode, string? customerCpfCnpj, List<int>? branchCodes)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsGetPersonStatistics);
+
+            var key = $"{(object?)customerCode ?? customerCpfCnpj}|{String.Join(",", branchCodes ?? [])}";
+
+            try
+            {
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return _totvsService.CompanyNotFound(doc_company, key);
+
+                // BranchCode é obrigatório (400 EmptyField sem ele, testado): sem lojas informadas, vão todas as da empresa
+                var companyBranches = await _totvsService.GetBranchCodes(company);
+
+                if (branchCodes is null || branchCodes.Count == 0)
+                {
+                    branchCodes = companyBranches;
+                    key = $"{(object?)customerCode ?? customerCpfCnpj}|{String.Join(",", branchCodes)}";
+                }
+
+                var outside = branchCodes.Where(x => !companyBranches.Contains(x)).ToList();
+
+                if (outside.Count > 0)
+                    return _totvsService.BranchNotFound(doc_company, key, outside.Select(x => x.ToString()));
+
+                return await _totvsService.ReadOnDemand(company, EnumJob.TotvsGetPersonStatistics, user_name, key, HttpMethod.Get, TotvsQuery.Route("person/v2/person-statistics", ("CustomerCode", customerCode), ("CustomerCpfCnpj", customerCpfCnpj), ("BranchCode", branchCodes)), null, null);
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
     }
 }

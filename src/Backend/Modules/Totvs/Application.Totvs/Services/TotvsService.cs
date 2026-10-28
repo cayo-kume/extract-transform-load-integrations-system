@@ -139,5 +139,174 @@ namespace Application.Totvs.Services
                     is_success: isSuccess
                 )
             );
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> ReadOnDemand(Company company, Domain.Totvs.Enums.EnumJob job, string user_name, string key, HttpMethod method, string route, string? requestBody = null, string? emptyListProperty = null)
+        {
+            var routeName = route.Split('?')[0];
+            ApiResponse? response = null;
+
+            try
+            {
+                // uma nova tentativa: são consultas, idempotentes, inclusive os POST
+                for (var attempt = 1; attempt <= 2; attempt++)
+                {
+                    var token = await GetToken(company);
+
+                    if (token is null)
+                        break;   // a mensagem do login já foi para o log
+
+                    using var content = requestBody is null ? null : new StringContent(requestBody, System.Text.Encoding.UTF8, "application/json");
+
+                    response = await _apiClient.SendAsync(
+                        method,
+                        route,
+                        content,
+                        headers: new Dictionary<string, string> { { "Authorization", $"Bearer {token}" } }
+                    );
+
+                    if (attempt == 1 && response.StatusCode == 401)
+                    {
+                        RemoveToken(company);
+                        continue;
+                    }
+
+                    if (attempt == 1 && response.StatusCode == 429)
+                    {
+                        var seconds = response.Headers.TryGetValue("Retry-After", out var retryAfter) && int.TryParse(retryAfter, out var value) ? value : 5;
+                        await Task.Delay(TimeSpan.FromSeconds(Math.Clamp(seconds, 1, 60)));
+                        continue;
+                    }
+
+                    if (attempt == 1 && response.StatusCode is 502 or 503 or 504)
+                    {
+                        await Task.Delay(TimeSpan.FromSeconds(10));
+                        continue;
+                    }
+
+                    break;
+                }
+            }
+            catch (Exception ex)
+            {
+                // registra a tentativa mesmo quando a chamada não chega a ter resposta (timeout, rede)
+                SaveRequest(job, user_name, method.Method, route, company.doc_company!, key, $"Exceção ao chamar a API: {ex.Message}", false, requestBody);
+                throw;
+            }
+
+            if (response is null)
+            {
+                SaveRequest(job, user_name, method.Method, route, company.doc_company!, key, null, false, requestBody);
+                return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, statusCode = 0, apiCalled = false, message = "Falha no login na Totvs: veja o log da execução." };
+            }
+
+            if (!response.IsSuccess)
+            {
+                SaveRequest(job, user_name, method.Method, route, company.doc_company!, key, response.Content, false, requestBody);
+
+                var message = OnDemandMessage(response);
+                _logger.AddMessage($"Erro da API Totvs em {routeName} ({key}): {response.StatusCode} {message}");
+
+                return new Domain.Totvs.Dtos.Writes.Result
+                {
+                    success = false,
+                    key = key,
+                    statusCode = IsNotFound(response) ? 404 : response.StatusCode,
+                    apiCalled = true,
+                    message = message,
+                    response = Truncate(response.Content),
+                    retryAfterSeconds = response.Headers.TryGetValue("Retry-After", out var retryAfter) && int.TryParse(retryAfter, out var seconds) ? seconds : null
+                };
+            }
+
+            System.Text.Json.JsonElement data;
+
+            try
+            {
+                data = System.Text.Json.JsonDocument.Parse(response.Content ?? String.Empty).RootElement.Clone();
+            }
+            catch (System.Text.Json.JsonException)
+            {
+                SaveRequest(job, user_name, method.Method, route, company.doc_company!, key, Truncate(response.Content), false, requestBody);
+                _logger.AddMessage($"Resposta inválida da API Totvs em {routeName} ({key}): {Truncate(response.Content)}");
+
+                // JSON inválido: 502 (§8.1)
+                return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, statusCode = 502, apiCalled = true, message = "Resposta inválida da Totvs.", response = Truncate(response.Content) };
+            }
+
+            var empty = emptyListProperty is not null && data.ValueKind == System.Text.Json.JsonValueKind.Object && data.TryGetProperty(emptyListProperty, out var list)
+                && list.ValueKind == System.Text.Json.JsonValueKind.Array && list.GetArrayLength() == 0;
+
+            SaveRequest(job, user_name, method.Method, route, company.doc_company!, key, response.Content, !empty, requestBody);
+
+            if (empty)
+            {
+                _logger.AddMessage($"Sem registros em {routeName} ({key}).");
+                return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, statusCode = 404, apiCalled = true, message = "Nenhum registro encontrado.", data = data };
+            }
+
+            _logger.AddMessage($"Concluída com sucesso: {routeName} ({key}) devolvido.");
+
+            return new Domain.Totvs.Dtos.Writes.Result { success = true, key = key, statusCode = 200, apiCalled = true, data = data };
+        }
+
+        public Domain.Totvs.Dtos.Writes.Result CompanyNotFound(string doc_company, string key)
+        {
+            // nenhuma chamada à API: não há o que registrar em TotvsRequests (igual ao Movidesk)
+            _logger.AddMessage($"Empresa {doc_company} não cadastrada em totvs.TotvsParameters.");
+
+            return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, statusCode = 0, apiCalled = false, message = $"Empresa {doc_company} não cadastrada." };
+        }
+
+        public Domain.Totvs.Dtos.Writes.Result BranchNotFound(string doc_company, string key, IEnumerable<string> branches)
+        {
+            // nenhuma chamada à API: não há o que registrar em TotvsRequests
+            var message = $"Loja(s) {String.Join(", ", branches)} fora de totvs.TotvsBranches da empresa {doc_company}.";
+            _logger.AddMessage(message);
+
+            return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, statusCode = 0, apiCalled = false, message = message };
+        }
+
+        // o 400 de chave inexistente da Totvs (KeyNotFound no xml-contents e nas buscas por chave, NotFound no list-balance-bonus) é um 404
+        private static bool IsNotFound(ApiResponse response)
+        {
+            if (response.StatusCode == 404)
+                return true;
+
+            if (response.StatusCode != 400 || String.IsNullOrWhiteSpace(response.Content))
+                return false;
+
+            try
+            {
+                return Newtonsoft.Json.Linq.JToken.Parse(response.Content) is Newtonsoft.Json.Linq.JArray messages
+                    && messages.OfType<Newtonsoft.Json.Linq.JObject>().Any(m => (string?)m["code"] is "KeyNotFound" or "NotFound" or "PathParamNotFound");
+            }
+            catch (JsonReaderException)
+            {
+                return false;
+            }
+        }
+
+        // as mensagens da Totvs (lista de DomainNotificationMessage), como no TotvsAccountsPayableService
+        private static string OnDemandMessage(ApiResponse response)
+        {
+            try
+            {
+                if (!String.IsNullOrWhiteSpace(response.Content) && Newtonsoft.Json.Linq.JToken.Parse(response.Content) is Newtonsoft.Json.Linq.JArray messages)
+                {
+                    var text = String.Join(" | ", messages.OfType<Newtonsoft.Json.Linq.JObject>().Select(m => $"{m["code"]}: {m["message"]}").Where(m => m != ": "));
+
+                    if (!String.IsNullOrEmpty(text))
+                        return text;
+                }
+            }
+            catch (JsonReaderException)
+            {
+                // corpo em texto: usa o corpo como veio
+            }
+
+            return String.IsNullOrWhiteSpace(response.Content) ? $"A Totvs devolveu {response.StatusCode} sem corpo." : Truncate(response.Content)!;
+        }
+
+        private static string? Truncate(string? content) => content?.Length > 800 ? content[..800] : content;
     }
 }

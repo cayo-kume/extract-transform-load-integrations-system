@@ -31,5 +31,15 @@
         /// busca uma pessoa jurídica por código (POST person/v2/legal-entities/search com personCodeList); mesmo contrato do GetCustomerByCode
         /// </summary>
         public Task<bool?> GetLegalEntityByCode(string user_name, string doc_company, int code);
+
+        /// <summary>
+        /// devolve os dados de uma loja pelo código ou CNPJ (GET person/v2/branches/{branchId}), sem gravar
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> GetBranches(string user_name, string doc_company, string branchId);
+
+        /// <summary>
+        /// devolve as estatísticas de compra e de crédito de um cliente nas lojas (GET person/v2/person-statistics), sem gravar
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> GetPersonStatistics(string user_name, string doc_company, int? customerCode, string? customerCpfCnpj, List<int>? branchCodes);
     }
 }

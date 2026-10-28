@@ -829,6 +829,38 @@ namespace Hangfire.Controllers.Totvs
         }
 
         /// <summary>
+        /// devolve os dados de uma loja pelo código (1 a 4 dígitos) ou CNPJ (GET person/v2/branches/{branchId}), sem gravar
+        /// </summary>
+        [HttpGet("Branches/{docCompany}/{branchId}")]
+        [Tags("TotvsPeople")]
+        public async Task<ActionResult> Branch(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [RegularExpression(@"^(\d{1,4}|\d{14})$")] string branchId
+        ) =>
+            ReadResponse(await _totvsPeopleService.GetBranches(userName, docCompany, branchId));
+
+        /// <summary>
+        /// devolve as estatísticas de compra e crédito de um cliente (GET person/v2/person-statistics): customerCode ou customerCpfCnpj, um dos
+        /// dois; branchCode repetido (sem ele, todas as lojas da empresa)
+        /// </summary>
+        [HttpGet("PersonStatistics/{docCompany}")]
+        [Tags("TotvsPeople")]
+        public async Task<ActionResult> PersonStatistics(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromQuery, Range(1, int.MaxValue)] int? customerCode,
+            [FromQuery, RegularExpression(@"^(\d{11}|\d{14})$")] string? customerCpfCnpj,
+            [FromQuery] List<int>? branchCode
+        )
+        {
+            if ((customerCode is null) == String.IsNullOrEmpty(customerCpfCnpj))
+                return BadRequest(new[] { new { field = "customerCode", message = "Informe customerCode ou customerCpfCnpj, um dos dois." } });
+
+            return ReadResponse(await _totvsPeopleService.GetPersonStatistics(userName, docCompany, customerCode, String.IsNullOrEmpty(customerCpfCnpj) ? null : customerCpfCnpj, branchCode));
+        }
+
+        /// <summary>
         /// resposta das leituras sem persistência (docs/PLANO-TOTVS-METODOS-FALTANTES.md §8.1, T11): 200 com o JSON ou o arquivo; 404 quando
         /// a Totvs não acha; 429 com Retry-After; 502 para 5xx, falta de resposta ou JSON inválido; 422 nos demais (empresa não cadastrada,
         /// 400 da Totvs)
