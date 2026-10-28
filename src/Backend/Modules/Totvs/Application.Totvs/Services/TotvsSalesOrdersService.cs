@@ -1051,5 +1051,81 @@ namespace Application.Totvs.Services
 
             return items;
         }
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> GetInvoices(string user_name, string doc_company, int branchCode, int orderCode, List<string>? invoiceStatus)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsGetSalesOrderInvoices);
+
+            var key = $"{branchCode}|{orderCode}";
+
+            try
+            {
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return _totvsService.CompanyNotFound(doc_company, key);
+
+                // as notas já chegam pelo orders/search (TotvsSaleOrdersInvoices): gravar a filha sem o pai quebraria o merge (§7.3). Pedido
+                // inexistente: 400 KeyNotFound (404 aqui)
+                return await _totvsService.ReadOnDemand(company, EnumJob.TotvsGetSalesOrderInvoices, user_name, key, HttpMethod.Get, TotvsQuery.Route("sales-order/v2/invoices", ("BranchCode", branchCode), ("OrderCode", orderCode), ("InvoiceStatusType", invoiceStatus)), null, "invoices");
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> GetPendingItems(string user_name, string doc_company, int branchCode, int orderCode)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsGetSalesOrderPendingItems);
+
+            var key = $"{branchCode}|{orderCode}";
+
+            try
+            {
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return _totvsService.CompanyNotFound(doc_company, key);
+
+                // pedido sem pendência responde 200 com items vazio, que aqui também é 200 (é a resposta: nada pendente)
+                return await _totvsService.ReadOnDemand(company, EnumJob.TotvsGetSalesOrderPendingItems, user_name, key, HttpMethod.Get, TotvsQuery.Route("sales-order/v2/pending-items", ("BranchCode", branchCode), ("OrderCode", orderCode)), null, null);
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> GetChangedBatchItems(string user_name, string doc_company, int branchCode, int orderCode, int? batchCode, DateTime? startDate, DateTime? endDate)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsGetSalesOrderChangedBatchItems);
+
+            var key = $"{branchCode}|{orderCode}";
+
+            try
+            {
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return _totvsService.CompanyNotFound(doc_company, key);
+
+                // a rota exige loja, pedido e o período (400 EmptyField, testado): não serve de leitura recorrente (veio da SO-1); sem período, desde 2000
+                return await _totvsService.ReadOnDemand(company, EnumJob.TotvsGetSalesOrderChangedBatchItems, user_name, key, HttpMethod.Get, TotvsQuery.Route("sales-order/v2/changed-batch-items", ("BranchCode", branchCode), ("OrderCode", orderCode), ("BatchCode", batchCode), ("StartDate", $"{startDate ?? new DateTime(2000, 1, 1):yyyy-MM-ddTHH:mm:ss}"), ("EndDate", $"{endDate ?? _totvsService.GetBatchTime():yyyy-MM-ddTHH:mm:ss}")), null, "items");
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
     }
 }

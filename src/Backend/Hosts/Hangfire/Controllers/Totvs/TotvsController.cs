@@ -1015,6 +1015,49 @@ namespace Hangfire.Controllers.Totvs
         }
 
         /// <summary>
+        /// devolve as notas de um pedido de venda (GET sales-order/v2/invoices), sem gravar; invoiceStatus repetido filtra a situação
+        /// </summary>
+        [HttpGet("SalesOrders/{docCompany}/{branchCode:int:min(1)}/{orderCode:int:min(1)}/Invoices")]
+        [Tags("TotvsSalesOrders")]
+        public async Task<ActionResult> SalesOrderInvoices(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            int branchCode,
+            int orderCode,
+            [FromQuery] List<string>? invoiceStatus
+        ) =>
+            ReadResponse(await _totvsSalesOrdersService.GetInvoices(userName, docCompany, branchCode, orderCode, invoiceStatus is { Count: > 0 } ? invoiceStatus : null));
+
+        /// <summary>
+        /// devolve os itens pendentes de um pedido de venda, com os preços líquidos (GET sales-order/v2/pending-items), sem gravar
+        /// </summary>
+        [HttpGet("SalesOrders/{docCompany}/{branchCode:int:min(1)}/{orderCode:int:min(1)}/PendingItems")]
+        [Tags("TotvsSalesOrders")]
+        public async Task<ActionResult> SalesOrderPendingItems(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            int branchCode,
+            int orderCode
+        ) =>
+            ReadResponse(await _totvsSalesOrdersService.GetPendingItems(userName, docCompany, branchCode, orderCode));
+
+        /// <summary>
+        /// devolve os itens de lote ligados a um pedido de venda (GET sales-order/v2/changed-batch-items), sem gravar; sem período, desde 2000
+        /// </summary>
+        [HttpGet("SalesOrders/{docCompany}/{branchCode:int:min(1)}/{orderCode:int:min(1)}/ChangedBatchItems")]
+        [Tags("TotvsSalesOrders")]
+        public async Task<ActionResult> SalesOrderChangedBatchItems(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            int branchCode,
+            int orderCode,
+            [FromQuery, Range(1, int.MaxValue)] int? batchCode,
+            [FromQuery] DateTime? startDate,
+            [FromQuery] DateTime? endDate
+        ) =>
+            ReadResponse(await _totvsSalesOrdersService.GetChangedBatchItems(userName, docCompany, branchCode, orderCode, batchCode, startDate, endDate));
+
+        /// <summary>
         /// resposta das leituras sem persistência (docs/PLANO-TOTVS-METODOS-FALTANTES.md §8.1, T11): 200 com o JSON ou o arquivo; 404 quando
         /// a Totvs não acha; 429 com Retry-After; 502 para 5xx, falta de resposta ou JSON inválido; 422 nos demais (empresa não cadastrada,
         /// 400 da Totvs)

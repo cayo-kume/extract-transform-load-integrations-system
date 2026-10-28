@@ -13,4 +13,7 @@ VALUES
 (130, 13103, 'TotvsGetMeasurementConversions', 'Conversões de unidade de um produto ou grupo (GET Products/{docCompany}/MeasurementConversions)', 0, 2),
 (130, 13104, 'TotvsGetCompositionProduct', 'Composição por produto (GET Products/{docCompany}/CompositionProduct)', 0, 2),
 (130, 13105, 'TotvsGetCompositionGroupProduct', 'Composição por grupo (GET Products/{docCompany}/CompositionGroupProduct)', 0, 2),
-(130, 13185, 'TotvsGetPurchaseOrderByKey', 'Integração de um pedido de compra por loja e número (GET PurchaseOrders/{docCompany}/{branchCode}/{orderCode})', 0, 2);
+(130, 13185, 'TotvsGetPurchaseOrderByKey', 'Integração de um pedido de compra por loja e número (GET PurchaseOrders/{docCompany}/{branchCode}/{orderCode})', 0, 2),
+(130, 13193, 'TotvsGetSalesOrderChangedBatchItems', 'Itens de lote ligados a um pedido de venda (GET SalesOrders/.../ChangedBatchItems)', 0, 2),
+(130, 13195, 'TotvsGetSalesOrderInvoices', 'Notas de um pedido de venda (GET SalesOrders/.../Invoices)', 0, 2),
+(130, 13196, 'TotvsGetSalesOrderPendingItems', 'Itens pendentes de um pedido de venda (GET SalesOrders/.../PendingItems)', 0, 2);

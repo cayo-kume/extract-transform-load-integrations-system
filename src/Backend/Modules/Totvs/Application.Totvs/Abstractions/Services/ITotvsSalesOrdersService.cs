@@ -33,5 +33,20 @@
         /// sincroniza as sugestões de faturamento, com pedidos e itens, pelo GET sales-order/v2/billing-suggestions (janela de alteração); só grava os novos ou alterados
         /// </summary>
         public Task<bool?> GetBillingSuggestions();
+
+        /// <summary>
+        /// devolve as notas de um pedido de venda (GET sales-order/v2/invoices), sem gravar
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> GetInvoices(string user_name, string doc_company, int branchCode, int orderCode, List<string>? invoiceStatus);
+
+        /// <summary>
+        /// devolve os itens pendentes de um pedido de venda, com os preços líquidos (GET sales-order/v2/pending-items), sem gravar
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> GetPendingItems(string user_name, string doc_company, int branchCode, int orderCode);
+
+        /// <summary>
+        /// devolve os itens de lote ligados a um pedido de venda (GET sales-order/v2/changed-batch-items), sem gravar
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> GetChangedBatchItems(string user_name, string doc_company, int branchCode, int orderCode, int? batchCode, DateTime? startDate, DateTime? endDate);
     }
 }
