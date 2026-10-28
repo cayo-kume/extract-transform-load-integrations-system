@@ -3767,3 +3767,30 @@ cliente de teste 58243 seguem sem aparecer no saldo (o "Saldo atual" do PESFC054
 fora da venda, não do módulo.
 
 **Ficou na homologação:** R$ 0,02 consumidos do bônus do cliente 55566 na loja 1.
+
+### 10.44 Banco e host locais (28/10/2026)
+
+Num SQL Server 2025 em docker (`localhost,1433`, banco `Company`, a string de conexão do `appsettings.json` do host), com um migrador DbUp
+do rascunho que lê a conexão do `appsettings` sem imprimi-la.
+
+**Banco:**
+* A base compartilhada (`Infrastructure.Shared`, `Script001`–`007`) já estava aplicada; os **78 scripts do Totvs** (`Script001`–`079`, menos o
+  `Script003` `.example`) rodaram **sem erro**, um por transação. Ficaram 153 tabelas `Totvs*` em `totvs` e 151 em `untreated`.
+* **Jobs x `EnumJob`:** os 122 valores do `EnumJob` estão em `auditing.Jobs` com o mesmo título; nenhuma integração do banco fora do enum,
+  nenhum título repetido, nenhum job com pai inexistente. As escritas têm `IntervalTimeInMinutes = 0` (o único 120 entre os `TotvsPost*` é
+  o `TotvsPostCompositions`, leitura recorrente do catálogo).
+* **Procedures:** as **151** `sp_Totvs*_Sync` (geradas pelo `dbo.sp_Create_Merge_Procedure`) executam sem erro com as tabelas vazias
+  (`@Guid` novo, dentro de transação desfeita).
+
+**Host (`Hosts/Hangfire`, `http://localhost:5252`), sem credencial da Totvs no banco:** 10 de 10 chamadas com a resposta esperada:
+escrita sem `X-User-Name` (400), `docCompany` com 13 dígitos (400), corpo inválido (400 com o campo), escrita com o grupo desligado (422,
+contas a pagar e pedido de compra), pedidos preferenciais com lista vazia sem `?clear=true` (400) e com ele (passa e volta o 422 do grupo),
+leitura sob demanda e leitura de arquivo com a empresa não cadastrada (422) e rota inexistente (404).
+
+**Hangfire:** o `AddHangfireService` e o `UseHangfireDashboard` estão comentados no host e nenhum job do Totvs está registrado como recorrente;
+não há `DisableConcurrentExecution` em lugar nenhum. A proteção contra execução simultânea (carga inicial dos saldos) continua a fazer
+quando os jobs forem registrados.
+
+**Não verificado:** o caminho com a Totvs pelo host (200, 404, 409 da trava, 429, 502 e a gravação em `totvs.TotvsRequests` com o
+`status_code` e a máscara), que pede uma empresa em `totvs.TotvsParameters` com credenciais (o `Script003` é `.example`); os registros
+antigos de `TotvsRequests` sem máscara (o banco local começou vazio).

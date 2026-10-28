@@ -761,8 +761,10 @@ corpo de verdade leva só um, como o validador da rota exige.
 O plano de métodos faltantes (`docs/PLANO-TOTVS-METODOS-FALTANTES.md`) está implementado em todas as ondas; o que falta está no fim da §10 de
 cada fase ("Não verificado"). Em resumo:
 
-* **Execução em banco e pelo host:** os scripts e as rotas ainda não rodaram pelo host; a modelagem foi conferida com chamadas reais à API
-  e as escritas com um console contra a homologação, sem banco.
+* **Execução em banco e pelo host (plano, §10.44):** os scripts 001 a 079 rodaram num SQL Server local (DbUp, com a base compartilhada), as
+  151 procedures de sincronização executam, e os jobs batem com o `EnumJob`. O host respondeu certo às rotas que não dependem da Totvs
+  (400 de validação e `?clear=true`, 422 de escrita desligada e de empresa não cadastrada). Falta o caminho com a Totvs pelo host (200, 404,
+  409, 502 e a gravação em `TotvsRequests`), que pede as credenciais em `totvs.TotvsParameters`.
 * **Homologação:** as ondas 3, 4 e 5 foram testadas (plano, §10.19, §10.25 e §10.32 a §10.43), inclusive a troca de estágio da parcela
   (AP-1), a inclusão de referência, os lotes e o consumo de bônus. Sem verificar: a sugestão por nuance (503 sem corpo; a produção não usa
   lote), a classificação no tipo de teste 9001 (`ORA-02291`), o vínculo com contagem real (o formato foi conferido; falta uma contagem sem
