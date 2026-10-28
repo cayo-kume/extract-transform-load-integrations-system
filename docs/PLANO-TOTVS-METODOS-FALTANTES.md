@@ -2235,7 +2235,7 @@ casos particulares delas apontam para cá.
 | T3 | **Formato dos enums no corpo** | D6, PE6, SO11, §5 (`ProductValueType` C/P, `PromotionStatusType` A/B/E), §8.10 | O swagger mistura três formatos: número da descrição (maioria), nome (`"NotInformed"` no reset de cliente) e letra (`C`/`P`, `N`/`S`). Cada enum de escrita declara o seu formato no DTO (um conversor por formato), e o primeiro teste de cada rota confirma |
 | T4 | **Escrita ligada por configuração** | PE5, PR8 | Cada grupo de escrita atrás de `Totvs:Writes:<Grupo>:Enabled`, falso por padrão; ligar é decisão do negócio, não do deploy |
 | T5 | **Repetição de escrita não idempotente** | SO6, DP2, §3.4.5 | Além de não repetir em 5xx (§1.2), recusar com **409** a mesma rota + chave + corpo que já conste com sucesso em `TotvsRequests` nos últimos 10 min |
-| T6 | **Dados pessoais em `TotvsRequests`** | PE7 | `request_body` e `response_body` com documentos, conta bancária e chave PIX mascarados; arquivos (XML, PDF) registrados só com tipo e tamanho (§8.1) |
+| T6 | **Dados pessoais em `TotvsRequests`** | PE7 | `request_body` e `response_body` com documentos, conta bancária e chave PIX mascarados; arquivos (XML, PDF) registrados só com tipo e tamanho (§8.1). **Implementada em 28/10/2026** (§10.18): só nos corpos; a rota e o `field_key_value` ficam inteiros |
 | T7 | **Reler depois da escrita** | D3, PE11, SO10 | Não: o job da leitura traz em até 3 min, e a resposta devolve a chave para o chamador usar a leitura sob demanda |
 | T8 | **Conferência local antes de escrever** | D4, DP7, SO7 | Só quando o registro já está no banco; senão a Totvs valida |
 | T9 | **Catálogos: como saber o que mudou** | §3.2, §4.1, §5.1, §7.1, F5 | Com `maxChangeFilterDate` na resposta: janela pelo banco, como as leituras recorrentes. Sem ela: leitura inteira com o **hash numa coluna `json_hash`** da própria tabela, carregado do banco (F5), em vez do cache em memória das comissões, que é refeito a cada 2 h |
@@ -3047,4 +3047,41 @@ pelo `filter.change` do `orders/search` (§7.4); o `Script070` em banco e as rot
 
 **Onda 3 concluída** (AP-1, PE-5, PR-4, PO-2 e SO-3), toda conferida só com a Totvs falsa: falta a rodada em homologação (T1, com o
 usuário de integração da §1.3) e a autenticação dos endpoints de inbound (T2) antes de ligar qualquer grupo de escrita em produção. A onda 4
-(AP-2, PE-6, PR-5, PO-3, SO-4) depende disso e da T6 (mascaramento) para os clientes.
+(AP-2, PE-6, PR-5, PO-3, SO-4) depende disso; a T6 (mascaramento), que a PE-6 pedia para os clientes, entrou em seguida (§10.18).
+
+### 10.18 T6: mascaramento dos dados pessoais em `TotvsRequests` (28/10/2026)
+
+Adiantada da onda 4 porque não depende da homologação: a PE-6 (clientes PF e PJ) grava CPF, RG, CNH, passaporte, conta e PIX no
+`request_body`, e as leituras sob demanda de cliente (`GetCustomerByCode`) já gravavam o cadastro inteiro no `response_body`.
+
+**Onde:** `TotvsMasking.Body` (`Application.Totvs/Services`), chamado pelo `TotvsService.SaveRequest` nos dois corpos. Como toda chamada
+registrada passa pelo `SaveRequest` (leituras sob demanda, escritas pela base comum, o fluxo próprio da AP-1 e a cópia da base T11 no
+`TotvsInvoicesService`), nenhum service mudou.
+
+**Regra:**
+
+| Campo (nome no JSON, sem diferença de maiúsculas, em qualquer nível) | Máscara |
+|---|---|
+| `cpf`, `personCpf`, `sellerCpf`, `rg`, `rgIe`, `ctps`, `ctpsSerial`, `pisNumber`, `ricNumber`, `passportNumber`, `foreignDocumentNumber`, `voterRegistrationNumber`, `driverLicenseNumber`, `driverLicenseRegistrationNumber`, `driverLicenseSecurityNumber`, `accountNumber`, `accountDigit`, `pixKey` | sempre |
+| `*CpfCnpj`, `*CpfCnpjList` e `cpfPartner` | só quando o valor é CPF (11 dígitos, com ou sem pontuação): CNPJ é dado da empresa e fica aberto |
+
+* O valor vira `*` com os **2 últimos caracteres** (`*********01`), para conferir com quem chamou; valores de até 4 caracteres (o dígito da
+  conta) e finais com escape do JSON somem inteiros. Número vira texto (`12345678901` → `"*********01"`); `null`, vazio e booleano ficam.
+* Trabalha sobre o **texto**, sem desserializar: vale também na resposta cortada em 800 caracteres e não muda o resto do corpo
+  (espaços, ordem, casas decimais). Listas de valores (`personCpfCnpjList`) são mascaradas item a item; em listas de objetos
+  (`bankAccounts`), os campos de dentro.
+* **A rota e o `field_key_value` ficam inteiros.** Eles são a busca do registro, e a trava T5 compara a chave: com a chave mascarada, dois
+  CPFs com o mesmo final e a mesma mensagem (envio em lote) seriam tomados por repetição. Hoje levam CPF a chave das mensagens e das
+  estatísticas da pessoa sem `personCode`, a do saldo de bônus, a dos itens pendentes de condicional sem `personCode` e a da troca de estágio com
+  `supplierCpfCnpj`, e a rota das estatísticas (`CustomerCpfCnpj` na query).
+* **Trava T5:** o banco guarda o corpo mascarado, então a comparação usa o novo corpo com a mesma máscara; a chave inteira separa o que a
+  máscara igualaria.
+* `auditing.Logs` (mensagens com a chave) e a resposta devolvida a quem chamou não mudam: a T6 trata só de `TotvsRequests`.
+
+**Testes (console de rascunho):** CPF texto e número, com espaços e maiúsculas; `*CpfCnpj` com CPF formatado (mascarado) e com CNPJ (fica);
+lista mista de CPF e CNPJ; conta, dígito e PIX dentro de `bankAccounts`; documentos dentro de `individualAdditionals` (o `socialName` fica);
+`null`, vazio e booleano; escape no fim; JSON cortado; texto de exceção; `PostMessages` por CPF grava os corpos sem o CPF e a chave inteira,
+envia o CPF inteiro à Totvs, devolve 409 na repetição e chama para outro CPF com o mesmo final. As fases da onda 3 rodaram de novo sem
+falha.
+
+**Não verificado:** os registros que já estão em `TotvsRequests` continuam sem máscara (nenhum script os reescreve); o host e o banco.

@@ -137,8 +137,10 @@ namespace Application.Totvs.Services
                     route: route,
                     doc_company: doc_company,
                     field_key_value: field_key_value,
-                    request_body: requestBody,
-                    response_body: responseBody,
+                    // T6: documentos, conta e PIX mascarados nos corpos; a chave fica inteira, é por ela que o registro é procurado (e a trava T5
+                    // compara)
+                    request_body: TotvsMasking.Body(requestBody),
+                    response_body: TotvsMasking.Body(responseBody),
                     is_success: isSuccess,
                     status_code: statusCode
                 )
@@ -360,8 +362,11 @@ namespace Application.Totvs.Services
             // request_date é gravado no horário de Brasília (Request)
             var since = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time")).AddMinutes(-RepeatLockMinutes);
 
+            // o banco guarda o corpo mascarado (T6): a comparação é com a mesma máscara, e a chave inteira separa quem a máscara igualaria
+            var maskedBody = TotvsMasking.Body(requestBody);
+
             var previous = (await _totvsRepository.GetRecentRequests(company.doc_company!, route, key, since))
-                .FirstOrDefault(x => x is not null && x.request_body == requestBody && (x.is_success || x.status_code == 0 || x.status_code >= 500));
+                .FirstOrDefault(x => x is not null && x.request_body == maskedBody && (x.is_success || x.status_code == 0 || x.status_code >= 500));
 
             if (previous is null)
                 return null;

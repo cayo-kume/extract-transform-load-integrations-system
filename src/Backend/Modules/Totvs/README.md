@@ -154,7 +154,7 @@ Os nomes dos métodos são os da **documentação oficial** (`PostSearch*`, `Get
 | `GetCompanys` / `GetCompany` | Empresas de `totvs.TotvsParameters` (em cache) / uma empresa pelo CNPJ |
 | `GetBranchCodes` / `GetBrandBranchCodes` | Lojas da empresa / lojas da marca (mesma raiz de CNPJ da matriz), lidas de `totvs.TotvsBranches` sem cache |
 | `GetToken` / `RemoveToken` | Token do `authorization/v2/token` em cache até 5 min antes do `expires_in`; um 401 tira o token do cache |
-| `SaveRequest` | Grava uma chamada sob demanda em `totvs.TotvsRequests`, ligada ao `Execution` do log aberto por quem chama. A rota é gravada sem o token, e o filtro enviado vai em `request_body` |
+| `SaveRequest` | Grava uma chamada sob demanda em `totvs.TotvsRequests`, ligada ao `Execution` do log aberto por quem chama. A rota é gravada sem o token, e o filtro enviado vai em `request_body`. Documentos da pessoa física, conta bancária e chave PIX são mascarados nos dois corpos (T6, `TotvsMasking`): ficam os 2 últimos caracteres, e campo de CPF ou CNPJ só é mascarado quando traz CPF. A rota e o `field_key_value` ficam inteiros, para a busca e a trava de repetição |
 
 **Leituras recorrentes**
 
