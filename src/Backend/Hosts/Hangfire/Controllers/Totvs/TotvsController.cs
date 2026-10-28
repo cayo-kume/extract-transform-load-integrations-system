@@ -319,6 +319,42 @@ namespace Hangfire.Controllers.Totvs
         }
 
         /// <summary>
+        /// sincroniza os produtos similares (GET product/v2/similar)
+        /// </summary>
+        [HttpGet("Products/Similar")]
+        [Tags("TotvsProducts")]
+        public async Task<ActionResult> ProductSimilar()
+        {
+            var result = await _totvsProductsService.GetSimilar();
+
+            return Ok($"Records integrated successfully.");
+        }
+
+        /// <summary>
+        /// sincroniza os lotes de todas as lojas (POST product/v2/batch/search)
+        /// </summary>
+        [HttpPost("Products/Batches")]
+        [Tags("TotvsProducts")]
+        public async Task<ActionResult> ProductBatches()
+        {
+            var result = await _totvsProductsService.PostSearchBatch();
+
+            return Ok($"Records integrated successfully.");
+        }
+
+        /// <summary>
+        /// confere os produtos de cada marca com as referências gravadas e recupera os que faltam (POST product/v2/product-codes/search)
+        /// </summary>
+        [HttpPost("Products/ProductCodes")]
+        [Tags("TotvsProducts")]
+        public async Task<ActionResult> ProductCodes()
+        {
+            var result = await _totvsProductsService.PostSearchProductCodes();
+
+            return Ok($"Records integrated successfully.");
+        }
+
+        /// <summary>
         /// sincroniza o catálogo de tipos de classificação de produto (GET product/v2/classificationType)
         /// </summary>
         [HttpGet("Products/ClassificationTypes")]

@@ -64,6 +64,11 @@
         TotvsPostSearchPriceTables = 13092,   //Script053_Insert_Totvs_Product_Prices_Jobs_Into_Jobs_Table.sql
         TotvsGetPromotion = 13093,   //Script053_Insert_Totvs_Product_Prices_Jobs_Into_Jobs_Table.sql
 
+        // similares e lotes (120 min) e a conferência diária das referências (fase PR-2, parte 3); 13096 reservado (PR2)
+        TotvsGetSimilar = 13094,   //Script056_Insert_Totvs_Product_Similar_And_Batches_Jobs_Into_Jobs_Table.sql
+        TotvsPostSearchBatch = 13095,   //Script056_Insert_Totvs_Product_Similar_And_Batches_Jobs_Into_Jobs_Table.sql
+        TotvsPostSearchProductCodes = 13097,   //Script056_Insert_Totvs_Product_Similar_And_Batches_Jobs_Into_Jobs_Table.sql
+
         // escritas (TotvsController, com X-User-Name; não recorrentes): docs/PLANO-TOTVS-METODOS-FALTANTES.md §9.4
         TotvsPostDuplicates = 13018,   //Script032_Insert_Totvs_Accounts_Payable_Writes_Jobs_Into_Jobs_Table.sql (fase AP-2)
         TotvsPostGroupDuplicates = 13019,   //Script032_Insert_Totvs_Accounts_Payable_Writes_Jobs_Into_Jobs_Table.sql (fase AP-2)

@@ -567,5 +567,39 @@ namespace Application.Totvs.Handlers.Commands
                      WHERE DOC_COMPANY = '{doc_company}'
                      AND BRANCHCODE = {branchCode}";
         }
+
+        public string CreateGetSimilarHashesQuery(string doc_company)
+        {
+            // produtos gravados com o hash do JSON (lastChageDate vem 0001-01-01: o hash diz o que mudou)
+            return @$"SELECT PRODUCTCODE, JSON_HASH
+                     FROM TOTVS.TOTVSPRODUCTSSIMILAR
+                     WHERE DOC_COMPANY = '{doc_company}'";
+        }
+
+        public string CreateGetSimilarLastWindowEndQuery(string doc_company)
+        {
+            // fim da última janela lida e gravada (as janelas são lidas em ordem de data e gravadas só inteiras)
+            return @$"SELECT MAX(CHANGEWINDOWEND)
+                     FROM TOTVS.TOTVSPRODUCTSSIMILAR
+                     WHERE DOC_COMPANY = '{doc_company}'";
+        }
+
+        public string CreateGetBatchesHashesQuery(string doc_company, int branchCode)
+        {
+            // lotes gravados da loja com o hash do JSON (a resposta não tem data de alteração: a leitura é inteira)
+            return @$"SELECT BRANCHCODE, BATCHCODE, PRODUCTCODE, JSON_HASH
+                     FROM TOTVS.TOTVSBATCHES
+                     WHERE DOC_COMPANY = '{doc_company}'
+                     AND BRANCHCODE = {branchCode}";
+        }
+
+        public string CreateGetSkusProductCodesQuery(string doc_company, int branchInfoCode)
+        {
+            // produtos gravados das referências da matriz, para a conferência do product-codes/search
+            return @$"SELECT [CODE]
+                     FROM TOTVS.TOTVSSKUSCOLORSPRODUCTS
+                     WHERE DOC_COMPANY = '{doc_company}'
+                     AND BRANCHINFOCODE = {branchInfoCode}";
+        }
     }
 }

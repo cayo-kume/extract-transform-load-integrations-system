@@ -84,5 +84,10 @@
         public string CreateGetPriceTableItemsStateQuery(string doc_company, int priceTableCode);
         public string CreateGetPriceTableItemsChangesQuery(string doc_company, int priceTableCode, List<int> productCodes);
         public string CreateGetPromotionsHashesQuery(string doc_company, int branchCode);
+
+        public string CreateGetSimilarHashesQuery(string doc_company);
+        public string CreateGetSimilarLastWindowEndQuery(string doc_company);
+        public string CreateGetBatchesHashesQuery(string doc_company, int branchCode);
+        public string CreateGetSkusProductCodesQuery(string doc_company, int branchInfoCode);
     }
 }

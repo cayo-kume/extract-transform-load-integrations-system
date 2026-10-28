@@ -27,6 +27,8 @@ namespace Application.Totvs.Services
         private readonly ITotvsProductsRepository _totvsProductsRepository;
         private readonly IValidator<Domain.Totvs.Dtos.Reads.Products.Reference> _referenceValidator;
         private readonly IValidator<Domain.Totvs.Dtos.Reads.Products.Values.ProductBalance> _productBalanceValidator;
+        private readonly IValidator<Domain.Totvs.Dtos.Reads.Products.Similars.ProductSimilar> _productSimilarValidator;
+        private readonly IValidator<Domain.Totvs.Dtos.Reads.Products.Batches.Batch> _batchValidator;
 
         private const string SkusKey = "Totvs:Skus";
         private const string BalancesKey = "Totvs:Balances";
@@ -34,6 +36,20 @@ namespace Application.Totvs.Services
 
         // uma loja com os 17 saldos: 100 produtos por página em ~16 s; 1000 em ~60 s; 15 lojas com 100 deram 502 (testado)
         private const int BalancesPageSize = 100;
+
+        // máximos das rotas (swagger): similar 100; lote 1000
+        private const int SimilarPageSize = 100;
+
+        // volume máximo de uma janela do similar antes de dividi-la (o tempo da chamada cresce com o volume da janela, testado)
+        private const int SimilarWindowItems = 1000;
+        private const int BatchesPageSize = 1000;
+
+        // product-codes aceita 100 000, mas com o branchInfo da marca uma página assim deu 502; 5000 respondeu em ~22 s (testado)
+        private const int ProductCodesPageSize = 5000;
+
+        // conferência: referências recuperadas por execução (o resto fica para o dia seguinte) e quantas por chamada
+        private const int MaxRecoveredReferences = 500;
+        private const int RecoveredReferencesPerCall = 50;
 
         // os códigos de preço, custo e saldo do cadastro (PRDFL003 e PRDFL002) vão de 1 a 999
         private const int MaxValueCode = 999;
@@ -73,10 +89,12 @@ namespace Application.Totvs.Services
             ITotvsService totvsService,
             ITotvsProductsRepository totvsProductsRepository,
             IValidator<Domain.Totvs.Dtos.Reads.Products.Reference> referenceValidator,
-            IValidator<Domain.Totvs.Dtos.Reads.Products.Values.ProductBalance> productBalanceValidator
+            IValidator<Domain.Totvs.Dtos.Reads.Products.Values.ProductBalance> productBalanceValidator,
+            IValidator<Domain.Totvs.Dtos.Reads.Products.Similars.ProductSimilar> productSimilarValidator,
+            IValidator<Domain.Totvs.Dtos.Reads.Products.Batches.Batch> batchValidator
         ) =>
-            (_apiClient, _logger, _cache, _totvsService, _totvsProductsRepository, _referenceValidator, _productBalanceValidator) =
-            (apiClient, logger, cache, totvsService, totvsProductsRepository, referenceValidator, productBalanceValidator);
+            (_apiClient, _logger, _cache, _totvsService, _totvsProductsRepository, _referenceValidator, _productBalanceValidator, _productSimilarValidator, _batchValidator) =
+            (apiClient, logger, cache, totvsService, totvsProductsRepository, referenceValidator, productBalanceValidator, productSimilarValidator, batchValidator);
 
         public async Task<bool?> PostSearchBalances()
         {
@@ -495,6 +513,594 @@ namespace Application.Totvs.Services
             }
 
             return (result.items.Select((x, i) => (x, (JObject)json[i])).ToList(), result.totalPages);
+        }
+
+        public async Task<bool?> GetSimilar()
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsGetSimilar);
+
+            var totalInseridos = 0;
+
+            try
+            {
+                foreach (var company in await _totvsService.GetCompanys())
+                {
+                    var batchTime = _totvsService.GetBatchTime();
+
+                    // lastChageDate vem 0001-01-01 (testado): a janela começa no fim da última janela lida e gravada − 1 h (banco vazio,
+                    // desde 2000); sem ProductsCode a rota exige a janela (400 InformOneOfTheFields)
+                    var lastWindowEnd = await _totvsProductsRepository.GetSimilarLastWindowEnd(company.doc_company!);
+                    var since = lastWindowEnd?.AddHours(-1) ?? new DateTime(2000, 1, 1);
+
+                    // o que já está gravado, com o hash de cada produto (sem cache: a tabela guarda o hash, T9), lido só se vier produto
+                    Dictionary<int, string>? stored = null;
+
+                    async Task<Dictionary<int, string>> Stored() =>
+                        stored ??= (await _totvsProductsRepository.GetSimilarHashes(company.doc_company!))
+                            .Where(x => x != null)
+                            .GroupBy(x => x!.productCode)
+                            .ToDictionary(g => g.Key, g => g.First()!.json_hash);
+
+                    var (saved, _) = await ReadSimilarWindow(company, since, batchTime, batchTime, Stored);
+
+                    totalInseridos += saved;
+                }
+
+                _logger.AddMessage(
+                    $"Concluída com sucesso: {totalInseridos} registro(s) novo(s) ou atualizado(s) inserido(s)!"
+                );
+
+                return true;
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        /// <summary>
+        /// lê uma janela do product/v2/similar. O tempo de cada chamada cresce com o volume da janela, não com a página (o dia da
+        /// migração, com 19 mil produtos, levou ~60 s por página, mesmo de tamanho 1; uma hora com 6 mil, ~10 s; um mês com 700, ~1 s;
+        /// testado): a 1ª página diz o volume, e a janela acima de SimilarWindowItems é dividida ao meio (até 1 minuto), em ordem de
+        /// data. A janela é gravada só inteira, com o seu fim em changeWindowEnd: uma falha para a leitura, e a próxima execução
+        /// continua da última janela completa. Devolve os produtos gravados e se a leitura chegou ao fim
+        /// </summary>
+        private async Task<(int saved, bool ok)> ReadSimilarWindow(Domain.Totvs.Entities.Parameters.Company company, DateTime start, DateTime end, DateTime batchTime, Func<Task<Dictionary<int, string>>> stored)
+        {
+            var items = new List<(Domain.Totvs.Dtos.Reads.Products.Similars.ProductSimilar dto, JObject json)>();
+            var page = 1;
+            var totalPages = 1;
+
+            while (page <= totalPages)
+            {
+                var query = new Dictionary<string, string>
+                {
+                    { "StartChangeDate", $"{start:yyyy-MM-ddTHH:mm:ss}" },
+                    { "EndChangeDate", $"{end:yyyy-MM-ddTHH:mm:ss}" },
+                    { "Page", page.ToString() },
+                    { "PageSize", SimilarPageSize.ToString() }
+                };
+
+                var response = await SendGetRequest(company, "product/v2/similar", query);
+                var result = ParsePage<Domain.Totvs.Dtos.Reads.Products.Similars.ProductSimilar>(company, "product/v2/similar", response, $"janela {start:dd/MM/yyyy HH:mm:ss} a {end:dd/MM/yyyy HH:mm:ss}, página {page}");
+
+                if (result is null)
+                    return (0, false);
+
+                if (page == 1 && result.Value.count > SimilarWindowItems && end - start > TimeSpan.FromMinutes(1))
+                {
+                    var middle = start + (end - start) / 2;
+                    var (first, ok) = await ReadSimilarWindow(company, start, middle, batchTime, stored);
+
+                    if (!ok)
+                        return (first, false);
+
+                    var (second, ok2) = await ReadSimilarWindow(company, middle, end, batchTime, stored);
+
+                    return (first + second, ok2);
+                }
+
+                items.AddRange(result.Value.items);
+
+                totalPages = result.Value.totalPages;
+                page++;
+            }
+
+            if (items.Count == 0)
+                return (0, true);
+
+            return (await SaveSimilar(company.doc_company!, batchTime, end, items, await stored()), true);
+        }
+
+        /// <summary>
+        /// valida, monta as entidades (com o mesmo horário de lote e o hash do JSON) e grava só os produtos novos ou com hash diferente
+        /// do gravado. Devolve a quantidade de produtos gravados.
+        /// </summary>
+        private async Task<int> SaveSimilar(
+            string doc_company,
+            DateTime batchTime,
+            DateTime changeWindowEnd,
+            List<(Domain.Totvs.Dtos.Reads.Products.Similars.ProductSimilar dto, JObject json)> items,
+            Dictionary<int, string> stored)
+        {
+            var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Products.Similars.ProductSimilar record, string json)>();
+
+            foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.productCode) != 0).GroupBy(x => x.dto.productCode).Select(g => g.Last()))
+            {
+                var json = item.json.ToString(Formatting.None);
+                var hash = _logger.ComputeSha256Hash(json);
+
+                // sem data de alteração: só regrava quando o JSON mudou
+                if (stored.TryGetValue(ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.productCode), out var storedHash) && storedHash == hash)
+                    continue;
+
+                var validations = _productSimilarValidator.Validate(item.dto);
+
+                if (validations.Errors.Count > 0)
+                {
+                    var message = String.Empty;
+                    validations.Errors.ForEach(s => message += $"similares do produto {item.dto.productCode}: {s.ErrorMessage}\n");
+                    _logger.AddMessage(message);
+                }
+
+                _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Similars.ProductSimilar(doc_company, batchTime, changeWindowEnd, hash, item.dto), json));
+            }
+
+            if (_listSomenteNovos.Count == 0)
+                return 0;
+
+            await _totvsProductsRepository.BulkInsertIntoTotvsProductsSimilar(_listSomenteNovos.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
+
+            foreach (var (record, json) in _listSomenteNovos)
+            {
+                _logger.AddRecord(record.productCode.ToString(), json);
+                stored[record.productCode] = record.json_hash;
+            }
+
+            return _listSomenteNovos.Count;
+        }
+
+        public async Task<bool?> PostSearchBatch()
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsPostSearchBatch);
+
+            var totalInseridos = 0;
+
+            try
+            {
+                foreach (var company in await _totvsService.GetCompanys())
+                {
+                    // branchCode filtra uma loja por chamada; sem lojas em TotvsBranches não há o que ler
+                    var branchCodes = await _totvsService.GetBranchCodes(company);
+
+                    if (branchCodes.Count == 0)
+                    {
+                        _logger.AddMessage($"Empresa {company.doc_company} sem lojas em totvs.TotvsBranches: rode o GetBranchesList antes.");
+                        continue;
+                    }
+
+                    foreach (var branchCode in branchCodes)
+                        totalInseridos += await SyncBatches(company, branchCode);
+                }
+
+                _logger.AddMessage(
+                    $"Concluída com sucesso: {totalInseridos} registro(s) novo(s) ou atualizado(s) inserido(s)!"
+                );
+
+                return true;
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        /// <summary>
+        /// lotes de uma loja, lidos inteiros: a resposta não tem data de alteração, e a rota exige um produto ou um período
+        /// (400 BatchMandatoryFields, testado), então o período vai desde 2000; o hash do JSON de cada lote, comparado com o json_hash
+        /// gravado (T9), diz o que mudou. Cada página é gravada ao chegar. Devolve a quantidade de lotes gravados
+        /// </summary>
+        private async Task<int> SyncBatches(Domain.Totvs.Entities.Parameters.Company company, int branchCode)
+        {
+            var batchTime = _totvsService.GetBatchTime();
+            Dictionary<(int, int, int), string>? stored = null;
+            var total = 0;
+            var page = 1;
+            var totalPages = 1;
+
+            while (page <= totalPages)
+            {
+                var requestBody = JsonConvert.SerializeObject(new
+                {
+                    filter = new
+                    {
+                        branchCode,
+                        updatedDateStart = "2000-01-01T00:00:00",
+                        updatedDateEnd = $"{batchTime:yyyy-MM-ddTHH:mm:ss}"
+                    },
+                    page,
+                    pageSize = BatchesPageSize,
+                    // o swagger escreve "additionalFieds" e a resposta "additionalFields": vão as duas grafias (a API aceita, testado)
+                    expand = "additionalFieds,additionalFields"
+                });
+
+                var response = await SendValueRequest(company, "product/v2/batch/search", requestBody);
+                var result = ParsePage<Domain.Totvs.Dtos.Reads.Products.Batches.Batch>(company, "product/v2/batch/search", response, $"loja {branchCode}, página {page}");
+
+                if (result is null)
+                    return total;
+
+                if (result.Value.items.Count > 0)
+                {
+                    // o que já está gravado da loja, com o hash de cada lote (sem cache: a tabela guarda o hash, T9)
+                    stored ??= (await _totvsProductsRepository.GetBatchesHashes(company.doc_company!, branchCode))
+                        .Where(x => x != null)
+                        .GroupBy(x => (x!.branchCode, x.batchCode, x.productCode))
+                        .ToDictionary(g => g.Key, g => g.First()!.json_hash);
+
+                    total += await SaveBatches(company.doc_company!, batchTime, result.Value.items, stored);
+                }
+
+                totalPages = result.Value.totalPages;
+                page++;
+            }
+
+            return total;
+        }
+
+        /// <summary>
+        /// valida, monta as entidades (com o mesmo horário de lote e o hash do JSON) e grava só os lotes novos ou com hash diferente
+        /// do gravado; lote sem batchCode (a chave) vai para o log e não é gravado. Devolve a quantidade de lotes gravados.
+        /// </summary>
+        private async Task<int> SaveBatches(
+            string doc_company,
+            DateTime batchTime,
+            List<(Domain.Totvs.Dtos.Reads.Products.Batches.Batch dto, JObject json)> items,
+            Dictionary<(int, int, int), string> stored)
+        {
+            var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Products.Batches.Batch record, string json)>();
+
+            foreach (var item in items)
+            {
+                var key = (ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.branchCode), ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.batchCode), ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.productCode));
+                var json = item.json.ToString(Formatting.None);
+                var hash = _logger.ComputeSha256Hash(json);
+
+                if (key.Item1 != 0 && key.Item2 != 0 && key.Item3 != 0 && stored.TryGetValue(key, out var storedHash) && storedHash == hash)
+                    continue;
+
+                var validations = _batchValidator.Validate(item.dto);
+
+                if (validations.Errors.Count > 0)
+                {
+                    var message = String.Empty;
+                    validations.Errors.ForEach(s => message += $"lote {item.dto.batchCode} do produto {item.dto.productCode} na loja {item.dto.branchCode}: {s.ErrorMessage}\n");
+                    _logger.AddMessage(message);
+                }
+
+                if (key.Item1 == 0 || key.Item2 == 0 || key.Item3 == 0)
+                    continue;
+
+                _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Batches.Batch(doc_company, batchTime, hash, item.dto), json));
+            }
+
+            // o mesmo lote pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
+            var records = _listSomenteNovos.GroupBy(x => (x.record.branchCode, x.record.batchCode, x.record.productCode)).Select(g => g.Last()).ToList();
+
+            if (records.Count == 0)
+                return 0;
+
+            await _totvsProductsRepository.BulkInsertIntoTotvsBatches(records.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
+
+            foreach (var (record, json) in records)
+            {
+                _logger.AddRecord($"{record.branchCode}|{record.batchCode}|{record.productCode}", json);
+                stored[(record.branchCode, record.batchCode, record.productCode)] = record.json_hash;
+            }
+
+            return records.Count;
+        }
+
+        public async Task<bool?> PostSearchProductCodes()
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsPostSearchProductCodes);
+
+            var totalInseridos = 0;
+
+            try
+            {
+                foreach (var company in await _totvsService.GetCompanys())
+                {
+                    foreach (var (baseBranchCode, brandClassificationCode) in BaseBranchCodes)
+                    {
+                        var stored = (await _totvsProductsRepository.GetSkusProductCodes(company.doc_company!, baseBranchCode)).ToHashSet();
+
+                        // sem referências gravadas a conferência seria a carga inteira: é o trabalho do PostSearchReferences
+                        if (stored.Count == 0)
+                        {
+                            _logger.AddMessage($"Empresa {company.doc_company}, matriz {baseBranchCode}: nenhum produto gravado em totvs.TotvsSkusColorsProducts; rode o PostSearchReferences antes da conferência.");
+                            continue;
+                        }
+
+                        var codes = await GetBrandProductCodes(company, baseBranchCode, brandClassificationCode);
+
+                        if (codes is null)
+                            continue;   // a mensagem já foi para o log
+
+                        var missing = codes.Where(x => !stored.Contains(x)).Order().ToList();
+
+                        _logger.AddMessage($"Conferência da matriz {baseBranchCode} (empresa {company.doc_company}): {codes.Count} produto(s) na Totvs, {stored.Count} gravado(s), {missing.Count} faltando.");
+
+                        if (missing.Count > 0)
+                            totalInseridos += await RecoverReferences(company, baseBranchCode, brandClassificationCode, missing);
+                    }
+                }
+
+                _logger.AddMessage(
+                    $"Concluída com sucesso: {totalInseridos} registro(s) novo(s) ou atualizado(s) inserido(s)!"
+                );
+
+                return true;
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        /// <summary>
+        /// códigos dos produtos da marca, com o mesmo filtro do PostSearchReferences (matriz, ativos, produto acabado e a classificação
+        /// 6000 da marca), sem filter.change. null se alguma página falhou (a mensagem vai para o log)
+        /// </summary>
+        private async Task<List<int>?> GetBrandProductCodes(Domain.Totvs.Entities.Parameters.Company company, int baseBranchCode, string brandClassificationCode)
+        {
+            var codes = new List<int>();
+            var page = 1;
+            var totalPages = 1;
+
+            while (page <= totalPages)
+            {
+                var requestBody = JsonConvert.SerializeObject(new
+                {
+                    filter = new
+                    {
+                        branchInfo = new
+                        {
+                            branchCode = baseBranchCode,
+                            isActive = true,
+                            isFinishedProduct = true
+                        },
+                        classifications = new[] { new { type = BrandClassificationType, codeList = new[] { brandClassificationCode } } }
+                    },
+                    order = "productCode",
+                    page,
+                    pageSize = ProductCodesPageSize
+                });
+
+                var response = await SendValueRequest(company, "product/v2/product-codes/search", requestBody);
+                var result = ParsePage<Domain.Totvs.Dtos.Reads.Products.Values.ProductKey>(company, "product/v2/product-codes/search", response, $"matriz {baseBranchCode}, página {page}");
+
+                if (result is null)
+                    return null;
+
+                codes.AddRange(result.Value.items.Select(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.productCode)).Where(x => x != 0));
+
+                totalPages = result.Value.totalPages;
+                page++;
+            }
+
+            return codes.Distinct().ToList();
+        }
+
+        /// <summary>
+        /// recupera as referências dos produtos que faltam: 1) productCodeList (até 500 por chamada) acha a referência de cada produto;
+        /// 2) referenceCodeList (até RecoveredReferencesPerCall por chamada) lê as referências inteiras, com as páginas unidas por
+        /// referenceId, e grava pelo SaveReferences, sem maxChangeFilterDate (como o GetProductByCode: o job as regrava quando mudarem).
+        /// No máximo MaxRecoveredReferences referências por execução. Devolve a quantidade de referências gravadas
+        /// </summary>
+        private async Task<int> RecoverReferences(Domain.Totvs.Entities.Parameters.Company company, int baseBranchCode, string brandClassificationCode, List<int> missing)
+        {
+            object BrandFilter(object? productCodeList, object? referenceCodeList) => new
+            {
+                productCodeList,
+                referenceCodeList,
+                branchInfo = new
+                {
+                    branchCode = baseBranchCode,
+                    isActive = true,
+                    isFinishedProduct = true
+                },
+                classifications = new[] { new { type = BrandClassificationType, codeList = new[] { brandClassificationCode } } }
+            };
+
+            string Body(object filter, int page, int pageSize, string? expand) => JsonConvert.SerializeObject(new
+            {
+                filter,
+                option = new
+                {
+                    branchInfoCode = baseBranchCode,
+                    measurementTableOmniType = 2
+                },
+                page,
+                pageSize,
+                expand
+            }, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
+
+            // 1) a referência de cada produto que falta (sem expand: só o referenceId e o ReferenceCode)
+            var references = new Dictionary<int, string>();
+
+            foreach (var chunk in missing.Chunk(500))
+            {
+                var page = 1;
+                var totalPages = 1;
+
+                while (page <= totalPages)
+                {
+                    var response = await SendValueRequest(company, "product/v2/references/search", Body(BrandFilter(chunk, null), page, ReferencePageSize, null));
+                    var result = ParsePage<Domain.Totvs.Dtos.Reads.Products.Reference>(company, "product/v2/references/search", response, $"conferência da matriz {baseBranchCode}, produtos {chunk.First()} a {chunk.Last()}, página {page}");
+
+                    if (result is null)
+                        return 0;
+
+                    foreach (var (dto, _) in result.Value.items)
+                    {
+                        var referenceId = ConverterValidatorsExtensions.ConvertToInt32Validation(dto.referenceId);
+
+                        if (referenceId != 0 && !String.IsNullOrWhiteSpace(dto.ReferenceCode))
+                            references[referenceId] = dto.ReferenceCode;
+                    }
+
+                    totalPages = result.Value.totalPages;
+                    page++;
+                }
+            }
+
+            if (references.Count > MaxRecoveredReferences)
+                _logger.AddMessage($"Conferência da matriz {baseBranchCode}: {references.Count} referência(s) a recuperar; {MaxRecoveredReferences} nesta execução, o resto na próxima.");
+
+            // 2) as referências inteiras, unidas por referenceId (a paginação é por produto)
+            var saved = 0;
+            var skusCache = _cache.TryGetValue($"{SkusKey}:{company.doc_company}:{baseBranchCode}", out Dictionary<int, Domain.Totvs.Entities.Reads.Products.Sku>? cached) ? cached : null;
+
+            foreach (var chunk in references.Take(MaxRecoveredReferences).Chunk(RecoveredReferencesPerCall))
+            {
+                var merged = new Dictionary<int, JObject>();
+                var page = 1;
+                var totalPages = 1;
+
+                while (page <= totalPages)
+                {
+                    var response = await SendValueRequest(company, "product/v2/references/search", Body(BrandFilter(null, chunk.Select(x => x.Value).Distinct().ToArray()), page, ReferencesPageSize, Expand));
+                    var result = ParsePage<Domain.Totvs.Dtos.Reads.Products.Reference>(company, "product/v2/references/search", response, $"conferência da matriz {baseBranchCode}, referências {chunk.First().Value} a {chunk.Last().Value}, página {page}");
+
+                    // a fatia incompleta não é gravada (gravar uma referência partida apagaria cores e produtos no merge)
+                    if (result is null)
+                        return saved;
+
+                    foreach (var (_, json) in result.Value.items)
+                    {
+                        var referenceId = ConverterValidatorsExtensions.ConvertToInt32Validation((string?)json["referenceId"]);
+
+                        if (referenceId == 0 || !chunk.Any(x => x.Key == referenceId))
+                            continue;
+
+                        if (merged.TryGetValue(referenceId, out var existing))
+                            MergeColors(existing, json);
+                        else
+                            merged[referenceId] = json;
+                    }
+
+                    totalPages = result.Value.totalPages;
+                    page++;
+                }
+
+                var dtos = merged.Values.Select(x => x.ToObject<Domain.Totvs.Dtos.Reads.Products.Reference>()).Where(x => x is not null).Select(x => x!).ToList();
+
+                saved += await SaveReferences(company.doc_company!, baseBranchCode, _totvsService.GetBatchTime(), dtos, merged.ToDictionary(x => x.Key, x => x.Value.ToString(Formatting.None)), skusCache);
+            }
+
+            _logger.AddMessage($"Conferência da matriz {baseBranchCode}: {saved} referência(s) recuperada(s), com {missing.Count} produto(s) que faltavam.");
+
+            return saved;
+        }
+
+        /// <summary>
+        /// um GET das leituras do service, com uma nova tentativa: 401 renova o token, 429 espera o Retry-After e 502/503/504 espera 10 s.
+        /// Devolve null se não houve token (a mensagem do login já foi para o log)
+        /// </summary>
+        private async Task<ApiResponse?> SendGetRequest(Domain.Totvs.Entities.Parameters.Company company, string route, Dictionary<string, string> query)
+        {
+            ApiResponse? response = null;
+
+            for (var attempt = 1; attempt <= 2; attempt++)
+            {
+                var token = await _totvsService.GetToken(company);
+
+                if (token is null)
+                    break;
+
+                response = await _apiClient.SendAsync(
+                    HttpMethod.Get,
+                    route,
+                    headers: new Dictionary<string, string> { { "Authorization", $"Bearer {token}" } },
+                    queryParams: query
+                );
+
+                if (attempt == 1 && response.StatusCode == 401)
+                {
+                    _totvsService.RemoveToken(company);
+                    continue;
+                }
+
+                if (attempt == 1 && response.StatusCode == 429)
+                {
+                    var seconds = response.Headers.TryGetValue("Retry-After", out var retryAfter) && int.TryParse(retryAfter, out var value) ? value : 5;
+                    await Task.Delay(TimeSpan.FromSeconds(Math.Clamp(seconds, 1, 60)));
+                    continue;
+                }
+
+                if (attempt == 1 && response.StatusCode is 502 or 503 or 504)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(10));
+                    continue;
+                }
+
+                break;
+            }
+
+            return response;
+        }
+
+        /// <summary>
+        /// lê uma página de resposta, com cada item pareado com o seu JSON (datas como a API mandou), ou null se a resposta falhou ou
+        /// veio inválida (a mensagem vai para o log)
+        /// </summary>
+        private (List<(T dto, JObject json)> items, int totalPages, int count)? ParsePage<T>(Domain.Totvs.Entities.Parameters.Company company, string route, ApiResponse? response, string context)
+        {
+            if (response is null || !response.IsSuccess)
+            {
+                if (response is not null)
+                {
+                    var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
+                    _logger.AddMessage($"Erro da API Totvs em {route} (empresa {company.doc_company}, {context}): {response.StatusCode} {body}");
+                }
+
+                return null;
+            }
+
+            Page<T>? result = null;
+            JArray json = [];
+
+            try
+            {
+                result = JsonConvert.DeserializeObject<Page<T>>(response.Content ?? String.Empty);
+
+                using var reader = new JsonTextReader(new StringReader(response.Content!)) { DateParseHandling = DateParseHandling.None };
+                json = (JObject.Load(reader)["items"] as JArray) ?? [];
+            }
+            catch (JsonException)
+            {
+                // result continua null: tratado abaixo como resposta inválida
+            }
+
+            if (result?.items is null || json.Count != result.items.Count)
+            {
+                var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
+                _logger.AddMessage($"Resposta inválida da API Totvs em {route} (empresa {company.doc_company}, {context}): {body}");
+
+                return null;
+            }
+
+            return (result.items.Select((x, i) => (x, (JObject)json[i])).ToList(), result.totalPages, result.count);
         }
 
         public async Task<bool?> PostSearchReferences()

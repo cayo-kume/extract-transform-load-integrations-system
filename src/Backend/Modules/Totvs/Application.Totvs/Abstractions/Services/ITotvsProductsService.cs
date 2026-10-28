@@ -9,6 +9,23 @@
         public Task<bool?> PostSearchBalances();
 
         /// <summary>
+        /// sincroniza os produtos similares pelo GET product/v2/similar, pela janela desde a última lida (a data de alteração da
+        /// resposta não serve), dividida quando o volume é grande; só grava os produtos novos ou cujo hash mudou
+        /// </summary>
+        public Task<bool?> GetSimilar();
+
+        /// <summary>
+        /// sincroniza os lotes de todas as lojas pelo POST product/v2/batch/search, lidos inteiros; só grava os novos ou cujo hash mudou
+        /// </summary>
+        public Task<bool?> PostSearchBatch();
+
+        /// <summary>
+        /// confere, uma vez por dia, os produtos de cada marca (POST product/v2/product-codes/search) com os gravados das referências e
+        /// recupera as referências dos que faltam
+        /// </summary>
+        public Task<bool?> PostSearchProductCodes();
+
+        /// <summary>
         /// sincroniza as referências e produtos pelo POST product/v2/references/search, uma chamada por marca (matrizes 1 e 101
         /// como empresa base, filtradas pela classificação 6000 da marca); só grava as novas ou alteradas
         /// </summary>

@@ -2319,7 +2319,7 @@ onda 2 que entrar monta a base das leituras sem persistência (T11, §8.1).
 | Fase | Onda | Service | Métodos | Jobs | Depende de |
 |---|---|---|---|---|---|
 | PR-1 | 1 | `TotvsProductCatalogsService` | `GetClassificationType`, `GetClassifications`, `GetCategory`, `GetGrid`, `GetMeasurementUnit`, `PostSearchColors`, `GetAdditionalFieldsTypes`, `GetProductGrouperConfiguration`, `GetInstructionItems`, `PostCompositions`; `GetPriceTablesHeaders`, `GetPriceTableScales` (PR5) | 13080–13091 | — **Implementada em 27/10/2026** (§10.5) |
-| PR-2 | 1 | `TotvsProductPricesService`, `TotvsProductsService` | fase 3, partes 4 a 6 (`PostSearchPrices`, `PostSearchCosts`, `PostSearchBalances`, com a escolha da PR2 sobre `PostOmniChangedBalances`); `PostSearchPriceTables`, `GetPromotion` (PR5); `GetSimilar`; `PostSearchBatch` (PR6); `PostSearchProductCodes` (PR3) | 13015–13017, 13092–13097 | PR-1 (cabeçalhos das tabelas de preço). **Parte 1 (preços, custos e saldos) implementada em 27/10/2026** (§10.6); **parte 2 (`PostSearchPriceTables`, `GetPromotion`) em 27/10/2026** (§10.7) |
+| PR-2 | 1 | `TotvsProductPricesService`, `TotvsProductsService` | fase 3, partes 4 a 6 (`PostSearchPrices`, `PostSearchCosts`, `PostSearchBalances`, com a escolha da PR2 sobre `PostOmniChangedBalances`); `PostSearchPriceTables`, `GetPromotion` (PR5); `GetSimilar`; `PostSearchBatch` (PR6); `PostSearchProductCodes` (PR3) | 13015–13017, 13092–13097 | PR-1 (cabeçalhos das tabelas de preço). **Parte 1 (preços, custos e saldos) implementada em 27/10/2026** (§10.6); **parte 2 (`PostSearchPriceTables`, `GetPromotion`) em 27/10/2026** (§10.7); **parte 3 (`GetSimilar`, `PostSearchBatch`, `PostSearchProductCodes`) em 27/10/2026** (§10.8): fase concluída, menos o `PostOmniChangedBalances` (13096 reservado, PR2) |
 | PR-3 | 2 | `TotvsProductsService` | `GetProducts`, `GetKardexMovement`, `GetGridFrequency`, `GetMeasurementConversions`, `GetCompositionProduct`, `GetCompositionGroupProduct` | 13100–13105 | base T11 |
 | PR-4 | 3 | `TotvsProductCatalogsService` | `PostColors`, `PostGrids` | 13124, 13126 | AP-1, PR-1 |
 | PR-5 | 4 | `TotvsProductCatalogsService`, `TotvsProductsService` | `PostClassifications`, `PostCreateClassificationRelationship`, `PostUpdateClassificationRelationship` (sem a classificação 6000, PR10), `PostBarcodes`, `PostUpdateBarcodes`, `PostReferences` (sem `values`, PR11); lote: `PostCreateBatch`, `PutBatchInfo`, `PostBatchPreferentialSalesOrder` (PR6) | 13120–13123, 13125, 13127, 13135–13137 | PR-4 |
@@ -2665,3 +2665,57 @@ o estado da loja semeado para a carga inicial começar nos últimos 250 produtos
 * as colunas das 3 `DataTable` batem com o `Script051`.
 
 **Não verificado:** os scripts `051`–`053` em banco e as rotas pelo host.
+
+### 10.8 Fase PR-2, parte 3: similares, lotes e conferência das referências (27/10/2026)
+
+**O que entrou** (no `TotvsProductsService`):
+* `GetSimilar` (job 13094, 120 min): a rota exige `ProductsCode` ou a janela, e o `lastChageDate` da resposta vem sempre
+  `0001-01-01`, então a janela começa no fim da última janela lida e gravada − 1 h (coluna `changeWindowEnd`; banco vazio, desde
+  2000) e vai até agora. O tempo de cada chamada cresce com o volume da janela, não com a página, então a 1ª página diz o volume e a
+  janela acima de 1000 produtos é dividida ao meio (até 1 minuto), em ordem de data; cada janela é gravada só inteira, e uma falha
+  faz a próxima execução continuar da última completa. O hash do JSON de cada produto (`json_hash`, T9) evita regravar o que não
+  mudou. Tabelas `TotvsProductsSimilar` (produto + `groupSequenceCode` + `changeWindowEnd`) e `TotvsProductsSimilarItems`
+  (`listType` `Product` ou `ReferenceGroup` + produto similar). A lista da mesma grade (`similarGroupProductList`) não é gravada,
+  como decidido na §5.2 (sai de `TotvsSkusColorsProducts` pela referência);
+* `PostSearchBatch` (job 13095, 120 min, PR6): uma leitura por loja, com o período desde 2000 (a rota exige um produto ou um
+  período: 400 `BatchMandatoryFields`) e o `expand` nas duas grafias (`additionalFieds,additionalFields`); a resposta não tem data
+  de alteração, então o hash de cada lote diz o que mudou. Tabelas `TotvsBatches` (loja + lote + produto), `TotvsBatchesItems`
+  (+ sequencial) e `TotvsBatchesItemsAdditionalFields` (+ código). Lote sem `batchCode` e item sem sequencial vão para o log e não
+  são gravados. A janela por `auditing.Logs` da §5.2 foi trocada pela leitura inteira com hash (T9), que não depende do log;
+* `PostSearchProductCodes` (job 13097, diário, PR3): por marca, os códigos do `product-codes/search` com o mesmo filtro do
+  `PostSearchReferences` (matriz, ativos, produto acabado, classificação 6000; página de 5000) comparados com os produtos de
+  `TotvsSkusColorsProducts` da matriz. Os que faltam têm a referência achada por `productCodeList` (500 por chamada) e lida inteira
+  por `referenceCodeList` (50 por chamada, páginas unidas por `referenceId`), gravada pelo `SaveReferences` sem
+  `maxChangeFilterDate` (como o `GetProductByCode`; o job a regrava quando mudar). No máximo 500 referências por execução; marca sem
+  nada gravado é pulada (a carga é do `PostSearchReferences`). O `GetProductByCode` não é chamado: ele reinicia o log da execução;
+* `Script054`–`056` (procedures **13637–13641**), rotas `GET TotvsJobs/Totvs/Products/Similar`, `POST .../Products/Batches` e
+  `POST .../Products/ProductCodes`.
+
+**Achados na chamada real (27/10/2026):**
+* `similar`: 22 109 produtos desde 2000, quase todos só com a lista da mesma grade; `lastChageDate` sempre `0001-01-01` (não cabe
+  em `datetime` e não é gravado). **O tempo de cada chamada depende do volume da janela, não do tamanho da página**: a janela
+  desde 2000 leva 30 a 90 s por página (às vezes 502), e as 222 páginas passariam de 4 h; o dia 15/06/2026 (a migração, 18 996
+  produtos) leva ~60 s mesmo com página de 1; uma hora desse dia (~6 mil), ~10 s; um mês comum (~400 a 700), ~1 s. Antes de 06/2026
+  não há alteração; depois, 250 a 700 por mês. A primeira versão (janela sempre desde 2000) travou o teste e foi trocada pela
+  janela incremental com divisão;
+* `batch/search`: nenhum lote em nenhum tipo (1 a 5, numéricos; o nome do enum dá 400). Implementado pela T14 e conferido com
+  respostas sintéticas;
+* `product-codes/search`: com o `branchInfo` da marca, página de 100 000 deu 502 e de 5000 respondeu em ~22 s (Misha: 9 721
+  produtos ativos acabados); sem `branchInfo` vêm também os inativos (10 287).
+
+**Conferido com o console descartável** (API real e respostas sintéticas, banco falso):
+* similares, carga inicial com 500 simulado na 40ª chamada: a 1ª execução desce de "desde 2000" até janelas de minutos dentro de
+  15/06/2026 (40 chamadas, 15 min), grava 362 produtos das janelas completas e para; a 2ª continua de 15/06/2026 00:25 (o fim da
+  última janela gravada) e grava os 21 747 que faltavam (295 chamadas em 293 janelas, 19 min), somando os 22 109 da API. A 3ª
+  execução é incremental: 1 chamada, na janela da última hora, sem produto alterado (por isso o cenário de alteração não teve o
+  que alterar). Nenhum produto da base tem `similarProductList` ou `similarRefereceGroupProductList` (a tabela de itens fica vazia);
+* lotes: contra a API, nada (base sem lotes); sintético, grava os 2 lotes válidos (item sem sequencial descartado, campo
+  adicional repetido fica o último), registra o lote sem `batchCode`, não regrava os inalterados e regrava só o lote cujo saldo
+  mudou. As contagens dobradas do teste vêm da resposta sintética (a mesma, com a loja 1, nas chamadas das lojas 1 e 101);
+* conferência: com 3 produtos da Misha tirados do banco falso (17, 10558 e 31475), compara os 9 721 da Totvs com os 9 718
+  gravados, acha as 3 referências (421, 115, 8422) e as grava inteiras (8 produtos, os 3 que faltavam entre eles; o validador
+  registra a falta do `maxChangeFilterDate`, como no `GetProductByCode`), em 4 chamadas e 38 s; a Open Era, sem nada gravado, é
+  pulada com a mensagem;
+* as colunas das 5 `DataTable` batem com o `Script054`.
+
+**Não verificado:** os scripts `054`–`056` em banco e as rotas pelo host.

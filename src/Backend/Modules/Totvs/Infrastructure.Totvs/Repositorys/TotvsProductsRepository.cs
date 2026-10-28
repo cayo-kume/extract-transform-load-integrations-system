@@ -131,5 +131,78 @@ namespace Infrastructure.Totvs.Repositorys
 
             return true;
         }
+
+        public async Task<IEnumerable<int>> GetSkusProductCodes(string doc_company, int branchInfoCode)
+        {
+            string sql = _totvsCommandHandler.CreateGetSkusProductCodesQuery(doc_company, branchInfoCode);
+
+            return (await _coreRepository.GetRecords<int>(sql)).Select(x => x);
+        }
+
+        public async Task<IEnumerable<Domain.Totvs.Entities.Reads.Products.Similars.ProductSimilar?>> GetSimilarHashes(string doc_company)
+        {
+            string sql = _totvsCommandHandler.CreateGetSimilarHashesQuery(doc_company);
+
+            return await _coreRepository.GetRecords<Domain.Totvs.Entities.Reads.Products.Similars.ProductSimilar>(sql);
+        }
+
+        public async Task<DateTime?> GetSimilarLastWindowEnd(string doc_company)
+        {
+            string sql = _totvsCommandHandler.CreateGetSimilarLastWindowEndQuery(doc_company);
+
+            return await _coreRepository.GetRecord<DateTime?>(sql);
+        }
+
+        public async Task<bool> BulkInsertIntoTotvsProductsSimilar(List<Domain.Totvs.Entities.Reads.Products.Similars.ProductSimilar> data, Guid? parentExecutionGUID)
+        {
+            // ordem = ordem dos merges: o produto antes dos similares (FK e condição de exclusão do merge)
+            var tables = new List<(DataTable table, IList rows)>
+            {
+                (_coreRepository.CreateSystemDataTable(entity: new Domain.Totvs.Entities.Reads.Products.Similars.ProductSimilar(), tableName: "TotvsProductsSimilar"), data),
+                (_coreRepository.CreateSystemDataTable(entity: new Domain.Totvs.Entities.Reads.Products.Similars.ProductSimilarItem(), tableName: "TotvsProductsSimilarItems"), data.SelectMany(x => x.items).ToList()),
+            };
+
+            foreach (var (table, rows) in tables)
+            {
+                _coreRepository.FillSystemDataTable(table, rows.Cast<object>().ToList());
+                _coreRepository.BulkInsertIntoTableRaw(table, "untreated");
+            }
+
+            // o merge das filhas roda mesmo sem linhas no lote: é ele que apaga as que saíram do registro
+            foreach (var (table, _) in tables)
+                await _coreRepository.CallDbProcMerge("totvs", table.TableName, parentExecutionGUID);
+
+            return true;
+        }
+
+        public async Task<IEnumerable<Domain.Totvs.Entities.Reads.Products.Batches.Batch?>> GetBatchesHashes(string doc_company, int branchCode)
+        {
+            string sql = _totvsCommandHandler.CreateGetBatchesHashesQuery(doc_company, branchCode);
+
+            return await _coreRepository.GetRecords<Domain.Totvs.Entities.Reads.Products.Batches.Batch>(sql);
+        }
+
+        public async Task<bool> BulkInsertIntoTotvsBatches(List<Domain.Totvs.Entities.Reads.Products.Batches.Batch> data, Guid? parentExecutionGUID)
+        {
+            // ordem = ordem dos merges: lote, itens e campos adicionais (FKs e condição de exclusão do merge)
+            var tables = new List<(DataTable table, IList rows)>
+            {
+                (_coreRepository.CreateSystemDataTable(entity: new Domain.Totvs.Entities.Reads.Products.Batches.Batch(), tableName: "TotvsBatches"), data),
+                (_coreRepository.CreateSystemDataTable(entity: new Domain.Totvs.Entities.Reads.Products.Batches.BatchItem(), tableName: "TotvsBatchesItems"), data.SelectMany(x => x.items).ToList()),
+                (_coreRepository.CreateSystemDataTable(entity: new Domain.Totvs.Entities.Reads.Products.Batches.BatchItemAdditionalField(), tableName: "TotvsBatchesItemsAdditionalFields"), data.SelectMany(x => x.additionalFields).ToList()),
+            };
+
+            foreach (var (table, rows) in tables)
+            {
+                _coreRepository.FillSystemDataTable(table, rows.Cast<object>().ToList());
+                _coreRepository.BulkInsertIntoTableRaw(table, "untreated");
+            }
+
+            // o merge das filhas roda mesmo sem linhas no lote: é ele que apaga as que saíram do registro
+            foreach (var (table, _) in tables)
+                await _coreRepository.CallDbProcMerge("totvs", table.TableName, parentExecutionGUID);
+
+            return true;
+        }
     }
 }
