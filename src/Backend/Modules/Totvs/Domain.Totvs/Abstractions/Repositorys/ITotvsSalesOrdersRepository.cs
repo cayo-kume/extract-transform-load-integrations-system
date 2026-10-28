@@ -7,6 +7,8 @@ namespace Domain.Totvs.Abstractions.Repositorys
         public Task<DateTime?> GetSalesOrdersLastChange(string doc_company);
         public Task<IEnumerable<SaleOrder?>> GetSalesOrdersByKeys(string doc_company, List<(int branchCode, int orderCode)> keys);
         public Task<bool> BulkInsertIntoTotvsSaleOrders(List<SaleOrder> data, Guid? parentExecutionGUID);
+        public Task<string?> GetSaleOrderStatus(string doc_company, int branchCode, int orderCode);
+        public Task<IEnumerable<Entities.Writes.SalesOrders.SaleOrderProductQuantity?>> GetSaleOrderProducts(string doc_company, int branchCode, int orderCode);
         public Task<DateTime?> GetSaleDiscountTypesLastChange(string doc_company);
         public Task<IEnumerable<Entities.Reads.SalesOrders.Catalogs.SaleDiscountType?>> GetSaleDiscountTypes(string doc_company);
         public Task<bool> BulkInsertIntoTotvsSaleDiscountTypes(List<Entities.Reads.SalesOrders.Catalogs.SaleDiscountType> data, Guid? parentExecutionGUID);

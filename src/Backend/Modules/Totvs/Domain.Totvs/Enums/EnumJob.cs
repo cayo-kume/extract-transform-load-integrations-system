@@ -128,9 +128,18 @@
         TotvsPostPurchaseOrdersQuantityItems = 13181,   //Script073_Insert_Totvs_Purchase_Orders_Documents_Writes_Jobs_Into_Jobs_Table.sql
         TotvsPostPurchaseOrdersChangeStatus = 13182,   //Script069_Insert_Totvs_Purchase_Orders_Writes_Jobs_Into_Jobs_Table.sql
         TotvsPostPurchaseOrderBatchLink = 13184,   //Script073_Insert_Totvs_Purchase_Orders_Documents_Writes_Jobs_Into_Jobs_Table.sql
+        TotvsPostSalesOrderOrdersChangeStatus = 13199,   //Script074_Insert_Totvs_Sales_Orders_Documents_Writes_Jobs_Into_Jobs_Table.sql
+        TotvsPostSalesOrderHeader = 13200,   //Script074_Insert_Totvs_Sales_Orders_Documents_Writes_Jobs_Into_Jobs_Table.sql
         TotvsPostSalesOrderAdditionalOrder = 13201,   //Script070_Insert_Totvs_Sales_Orders_Writes_Jobs_Into_Jobs_Table.sql
         TotvsPostSalesOrderShippingOrder = 13202,   //Script070_Insert_Totvs_Sales_Orders_Writes_Jobs_Into_Jobs_Table.sql
         TotvsPostSalesOrderObservationsOrder = 13203,   //Script070_Insert_Totvs_Sales_Orders_Writes_Jobs_Into_Jobs_Table.sql
+        TotvsPostSalesOrderItems = 13205,   //Script074_Insert_Totvs_Sales_Orders_Documents_Writes_Jobs_Into_Jobs_Table.sql
+        TotvsDeleteSalesOrderItems = 13206,   //Script074_Insert_Totvs_Sales_Orders_Documents_Writes_Jobs_Into_Jobs_Table.sql
         TotvsPostSalesOrderAdditionalItems = 13207,   //Script070_Insert_Totvs_Sales_Orders_Writes_Jobs_Into_Jobs_Table.sql
+        TotvsPostSalesOrderQuantityItems = 13208,   //Script074_Insert_Totvs_Sales_Orders_Documents_Writes_Jobs_Into_Jobs_Table.sql
+        TotvsPostSalesOrderRelationshipCounts = 13211,   //Script074_Insert_Totvs_Sales_Orders_Documents_Writes_Jobs_Into_Jobs_Table.sql
+        TotvsPostSalesOrderRelationshipBatchItems = 13212,   //Script074_Insert_Totvs_Sales_Orders_Documents_Writes_Jobs_Into_Jobs_Table.sql
+        TotvsDeleteSalesOrderBatchItems = 13213,   //Script074_Insert_Totvs_Sales_Orders_Documents_Writes_Jobs_Into_Jobs_Table.sql
+        TotvsPostSalesOrderSuggestBatchItemsNuance = 13214,   //Script074_Insert_Totvs_Sales_Orders_Documents_Writes_Jobs_Into_Jobs_Table.sql
     }
 }

@@ -237,6 +237,15 @@ Os nomes dos métodos são os da **documentação oficial** (`PostSearch*`, `Get
 | `TotvsSalesOrdersService` | `PostShippingOrder` | `POST sales-order/v2/shipping-order` | 13202 | `Totvs:Writes:SalesOrders:Enabled` |
 | `TotvsSalesOrdersService` | `PostObservationsOrder` | `POST sales-order/v2/observations-order` (com a trava de repetição) | 13203 | `Totvs:Writes:SalesOrders:Enabled` |
 | `TotvsSalesOrdersService` | `PostAdditionalItems` | `POST sales-order/v2/additional-items` | 13207 | `Totvs:Writes:SalesOrders:Enabled` |
+| `TotvsSalesOrdersService` | `PostOrdersChangeStatus` | `POST sales-order/v2/orders/change-status` | 13199 | `Totvs:Writes:SalesOrders:Enabled` |
+| `TotvsSalesOrdersService` | `PostHeader` | `POST sales-order/v2/header` | 13200 | `Totvs:Writes:SalesOrders:Enabled` |
+| `TotvsSalesOrdersService` | `PostItems` | `POST sales-order/v2/items` (com a trava de repetição) | 13205 | `Totvs:Writes:SalesOrders:Enabled` |
+| `TotvsSalesOrdersService` | `DeleteItems` | `DELETE sales-order/v2/items` | 13206 | `Totvs:Writes:SalesOrders:Enabled` |
+| `TotvsSalesOrdersService` | `PostQuantityItems` | `POST sales-order/v2/quantity-items` | 13208 | `Totvs:Writes:SalesOrders:Enabled` |
+| `TotvsSalesOrdersService` | `PostRelationshipCounts` | `POST sales-order/v2/relationship-counts` (com a trava de repetição) | 13211 | `Totvs:Writes:SalesOrders:Enabled` |
+| `TotvsSalesOrdersService` | `PostRelationshipBatchItems` | `POST sales-order/v2/relationship-batch-items` (com a trava de repetição) | 13212 | `Totvs:Writes:SalesOrders:Enabled` |
+| `TotvsSalesOrdersService` | `DeleteBatchItems` | `DELETE sales-order/v2/batch-items` | 13213 | `Totvs:Writes:SalesOrders:Enabled` |
+| `TotvsSalesOrdersService` | `PostSuggestBatchItemsNuance` | `POST sales-order/v2/suggest-batch-items-nuance` (com a trava de repetição) | 13214 | `Totvs:Writes:SalesOrders:Enabled` |
 
 **Leituras sob demanda** (um registro por chave)
 
@@ -369,6 +378,7 @@ O DbUp executa cada script uma única vez, em ordem alfabética. Alterar um scri
 | `Script071` | Jobs das escritas de cadastro da API Person (clientes PF e PJ, representante do cliente e remoção de classificação, 13040–13043) |
 | `Script072` | Jobs das escritas de cadastro da API Product (códigos de barras, classificações, referência e lotes, 13120–13123, 13125, 13127 e 13135–13137) |
 | `Script073` | Jobs das escritas de documento da API Purchase Order (inclusão, quantidade dos itens e vínculo com lote, 13180, 13181 e 13184) |
+| `Script074` | Jobs das escritas de documento da API Sales Order (situação, capa, itens, lotes e contagens, 13199, 13200, 13205, 13206, 13208 e 13211–13214) |
 
 **Regras gerais das tabelas e dos merges:**
 * Toda tabela de dados existe em dois schemas: `untreated` (recebe o bulk insert, sem chave) e `totvs` (tabela final, com PK). A exceção é `totvs.TotvsRequests`, que só recebe inserts.
@@ -522,6 +532,15 @@ escritas de pedido de venda, a **chave do pedido** é `branchCode` + `orderCode`
 | POST | `SalesOrders/{docCompany}/Shipping` | chave do pedido; transportadora e redespacho (código **ou** CPF/CNPJ, com o tipo de frete), `freightPercentage`, `freightValue`, `shippingAddress` | `PostShippingOrder` (muda o total do pedido; recusado em pedido bloqueado ou do e-commerce) |
 | POST | `SalesOrders/{docCompany}/Observations` | chave do pedido; `observations` (`observation` até 80, `visualizationType` 1 ou 2) e/ou `invoiceObservations` | `PostObservationsOrder` (inclui linhas; recusado em pedido do e-commerce) |
 | POST | `SalesOrders/{docCompany}/Items/Additional` | chave do pedido; `items` (`productCode` **ou** `productSku`; `rollMeasureCode`, `billingForecastDate`) | `PostAdditionalItems` (recusado em pedido do e-commerce) |
+| POST | `SalesOrders/{docCompany}/Status` | chave do pedido; `statusOrder` **pelo nome** (`InProgress`, `BillingReleased`, `Blocked`, `InComposition`, `InAnalysis`); motivo do bloqueio | `PostOrdersChangeStatus` |
+| POST | `SalesOrders/{docCompany}/Header` | chave do pedido e pelo menos um entre `averagePaymentPeriod`, `operationCode`, `priceTableCode` e `priorityCode` | `PostHeader` (com o pedido no banco, operação e tabela de preço só em andamento ou bloqueado) |
+| POST | `SalesOrders/{docCompany}/Items` | chave do pedido; `items` (`productCode` **ou** `productSku`, quantidade, preço, descontos, seriais, comissionados) | `PostItems` |
+| DELETE | `SalesOrders/{docCompany}/Items` | query: `branchCode` + `orderCode` **ou** `orderId`; `productCode` **ou** `productSku` | `DeleteItems` |
+| POST | `SalesOrders/{docCompany}/Items/Quantity` | chave do pedido; `items` (`productCode` **ou** `productSku`, `quantity` nova) | `PostQuantityItems` (com o item no banco, a nova precisa ser maior que a atual) |
+| POST | `SalesOrders/{docCompany}/Counts` | `branchCode`, `orderCode`; `counts` (`branchCountCode`, `countCode`; sugestão aos pares) | `PostRelationshipCounts` |
+| POST | `SalesOrders/{docCompany}/BatchItems` | `branchCode`, `orderCode`; `items` (`code` do produto, `isUpdateQuantity`, `batchItems` por loja + lote + sequência **ou** `barCode`, com a quantidade) | `PostRelationshipBatchItems` |
+| DELETE | `SalesOrders/{docCompany}/BatchItems` | query: chave do pedido, `productCode` **ou** `productSku`, `batchSequence` | `DeleteBatchItems` |
+| POST | `SalesOrders/{docCompany}/BatchItems/SuggestNuance` | só a chave do pedido | `PostSuggestBatchItemsNuance` (o ERP escolhe os lotes) |
 
 | Código | Quando |
 |---|---|
@@ -617,7 +636,8 @@ Os jobs ficam em `auditing.Jobs`, com os mesmos ids em `EnumJob`.
 | 13120–13127 | `TotvsPostBarcodes`, `TotvsPostUpdateBarcodes`, `TotvsPostCreateClassificationRelationship`, `TotvsPostUpdateClassificationRelationship`, `TotvsPostColors`, `TotvsPostClassifications`, `TotvsPostGrids`, `TotvsPostReferences` | escrita |
 | 13135–13137 | `TotvsPostCreateBatch`, `TotvsPutBatchInfo`, `TotvsPostBatchPreferentialSalesOrder` | escrita |
 | 13180–13182, 13184 | `TotvsPostPurchaseOrders`, `TotvsPostPurchaseOrdersQuantityItems`, `TotvsPostPurchaseOrdersChangeStatus`, `TotvsPostPurchaseOrderBatchLink` | escrita |
-| 13201–13203, 13207 | `TotvsPostSalesOrderAdditionalOrder`, `TotvsPostSalesOrderShippingOrder`, `TotvsPostSalesOrderObservationsOrder`, `TotvsPostSalesOrderAdditionalItems` | escrita |
+| 13199–13203, 13205–13208 | `TotvsPostSalesOrderOrdersChangeStatus`, `TotvsPostSalesOrderHeader`, `TotvsPostSalesOrderAdditionalOrder`, `TotvsPostSalesOrderShippingOrder`, `TotvsPostSalesOrderObservationsOrder`, `TotvsPostSalesOrderItems`, `TotvsDeleteSalesOrderItems`, `TotvsPostSalesOrderAdditionalItems`, `TotvsPostSalesOrderQuantityItems` | escrita |
+| 13211–13214 | `TotvsPostSalesOrderRelationshipCounts`, `TotvsPostSalesOrderRelationshipBatchItems`, `TotvsDeleteSalesOrderBatchItems`, `TotvsPostSalesOrderSuggestBatchItemsNuance` | escrita |
 
 Toda execução grava `auditing.Logs` e, conforme o caso:
 * `auditing.Messages`, com mensagens e erros de validação;

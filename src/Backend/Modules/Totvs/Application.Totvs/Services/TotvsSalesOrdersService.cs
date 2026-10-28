@@ -1271,5 +1271,121 @@ namespace Application.Totvs.Services
 
             return _totvsService.BranchNotFound(doc_company, key, [branchCode.ToString()]);
         }
+
+        // situação valor absoluto: repetir não muda nada, sem trava. BillingReleased libera o pedido para faturar
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostOrdersChangeStatus(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderStatusChange body) =>
+            await WriteOrder(user_name, doc_company, EnumJob.TotvsPostSalesOrderOrdersChangeStatus, HttpMethod.Post, "sales-order/v2/orders/change-status", body.branchCode,
+                $"{OrderKeyValue(body)}|{body.statusOrder}", body, "Confira a situação do pedido antes de repetir.");
+
+        // SO7: operação e tabela de preço só mudam com o pedido em andamento ou bloqueado, conferido quando o pedido está no banco
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostHeader(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderHeader body) =>
+            await WriteOrder(user_name, doc_company, EnumJob.TotvsPostSalesOrderHeader, HttpMethod.Post, "sales-order/v2/header", body.branchCode, OrderKeyValue(body), body,
+                "Confira a capa do pedido antes de repetir.",
+                check: async () =>
+                {
+                    if ((body.operationCode is null && body.priceTableCode is null) || body.branchCode is null)
+                        return null;
+
+                    var status = await _totvsSalesOrdersRepository.GetSaleOrderStatus(doc_company, body.branchCode.Value, body.orderCode!.Value);
+
+                    return String.IsNullOrEmpty(status) || status is "InProgress" or "Blocked"
+                        ? null
+                        : $"O pedido de venda {OrderKeyValue(body)} está {status} em totvs.TotvsSaleOrders: operação e tabela de preço só mudam em andamento ou bloqueado.";
+                });
+
+        // SO7: a quantidade nova precisa ser maior que a atual (reduzir é pelo cancelamento), conferida para os itens que estão no banco
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostQuantityItems(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderItemsQuantity body) =>
+            await WriteOrder(user_name, doc_company, EnumJob.TotvsPostSalesOrderQuantityItems, HttpMethod.Post, "sales-order/v2/quantity-items", body.branchCode, OrderKeyValue(body), body,
+                "Confira as quantidades do pedido antes de repetir.",
+                check: async () =>
+                {
+                    if (body.branchCode is null)
+                        return null;
+
+                    var stored = (await _totvsSalesOrdersRepository.GetSaleOrderProducts(doc_company, body.branchCode.Value, body.orderCode!.Value)).Where(x => x is not null).ToList();
+                    var notAbove = body.items!
+                        .Select(i => (item: i, current: stored.FirstOrDefault(s => i.productCode is not null ? s!.productCode == i.productCode : s!.productSku == i.productSku)))
+                        .Where(x => x.current?.quantity is decimal current && x.item.quantity <= current)
+                        .Select(x => $"{(object?)x.item.productCode ?? x.item.productSku} (atual {x.current!.quantity:0.###})")
+                        .ToList();
+
+                    return notAbove.Count == 0 ? null : $"A quantidade nova precisa ser maior que a atual (para reduzir, cancele itens): {String.Join(", ", notAbove)}.";
+                });
+
+        // inclui itens: repetir somaria ou daria erro, daí a trava (T5)
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostItems(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderItemsAdd body) =>
+            await WriteOrder(user_name, doc_company, EnumJob.TotvsPostSalesOrderItems, HttpMethod.Post, "sales-order/v2/items", body.branchCode, OrderKeyValue(body), body,
+                "Confira os itens do pedido antes de repetir.", repeatLock: true);
+
+        // sem corpo: os campos vão na query (a rota gravada em TotvsRequests os leva); LastChangeUser e ValidationResult.* não vão (§7.4.2)
+        public async Task<Domain.Totvs.Dtos.Writes.Result> DeleteItems(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderItemDelete parameters) =>
+            await WriteOrder(user_name, doc_company, EnumJob.TotvsDeleteSalesOrderItems, HttpMethod.Delete,
+                TotvsQuery.Route("sales-order/v2/items", ("BranchCode", parameters.branchCode), ("OrderCode", parameters.orderCode), ("OrderId", parameters.orderId),
+                    ("ProductCode", parameters.productCode), ("ProductSku", parameters.productSku)),
+                parameters.branchCode, $"{OrderKeyValue(parameters)}|{(object?)parameters.productCode ?? parameters.productSku}", null, "Confira os itens do pedido antes de repetir.");
+
+        // vínculo de contagens: repetir pode duplicar, daí a trava (T5)
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostRelationshipCounts(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderCounts body) =>
+            await WriteOrder(user_name, doc_company, EnumJob.TotvsPostSalesOrderRelationshipCounts, HttpMethod.Post, "sales-order/v2/relationship-counts", body.branchCode,
+                $"{body.branchCode}|{body.orderCode}", body, "Confira as contagens do pedido antes de repetir.", repeatLock: true);
+
+        // item de lote já ligado dá erro e isUpdateQuantity muda a quantidade do pedido: trava (T5)
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostRelationshipBatchItems(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderBatchItems body) =>
+            await WriteOrder(user_name, doc_company, EnumJob.TotvsPostSalesOrderRelationshipBatchItems, HttpMethod.Post, "sales-order/v2/relationship-batch-items", body.branchCode,
+                $"{body.branchCode}|{body.orderCode}", body, "Confira os itens de lote do pedido antes de repetir.", repeatLock: true,
+                note: body.items!.Any(x => x.isUpdateQuantity == true) ? $"Vínculo de itens de lote no pedido {body.branchCode}|{body.orderCode} com isUpdateQuantity: a quantidade do pedido pode mudar." : null);
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> DeleteBatchItems(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderBatchItemDelete parameters) =>
+            await WriteOrder(user_name, doc_company, EnumJob.TotvsDeleteSalesOrderBatchItems, HttpMethod.Delete,
+                TotvsQuery.Route("sales-order/v2/batch-items", ("BranchCode", parameters.branchCode), ("OrderCode", parameters.orderCode), ("OrderId", parameters.orderId),
+                    ("ProductCode", parameters.productCode), ("ProductSku", parameters.productSku), ("BatchSequence", parameters.batchSequence)),
+                parameters.branchCode, $"{OrderKeyValue(parameters)}|{(object?)parameters.productCode ?? parameters.productSku}|{parameters.batchSequence}", null,
+                "Confira os itens de lote do pedido antes de repetir.");
+
+        // o ERP escolhe e grava os itens de lote: trava (T5)
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostSuggestBatchItemsNuance(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderBatchItemsNuance body) =>
+            await WriteOrder(user_name, doc_company, EnumJob.TotvsPostSalesOrderSuggestBatchItemsNuance, HttpMethod.Post, "sales-order/v2/suggest-batch-items-nuance", body.branchCode,
+                OrderKeyValue(body), body, "Confira os itens de lote do pedido antes de repetir.", repeatLock: true);
+
+        // escritas do pedido de venda da onda 4 (docs/PLANO-TOTVS-METODOS-FALTANTES.md §7.4) pela base comum: liga/desliga, empresa, loja do pedido
+        // (quando vem por loja + número), a conferência local, se houver (SO7, só com o pedido no banco), e a chamada
+        private async Task<Domain.Totvs.Dtos.Writes.Result> WriteOrder(string user_name, string doc_company, EnumJob job, HttpMethod method, string route, int? branchCode, string key, object? body,
+            string checkHint, bool repeatLock = false, Func<Task<string?>>? check = null, string? note = null)
+        {
+            _logger
+                .Clear()
+                .AddLog(job);
+
+            if (note is not null)
+                _logger.AddMessage(note);
+
+            try
+            {
+                if (!_totvsService.IsWriteEnabled(WritesGroup))
+                    return _totvsService.WriteDisabled(WritesGroup, key);
+
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return _totvsService.CompanyNotFound(doc_company, key);
+
+                if (branchCode is int branch && !(await _totvsService.GetBranchCodes(company)).Contains(branch))
+                    return _totvsService.BranchNotFound(doc_company, key, [branch.ToString()]);
+
+                if (check is not null && await check() is { } refused)
+                {
+                    _logger.AddMessage(refused);
+
+                    return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, message = refused };
+                }
+
+                return await _totvsService.Write(company, job, user_name, key, method, route, body, checkHint, repeatLock);
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
     }
 }

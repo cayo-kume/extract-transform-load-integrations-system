@@ -2348,7 +2348,7 @@ onda 2 que entrar monta a base das leituras sem persistência (T11, §8.1).
 | SO-1 | 1 | `GetDiscountType`, `GetClassifications`; `GetBatchItems`, `GetChangedBatchItems`, `GetBillingSuggestions` (SO2) | 13190–13194 | — **Implementada em 27/10/2026** (§10.9), sem o `GetChangedBatchItems`: a rota exige `BranchCode` e `OrderCode` e passou para a SO-2 |
 | SO-2 | 2 | `GetInvoices`, `GetPendingItems`; `GetChangedBatchItems` (vindo da SO-1: sob demanda por loja + pedido) | 13195, 13196, 13193 | base T11 **Implementada em 28/10/2026** (§10.13) |
 | SO-3 | 3 | trava de repetição (T5) + `PostAdditionalOrder`, `PostAdditionalItems`, `PostObservationsOrder`, `PostShippingOrder` | 13201, 13207, 13203, 13202 | AP-1 **Implementada em 28/10/2026** (§10.17); a trava T5 entrou antes, na PE-5 (§10.14) |
-| SO-4 | 4 | `PostOrdersChangeStatus`, `PostHeader` (SO8), `PostQuantityItems`, `PostItems`, `DeleteItems`; lote e contagem: `PostRelationshipBatchItems`, `DeleteBatchItems`, `PostSuggestBatchItemsNuance`, `PostRelationshipCounts` (SO2) | 13199, 13200, 13208, 13205, 13206, 13211–13214 | SO-3 |
+| SO-4 | 4 | `PostOrdersChangeStatus`, `PostHeader` (SO8), `PostQuantityItems`, `PostItems`, `DeleteItems`; lote e contagem: `PostRelationshipBatchItems`, `DeleteBatchItems`, `PostSuggestBatchItemsNuance`, `PostRelationshipCounts` (SO2) | 13199, 13200, 13208, 13205, 13206, 13211–13214 | SO-3. **Implementada em 28/10/2026** (§10.24) |
 | SO-5 | 5 | `PostPriceItems`, `PostCancelItems`, `PostB2COrders` (com a conferência do `orderId`, SO5), `PostOrdersCancel`, `PostPdvTransactions` | 13209, 13210, 13197, 13198, 13204 | SO-4, T4 |
 
 #### Fiscal (`TotvsInvoicesService`, §8)
@@ -3282,3 +3282,42 @@ inválido; feito; 404 e 409 da Totvs repassados.
 
 **Não verificado:** a chamada em homologação (cria pedido de verdade); se a quantidade 0 cancela o item e se a Totvs procura o pedido do
 vínculo na loja do lote; o `Script073` em banco e as rotas pelo host.
+
+### 10.24 Fase SO-4: situação, capa, itens, lotes e contagens do pedido de venda (28/10/2026)
+
+| Peça | Onde |
+|---|---|
+| DTOs `OrderStatusChange` (+ `OrderStatusNames`), `OrderHeader`, `OrderItemsQuantity`/`OrderItemQuantity`, `OrderItemsAdd`/`OrderItemAdd` (+ `OrderItemSequential`, `OrderItemGroupObservation`, `OrderItemCommissioned`, `CommissionedType`), `OrderItemDelete`, `OrderBatchItemDelete`, `OrderBatchItemsNuance` (os que levam a chave herdam `OrderKey`); `OrderBatchItems`/`OrderBatchItemsProduct`/`OrderBatchItem`, `OrderCounts`/`OrderCount` (só loja + número) | `Domain.Totvs/Dtos/Writes/SalesOrders` |
+| Um validador por DTO, com o `OrderKeyValidator` incluído nos que levam a chave | `Application.Totvs/Validations/Writes/SalesOrders` |
+| `GetSaleOrderStatus` e `GetSaleOrderProducts` (entidade `SaleOrderProductQuantity`) | `ITotvsSalesOrdersRepository`, `TotvsCommandHandler` |
+| `PostOrdersChangeStatus` (13199), `PostHeader` (13200), `PostItems` (13205), `DeleteItems` (13206), `PostQuantityItems` (13208), `PostRelationshipCounts` (13211), `PostRelationshipBatchItems` (13212), `DeleteBatchItems` (13213), `PostSuggestBatchItemsNuance` (13214), pelo helper `WriteOrder` | `TotvsSalesOrdersService` |
+| 7 rotas `POST` e 2 `DELETE` (com `[FromQuery]`) em `SalesOrders/{docCompany}/...` | `TotvsController` |
+| `Script074` (jobs) | `Infrastructure.Totvs/Scripts/SQLServer` |
+
+**Regras:**
+* **Situação pelo nome:** o swagger declara o `UpdateStatusOrderType` como `string`, então ele vai pelo nome (`InProgress`,
+  `BillingReleased`, `Blocked`, `InComposition`, `InAnalysis`), como os enums de cliente da PE-6 (a SO11 previa número). O
+  `CommissionedType` do item é `integer` e vai como número.
+* **SO7 (só com o pedido no banco):** operação e tabela de preço da capa só mudam com o pedido `InProgress` ou `Blocked`; a quantidade nova
+  dos itens precisa ser maior que a gravada em `TotvsSaleOrdersProducts` (o item é achado pelo código ou pelo SKU).
+* **`DELETE`:** os campos vão na query; `LastChangeUser` e `ValidationResult.*` nunca vão; a rota gravada em `TotvsRequests` leva a query
+  e o `request_body` fica nulo, como no `DeleteMessages`.
+* **Trava (T5):** inclusão de itens, contagens, vínculo de itens de lote e sugestão pelo nuance. Situação, capa, quantidade e remoções são
+  valores absolutos.
+* **`isUpdateQuantity`:** não é bloqueado; quando verdadeiro, o log registra que a quantidade do pedido pode mudar.
+* **Chave em `TotvsRequests`:** a do pedido (`loja|pedido` ou `orderId`), com a situação na troca de situação e com o produto (e a sequência
+  do item de lote) nas remoções.
+
+**Testes (console de rascunho, Totvs falsa):** situação válida pelo nome, vazia, por número; trocada com o nome no corpo. Capa só com a
+chave, com tamanhos errados; fora do banco (chama, sem nulos), operação com o pedido atendido (422), só a prioridade com o pedido atendido
+(chama). Quantidades válidas e inválidas; igual à atual pelo SKU (422 só com esse item); maiores (chama). Itens válidos; sem preço, seriais a
+menos, comissionado duplo e sem tipo, desconto de 120%; incluídos (comissionado como número), repetidos (409). Remoção sem produto; item
+removido (DELETE com a query, sem corpo); vínculo de item de lote removido por `orderId`. Lotes válidos e inválidos; ligados (com o aviso do
+`isUpdateQuantity` no log), repetidos (409). Sugestão pelo nuance (só a chave) e repetida (409). Contagens válidas, sugestão pela metade;
+ligadas; loja de fora (422).
+
+**Não verificado:** a chamada em homologação; se a situação também aceita número; se omitir o `averagePaymentPeriod` mantém o prazo (SO8);
+o `Script074` em banco e as rotas pelo host.
+
+**Onda 4 implementada** (AP-2, PE-6, PR-5, PO-3 e SO-4), conferida só com a Totvs falsa: falta a rodada em homologação, que cria registros
+de verdade (duplicata, cliente, referência, lote, pedido de compra e itens de pedido de venda).

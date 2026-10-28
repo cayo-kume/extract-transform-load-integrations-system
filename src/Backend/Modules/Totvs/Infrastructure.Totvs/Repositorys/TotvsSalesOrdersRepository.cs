@@ -191,5 +191,19 @@ namespace Infrastructure.Totvs.Repositorys
 
             return true;
         }
+
+        public async Task<string?> GetSaleOrderStatus(string doc_company, int branchCode, int orderCode)
+        {
+            string sql = _totvsCommandHandler.CreateGetSaleOrderStatusQuery(doc_company, branchCode, orderCode);
+
+            return await _coreRepository.GetRecord<string?>(sql);
+        }
+
+        public async Task<IEnumerable<Domain.Totvs.Entities.Writes.SalesOrders.SaleOrderProductQuantity?>> GetSaleOrderProducts(string doc_company, int branchCode, int orderCode)
+        {
+            string sql = _totvsCommandHandler.CreateGetSaleOrderProductsQuery(doc_company, branchCode, orderCode);
+
+            return await _coreRepository.GetRecords<Domain.Totvs.Entities.Writes.SalesOrders.SaleOrderProductQuantity>(sql);
+        }
     }
 }

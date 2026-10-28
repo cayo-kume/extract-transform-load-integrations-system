@@ -728,6 +728,25 @@ namespace Application.Totvs.Handlers.Commands
                      ORDER BY ORDERCODE DESC";
         }
 
+        public string CreateGetSaleOrderStatusQuery(string doc_company, int branchCode, int orderCode)
+        {
+            // situação gravada pela leitura (nome do StatusOrderType); sem linha, o pedido ainda não chegou ao banco
+            return @$"SELECT STATUSORDER
+                     FROM TOTVS.TOTVSSALEORDERS
+                     WHERE DOC_COMPANY = '{doc_company}'
+                     AND BRANCHCODE = {branchCode}
+                     AND ORDERCODE = {orderCode}";
+        }
+
+        public string CreateGetSaleOrderProductsQuery(string doc_company, int branchCode, int orderCode)
+        {
+            return @$"SELECT PRODUCTCODE AS productCode, PRODUCTSKU AS productSku, [QUANTITY] AS quantity
+                     FROM TOTVS.TOTVSSALEORDERSPRODUCTS
+                     WHERE DOC_COMPANY = '{doc_company}'
+                     AND BRANCHCODE = {branchCode}
+                     AND ORDERCODE = {orderCode}";
+        }
+
         public string CreateGetPurchaseOrderProductsQuery(string doc_company, int branchCode, int orderCode)
         {
             return @$"SELECT PRODUCTCODE AS productCode, SETTLEDQUANTITY AS settledQuantity

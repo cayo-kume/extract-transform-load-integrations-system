@@ -1628,6 +1628,184 @@ namespace Hangfire.Controllers.Totvs
         }
 
         /// <summary>
+        /// muda a situação do pedido de venda (POST sales-order/v2/orders/change-status) pelo nome: InProgress, BillingReleased (libera para
+        /// faturar), Blocked, InComposition ou InAnalysis
+        /// </summary>
+        [HttpPost("SalesOrders/{docCompany}/Status")]
+        [Tags("TotvsSalesOrders")]
+        public async Task<ActionResult> SalesOrderStatus(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.SalesOrders.OrderStatusChange body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.SalesOrders.OrderStatusChange> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsSalesOrdersService.PostOrdersChangeStatus(userName, docCompany, body));
+        }
+        /// <summary>
+        /// altera a capa do pedido de venda (POST sales-order/v2/header): prazo médio, operação, tabela de preço e prioridade. Com o pedido no banco,
+        /// operação e tabela de preço só mudam em andamento ou bloqueado
+        /// </summary>
+        [HttpPost("SalesOrders/{docCompany}/Header")]
+        [Tags("TotvsSalesOrders")]
+        public async Task<ActionResult> SalesOrderHeader(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.SalesOrders.OrderHeader body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.SalesOrders.OrderHeader> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsSalesOrdersService.PostHeader(userName, docCompany, body));
+        }
+        /// <summary>
+        /// inclui itens no pedido de venda (POST sales-order/v2/items): valor e reserva. O mesmo corpo em 10 minutos volta 409
+        /// </summary>
+        [HttpPost("SalesOrders/{docCompany}/Items")]
+        [Tags("TotvsSalesOrders")]
+        public async Task<ActionResult> SalesOrderItems(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.SalesOrders.OrderItemsAdd body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.SalesOrders.OrderItemsAdd> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsSalesOrdersService.PostItems(userName, docCompany, body));
+        }
+        /// <summary>
+        /// aumenta a quantidade dos itens do pedido de venda (POST sales-order/v2/quantity-items); com o item no banco, a nova precisa ser maior que
+        /// a atual (reduzir é pelo cancelamento de itens)
+        /// </summary>
+        [HttpPost("SalesOrders/{docCompany}/Items/Quantity")]
+        [Tags("TotvsSalesOrders")]
+        public async Task<ActionResult> SalesOrderItemsQuantity(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.SalesOrders.OrderItemsQuantity body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.SalesOrders.OrderItemsQuantity> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsSalesOrdersService.PostQuantityItems(userName, docCompany, body));
+        }
+        /// <summary>
+        /// liga contagens ao pedido de venda (POST sales-order/v2/relationship-counts). O mesmo corpo em 10 minutos volta 409
+        /// </summary>
+        [HttpPost("SalesOrders/{docCompany}/Counts")]
+        [Tags("TotvsSalesOrders")]
+        public async Task<ActionResult> SalesOrderCounts(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.SalesOrders.OrderCounts body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.SalesOrders.OrderCounts> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsSalesOrdersService.PostRelationshipCounts(userName, docCompany, body));
+        }
+        /// <summary>
+        /// liga itens de lote aos itens do pedido de venda (POST sales-order/v2/relationship-batch-items); com isUpdateQuantity, a quantidade do
+        /// pedido muda. O mesmo corpo em 10 minutos volta 409
+        /// </summary>
+        [HttpPost("SalesOrders/{docCompany}/BatchItems")]
+        [Tags("TotvsSalesOrders")]
+        public async Task<ActionResult> SalesOrderBatchItems(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.SalesOrders.OrderBatchItems body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.SalesOrders.OrderBatchItems> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsSalesOrdersService.PostRelationshipBatchItems(userName, docCompany, body));
+        }
+        /// <summary>
+        /// o ERP escolhe e grava os itens de lote do pedido pelo nuance de cor (POST sales-order/v2/suggest-batch-items-nuance). O mesmo pedido em
+        /// 10 minutos volta 409
+        /// </summary>
+        [HttpPost("SalesOrders/{docCompany}/BatchItems/SuggestNuance")]
+        [Tags("TotvsSalesOrders")]
+        public async Task<ActionResult> SalesOrderBatchItemsNuance(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.SalesOrders.OrderBatchItemsNuance body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.SalesOrders.OrderBatchItemsNuance> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsSalesOrdersService.PostSuggestBatchItemsNuance(userName, docCompany, body));
+        }
+        /// <summary>
+        /// remove um item do pedido de venda (DELETE sales-order/v2/items); pedido e produto na query (branchCode + orderCode ou orderId; productCode
+        /// ou productSku)
+        /// </summary>
+        [HttpDelete("SalesOrders/{docCompany}/Items")]
+        [Tags("TotvsSalesOrders")]
+        public async Task<ActionResult> DeleteSalesOrderItem(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromQuery] Domain.Totvs.Dtos.Writes.SalesOrders.OrderItemDelete parameters,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.SalesOrders.OrderItemDelete> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(parameters);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsSalesOrdersService.DeleteItems(userName, docCompany, parameters));
+        }
+        /// <summary>
+        /// remove o vínculo de um item de lote com o item do pedido (DELETE sales-order/v2/batch-items); pedido, produto e batchSequence na query
+        /// </summary>
+        [HttpDelete("SalesOrders/{docCompany}/BatchItems")]
+        [Tags("TotvsSalesOrders")]
+        public async Task<ActionResult> DeleteSalesOrderBatchItem(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromQuery] Domain.Totvs.Dtos.Writes.SalesOrders.OrderBatchItemDelete parameters,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.SalesOrders.OrderBatchItemDelete> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(parameters);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsSalesOrdersService.DeleteBatchItems(userName, docCompany, parameters));
+        }
+
+        /// <summary>
         /// resposta das leituras sem persistência (docs/PLANO-TOTVS-METODOS-FALTANTES.md §8.1, T11): 200 com o JSON ou o arquivo; 404 quando
         /// a Totvs não acha; 429 com Retry-After; 502 para 5xx, falta de resposta ou JSON inválido; 422 nos demais (empresa não cadastrada,
         /// 400 da Totvs)

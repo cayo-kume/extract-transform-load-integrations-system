@@ -72,5 +72,53 @@
         /// recusa em pedido do e-commerce
         /// </summary>
         public Task<Domain.Totvs.Dtos.Writes.Result> PostAdditionalItems(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderItemsAdditional body);
+
+        /// <summary>
+        /// muda a situação do pedido de venda (POST sales-order/v2/orders/change-status), pelo nome; BillingReleased libera para faturar
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PostOrdersChangeStatus(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderStatusChange body);
+
+        /// <summary>
+        /// altera a capa do pedido de venda (POST sales-order/v2/header). Com o pedido no banco, operação e tabela de preço só mudam em
+        /// andamento ou bloqueado (SO7)
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PostHeader(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderHeader body);
+
+        /// <summary>
+        /// aumenta a quantidade dos itens do pedido de venda (POST sales-order/v2/quantity-items); com o item no banco, a nova precisa ser
+        /// maior que a atual (SO7)
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PostQuantityItems(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderItemsQuantity body);
+
+        /// <summary>
+        /// inclui itens no pedido de venda (POST sales-order/v2/items); o mesmo corpo em 10 minutos volta 409 (T5)
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PostItems(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderItemsAdd body);
+
+        /// <summary>
+        /// remove um item do pedido de venda (DELETE sales-order/v2/items, com os campos na query)
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> DeleteItems(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderItemDelete parameters);
+
+        /// <summary>
+        /// liga contagens ao pedido de venda (POST sales-order/v2/relationship-counts); o mesmo corpo em 10 minutos volta 409 (T5)
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PostRelationshipCounts(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderCounts body);
+
+        /// <summary>
+        /// liga itens de lote aos itens do pedido de venda (POST sales-order/v2/relationship-batch-items); o mesmo corpo em 10 minutos volta 409
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PostRelationshipBatchItems(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderBatchItems body);
+
+        /// <summary>
+        /// remove o vínculo de um item de lote com o item do pedido (DELETE sales-order/v2/batch-items, com os campos na query)
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> DeleteBatchItems(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderBatchItemDelete parameters);
+
+        /// <summary>
+        /// o ERP escolhe e grava os itens de lote do pedido pelo nuance de cor (POST sales-order/v2/suggest-batch-items-nuance); o mesmo
+        /// pedido em 10 minutos volta 409
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PostSuggestBatchItemsNuance(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderBatchItemsNuance body);
     }
 }
