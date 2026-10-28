@@ -1836,6 +1836,106 @@ namespace Hangfire.Controllers.Totvs
         }
 
         /// <summary>
+        /// inclui um pedido de venda B2C (POST sales-order/v2/b2c-orders): reserva estoque e gera o financeiro do pagamento. O orderId é conferido
+        /// antes (existente volta 422 com o pedido); o mesmo corpo em 10 minutos volta 409
+        /// </summary>
+        [HttpPost("SalesOrders/{docCompany}/B2C")]
+        [Tags("TotvsSalesOrders")]
+        public async Task<ActionResult> SalesOrderB2C(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.SalesOrders.B2COrders.B2COrder body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.SalesOrders.B2COrders.B2COrder> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsSalesOrdersService.PostB2COrders(userName, docCompany, body));
+        }
+        /// <summary>
+        /// cancela o pedido de venda inteiro (POST sales-order/v2/orders/cancel), sem volta pela API; com o pedido no banco, cancelado ou atendido volta
+        /// 422
+        /// </summary>
+        [HttpPost("SalesOrders/{docCompany}/Cancel")]
+        [Tags("TotvsSalesOrders")]
+        public async Task<ActionResult> SalesOrderCancel(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.SalesOrders.OrderCancel body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.SalesOrders.OrderCancel> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsSalesOrdersService.PostOrdersCancel(userName, docCompany, body));
+        }
+        /// <summary>
+        /// altera o preço dos itens do pedido de venda (POST sales-order/v2/price-items): muda o valor do pedido
+        /// </summary>
+        [HttpPost("SalesOrders/{docCompany}/Items/Price")]
+        [Tags("TotvsSalesOrders")]
+        public async Task<ActionResult> SalesOrderItemsPrice(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.SalesOrders.OrderItemsPrice body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.SalesOrders.OrderItemsPrice> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsSalesOrdersService.PostPriceItems(userName, docCompany, body));
+        }
+        /// <summary>
+        /// cancela quantidades dos itens do pedido de venda (POST sales-order/v2/cancel-items); com o item no banco, até a pendente. O mesmo corpo em 10
+        /// minutos volta 409 (a quantidade é delta)
+        /// </summary>
+        [HttpPost("SalesOrders/{docCompany}/Items/Cancel")]
+        [Tags("TotvsSalesOrders")]
+        public async Task<ActionResult> SalesOrderItemsCancel(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.SalesOrders.OrderItemsCancel body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.SalesOrders.OrderItemsCancel> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsSalesOrdersService.PostCancelItems(userName, docCompany, body));
+        }
+        /// <summary>
+        /// liga o pedido de venda a uma transação do TOTVS Moda PDV (POST sales-order/v2/pdv-transactions): o pedido passa a constar como faturado pelo
+        /// PDV. O mesmo corpo em 10 minutos volta 409
+        /// </summary>
+        [HttpPost("SalesOrders/{docCompany}/PdvTransactions")]
+        [Tags("TotvsSalesOrders")]
+        public async Task<ActionResult> SalesOrderPdvTransactions(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.SalesOrders.OrderPdvTransaction body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.SalesOrders.OrderPdvTransaction> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsSalesOrdersService.PostPdvTransactions(userName, docCompany, body));
+        }
+
+        /// <summary>
         /// muda a situação do pedido de venda (POST sales-order/v2/orders/change-status) pelo nome: InProgress, BillingReleased (libera para
         /// faturar), Blocked, InComposition ou InAnalysis
         /// </summary>

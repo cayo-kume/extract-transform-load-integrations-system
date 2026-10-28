@@ -774,7 +774,7 @@ namespace Application.Totvs.Handlers.Commands
 
         public string CreateGetSaleOrderProductsQuery(string doc_company, int branchCode, int orderCode)
         {
-            return @$"SELECT PRODUCTCODE AS productCode, PRODUCTSKU AS productSku, [QUANTITY] AS quantity
+            return @$"SELECT PRODUCTCODE AS productCode, PRODUCTSKU AS productSku, [QUANTITY] AS quantity, PENDINGQUANTITY AS pendingQuantity
                      FROM TOTVS.TOTVSSALEORDERSPRODUCTS
                      WHERE DOC_COMPANY = '{doc_company}'
                      AND BRANCHCODE = {branchCode}

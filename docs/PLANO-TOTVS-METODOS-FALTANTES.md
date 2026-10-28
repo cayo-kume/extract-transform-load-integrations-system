@@ -2349,7 +2349,7 @@ onda 2 que entrar monta a base das leituras sem persistência (T11, §8.1).
 | SO-2 | 2 | `GetInvoices`, `GetPendingItems`; `GetChangedBatchItems` (vindo da SO-1: sob demanda por loja + pedido) | 13195, 13196, 13193 | base T11 **Implementada em 28/10/2026** (§10.13) |
 | SO-3 | 3 | trava de repetição (T5) + `PostAdditionalOrder`, `PostAdditionalItems`, `PostObservationsOrder`, `PostShippingOrder` | 13201, 13207, 13203, 13202 | AP-1 **Implementada em 28/10/2026** (§10.17); a trava T5 entrou antes, na PE-5 (§10.14) |
 | SO-4 | 4 | `PostOrdersChangeStatus`, `PostHeader` (SO8), `PostQuantityItems`, `PostItems`, `DeleteItems`; lote e contagem: `PostRelationshipBatchItems`, `DeleteBatchItems`, `PostSuggestBatchItemsNuance`, `PostRelationshipCounts` (SO2) | 13199, 13200, 13208, 13205, 13206, 13211–13214 | SO-3. **Implementada em 28/10/2026** (§10.24) |
-| SO-5 | 5 | `PostPriceItems`, `PostCancelItems`, `PostB2COrders` (com a conferência do `orderId`, SO5), `PostOrdersCancel`, `PostPdvTransactions` | 13209, 13210, 13197, 13198, 13204 | SO-4, T4 |
+| SO-5 | 5 | `PostPriceItems`, `PostCancelItems`, `PostB2COrders` (com a conferência do `orderId`, SO5), `PostOrdersCancel`, `PostPdvTransactions` | 13209, 13210, 13197, 13198, 13204 | SO-4, T4. **Implementada em 28/10/2026** (§10.29) |
 
 #### Fiscal (`TotvsInvoicesService`, §8)
 
@@ -3447,3 +3447,41 @@ loja e pedido no corpo); bloqueado do fornecedor esperado (chama); fornecedor di
 
 **Não verificado:** a chamada em homologação (o pedido de teste 1\|141 da §10.25, bloqueado, é o candidato); o que a Totvs faz com pedido
 parcialmente recebido; o `Script077` em banco e a rota pelo host.
+
+### 10.29 Fase SO-5: pedido B2C, cancelamentos, preço dos itens e transação PDV (28/10/2026)
+
+| Peça | Onde |
+|---|---|
+| DTOs do pedido B2C (`B2COrder` e 16 filhas: itens, descontos, classificações, pagamentos, observações, endereço, brindes, comissionados, terceiros, limites de faturamento), gerados do swagger, e os enums `B2COrderStatus`, `B2COrderChargeType`, `B2CPaymentDocumentType`, `B2CPaymentType`, `B2COrderLimitType` (frete, visualização e comissionado reusam os do pedido) | `Domain.Totvs/Dtos/Writes/SalesOrders/B2COrders` |
+| `OrderItemsPrice`/`OrderItemPrice`, `OrderItemsCancel`/`OrderItemCancel`, `OrderCancel`, `OrderPdvTransaction` (herdam `OrderKey`) | `Domain.Totvs/Dtos/Writes/SalesOrders` |
+| `B2COrderValidator`, `B2COrderItemValidator`, `B2COrderPaymentValidator` e um validador por DTO das outras rotas | `Application.Totvs/Validations/Writes/SalesOrders` |
+| `pendingQuantity` na consulta de produtos do pedido (`SaleOrderProductQuantity`) | `TotvsCommandHandler` |
+| `PostB2COrders` (13197), `PostOrdersCancel` (13198), `PostPdvTransactions` (13204), `PostPriceItems` (13209), `PostCancelItems` (13210) | `TotvsSalesOrdersService` |
+| 5 rotas `POST SalesOrders/{docCompany}/...` | `TotvsController` |
+| `Script078` (jobs) | `Infrastructure.Totvs/Scripts/SQLServer` |
+
+**Regras:**
+* **SO5:** antes de incluir, o service busca o `orderId` pelo `orders/search` (loja + `orderIdList`, `pageSize` 1; a busca fica em
+  `TotvsRequests`). Achou: 422 com o pedido existente, sem incluir. A busca falhou (5xx, 429, login): não inclui e devolve o status dela. Só
+  a lista vazia libera a inclusão, que ainda tem a trava T5 para o intervalo em que a busca não enxerga o pedido recém-criado.
+* **Enums do B2C:** o swagger declara `statusOrder`, `chargeType`, `documentType`, `paymentType`, `freightType`, `commissionedType`,
+  `visualizationType` e `limitType` como inteiros (vão como número, T3) e o `experienceType` como string (vai pelo nome). O `DocumentInputType`
+  segue o nome (16 Paypal, 18 cheque presente), como a §7.9 previa; os nomes com acento do `ChargeType` ficaram sem acento (vai o número).
+* **Validador do B2C** (obrigatórios pela descrição, não pelo schema, que marca os dois lados de cada "um ou outro"): cliente e
+  representante por código **ou** CPF/CNPJ; transportadora com `freightType`; redespacho com a transportadora e o tipo; pagamentos somando o
+  total (0,01 de tolerância); cartão com NSU, autorização, operadora e bandeira; `SplitOmni` com a empresa do financeiro; `integrationCode` só
+  com algum `paymentType`; seriais um por unidade; desconto por valor **ou** percentual. A soma dos itens fica com a Totvs.
+* **Cancelamento do pedido:** `ReasonCancellationDescription` com R maiúsculo, como no swagger, nos dois serializadores (o host lê e a Totvs
+  recebe com a mesma grafia). SO7: com o pedido no banco, cancelado ou atendido volta 422.
+* **Cancelamento de itens:** `cancelQuantity` é delta (trava T5); SO7: com o item no banco, até a `pendingQuantity`.
+* **Preço dos itens:** sem conferência local de preço e sem trava (valor absoluto); o corpo fica em `TotvsRequests`.
+* **Transação PDV:** trava T5; o pedido passa a constar como faturado pelo PDV.
+
+**Testes (console de rascunho, Totvs falsa):** B2C válido; vazio; pagamentos fora do total, cartão sem NSU, `SplitOmni` sem empresa,
+transportadora sem frete, experiência inválida; item pelos dois produtos, seriais a menos, desconto pelos dois, redespacho sem tipo. Novo
+(busca vazia, inclui; corpo da busca e enums conferidos), `orderId` existente (422 sem incluir), busca com 500 (não inclui), repetido com a
+busca ainda vazia (409 pela trava). Cancelamento válido, sem motivo; feito com o R maiúsculo no corpo e lido pelo `System.Text.Json`; já
+cancelado no banco (422). Preço sem valor e com 7 casas; alterado. Cancelamento de itens sem quantidade e motivo, acima da pendente (422),
+dentro (chama), repetido (409). Transação sem id; ligada; repetida (409).
+
+**Não verificado:** a chamada em homologação (cria e cancela pedido de verdade); o `Script078` em banco e as rotas pelo host.

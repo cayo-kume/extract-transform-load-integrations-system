@@ -256,6 +256,11 @@ Os nomes dos métodos são os da **documentação oficial** (`PostSearch*`, `Get
 | `TotvsSalesOrdersService` | `PostRelationshipBatchItems` | `POST sales-order/v2/relationship-batch-items` (com a trava de repetição) | 13212 | `Totvs:Writes:SalesOrders:Enabled` |
 | `TotvsSalesOrdersService` | `DeleteBatchItems` | `DELETE sales-order/v2/batch-items` | 13213 | `Totvs:Writes:SalesOrders:Enabled` |
 | `TotvsSalesOrdersService` | `PostSuggestBatchItemsNuance` | `POST sales-order/v2/suggest-batch-items-nuance` (com a trava de repetição) | 13214 | `Totvs:Writes:SalesOrders:Enabled` |
+| `TotvsSalesOrdersService` | `PostB2COrders` | `POST sales-order/v2/b2c-orders` (orderId conferido antes; com a trava de repetição) | 13197 | `Totvs:Writes:SalesOrders:Enabled` |
+| `TotvsSalesOrdersService` | `PostOrdersCancel` | `POST sales-order/v2/orders/cancel` (irreversível) | 13198 | `Totvs:Writes:SalesOrders:Enabled` |
+| `TotvsSalesOrdersService` | `PostPdvTransactions` | `POST sales-order/v2/pdv-transactions` (com a trava de repetição) | 13204 | `Totvs:Writes:SalesOrders:Enabled` |
+| `TotvsSalesOrdersService` | `PostPriceItems` | `POST sales-order/v2/price-items` | 13209 | `Totvs:Writes:SalesOrders:Enabled` |
+| `TotvsSalesOrdersService` | `PostCancelItems` | `POST sales-order/v2/cancel-items` (com a trava de repetição) | 13210 | `Totvs:Writes:SalesOrders:Enabled` |
 
 **Leituras sob demanda** (um registro por chave)
 
@@ -392,6 +397,7 @@ O DbUp executa cada script uma única vez, em ordem alfabética. Alterar um scri
 | `Script075` | Jobs das escritas de bônus da API Person (crédito e consumo, 13047 e 13048) |
 | `Script076` | Jobs das escritas de dados fiscais, preço, custo e promoção da API Product (13128–13134) |
 | `Script077` | Job do cancelamento de pedido de compra (13183) |
+| `Script078` | Jobs das escritas da API Sales Order com efeito financeiro (pedido B2C, cancelamentos, preço dos itens e transação PDV, 13197, 13198, 13204, 13209 e 13210) |
 
 **Regras gerais das tabelas e dos merges:**
 * Toda tabela de dados existe em dois schemas: `untreated` (recebe o bulk insert, sem chave) e `totvs` (tabela final, com PK). A exceção é `totvs.TotvsRequests`, que só recebe inserts.
@@ -564,6 +570,11 @@ escritas de pedido de venda, a **chave do pedido** é `branchCode` + `orderCode`
 | POST | `SalesOrders/{docCompany}/BatchItems` | `branchCode`, `orderCode`; `items` (`code` do produto, `isUpdateQuantity`, `batchItems` por loja + lote + sequência **ou** `barCode`, com a quantidade) | `PostRelationshipBatchItems` |
 | DELETE | `SalesOrders/{docCompany}/BatchItems` | query: chave do pedido, `productCode` **ou** `productSku`, `batchSequence` | `DeleteBatchItems` |
 | POST | `SalesOrders/{docCompany}/BatchItems/SuggestNuance` | só a chave do pedido | `PostSuggestBatchItemsNuance` (o ERP escolhe os lotes) |
+| POST | `SalesOrders/{docCompany}/B2C` | `orderId`, loja, data, cliente e representante (código **ou** CPF/CNPJ), operação, condição, prioridade, `statusOrder` (1, 5, 8), total e itens; pagamentos (soma igual ao total; cartão com NSU, autorização, operadora e bandeira), descontos, classificações, observações, endereço, brindes, comissionados, terceiros | `PostB2COrders` (orderId existente: 422 com o pedido; sem como conferir: não inclui) |
+| POST | `SalesOrders/{docCompany}/Cancel` | chave do pedido; `reasonCancellationCode`, `ReasonCancellationDescription` (R maiúsculo) | `PostOrdersCancel` (com o pedido no banco: cancelado ou atendido voltam 422) |
+| POST | `SalesOrders/{docCompany}/Items/Price` | chave do pedido; `items` (`productCode` **ou** `productSku`, `price` > 0) | `PostPriceItems` |
+| POST | `SalesOrders/{docCompany}/Items/Cancel` | chave do pedido; `items` (produto, `cancelQuantity` > 0, `reasonCancellationCode`) | `PostCancelItems` (com o item no banco, até a pendente) |
+| POST | `SalesOrders/{docCompany}/PdvTransactions` | chave do pedido; `transactionId`, loja, código e data da transação | `PostPdvTransactions` |
 
 | Código | Quando |
 |---|---|
@@ -661,6 +672,7 @@ Os jobs ficam em `auditing.Jobs`, com os mesmos ids em `EnumJob`.
 | 13135–13137 | `TotvsPostCreateBatch`, `TotvsPutBatchInfo`, `TotvsPostBatchPreferentialSalesOrder` | escrita |
 | 13180–13184 | `TotvsPostPurchaseOrders`, `TotvsPostPurchaseOrdersQuantityItems`, `TotvsPostPurchaseOrdersChangeStatus`, `TotvsPostPurchaseOrdersCancel`, `TotvsPostPurchaseOrderBatchLink` | escrita |
 | 13199–13203, 13205–13208 | `TotvsPostSalesOrderOrdersChangeStatus`, `TotvsPostSalesOrderHeader`, `TotvsPostSalesOrderAdditionalOrder`, `TotvsPostSalesOrderShippingOrder`, `TotvsPostSalesOrderObservationsOrder`, `TotvsPostSalesOrderItems`, `TotvsDeleteSalesOrderItems`, `TotvsPostSalesOrderAdditionalItems`, `TotvsPostSalesOrderQuantityItems` | escrita |
+| 13197, 13198, 13204, 13209, 13210 | `TotvsPostSalesOrderB2COrders`, `TotvsPostSalesOrderOrdersCancel`, `TotvsPostSalesOrderPdvTransactions`, `TotvsPostSalesOrderPriceItems`, `TotvsPostSalesOrderCancelItems` | escrita |
 | 13211–13214 | `TotvsPostSalesOrderRelationshipCounts`, `TotvsPostSalesOrderRelationshipBatchItems`, `TotvsDeleteSalesOrderBatchItems`, `TotvsPostSalesOrderSuggestBatchItemsNuance` | escrita |
 
 Toda execução grava `auditing.Logs` e, conforme o caso:

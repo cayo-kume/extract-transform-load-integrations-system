@@ -1387,5 +1387,108 @@ namespace Application.Totvs.Services
                 await _logger.CommitAllChanges();
             }
         }
+
+        // preço novo dos itens: valor absoluto, sem trava; sem conferência local de preço (o corpo fica em TotvsRequests para auditoria)
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostPriceItems(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderItemsPrice body) =>
+            await WriteOrder(user_name, doc_company, EnumJob.TotvsPostSalesOrderPriceItems, HttpMethod.Post, "sales-order/v2/price-items", body.branchCode, OrderKeyValue(body), body,
+                "Confira os preços dos itens do pedido antes de repetir.");
+
+        // cancelQuantity é delta: repetir cancela de novo, daí a trava (T5). SO7: com o item no banco, não passa da quantidade pendente
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostCancelItems(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderItemsCancel body) =>
+            await WriteOrder(user_name, doc_company, EnumJob.TotvsPostSalesOrderCancelItems, HttpMethod.Post, "sales-order/v2/cancel-items", body.branchCode, OrderKeyValue(body), body,
+                "Confira as quantidades canceladas do pedido antes de repetir.", repeatLock: true,
+                check: async () =>
+                {
+                    if (body.branchCode is null)
+                        return null;
+
+                    var stored = (await _totvsSalesOrdersRepository.GetSaleOrderProducts(doc_company, body.branchCode.Value, body.orderCode!.Value)).Where(x => x is not null).ToList();
+                    var above = body.items!
+                        .Select(i => (item: i, current: stored.FirstOrDefault(s => i.productCode is not null ? s!.productCode == i.productCode : s!.productSku == i.productSku)))
+                        .Where(x => x.current?.pendingQuantity is decimal pending && x.item.cancelQuantity > pending)
+                        .Select(x => $"{(object?)x.item.productCode ?? x.item.productSku} (pendente {x.current!.pendingQuantity:0.###})")
+                        .ToList();
+
+                    return above.Count == 0 ? null : $"Quantidade a cancelar acima da pendente: {String.Join(", ", above)}.";
+                });
+
+        // cancela o pedido inteiro, sem volta pela API. SO7: com o pedido no banco, cancelado ou atendido não cancela. O segundo cancelamento a
+        // Totvs recusa: sem trava
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostOrdersCancel(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderCancel body) =>
+            await WriteOrder(user_name, doc_company, EnumJob.TotvsPostSalesOrderOrdersCancel, HttpMethod.Post, "sales-order/v2/orders/cancel", body.branchCode, OrderKeyValue(body), body,
+                "Confira a situação do pedido antes de repetir.",
+                check: async () =>
+                {
+                    if (body.branchCode is null)
+                        return null;
+
+                    var status = await _totvsSalesOrdersRepository.GetSaleOrderStatus(doc_company, body.branchCode.Value, body.orderCode!.Value);
+
+                    return status switch
+                    {
+                        "Canceled" => $"O pedido de venda {OrderKeyValue(body)} já está cancelado em totvs.TotvsSaleOrders.",
+                        "Attended" => $"O pedido de venda {OrderKeyValue(body)} está atendido em totvs.TotvsSaleOrders: não cancela.",
+                        _ => null
+                    };
+                });
+
+        // liga o pedido a uma venda do PDV (passa a constar como faturado pelo PDV): trava (T5), a repetição com o mesmo transactionId é incerta
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostPdvTransactions(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderPdvTransaction body) =>
+            await WriteOrder(user_name, doc_company, EnumJob.TotvsPostSalesOrderPdvTransactions, HttpMethod.Post, "sales-order/v2/pdv-transactions", body.branchCode,
+                $"{OrderKeyValue(body)}|{body.transactionId}", body, "Confira a transação do pedido antes de repetir.", repeatLock: true);
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostB2COrders(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.B2COrders.B2COrder body)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsPostSalesOrderB2COrders);
+
+            var key = $"{body.branchCode}|{body.orderId}";
+
+            try
+            {
+                if (!_totvsService.IsWriteEnabled(WritesGroup))
+                    return _totvsService.WriteDisabled(WritesGroup, key);
+
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return _totvsService.CompanyNotFound(doc_company, key);
+
+                if (!(await _totvsService.GetBranchCodes(company)).Contains(body.branchCode!.Value))
+                    return _totvsService.BranchNotFound(doc_company, key, [body.branchCode.Value.ToString()]);
+
+                // SO5: o orderId é o único controle de duplicidade e não há nova tentativa em 5xx, então a busca vem antes, sempre. Achou: 422 com a
+                // chave do pedido existente. Não deu para conferir (5xx, 429, login): não inclui. A busca fica em TotvsRequests
+                var search = await _totvsService.ReadOnDemand(company, EnumJob.TotvsPostSalesOrderB2COrders, user_name, key, HttpMethod.Post, "sales-order/v2/orders/search",
+                    JsonConvert.SerializeObject(new { filter = new { branchCodeList = new[] { body.branchCode }, orderIdList = new[] { body.orderId } }, page = 1, pageSize = 1 }), "items");
+
+                if (search.success)
+                {
+                    var existing = search.data is { ValueKind: System.Text.Json.JsonValueKind.Object } data && data.TryGetProperty("items", out var items) && items.GetArrayLength() > 0
+                        ? $"{items[0].GetProperty("branchCode")}|{items[0].GetProperty("orderCode")}" : "?";
+                    var refused = $"O orderId {body.orderId} já existe na Totvs (pedido {existing}): nada foi incluído.";
+                    _logger.AddMessage(refused);
+
+                    return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, message = refused };
+                }
+
+                if (search.statusCode != 404)
+                {
+                    var notChecked = $"Não foi possível conferir se o orderId {body.orderId} já existe ({search.message}): nada foi incluído.";
+                    _logger.AddMessage(notChecked);
+
+                    return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, statusCode = search.statusCode, apiCalled = search.apiCalled, retryAfterSeconds = search.retryAfterSeconds, message = notChecked };
+                }
+
+                return await _totvsService.Write(company, EnumJob.TotvsPostSalesOrderB2COrders, user_name, key, HttpMethod.Post, "sales-order/v2/b2c-orders", body,
+                    "Confira o pedido pelo orderId antes de repetir (uma nova chamada já confere).", repeatLock: true);
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
     }
 }
