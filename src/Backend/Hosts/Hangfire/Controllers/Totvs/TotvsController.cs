@@ -544,6 +544,54 @@ namespace Hangfire.Controllers.Totvs
         }
 
         /// <summary>
+        /// sincroniza o catálogo de tipos de desconto (GET sales-order/v2/discount-type)
+        /// </summary>
+        [HttpGet("SalesOrderDiscountTypes")]
+        [Tags("TotvsSalesOrders")]
+        public async Task<ActionResult> SalesOrderDiscountTypes()
+        {
+            var result = await _totvsSalesOrdersService.GetDiscountType();
+
+            return Ok($"Records integrated successfully.");
+        }
+
+        /// <summary>
+        /// sincroniza o catálogo de classificações de pedido de venda (GET sales-order/v2/classifications)
+        /// </summary>
+        [HttpGet("SalesOrderClassifications")]
+        [Tags("TotvsSalesOrders")]
+        public async Task<ActionResult> SalesOrderClassifications()
+        {
+            var result = await _totvsSalesOrdersService.GetClassifications();
+
+            return Ok($"Records integrated successfully.");
+        }
+
+        /// <summary>
+        /// sincroniza os lotes de pedidos de venda (GET sales-order/v2/batch-items)
+        /// </summary>
+        [HttpGet("SalesOrderBatches")]
+        [Tags("TotvsSalesOrders")]
+        public async Task<ActionResult> SalesOrderBatches()
+        {
+            var result = await _totvsSalesOrdersService.GetBatchItems();
+
+            return Ok($"Records integrated successfully.");
+        }
+
+        /// <summary>
+        /// sincroniza as sugestões de faturamento, com pedidos e itens (GET sales-order/v2/billing-suggestions)
+        /// </summary>
+        [HttpGet("BillingSuggestions")]
+        [Tags("TotvsSalesOrders")]
+        public async Task<ActionResult> BillingSuggestions()
+        {
+            var result = await _totvsSalesOrdersService.GetBillingSuggestions();
+
+            return Ok($"Records integrated successfully.");
+        }
+
+        /// <summary>
         /// busca um pedido de venda por loja + número (POST sales-order/v2/orders/search com branchCodeList + orderCodeList) e grava; a chamada fica em totvs.TotvsRequests
         /// </summary>
         [HttpGet("SalesOrders/{docCompany}/{branchCode:int:min(1)}/{orderCode:int:min(1)}")]

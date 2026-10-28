@@ -601,5 +601,67 @@ namespace Application.Totvs.Handlers.Commands
                      WHERE DOC_COMPANY = '{doc_company}'
                      AND BRANCHINFOCODE = {branchInfoCode}";
         }
+
+        public string CreateGetSaleDiscountTypesLastChangeQuery(string doc_company)
+        {
+            return @$"SELECT MAX(MAXCHANGEFILTERDATE)
+                     FROM TOTVS.TOTVSSALEDISCOUNTTYPES
+                     WHERE DOC_COMPANY = '{doc_company}'";
+        }
+
+        public string CreateGetSaleDiscountTypesQuery(string doc_company)
+        {
+            // catálogo pequeno: o cache de estado é montado com a tabela inteira da empresa
+            return @$"SELECT DOC_COMPANY, CODE, MAXCHANGEFILTERDATE
+                     FROM TOTVS.TOTVSSALEDISCOUNTTYPES
+                     WHERE DOC_COMPANY = '{doc_company}'";
+        }
+
+        public string CreateGetSaleClassificationsLastChangeQuery(string doc_company)
+        {
+            return @$"SELECT MAX(MAXCHANGEFILTERDATE)
+                     FROM TOTVS.TOTVSSALECLASSIFICATIONS
+                     WHERE DOC_COMPANY = '{doc_company}'";
+        }
+
+        public string CreateGetSaleClassificationsQuery(string doc_company)
+        {
+            // catálogo pequeno: o cache de estado é montado com a tabela inteira da empresa
+            return @$"SELECT DOC_COMPANY, TYPECODE, CODE, MAXCHANGEFILTERDATE
+                     FROM TOTVS.TOTVSSALECLASSIFICATIONS
+                     WHERE DOC_COMPANY = '{doc_company}'";
+        }
+
+        public string CreateGetSaleOrderBatchesLastChangeQuery(string doc_company)
+        {
+            return @$"SELECT MAX(MAXCHANGEFILTERDATE)
+                     FROM TOTVS.TOTVSSALEORDERBATCHES
+                     WHERE DOC_COMPANY = '{doc_company}'";
+        }
+
+        public string CreateGetSaleOrderBatchesQuery(string doc_company)
+        {
+            // catálogo pequeno: o cache de estado é montado com a tabela inteira da empresa
+            return @$"SELECT DOC_COMPANY, CODE, MAXCHANGEFILTERDATE
+                     FROM TOTVS.TOTVSSALEORDERBATCHES
+                     WHERE DOC_COMPANY = '{doc_company}'";
+        }
+
+        public string CreateGetBillingSuggestionsLastChangeQuery(string doc_company)
+        {
+            return @$"SELECT MAX(MAXCHANGEFILTERDATE)
+                     FROM TOTVS.TOTVSBILLINGSUGGESTIONS
+                     WHERE DOC_COMPANY = '{doc_company}'";
+        }
+
+        public string CreateGetBillingSuggestionsByKeysQuery(string doc_company, List<(int branchCode, int suggestionCode)> keys)
+        {
+            // sugestões por (loja, código), como os pedidos; com lista vazia a query é inválida, e o repositório não a chama nesse caso
+            return @$"SELECT S.DOC_COMPANY, S.BRANCHCODE, S.SUGGESTIONCODE, S.MAXCHANGEFILTERDATE
+                     FROM TOTVS.TOTVSBILLINGSUGGESTIONS S
+                     INNER JOIN (VALUES {String.Join(", ", keys.Select(k => $"({k.branchCode}, {k.suggestionCode})"))}) K (BRANCHCODE, SUGGESTIONCODE)
+                     ON K.BRANCHCODE = S.BRANCHCODE AND K.SUGGESTIONCODE = S.SUGGESTIONCODE
+                     WHERE S.DOC_COMPANY = '{doc_company}'";
+        }
     }
 }

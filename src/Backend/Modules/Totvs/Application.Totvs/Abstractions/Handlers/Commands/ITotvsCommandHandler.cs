@@ -89,5 +89,14 @@
         public string CreateGetSimilarLastWindowEndQuery(string doc_company);
         public string CreateGetBatchesHashesQuery(string doc_company, int branchCode);
         public string CreateGetSkusProductCodesQuery(string doc_company, int branchInfoCode);
+
+        public string CreateGetSaleDiscountTypesLastChangeQuery(string doc_company);
+        public string CreateGetSaleDiscountTypesQuery(string doc_company);
+        public string CreateGetSaleClassificationsLastChangeQuery(string doc_company);
+        public string CreateGetSaleClassificationsQuery(string doc_company);
+        public string CreateGetSaleOrderBatchesLastChangeQuery(string doc_company);
+        public string CreateGetSaleOrderBatchesQuery(string doc_company);
+        public string CreateGetBillingSuggestionsLastChangeQuery(string doc_company);
+        public string CreateGetBillingSuggestionsByKeysQuery(string doc_company, List<(int branchCode, int suggestionCode)> keys);
     }
 }

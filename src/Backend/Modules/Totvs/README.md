@@ -176,6 +176,10 @@ Os nomes dos métodos são os da **documentação oficial** (`PostSearch*`, `Get
 | `TotvsProductsService` | `PostSearchProductCodes` | `POST product/v2/product-codes/search` (conferência por marca; recupera as referências que faltam) | `TotvsSkus` e filhas | 13097 | diário |
 | `TotvsPurchaseOrdersService` | `PostSearchPurchaseOrders` | `POST purchase-order/v2/search` | `TotvsPurchaseOrders` e 2 filhas | 13004 | 3 min |
 | `TotvsSalesOrdersService` | `PostSearchSalesOrders` | `POST sales-order/v2/orders/search` | `TotvsSaleOrders` e 10 filhas/netas | 13005 | 3 min |
+| `TotvsSalesOrdersService` | `GetDiscountType` | `GET sales-order/v2/discount-type` | `TotvsSaleDiscountTypes` | 13190 | 120 min |
+| `TotvsSalesOrdersService` | `GetClassifications` | `GET sales-order/v2/classifications` | `TotvsSaleClassifications` | 13191 | 120 min |
+| `TotvsSalesOrdersService` | `GetBatchItems` | `GET sales-order/v2/batch-items` (lotes de pedidos) | `TotvsSaleOrderBatches` | 13192 | 120 min |
+| `TotvsSalesOrdersService` | `GetBillingSuggestions` | `GET sales-order/v2/billing-suggestions` | `TotvsBillingSuggestions`, pedidos e itens | 13194 | 3 min |
 | `TotvsAccountsPayableService` | `PostSearchDuplicates` | `POST accounts-payable/v2/duplicates/search` | `TotvsDuplicates` e 2 filhas | 13008 | 3 min |
 | `TotvsAccountsPayableService` | `PostSearchComissionsPaid` | `POST accounts-payable/v2/comissions-paid/search` (uma chamada por loja) | `TotvsCommissionsPaid` e movimentos | 13009 | 3 min |
 | `TotvsInvoicesService` | `PostSearchInvoices` | `POST fiscal/v2/invoices/search` | `TotvsInvoices` e 9 filhas/netas | 13003 | 3 min |
@@ -311,6 +315,7 @@ O DbUp executa cada script uma única vez, em ordem alfabética. Alterar um scri
 | `Script048`–`050` | Preços, custos e saldos |
 | `Script051`–`053` | Itens das tabelas de preço e promoções |
 | `Script054`–`056` | Similares, lotes e a conferência das referências |
+| `Script057`–`059` | Catálogos, lotes de pedidos e sugestões de faturamento da API Sales Order |
 
 **Regras gerais das tabelas e dos merges:**
 * Toda tabela de dados existe em dois schemas: `untreated` (recebe o bulk insert, sem chave) e `totvs` (tabela final, com PK). A exceção é `totvs.TotvsRequests`, que só recebe inserts.
@@ -345,6 +350,10 @@ Rota base: `TotvsJobs/Totvs`. O verbo segue a documentação oficial: `POST` nas
 | POST | `Products/Balances` | `TotvsProductsService.PostSearchBalances` |
 | POST | `PurchaseOrders` | `TotvsPurchaseOrdersService.PostSearchPurchaseOrders` |
 | POST | `SalesOrders` | `TotvsSalesOrdersService.PostSearchSalesOrders` |
+| GET | `SalesOrderDiscountTypes` | `TotvsSalesOrdersService.GetDiscountType` |
+| GET | `SalesOrderClassifications` | `TotvsSalesOrdersService.GetClassifications` |
+| GET | `SalesOrderBatches` | `TotvsSalesOrdersService.GetBatchItems` |
+| GET | `BillingSuggestions` | `TotvsSalesOrdersService.GetBillingSuggestions` |
 | POST | `Duplicates` | `TotvsAccountsPayableService.PostSearchDuplicates` |
 | POST | `ComissionsPaid` | `TotvsAccountsPayableService.PostSearchComissionsPaid` |
 | POST | `Invoices` | `TotvsInvoicesService.PostSearchInvoices` |
@@ -418,7 +427,7 @@ Os jobs ficam em `auditing.Jobs`, com os mesmos ids em `EnumJob`.
 | Faixa | Tipo (`IdType`) | Conteúdo |
 |---|---|---|
 | 13000–13499 | 2 (Integração) | Leituras, com `IdParent = 130` (app Totvs) |
-| 13500–13999 | 1 (Procedure) | Procedures `sp_<Tabela>_Sync` (13500–13641), com `IdParent` = job da leitura e o mesmo intervalo |
+| 13500–13999 | 1 (Procedure) | Procedures `sp_<Tabela>_Sync` (13500–13647), com `IdParent` = job da leitura e o mesmo intervalo |
 
 | Id | Job | Intervalo |
 |---|---|---|
@@ -465,6 +474,10 @@ Os jobs ficam em `auditing.Jobs`, com os mesmos ids em `EnumJob`.
 | 13094 | `TotvsGetSimilar` | 120 min |
 | 13095 | `TotvsPostSearchBatch` | 120 min |
 | 13097 | `TotvsPostSearchProductCodes` | diário |
+| 13190 | `TotvsGetSalesOrderDiscountType` | 120 min |
+| 13191 | `TotvsGetSalesOrderClassifications` | 120 min |
+| 13192 | `TotvsGetSalesOrderBatchItems` | 120 min |
+| 13194 | `TotvsGetSalesOrderBillingSuggestions` | 3 min |
 | 13018 | `TotvsPostDuplicates` | escrita (reservado, fase AP-2) |
 | 13019 | `TotvsPostGroupDuplicates` | escrita (reservado, fase AP-2) |
 | 13020 | `TotvsPostDuplicatesInstallmentsStage` | escrita |

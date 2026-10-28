@@ -69,6 +69,12 @@
         TotvsPostSearchBatch = 13095,   //Script056_Insert_Totvs_Product_Similar_And_Batches_Jobs_Into_Jobs_Table.sql
         TotvsPostSearchProductCodes = 13097,   //Script056_Insert_Totvs_Product_Similar_And_Batches_Jobs_Into_Jobs_Table.sql
 
+        // catálogos (120 min), lotes de pedidos (120 min) e sugestões de faturamento (3 min) da API Sales Order (fase SO-1); 13193 reservado (SO-2)
+        TotvsGetSalesOrderDiscountType = 13190,   //Script059_Insert_Totvs_Sales_Order_Catalogs_Jobs_Into_Jobs_Table.sql
+        TotvsGetSalesOrderClassifications = 13191,   //Script059_Insert_Totvs_Sales_Order_Catalogs_Jobs_Into_Jobs_Table.sql
+        TotvsGetSalesOrderBatchItems = 13192,   //Script059_Insert_Totvs_Sales_Order_Catalogs_Jobs_Into_Jobs_Table.sql
+        TotvsGetSalesOrderBillingSuggestions = 13194,   //Script059_Insert_Totvs_Sales_Order_Catalogs_Jobs_Into_Jobs_Table.sql
+
         // escritas (TotvsController, com X-User-Name; não recorrentes): docs/PLANO-TOTVS-METODOS-FALTANTES.md §9.4
         TotvsPostDuplicates = 13018,   //Script032_Insert_Totvs_Accounts_Payable_Writes_Jobs_Into_Jobs_Table.sql (fase AP-2)
         TotvsPostGroupDuplicates = 13019,   //Script032_Insert_Totvs_Accounts_Payable_Writes_Jobs_Into_Jobs_Table.sql (fase AP-2)

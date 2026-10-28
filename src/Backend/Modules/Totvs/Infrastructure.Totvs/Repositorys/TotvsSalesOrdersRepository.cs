@@ -68,5 +68,128 @@ namespace Infrastructure.Totvs.Repositorys
 
             return true;
         }
+
+        public async Task<DateTime?> GetSaleDiscountTypesLastChange(string doc_company)
+        {
+            string sql = _totvsCommandHandler.CreateGetSaleDiscountTypesLastChangeQuery(doc_company);
+
+            return await _coreRepository.GetRecord<DateTime?>(sql);
+        }
+
+        public async Task<IEnumerable<Domain.Totvs.Entities.Reads.SalesOrders.Catalogs.SaleDiscountType?>> GetSaleDiscountTypes(string doc_company)
+        {
+            string sql = _totvsCommandHandler.CreateGetSaleDiscountTypesQuery(doc_company);
+
+            return await _coreRepository.GetRecords<Domain.Totvs.Entities.Reads.SalesOrders.Catalogs.SaleDiscountType>(sql);
+        }
+
+        public async Task<bool> BulkInsertIntoTotvsSaleDiscountTypes(List<Domain.Totvs.Entities.Reads.SalesOrders.Catalogs.SaleDiscountType> data, Guid? parentExecutionGUID)
+        {
+            var table = _coreRepository.CreateSystemDataTable(entity: new Domain.Totvs.Entities.Reads.SalesOrders.Catalogs.SaleDiscountType(), tableName: "TotvsSaleDiscountTypes");
+
+            _coreRepository.FillSystemDataTable(table, data.Cast<object>().ToList());
+            _coreRepository.BulkInsertIntoTableRaw(table, "untreated");
+
+            await _coreRepository.CallDbProcMerge("totvs", table.TableName, parentExecutionGUID);
+
+            return true;
+        }
+
+        public async Task<DateTime?> GetSaleClassificationsLastChange(string doc_company)
+        {
+            string sql = _totvsCommandHandler.CreateGetSaleClassificationsLastChangeQuery(doc_company);
+
+            return await _coreRepository.GetRecord<DateTime?>(sql);
+        }
+
+        public async Task<IEnumerable<Domain.Totvs.Entities.Reads.SalesOrders.Catalogs.SaleClassification?>> GetSaleClassifications(string doc_company)
+        {
+            string sql = _totvsCommandHandler.CreateGetSaleClassificationsQuery(doc_company);
+
+            return await _coreRepository.GetRecords<Domain.Totvs.Entities.Reads.SalesOrders.Catalogs.SaleClassification>(sql);
+        }
+
+        public async Task<bool> BulkInsertIntoTotvsSaleClassifications(List<Domain.Totvs.Entities.Reads.SalesOrders.Catalogs.SaleClassification> data, Guid? parentExecutionGUID)
+        {
+            var table = _coreRepository.CreateSystemDataTable(entity: new Domain.Totvs.Entities.Reads.SalesOrders.Catalogs.SaleClassification(), tableName: "TotvsSaleClassifications");
+
+            _coreRepository.FillSystemDataTable(table, data.Cast<object>().ToList());
+            _coreRepository.BulkInsertIntoTableRaw(table, "untreated");
+
+            await _coreRepository.CallDbProcMerge("totvs", table.TableName, parentExecutionGUID);
+
+            return true;
+        }
+
+        public async Task<DateTime?> GetSaleOrderBatchesLastChange(string doc_company)
+        {
+            string sql = _totvsCommandHandler.CreateGetSaleOrderBatchesLastChangeQuery(doc_company);
+
+            return await _coreRepository.GetRecord<DateTime?>(sql);
+        }
+
+        public async Task<IEnumerable<Domain.Totvs.Entities.Reads.SalesOrders.Catalogs.SaleOrderBatch?>> GetSaleOrderBatches(string doc_company)
+        {
+            string sql = _totvsCommandHandler.CreateGetSaleOrderBatchesQuery(doc_company);
+
+            return await _coreRepository.GetRecords<Domain.Totvs.Entities.Reads.SalesOrders.Catalogs.SaleOrderBatch>(sql);
+        }
+
+        public async Task<bool> BulkInsertIntoTotvsSaleOrderBatches(List<Domain.Totvs.Entities.Reads.SalesOrders.Catalogs.SaleOrderBatch> data, Guid? parentExecutionGUID)
+        {
+            var table = _coreRepository.CreateSystemDataTable(entity: new Domain.Totvs.Entities.Reads.SalesOrders.Catalogs.SaleOrderBatch(), tableName: "TotvsSaleOrderBatches");
+
+            _coreRepository.FillSystemDataTable(table, data.Cast<object>().ToList());
+            _coreRepository.BulkInsertIntoTableRaw(table, "untreated");
+
+            await _coreRepository.CallDbProcMerge("totvs", table.TableName, parentExecutionGUID);
+
+            return true;
+        }
+
+        public async Task<DateTime?> GetBillingSuggestionsLastChange(string doc_company)
+        {
+            string sql = _totvsCommandHandler.CreateGetBillingSuggestionsLastChangeQuery(doc_company);
+
+            return await _coreRepository.GetRecord<DateTime?>(sql);
+        }
+
+        public async Task<IEnumerable<Domain.Totvs.Entities.Reads.SalesOrders.BillingSuggestions.BillingSuggestion?>> GetBillingSuggestionsByKeys(string doc_company, List<(int branchCode, int suggestionCode)> keys)
+        {
+            var result = new List<Domain.Totvs.Entities.Reads.SalesOrders.BillingSuggestions.BillingSuggestion?>();
+
+            // lotes de 1000 chaves, como nos pedidos
+            foreach (var chunk in keys.Distinct().Chunk(1000))
+            {
+                string sql = _totvsCommandHandler.CreateGetBillingSuggestionsByKeysQuery(doc_company, chunk.ToList());
+
+                result.AddRange(await _coreRepository.GetRecords<Domain.Totvs.Entities.Reads.SalesOrders.BillingSuggestions.BillingSuggestion>(sql));
+            }
+
+            return result;
+        }
+
+        public async Task<bool> BulkInsertIntoTotvsBillingSuggestions(List<Domain.Totvs.Entities.Reads.SalesOrders.BillingSuggestions.BillingSuggestion> data, Guid? parentExecutionGUID)
+        {
+            // ordem = ordem dos merges: sugestão, pedidos e itens (FKs e condição de exclusão do merge)
+            var tables = new List<(DataTable table, IList rows)>
+            {
+                (_coreRepository.CreateSystemDataTable(entity: new Domain.Totvs.Entities.Reads.SalesOrders.BillingSuggestions.BillingSuggestion(), tableName: "TotvsBillingSuggestions"), data),
+                (_coreRepository.CreateSystemDataTable(entity: new Domain.Totvs.Entities.Reads.SalesOrders.BillingSuggestions.BillingSuggestionOrder(), tableName: "TotvsBillingSuggestionsOrders"), data.SelectMany(x => x.orders).ToList()),
+                (_coreRepository.CreateSystemDataTable(entity: new Domain.Totvs.Entities.Reads.SalesOrders.BillingSuggestions.BillingSuggestionOrderItem(), tableName: "TotvsBillingSuggestionsOrdersItems"), data.SelectMany(x => x.orderItems).ToList()),
+            };
+
+            foreach (var (table, rows) in tables)
+            {
+                _coreRepository.FillSystemDataTable(table, rows.Cast<object>().ToList());
+                _coreRepository.BulkInsertIntoTableRaw(table, "untreated");
+            }
+
+            // o merge das filhas roda mesmo sem linhas no lote: é ele que apaga as que saíram da sugestão
+            foreach (var (table, _) in tables)
+                await _coreRepository.CallDbProcMerge("totvs", table.TableName, parentExecutionGUID);
+
+            return true;
+        }
     }
 }

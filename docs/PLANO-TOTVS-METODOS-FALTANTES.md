@@ -1571,6 +1571,8 @@ até 4 dígitos, `orderCode` `int?` até 9, `orderId` até 100) e um `OrderKeyVa
 | `GET discount-type` | `GET TotvsJobs/Totvs/SalesOrderDiscountTypes` | `Page`, `PageSize` (máx. 1000) | `TotvsSaleDiscountTypes` (`doc_company`, `code`) | 13190, 120 min |
 | `GET classifications` | `GET TotvsJobs/Totvs/SalesOrderClassifications` | `Page`, `PageSize` (máx. 1000) | `TotvsSaleClassifications` (`doc_company`, `typeCode`, `code`) | 13191, 120 min |
 
+* **Na implementação (§10.9)**, pela T9, os dois seguem a janela do banco (a resposta traz `maxChangeFilterDate` com o filtro),
+  não o hash abaixo.
 * **Leitura inteira a cada execução** (domínios pequenos), sem `StartChangeDate`/`EndChangeDate`: o desenho "só regrava
   quando muda" das comissões, com hash do JSON de cada item em cache (`Totvs:SaleDiscountTypesHash:<cnpj>`,
   `Totvs:SaleClassificationsHash:<cnpj>`). Item novo ou com hash diferente vai para `untreated` e merge; o resto é
@@ -2339,8 +2341,8 @@ onda 2 que entrar monta a base das leituras sem persistência (T11, §8.1).
 
 | Fase | Onda | Métodos | Jobs | Depende de |
 |---|---|---|---|---|
-| SO-1 | 1 | `GetDiscountType`, `GetClassifications`; `GetBatchItems`, `GetChangedBatchItems`, `GetBillingSuggestions` (SO2) | 13190–13194 | — |
-| SO-2 | 2 | `GetInvoices`, `GetPendingItems` | 13195, 13196 | base T11 |
+| SO-1 | 1 | `GetDiscountType`, `GetClassifications`; `GetBatchItems`, `GetChangedBatchItems`, `GetBillingSuggestions` (SO2) | 13190–13194 | — **Implementada em 27/10/2026** (§10.9), sem o `GetChangedBatchItems`: a rota exige `BranchCode` e `OrderCode` e passou para a SO-2 |
+| SO-2 | 2 | `GetInvoices`, `GetPendingItems`; `GetChangedBatchItems` (vindo da SO-1: sob demanda por loja + pedido) | 13195, 13196, 13193 | base T11 |
 | SO-3 | 3 | trava de repetição (T5) + `PostAdditionalOrder`, `PostAdditionalItems`, `PostObservationsOrder`, `PostShippingOrder` | 13201, 13207, 13203, 13202 | AP-1 |
 | SO-4 | 4 | `PostOrdersChangeStatus`, `PostHeader` (SO8), `PostQuantityItems`, `PostItems`, `DeleteItems`; lote e contagem: `PostRelationshipBatchItems`, `DeleteBatchItems`, `PostSuggestBatchItemsNuance`, `PostRelationshipCounts` (SO2) | 13199, 13200, 13208, 13205, 13206, 13211–13214 | SO-3 |
 | SO-5 | 5 | `PostPriceItems`, `PostCancelItems`, `PostB2COrders` (com a conferência do `orderId`, SO5), `PostOrdersCancel`, `PostPdvTransactions` | 13209, 13210, 13197, 13198, 13204 | SO-4, T4 |
@@ -2719,3 +2721,38 @@ o estado da loja semeado para a carga inicial começar nos últimos 250 produtos
 * as colunas das 5 `DataTable` batem com o `Script054`.
 
 **Não verificado:** os scripts `054`–`056` em banco e as rotas pelo host.
+
+### 10.9 Fase SO-1: catálogos, lotes de pedidos e sugestões de faturamento da API Sales Order (27/10/2026)
+
+**O que entrou** (no `TotvsSalesOrdersService`, como diz a §7):
+* `GetDiscountType` (job 13190), `GetClassifications` (13191) e `GetBatchItems` (13192), a cada 120 min: com o filtro de
+  alteração as três respostas trazem `maxChangeFilterDate`, então seguem o desenho das filiais e da PE-1/PR-1 (T9) e não o hash
+  proposto na §7.1: janela pelo banco (`MAX(maxChangeFilterDate)` − 1 h; banco vazio, desde 2000), cache de estado
+  `Totvs:<Catálogo>:<cnpj>` com a tabela inteira da empresa, e o registro sem a chave (`code` nulo) vai para o log sem ser gravado.
+  Tabelas `TotvsSaleDiscountTypes`, `TotvsSaleClassifications` (o `type` vem como número, 1 capa e 2 item, e é gravado como veio)
+  e `TotvsSaleOrderBatches`;
+* `GetBillingSuggestions` (job 13194, 3 min): janela pelo banco desde 01/01/2025 em fatias de 30 dias, com `Expand=items`, cache de
+  estado por (loja, sugestão) como os pedidos, e a sugestão de loja fora de `TotvsBranches` da empresa vai para o log e é
+  descartada (a rota não filtra por lista de lojas). Tabelas `TotvsBillingSuggestions`, `TotvsBillingSuggestionsOrders` e
+  `TotvsBillingSuggestionsOrdersItems`, com exclusão das filhas quando a sugestão é regravada;
+* **`GetChangedBatchItems` não entrou**: `changed-batch-items` responde 400 `EmptyField` sem `BranchCode` e `OrderCode`, mesmo
+  com as datas. Pela regra da §7.2, a rota não serve como leitura recorrente: passa para a SO-2 como leitura sob demanda por loja +
+  pedido (job 13193 reservado), e a releitura dos pedidos alterados (SO2) cai junto;
+* o helper `GetCatalogPages<T>` do service pagina os quatro GET e trata 404 (declarado por três deles) como lista vazia;
+* `Script057`–`059` (6 tabelas, procedures **13642–13647**), rotas `GET TotvsJobs/Totvs/SalesOrderDiscountTypes`,
+  `.../SalesOrderClassifications`, `.../SalesOrderBatches` e `.../BillingSuggestions`.
+
+**Achados na chamada real (27/10/2026):** 6 tipos de desconto e 9 classificações (nenhum `code` nulo, nenhuma chave repetida;
+textos bem abaixo dos tamanhos do swagger); nenhum lote de pedido e nenhuma sugestão de faturamento na base (implementados pela
+T14, conferidos com respostas sintéticas).
+
+**Conferido com o console descartável** (API real e respostas sintéticas, banco falso):
+* tipos de desconto e classificações: a 1ª execução grava 6 e 9 em 1 chamada cada; a 2ª, com a janela desde o maior
+  `maxChangeFilterDate` − 1 h, não grava nada;
+* lotes de pedidos: contra a API, nada; sintético, grava o lote com código e registra o sem código; a 2ª não regrava;
+* sugestões de faturamento: contra a API, as 23 fatias desde 01/01/2025 sem nada; sintético, grava a sugestão da loja 1 com 2
+  pedidos (o pedido repetido fica com a última versão) e 1 item, registra e descarta a da loja 999; a 2ª, com a mesma data, não
+  regrava; a 3ª, com data nova, regrava;
+* as colunas das 6 `DataTable` batem com o `Script057`.
+
+**Não verificado:** os scripts `057`–`059` em banco e as rotas pelo host.
