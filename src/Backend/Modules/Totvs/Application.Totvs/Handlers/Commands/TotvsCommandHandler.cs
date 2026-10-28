@@ -663,5 +663,28 @@ namespace Application.Totvs.Handlers.Commands
                      ON K.BRANCHCODE = S.BRANCHCODE AND K.SUGGESTIONCODE = S.SUGGESTIONCODE
                      WHERE S.DOC_COMPANY = '{doc_company}'";
         }
+
+        public string CreateGetInvoicesDisableLastChangeQuery(string doc_company)
+        {
+            return @$"SELECT MAX(MAXCHANGEFILTERDATE)
+                     FROM TOTVS.TOTVSINVOICESDISABLE
+                     WHERE DOC_COMPANY = '{doc_company}'";
+        }
+
+        public string CreateGetInvoicesDisableQuery(string doc_company)
+        {
+            // poucas faixas por ano (~120 em 12 meses, testado): o cache de estado é montado com a tabela inteira da empresa
+            return @$"SELECT DOC_COMPANY, BRANCHCODE, DOCUMENTTYPE, SERIALCODE, INITIALINVOICENUMBER, MAXCHANGEFILTERDATE
+                     FROM TOTVS.TOTVSINVOICESDISABLE
+                     WHERE DOC_COMPANY = '{doc_company}'";
+        }
+
+        public string CreateGetCostCentersHashesQuery(string doc_company)
+        {
+            // centros gravados com o hash do JSON (a resposta não tem data de alteração: a leitura é inteira)
+            return @$"SELECT [CODE], JSON_HASH
+                     FROM TOTVS.TOTVSCOSTCENTERS
+                     WHERE DOC_COMPANY = '{doc_company}'";
+        }
     }
 }

@@ -670,6 +670,30 @@ namespace Hangfire.Controllers.Totvs
         }
 
         /// <summary>
+        /// sincroniza as faixas de numeração inutilizadas de todas as lojas (GET fiscal/v2/invoices/disable)
+        /// </summary>
+        [HttpGet("InvoicesDisable")]
+        [Tags("TotvsInvoices")]
+        public async Task<ActionResult> InvoicesDisable()
+        {
+            var result = await _totvsInvoicesService.GetInvoicesDisable();
+
+            return Ok($"Records integrated successfully.");
+        }
+
+        /// <summary>
+        /// sincroniza os centros de custo, com as classificações (GET fiscal/v2/cost-center)
+        /// </summary>
+        [HttpGet("CostCenters")]
+        [Tags("TotvsInvoices")]
+        public async Task<ActionResult> CostCenters()
+        {
+            var result = await _totvsInvoicesService.GetCostCenter();
+
+            return Ok($"Records integrated successfully.");
+        }
+
+        /// <summary>
         /// busca uma nota fiscal por loja + sequência (POST fiscal/v2/invoices/search com branchCodeList + invoiceSequenceList) e grava; a chamada fica em totvs.TotvsRequests
         /// </summary>
         [HttpGet("Invoices/{docCompany}/{branchCode:int:min(1)}/{invoiceSequence:int:min(1)}")]

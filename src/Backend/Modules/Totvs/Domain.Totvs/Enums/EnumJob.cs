@@ -75,6 +75,10 @@
         TotvsGetSalesOrderBatchItems = 13192,   //Script059_Insert_Totvs_Sales_Order_Catalogs_Jobs_Into_Jobs_Table.sql
         TotvsGetSalesOrderBillingSuggestions = 13194,   //Script059_Insert_Totvs_Sales_Order_Catalogs_Jobs_Into_Jobs_Table.sql
 
+        // inutilizações e centros de custo da API Fiscal (fase FI-1), a cada 2 horas
+        TotvsGetInvoicesDisable = 13250,   //Script062_Insert_Totvs_Fiscal_Catalogs_Jobs_Into_Jobs_Table.sql
+        TotvsGetCostCenter = 13251,   //Script062_Insert_Totvs_Fiscal_Catalogs_Jobs_Into_Jobs_Table.sql
+
         // escritas (TotvsController, com X-User-Name; não recorrentes): docs/PLANO-TOTVS-METODOS-FALTANTES.md §9.4
         TotvsPostDuplicates = 13018,   //Script032_Insert_Totvs_Accounts_Payable_Writes_Jobs_Into_Jobs_Table.sql (fase AP-2)
         TotvsPostGroupDuplicates = 13019,   //Script032_Insert_Totvs_Accounts_Payable_Writes_Jobs_Into_Jobs_Table.sql (fase AP-2)

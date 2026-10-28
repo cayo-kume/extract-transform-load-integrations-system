@@ -70,5 +70,60 @@ namespace Infrastructure.Totvs.Repositorys
 
             return true;
         }
+
+        public async Task<DateTime?> GetInvoicesDisableLastChange(string doc_company)
+        {
+            string sql = _totvsCommandHandler.CreateGetInvoicesDisableLastChangeQuery(doc_company);
+
+            return await _coreRepository.GetRecord<DateTime?>(sql);
+        }
+
+        public async Task<IEnumerable<InvoiceDisable?>> GetInvoicesDisable(string doc_company)
+        {
+            string sql = _totvsCommandHandler.CreateGetInvoicesDisableQuery(doc_company);
+
+            return await _coreRepository.GetRecords<InvoiceDisable>(sql);
+        }
+
+        public async Task<bool> BulkInsertIntoTotvsInvoicesDisable(List<InvoiceDisable> data, Guid? parentExecutionGUID)
+        {
+            var table = _coreRepository.CreateSystemDataTable(entity: new InvoiceDisable(), tableName: "TotvsInvoicesDisable");
+
+            _coreRepository.FillSystemDataTable(table, data.Cast<object>().ToList());
+            _coreRepository.BulkInsertIntoTableRaw(table, "untreated");
+
+            await _coreRepository.CallDbProcMerge("totvs", table.TableName, parentExecutionGUID);
+
+            return true;
+        }
+
+        public async Task<IEnumerable<CostCenter?>> GetCostCentersHashes(string doc_company)
+        {
+            string sql = _totvsCommandHandler.CreateGetCostCentersHashesQuery(doc_company);
+
+            return await _coreRepository.GetRecords<CostCenter>(sql);
+        }
+
+        public async Task<bool> BulkInsertIntoTotvsCostCenters(List<CostCenter> data, Guid? parentExecutionGUID)
+        {
+            // ordem = ordem dos merges: o centro antes das classificações (FK e condição de exclusão do merge)
+            var tables = new List<(DataTable table, IList rows)>
+            {
+                (_coreRepository.CreateSystemDataTable(entity: new CostCenter(), tableName: "TotvsCostCenters"), data),
+                (_coreRepository.CreateSystemDataTable(entity: new CostCenterClassification(), tableName: "TotvsCostCentersClassifications"), data.SelectMany(x => x.classifications).ToList()),
+            };
+
+            foreach (var (table, rows) in tables)
+            {
+                _coreRepository.FillSystemDataTable(table, rows.Cast<object>().ToList());
+                _coreRepository.BulkInsertIntoTableRaw(table, "untreated");
+            }
+
+            // o merge das classificações roda mesmo sem linhas no lote: é ele que apaga as que saíram do centro
+            foreach (var (table, _) in tables)
+                await _coreRepository.CallDbProcMerge("totvs", table.TableName, parentExecutionGUID);
+
+            return true;
+        }
     }
 }

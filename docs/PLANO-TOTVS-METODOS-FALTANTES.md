@@ -2351,7 +2351,7 @@ onda 2 que entrar monta a base das leituras sem persistência (T11, §8.1).
 
 | Fase | Onda | Métodos | Jobs | Depende de |
 |---|---|---|---|---|
-| FI-1 | 1 | `GetCostCenter` (hash em coluna, F5), `GetInvoicesDisable` (F4) | 13251, 13250 | — |
+| FI-1 | 1 | `GetCostCenter` (hash em coluna, F5), `GetInvoicesDisable` (F4) | 13251, 13250 | — **Implementada em 27/10/2026** (§10.10). Com ela, a onda 1 fica concluída |
 | FI-2 | 2 | base das leituras sem persistência (§8.1) + `GetXmlContents`, `PostSearchDanfe`, `PostTransactionPrint` (F9), `GetInvoicesPendingConditionalProducts`, `GetSearchInvoicesItemDetail` (com o teste da F3), `PostSearchInvoiceProducts` (F10) | 13252–13257 | — (se for a primeira fase da onda 2, é ela que monta a base T11) |
 | FI-3 | 5 | `PostInvoicesManifestations` (F1: implementada mesmo sem caso de uso) | 13258 | AP-1, T1 |
 | — | fora | `GetDigitalCertificates` (F2) | — | — |
@@ -2756,3 +2756,37 @@ T14, conferidos com respostas sintéticas).
 * as colunas das 6 `DataTable` batem com o `Script057`.
 
 **Não verificado:** os scripts `057`–`059` em banco e as rotas pelo host.
+
+### 10.10 Fase FI-1: inutilizações e centros de custo da API Fiscal (27/10/2026)
+
+**O que entrou** (no `TotvsInvoicesService`, F7):
+* `GetInvoicesDisable` (job 13250, 120 min, F4): `BranchCodeList` é obrigatório (400 `EmptyField` sem ele) e vai com todas as
+  lojas da empresa repetidas na rota (`BranchCodeList=1&BranchCodeList=2...`), porque os parâmetros de query do `IApiClient` são
+  um dicionário (o `BuildUrl` junta o resto com `&`); 25 lojas cabem com folga na URL. Janela pelo banco (`MAX(maxChangeFilterDate)`
+  − 1 h; banco vazio, desde 01/01/2025) em fatias de 30 dias, cache de estado com a tabela inteira da empresa. Tabela
+  `TotvsInvoicesDisable`, chave loja + modelo + série + número inicial, com série e modelo nulos gravados como `''` e `0`;
+* `GetCostCenter` (job 13251, 120 min): a rota exige `StartChangeDate`/`EndChangeDate`, mas a resposta não tem
+  `maxChangeFilterDate`: leitura inteira desde 2000 e o hash do JSON de cada centro na coluna `json_hash`, montado do banco (F5,
+  T9). Tabelas `TotvsCostCenters` (os enums `class`, `classType`, `indirectType` pelo nome, como vêm) e
+  `TotvsCostCentersClassifications` (o `code` do pai vira `costCenterCode`);
+* o helper `GetFiscalPages<T>` do service pagina os dois GET; `Script060`–`062` (procedures **13648–13650**), rotas
+  `GET TotvsJobs/Totvs/InvoicesDisable` e `GET .../CostCenters`.
+
+**Achados na chamada real (27/10/2026):**
+* `cost-center` recusa `PageSize` acima de **100** (o swagger diz 1000), como o `promotion`; 48 centros (47 `Expense` /
+  `Administrative`, o 999 "padrão" sem classe), nenhum inativo, nenhum com classificação; sem `IsInactive` vêm todos;
+* `invoices/disable`: 119 faixas nos últimos 12 meses (a primeira em 17/06/2026, depois da migração), em 16 lojas, 87 de NF-e
+  (55) e 32 de NFC-e (65), nenhuma chave repetida; todas com `maxChangeFilterDate`.
+
+**Conferido com o console descartável** (API real e respostas sintéticas, banco falso):
+* inutilizações: a 1ª execução grava as 119 em 23 chamadas (as fatias desde 01/01/2025); a 2ª faz 1 chamada e não grava nada;
+  sintético, a faixa com série e modelo nulos é gravada com `''` e `0`, e a faixa invertida com CNPJ curto vai para o log (e é
+  gravada, pela regra das leituras);
+* centros de custo: a 1ª grava os 48; a 2ª não grava nada; com a descrição de um centro alterada, só ele é regravado;
+* as colunas das 3 `DataTable` batem com o `Script060`.
+
+**Não verificado:** os scripts `060`–`062` em banco e as rotas pelo host.
+
+**Onda 1 concluída** (PE-1, PE-2, SE-1, PR-1, PR-2, SO-1 e FI-1), com o `GetChangedBatchItems` passado para a SO-2 e o
+`PostOmniChangedBalances` reservado (PR2). A onda 2 (leituras sob demanda sem persistência: PE-3, PE-4, PR-3, PO-1, SO-2 e FI-2)
+começa pela base T11 (§8.1).

@@ -183,6 +183,8 @@ Os nomes dos métodos são os da **documentação oficial** (`PostSearch*`, `Get
 | `TotvsAccountsPayableService` | `PostSearchDuplicates` | `POST accounts-payable/v2/duplicates/search` | `TotvsDuplicates` e 2 filhas | 13008 | 3 min |
 | `TotvsAccountsPayableService` | `PostSearchComissionsPaid` | `POST accounts-payable/v2/comissions-paid/search` (uma chamada por loja) | `TotvsCommissionsPaid` e movimentos | 13009 | 3 min |
 | `TotvsInvoicesService` | `PostSearchInvoices` | `POST fiscal/v2/invoices/search` | `TotvsInvoices` e 9 filhas/netas | 13003 | 3 min |
+| `TotvsInvoicesService` | `GetInvoicesDisable` | `GET fiscal/v2/invoices/disable` (todas as lojas na rota) | `TotvsInvoicesDisable` | 13250 | 120 min |
+| `TotvsInvoicesService` | `GetCostCenter` | `GET fiscal/v2/cost-center` (inteira, com hash) | `TotvsCostCenters` e classificações | 13251 | 120 min |
 | `TotvsRepresentativesService` | `PostSearchRepresentatives` | `POST person/v2/representatives/search` | `TotvsRepresentatives` e 10 filhas | 13030 | 120 min |
 | `TotvsRepresentativesService` | `GetSearchReceptionSale` | `GET person/v2/reception-sale/search` (pela data do movimento, com hash) | `TotvsReceptionSales` e formas de pagamento | 13031 | 3 min |
 | `TotvsPersonCatalogsService` | `GetClassifications` | `GET person/v2/classifications` | `TotvsPersonClassifications` | 13032 | 120 min |
@@ -316,6 +318,7 @@ O DbUp executa cada script uma única vez, em ordem alfabética. Alterar um scri
 | `Script051`–`053` | Itens das tabelas de preço e promoções |
 | `Script054`–`056` | Similares, lotes e a conferência das referências |
 | `Script057`–`059` | Catálogos, lotes de pedidos e sugestões de faturamento da API Sales Order |
+| `Script060`–`062` | Inutilizações e centros de custo da API Fiscal |
 
 **Regras gerais das tabelas e dos merges:**
 * Toda tabela de dados existe em dois schemas: `untreated` (recebe o bulk insert, sem chave) e `totvs` (tabela final, com PK). A exceção é `totvs.TotvsRequests`, que só recebe inserts.
@@ -357,6 +360,8 @@ Rota base: `TotvsJobs/Totvs`. O verbo segue a documentação oficial: `POST` nas
 | POST | `Duplicates` | `TotvsAccountsPayableService.PostSearchDuplicates` |
 | POST | `ComissionsPaid` | `TotvsAccountsPayableService.PostSearchComissionsPaid` |
 | POST | `Invoices` | `TotvsInvoicesService.PostSearchInvoices` |
+| GET | `InvoicesDisable` | `TotvsInvoicesService.GetInvoicesDisable` |
+| GET | `CostCenters` | `TotvsInvoicesService.GetCostCenter` |
 | POST | `Representatives` | `TotvsRepresentativesService.PostSearchRepresentatives` |
 | GET | `ReceptionSales` | `TotvsRepresentativesService.GetSearchReceptionSale` |
 | GET | `People/Classifications` | `TotvsPersonCatalogsService.GetClassifications` |
@@ -427,7 +432,7 @@ Os jobs ficam em `auditing.Jobs`, com os mesmos ids em `EnumJob`.
 | Faixa | Tipo (`IdType`) | Conteúdo |
 |---|---|---|
 | 13000–13499 | 2 (Integração) | Leituras, com `IdParent = 130` (app Totvs) |
-| 13500–13999 | 1 (Procedure) | Procedures `sp_<Tabela>_Sync` (13500–13647), com `IdParent` = job da leitura e o mesmo intervalo |
+| 13500–13999 | 1 (Procedure) | Procedures `sp_<Tabela>_Sync` (13500–13650), com `IdParent` = job da leitura e o mesmo intervalo |
 
 | Id | Job | Intervalo |
 |---|---|---|
@@ -478,6 +483,8 @@ Os jobs ficam em `auditing.Jobs`, com os mesmos ids em `EnumJob`.
 | 13191 | `TotvsGetSalesOrderClassifications` | 120 min |
 | 13192 | `TotvsGetSalesOrderBatchItems` | 120 min |
 | 13194 | `TotvsGetSalesOrderBillingSuggestions` | 3 min |
+| 13250 | `TotvsGetInvoicesDisable` | 120 min |
+| 13251 | `TotvsGetCostCenter` | 120 min |
 | 13018 | `TotvsPostDuplicates` | escrita (reservado, fase AP-2) |
 | 13019 | `TotvsPostGroupDuplicates` | escrita (reservado, fase AP-2) |
 | 13020 | `TotvsPostDuplicatesInstallmentsStage` | escrita |

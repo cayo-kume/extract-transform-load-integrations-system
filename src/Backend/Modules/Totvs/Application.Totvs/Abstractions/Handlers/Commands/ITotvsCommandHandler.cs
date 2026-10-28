@@ -97,6 +97,9 @@
         public string CreateGetSaleOrderBatchesLastChangeQuery(string doc_company);
         public string CreateGetSaleOrderBatchesQuery(string doc_company);
         public string CreateGetBillingSuggestionsLastChangeQuery(string doc_company);
+        public string CreateGetInvoicesDisableLastChangeQuery(string doc_company);
+        public string CreateGetInvoicesDisableQuery(string doc_company);
+        public string CreateGetCostCentersHashesQuery(string doc_company);
         public string CreateGetBillingSuggestionsByKeysQuery(string doc_company, List<(int branchCode, int suggestionCode)> keys);
     }
 }

@@ -26,8 +26,14 @@ namespace Application.Totvs.Services
         private readonly ITotvsService _totvsService;
         private readonly ITotvsInvoicesRepository _totvsInvoicesRepository;
         private readonly IValidator<Domain.Totvs.Dtos.Reads.Invoices.Invoice> _invoiceValidator;
+        private readonly IValidator<Domain.Totvs.Dtos.Reads.Invoices.InvoiceDisable> _invoiceDisableValidator;
+        private readonly IValidator<Domain.Totvs.Dtos.Reads.Invoices.CostCenter> _costCenterValidator;
 
         private const string InvoicesKey = "Totvs:Invoices";
+        private const string InvoicesDisableKey = "Totvs:InvoicesDisable";
+
+        // máximo das rotas de inutilização e de centro de custo (o swagger do cost-center diz 1000, mas a rota recusa mais de 100, testado)
+        private const int FiscalCatalogsPageSize = 100;
 
         // decisão do documento (§10.1); com o expand completo, 100 notas levam poucos segundos (testado)
         private const int InvoicesPageSize = 100;
@@ -52,10 +58,12 @@ namespace Application.Totvs.Services
             IMemoryCache cache,
             ITotvsService totvsService,
             ITotvsInvoicesRepository totvsInvoicesRepository,
-            IValidator<Domain.Totvs.Dtos.Reads.Invoices.Invoice> invoiceValidator
+            IValidator<Domain.Totvs.Dtos.Reads.Invoices.Invoice> invoiceValidator,
+            IValidator<Domain.Totvs.Dtos.Reads.Invoices.InvoiceDisable> invoiceDisableValidator,
+            IValidator<Domain.Totvs.Dtos.Reads.Invoices.CostCenter> costCenterValidator
         ) =>
-            (_apiClient, _logger, _cache, _totvsService, _totvsInvoicesRepository, _invoiceValidator) =
-            (apiClient, logger, cache, totvsService, totvsInvoicesRepository, invoiceValidator);
+            (_apiClient, _logger, _cache, _totvsService, _totvsInvoicesRepository, _invoiceValidator, _invoiceDisableValidator, _costCenterValidator) =
+            (apiClient, logger, cache, totvsService, totvsInvoicesRepository, invoiceValidator, invoiceDisableValidator, costCenterValidator);
 
         public async Task<bool?> PostSearchInvoices()
         {
@@ -546,6 +554,336 @@ namespace Application.Totvs.Services
             }
 
             return _listSomenteNovos.Count;
+        }
+
+        public async Task<bool?> GetInvoicesDisable()
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsGetInvoicesDisable);
+
+            var totalInseridos = 0;
+
+            try
+            {
+                foreach (var company in await _totvsService.GetCompanys())
+                {
+                    // BranchCodeList é obrigatório (400 EmptyField, testado): as lojas vão repetidas na rota (BranchCodeList=1&BranchCodeList=2),
+                    // porque os parâmetros de query do IApiClient são um dicionário; o BuildUrl junta o resto com &
+                    var branchCodes = await _totvsService.GetBranchCodes(company);
+
+                    if (branchCodes.Count == 0)
+                    {
+                        _logger.AddMessage($"Empresa {company.doc_company} sem lojas em totvs.TotvsBranches: rode o GetBranchesList antes.");
+                        continue;
+                    }
+
+                    var route = "fiscal/v2/invoices/disable?" + String.Join("&", branchCodes.Select(x => $"BranchCodeList={x}"));
+                    var endDate = _totvsService.GetBatchTime();
+
+                    // banco vazio: desde 01/01/2025 (igual às notas), em fatias de 30 dias; depois, MAX(maxChangeFilterDate) − 1 h
+                    var lastChange = await _totvsInvoicesRepository.GetInvoicesDisableLastChange(company.doc_company!);
+                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : new DateTime(2025, 1, 1);
+
+                    for (var windowStart = since; windowStart < endDate; windowStart = windowStart.AddDays(InvoicesWindowDays))
+                    {
+                        var windowEnd = windowStart.AddDays(InvoicesWindowDays) < endDate ? windowStart.AddDays(InvoicesWindowDays) : endDate;
+
+                        var items = await GetFiscalPages<Domain.Totvs.Dtos.Reads.Invoices.InvoiceDisable>(company, route, page => new Dictionary<string, string>
+                        {
+                            { "StartDate", $"{windowStart:yyyy-MM-ddTHH:mm:ss}" },
+                            { "EndDate", $"{windowEnd:yyyy-MM-ddTHH:mm:ss}" },
+                            { "Order", "maxChangeFilterDate" },
+                            { "Page", page.ToString() },
+                            { "PageSize", FiscalCatalogsPageSize.ToString() }
+                        });
+
+                        // fatia incompleta para a leitura: a próxima execução continua do MAX(maxChangeFilterDate)
+                        if (items is null)
+                            break;
+
+                        if (items.Count == 0)
+                            continue;
+
+                        static string Key(Domain.Totvs.Dtos.Reads.Invoices.InvoiceDisable x) =>
+                            $"{ConverterValidatorsExtensions.ConvertToInt32Validation(x.branchCode)}|{ConverterValidatorsExtensions.ConvertToInt32Validation(x.documentType)}|{(x.serialCode ?? String.Empty).ToUpperInvariant()}|{ConverterValidatorsExtensions.ConvertToInt32Validation(x.initialInvoiceNumber)}";
+
+                        // cache de estado: chave -> maxChangeFilterDate gravado, por empresa (poucas faixas: a tabela inteira da empresa)
+                        var itemsCache = await _cache.GetOrCreateAsync($"{InvoicesDisableKey}:{company.doc_company}", async entry =>
+                        {
+                            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(2);
+                            entry.SlidingExpiration = TimeSpan.FromMinutes(30);
+
+                            var list = await _totvsInvoicesRepository.GetInvoicesDisable(company.doc_company!);
+
+                            return list
+                                .Where(x => x != null)
+                                .GroupBy(x => $"{x!.branchCode}|{x.documentType}|{x.serialCode.ToUpperInvariant()}|{x.initialInvoiceNumber}")
+                                .ToDictionary(g => g.Key, g => g.First()!.maxChangeFilterDate);
+                        });
+
+                        // mantém só os novos ou com maxChangeFilterDate mais recente que o gravado (sem data, regrava)
+                        items.RemoveAll(x =>
+                            itemsCache!.TryGetValue(Key(x.dto), out var y) &&
+                            NullableConverters.ToNullableDateTime(x.dto.maxChangeFilterDate) <= y
+                        );
+
+                        totalInseridos += await SaveInvoicesDisable(company.doc_company!, _totvsService.GetBatchTime(), items, itemsCache);
+                    }
+                }
+
+                _logger.AddMessage(
+                    $"Concluída com sucesso: {totalInseridos} registro(s) novo(s) ou atualizado(s) inserido(s)!"
+                );
+
+                return true;
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        /// <summary>
+        /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa. Sem loja ou número inicial
+        /// (a chave), a faixa vai para o log e não é gravada. Devolve a quantidade de faixas gravadas.
+        /// </summary>
+        private async Task<int> SaveInvoicesDisable(
+            string doc_company,
+            DateTime batchTime,
+            List<(Domain.Totvs.Dtos.Reads.Invoices.InvoiceDisable dto, JObject json)> items,
+            Dictionary<string, DateTime?>? itemsCache)
+        {
+            var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Invoices.InvoiceDisable record, string json)>();
+
+            foreach (var item in items)
+            {
+                var validations = _invoiceDisableValidator.Validate(item.dto);
+
+                if (validations.Errors.Count > 0)
+                {
+                    var message = String.Empty;
+                    validations.Errors.ForEach(s => message += $"inutilização {item.dto.branchCode}/{item.dto.documentType}/{item.dto.serialCode}/{item.dto.initialInvoiceNumber}: {s.ErrorMessage}\n");
+                    _logger.AddMessage(message);
+                }
+
+                var record = new Domain.Totvs.Entities.Reads.Invoices.InvoiceDisable(doc_company, batchTime, item.dto);
+
+                if (record.branchCode != 0 && record.initialInvoiceNumber != 0)
+                    _listSomenteNovos.Add((record, item.json.ToString(Formatting.None)));
+            }
+
+            // a mesma faixa pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
+            var records = _listSomenteNovos.GroupBy(x => $"{x.record.branchCode}|{x.record.documentType}|{x.record.serialCode.ToUpperInvariant()}|{x.record.initialInvoiceNumber}").Select(g => g.Last()).ToList();
+
+            if (records.Count == 0)
+                return 0;
+
+            await _totvsInvoicesRepository.BulkInsertIntoTotvsInvoicesDisable(records.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
+
+            foreach (var (record, json) in records)
+            {
+                var key = $"{record.branchCode}|{record.documentType}|{record.serialCode.ToUpperInvariant()}|{record.initialInvoiceNumber}";
+
+                _logger.AddRecord(key, json);
+
+                if (itemsCache is not null)
+                    itemsCache[key] = record.maxChangeFilterDate;
+            }
+
+            return records.Count;
+        }
+
+        public async Task<bool?> GetCostCenter()
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsGetCostCenter);
+
+            var totalInseridos = 0;
+
+            try
+            {
+                foreach (var company in await _totvsService.GetCompanys())
+                {
+                    var batchTime = _totvsService.GetBatchTime();
+
+                    // a rota exige StartChangeDate/EndChangeDate, mas a resposta não traz maxChangeFilterDate: a leitura é inteira (desde 2000)
+                    // e o hash do JSON de cada centro, comparado com o json_hash gravado, diz o que mudou (F5, T9). IsInactive não é enviado:
+                    // sem ele vêm os ativos e os inativos (testado)
+                    var items = await GetFiscalPages<Domain.Totvs.Dtos.Reads.Invoices.CostCenter>(company, "fiscal/v2/cost-center", page => new Dictionary<string, string>
+                    {
+                        { "StartChangeDate", "2000-01-01T00:00:00" },
+                        { "EndChangeDate", $"{batchTime:yyyy-MM-ddTHH:mm:ss}" },
+                        { "Page", page.ToString() },
+                        { "PageSize", FiscalCatalogsPageSize.ToString() }
+                    });
+
+                    // leitura incompleta não é gravada: só a leitura inteira diz quais centros mudaram
+                    if (items is null || items.Count == 0)
+                        continue;
+
+                    var stored = (await _totvsInvoicesRepository.GetCostCentersHashes(company.doc_company!))
+                        .Where(x => x != null)
+                        .GroupBy(x => x!.code)
+                        .ToDictionary(g => g.Key, g => g.First()!.json_hash);
+
+                    totalInseridos += await SaveCostCenters(company.doc_company!, batchTime, items, stored);
+                }
+
+                _logger.AddMessage(
+                    $"Concluída com sucesso: {totalInseridos} registro(s) novo(s) ou atualizado(s) inserido(s)!"
+                );
+
+                return true;
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        /// <summary>
+        /// valida, monta as entidades (com o mesmo horário de lote e o hash do JSON) e grava só os centros novos ou com hash diferente
+        /// do gravado. Devolve a quantidade de centros gravados.
+        /// </summary>
+        private async Task<int> SaveCostCenters(
+            string doc_company,
+            DateTime batchTime,
+            List<(Domain.Totvs.Dtos.Reads.Invoices.CostCenter dto, JObject json)> items,
+            Dictionary<int, string> stored)
+        {
+            var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Invoices.CostCenter record, string json)>();
+
+            foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.code) != 0).GroupBy(x => x.dto.code).Select(g => g.Last()))
+            {
+                var json = item.json.ToString(Formatting.None);
+                var hash = _logger.ComputeSha256Hash(json);
+
+                // sem data de alteração: só regrava quando o JSON mudou
+                if (stored.TryGetValue(ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.code), out var storedHash) && storedHash == hash)
+                    continue;
+
+                var validations = _costCenterValidator.Validate(item.dto);
+
+                if (validations.Errors.Count > 0)
+                {
+                    var message = String.Empty;
+                    validations.Errors.ForEach(s => message += $"centro de custo {item.dto.code}: {s.ErrorMessage}\n");
+                    _logger.AddMessage(message);
+                }
+
+                _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Invoices.CostCenter(doc_company, batchTime, hash, item.dto), json));
+            }
+
+            if (_listSomenteNovos.Count == 0)
+                return 0;
+
+            await _totvsInvoicesRepository.BulkInsertIntoTotvsCostCenters(_listSomenteNovos.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
+
+            foreach (var (record, json) in _listSomenteNovos)
+                _logger.AddRecord(record.code.ToString(), json);
+
+            return _listSomenteNovos.Count;
+        }
+
+        /// <summary>
+        /// lê todas as páginas de um GET da API Fiscal (inutilizações e centros de custo). Devolve cada item com o seu JSON, ou null se
+        /// alguma página falhou (a mensagem vai para o log)
+        /// </summary>
+        private async Task<List<(T dto, JObject json)>?> GetFiscalPages<T>(Domain.Totvs.Entities.Parameters.Company company, string route, Func<int, Dictionary<string, string>> query)
+        {
+            var items = new List<(T dto, JObject json)>();
+            var page = 1;
+            var totalPages = 1;
+            var routeName = route.Split('?')[0];
+
+            while (page <= totalPages)
+            {
+                // uma nova tentativa: 401 renova o token, 429 espera o Retry-After e 502/503/504 espera 10 s
+                ApiResponse? response = null;
+
+                for (var attempt = 1; attempt <= 2; attempt++)
+                {
+                    var token = await _totvsService.GetToken(company);
+
+                    if (token is null)
+                        break;   // a mensagem do login já foi para o log
+
+                    response = await _apiClient.SendAsync(
+                        HttpMethod.Get,
+                        route,
+                        headers: new Dictionary<string, string> { { "Authorization", $"Bearer {token}" } },
+                        queryParams: query(page)
+                    );
+
+                    if (attempt == 1 && response.StatusCode == 401)
+                    {
+                        _totvsService.RemoveToken(company);
+                        continue;
+                    }
+
+                    if (attempt == 1 && response.StatusCode == 429)
+                    {
+                        var seconds = response.Headers.TryGetValue("Retry-After", out var retryAfter) && int.TryParse(retryAfter, out var value) ? value : 5;
+                        await Task.Delay(TimeSpan.FromSeconds(Math.Clamp(seconds, 1, 60)));
+                        continue;
+                    }
+
+                    if (attempt == 1 && response.StatusCode is 502 or 503 or 504)
+                    {
+                        await Task.Delay(TimeSpan.FromSeconds(10));
+                        continue;
+                    }
+
+                    break;
+                }
+
+                if (response is null || !response.IsSuccess)
+                {
+                    if (response is not null)
+                    {
+                        var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
+                        _logger.AddMessage($"Erro da API Totvs em {routeName} (empresa {company.doc_company}, página {page}): {response.StatusCode} {body}");
+                    }
+
+                    return null;
+                }
+
+                Page<T>? result = null;
+                JArray json = [];
+
+                try
+                {
+                    result = JsonConvert.DeserializeObject<Page<T>>(response.Content ?? String.Empty);
+
+                    // DateParseHandling.None: o JSON gravado e o hash ficam com as datas como a API mandou
+                    using var reader = new JsonTextReader(new StringReader(response.Content!)) { DateParseHandling = DateParseHandling.None };
+                    json = (JObject.Load(reader)["items"] as JArray) ?? [];
+                }
+                catch (JsonException)
+                {
+                    // result continua null: tratado abaixo como resposta inválida
+                }
+
+                if (result?.items is null || json.Count != result.items.Count)
+                {
+                    var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
+                    _logger.AddMessage($"Resposta inválida da API Totvs em {routeName} (empresa {company.doc_company}, página {page}): {body}");
+
+                    return null;
+                }
+
+                for (var i = 0; i < json.Count; i++)
+                    items.Add((result.items[i], (JObject)json[i]));
+
+                totalPages = result.totalPages;
+                page++;
+            }
+
+            return items;
         }
     }
 }
