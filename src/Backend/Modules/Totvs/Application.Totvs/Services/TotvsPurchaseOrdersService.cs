@@ -290,5 +290,164 @@ namespace Application.Totvs.Services
 
             return _listSomenteNovos.Count;
         }
+
+        /// <summary>
+        /// busca um pedido de compra por loja + número, grava nas tabelas de pedidos (sempre, sem consultar o cache)
+        /// e registra a chamada em totvs.TotvsRequests
+        /// </summary>
+        public async Task<bool?> GetPurchaseOrderByKey(string user_name, string doc_company, int branchCode, int orderCode)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsGetPurchaseOrderByKey);
+
+            // rota registrada no log de requisições (sem o token); o filtro vai no corpo
+            const string route = "purchase-order/v2/search";
+            var key = $"{branchCode}|{orderCode}";
+            bool? result;
+
+            try
+            {
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                {
+                    // nenhuma chamada à API: não há o que registrar em TotvsRequests (igual ao Movidesk)
+                    _logger.AddMessage($"Empresa {doc_company} não cadastrada em totvs.TotvsParameters.");
+                    return null;
+                }
+
+                // o change é o que faz o maxChangeFilterDate vir preenchido (sem ele vem nulo, testado), e a busca de pedidos de compra aceita a
+                // janela desde 2000: sem ele o pedido seria regravado na próxima execução do job (fase PO-1, DP4)
+                var requestBody = JsonConvert.SerializeObject(new
+                {
+                    filter = new
+                    {
+                        branchCodeList = new[] { branchCode },
+                        orderCodeList = new[] { orderCode },
+                        change = new
+                        {
+                            startDate = "2000-01-01T00:00:00",
+                            endDate = $"{_totvsService.GetBatchTime():yyyy-MM-ddTHH:mm:ss}"
+                        }
+                    },
+                    page = 1,
+                    pageSize = 1,
+                    expand = Expand
+                });
+
+                // uma nova tentativa: 401 renova o token, 429 espera o Retry-After e 502/503/504 espera 10 s
+                ApiResponse? response = null;
+
+                try
+                {
+                    for (var attempt = 1; attempt <= 2; attempt++)
+                    {
+                        var token = await _totvsService.GetToken(company);
+
+                        if (token is null)
+                            break;   // a mensagem do login já foi para o log
+
+                        using var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
+
+                        response = await _apiClient.SendAsync(
+                            HttpMethod.Post,
+                            route,
+                            content,
+                            headers: new Dictionary<string, string> { { "Authorization", $"Bearer {token}" } }
+                        );
+
+                        if (attempt == 1 && response.StatusCode == 401)
+                        {
+                            _totvsService.RemoveToken(company);
+                            continue;
+                        }
+
+                        if (attempt == 1 && response.StatusCode == 429)
+                        {
+                            var seconds = response.Headers.TryGetValue("Retry-After", out var retryAfter) && int.TryParse(retryAfter, out var value) ? value : 5;
+                            await Task.Delay(TimeSpan.FromSeconds(Math.Clamp(seconds, 1, 60)));
+                            continue;
+                        }
+
+                        if (attempt == 1 && response.StatusCode is 502 or 503 or 504)
+                        {
+                            await Task.Delay(TimeSpan.FromSeconds(10));
+                            continue;
+                        }
+
+                        break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // registra a tentativa mesmo quando a chamada não chega a ter resposta (timeout, rede)
+                    _totvsService.SaveRequest(EnumJob.TotvsGetPurchaseOrderByKey, user_name, "POST", route, doc_company, key, $"Exceção ao chamar a API: {ex.Message}", false, requestBody);
+                    throw;
+                }
+
+                if (response is null)
+                {
+                    // login falhou: nenhuma chamada à busca
+                    _totvsService.SaveRequest(EnumJob.TotvsGetPurchaseOrderByKey, user_name, "POST", route, doc_company, key, null, false, requestBody);
+                    return null;
+                }
+
+                if (!response.IsSuccess)
+                {
+                    var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
+                    _logger.AddMessage($"Erro da API Totvs em {route} (empresa {doc_company}, pedido de compra {key}): {response.StatusCode} {body}");
+
+                    _totvsService.SaveRequest(EnumJob.TotvsGetPurchaseOrderByKey, user_name, "POST", route, doc_company, key, response.Content, false, requestBody);
+                    return null;
+                }
+
+                Page<Domain.Totvs.Dtos.Reads.PurchaseOrders.PurchaseOrder>? page = null;
+                string? json = null;
+
+                try
+                {
+                    page = JsonConvert.DeserializeObject<Page<Domain.Totvs.Dtos.Reads.PurchaseOrders.PurchaseOrder>>(response.Content ?? String.Empty);
+                    json = ((JObject.Parse(response.Content!)["items"] as JArray) ?? []).FirstOrDefault()?.ToString(Formatting.None);
+                }
+                catch (JsonException)
+                {
+                    // page continua null: tratado abaixo como resposta inválida
+                }
+
+                var order = page?.items?.FirstOrDefault(x => Key(x) == (branchCode, orderCode));
+
+                if (page?.items is null)
+                {
+                    _logger.AddMessage($"Resposta inválida da API Totvs em {route} (empresa {doc_company}, pedido de compra {key}): {response.Content}");
+                    result = null;
+                }
+                else if (order is null || json is null)
+                {
+                    // a busca responde 200 com items vazio, ou com outro pedido, quando o número não existe (testado): vale só a chave igual
+                    _logger.AddMessage($"Pedido de venda {key} não encontrado na Totvs (empresa {doc_company}).");
+                    result = false;
+                }
+                else
+                {
+                    // atualiza o cache do PostSearchPurchaseOrders, se ele estiver carregado, para a próxima execução não regravar o pedido
+                    _cache.TryGetValue($"{OrdersKey}:{doc_company}", out Dictionary<(int branchCode, int orderCode), Domain.Totvs.Entities.Reads.PurchaseOrders.PurchaseOrder>? ordersCache);
+
+                    await SavePurchaseOrders(doc_company, _totvsService.GetBatchTime(), [order], new Dictionary<(int, int), string> { { (branchCode, orderCode), json } }, ordersCache);
+
+                    _logger.AddMessage($"Concluída com sucesso: pedido de compra {key} inserido ou atualizado!");
+                    result = true;
+                }
+
+                _totvsService.SaveRequest(EnumJob.TotvsGetPurchaseOrderByKey, user_name, "POST", route, doc_company, key, response.Content, result == true, requestBody);
+
+                return result;
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
     }
 }

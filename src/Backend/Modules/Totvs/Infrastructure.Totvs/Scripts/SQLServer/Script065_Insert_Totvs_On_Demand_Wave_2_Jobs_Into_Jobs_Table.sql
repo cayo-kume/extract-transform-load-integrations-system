@@ -12,4 +12,5 @@ VALUES
 (130, 13102, 'TotvsGetGridFrequency', 'Grade de frequência de um produto (GET Products/{docCompany}/{productCode}/GridFrequency)', 0, 2),
 (130, 13103, 'TotvsGetMeasurementConversions', 'Conversões de unidade de um produto ou grupo (GET Products/{docCompany}/MeasurementConversions)', 0, 2),
 (130, 13104, 'TotvsGetCompositionProduct', 'Composição por produto (GET Products/{docCompany}/CompositionProduct)', 0, 2),
-(130, 13105, 'TotvsGetCompositionGroupProduct', 'Composição por grupo (GET Products/{docCompany}/CompositionGroupProduct)', 0, 2);
+(130, 13105, 'TotvsGetCompositionGroupProduct', 'Composição por grupo (GET Products/{docCompany}/CompositionGroupProduct)', 0, 2),
+(130, 13185, 'TotvsGetPurchaseOrderByKey', 'Integração de um pedido de compra por loja e número (GET PurchaseOrders/{docCompany}/{branchCode}/{orderCode})', 0, 2);

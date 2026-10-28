@@ -993,6 +993,28 @@ namespace Hangfire.Controllers.Totvs
         }
 
         /// <summary>
+        /// busca um pedido de compra por loja + número (POST purchase-order/v2/search com branchCodeList + orderCodeList) e grava; a chamada fica em totvs.TotvsRequests
+        /// </summary>
+        [HttpGet("PurchaseOrders/{docCompany}/{branchCode:int:min(1)}/{orderCode:int:min(1)}")]
+        [Tags("TotvsPurchaseOrders")]
+        public async Task<ActionResult> PurchaseOrder(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            int branchCode,
+            int orderCode
+        )
+        {
+            var result = await _totvsPurchaseOrdersService.GetPurchaseOrderByKey(userName, docCompany, branchCode, orderCode);
+
+            return result switch
+            {
+                true => Ok($"Purchase order {branchCode}/{orderCode} integrated successfully."),
+                false => NotFound($"Purchase order {branchCode}/{orderCode} not found in Totvs."),
+                null => UnprocessableEntity("Company not registered or invalid response from Totvs. See the execution log.")
+            };
+        }
+
+        /// <summary>
         /// resposta das leituras sem persistência (docs/PLANO-TOTVS-METODOS-FALTANTES.md §8.1, T11): 200 com o JSON ou o arquivo; 404 quando
         /// a Totvs não acha; 429 com Retry-After; 502 para 5xx, falta de resposta ou JSON inválido; 422 nos demais (empresa não cadastrada,
         /// 400 da Totvs)
