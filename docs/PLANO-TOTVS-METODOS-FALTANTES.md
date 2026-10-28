@@ -3672,3 +3672,22 @@ Console da §10.32, modo `pr6`. A Totvs diz quais códigos existem (a lista de "
 
 Com isso a PR-6 está verificada em homologação: dados do produto, alteração, inclusão em código novo (preço e custo), a trava de variação
 no `update` e as promoções (§10.32).
+
+### 10.39 Segunda rodada com dados do ERP (28/10/2026)
+
+Com o produto 15687 controlado por lote na loja 1 (PRDFM236, "Lote: Tecido"), um item no lote 1/223436545 (PRDFM059), a contagem 1/2304 do
+PEDFC022 e a máscara de referência lida no PRDFM236 (código nível 1 "PRODUTO OPEN ERA", 3 níveis: OE ANO, OE MOD, OE REF). Modo `erp2`.
+
+| Ponto | Resultado |
+|---|---|
+| SE-1: regiões | `operational-area`: 1 região ("TESTE", tipo `Representative`, agrupamento "TESTE", `numberOfDays` nulo); os textos cabem nas colunas do `Script042`. As rotas por estado, CEP e cidade voltaram **vazias**: falta o cadastro do PESFM006 |
+| SO-4: contagem real | **400 `CountRelated`** tanto no pedido 1\|2124 (já ligado) quanto no 106\|266: uma contagem só se liga a **um** pedido. O formato está certo; o sucesso pede uma contagem ainda sem pedido |
+| Lote: `batch-info` | **400 `NotFound: Location TESTE not found`**: a localização precisa ser um código cadastrado. Anotado na interface |
+| Lote: pedido de venda | Sem pedido de venda em andamento fora do e-commerce na loja 1 nos últimos 365 dias: pedido preferencial, vínculo, remoção e sugestão por nuance ficaram sem pedido |
+| Lote: `batch/create` | Agora passa do `ProductNotBatch` e volta **400 `RequiredField: BatchExpirationDate BatchManufacturingDate`**: para este produto a Totvs exige as datas de fabricação e de validade. Anotado na interface |
+| PR-5: referência na máscara 1 | Grupos `OA24` / `BE` / `97159` (novo, "TESTE INTEGRACAO"), grade 7, um SKU cor 107 tamanho PP, marca 4: **500 sem corpo**. A busca pela referência voltou vazia; falta conferir no PRDFM236 se algo foi gravado |
+| PO-2/PO-4 | O pedido de compra 1\|143 continua em andamento, sem recebimento |
+
+**Sem mudança no código** além dos comentários da interface. A conferir no ERP: a referência OA24 BE 97159 no PRDFM236, uma contagem sem
+pedido, um pedido de venda em andamento na loja 1, uma localização de lote cadastrada, o PESFM006 da região "TESTE", o recebimento de 1 un
+do 1\|143 (CMPFM092) e o `TP_BONUS_DESCONTO` da loja 1 (ADMFM014).

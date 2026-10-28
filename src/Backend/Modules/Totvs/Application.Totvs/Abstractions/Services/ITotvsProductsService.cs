@@ -95,12 +95,14 @@
         public Task<Domain.Totvs.Dtos.Writes.Result> PostReferences(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.References.InsertReference body);
 
         /// <summary>
-        /// inclui lotes e itens de lote (POST product/v2/batch/create); o mesmo corpo em 10 minutos volta 409 (T5)
+        /// inclui lotes e itens de lote (POST product/v2/batch/create); o mesmo corpo em 10 minutos volta 409 (T5). O produto precisa ser
+        /// controlado por lote na loja (senão 400 ProductNotBatch) e, conforme o produto, a Totvs exige as datas de fabricação e de validade
+        /// (400 RequiredField, testado)
         /// </summary>
         public Task<Domain.Totvs.Dtos.Writes.Result> PostCreateBatch(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Batches.InsertBatches body);
 
         /// <summary>
-        /// altera dados de itens de lote (PUT product/v2/batch-info)
+        /// altera dados de itens de lote (PUT product/v2/batch-info); a localização precisa ser um código cadastrado (400 NotFound, testado)
         /// </summary>
         public Task<Domain.Totvs.Dtos.Writes.Result> PutBatchInfo(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Batches.UpdateBatchInfo body);
 
