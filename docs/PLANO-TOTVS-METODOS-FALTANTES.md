@@ -3560,3 +3560,25 @@ loja 1, o pedido de compra 1\|141 cancelado, o pedido B2C 106\|267 (`TESTEINT102
 **Não verificado em homologação:** o consumo de bônus com sucesso (o crédito não chega ao saldo: a conferir no PESFC054 do ERP se os créditos
 aparecem e com qual situação, e o parâmetro `TP_BONUS_DESCONTO` da loja 1), a inclusão de custo (`valueType` `C`) e a inclusão de valor
 em código novo, e o efeito fiscal da manifestação (só com a área fiscal).
+
+### 10.33 Segunda rodada da onda 4 em homologação (28/10/2026)
+
+O que a §10.25 deixou sem verificar, no console da §10.32 (modo `w4`, duas rodadas). A descoberta leu os lotes de todas as 24 lojas (pelo
+`batch/search` desde 2000): **nenhum lote na homologação**. A referência do produto 15687 é `OA24 BE 11405`, grade 7, sem grupos de integração.
+
+| Fase | Rota | Resultado |
+|---|---|---|
+| SO-4 | `POST header` | 200 no pedido 106\|266 (operação atual 1004, prioridade 1) |
+| SO-4 | `POST relationship-counts` | Contagem inexistente: **400 `KeyNotFound` (`Count of 106 / 999999 not found`)**: o formato está certo; sem contagem real na homologação, o vínculo com sucesso não foi verificado |
+| SO-4 | `POST suggest-batch-items-nuance` | **503 sem corpo** (depois de ~1,5 min), provavelmente por não haver lote; a base devolveu 502 sem repetir, como manda a §1 |
+| PR-5 | `POST batch/create` | Sem `balanceCode`: **400 `EmptyField`** (o validador já o exige; o console passa por fora dele). Com `balanceCode` 1: **400 `ProductNotFound`** (`InsertBatchValue`): o produto 15687 não tem controle de lote na loja 106 |
+| PR-5 | `POST classification-relationship/update` | **200** regravando a classificação atual 6001/1 do produto 15687: a rota funciona; a `ORA-02291` da §10.25 é do tipo de teste 9001 |
+| PR-5 | `POST references` | Com `groups` vazio: **400 `EmptyField: Groups`**, antes da regra da máscara. O número de níveis da máscara não vem em nenhuma leitura |
+
+**Sem mudança no código:** os dois 400 do lote e da referência vieram de corpos que o validador recusaria (o console chama o service direto).
+
+**Ficou na homologação:** a prioridade 1 no pedido 106\|266.
+
+**Não verificado em homologação:** o lote e tudo o que depende dele (`batch-info`, `batch-preferentialsalesorder`, `relationship-batch-items`,
+`DELETE batch-items`, `batch-link`, a sugestão por nuance): a homologação não usa lote, e falta um produto com controle de lote (matéria-prima,
+PRDFM059); a referência (precisa do código e dos níveis de uma máscara do PRDFM236); o vínculo com uma contagem real.
