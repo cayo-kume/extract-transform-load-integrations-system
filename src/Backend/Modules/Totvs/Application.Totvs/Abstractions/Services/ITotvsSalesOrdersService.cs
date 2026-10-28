@@ -56,18 +56,20 @@
         public Task<Domain.Totvs.Dtos.Writes.Result> PostAdditionalOrder(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderAdditional body);
 
         /// <summary>
-        /// altera transportadora, redespacho, frete e endereço de entrega de um pedido de venda (POST sales-order/v2/shipping-order)
+        /// altera transportadora, redespacho, frete e endereço de entrega de um pedido de venda (POST sales-order/v2/shipping-order). A Totvs
+        /// recusa em pedido bloqueado e em pedido do e-commerce
         /// </summary>
         public Task<Domain.Totvs.Dtos.Writes.Result> PostShippingOrder(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderShipping body);
 
         /// <summary>
         /// inclui linhas de observação num pedido de venda (POST sales-order/v2/observations-order). Não idempotente: o mesmo corpo em
-        /// 10 minutos volta 409 (T5)
+        /// 10 minutos volta 409 (T5). A Totvs recusa em pedido do e-commerce
         /// </summary>
         public Task<Domain.Totvs.Dtos.Writes.Result> PostObservationsOrder(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderObservations body);
 
         /// <summary>
-        /// altera medida de rolo e previsão de faturamento dos itens de um pedido de venda (POST sales-order/v2/additional-items)
+        /// altera medida de rolo e previsão de faturamento dos itens de um pedido de venda (POST sales-order/v2/additional-items). A Totvs
+        /// recusa em pedido do e-commerce
         /// </summary>
         public Task<Domain.Totvs.Dtos.Writes.Result> PostAdditionalItems(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderItemsAdditional body);
     }

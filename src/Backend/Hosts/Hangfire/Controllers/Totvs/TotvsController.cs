@@ -1079,8 +1079,8 @@ namespace Hangfire.Controllers.Totvs
         }
 
         /// <summary>
-        /// altera uma mensagem da pessoa (PUT person/v2/messages/change) pela pessoa e sequence: descrição, situação (3 = cancelada, o
-        /// caminho normal para tirar uma mensagem) ou prioridade
+        /// altera uma mensagem da pessoa (PUT person/v2/messages/change) pela pessoa e sequence: a descrição vai sempre (a Totvs recusa sem
+        /// ela), com a situação (3 = cancelada, o caminho normal para tirar uma mensagem) ou a prioridade
         /// </summary>
         [HttpPut("Messages/{docCompany}/Change")]
         [Tags("TotvsPeople")]
@@ -1100,8 +1100,8 @@ namespace Hangfire.Controllers.Totvs
         }
 
         /// <summary>
-        /// exclui uma mensagem da pessoa em definitivo (DELETE person/v2/messages). Sem leitura de mensagens na API para conferir antes:
-        /// prefira o PUT com status 3 (cancelada)
+        /// exclui uma mensagem da pessoa em definitivo (DELETE person/v2/messages). A Totvs só exclui mensagem não lida (StatusNotPermited,
+        /// testado em homologação). Sem leitura de mensagens na API para conferir antes: prefira o PUT com status 3 (cancelada)
         /// </summary>
         [HttpDelete("Messages/{docCompany}/{personCode:int:range(1,999999999)}/{sequence:int:min(1)}")]
         [Tags("TotvsPeople")]
@@ -1199,7 +1199,7 @@ namespace Hangfire.Controllers.Totvs
 
         /// <summary>
         /// altera transportadora, redespacho, frete e endereço de entrega de um pedido de venda (POST sales-order/v2/shipping-order); o frete
-        /// muda o total do pedido
+        /// muda o total do pedido. A Totvs recusa em pedido bloqueado e em pedido do e-commerce (InvalidStatusUpdate, CannotChangedOrderEcommerce)
         /// </summary>
         [HttpPost("SalesOrders/{docCompany}/Shipping")]
         [Tags("TotvsSalesOrders")]
@@ -1220,7 +1220,7 @@ namespace Hangfire.Controllers.Totvs
 
         /// <summary>
         /// inclui linhas de observação num pedido de venda e na nota (POST sales-order/v2/observations-order). Repetir duplica as linhas: o
-        /// mesmo corpo em 10 minutos volta 409
+        /// mesmo corpo em 10 minutos volta 409. A Totvs recusa em pedido do e-commerce (CannotChangedOrderEcommerce)
         /// </summary>
         [HttpPost("SalesOrders/{docCompany}/Observations")]
         [Tags("TotvsSalesOrders")]

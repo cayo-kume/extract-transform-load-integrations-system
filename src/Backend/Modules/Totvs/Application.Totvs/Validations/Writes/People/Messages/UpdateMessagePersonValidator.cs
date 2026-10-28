@@ -4,8 +4,8 @@ using FluentValidation;
 namespace Application.Totvs.Validations.Writes.People.Messages
 {
     /// <summary>
-    /// valida o corpo da alteração de mensagem no controller (corpo inválido volta 400): a mensagem pela pessoa e sequence, e pelo menos um
-    /// campo a alterar. O schema não diz o tamanho da descrição: vale o do POST (200)
+    /// valida o corpo da alteração de mensagem no controller (corpo inválido volta 400): a mensagem pela pessoa e sequence, e a descrição,
+    /// que a Totvs exige em toda alteração. O schema não diz o tamanho da descrição: vale o do POST (200)
     /// </summary>
     public class UpdateMessagePersonValidator : AbstractValidator<UpdateMessagePerson>
     {
@@ -38,12 +38,10 @@ namespace Application.Totvs.Validations.Writes.People.Messages
                 .WithMessage("O campo 'filter.sequence' deve ser maior que zero.")
                 .When(x => x.filter is not null);
 
-            RuleFor(x => x)
-                .Must(x => x.description is not null || x.status is not null || x.priority is not null)
-                .WithName("description")
-                .WithMessage("Informe pelo menos um entre 'description', 'status' e 'priority'.");
-
+            // a Totvs recusa a alteração sem descrição (EmptyField, testado em homologação em 28/10/2026), mesmo para só mudar a situação
             RuleFor(x => x.description)
+                .NotEmpty()
+                .WithMessage("O campo 'description' é obrigatório: a Totvs recusa a alteração sem ele, mesmo para só mudar a situação (repita a descrição atual).")
                 .MaximumLength(200)
                 .WithMessage("O campo 'description' aceita até 200 caracteres.");
 

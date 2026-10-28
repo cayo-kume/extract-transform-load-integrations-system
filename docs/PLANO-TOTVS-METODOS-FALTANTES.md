@@ -2230,9 +2230,9 @@ casos particulares delas apontam para cá.
 
 | # | Tema | Aparece em | Proposta |
 |---|---|---|---|
-| T1 | **Ambiente dos testes de escrita** | D1, §3.6, §5.11, §6.7, §7.6, §8.13 | Toda escrita é testada só em homologação, que **existe** (gateway da §1.3, login conferido em 27/10/2026). Leituras podem rodar nos dois ambientes |
+| T1 | **Ambiente dos testes de escrita** | D1, §3.6, §5.11, §6.7, §7.6, §8.13 | Toda escrita é testada só em homologação, que **existe** (gateway da §1.3, login conferido em 27/10/2026). Leituras podem rodar nos dois ambientes. **Onda 3 testada em homologação em 28/10/2026** com o usuário pessoal `cayo.kume`, por decisão do dono do usuário, sem esperar o usuário de integração (§10.19) |
 | T2 | **Autenticação do host** | D2, PE5 | **Respondida (27/10/2026):** o `[Authorize]` **não** é ligado agora; a autenticação dos endpoints de inbound vai ser outro mecanismo, a definir. Implementação e testes em homologação seguem; publicar escrita em produção espera esse mecanismo |
-| T3 | **Formato dos enums no corpo** | D6, PE6, SO11, §5 (`ProductValueType` C/P, `PromotionStatusType` A/B/E), §8.10 | O swagger mistura três formatos: número da descrição (maioria), nome (`"NotInformed"` no reset de cliente) e letra (`C`/`P`, `N`/`S`). Cada enum de escrita declara o seu formato no DTO (um conversor por formato), e o primeiro teste de cada rota confirma |
+| T3 | **Formato dos enums no corpo** | D6, PE6, SO11, §5 (`ProductValueType` C/P, `PromotionStatusType` A/B/E), §8.10 | O swagger mistura três formatos: número da descrição (maioria), nome (`"NotInformed"` no reset de cliente) e letra (`C`/`P`, `N`/`S`). Cada enum de escrita declara o seu formato no DTO (um conversor por formato), e o primeiro teste de cada rota confirma. **Confirmado em homologação (28/10/2026):** número em `status` do pedido de compra e da mensagem, `freightType` e `visualizationType`; letra em `entryType` (§10.19) |
 | T4 | **Escrita ligada por configuração** | PE5, PR8 | Cada grupo de escrita atrás de `Totvs:Writes:<Grupo>:Enabled`, falso por padrão; ligar é decisão do negócio, não do deploy |
 | T5 | **Repetição de escrita não idempotente** | SO6, DP2, §3.4.5 | Além de não repetir em 5xx (§1.2), recusar com **409** a mesma rota + chave + corpo que já conste com sucesso em `TotvsRequests` nos últimos 10 min |
 | T6 | **Dados pessoais em `TotvsRequests`** | PE7 | `request_body` e `response_body` com documentos, conta bancária e chave PIX mascarados; arquivos (XML, PDF) registrados só com tipo e tamanho (§8.1). **Implementada em 28/10/2026** (§10.18): só nos corpos; a rota e o `field_key_value` ficam inteiros |
@@ -3085,3 +3085,36 @@ envia o CPF inteiro à Totvs, devolve 409 na repetição e chama para outro CPF 
 falha.
 
 **Não verificado:** os registros que já estão em `TotvsRequests` continuam sem máscara (nenhum script os reescreve); o host e o banco.
+
+### 10.19 Rodada da onda 3 em homologação (28/10/2026)
+
+Feita com o usuário pessoal `cayo.kume` (T1), por decisão do dono do usuário, num console de rascunho que chama os services de verdade
+(`TotvsService.Write`, trava T5, máscara T6) contra o gateway de homologação da §1.3, com as tabelas em memória. As credenciais foram
+digitadas por ele no terminal e não ficaram gravadas. Três rodadas; antes de cada uma, a descoberta só leu a homologação e a escrita esperou
+confirmação.
+
+| Fase | Rota | Resultado |
+|---|---|---|
+| PE-5 | `POST person/v2/messages` | 201; a resposta traz `sequence` e a descrição em maiúsculas. Repetida em 10 min: **409 sem chamar** (T5). Sem `priority`, a Totvs aceita e grava **0**: o validador continua exigindo a prioridade |
+| PE-5 | `PUT person/v2/messages/change` | Sem `description`: **400 `EmptyField`**, mesmo só mudando a situação. **Mudança:** o `UpdateMessagePersonValidator` passou a exigir a descrição (antes bastava um campo qualquer). Com ela: 200, para lida (2) e de volta para não lida (1) |
+| PE-5 | `DELETE person/v2/messages` | 200 com a mensagem **não lida**; lida: **400 `StatusNotPermited`**. Regra anotada no controller, na interface e no README |
+| PR-4 | `POST product/v2/colors` | 201 na inclusão e na alteração pela mesma rota (relida com o nome novo). Cor `ZZT01` fica na homologação |
+| PR-4 | `POST product/v2/grids` | 201 sem `gridCode`: **a Totvs numera** (devolveu 29). Grade "GRADE TESTE INTEGRACAO" fica na homologação |
+| PO-2 | `POST purchase-order/v2/orders/change-status` | Pedido 1\|56: em andamento → bloqueado (5) → em andamento (1), cada troca relida no `purchase-order/v2/search`. Pedido terminou como estava |
+| SO-3 | `POST sales-order/v2/additional-order` | 200 com `trackingId` e `entryType` **`N` (letra)**, no pedido 1\|1821 (bloqueado, do e-commerce) |
+| SO-3 | `POST sales-order/v2/shipping-order` | Pedido bloqueado e do e-commerce: **400 `InvalidStatusUpdate` e `CannotChangedOrderEcommerce`**. Em andamento, fora do e-commerce (106\|266): 200, `freightType` 2 relido |
+| SO-3 | `POST sales-order/v2/observations-order` | Do e-commerce: **400 `CannotChangedOrderEcommerce`**. 106\|266: 200 (linha relida); repetida: **409 sem chamar** |
+| SO-3 | `POST sales-order/v2/additional-items` | Do e-commerce: **400 `CannotChangedOrderEcommerce`**. 106\|266: 200, `billingForecastDate` relida |
+
+**Outras observações:**
+* A busca de pedidos de venda aceita `filter.orderStatusList` **pelo nome** (`InProgress`, `BillingReleased`, `Blocked`, `InAnalysis`).
+* As recusas da Totvs chegam como 422 com `code: message`, como previsto; nenhuma precisou de conferência local nova.
+* Ficaram na homologação: a cor `ZZT01`, a grade 29, o `trackingId` "TESTEINTEGRACAO" no pedido 1\|1821 (o valor anterior não foi lido)
+  e uma observação "TESTE INTEGRACAO - PODE APAGAR" no pedido 106\|266. As mensagens de teste foram excluídas.
+
+**Não verificado:** a AP-1 em homologação (a busca não devolve o estágio da parcela, então a troca não teria como voltar ao original);
+bloquear pedido de compra parcialmente recebido (a volta iria para em andamento, não para o estado original); `experienceType`; os
+`Script066`–`070` em banco e as rotas pelo host.
+
+**Situação da onda 4:** a condição "onda 3 testada" (§9.3) está cumprida para PE-5, PR-4, PO-2 e SO-3. Continua valendo a T2 para publicar
+qualquer escrita em produção.

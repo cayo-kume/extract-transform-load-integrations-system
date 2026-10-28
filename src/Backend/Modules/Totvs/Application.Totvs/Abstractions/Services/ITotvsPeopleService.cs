@@ -54,7 +54,7 @@
         public Task<Domain.Totvs.Dtos.Writes.Result> PutChangeMessages(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.People.Messages.UpdateMessagePerson body);
 
         /// <summary>
-        /// exclui uma mensagem da pessoa (DELETE person/v2/messages), em definitivo; cancelar pelo PutChangeMessages é o caminho normal (PE8)
+        /// exclui uma mensagem da pessoa (DELETE person/v2/messages), em definitivo e só se não lida (a Totvs recusa as outras); cancelar pelo PutChangeMessages é o caminho normal (PE8)
         /// </summary>
         public Task<Domain.Totvs.Dtos.Writes.Result> DeleteMessages(string user_name, string doc_company, int personCode, int sequence);
     }

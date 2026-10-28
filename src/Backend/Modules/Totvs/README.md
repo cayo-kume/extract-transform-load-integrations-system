@@ -474,15 +474,15 @@ escritas de pedido de venda, a **chave do pedido** é `branchCode` + `orderCode`
 |---|---|---|---|
 | POST | `Duplicates/{docCompany}/Installments/Stage` | `branchCnpj` (loja da empresa), `supplierCpfCnpj` **ou** `supplierCode`, `duplicateCode`, `installmentCode`, `newStage` (1 título não conferido, 2 liberado para pagamento, 5 título aceito) | `PostDuplicatesInstallmentsStage` |
 | POST | `Messages/{docCompany}` | `personCode` **ou** `personCpfCnpj`; `messages` (`description` até 200, `priority`) | `PostMessages` (devolve as `sequence`) |
-| PUT | `Messages/{docCompany}/Change` | `filter` (`personCode` **ou** `personCpfCnpj`, `sequence`); `description`, `status` (1 não lida, 2 lida, 3 cancelada) ou `priority` | `PutChangeMessages` |
-| DELETE | `Messages/{docCompany}/{personCode}/{sequence}` | — (exclusão definitiva; prefira o `PUT` com `status` 3) | `DeleteMessages` |
+| PUT | `Messages/{docCompany}/Change` | `filter` (`personCode` **ou** `personCpfCnpj`, `sequence`); `description` (obrigatória: a Totvs recusa a alteração sem ela); `status` (1 não lida, 2 lida, 3 cancelada) e `priority` opcionais | `PutChangeMessages` |
+| DELETE | `Messages/{docCompany}/{personCode}/{sequence}` | — (exclusão definitiva, só de mensagem **não lida**; prefira o `PUT` com `status` 3) | `DeleteMessages` |
 | POST | `Products/{docCompany}/Colors` | `code` (10), `name` (40); `colorInfoAdditionals` por loja da empresa (`branchCode`, `auxiliaryCode`, `auxiliaryName`, `pantoneCode`, usos) | `PostColors` (um `code` existente é renomeado em todas as referências) |
 | POST | `Products/{docCompany}/Grids` | `gridCode` (opcional, 6), `name` (40), `type`; `gridSizes` (`name` até 10, sem repetição) | `PostGrids` (devolve o `gridCode`) |
 | POST | `PurchaseOrders/{docCompany}/ChangeStatus` | `branchCode` (loja da empresa), `orderCode`, `status` (1 em andamento, 5 bloqueado) | `PostPurchaseOrdersChangeStatus` (com o pedido no banco, só entre essas duas situações) |
 | POST | `SalesOrders/{docCompany}/Additional` | chave do pedido; `shippingService`, `trackingId`, `ecommerceStage`, `omniSiteId`, `compensationDays`, `anticipationDay`, `entryType` (`N`/`S`), `experienceType` (1 a 5) | `PostAdditionalOrder` |
-| POST | `SalesOrders/{docCompany}/Shipping` | chave do pedido; transportadora e redespacho (código **ou** CPF/CNPJ, com o tipo de frete), `freightPercentage`, `freightValue`, `shippingAddress` | `PostShippingOrder` (muda o total do pedido) |
-| POST | `SalesOrders/{docCompany}/Observations` | chave do pedido; `observations` (`observation` até 80, `visualizationType` 1 ou 2) e/ou `invoiceObservations` | `PostObservationsOrder` (inclui linhas) |
-| POST | `SalesOrders/{docCompany}/Items/Additional` | chave do pedido; `items` (`productCode` **ou** `productSku`; `rollMeasureCode`, `billingForecastDate`) | `PostAdditionalItems` |
+| POST | `SalesOrders/{docCompany}/Shipping` | chave do pedido; transportadora e redespacho (código **ou** CPF/CNPJ, com o tipo de frete), `freightPercentage`, `freightValue`, `shippingAddress` | `PostShippingOrder` (muda o total do pedido; recusado em pedido bloqueado ou do e-commerce) |
+| POST | `SalesOrders/{docCompany}/Observations` | chave do pedido; `observations` (`observation` até 80, `visualizationType` 1 ou 2) e/ou `invoiceObservations` | `PostObservationsOrder` (inclui linhas; recusado em pedido do e-commerce) |
+| POST | `SalesOrders/{docCompany}/Items/Additional` | chave do pedido; `items` (`productCode` **ou** `productSku`; `rollMeasureCode`, `billingForecastDate`) | `PostAdditionalItems` (recusado em pedido do e-commerce) |
 
 | Código | Quando |
 |---|---|
