@@ -763,8 +763,9 @@ cada fase ("Não verificado"). Em resumo:
 
 * **Execução em banco e pelo host (plano, §10.44):** os scripts 001 a 079 rodaram num SQL Server local (DbUp, com a base compartilhada), as
   151 procedures de sincronização executam, e os jobs batem com o `EnumJob`. O host respondeu certo às rotas que não dependem da Totvs
-  (400 de validação e `?clear=true`, 422 de escrita desligada e de empresa não cadastrada). Falta o caminho com a Totvs pelo host (200, 404,
-  409, 502 e a gravação em `TotvsRequests`), que pede as credenciais em `totvs.TotvsParameters`.
+  (400 de validação e `?clear=true`, 422 de escrita desligada e de empresa não cadastrada) e, com a empresa de homologação cadastrada, ao
+  caminho com a Totvs: carga das lojas, leitura 200 e 404, escrita 200, 409 da trava, 422 da recusa da Totvs e a gravação em `TotvsRequests`
+  com o `status_code` e o CPF mascarado. Sem verificar pelo host: 429 e 502 (não dá para provocar).
 * **Homologação:** as ondas 3, 4 e 5 foram testadas (plano, §10.19, §10.25 e §10.32 a §10.43), inclusive a troca de estágio da parcela
   (AP-1), a inclusão de referência, os lotes e o consumo de bônus. Sem verificar: a sugestão por nuance (503 sem corpo; a produção não usa
   lote), a classificação no tipo de teste 9001 (`ORA-02291`), o vínculo com contagem real (o formato foi conferido; falta uma contagem sem

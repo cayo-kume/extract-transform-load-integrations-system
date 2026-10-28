@@ -3794,3 +3794,25 @@ quando os jobs forem registrados.
 **Não verificado:** o caminho com a Totvs pelo host (200, 404, 409 da trava, 429, 502 e a gravação em `totvs.TotvsRequests` com o
 `status_code` e a máscara), que pede uma empresa em `totvs.TotvsParameters` com credenciais (o `Script003` é `.example`); os registros
 antigos de `TotvsRequests` sem máscara (o banco local começou vazio).
+
+**Caminho com a Totvs pelo host (mesmo dia):** com a empresa 44065634000106 cadastrada em `totvs.TotvsParameters` do banco local (as
+credenciais de homologação digitadas pelo usuário num console, sem eco) e o host apontando para a homologação só pela variável de ambiente
+`Totvs__BaseUrl` (o `appsettings.json` aponta para produção e não foi mudado), com os grupos `People` e `PurchaseOrders` ligados também por
+variável:
+
+| Chamada ao host | Resposta | Banco |
+|---|---|---|
+| `GET Branches` (carga das lojas) | 200 | **24 lojas** em `totvs.TotvsBranches` pela `sp_TotvsBranches_Sync` (a `untreated` esvaziada): a carga e a procedure com dados de verdade |
+| `GET Invoices/{docCompany}/2/31392/Items` | **200** com os itens | registro em `TotvsRequests` (leitura sob demanda: sem `status_code`, como previsto) |
+| A mesma rota com a nota 99999999 | **404** (`KeyNotFound` da Totvs) | registrado, `is_success` falso |
+| `POST Messages` no cliente de teste 58243, pelo CPF gerado | **200** (`sequence` 1) | `status_code` 201; o CPF **mascarado** no corpo gravado |
+| A mesma mensagem de novo | **409** sem chamar (a trava lendo `TotvsRequests` do banco) | — |
+| `DELETE Messages/{docCompany}/58243/1` | **200** | `status_code` 200 |
+| `POST IndividualCustomers` (ocupação "HOST") | **200** | `status_code` 200; o CPF mascarado no corpo |
+| `POST PurchaseOrders/{docCompany}/Cancel` do 1\|142 (já cancelado) | **422** com `apiCalled` verdadeiro e a mensagem da Totvs (`InvalidStatusUpdate`) | `status_code` 400 |
+
+Com isso o mapeamento das respostas (`ReadResponse` e `WriteResponse`) e a gravação em `totvs.TotvsRequests` ficam verificados pelo host; só
+o 429 e o 502 não dá para provocar. Os registros antigos sem máscara não se aplicam ao banco local (começou vazio).
+
+**Ficou no banco local:** a empresa de homologação em `totvs.TotvsParameters` (credenciais só no docker do usuário) e as lojas. **Na
+homologação:** a ocupação "HOST" no cliente 58243 (a mensagem de teste foi excluída).
