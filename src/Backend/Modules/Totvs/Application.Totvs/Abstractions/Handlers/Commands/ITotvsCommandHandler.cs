@@ -103,6 +103,7 @@
         public string CreateGetCostCentersHashesQuery(string doc_company);
         public string CreateGetBillingSuggestionsByKeysQuery(string doc_company, List<(int branchCode, int suggestionCode)> keys);
         public string CreateGetPurchaseOrderStatusQuery(string doc_company, int branchCode, int orderCode);
+        public string CreateGetPurchaseOrderStateQuery(string doc_company, int branchCode, int orderCode);
         public string CreateGetSaleOrderStatusQuery(string doc_company, int branchCode, int orderCode);
         public string CreateGetCurrentProductValuesQuery(string doc_company, List<int> productCodes);
         public string CreateGetPromotionItemsQuery(string doc_company, int branchCode, int promotionCode);

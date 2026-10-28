@@ -712,6 +712,15 @@ namespace Application.Totvs.Handlers.Commands
                      AND ORDERCODE = {orderCode}";
         }
 
+        public string CreateGetPurchaseOrderStateQuery(string doc_company, int branchCode, int orderCode)
+        {
+            return @$"SELECT [STATUS] AS status, SUPPLIERCODE AS supplierCode, SUPPLIERCPFCNPJ AS supplierCpfCnpj
+                     FROM TOTVS.TOTVSPURCHASEORDERS
+                     WHERE DOC_COMPANY = '{doc_company}'
+                     AND BRANCHCODE = {branchCode}
+                     AND ORDERCODE = {orderCode}";
+        }
+
         public string CreateGetPurchaseOrderBySupplierOrderCodeQuery(string doc_company, int branchCode, int? supplierCode, string? supplierCpfCnpj, string supplierOrderCode)
         {
             // pedido já gravado com o mesmo pedido do fornecedor (DP2); o texto vem do corpo, com as aspas dobradas

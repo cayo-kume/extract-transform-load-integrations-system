@@ -242,6 +242,7 @@ Os nomes dos métodos são os da **documentação oficial** (`PostSearch*`, `Get
 | `TotvsPurchaseOrdersService` | `PostPurchaseOrders` | `POST purchase-order/v2/orders` (com a trava de repetição) | 13180 | `Totvs:Writes:PurchaseOrders:Enabled` |
 | `TotvsPurchaseOrdersService` | `PostPurchaseOrdersQuantityItems` | `POST purchase-order/v2/quantity-items` | 13181 | `Totvs:Writes:PurchaseOrders:Enabled` |
 | `TotvsPurchaseOrdersService` | `PostPurchaseOrderBatchLink` | `POST purchase-order/v2/purchase-order/batch-link` | 13184 | `Totvs:Writes:PurchaseOrders:Enabled` |
+| `TotvsPurchaseOrdersService` | `PostPurchaseOrdersCancel` | `POST purchase-order/v2/orders/cancel` (irreversível) | 13183 | `Totvs:Writes:PurchaseOrders:Enabled` |
 | `TotvsSalesOrdersService` | `PostAdditionalOrder` | `POST sales-order/v2/additional-order` | 13201 | `Totvs:Writes:SalesOrders:Enabled` |
 | `TotvsSalesOrdersService` | `PostShippingOrder` | `POST sales-order/v2/shipping-order` | 13202 | `Totvs:Writes:SalesOrders:Enabled` |
 | `TotvsSalesOrdersService` | `PostObservationsOrder` | `POST sales-order/v2/observations-order` (com a trava de repetição) | 13203 | `Totvs:Writes:SalesOrders:Enabled` |
@@ -390,6 +391,7 @@ O DbUp executa cada script uma única vez, em ordem alfabética. Alterar um scri
 | `Script074` | Jobs das escritas de documento da API Sales Order (situação, capa, itens, lotes e contagens, 13199, 13200, 13205, 13206, 13208 e 13211–13214) |
 | `Script075` | Jobs das escritas de bônus da API Person (crédito e consumo, 13047 e 13048) |
 | `Script076` | Jobs das escritas de dados fiscais, preço, custo e promoção da API Product (13128–13134) |
+| `Script077` | Job do cancelamento de pedido de compra (13183) |
 
 **Regras gerais das tabelas e dos merges:**
 * Toda tabela de dados existe em dois schemas: `untreated` (recebe o bulk insert, sem chave) e `totvs` (tabela final, com PK). A exceção é `totvs.TotvsRequests`, que só recebe inserts.
@@ -548,6 +550,7 @@ escritas de pedido de venda, a **chave do pedido** é `branchCode` + `orderCode`
 | POST | `PurchaseOrders/{docCompany}` | loja da empresa, fornecedor e comprador (código **ou** CPF/CNPJ), operação, condição, `status` (1 ou 5), `supplierOrderCode` (**obrigatório**), `totalAmountOrder` e pelo menos um item (`productCode` **ou** `productSku`, valor, quantidade, `itemsValues` com `C`/`P`); classificações, observações, despesas, descontos, campos e dados adicionais | `PostPurchaseOrders` (devolve loja e número; o mesmo `supplierOrderCode` do fornecedor já gravado volta 422) |
 | POST | `PurchaseOrders/{docCompany}/QuantityItems` | `branchCode`, `orderCode`, `items` (`productCode`, `quantity` ≥ 0, sem repetição) | `PostPurchaseOrdersQuantityItems` (com o pedido no banco: atendido ou cancelado, produto fora do pedido e quantidade abaixo da recebida voltam 422) |
 | POST | `PurchaseOrders/{docCompany}/BatchLink` | `branchCode` (do lote), `batchCode` + `sequence` **ou** `batchItemBarCode`, `orderCode`, `invoice` (`accessKey` **ou** `serialCode` + `invoiceCode`) | `PostPurchaseOrderBatchLink` (cria ou troca o vínculo; 404 e 409 da Totvs repassados) |
+| POST | `PurchaseOrders/{docCompany}/Cancel` | `branchCode`, `orderCode` e o fornecedor esperado (`supplierCode` **ou** `supplierCpfCnpj`, não vai à Totvs) | `PostPurchaseOrdersCancel` (com o pedido no banco: outro fornecedor, já cancelado, atendido, parcialmente recebido ou distribuído voltam 422) |
 | POST | `SalesOrders/{docCompany}/Additional` | chave do pedido; `shippingService`, `trackingId`, `ecommerceStage`, `omniSiteId`, `compensationDays`, `anticipationDay`, `entryType` (`N`/`S`), `experienceType` (1 a 5) | `PostAdditionalOrder` |
 | POST | `SalesOrders/{docCompany}/Shipping` | chave do pedido; transportadora e redespacho (código **ou** CPF/CNPJ, com o tipo de frete), `freightPercentage`, `freightValue`, `shippingAddress` | `PostShippingOrder` (muda o total do pedido; recusado em pedido bloqueado ou do e-commerce) |
 | POST | `SalesOrders/{docCompany}/Observations` | chave do pedido; `observations` (`observation` até 80, `visualizationType` 1 ou 2) e/ou `invoiceObservations` | `PostObservationsOrder` (inclui linhas; recusado em pedido do e-commerce) |
@@ -656,7 +659,7 @@ Os jobs ficam em `auditing.Jobs`, com os mesmos ids em `EnumJob`.
 | 13120–13127 | `TotvsPostBarcodes`, `TotvsPostUpdateBarcodes`, `TotvsPostCreateClassificationRelationship`, `TotvsPostUpdateClassificationRelationship`, `TotvsPostColors`, `TotvsPostClassifications`, `TotvsPostGrids`, `TotvsPostReferences` | escrita |
 | 13128–13134 | `TotvsPutProducts`, `TotvsPutBranchInfo`, `TotvsPutData`, `TotvsPostCreateValues`, `TotvsPostUpdateValues`, `TotvsPostUpdatePromotionValues`, `TotvsPostPromotionItems` | escrita |
 | 13135–13137 | `TotvsPostCreateBatch`, `TotvsPutBatchInfo`, `TotvsPostBatchPreferentialSalesOrder` | escrita |
-| 13180–13182, 13184 | `TotvsPostPurchaseOrders`, `TotvsPostPurchaseOrdersQuantityItems`, `TotvsPostPurchaseOrdersChangeStatus`, `TotvsPostPurchaseOrderBatchLink` | escrita |
+| 13180–13184 | `TotvsPostPurchaseOrders`, `TotvsPostPurchaseOrdersQuantityItems`, `TotvsPostPurchaseOrdersChangeStatus`, `TotvsPostPurchaseOrdersCancel`, `TotvsPostPurchaseOrderBatchLink` | escrita |
 | 13199–13203, 13205–13208 | `TotvsPostSalesOrderOrdersChangeStatus`, `TotvsPostSalesOrderHeader`, `TotvsPostSalesOrderAdditionalOrder`, `TotvsPostSalesOrderShippingOrder`, `TotvsPostSalesOrderObservationsOrder`, `TotvsPostSalesOrderItems`, `TotvsDeleteSalesOrderItems`, `TotvsPostSalesOrderAdditionalItems`, `TotvsPostSalesOrderQuantityItems` | escrita |
 | 13211–13214 | `TotvsPostSalesOrderRelationshipCounts`, `TotvsPostSalesOrderRelationshipBatchItems`, `TotvsDeleteSalesOrderBatchItems`, `TotvsPostSalesOrderSuggestBatchItemsNuance` | escrita |
 

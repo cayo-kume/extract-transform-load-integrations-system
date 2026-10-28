@@ -1670,6 +1670,27 @@ namespace Hangfire.Controllers.Totvs
         }
 
         /// <summary>
+        /// cancela um pedido de compra (POST purchase-order/v2/orders/cancel), irreversível pela API. Exige o fornecedor esperado (supplierCode ou
+        /// supplierCpfCnpj), conferido com o pedido gravado antes de cancelar e não enviado à Totvs (DP3)
+        /// </summary>
+        [HttpPost("PurchaseOrders/{docCompany}/Cancel")]
+        [Tags("TotvsPurchaseOrders")]
+        public async Task<ActionResult> PurchaseOrdersCancel(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.PurchaseOrders.CancelPurchaseOrder body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.PurchaseOrders.CancelPurchaseOrder> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsPurchaseOrdersService.PostPurchaseOrdersCancel(userName, docCompany, body));
+        }
+
+        /// <summary>
         /// inclui um pedido de compra (POST purchase-order/v2/orders); a resposta traz loja e número. O supplierOrderCode é obrigatório: um pedido
         /// do mesmo fornecedor com ele já gravado volta 422, e o mesmo corpo em 10 minutos volta 409
         /// </summary>

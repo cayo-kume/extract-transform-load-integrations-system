@@ -136,6 +136,7 @@
         TotvsPostPurchaseOrders = 13180,   //Script073_Insert_Totvs_Purchase_Orders_Documents_Writes_Jobs_Into_Jobs_Table.sql
         TotvsPostPurchaseOrdersQuantityItems = 13181,   //Script073_Insert_Totvs_Purchase_Orders_Documents_Writes_Jobs_Into_Jobs_Table.sql
         TotvsPostPurchaseOrdersChangeStatus = 13182,   //Script069_Insert_Totvs_Purchase_Orders_Writes_Jobs_Into_Jobs_Table.sql
+        TotvsPostPurchaseOrdersCancel = 13183,   //Script077_Insert_Totvs_Purchase_Orders_Cancel_Job_Into_Jobs_Table.sql
         TotvsPostPurchaseOrderBatchLink = 13184,   //Script073_Insert_Totvs_Purchase_Orders_Documents_Writes_Jobs_Into_Jobs_Table.sql
         TotvsPostSalesOrderOrdersChangeStatus = 13199,   //Script074_Insert_Totvs_Sales_Orders_Documents_Writes_Jobs_Into_Jobs_Table.sql
         TotvsPostSalesOrderHeader = 13200,   //Script074_Insert_Totvs_Sales_Orders_Documents_Writes_Jobs_Into_Jobs_Table.sql

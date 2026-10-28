@@ -647,5 +647,61 @@ namespace Application.Totvs.Services
                 await _logger.CommitAllChanges();
             }
         }
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostPurchaseOrdersCancel(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.PurchaseOrders.CancelPurchaseOrder body)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsPostPurchaseOrdersCancel);
+
+            var key = $"{body.branchCode}|{body.orderCode}";
+
+            try
+            {
+                if (!_totvsService.IsWriteEnabled(WritesGroup))
+                    return _totvsService.WriteDisabled(WritesGroup, key);
+
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return _totvsService.CompanyNotFound(doc_company, key);
+
+                if (!(await _totvsService.GetBranchCodes(company)).Contains(body.branchCode!.Value))
+                    return _totvsService.BranchNotFound(doc_company, key, [body.branchCode.Value.ToString()]);
+
+                // DP3 e DP7, só com o pedido no banco: o fornecedor precisa ser o esperado (um número errado cancelaria o pedido de outro fornecedor),
+                // e cancelado, atendido, parcialmente recebido ou distribuído não cancela
+                var state = await _totvsPurchaseOrdersRepository.GetPurchaseOrderState(doc_company, body.branchCode.Value, body.orderCode!.Value);
+                string? refused = null;
+
+                if (state is not null)
+                {
+                    var supplierMatches = body.supplierCode is not null ? state.supplierCode == body.supplierCode : state.supplierCpfCnpj == body.supplierCpfCnpj;
+
+                    if (!supplierMatches)
+                        refused = $"O pedido de compra {key} é de outro fornecedor em totvs.TotvsPurchaseOrders: nada foi cancelado.";
+                    else if (state.status is "6")
+                        refused = $"O pedido de compra {key} já está {StatusName(state.status)} em totvs.TotvsPurchaseOrders.";
+                    else if (state.status is "3" or "4" or "7")
+                        refused = $"O pedido de compra {key} está {StatusName(state.status)} em totvs.TotvsPurchaseOrders: já há recebimento.";
+                }
+
+                if (refused is not null)
+                {
+                    _logger.AddMessage(refused);
+
+                    return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, message = refused };
+                }
+
+                // à Totvs vão só loja e pedido (CancelOrderCommand); o fornecedor esperado é só nosso. Repetir dá 400 (já cancelado): sem trava
+                return await _totvsService.Write(company, EnumJob.TotvsPostPurchaseOrdersCancel, user_name, key, HttpMethod.Post, "purchase-order/v2/orders/cancel",
+                    new { body.branchCode, body.orderCode }, "Confira a situação do pedido na Totvs antes de repetir.");
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
     }
 }

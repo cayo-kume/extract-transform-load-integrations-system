@@ -35,5 +35,11 @@
         /// cria ou troca o vínculo de um item de lote com um pedido de compra (POST purchase-order/v2/purchase-order/batch-link)
         /// </summary>
         public Task<Domain.Totvs.Dtos.Writes.Result> PostPurchaseOrderBatchLink(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.PurchaseOrders.BatchLink body);
+
+        /// <summary>
+        /// cancela um pedido de compra (POST purchase-order/v2/orders/cancel), irreversível pela API. Com o pedido no banco, o fornecedor esperado
+        /// precisa bater (DP3) e cancelado, atendido, parcialmente recebido ou distribuído voltam 422 sem chamar a Totvs
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PostPurchaseOrdersCancel(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.PurchaseOrders.CancelPurchaseOrder body);
     }
 }

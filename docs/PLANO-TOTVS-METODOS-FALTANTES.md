@@ -2339,7 +2339,7 @@ onda 2 que entrar monta a base das leituras sem persistência (T11, §8.1).
 | PO-1 | 2 | `GetPurchaseOrderByKey` (DP4: sob demanda **com** persistência, como o `GetSalesOrderByKey`) | 13185 | — **Implementada em 28/10/2026** (§10.13) |
 | PO-2 | 3 | `PostPurchaseOrdersChangeStatus` | 13182 | AP-1 **Implementada em 28/10/2026** (§10.16) |
 | PO-3 | 4 | `PostPurchaseOrdersQuantityItems`, `PostPurchaseOrders` (com `supplierOrderCode` obrigatório, DP2); `PostPurchaseOrderBatchLink` (DP6) | 13181, 13180, 13184 | PO-2. **Implementada em 28/10/2026** (§10.23) |
-| PO-4 | 5 | `PostPurchaseOrdersCancel` (com conferência do fornecedor, DP3) | 13183 | PO-3 |
+| PO-4 | 5 | `PostPurchaseOrdersCancel` (com conferência do fornecedor, DP3) | 13183 | PO-3. **Implementada em 28/10/2026** (§10.28) |
 
 #### Sales Order (`TotvsSalesOrdersService`, §7)
 
@@ -3423,3 +3423,27 @@ itens numa promoção aberta (chama) e repetidos (409).
 
 **Não verificado:** a chamada em homologação (muda preço de verdade nos PDVs da homologação), o formato do `valueType` e a diferença entre
 `create` e `update` de valor; o `Script076` em banco e as rotas pelo host.
+
+### 10.28 Fase PO-4: cancelamento do pedido de compra (28/10/2026)
+
+| Peça | Onde |
+|---|---|
+| DTO `CancelPurchaseOrder` (loja, pedido e o fornecedor esperado) e `CancelPurchaseOrderValidator` | `Domain.Totvs/Dtos/Writes/PurchaseOrders`, `Application.Totvs/Validations/Writes/PurchaseOrders` |
+| `GetPurchaseOrderState` (situação e fornecedor, entidade `PurchaseOrderState`) | `ITotvsPurchaseOrdersRepository`, `TotvsCommandHandler` |
+| `PostPurchaseOrdersCancel` (13183) | `TotvsPurchaseOrdersService` |
+| Rota `POST PurchaseOrders/{docCompany}/Cancel` | `TotvsController` |
+| `Script077` (job) | `Infrastructure.Totvs/Scripts/SQLServer` |
+
+**Regras:**
+* **DP3:** a rota exige o fornecedor esperado (`supplierCode` **ou** `supplierCpfCnpj`); com o pedido em `totvs.TotvsPurchaseOrders`, um
+  fornecedor diferente volta 422 sem chamar. O fornecedor nunca vai à Totvs: o corpo enviado é só `branchCode` e `orderCode`
+  (`CancelOrderCommand`).
+* **DP7:** com o pedido no banco, cancelado (6) volta 422 (já cancelado) e atendido (4), parcialmente recebido (3) ou distribuído (7) voltam
+  422 (já há recebimento). Fora do banco, a Totvs decide.
+* Sem trava (T5): o segundo cancelamento a Totvs recusa.
+
+**Testes (console de rascunho, Totvs falsa):** cancelamento válido, sem fornecedor esperado, com os dois e CNPJ ruim; fora do banco (chama, só
+loja e pedido no corpo); bloqueado do fornecedor esperado (chama); fornecedor diferente, parcialmente recebido e já cancelado (422 sem chamar).
+
+**Não verificado:** a chamada em homologação (o pedido de teste 1\|141 da §10.25, bloqueado, é o candidato); o que a Totvs faz com pedido
+parcialmente recebido; o `Script077` em banco e a rota pelo host.
