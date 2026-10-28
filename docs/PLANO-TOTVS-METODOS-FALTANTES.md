@@ -3749,3 +3749,21 @@ e `GET`), que recusa qualquer outra antes de chamar; nada foi incluído, alterad
 | PE-7: saldo de bônus | **A leitura traz valor:** 7 de 40 clientes de notas recentes têm saldo (de 20,96 a 99,80). O `list-balance-bonus` e a leitura do saldo no consumo funcionam; o saldo zero da homologação é do cadastro, não do código. Falta só o consumo com sucesso, que pede um cliente com saldo na homologação |
 
 **Sem mudança no código.** As credenciais de produção não aparecem no repositório nem na saída (documentos mascarados).
+
+### 10.43 PE-7: consumo de bônus com saldo real (28/10/2026)
+
+Os créditos pela API não chegam ao saldo na homologação (§10.32, §10.37), mas a leitura de produção mostrou clientes com saldo (§10.42). Na
+homologação, lendo os clientes de notas recentes, o quinto consultado (cliente 55566) tinha R$ 239,52 na loja 1. Modo `pe7b` do console da
+§10.32 (CPF mascarado na saída).
+
+| Escrita | Resultado |
+|---|---|
+| `bonus-consume` de R$ 0,01 pelo **CPF** (com a conferência do saldo antes, PE4) | **201**; saldo relido 239,51 |
+| `bonus-consume` de R$ 0,01 pelo **código** | **201**; saldo relido 239,50 |
+| Consumo acima do saldo pelo CPF | **422 sem chamar**, com o saldo lido na hora (239,50) na mensagem |
+
+A PE-7 fica verificada em homologação: crédito (201), conferência do saldo e consumo pelos dois jeitos. Os créditos feitos pela API para o
+cliente de teste 58243 seguem sem aparecer no saldo (o "Saldo atual" do PESFC054 também é 0): é regra do ERP para os bônus incluídos por
+fora da venda, não do módulo.
+
+**Ficou na homologação:** R$ 0,02 consumidos do bônus do cliente 55566 na loja 1.

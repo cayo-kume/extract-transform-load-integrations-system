@@ -763,7 +763,7 @@ cada fase ("Não verificado"). Em resumo:
 
 * **Execução em banco e pelo host:** os scripts e as rotas ainda não rodaram pelo host; a modelagem foi conferida com chamadas reais à API
   e as escritas com um console contra a homologação, sem banco.
-* **Homologação:** as ondas 3, 4 e 5 foram testadas (plano, §10.19, §10.25 e §10.32 a §10.42), inclusive a troca de estágio da parcela (AP-1). Sem verificar: a inclusão de referência
+* **Homologação:** as ondas 3, 4 e 5 foram testadas (plano, §10.19, §10.25 e §10.32 a §10.43), inclusive a troca de estágio da parcela (AP-1). Sem verificar: a inclusão de referência
   (falta a máscara do PRDFM236 com os níveis), os lotes e o que depende deles (a homologação não tem lote nem produto com controle de lote:
   `ProductNotFound`), a sugestão por nuance (503 sem corpo), o vínculo com contagem real (o formato foi conferido) e o **consumo de bônus**
   (o crédito é aceito, mas o saldo continua 0: a conferir no PESFC054). A manifestação foi feita com uma nota fictícia (efeito fiscal com a área
