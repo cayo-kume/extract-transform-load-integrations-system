@@ -2300,7 +2300,7 @@ onda 2 que entrar monta a base das leituras sem persistência (T11, §8.1).
 | Fase | Onda | Métodos | Jobs | Depende de |
 |---|---|---|---|---|
 | AP-1 | 3 | Base de escrita (§1.1) + `PostDuplicatesInstallmentsStage` | 13020 | T1 (a publicação em produção espera a T2). **Implementada em 27/10/2026** (§10) |
-| AP-2 | 4 | `PostDuplicates`, `PostGroupDuplicates` | 13018, 13019 | AP-1 (o agrupamento é testado com duplicatas do `PostDuplicates`) |
+| AP-2 | 4 | `PostDuplicates`, `PostGroupDuplicates` | 13018, 13019 | AP-1 (o agrupamento é testado com duplicatas do `PostDuplicates`). **Implementada em 28/10/2026** (§10.20) |
 
 #### Person (§3)
 
@@ -3118,3 +3118,40 @@ bloquear pedido de compra parcialmente recebido (a volta iria para em andamento,
 
 **Situação da onda 4:** a condição "onda 3 testada" (§9.3) está cumprida para PE-5, PR-4, PO-2 e SO-3. Continua valendo a T2 para publicar
 qualquer escrita em produção.
+
+### 10.20 Fase AP-2: inclusão e agrupamento de duplicatas (28/10/2026)
+
+Primeira fase da onda 4, já pela base comum das escritas (`ITotvsService.Write`, com a trava T5 e a máscara T6); a AP-1 continua com o
+fluxo próprio (D5).
+
+| Peça | Onde |
+|---|---|
+| DTOs `Duplicate`, `Installment`, `Expense`, `ObservationInstallment`, `BillingAccept`, `DuplicateClassification`, `DuplicateField`, `TaxAdditional`, `TaxDuplicate`, `BusinessUnit`, `GroupDuplicate`, `GroupInstallment` | `Domain.Totvs/Dtos/Writes/AccountsPayable` |
+| Enums `DocumentType` (1 a 42 e 50 a 55), `PrevisionType`, `StageType` (1 a 5, 10, 20, 30, 40 a 43, 70, 71, 90), `AdvanceDiscountType` (0 a 7), `StatusTaxDuplicateType`, `RetentionType`, `GroupDocumentType` (1, 18) | idem, com os números da descrição do swagger (T3) |
+| `DuplicateValidator` (com `InstallmentValidator`), `GroupDuplicateValidator` | `Application.Totvs/Validations/Writes/AccountsPayable` |
+| `PostDuplicates` (13018) e `PostGroupDuplicates` (13019), as duas com a trava T5 | `TotvsAccountsPayableService` |
+| `POST Duplicates/{docCompany}` e `POST GroupDuplicates/{docCompany}` | `TotvsController` |
+
+Os jobs já estavam no `Script032` (reservados na AP-1): a fase não tem script.
+
+**Regras:**
+* Chave em `TotvsRequests`: `branchCnpj|supplierCpfCnpj|duplicateCode` (no agrupamento, a duplicata nova). O CPF do fornecedor fica inteiro
+  na chave e mascarado no corpo gravado (T6).
+* Loja: o `branchCnpj` do corpo e, no agrupamento, o de cada parcela agrupada precisam estar em `totvs.TotvsBranches` da empresa (422 sem
+  chamar, com os CNPJs de fora). O `branchCnpj` dos impostos (`taxDuplicates`) não é conferido: a Totvs valida.
+* Validador: os campos que o swagger declara sem `nullable` ficam anuláveis no DTO e obrigatórios no validador, também nos filhos
+  opcionais (`classificationType`, `typeFieldCode`, `revenue`, `calculationPeriod`, `competenceDate`, `isThirteenthSalary`, `tax`,
+  `ratePercentage`, `taxValue`, `status`, `proratedPercentage` da unidade de negócio): omitidos, iriam como 0, `false` ou `0001-01-01`.
+* Despesa: rateio por `proratedPercentage` **ou** `proratedValue`; com todas por percentual, a soma da parcela fecha em 100. Campo
+  adicional com o dado em exatamente um entre texto, número e data.
+* Agrupamento: pelo menos duas parcelas, sem repetição; `document` só 1 ou 18.
+
+**Testes (console de rascunho, Totvs falsa):** validadores (corpo válido, vazios, parcela repetida, tamanhos, casas decimais, despesa com os
+dois rateios, soma 90, rateio por valor, vencimento antes da emissão, enums fora do swagger, filhos sem os campos não anuláveis; agrupamento
+com uma parcela, documento 7, parcela repetida); serialização (enums como número, datas ISO, sem nulos); fluxo: aceita (201), repetida em
+10 min (409 sem chamar), loja de outra empresa (422 sem chamar), 400 da Totvs (422 com `code: message`) que não trava a repetição, 502 sem
+nova tentativa e com a dica do `duplicates/search`, fornecedor pessoa física (CPF inteiro na chave, mascarado no corpo gravado), escrita
+desligada; agrupamento aceito com a chave gerada na resposta, repetido (409) e com parcela de loja de fora (422 só com o CNPJ de fora).
+
+**Não verificado:** a chamada em homologação (cria duplicata de verdade no financeiro da homologação: fica para a rodada da onda 4); se a API
+aceita agrupar uma parcela só (§2.2).

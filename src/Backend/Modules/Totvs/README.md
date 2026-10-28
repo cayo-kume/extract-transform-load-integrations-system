@@ -209,6 +209,8 @@ Os nomes dos métodos são os da **documentação oficial** (`PostSearch*`, `Get
 | Service | Método | Rota da API | Job | Chave de configuração |
 |---|---|---|---|---|
 | `TotvsAccountsPayableService` | `PostDuplicatesInstallmentsStage` | `POST accounts-payable/v2/duplicates/installments/stage` | 13020 | `Totvs:Writes:AccountsPayable:Enabled` |
+| `TotvsAccountsPayableService` | `PostDuplicates` | `POST accounts-payable/v2/duplicates` (com a trava de repetição) | 13018 | `Totvs:Writes:AccountsPayable:Enabled` |
+| `TotvsAccountsPayableService` | `PostGroupDuplicates` | `POST accounts-payable/v2/group-duplicates` (com a trava de repetição) | 13019 | `Totvs:Writes:AccountsPayable:Enabled` |
 | `TotvsPeopleService` | `PostMessages` | `POST person/v2/messages` (com a trava de repetição) | 13044 | `Totvs:Writes:People:Enabled` |
 | `TotvsPeopleService` | `PutChangeMessages` | `PUT person/v2/messages/change` | 13045 | `Totvs:Writes:People:Enabled` |
 | `TotvsPeopleService` | `DeleteMessages` | `DELETE person/v2/messages` | 13046 | `Totvs:Writes:People:Enabled` |
@@ -473,6 +475,8 @@ escritas de pedido de venda, a **chave do pedido** é `branchCode` + `orderCode`
 | Método | Rota | Corpo | Service |
 |---|---|---|---|
 | POST | `Duplicates/{docCompany}/Installments/Stage` | `branchCnpj` (loja da empresa), `supplierCpfCnpj` **ou** `supplierCode`, `duplicateCode`, `installmentCode`, `newStage` (1 título não conferido, 2 liberado para pagamento, 5 título aceito) | `PostDuplicatesInstallmentsStage` |
+| POST | `Duplicates/{docCompany}` | `branchCnpj` (loja da empresa), `supplierCpfCnpj`, `duplicateCode`, `installments` (cada uma com portador, emissão, vencimento, chegada, `document`, `prevision`, `stage`, valor e pelo menos uma despesa, com rateio por `proratedPercentage` somando 100 **ou** por `proratedValue`) | `PostDuplicates` |
+| POST | `GroupDuplicates/{docCompany}` | a duplicata nova (`branchCnpj`, `supplierCpfCnpj`, `duplicateCode`, `document` 1 ou 18, `dueDate`) e pelo menos duas parcelas em `groupInstallments` (lojas da empresa) | `PostGroupDuplicates` (devolve a chave gerada) |
 | POST | `Messages/{docCompany}` | `personCode` **ou** `personCpfCnpj`; `messages` (`description` até 200, `priority`) | `PostMessages` (devolve as `sequence`) |
 | PUT | `Messages/{docCompany}/Change` | `filter` (`personCode` **ou** `personCpfCnpj`, `sequence`); `description` (obrigatória: a Totvs recusa a alteração sem ela); `status` (1 não lida, 2 lida, 3 cancelada) e `priority` opcionais | `PutChangeMessages` |
 | DELETE | `Messages/{docCompany}/{personCode}/{sequence}` | — (exclusão definitiva, só de mensagem **não lida**; prefira o `PUT` com `status` 3) | `DeleteMessages` |
@@ -569,8 +573,8 @@ Os jobs ficam em `auditing.Jobs`, com os mesmos ids em `EnumJob`.
 | 13100–13105 | `TotvsGetProducts`, `TotvsGetKardexMovement`, `TotvsGetGridFrequency`, `TotvsGetMeasurementConversions`, `TotvsGetCompositionProduct`, `TotvsGetCompositionGroupProduct` | sob demanda, sem gravar |
 | 13185 | `TotvsGetPurchaseOrderByKey` | sob demanda |
 | 13193, 13195, 13196 | `TotvsGetSalesOrderChangedBatchItems`, `TotvsGetSalesOrderInvoices`, `TotvsGetSalesOrderPendingItems` | sob demanda, sem gravar |
-| 13018 | `TotvsPostDuplicates` | escrita (reservado, fase AP-2) |
-| 13019 | `TotvsPostGroupDuplicates` | escrita (reservado, fase AP-2) |
+| 13018 | `TotvsPostDuplicates` | escrita |
+| 13019 | `TotvsPostGroupDuplicates` | escrita |
 | 13020 | `TotvsPostDuplicatesInstallmentsStage` | escrita |
 | 13044–13046 | `TotvsPostMessages`, `TotvsPutChangeMessages`, `TotvsDeleteMessages` | escrita |
 | 13124, 13126 | `TotvsPostColors`, `TotvsPostGrids` | escrita |

@@ -103,8 +103,8 @@
         TotvsPostSearchInvoiceProducts = 13257,   //Script064_Insert_Totvs_On_Demand_Fiscal_Queries_Jobs_Into_Jobs_Table.sql
 
         // escritas (TotvsController, com X-User-Name; não recorrentes): docs/PLANO-TOTVS-METODOS-FALTANTES.md §9.4
-        TotvsPostDuplicates = 13018,   //Script032_Insert_Totvs_Accounts_Payable_Writes_Jobs_Into_Jobs_Table.sql (fase AP-2)
-        TotvsPostGroupDuplicates = 13019,   //Script032_Insert_Totvs_Accounts_Payable_Writes_Jobs_Into_Jobs_Table.sql (fase AP-2)
+        TotvsPostDuplicates = 13018,   //Script032_Insert_Totvs_Accounts_Payable_Writes_Jobs_Into_Jobs_Table.sql
+        TotvsPostGroupDuplicates = 13019,   //Script032_Insert_Totvs_Accounts_Payable_Writes_Jobs_Into_Jobs_Table.sql
         TotvsPostDuplicatesInstallmentsStage = 13020,   //Script032_Insert_Totvs_Accounts_Payable_Writes_Jobs_Into_Jobs_Table.sql
         TotvsPostMessages = 13044,   //Script067_Insert_Totvs_People_Writes_Jobs_Into_Jobs_Table.sql
         TotvsPutChangeMessages = 13045,   //Script067_Insert_Totvs_People_Writes_Jobs_Into_Jobs_Table.sql

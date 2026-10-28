@@ -664,6 +664,82 @@ namespace Application.Totvs.Services
         }
 
         /// <summary>
+        /// inclui uma duplicata a pagar (docs/PLANO-TOTVS-METODOS-FALTANTES.md §2.1) pela base comum das escritas. Não idempotente: o mesmo
+        /// corpo em 10 minutos volta 409 (T5). A duplicata chega ao banco pelo próximo PostSearchDuplicates (D3)
+        /// </summary>
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostDuplicates(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.AccountsPayable.Duplicate body)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsPostDuplicates);
+
+            var key = $"{body.branchCnpj}|{body.supplierCpfCnpj}|{body.duplicateCode}";
+
+            try
+            {
+                if (!_totvsService.IsWriteEnabled(WritesGroup))
+                    return _totvsService.WriteDisabled(WritesGroup, key);
+
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return _totvsService.CompanyNotFound(doc_company, key);
+
+                if (await _totvsService.GetBranchCodeByCnpj(company, body.branchCnpj!) is null)
+                    return _totvsService.BranchNotFound(doc_company, key, [body.branchCnpj!]);
+
+                return await _totvsService.Write(company, EnumJob.TotvsPostDuplicates, user_name, key, HttpMethod.Post, "accounts-payable/v2/duplicates", body,
+                    "Confira a duplicata pelo duplicates/search antes de repetir.", repeatLock: true);
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        /// <summary>
+        /// agrupa parcelas numa duplicata nova (docs/PLANO-TOTVS-METODOS-FALTANTES.md §2.2) pela base comum das escritas. A loja do corpo e as
+        /// das parcelas agrupadas precisam ser da empresa; o mesmo corpo em 10 minutos volta 409 (T5). A resposta traz a chave gerada
+        /// </summary>
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostGroupDuplicates(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.AccountsPayable.GroupDuplicate body)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsPostGroupDuplicates);
+
+            var key = $"{body.branchCnpj}|{body.supplierCpfCnpj}|{body.duplicateCode}";
+
+            try
+            {
+                if (!_totvsService.IsWriteEnabled(WritesGroup))
+                    return _totvsService.WriteDisabled(WritesGroup, key);
+
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return _totvsService.CompanyNotFound(doc_company, key);
+
+                var outside = new List<string>();
+
+                foreach (var cnpj in body.groupInstallments!.Select(x => x.branchCnpj!).Prepend(body.branchCnpj!).Distinct())
+                    if (await _totvsService.GetBranchCodeByCnpj(company, cnpj) is null)
+                        outside.Add(cnpj);
+
+                if (outside.Count > 0)
+                    return _totvsService.BranchNotFound(doc_company, key, outside);
+
+                return await _totvsService.Write(company, EnumJob.TotvsPostGroupDuplicates, user_name, key, HttpMethod.Post, "accounts-payable/v2/group-duplicates", body,
+                    "Confira a duplicata agrupadora pelo duplicates/search antes de repetir.", repeatLock: true);
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        /// <summary>
         /// mensagens da Totvs num erro: o 400 traz DomainNotificationMessage[] (code, message, detailedMessage); outro corpo vai
         /// como veio, cortado
         /// </summary>

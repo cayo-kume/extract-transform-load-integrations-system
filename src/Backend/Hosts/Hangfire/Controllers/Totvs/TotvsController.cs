@@ -664,6 +664,48 @@ namespace Hangfire.Controllers.Totvs
         }
 
         /// <summary>
+        /// inclui uma duplicata a pagar com as parcelas (POST accounts-payable/v2/duplicates). A loja vai pelo CNPJ; a duplicata chega ao banco
+        /// pelo próximo job de duplicatas. O mesmo corpo em 10 minutos volta 409
+        /// </summary>
+        [HttpPost("Duplicates/{docCompany}")]
+        [Tags("TotvsAccountsPayable")]
+        public async Task<ActionResult> PostDuplicates(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.AccountsPayable.Duplicate body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.AccountsPayable.Duplicate> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsAccountsPayableService.PostDuplicates(userName, docCompany, body));
+        }
+
+        /// <summary>
+        /// agrupa duas ou mais parcelas numa duplicata nova (POST accounts-payable/v2/group-duplicates); a resposta traz a chave da duplicata
+        /// gerada. O mesmo corpo em 10 minutos volta 409
+        /// </summary>
+        [HttpPost("GroupDuplicates/{docCompany}")]
+        [Tags("TotvsAccountsPayable")]
+        public async Task<ActionResult> PostGroupDuplicates(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.AccountsPayable.GroupDuplicate body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.AccountsPayable.GroupDuplicate> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsAccountsPayableService.PostGroupDuplicates(userName, docCompany, body));
+        }
+
+        /// <summary>
         /// sincroniza as notas fiscais de todas as lojas da holding (POST fiscal/v2/invoices/search)
         /// </summary>
         [HttpPost("Invoices")]

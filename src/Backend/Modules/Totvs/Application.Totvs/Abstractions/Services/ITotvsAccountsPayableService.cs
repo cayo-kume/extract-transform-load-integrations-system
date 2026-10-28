@@ -18,5 +18,17 @@
         /// controller; a chamada é registrada em totvs.TotvsRequests. Sem nova tentativa em 5xx (escrita)
         /// </summary>
         public Task<Domain.Totvs.Dtos.Writes.Result> PostDuplicatesInstallmentsStage(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.AccountsPayable.ChangeInstallmentStage body);
+
+        /// <summary>
+        /// inclui uma duplicata a pagar com as parcelas pelo POST accounts-payable/v2/duplicates. Não idempotente: o mesmo corpo em 10 minutos
+        /// volta 409 (T5)
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PostDuplicates(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.AccountsPayable.Duplicate body);
+
+        /// <summary>
+        /// agrupa parcelas numa duplicata nova pelo POST accounts-payable/v2/group-duplicates; a resposta traz loja, fornecedor, duplicata e
+        /// parcela gerados. Não idempotente: o mesmo corpo em 10 minutos volta 409 (T5)
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PostGroupDuplicates(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.AccountsPayable.GroupDuplicate body);
     }
 }
