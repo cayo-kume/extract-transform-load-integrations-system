@@ -2102,7 +2102,8 @@ os nomes do swagger.
 
 **Estranho no swagger:** o schema marca `productCodeList` e `batchBarCodeList` como obrigatórios (em minúscula), mas as
 propriedades se chamam `ProductCodeList`/`BatchBarCodeList` e são anuláveis. A confirmar com chamada real se a API exige
-produto ou lote; se exigir, a rota vira "em quais notas o produto/lote saiu" e a validação acima muda.
+produto ou lote; se exigir, a rota vira "em quais notas o produto/lote saiu" e a validação acima muda. **Conferido (§10.12):** a
+API exige um entre `ProductCodeList`, `invoiceCodeList` e `acessKeyList` (400 `EnterAtLeastOne`); a emissão sozinha não basta.
 
 ### 8.10 `PostInvoicesManifestations` — `POST fiscal/v2/invoices/manifestations` (escrita, risco alto)
 
@@ -2353,7 +2354,7 @@ onda 2 que entrar monta a base das leituras sem persistência (T11, §8.1).
 | Fase | Onda | Métodos | Jobs | Depende de |
 |---|---|---|---|---|
 | FI-1 | 1 | `GetCostCenter` (hash em coluna, F5), `GetInvoicesDisable` (F4) | 13251, 13250 | — **Implementada em 27/10/2026** (§10.10). Com ela, a onda 1 fica concluída |
-| FI-2 | 2 | base das leituras sem persistência (§8.1) + `GetXmlContents`, `PostSearchDanfe`, `PostTransactionPrint` (F9), `GetInvoicesPendingConditionalProducts`, `GetSearchInvoicesItemDetail` (com o teste da F3), `PostSearchInvoiceProducts` (F10) | 13252–13257 | — (se for a primeira fase da onda 2, é ela que monta a base T11). **Parte 1 (base T11, `GetXmlContents`, `PostSearchDanfe`, `PostTransactionPrint`) implementada em 28/10/2026** (§10.11) |
+| FI-2 | 2 | base das leituras sem persistência (§8.1) + `GetXmlContents`, `PostSearchDanfe`, `PostTransactionPrint` (F9), `GetInvoicesPendingConditionalProducts`, `GetSearchInvoicesItemDetail` (com o teste da F3), `PostSearchInvoiceProducts` (F10) | 13252–13257 | — (se for a primeira fase da onda 2, é ela que monta a base T11). **Parte 1 (base T11, `GetXmlContents`, `PostSearchDanfe`, `PostTransactionPrint`) implementada em 28/10/2026** (§10.11); **parte 2 (`GetSearchInvoicesItemDetail`, `GetInvoicesPendingConditionalProducts`, `PostSearchInvoiceProducts`) em 28/10/2026** (§10.12): fase concluída, menos o teste da F3 |
 | FI-3 | 5 | `PostInvoicesManifestations` (F1: implementada mesmo sem caso de uso) | 13258 | AP-1, T1 |
 | — | fora | `GetDigitalCertificates` (F2) | — | — |
 
@@ -2834,3 +2835,38 @@ como objeto, arquivo fora do JSON) e as linhas de `TotvsRequests` só com os res
 
 **Não verificado:** o `Script063` em banco e as rotas pelo host (o mapeamento do `ReadResponse` para 200/404/422/502 não foi
 chamado por HTTP).
+
+### 10.12 Fase FI-2, parte 2: itens da nota, condicional e produtos das notas (28/10/2026)
+
+**O que entrou** (no `TotvsInvoicesService`, sobre a base T11 da §10.11; jobs sob demanda no `Script064`):
+* `GetSearchInvoicesItemDetail` (13255): `GET TotvsJobs/Totvs/Invoices/{docCompany}/{branchCode}/{invoiceSequence}/Items?invoiceDate=`
+  e `GET .../ElectronicInvoices/{docCompany}/{accessKey}/Items`, com `Expand=barcodes`; devolve o JSON da Totvs sem gravar (§8.7);
+* `GetInvoicesPendingConditionalProducts` (13256): `GET .../ConditionalProducts/{docCompany}/{branchCode}?personCode=` ou
+  `?personCpfCnpj=`, `&onlyPendingItem=true` (padrão); a loja precisa estar em `TotvsBranches` da empresa (422 sem chamar a API);
+  `personCode` ou `personCpfCnpj`, um dos dois (400 na rota); `items` vazio vira 404 (§8.8);
+* `PostSearchInvoiceProducts` (13257): `POST .../InvoiceProducts/{docCompany}/Search` com o corpo (`InvoiceProductSearch`, nos nomes do
+  swagger: `ProductCodeList`, `BatchBarCodeList` e `acessKeyList` como lá), validado no controller pelo `InvoiceProductSearchValidator`
+  (lojas informadas, um filtro restritivo, emissão com início e fim e até 31 dias, chaves com 44 dígitos, enums pelo nome, `pageSize`
+  de 1 a 100); as lojas precisam ser da empresa (422); a página volta como veio (§8.9, F10);
+* o helper `ReadFiscalJson` (a leitura que devolve o JSON) registra em `TotvsRequests` o corpo enviado e o recebido inteiros, e
+  `BranchNotFound` devolve o 422 das lojas fora da empresa.
+
+**Achados na chamada real (28/10/2026):**
+* `item-detail-search` exige exatamente uma das duas formas da chave (nenhuma: 400 `AllEmptyField`; as duas: 400 `CannotBeInformed`);
+  nota inexistente dá 400 `KeyNotFound` (a rota devolve 404); a resposta de uma nota de 1 item tem ~3 KB;
+* `pending-conditional-products` exige `PersonCode` ou `PersonCpfCnpj`, um dos dois (400 `FieldsHaveNoValue` / `FieldsHaveValue`); sem
+  saldo, responde 200 com `items` vazio;
+* `invoice-products/search` exige `ProductCodeList`, `invoiceCodeList` ou `acessKeyList` (400 `EnterAtLeastOne`): a emissão sozinha
+  não basta; os enums (`operationType`, `origin`, `modality`, `invoiceStatusList`) só aceitam o **nome** (o número dá 400
+  `InvalidValue`), embora o swagger declare três deles como `integer`; 40 dias de emissão junto com a nota foram aceitos pela Totvs (o
+  limite de 31 dias da F10 é nosso).
+
+**Conferido com o console descartável** (API real, sem banco): itens pela chave da nota e pela chave de acesso (200, o mesmo JSON),
+nota inexistente (404); condicional sem saldo pelo código e pelo CPF (404 com `data` = `{"items":[]}`) e loja fora da empresa (422 sem
+chamada); produtos da nota 1914 com `isReturn` e `batchItems` (200 com a página) e lista com loja fora da empresa (422 sem chamada); o
+validador com 7 corpos (válido, sem filtro restritivo, emissão só com início, 40 dias, enum pelo número + chave curta + página 500, sem
+lojas, sem `filter`).
+
+**Pendente:** o teste da F3 (se o `item-detail-search` traz as `referencedInvoices` das devoluções que dão 400 no `invoices/search`):
+precisa de uma nota de devolução que falhe, que não apareceu nesta conferência. **Não verificado:** o `Script064` em banco e as rotas pelo
+host.

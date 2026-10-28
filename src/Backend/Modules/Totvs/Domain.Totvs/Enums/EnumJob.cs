@@ -83,6 +83,9 @@
         TotvsGetXmlContents = 13252,   //Script063_Insert_Totvs_On_Demand_Fiscal_Files_Jobs_Into_Jobs_Table.sql
         TotvsPostSearchDanfe = 13253,   //Script063_Insert_Totvs_On_Demand_Fiscal_Files_Jobs_Into_Jobs_Table.sql
         TotvsPostTransactionPrint = 13254,   //Script063_Insert_Totvs_On_Demand_Fiscal_Files_Jobs_Into_Jobs_Table.sql
+        TotvsGetSearchInvoicesItemDetail = 13255,   //Script064_Insert_Totvs_On_Demand_Fiscal_Queries_Jobs_Into_Jobs_Table.sql
+        TotvsGetInvoicesPendingConditionalProducts = 13256,   //Script064_Insert_Totvs_On_Demand_Fiscal_Queries_Jobs_Into_Jobs_Table.sql
+        TotvsPostSearchInvoiceProducts = 13257,   //Script064_Insert_Totvs_On_Demand_Fiscal_Queries_Jobs_Into_Jobs_Table.sql
 
         // escritas (TotvsController, com X-User-Name; não recorrentes): docs/PLANO-TOTVS-METODOS-FALTANTES.md §9.4
         TotvsPostDuplicates = 13018,   //Script032_Insert_Totvs_Accounts_Payable_Writes_Jobs_Into_Jobs_Table.sql (fase AP-2)

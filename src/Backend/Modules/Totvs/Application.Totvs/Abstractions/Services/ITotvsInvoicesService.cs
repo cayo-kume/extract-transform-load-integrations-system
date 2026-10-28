@@ -41,5 +41,21 @@
         /// devolve o PDF da impressão da transação de uma nota (POST fiscal/v2/transaction/print), com o modelo do TRAFP004 informado
         /// </summary>
         public Task<Domain.Totvs.Dtos.Writes.Result> PostTransactionPrint(string user_name, string doc_company, int branchCode, int invoiceSequence, DateTime invoiceDate, int transactionPrintTemplate, int transactionPrintType);
+
+        /// <summary>
+        /// devolve os itens da nota com transações e notas referenciadas por produto (GET fiscal/v2/invoices/item-detail-search), pela loja +
+        /// sequência + data ou pela chave de acesso, sem gravar
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> GetSearchInvoicesItemDetail(string user_name, string doc_company, int? branchCode, int? invoiceSequence, DateTime? invoiceDate, string? accessKey);
+
+        /// <summary>
+        /// devolve o saldo de produtos em condicional de uma pessoa numa loja (GET fiscal/v2/invoices/pending-conditional-products), sem gravar
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> GetInvoicesPendingConditionalProducts(string user_name, string doc_company, int branchCode, int? personCode, string? personCpfCnpj, bool onlyPendingItem);
+
+        /// <summary>
+        /// devolve uma página de produtos das notas (POST fiscal/v2/invoice-products/search), com o corpo de quem chamou, sem gravar
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PostSearchInvoiceProducts(string user_name, string doc_company, Domain.Totvs.Dtos.Reads.Invoices.InvoiceProductSearch body);
     }
 }

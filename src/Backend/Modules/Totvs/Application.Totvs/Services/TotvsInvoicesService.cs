@@ -1280,5 +1280,165 @@ namespace Application.Totvs.Services
             public const int UnprocessableEntity = 422;
             public const int BadGateway = 502;
         }
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> GetSearchInvoicesItemDetail(string user_name, string doc_company, int? branchCode, int? invoiceSequence, DateTime? invoiceDate, string? accessKey)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsGetSearchInvoicesItemDetail);
+
+            // as duas formas da chave da nota, uma ou outra (a Totvs recusa as duas juntas: 400 CannotBeInformed, testado)
+            var key = accessKey ?? $"{branchCode}|{invoiceSequence}|{invoiceDate:yyyy-MM-dd}";
+            var query = accessKey is not null
+                ? $"AccessKey={accessKey}"
+                : $"BranchCode={branchCode}&InvoiceDate={invoiceDate:yyyy-MM-dd}&InvoiceSequence={invoiceSequence}";
+
+            try
+            {
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return CompanyNotFound(doc_company, key);
+
+                // os itens já são gravados pelo invoices/search; esta rota só devolve o que é dela (transações e notas referenciadas por
+                // produto, inTransactionAgroup) e não grava: regravar as tabelas por aqui apagaria cest e additionalItemInformation (§8.7)
+                return await ReadFiscalJson(company, EnumJob.TotvsGetSearchInvoicesItemDetail, user_name, key, HttpMethod.Get, $"fiscal/v2/invoices/item-detail-search?{query}&Expand=barcodes", null, false);
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> GetInvoicesPendingConditionalProducts(string user_name, string doc_company, int branchCode, int? personCode, string? personCpfCnpj, bool onlyPendingItem)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsGetInvoicesPendingConditionalProducts);
+
+            var key = personCode is not null ? $"{branchCode}|{personCode}" : $"{branchCode}|{personCpfCnpj}";
+
+            try
+            {
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return CompanyNotFound(doc_company, key);
+
+                // a loja precisa ser da empresa (422 sem chamar a API, §8.8)
+                if (!(await _totvsService.GetBranchCodes(company)).Contains(branchCode))
+                    return BranchNotFound(doc_company, key, [branchCode]);
+
+                // PersonCode ou PersonCpfCnpj, um dos dois (a Totvs recusa nenhum e os dois: 400 FieldsHaveNoValue / FieldsHaveValue, testado)
+                var person = personCode is not null ? $"PersonCode={personCode}" : $"PersonCpfCnpj={personCpfCnpj}";
+
+                // o saldo do momento muda a cada venda ou devolução e a rota não tem filtro de alteração: não há o que gravar (§8.8)
+                return await ReadFiscalJson(company, EnumJob.TotvsGetInvoicesPendingConditionalProducts, user_name, key, HttpMethod.Get,
+                    $"fiscal/v2/invoices/pending-conditional-products?BranchCode={branchCode}&{person}&OnlyPendingItem={(onlyPendingItem ? "true" : "false")}", null, true);
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostSearchInvoiceProducts(string user_name, string doc_company, Domain.Totvs.Dtos.Reads.Invoices.InvoiceProductSearch body)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsPostSearchInvoiceProducts);
+
+            // chave em TotvsRequests: as lojas e o primeiro filtro restritivo informado (§8.9)
+            var filter = body.filter!;
+            var restrictive = filter.invoiceCodeList?.Count > 0 ? $"invoiceCodeList={String.Join(",", filter.invoiceCodeList)}"
+                : filter.ProductCodeList?.Count > 0 ? $"ProductCodeList={String.Join(",", filter.ProductCodeList)}"
+                : $"acessKeyList={String.Join(",", filter.acessKeyList ?? [])}";
+            var key = $"{String.Join(",", filter.branchCodeList ?? [])}|{restrictive}";
+            key = key.Length > 200 ? key[..200] : key;
+
+            try
+            {
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return CompanyNotFound(doc_company, key);
+
+                var branchCodes = await _totvsService.GetBranchCodes(company);
+                var outside = (filter.branchCodeList ?? []).Where(x => !branchCodes.Contains(x)).ToList();
+
+                if (outside.Count > 0)
+                    return BranchNotFound(doc_company, key, outside);
+
+                // o corpo vai como veio (nomes do swagger, enums pelo nome); nulos omitidos
+                var requestBody = JsonConvert.SerializeObject(body, new JsonSerializerSettings
+                {
+                    NullValueHandling = NullValueHandling.Ignore,
+                    DateFormatString = "yyyy-MM-ddTHH:mm:ss"
+                });
+
+                // a página volta como veio: quem chama pagina (§8.9)
+                return await ReadFiscalJson(company, EnumJob.TotvsPostSearchInvoiceProducts, user_name, key, HttpMethod.Post, "fiscal/v2/invoice-products/search", requestBody, false);
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        /// <summary>
+        /// uma leitura sem persistência que devolve o JSON da Totvs (T11): chama com a nova tentativa, registra em TotvsRequests o corpo
+        /// enviado e o recebido inteiros, e devolve o Result com o JSON em data, ou o do erro (o 400 KeyNotFound vira 404). Com emptyIs404,
+        /// a resposta com items vazio também vira 404 (§8.8)
+        /// </summary>
+        private async Task<Domain.Totvs.Dtos.Writes.Result> ReadFiscalJson(Domain.Totvs.Entities.Parameters.Company company, EnumJob job, string user_name, string key, HttpMethod method, string route, string? requestBody, bool emptyIs404)
+        {
+            var routeName = route.Split('?')[0];
+            var response = await CallFiscalOnDemand(company, job, user_name, key, method, route, requestBody, requestBody);
+
+            if (response is null || !response.IsSuccess)
+            {
+                _totvsService.SaveRequest(job, user_name, method.Method, route, company.doc_company!, key, response?.Content, false, requestBody);
+                return FiscalError(key, routeName, response);
+            }
+
+            System.Text.Json.JsonElement data;
+
+            try
+            {
+                data = System.Text.Json.JsonDocument.Parse(response.Content ?? String.Empty).RootElement.Clone();
+            }
+            catch (System.Text.Json.JsonException)
+            {
+                _totvsService.SaveRequest(job, user_name, method.Method, route, company.doc_company!, key, Truncate(response.Content), false, requestBody);
+                return InvalidResponse(key, routeName, response.Content);
+            }
+
+            var empty = emptyIs404 && data.ValueKind == System.Text.Json.JsonValueKind.Object && data.TryGetProperty("items", out var items)
+                && items.ValueKind == System.Text.Json.JsonValueKind.Array && items.GetArrayLength() == 0;
+
+            _totvsService.SaveRequest(job, user_name, method.Method, route, company.doc_company!, key, response.Content, !empty, requestBody);
+
+            if (empty)
+            {
+                _logger.AddMessage($"Sem registros em {routeName} ({key}).");
+                return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, statusCode = StatusCodes.NotFound, apiCalled = true, message = "Nenhum registro encontrado.", data = data };
+            }
+
+            _logger.AddMessage($"Concluída com sucesso: {routeName} ({key}) devolvido.");
+
+            return new Domain.Totvs.Dtos.Writes.Result { success = true, key = key, statusCode = StatusCodes.OK, apiCalled = true, data = data };
+        }
+
+        private Domain.Totvs.Dtos.Writes.Result BranchNotFound(string doc_company, string key, List<int> branchCodes)
+        {
+            // nenhuma chamada à API: não há o que registrar em TotvsRequests
+            var message = $"Loja(s) {String.Join(", ", branchCodes)} fora de totvs.TotvsBranches da empresa {doc_company}.";
+            _logger.AddMessage(message);
+
+            return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, statusCode = 0, apiCalled = false, message = message };
+        }
     }
 }

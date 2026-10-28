@@ -33,6 +33,7 @@ namespace Hangfire.Controllers.Totvs
         private readonly ITotvsProductCatalogsService _totvsProductCatalogsService;
         private readonly ITotvsProductPricesService _totvsProductPricesService;
         private readonly IValidator<Domain.Totvs.Dtos.Writes.AccountsPayable.ChangeInstallmentStage> _changeInstallmentStageValidator;
+        private readonly IValidator<Domain.Totvs.Dtos.Reads.Invoices.InvoiceProductSearch> _invoiceProductSearchValidator;
 
         public TotvsController(
             ITotvsPeopleService totvsPeopleService,
@@ -46,10 +47,11 @@ namespace Hangfire.Controllers.Totvs
             ITotvsRepresentativesService totvsRepresentativesService,
             ITotvsProductCatalogsService totvsProductCatalogsService,
             ITotvsProductPricesService totvsProductPricesService,
-            IValidator<Domain.Totvs.Dtos.Writes.AccountsPayable.ChangeInstallmentStage> changeInstallmentStageValidator
+            IValidator<Domain.Totvs.Dtos.Writes.AccountsPayable.ChangeInstallmentStage> changeInstallmentStageValidator,
+            IValidator<Domain.Totvs.Dtos.Reads.Invoices.InvoiceProductSearch> invoiceProductSearchValidator
         ) =>
-            (_totvsPeopleService, _totvsSellersService, _totvsProductsService, _totvsPurchaseOrdersService, _totvsSalesOrdersService, _totvsAccountsPayableService, _totvsInvoicesService, _totvsPersonCatalogsService, _totvsRepresentativesService, _totvsProductCatalogsService, _totvsProductPricesService, _changeInstallmentStageValidator) =
-            (totvsPeopleService, totvsSellersService, totvsProductsService, totvsPurchaseOrdersService, totvsSalesOrdersService, totvsAccountsPayableService, totvsInvoicesService, totvsPersonCatalogsService, totvsRepresentativesService, totvsProductCatalogsService, totvsProductPricesService, changeInstallmentStageValidator);
+            (_totvsPeopleService, _totvsSellersService, _totvsProductsService, _totvsPurchaseOrdersService, _totvsSalesOrdersService, _totvsAccountsPayableService, _totvsInvoicesService, _totvsPersonCatalogsService, _totvsRepresentativesService, _totvsProductCatalogsService, _totvsProductPricesService, _changeInstallmentStageValidator, _invoiceProductSearchValidator) =
+            (totvsPeopleService, totvsSellersService, totvsProductsService, totvsPurchaseOrdersService, totvsSalesOrdersService, totvsAccountsPayableService, totvsInvoicesService, totvsPersonCatalogsService, totvsRepresentativesService, totvsProductCatalogsService, totvsProductPricesService, changeInstallmentStageValidator, invoiceProductSearchValidator);
 
         /// <summary>
         /// sincroniza as empresas (lojas) da holding (GET person/v2/branchesList)
@@ -757,6 +759,74 @@ namespace Hangfire.Controllers.Totvs
             [FromQuery, Range(1, 2)] int type = 1
         ) =>
             ReadResponse(await _totvsInvoicesService.PostTransactionPrint(userName, docCompany, branchCode, invoiceSequence, invoiceDate.Date, template, type));
+
+        /// <summary>
+        /// devolve os itens de uma nota com transações e notas referenciadas por produto (GET fiscal/v2/invoices/item-detail-search), pela
+        /// loja + sequência + data, sem gravar
+        /// </summary>
+        [HttpGet("Invoices/{docCompany}/{branchCode:int:min(1)}/{invoiceSequence:int:min(1)}/Items")]
+        [Tags("TotvsInvoices")]
+        public async Task<ActionResult> InvoiceItems(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            int branchCode,
+            int invoiceSequence,
+            [FromQuery, Required] DateTime invoiceDate
+        ) =>
+            ReadResponse(await _totvsInvoicesService.GetSearchInvoicesItemDetail(userName, docCompany, branchCode, invoiceSequence, invoiceDate.Date, null));
+
+        /// <summary>
+        /// devolve os itens de uma NF-e/NFC-e pela chave de acesso (GET fiscal/v2/invoices/item-detail-search), sem gravar
+        /// </summary>
+        [HttpGet("ElectronicInvoices/{docCompany}/{accessKey}/Items")]
+        [Tags("TotvsInvoices")]
+        public async Task<ActionResult> ElectronicInvoiceItems(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [RegularExpression(@"^\d{44}$")] string accessKey
+        ) =>
+            ReadResponse(await _totvsInvoicesService.GetSearchInvoicesItemDetail(userName, docCompany, null, null, null, accessKey));
+
+        /// <summary>
+        /// devolve o saldo de produtos em condicional de uma pessoa numa loja (GET fiscal/v2/invoices/pending-conditional-products): personCode
+        /// ou personCpfCnpj, um dos dois; 404 sem saldo
+        /// </summary>
+        [HttpGet("ConditionalProducts/{docCompany}/{branchCode:int:min(1)}")]
+        [Tags("TotvsInvoices")]
+        public async Task<ActionResult> ConditionalProducts(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            int branchCode,
+            [FromQuery, Range(1, int.MaxValue)] int? personCode,
+            [FromQuery, RegularExpression(@"^(\d{11}|\d{14})$")] string? personCpfCnpj,
+            [FromQuery] bool onlyPendingItem = true
+        )
+        {
+            if ((personCode is null) == String.IsNullOrEmpty(personCpfCnpj))
+                return BadRequest(new[] { new { field = "personCode", message = "Informe personCode ou personCpfCnpj, um dos dois." } });
+
+            return ReadResponse(await _totvsInvoicesService.GetInvoicesPendingConditionalProducts(userName, docCompany, branchCode, personCode, String.IsNullOrEmpty(personCpfCnpj) ? null : personCpfCnpj, onlyPendingItem));
+        }
+
+        /// <summary>
+        /// devolve uma página de produtos das notas (POST fiscal/v2/invoice-products/search), com o filtro no corpo: lojas da empresa e pelo
+        /// menos produto, nota ou chave de acesso; quem chama pagina
+        /// </summary>
+        [HttpPost("InvoiceProducts/{docCompany}/Search")]
+        [Tags("TotvsInvoices")]
+        public async Task<ActionResult> InvoiceProducts(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Reads.Invoices.InvoiceProductSearch body
+        )
+        {
+            var validation = await _invoiceProductSearchValidator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return ReadResponse(await _totvsInvoicesService.PostSearchInvoiceProducts(userName, docCompany, body));
+        }
 
         /// <summary>
         /// resposta das leituras sem persistência (docs/PLANO-TOTVS-METODOS-FALTANTES.md §8.1, T11): 200 com o JSON ou o arquivo; 404 quando

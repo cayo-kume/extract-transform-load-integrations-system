@@ -221,6 +221,9 @@ Os nomes dos métodos são os da **documentação oficial** (`PostSearch*`, `Get
 | `TotvsInvoicesService` | `GetXmlContents` | `GET fiscal/v2/xml-contents/{accessKey}` (sem gravar) | 13252 |
 | `TotvsInvoicesService` | `PostSearchDanfe` | `xml-contents` + `POST fiscal/v2/danfe-search` (devolve o PDF) | 13253 |
 | `TotvsInvoicesService` | `PostTransactionPrint` | `POST fiscal/v2/transaction/print` (devolve o PDF) | 13254 |
+| `TotvsInvoicesService` | `GetSearchInvoicesItemDetail` | `GET fiscal/v2/invoices/item-detail-search` (sem gravar) | 13255 |
+| `TotvsInvoicesService` | `GetInvoicesPendingConditionalProducts` | `GET fiscal/v2/invoices/pending-conditional-products` (sem gravar) | 13256 |
+| `TotvsInvoicesService` | `PostSearchInvoiceProducts` | `POST fiscal/v2/invoice-products/search` (sem gravar) | 13257 |
 | `TotvsRepresentativesService` | `GetRepresentativeByCode` | `representatives/search` com `representativeCodeList` | 13039 |
 | `TotvsProductsService` | `GetProductByCode` | `references/search` com `productCodeList` (acha a referência) e `referenceCodeList` (lê a referência inteira) | 13014 |
 
@@ -323,6 +326,7 @@ O DbUp executa cada script uma única vez, em ordem alfabética. Alterar um scri
 | `Script057`–`059` | Catálogos, lotes de pedidos e sugestões de faturamento da API Sales Order |
 | `Script060`–`062` | Inutilizações e centros de custo da API Fiscal |
 | `Script063` | Jobs das leituras sem persistência da API Fiscal (XML, DANFE, impressão) |
+| `Script064` | Jobs das leituras sem persistência da API Fiscal (itens, condicional, produtos das notas) |
 
 **Regras gerais das tabelas e dos merges:**
 * Toda tabela de dados existe em dois schemas: `untreated` (recebe o bulk insert, sem chave) e `totvs` (tabela final, com PK). A exceção é `totvs.TotvsRequests`, que só recebe inserts.
@@ -415,6 +419,10 @@ sem gravar tabela; a chamada fica em `totvs.TotvsRequests` (nas de arquivo, só 
 | GET | `ElectronicInvoices/{docCompany}/{accessKey}/Xml` | `GetXmlContents` |
 | GET | `ElectronicInvoices/{docCompany}/{accessKey}/Danfe?nfeDocumentType=1` | `PostSearchDanfe` (PDF; a NFC-e dá erro na Totvs) |
 | GET | `Invoices/{docCompany}/{branchCode}/{invoiceSequence}/Print?invoiceDate=yyyy-MM-dd&template=1&type=1` | `PostTransactionPrint` (PDF) |
+| GET | `Invoices/{docCompany}/{branchCode}/{invoiceSequence}/Items?invoiceDate=yyyy-MM-dd` | `GetSearchInvoicesItemDetail` |
+| GET | `ElectronicInvoices/{docCompany}/{accessKey}/Items` | `GetSearchInvoicesItemDetail` |
+| GET | `ConditionalProducts/{docCompany}/{branchCode}?personCode=N` (ou `personCpfCnpj`) | `GetInvoicesPendingConditionalProducts` (404 sem saldo) |
+| POST | `InvoiceProducts/{docCompany}/Search` (filtro no corpo; produto, nota ou chave de acesso obrigatórios) | `PostSearchInvoiceProducts` |
 
 | Código | Quando |
 |---|---|
@@ -509,6 +517,9 @@ Os jobs ficam em `auditing.Jobs`, com os mesmos ids em `EnumJob`.
 | 13252 | `TotvsGetXmlContents` | sob demanda, sem gravar |
 | 13253 | `TotvsPostSearchDanfe` | sob demanda, sem gravar |
 | 13254 | `TotvsPostTransactionPrint` | sob demanda, sem gravar |
+| 13255 | `TotvsGetSearchInvoicesItemDetail` | sob demanda, sem gravar |
+| 13256 | `TotvsGetInvoicesPendingConditionalProducts` | sob demanda, sem gravar |
+| 13257 | `TotvsPostSearchInvoiceProducts` | sob demanda, sem gravar |
 | 13018 | `TotvsPostDuplicates` | escrita (reservado, fase AP-2) |
 | 13019 | `TotvsPostGroupDuplicates` | escrita (reservado, fase AP-2) |
 | 13020 | `TotvsPostDuplicatesInstallmentsStage` | escrita |
