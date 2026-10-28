@@ -34,6 +34,8 @@ namespace Hangfire.Controllers.Totvs
         private readonly ITotvsProductPricesService _totvsProductPricesService;
         private readonly IValidator<Domain.Totvs.Dtos.Writes.AccountsPayable.ChangeInstallmentStage> _changeInstallmentStageValidator;
         private readonly IValidator<Domain.Totvs.Dtos.Reads.Invoices.InvoiceProductSearch> _invoiceProductSearchValidator;
+        private readonly ITotvsBonusService _totvsBonusService;
+        private readonly IValidator<Domain.Totvs.Dtos.Reads.People.Bonus.ListBalanceBonus> _listBalanceBonusValidator;
 
         public TotvsController(
             ITotvsPeopleService totvsPeopleService,
@@ -48,10 +50,12 @@ namespace Hangfire.Controllers.Totvs
             ITotvsProductCatalogsService totvsProductCatalogsService,
             ITotvsProductPricesService totvsProductPricesService,
             IValidator<Domain.Totvs.Dtos.Writes.AccountsPayable.ChangeInstallmentStage> changeInstallmentStageValidator,
-            IValidator<Domain.Totvs.Dtos.Reads.Invoices.InvoiceProductSearch> invoiceProductSearchValidator
+            IValidator<Domain.Totvs.Dtos.Reads.Invoices.InvoiceProductSearch> invoiceProductSearchValidator,
+            ITotvsBonusService totvsBonusService,
+            IValidator<Domain.Totvs.Dtos.Reads.People.Bonus.ListBalanceBonus> listBalanceBonusValidator
         ) =>
-            (_totvsPeopleService, _totvsSellersService, _totvsProductsService, _totvsPurchaseOrdersService, _totvsSalesOrdersService, _totvsAccountsPayableService, _totvsInvoicesService, _totvsPersonCatalogsService, _totvsRepresentativesService, _totvsProductCatalogsService, _totvsProductPricesService, _changeInstallmentStageValidator, _invoiceProductSearchValidator) =
-            (totvsPeopleService, totvsSellersService, totvsProductsService, totvsPurchaseOrdersService, totvsSalesOrdersService, totvsAccountsPayableService, totvsInvoicesService, totvsPersonCatalogsService, totvsRepresentativesService, totvsProductCatalogsService, totvsProductPricesService, changeInstallmentStageValidator, invoiceProductSearchValidator);
+            (_totvsPeopleService, _totvsSellersService, _totvsProductsService, _totvsPurchaseOrdersService, _totvsSalesOrdersService, _totvsAccountsPayableService, _totvsInvoicesService, _totvsPersonCatalogsService, _totvsRepresentativesService, _totvsProductCatalogsService, _totvsProductPricesService, _changeInstallmentStageValidator, _invoiceProductSearchValidator, _totvsBonusService, _listBalanceBonusValidator) =
+            (totvsPeopleService, totvsSellersService, totvsProductsService, totvsPurchaseOrdersService, totvsSalesOrdersService, totvsAccountsPayableService, totvsInvoicesService, totvsPersonCatalogsService, totvsRepresentativesService, totvsProductCatalogsService, totvsProductPricesService, changeInstallmentStageValidator, invoiceProductSearchValidator, totvsBonusService, listBalanceBonusValidator);
 
         /// <summary>
         /// sincroniza as empresas (lojas) da holding (GET person/v2/branchesList)
@@ -858,6 +862,25 @@ namespace Hangfire.Controllers.Totvs
                 return BadRequest(new[] { new { field = "customerCode", message = "Informe customerCode ou customerCpfCnpj, um dos dois." } });
 
             return ReadResponse(await _totvsPeopleService.GetPersonStatistics(userName, docCompany, customerCode, String.IsNullOrEmpty(customerCpfCnpj) ? null : customerCpfCnpj, branchCode));
+        }
+
+        /// <summary>
+        /// devolve o saldo de bônus de uma pessoa nas lojas (POST person/v2/list-balance-bonus), com o corpo validado; sem saldo, 404
+        /// </summary>
+        [HttpPost("ListBalanceBonus/{docCompany}")]
+        [Tags("TotvsBonus")]
+        public async Task<ActionResult> ListBalanceBonus(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Reads.People.Bonus.ListBalanceBonus body
+        )
+        {
+            var validation = await _listBalanceBonusValidator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return ReadResponse(await _totvsBonusService.PostListBalanceBonus(userName, docCompany, body));
         }
 
         /// <summary>

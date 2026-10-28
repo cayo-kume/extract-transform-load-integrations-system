@@ -46,6 +46,7 @@
         // leituras sob demanda da onda 2 (fases PE-3, PE-4, PR-3, PO-1 e SO-2); PO-1 grava, as outras não
         TotvsGetBranches = 13036,   //Script065_Insert_Totvs_On_Demand_Wave_2_Jobs_Into_Jobs_Table.sql
         TotvsGetPersonStatistics = 13037,   //Script065_Insert_Totvs_On_Demand_Wave_2_Jobs_Into_Jobs_Table.sql
+        TotvsPostListBalanceBonus = 13038,   //Script065_Insert_Totvs_On_Demand_Wave_2_Jobs_Into_Jobs_Table.sql
 
         // regiões de atuação da API Seller (fase SE-1), a cada 2 horas
         TotvsGetOperationalArea = 13070,   //Script044_Insert_Totvs_Operational_Areas_Jobs_Into_Jobs_Table.sql

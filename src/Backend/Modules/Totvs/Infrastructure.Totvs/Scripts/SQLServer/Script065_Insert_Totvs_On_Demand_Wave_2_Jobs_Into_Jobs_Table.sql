@@ -5,4 +5,5 @@ VALUES
   (docs/PLANO-TOTVS-METODOS-FALTANTES.md §8.1, T11)*/
 /*Range 13000 - 13499 (Person: 13030 - 13069; Product: 13100 - 13105; Purchase Order: 13185; Sales Order: 13190 - 13249)*/
 (130, 13036, 'TotvsGetBranches', 'Dados de uma loja pelo código ou CNPJ (GET Branches/{docCompany}/{branchId})', 0, 2),
-(130, 13037, 'TotvsGetPersonStatistics', 'Estatísticas de compra e crédito de um cliente (GET PersonStatistics/{docCompany})', 0, 2);
+(130, 13037, 'TotvsGetPersonStatistics', 'Estatísticas de compra e crédito de um cliente (GET PersonStatistics/{docCompany})', 0, 2),
+(130, 13038, 'TotvsPostListBalanceBonus', 'Saldo de bônus de uma pessoa nas lojas (POST ListBalanceBonus/{docCompany})', 0, 2);
