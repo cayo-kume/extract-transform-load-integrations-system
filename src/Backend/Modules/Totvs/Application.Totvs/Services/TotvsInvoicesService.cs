@@ -885,5 +885,400 @@ namespace Application.Totvs.Services
 
             return items;
         }
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> GetXmlContents(string user_name, string doc_company, string accessKey)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsGetXmlContents);
+
+            try
+            {
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return CompanyNotFound(doc_company, accessKey);
+
+                var (xml, error) = await ReadInvoiceXml(company, EnumJob.TotvsGetXmlContents, user_name, accessKey);
+
+                if (error is not null)
+                    return error;
+
+                _logger.AddMessage($"Concluída com sucesso: XML da nota {accessKey} ({(string?)xml!["invoiceStatus"]}) devolvido.");
+
+                return new Domain.Totvs.Dtos.Writes.Result
+                {
+                    success = true,
+                    key = accessKey,
+                    statusCode = StatusCodes.OK,
+                    apiCalled = true,
+                    data = System.Text.Json.JsonDocument.Parse(xml.ToString(Formatting.None)).RootElement.Clone()
+                };
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostSearchDanfe(string user_name, string doc_company, string accessKey, int? nfeDocumentType)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsPostSearchDanfe);
+
+            const string route = "fiscal/v2/danfe-search";
+
+            try
+            {
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return CompanyNotFound(doc_company, accessKey);
+
+                // a rota recebe a chave, não o XML: o XML sai do xml-contents (a linha dele em TotvsRequests leva o job do DANFE)
+                var (xml, error) = await ReadInvoiceXml(company, EnumJob.TotvsPostSearchDanfe, user_name, accessKey);
+
+                if (error is not null)
+                    return error;
+
+                var mainInvoiceXml = (string?)xml!["mainInvoiceXml"] ?? String.Empty;
+
+                // o xml-contents já devolve o XML em base64 (começa por PD94bWwg, "<?xml"; testado), que é o que o danfe-search pede;
+                // se um dia vier em texto, é codificado aqui
+                if (mainInvoiceXml.TrimStart().StartsWith('<'))
+                    mainInvoiceXml = Convert.ToBase64String(Encoding.UTF8.GetBytes(mainInvoiceXml));
+
+                var requestBody = JsonConvert.SerializeObject(new { mainInvoiceXml, nfeDocumentType }, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
+
+                // TotvsRequests leva só a chave e o tipo: o XML não é gravado
+                var requestSummary = JsonConvert.SerializeObject(new { accessKey, nfeDocumentType });
+                var response = await CallFiscalOnDemand(company, EnumJob.TotvsPostSearchDanfe, user_name, accessKey, HttpMethod.Post, route, requestBody, requestSummary);
+
+                if (response is null || !response.IsSuccess)
+                {
+                    _totvsService.SaveRequest(EnumJob.TotvsPostSearchDanfe, user_name, "POST", route, doc_company, accessKey, response?.Content, false, requestSummary);
+                    return FiscalError(accessKey, route, response);
+                }
+
+                var pdf = Base64Content(response.Content, "danfePdfBase64");
+
+                if (pdf is null)
+                {
+                    _totvsService.SaveRequest(EnumJob.TotvsPostSearchDanfe, user_name, "POST", route, doc_company, accessKey, Truncate(response.Content), false, requestSummary);
+                    return InvalidResponse(accessKey, route, response.Content);
+                }
+
+                _totvsService.SaveRequest(EnumJob.TotvsPostSearchDanfe, user_name, "POST", route, doc_company, accessKey, JsonConvert.SerializeObject(new { pdfLength = pdf.Length }), true, requestSummary);
+                _logger.AddMessage($"Concluída com sucesso: DANFE da nota {accessKey} devolvido ({pdf.Length} bytes).");
+
+                return new Domain.Totvs.Dtos.Writes.Result
+                {
+                    success = true,
+                    key = accessKey,
+                    statusCode = StatusCodes.OK,
+                    apiCalled = true,
+                    file = pdf,
+                    fileName = $"{accessKey}.pdf",
+                    contentType = "application/pdf"
+                };
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostTransactionPrint(string user_name, string doc_company, int branchCode, int invoiceSequence, DateTime invoiceDate, int transactionPrintTemplate, int transactionPrintType)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsPostTransactionPrint);
+
+            const string route = "fiscal/v2/transaction/print";
+            var key = $"{branchCode}|{invoiceSequence}|{invoiceDate:yyyy-MM-dd}";
+
+            try
+            {
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return CompanyNotFound(doc_company, key);
+
+                // o swagger não marca nenhum campo como obrigatório; aqui todos são (§8.6). A rota roda um processo Uniface no ERP
+                // (~12 s, testado): é chamada só sob demanda, nunca em laço
+                var requestBody = JsonConvert.SerializeObject(new
+                {
+                    branchCode,
+                    invoiceDate = $"{invoiceDate:yyyy-MM-dd}",
+                    invoiceSequence,
+                    transactionPrintTemplate,
+                    transactionPrintType
+                });
+
+                var response = await CallFiscalOnDemand(company, EnumJob.TotvsPostTransactionPrint, user_name, key, HttpMethod.Post, route, requestBody, requestBody);
+
+                if (response is null || !response.IsSuccess)
+                {
+                    _totvsService.SaveRequest(EnumJob.TotvsPostTransactionPrint, user_name, "POST", route, doc_company, key, response?.Content, false, requestBody);
+                    return FiscalError(key, route, response);
+                }
+
+                JObject? json = null;
+
+                try
+                {
+                    json = JObject.Parse(response.Content ?? String.Empty);
+                }
+                catch (JsonReaderException)
+                {
+                    // json continua null: tratado abaixo como resposta inválida
+                }
+
+                var status = (string?)json?["unifaceResponseStatus"];
+                var unifaceMessage = (string?)json?["unifaceMessage"];
+                var pdf = json is null ? null : Base64Content(response.Content, "content");
+                var summary = JsonConvert.SerializeObject(new { unifaceResponseStatus = status, unifaceMessage, contentLength = pdf?.Length ?? 0 });
+
+                if (json is null)
+                {
+                    _totvsService.SaveRequest(EnumJob.TotvsPostTransactionPrint, user_name, "POST", route, doc_company, key, Truncate(response.Content), false, requestBody);
+                    return InvalidResponse(key, route, response.Content);
+                }
+
+                // 200 com erro do processo (status diferente de Success ou sem conteúdo): 422 com a mensagem do Uniface
+                if (status != "Success" || pdf is null || pdf.Length == 0)
+                {
+                    _totvsService.SaveRequest(EnumJob.TotvsPostTransactionPrint, user_name, "POST", route, doc_company, key, summary, false, requestBody);
+                    _logger.AddMessage($"Impressão da transação {key} (empresa {doc_company}): {status} {unifaceMessage}");
+
+                    return new Domain.Totvs.Dtos.Writes.Result
+                    {
+                        success = false,
+                        key = key,
+                        statusCode = StatusCodes.UnprocessableEntity,
+                        apiCalled = true,
+                        message = String.IsNullOrWhiteSpace(unifaceMessage) ? $"A Totvs devolveu {status} sem conteúdo." : unifaceMessage
+                    };
+                }
+
+                _totvsService.SaveRequest(EnumJob.TotvsPostTransactionPrint, user_name, "POST", route, doc_company, key, summary, true, requestBody);
+                _logger.AddMessage($"Concluída com sucesso: impressão da transação {key} devolvida ({pdf.Length} bytes).");
+
+                return new Domain.Totvs.Dtos.Writes.Result
+                {
+                    success = true,
+                    key = key,
+                    statusCode = StatusCodes.OK,
+                    apiCalled = true,
+                    file = pdf,
+                    fileName = $"{branchCode}-{invoiceSequence}-{invoiceDate:yyyyMMdd}.pdf",
+                    contentType = "application/pdf"
+                };
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        /// <summary>
+        /// lê o XML da nota pelo GET fiscal/v2/xml-contents/{accessKey} e registra a chamada em TotvsRequests com um resumo (situação e
+        /// tamanho de cada XML), nunca o conteúdo. Devolve o JSON da Totvs ou o Result do erro
+        /// </summary>
+        private async Task<(JObject? xml, Domain.Totvs.Dtos.Writes.Result? error)> ReadInvoiceXml(Domain.Totvs.Entities.Parameters.Company company, EnumJob job, string user_name, string accessKey)
+        {
+            var route = $"fiscal/v2/xml-contents/{accessKey}";
+            var response = await CallFiscalOnDemand(company, job, user_name, accessKey, HttpMethod.Get, route, null, null);
+
+            if (response is null || !response.IsSuccess)
+            {
+                _totvsService.SaveRequest(job, user_name, "GET", route, company.doc_company!, accessKey, response?.Content, false);
+                return (null, FiscalError(accessKey, route, response));
+            }
+
+            JObject? json = null;
+
+            try
+            {
+                json = JObject.Parse(response.Content ?? String.Empty);
+            }
+            catch (JsonReaderException)
+            {
+                // json continua null: tratado abaixo como resposta inválida
+            }
+
+            if (json is null || String.IsNullOrWhiteSpace((string?)json["mainInvoiceXml"]))
+            {
+                _totvsService.SaveRequest(job, user_name, "GET", route, company.doc_company!, accessKey, Truncate(response.Content), false);
+                return (null, InvalidResponse(accessKey, route, response.Content));
+            }
+
+            // a resposta real traz invoiceStatus (o swagger diz processingType) e o cancelInvoiceXml só nas canceladas
+            var summary = JsonConvert.SerializeObject(new
+            {
+                invoiceStatus = (string?)json["invoiceStatus"],
+                mainInvoiceXmlLength = ((string?)json["mainInvoiceXml"])?.Length ?? 0,
+                cancelInvoiceXmlLength = ((string?)json["cancelInvoiceXml"])?.Length ?? 0
+            });
+
+            _totvsService.SaveRequest(job, user_name, "GET", route, company.doc_company!, accessKey, summary, true);
+
+            return (json, null);
+        }
+
+        /// <summary>
+        /// uma chamada sob demanda à API Fiscal, com uma nova tentativa (são consultas, idempotentes, inclusive os POST; §8.1): 401
+        /// renova o token, 429 espera o Retry-After e 502/503/504 espera 10 s. A exceção (timeout, rede) é registrada em TotvsRequests
+        /// antes de subir. Devolve null se o login falhou (a mensagem já foi para o log); quem chama registra a resposta
+        /// </summary>
+        private async Task<ApiResponse?> CallFiscalOnDemand(Domain.Totvs.Entities.Parameters.Company company, EnumJob job, string user_name, string key, HttpMethod method, string route, string? requestBody, string? requestSummary)
+        {
+            ApiResponse? response = null;
+
+            try
+            {
+                for (var attempt = 1; attempt <= 2; attempt++)
+                {
+                    var token = await _totvsService.GetToken(company);
+
+                    if (token is null)
+                        break;
+
+                    using var content = requestBody is null ? null : new StringContent(requestBody, Encoding.UTF8, "application/json");
+
+                    response = await _apiClient.SendAsync(
+                        method,
+                        route,
+                        content,
+                        headers: new Dictionary<string, string> { { "Authorization", $"Bearer {token}" } }
+                    );
+
+                    if (attempt == 1 && response.StatusCode == 401)
+                    {
+                        _totvsService.RemoveToken(company);
+                        continue;
+                    }
+
+                    if (attempt == 1 && response.StatusCode == 429)
+                    {
+                        var seconds = response.Headers.TryGetValue("Retry-After", out var retryAfter) && int.TryParse(retryAfter, out var value) ? value : 5;
+                        await Task.Delay(TimeSpan.FromSeconds(Math.Clamp(seconds, 1, 60)));
+                        continue;
+                    }
+
+                    if (attempt == 1 && response.StatusCode is 502 or 503 or 504)
+                    {
+                        await Task.Delay(TimeSpan.FromSeconds(10));
+                        continue;
+                    }
+
+                    break;
+                }
+            }
+            catch (Exception ex)
+            {
+                _totvsService.SaveRequest(job, user_name, method.Method, route, company.doc_company!, key, $"Exceção ao chamar a API: {ex.Message}", false, requestSummary);
+                throw;
+            }
+
+            return response;
+        }
+
+        /// <summary>
+        /// Result do erro da Totvs numa leitura sem persistência: o 400 KeyNotFound (chave de acesso inexistente, ou XML não encontrado
+        /// numa nota cancelada; testado) e o 404 viram 404; 429 e 5xx seguem como vieram; o resto (400) vira 422 com as mensagens
+        /// </summary>
+        private Domain.Totvs.Dtos.Writes.Result FiscalError(string key, string route, ApiResponse? response)
+        {
+            if (response is null)
+                return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, statusCode = 0, apiCalled = false, message = "Falha no login na Totvs: veja o log da execução." };
+
+            var message = TotvsMessage(response);
+            _logger.AddMessage($"Erro da API Totvs em {route} ({key}): {response.StatusCode} {message}");
+
+            var notFound = response.StatusCode == 404 || (response.StatusCode == 400 && (response.Content ?? String.Empty).Contains("\"KeyNotFound\""));
+
+            return new Domain.Totvs.Dtos.Writes.Result
+            {
+                success = false,
+                key = key,
+                statusCode = notFound ? StatusCodes.NotFound : response.StatusCode,
+                apiCalled = true,
+                message = message,
+                response = Truncate(response.Content),
+                retryAfterSeconds = response.Headers.TryGetValue("Retry-After", out var retryAfter) && int.TryParse(retryAfter, out var seconds) ? seconds : null
+            };
+        }
+
+        private Domain.Totvs.Dtos.Writes.Result CompanyNotFound(string doc_company, string key)
+        {
+            // nenhuma chamada à API: não há o que registrar em TotvsRequests (igual ao Movidesk)
+            _logger.AddMessage($"Empresa {doc_company} não cadastrada em totvs.TotvsParameters.");
+
+            return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, statusCode = 0, apiCalled = false, message = $"Empresa {doc_company} não cadastrada." };
+        }
+
+        private Domain.Totvs.Dtos.Writes.Result InvalidResponse(string key, string route, string? content)
+        {
+            _logger.AddMessage($"Resposta inválida da API Totvs em {route} ({key}): {Truncate(content)}");
+
+            // JSON inválido ou sem o conteúdo esperado: 502 (§8.1)
+            return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, statusCode = StatusCodes.BadGateway, apiCalled = true, message = "Resposta inválida da Totvs.", response = Truncate(content) };
+        }
+
+        /// <summary>
+        /// o arquivo em base64 de um campo da resposta, decodificado; null se o campo não existe ou não é base64
+        /// </summary>
+        private static byte[]? Base64Content(string? content, string field)
+        {
+            try
+            {
+                var value = (string?)JObject.Parse(content ?? String.Empty)[field];
+
+                return String.IsNullOrWhiteSpace(value) ? null : Convert.FromBase64String(value);
+            }
+            catch (Exception ex) when (ex is JsonReaderException or FormatException)
+            {
+                return null;
+            }
+        }
+
+        private static string? Truncate(string? content) => content?.Length > 800 ? content[..800] : content;
+
+        /// <summary>
+        /// as mensagens da Totvs (lista de DomainNotificationMessage), como no TotvsAccountsPayableService
+        /// </summary>
+        private static string TotvsMessage(ApiResponse response)
+        {
+            try
+            {
+                if (!String.IsNullOrWhiteSpace(response.Content) && JToken.Parse(response.Content) is JArray messages)
+                {
+                    var text = String.Join(" | ", messages.OfType<JObject>().Select(m => $"{m["code"]}: {m["message"]}").Where(m => m != ": "));
+
+                    if (!String.IsNullOrEmpty(text))
+                        return text;
+                }
+            }
+            catch (JsonReaderException)
+            {
+                // corpo em texto: usa o corpo como veio
+            }
+
+            return String.IsNullOrWhiteSpace(response.Content) ? $"A Totvs devolveu {response.StatusCode} sem corpo." : Truncate(response.Content)!;
+        }
+
+        // status das leituras sem persistência (§8.1)
+        private static class StatusCodes
+        {
+            public const int OK = 200;
+            public const int NotFound = 404;
+            public const int UnprocessableEntity = 422;
+            public const int BadGateway = 502;
+        }
     }
 }

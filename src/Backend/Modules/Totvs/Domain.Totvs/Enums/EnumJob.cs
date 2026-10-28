@@ -79,6 +79,11 @@
         TotvsGetInvoicesDisable = 13250,   //Script062_Insert_Totvs_Fiscal_Catalogs_Jobs_Into_Jobs_Table.sql
         TotvsGetCostCenter = 13251,   //Script062_Insert_Totvs_Fiscal_Catalogs_Jobs_Into_Jobs_Table.sql
 
+        // leituras sob demanda sem persistência da API Fiscal (fase FI-2): XML, DANFE e impressão da transação
+        TotvsGetXmlContents = 13252,   //Script063_Insert_Totvs_On_Demand_Fiscal_Files_Jobs_Into_Jobs_Table.sql
+        TotvsPostSearchDanfe = 13253,   //Script063_Insert_Totvs_On_Demand_Fiscal_Files_Jobs_Into_Jobs_Table.sql
+        TotvsPostTransactionPrint = 13254,   //Script063_Insert_Totvs_On_Demand_Fiscal_Files_Jobs_Into_Jobs_Table.sql
+
         // escritas (TotvsController, com X-User-Name; não recorrentes): docs/PLANO-TOTVS-METODOS-FALTANTES.md §9.4
         TotvsPostDuplicates = 13018,   //Script032_Insert_Totvs_Accounts_Payable_Writes_Jobs_Into_Jobs_Table.sql (fase AP-2)
         TotvsPostGroupDuplicates = 13019,   //Script032_Insert_Totvs_Accounts_Payable_Writes_Jobs_Into_Jobs_Table.sql (fase AP-2)

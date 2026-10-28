@@ -1994,7 +1994,8 @@ Gravar em `response_body` (`nvarchar(max)`) cada consulta multiplicaria o log. S
 sistema externo sem nova chamada), uma tabela `TotvsInvoicesXml` (`doc_company + accessKey`) é a alternativa (F6).
 
 **A confirmar:** se `mainInvoiceXml` vem como XML em texto ou já em base64 (a descrição do `danfe-search` sugere texto, que
-precisa ser codificado).
+precisa ser codificado). **Conferido (§10.11):** vem em base64; a situação vem em `invoiceStatus` (não `processingType`); chave
+inexistente e nota cancelada dão 400 `KeyNotFound`, não 404.
 
 ### 8.5 `PostSearchDanfe` — `POST fiscal/v2/danfe-search` (arquivo, sem persistência)
 
@@ -2352,7 +2353,7 @@ onda 2 que entrar monta a base das leituras sem persistência (T11, §8.1).
 | Fase | Onda | Métodos | Jobs | Depende de |
 |---|---|---|---|---|
 | FI-1 | 1 | `GetCostCenter` (hash em coluna, F5), `GetInvoicesDisable` (F4) | 13251, 13250 | — **Implementada em 27/10/2026** (§10.10). Com ela, a onda 1 fica concluída |
-| FI-2 | 2 | base das leituras sem persistência (§8.1) + `GetXmlContents`, `PostSearchDanfe`, `PostTransactionPrint` (F9), `GetInvoicesPendingConditionalProducts`, `GetSearchInvoicesItemDetail` (com o teste da F3), `PostSearchInvoiceProducts` (F10) | 13252–13257 | — (se for a primeira fase da onda 2, é ela que monta a base T11) |
+| FI-2 | 2 | base das leituras sem persistência (§8.1) + `GetXmlContents`, `PostSearchDanfe`, `PostTransactionPrint` (F9), `GetInvoicesPendingConditionalProducts`, `GetSearchInvoicesItemDetail` (com o teste da F3), `PostSearchInvoiceProducts` (F10) | 13252–13257 | — (se for a primeira fase da onda 2, é ela que monta a base T11). **Parte 1 (base T11, `GetXmlContents`, `PostSearchDanfe`, `PostTransactionPrint`) implementada em 28/10/2026** (§10.11) |
 | FI-3 | 5 | `PostInvoicesManifestations` (F1: implementada mesmo sem caso de uso) | 13258 | AP-1, T1 |
 | — | fora | `GetDigitalCertificates` (F2) | — | — |
 
@@ -2790,3 +2791,46 @@ T14, conferidos com respostas sintéticas).
 **Onda 1 concluída** (PE-1, PE-2, SE-1, PR-1, PR-2, SO-1 e FI-1), com o `GetChangedBatchItems` passado para a SO-2 e o
 `PostOmniChangedBalances` reservado (PR2). A onda 2 (leituras sob demanda sem persistência: PE-3, PE-4, PR-3, PO-1, SO-2 e FI-2)
 começa pela base T11 (§8.1).
+
+### 10.11 Fase FI-2, parte 1: base das leituras sem persistência e rotas de arquivo (28/10/2026)
+
+A FI-2 foi dividida em partes: esta entrega a base T11 (§8.1) e as três rotas de arquivo (§8.4 a §8.6); `GetSearchInvoicesItemDetail`,
+`GetInvoicesPendingConditionalProducts` e `PostSearchInvoiceProducts` ficam para a parte 2.
+
+**Base T11 (usada pelas outras fases da onda 2):**
+* o `Result` da §1.1 ganhou `data` (o JSON da Totvs, como `JsonElement`, que o System.Text.Json do host serializa como objeto) e
+  `file`/`fileName`/`contentType` (fora do JSON, `[JsonIgnore]`), para as rotas de arquivo (F8);
+* `ReadResponse` no controller: 200 com o JSON ou o arquivo (`File(bytes, "application/pdf", nome)`), 404 quando a Totvs não acha, e
+  o resto como as escritas (`WriteResponse`): 429 com `Retry-After`, 502 para 5xx, falta de resposta ou JSON inválido, 422 nos demais
+  (empresa não cadastrada, 400 da Totvs com as mensagens);
+* no service, `CallFiscalOnDemand` (uma nova tentativa em 401, 429 e 502/503/504, porque são consultas; a exceção é registrada em
+  `TotvsRequests` antes de subir), `FiscalError` (o 400 `KeyNotFound` e o 404 viram 404; o resto segue o status da Totvs, com as
+  mensagens), `CompanyNotFound` e `InvalidResponse`. `auditing.Records` não é gravado (não há registro integrado);
+* nas rotas de arquivo, `TotvsRequests` guarda só um resumo (situação e tamanho de cada XML; tamanho do PDF; status e mensagem do
+  Uniface), nunca o conteúdo; o `request_body` do DANFE leva só a chave e o tipo, sem o XML.
+
+**Rotas** (no `TotvsInvoicesService`, jobs sob demanda no `Script063`, com `IntervalTimeInMinutes` 0):
+* `GET TotvsJobs/Totvs/ElectronicInvoices/{docCompany}/{accessKey}/Xml` → `GetXmlContents` (13252): devolve o JSON da Totvs
+  (`invoiceStatus`, `mainInvoiceXml` em base64 e, nas canceladas, `cancelInvoiceXml`);
+* `GET .../ElectronicInvoices/{docCompany}/{accessKey}/Danfe?nfeDocumentType=1|2` → `PostSearchDanfe` (13253): lê o XML (a linha do
+  `xml-contents` em `TotvsRequests` leva o job do DANFE) e o envia como veio (já é base64) ao `danfe-search`; devolve o PDF;
+* `GET .../Invoices/{docCompany}/{branchCode}/{invoiceSequence}/Print?invoiceDate=yyyy-MM-dd&template=N&type=1|2` →
+  `PostTransactionPrint` (13254): todos os campos obrigatórios (F9: `invoiceDate` e modelo na rota); devolve o PDF; 200 da Totvs com
+  `unifaceResponseStatus` diferente de `Success` ou sem conteúdo vira 422 com a mensagem do Uniface.
+* `accessKey` com 44 dígitos e `docCompany` com 14 pela rota; `nfeDocumentType` e `type` só 1 ou 2 (`Range`, 400 do ASP.NET).
+
+**Achados na chamada real (28/10/2026):**
+* `xml-contents`: o `mainInvoiceXml` vem em **base64** (o que o `danfe-search` pede, sem recodificar); a situação vem em
+  `invoiceStatus`, não no `processingType` do swagger; chave inexistente e NF-e **cancelada** dão **400 `KeyNotFound`** (não 404);
+* `danfe-search`: a NF-e (55) devolve o PDF em 20 a 28 s (~355 KB); a **NFC-e (65) dá 400** "There is no default printer currently
+  selected" (erro do servidor da Totvs), que a rota devolve como 422 com a mensagem;
+* `transaction/print`: os modelos 1 e 2 existem e funcionam para NF-e e NFC-e (~12 s, PDF de ~13 KB, `unifaceResponseStatus`
+  `Success`); modelo inexistente dá 400 "Modelo transação ... não cadastrado". A NF-e cancelada dá 400 "Situação da nota fiscal
+  inválida para impressão".
+
+**Conferido com o console descartável** (API real, sem banco): os 8 cenários acima (XML autorizada, inexistente, cancelada, empresa
+não cadastrada; DANFE da NF-e e da NFC-e; impressão com modelo 1 e 999), com o `Result` serializado pelo System.Text.Json (`data`
+como objeto, arquivo fora do JSON) e as linhas de `TotvsRequests` só com os resumos.
+
+**Não verificado:** o `Script063` em banco e as rotas pelo host (o mapeamento do `ReadResponse` para 200/404/422/502 não foi
+chamado por HTTP).

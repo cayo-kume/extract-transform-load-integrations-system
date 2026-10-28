@@ -716,6 +716,65 @@ namespace Hangfire.Controllers.Totvs
         }
 
         /// <summary>
+        /// devolve o XML de uma NF-e/NFC-e pela chave de acesso (GET fiscal/v2/xml-contents/{accessKey}), sem gravar
+        /// </summary>
+        [HttpGet("ElectronicInvoices/{docCompany}/{accessKey}/Xml")]
+        [Tags("TotvsInvoices")]
+        public async Task<ActionResult> InvoiceXml(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [RegularExpression(@"^\d{44}$")] string accessKey
+        ) =>
+            ReadResponse(await _totvsInvoicesService.GetXmlContents(userName, docCompany, accessKey));
+
+        /// <summary>
+        /// devolve o PDF do DANFE de uma NF-e (POST fiscal/v2/danfe-search com o XML do xml-contents); nfeDocumentType 1 retrato
+        /// (padrão da Totvs) ou 2 simplificado. A NFC-e (65) dá erro na Totvs (testado): 422 com a mensagem
+        /// </summary>
+        [HttpGet("ElectronicInvoices/{docCompany}/{accessKey}/Danfe")]
+        [Tags("TotvsInvoices")]
+        public async Task<ActionResult> InvoiceDanfe(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [RegularExpression(@"^\d{44}$")] string accessKey,
+            [FromQuery, Range(1, 2)] int? nfeDocumentType
+        ) =>
+            ReadResponse(await _totvsInvoicesService.PostSearchDanfe(userName, docCompany, accessKey, nfeDocumentType));
+
+        /// <summary>
+        /// devolve o PDF da impressão da transação de uma nota (POST fiscal/v2/transaction/print); template é o modelo do TRAFP004 e
+        /// type 1 normal ou 2 richtext
+        /// </summary>
+        [HttpGet("Invoices/{docCompany}/{branchCode:int:min(1)}/{invoiceSequence:int:min(1)}/Print")]
+        [Tags("TotvsInvoices")]
+        public async Task<ActionResult> InvoicePrint(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            int branchCode,
+            int invoiceSequence,
+            [FromQuery, Required] DateTime invoiceDate,
+            [FromQuery, Required, Range(1, int.MaxValue)] int template,
+            [FromQuery, Range(1, 2)] int type = 1
+        ) =>
+            ReadResponse(await _totvsInvoicesService.PostTransactionPrint(userName, docCompany, branchCode, invoiceSequence, invoiceDate.Date, template, type));
+
+        /// <summary>
+        /// resposta das leituras sem persistência (docs/PLANO-TOTVS-METODOS-FALTANTES.md §8.1, T11): 200 com o JSON ou o arquivo; 404 quando
+        /// a Totvs não acha; 429 com Retry-After; 502 para 5xx, falta de resposta ou JSON inválido; 422 nos demais (empresa não cadastrada,
+        /// 400 da Totvs)
+        /// </summary>
+        private ActionResult ReadResponse(Domain.Totvs.Dtos.Writes.Result result)
+        {
+            if (result.success)
+                return result.file is not null ? File(result.file, result.contentType ?? "application/octet-stream", result.fileName) : Ok(result);
+
+            if (result.statusCode == StatusCodes.Status404NotFound)
+                return NotFound(result);
+
+            return WriteResponse(result);
+        }
+
+        /// <summary>
         /// resposta das escritas (docs/PLANO-TOTVS-METODOS-FALTANTES.md §1.2): 200 aceita; 429 com Retry-After; 502 quando a
         /// Totvs foi chamada e não respondeu ou respondeu 5xx (a escrita pode ter sido feita); 422 nos demais (empresa ou loja
         /// não cadastrada, escrita desligada, recusa da Totvs)

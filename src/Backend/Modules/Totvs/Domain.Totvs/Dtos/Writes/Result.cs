@@ -1,7 +1,8 @@
 ﻿namespace Domain.Totvs.Dtos.Writes
 {
     /// <summary>
-    /// resultado das rotas de escrita, devolvido pelos services ao controller (docs/PLANO-TOTVS-METODOS-FALTANTES.md §1.1)
+    /// resultado das rotas de escrita e das leituras sem persistência, devolvido pelos services ao controller
+    /// (docs/PLANO-TOTVS-METODOS-FALTANTES.md §1.1 e §8.1, T11)
     /// </summary>
     public class Result
     {
@@ -24,5 +25,18 @@
 
         // quando a Totvs respondeu 429 também na nova tentativa
         public int? retryAfterSeconds { get; init; }
+
+        // leituras sem persistência (T11): o JSON da Totvs, devolvido a quem chamou; nelas o response fica vazio
+        public System.Text.Json.JsonElement? data { get; init; }
+
+        // leituras de arquivo (F8): o arquivo devolvido pela rota no lugar do JSON
+        [System.Text.Json.Serialization.JsonIgnore]
+        public byte[]? file { get; init; }
+
+        [System.Text.Json.Serialization.JsonIgnore]
+        public string? fileName { get; init; }
+
+        [System.Text.Json.Serialization.JsonIgnore]
+        public string? contentType { get; init; }
     }
 }

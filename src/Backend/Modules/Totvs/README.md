@@ -218,6 +218,9 @@ Os nomes dos métodos são os da **documentação oficial** (`PostSearch*`, `Get
 | `TotvsPeopleService` | `GetLegalEntityByCode` | `legal-entities/search` com `personCodeList` | 13011 |
 | `TotvsSalesOrdersService` | `GetSalesOrderByKey` | `orders/search` com `branchCodeList` + `orderCodeList` | 13012 |
 | `TotvsInvoicesService` | `GetInvoiceByKey` | `invoices/search` com `branchCodeList` + `invoiceSequenceList` | 13013 |
+| `TotvsInvoicesService` | `GetXmlContents` | `GET fiscal/v2/xml-contents/{accessKey}` (sem gravar) | 13252 |
+| `TotvsInvoicesService` | `PostSearchDanfe` | `xml-contents` + `POST fiscal/v2/danfe-search` (devolve o PDF) | 13253 |
+| `TotvsInvoicesService` | `PostTransactionPrint` | `POST fiscal/v2/transaction/print` (devolve o PDF) | 13254 |
 | `TotvsRepresentativesService` | `GetRepresentativeByCode` | `representatives/search` com `representativeCodeList` | 13039 |
 | `TotvsProductsService` | `GetProductByCode` | `references/search` com `productCodeList` (acha a referência) e `referenceCodeList` (lê a referência inteira) | 13014 |
 
@@ -319,6 +322,7 @@ O DbUp executa cada script uma única vez, em ordem alfabética. Alterar um scri
 | `Script054`–`056` | Similares, lotes e a conferência das referências |
 | `Script057`–`059` | Catálogos, lotes de pedidos e sugestões de faturamento da API Sales Order |
 | `Script060`–`062` | Inutilizações e centros de custo da API Fiscal |
+| `Script063` | Jobs das leituras sem persistência da API Fiscal (XML, DANFE, impressão) |
 
 **Regras gerais das tabelas e dos merges:**
 * Toda tabela de dados existe em dois schemas: `untreated` (recebe o bulk insert, sem chave) e `totvs` (tabela final, com PK). A exceção é `totvs.TotvsRequests`, que só recebe inserts.
@@ -403,6 +407,23 @@ Todas exigem:
 | **404** | O registro não existe na Totvs |
 | **422** | Empresa não cadastrada ou resposta inválida da API (detalhes no log da execução) |
 
+**Leituras sem persistência** (onda 2 do plano, base T11): devolvem o conteúdo da Totvs (JSON no `data` do `Result`, ou o arquivo)
+sem gravar tabela; a chamada fica em `totvs.TotvsRequests` (nas de arquivo, só um resumo, nunca o XML ou o PDF).
+
+| Método | Rota | Service |
+|---|---|---|
+| GET | `ElectronicInvoices/{docCompany}/{accessKey}/Xml` | `GetXmlContents` |
+| GET | `ElectronicInvoices/{docCompany}/{accessKey}/Danfe?nfeDocumentType=1` | `PostSearchDanfe` (PDF; a NFC-e dá erro na Totvs) |
+| GET | `Invoices/{docCompany}/{branchCode}/{invoiceSequence}/Print?invoiceDate=yyyy-MM-dd&template=1&type=1` | `PostTransactionPrint` (PDF) |
+
+| Código | Quando |
+|---|---|
+| **200** | O JSON (`Result.data`) ou o arquivo |
+| **404** | A Totvs não achou (inclui o 400 `KeyNotFound` do `xml-contents`, que a Totvs devolve também para a nota cancelada) |
+| **422** | Empresa não cadastrada, 400 da Totvs (com as mensagens) ou impressão sem sucesso no Uniface |
+| **429** | Limite da Totvs, com `Retry-After` |
+| **502** | 5xx da Totvs, sem resposta ou JSON inválido |
+
 ### Escritas (chamadas por sistema externo)
 
 Mesmas exigências das leituras sob demanda (`X-User-Name` e `{docCompany}`), com o corpo validado **antes** de chamar a Totvs.
@@ -485,6 +506,9 @@ Os jobs ficam em `auditing.Jobs`, com os mesmos ids em `EnumJob`.
 | 13194 | `TotvsGetSalesOrderBillingSuggestions` | 3 min |
 | 13250 | `TotvsGetInvoicesDisable` | 120 min |
 | 13251 | `TotvsGetCostCenter` | 120 min |
+| 13252 | `TotvsGetXmlContents` | sob demanda, sem gravar |
+| 13253 | `TotvsPostSearchDanfe` | sob demanda, sem gravar |
+| 13254 | `TotvsPostTransactionPrint` | sob demanda, sem gravar |
 | 13018 | `TotvsPostDuplicates` | escrita (reservado, fase AP-2) |
 | 13019 | `TotvsPostGroupDuplicates` | escrita (reservado, fase AP-2) |
 | 13020 | `TotvsPostDuplicatesInstallmentsStage` | escrita |

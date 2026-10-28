@@ -25,5 +25,21 @@
         /// cujo hash mudou
         /// </summary>
         public Task<bool?> GetCostCenter();
+
+        /// <summary>
+        /// devolve o XML de uma NF-e/NFC-e pela chave de acesso (GET fiscal/v2/xml-contents/{accessKey}), sem gravar; a chamada fica em
+        /// totvs.TotvsRequests só com um resumo
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> GetXmlContents(string user_name, string doc_company, string accessKey);
+
+        /// <summary>
+        /// devolve o PDF do DANFE de uma NF-e pela chave de acesso: lê o XML (xml-contents) e o envia ao POST fiscal/v2/danfe-search
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PostSearchDanfe(string user_name, string doc_company, string accessKey, int? nfeDocumentType);
+
+        /// <summary>
+        /// devolve o PDF da impressão da transação de uma nota (POST fiscal/v2/transaction/print), com o modelo do TRAFP004 informado
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PostTransactionPrint(string user_name, string doc_company, int branchCode, int invoiceSequence, DateTime invoiceDate, int transactionPrintTemplate, int transactionPrintType);
     }
 }
