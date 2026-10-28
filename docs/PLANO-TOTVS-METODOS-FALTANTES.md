@@ -3656,3 +3656,19 @@ mandou a tela do bônus do cliente 58243 (PESFC054). Console da §10.32, modo `e
 **Próximos passos (com o ERP):** item no lote 223436545 e o produto 15687 marcado como controlado por lote na loja 1; recebimento de 1 un
 do pedido 1\|143 (a nota de entrada também serve ao `batch-link`); a regra do saldo de bônus; e os pontos da §10.36 que pedem cadastro
 (máscara de referência, contagem, região de atuação, painel FISFP153, tipo de classificação criado à mão).
+
+### 10.38 PR-6: inclusão de preço e custo em código novo (28/10/2026)
+
+Console da §10.32, modo `pr6`. A Totvs diz quais códigos existem (a lista de "not found" de 1 a 999): na loja 1, preço 1 a 6 e custo 1 a
+8. Lendo os produtos das marcas na loja 1, o produto **1** não tinha o preço 2 nem o custo 4.
+
+| Escrita | Resultado |
+|---|---|
+| `values/create` do preço 2 (`P`, 298,00, o valor que o produto tem em outro código), **sem** `confirmVariation` | **201**, relido `VENDA DOLAR` = 298. Esperado no teste era 422, mas a regra é essa mesma: sem valor anterior, só o `update` pede a confirmação; a inclusão em código novo não tem com o que comparar (PR7) |
+| A mesma inclusão de novo | **400 `AlreadyExist`**, como na §10.32 |
+| `values/create` do custo 4 (`C`, 799,00) | **201**, relido `MEDIO C/ IMPOSTO` = 799: o `valueType` `C` funciona |
+
+**Ficou na homologação:** o preço 2 e o custo 4 do produto 1 na loja 1.
+
+Com isso a PR-6 está verificada em homologação: dados do produto, alteração, inclusão em código novo (preço e custo), a trava de variação
+no `update` e as promoções (§10.32).
