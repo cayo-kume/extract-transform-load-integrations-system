@@ -49,6 +49,9 @@ namespace Application.Totvs.Services
         // expand da documentação; o expand do código antigo já batia com a documentação
         private const string Expand = "items,invoices,shippingAddress,observations,invoiceObservations,representativeObservations,classifications,discounts,commissioneds,counts";
 
+        // grupo das escritas desta API na configuração (Totvs:Writes:SalesOrders:Enabled, T4)
+        private const string WritesGroup = "SalesOrders";
+
         public TotvsSalesOrdersService(
             [FromKeyedServices("TotvsAPI")] IApiClient apiClient,
             ILoggerService logger,
@@ -1126,6 +1129,147 @@ namespace Application.Totvs.Services
                 _logger.SetLogEndDate();
                 await _logger.CommitAllChanges();
             }
+        }
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostAdditionalOrder(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderAdditional body)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsPostSalesOrderAdditionalOrder);
+
+            var key = OrderKeyValue(body);
+
+            try
+            {
+                if (!_totvsService.IsWriteEnabled(WritesGroup))
+                    return _totvsService.WriteDisabled(WritesGroup, key);
+
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return _totvsService.CompanyNotFound(doc_company, key);
+
+                if (await OrderBranchNotFound(company, doc_company, key, body) is { } branchNotFound)
+                    return branchNotFound;
+
+                // valores absolutos: repetir não muda nada, sem trava
+                return await _totvsService.Write(company, EnumJob.TotvsPostSalesOrderAdditionalOrder, user_name, key, HttpMethod.Post, "sales-order/v2/additional-order", body,
+                    "Confira os dados adicionais do pedido na Totvs antes de repetir.");
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostShippingOrder(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderShipping body)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsPostSalesOrderShippingOrder);
+
+            var key = OrderKeyValue(body);
+
+            try
+            {
+                if (!_totvsService.IsWriteEnabled(WritesGroup))
+                    return _totvsService.WriteDisabled(WritesGroup, key);
+
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return _totvsService.CompanyNotFound(doc_company, key);
+
+                if (await OrderBranchNotFound(company, doc_company, key, body) is { } branchNotFound)
+                    return branchNotFound;
+
+                // valores absolutos (o frete muda o total do pedido, mas repetir não soma): sem trava
+                return await _totvsService.Write(company, EnumJob.TotvsPostSalesOrderShippingOrder, user_name, key, HttpMethod.Post, "sales-order/v2/shipping-order", body,
+                    "Confira o transporte do pedido na Totvs antes de repetir.");
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostObservationsOrder(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderObservations body)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsPostSalesOrderObservationsOrder);
+
+            var key = OrderKeyValue(body);
+
+            try
+            {
+                if (!_totvsService.IsWriteEnabled(WritesGroup))
+                    return _totvsService.WriteDisabled(WritesGroup, key);
+
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return _totvsService.CompanyNotFound(doc_company, key);
+
+                if (await OrderBranchNotFound(company, doc_company, key, body) is { } branchNotFound)
+                    return branchNotFound;
+
+                // inclui as linhas: repetir duplica, daí a trava (T5)
+                return await _totvsService.Write(company, EnumJob.TotvsPostSalesOrderObservationsOrder, user_name, key, HttpMethod.Post, "sales-order/v2/observations-order", body,
+                    "Confira as observações do pedido na Totvs antes de repetir.", repeatLock: true);
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostAdditionalItems(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderItemsAdditional body)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsPostSalesOrderAdditionalItems);
+
+            var key = OrderKeyValue(body);
+
+            try
+            {
+                if (!_totvsService.IsWriteEnabled(WritesGroup))
+                    return _totvsService.WriteDisabled(WritesGroup, key);
+
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return _totvsService.CompanyNotFound(doc_company, key);
+
+                if (await OrderBranchNotFound(company, doc_company, key, body) is { } branchNotFound)
+                    return branchNotFound;
+
+                // valores absolutos: repetir não muda nada, sem trava
+                return await _totvsService.Write(company, EnumJob.TotvsPostSalesOrderAdditionalItems, user_name, key, HttpMethod.Post, "sales-order/v2/additional-items", body,
+                    "Confira os itens do pedido na Totvs antes de repetir.");
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        // chave das escritas do pedido em TotvsRequests: loja|pedido ou o orderId
+        private static string OrderKeyValue(Domain.Totvs.Dtos.Writes.SalesOrders.OrderKey body) =>
+            String.IsNullOrEmpty(body.orderId) ? $"{body.branchCode}|{body.orderCode}" : body.orderId;
+
+        // passo 3 da §1.2: com loja + número, a loja precisa ser da empresa; com orderId não há loja a conferir (a Totvs acha o pedido)
+        private async Task<Domain.Totvs.Dtos.Writes.Result?> OrderBranchNotFound(Domain.Totvs.Entities.Parameters.Company company, string doc_company, string key, Domain.Totvs.Dtos.Writes.SalesOrders.OrderKey body)
+        {
+            if (body.branchCode is not int branchCode || (await _totvsService.GetBranchCodes(company)).Contains(branchCode))
+                return null;
+
+            return _totvsService.BranchNotFound(doc_company, key, [branchCode.ToString()]);
         }
     }
 }

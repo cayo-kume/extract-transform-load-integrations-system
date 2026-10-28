@@ -112,5 +112,9 @@
         TotvsPostColors = 13124,   //Script068_Insert_Totvs_Products_Writes_Jobs_Into_Jobs_Table.sql
         TotvsPostGrids = 13126,   //Script068_Insert_Totvs_Products_Writes_Jobs_Into_Jobs_Table.sql
         TotvsPostPurchaseOrdersChangeStatus = 13182,   //Script069_Insert_Totvs_Purchase_Orders_Writes_Jobs_Into_Jobs_Table.sql
+        TotvsPostSalesOrderAdditionalOrder = 13201,   //Script070_Insert_Totvs_Sales_Orders_Writes_Jobs_Into_Jobs_Table.sql
+        TotvsPostSalesOrderShippingOrder = 13202,   //Script070_Insert_Totvs_Sales_Orders_Writes_Jobs_Into_Jobs_Table.sql
+        TotvsPostSalesOrderObservationsOrder = 13203,   //Script070_Insert_Totvs_Sales_Orders_Writes_Jobs_Into_Jobs_Table.sql
+        TotvsPostSalesOrderAdditionalItems = 13207,   //Script070_Insert_Totvs_Sales_Orders_Writes_Jobs_Into_Jobs_Table.sql
     }
 }

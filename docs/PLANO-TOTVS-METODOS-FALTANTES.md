@@ -2347,7 +2347,7 @@ onda 2 que entrar monta a base das leituras sem persistência (T11, §8.1).
 |---|---|---|---|---|
 | SO-1 | 1 | `GetDiscountType`, `GetClassifications`; `GetBatchItems`, `GetChangedBatchItems`, `GetBillingSuggestions` (SO2) | 13190–13194 | — **Implementada em 27/10/2026** (§10.9), sem o `GetChangedBatchItems`: a rota exige `BranchCode` e `OrderCode` e passou para a SO-2 |
 | SO-2 | 2 | `GetInvoices`, `GetPendingItems`; `GetChangedBatchItems` (vindo da SO-1: sob demanda por loja + pedido) | 13195, 13196, 13193 | base T11 **Implementada em 28/10/2026** (§10.13) |
-| SO-3 | 3 | trava de repetição (T5) + `PostAdditionalOrder`, `PostAdditionalItems`, `PostObservationsOrder`, `PostShippingOrder` | 13201, 13207, 13203, 13202 | AP-1 |
+| SO-3 | 3 | trava de repetição (T5) + `PostAdditionalOrder`, `PostAdditionalItems`, `PostObservationsOrder`, `PostShippingOrder` | 13201, 13207, 13203, 13202 | AP-1 **Implementada em 28/10/2026** (§10.17); a trava T5 entrou antes, na PE-5 (§10.14) |
 | SO-4 | 4 | `PostOrdersChangeStatus`, `PostHeader` (SO8), `PostQuantityItems`, `PostItems`, `DeleteItems`; lote e contagem: `PostRelationshipBatchItems`, `DeleteBatchItems`, `PostSuggestBatchItemsNuance`, `PostRelationshipCounts` (SO2) | 13199, 13200, 13208, 13205, 13206, 13211–13214 | SO-3 |
 | SO-5 | 5 | `PostPriceItems`, `PostCancelItems`, `PostB2COrders` (com a conferência do `orderId`, SO5), `PostOrdersCancel`, `PostPdvTransactions` | 13209, 13210, 13197, 13198, 13204 | SO-4, T4 |
 
@@ -3015,3 +3015,36 @@ chamar, com as situações por extenso); loja de outra empresa (422 sem chamar);
 
 **Não verificado:** a chamada real em homologação (T1); se a Totvs aceita bloquear um pedido parcialmente recebido ou liberado para baixa
 (hoje a conferência local recusa); o `Script069` em banco e a rota pelo host.
+
+### 10.17 Fase SO-3: dados adicionais, transporte, observações e itens do pedido de venda (28/10/2026)
+
+**O que entrou** (§7.4, no `TotvsSalesOrdersService`, pela base da §10.14; grupo `Totvs:Writes:SalesOrders:Enabled`, desligado; jobs no
+`Script070`, com `SalesOrder` depois do verbo, SO9):
+* **chave do pedido:** `OrderKey` (`branchCode` + `orderCode` **ou** `orderId`), base dos quatro corpos, com o `OrderKeyValidator` incluído
+  pelos validadores de cada rota (um ou outro; loja e número juntos; até 4, 9 e 100). Chave em `TotvsRequests` = `branchCode|orderCode` ou o
+  `orderId`. Com loja + número, a loja precisa ser da empresa (422 sem chamar); com `orderId` não há loja a conferir;
+* `PostAdditionalOrder` (13201): `POST TotvsJobs/Totvs/SalesOrders/{docCompany}/Additional` → `POST sales-order/v2/additional-order`;
+  `entryType` vai como **letra** (`N`/`S`, SO11) e `experienceType` como número (1 a 5); pelo menos um campo além da chave; sem trava;
+* `PostShippingOrder` (13202): `POST .../SalesOrders/{docCompany}/Shipping` → `POST sales-order/v2/shipping-order`; transportadora e
+  redespacho por código **ou** CPF/CNPJ, cada um exigindo o seu tipo de frete (`freightType` 1 a 6, `redispatchingFreightType` 1 ou 2, e
+  este só com o redespacho); `freightPercentage` 3,6 e `freightValue` 12,2 (`PrecisionScale`); endereço com CEP de 8 dígitos e os tamanhos
+  do swagger; sem trava (valores absolutos);
+* `PostObservationsOrder` (13203): `POST .../SalesOrders/{docCompany}/Observations` → `POST sales-order/v2/observations-order`; pelo menos
+  uma linha (do pedido ou da nota), cada uma obrigatória com até 80; `visualizationType` obrigatório (enum não anulável no swagger);
+  **com a trava T5** (repetir duplica as linhas);
+* `PostAdditionalItems` (13207): `POST .../SalesOrders/{docCompany}/Items/Additional` → `POST sales-order/v2/additional-items`; produto por
+  código **ou** SKU, sem repetir, e `rollMeasureCode` ou `billingForecastDate` em cada item; sem trava.
+
+**Conferido sem a API** (mesmo console da §10.14): 19 corpos nos validadores (chave nos quatro formatos errados, campos e tamanhos de cada
+rota, as regras de transportadora e redespacho, casas decimais, linhas e itens repetidos); os corpos enviados sem nulos, com `entryType`
+`"S"`, `experienceType` 2, `freightType` 2, `visualizationType` 2 e a data ISO (`2026-11-05T00:00:00`); dados adicionais aceitos e
+repetidos (chama de novo), com loja de outra empresa (422 sem chamar) e por `orderId` (sem conferência de loja, chave = `orderId`);
+transporte aceito; observações aceitas, **repetidas (409 sem chamar)** e outra linha no mesmo pedido (chama); itens aceitos e item fora
+do pedido (400 da Totvs como mensagem).
+
+**Não verificado:** a chamada real em homologação (T1), inclusive o formato do `entryType` (letra) e se toda alteração muda a data usada
+pelo `filter.change` do `orders/search` (§7.4); o `Script070` em banco e as rotas pelo host.
+
+**Onda 3 concluída** (AP-1, PE-5, PR-4, PO-2 e SO-3), toda conferida só com a Totvs falsa: falta a rodada em homologação (T1, com o
+usuário de integração da §1.3) e a autenticação dos endpoints de inbound (T2) antes de ligar qualquer grupo de escrita em produção. A onda 4
+(AP-2, PE-6, PR-5, PO-3, SO-4) depende disso e da T6 (mascaramento) para os clientes.

@@ -215,6 +215,10 @@ Os nomes dos métodos são os da **documentação oficial** (`PostSearch*`, `Get
 | `TotvsProductCatalogsService` | `PostColors` | `POST product/v2/colors` (inclusão e alteração) | 13124 | `Totvs:Writes:Products:Enabled` |
 | `TotvsProductCatalogsService` | `PostGrids` | `POST product/v2/grids` (com a trava de repetição) | 13126 | `Totvs:Writes:Products:Enabled` |
 | `TotvsPurchaseOrdersService` | `PostPurchaseOrdersChangeStatus` | `POST purchase-order/v2/orders/change-status` | 13182 | `Totvs:Writes:PurchaseOrders:Enabled` |
+| `TotvsSalesOrdersService` | `PostAdditionalOrder` | `POST sales-order/v2/additional-order` | 13201 | `Totvs:Writes:SalesOrders:Enabled` |
+| `TotvsSalesOrdersService` | `PostShippingOrder` | `POST sales-order/v2/shipping-order` | 13202 | `Totvs:Writes:SalesOrders:Enabled` |
+| `TotvsSalesOrdersService` | `PostObservationsOrder` | `POST sales-order/v2/observations-order` (com a trava de repetição) | 13203 | `Totvs:Writes:SalesOrders:Enabled` |
+| `TotvsSalesOrdersService` | `PostAdditionalItems` | `POST sales-order/v2/additional-items` | 13207 | `Totvs:Writes:SalesOrders:Enabled` |
 
 **Leituras sob demanda** (um registro por chave)
 
@@ -343,6 +347,7 @@ O DbUp executa cada script uma única vez, em ordem alfabética. Alterar um scri
 | `Script067` | Jobs das escritas da API Person (mensagens, 13044–13046) |
 | `Script068` | Jobs das escritas da API Product (cores e grades, 13124 e 13126) |
 | `Script069` | Jobs das escritas da API Purchase Order (situação do pedido, 13182) |
+| `Script070` | Jobs das escritas da API Sales Order (dados adicionais, transporte, observações e itens, 13201–13203 e 13207) |
 
 **Regras gerais das tabelas e dos merges:**
 * Toda tabela de dados existe em dois schemas: `untreated` (recebe o bulk insert, sem chave) e `totvs` (tabela final, com PK). A exceção é `totvs.TotvsRequests`, que só recebe inserts.
@@ -462,7 +467,8 @@ sem gravar tabela; a chamada fica em `totvs.TotvsRequests` (nas de arquivo, só 
 
 ### Escritas (chamadas por sistema externo)
 
-Mesmas exigências das leituras sob demanda (`X-User-Name` e `{docCompany}`), com o corpo validado **antes** de chamar a Totvs.
+Mesmas exigências das leituras sob demanda (`X-User-Name` e `{docCompany}`), com o corpo validado **antes** de chamar a Totvs. Nas
+escritas de pedido de venda, a **chave do pedido** é `branchCode` + `orderCode` (loja da empresa) **ou** `orderId`, um ou outro.
 
 | Método | Rota | Corpo | Service |
 |---|---|---|---|
@@ -473,6 +479,10 @@ Mesmas exigências das leituras sob demanda (`X-User-Name` e `{docCompany}`), co
 | POST | `Products/{docCompany}/Colors` | `code` (10), `name` (40); `colorInfoAdditionals` por loja da empresa (`branchCode`, `auxiliaryCode`, `auxiliaryName`, `pantoneCode`, usos) | `PostColors` (um `code` existente é renomeado em todas as referências) |
 | POST | `Products/{docCompany}/Grids` | `gridCode` (opcional, 6), `name` (40), `type`; `gridSizes` (`name` até 10, sem repetição) | `PostGrids` (devolve o `gridCode`) |
 | POST | `PurchaseOrders/{docCompany}/ChangeStatus` | `branchCode` (loja da empresa), `orderCode`, `status` (1 em andamento, 5 bloqueado) | `PostPurchaseOrdersChangeStatus` (com o pedido no banco, só entre essas duas situações) |
+| POST | `SalesOrders/{docCompany}/Additional` | chave do pedido; `shippingService`, `trackingId`, `ecommerceStage`, `omniSiteId`, `compensationDays`, `anticipationDay`, `entryType` (`N`/`S`), `experienceType` (1 a 5) | `PostAdditionalOrder` |
+| POST | `SalesOrders/{docCompany}/Shipping` | chave do pedido; transportadora e redespacho (código **ou** CPF/CNPJ, com o tipo de frete), `freightPercentage`, `freightValue`, `shippingAddress` | `PostShippingOrder` (muda o total do pedido) |
+| POST | `SalesOrders/{docCompany}/Observations` | chave do pedido; `observations` (`observation` até 80, `visualizationType` 1 ou 2) e/ou `invoiceObservations` | `PostObservationsOrder` (inclui linhas) |
+| POST | `SalesOrders/{docCompany}/Items/Additional` | chave do pedido; `items` (`productCode` **ou** `productSku`; `rollMeasureCode`, `billingForecastDate`) | `PostAdditionalItems` |
 
 | Código | Quando |
 |---|---|
@@ -565,6 +575,7 @@ Os jobs ficam em `auditing.Jobs`, com os mesmos ids em `EnumJob`.
 | 13044–13046 | `TotvsPostMessages`, `TotvsPutChangeMessages`, `TotvsDeleteMessages` | escrita |
 | 13124, 13126 | `TotvsPostColors`, `TotvsPostGrids` | escrita |
 | 13182 | `TotvsPostPurchaseOrdersChangeStatus` | escrita |
+| 13201–13203, 13207 | `TotvsPostSalesOrderAdditionalOrder`, `TotvsPostSalesOrderShippingOrder`, `TotvsPostSalesOrderObservationsOrder`, `TotvsPostSalesOrderAdditionalItems` | escrita |
 
 Toda execução grava `auditing.Logs` e, conforme o caso:
 * `auditing.Messages`, com mensagens e erros de validação;
@@ -577,7 +588,7 @@ Toda execução grava `auditing.Logs` e, conforme o caso:
 | Onde | Chave | Uso |
 |---|---|---|
 | `appsettings.json` do host | `Totvs:BaseUrl` | Endereço da API; homologação é só outro valor no `appsettings` do ambiente |
-| `appsettings.json` do host | `Totvs:Writes:<grupo>:Enabled` | Liga as escritas de um grupo (`AccountsPayable`, `People`, `Products`, `PurchaseOrders`...). Sem a chave, ou com `false`, a rota devolve 422 sem chamar a Totvs |
+| `appsettings.json` do host | `Totvs:Writes:<grupo>:Enabled` | Liga as escritas de um grupo (`AccountsPayable`, `People`, `Products`, `PurchaseOrders`, `SalesOrders`). Sem a chave, ou com `false`, a rota devolve 422 sem chamar a Totvs |
 | `appsettings.json` do host | `ConnectionStrings` | Conexão com o SQL Server (dados e auditoria) |
 | Banco | `totvs.TotvsParameters` | CNPJ (`doc_company`) e credenciais (`client_id`, `client_secret`, `username`, `password`) de cada empresa |
 

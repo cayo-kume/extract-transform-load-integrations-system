@@ -48,5 +48,27 @@
         /// devolve os itens de lote ligados a um pedido de venda (GET sales-order/v2/changed-batch-items), sem gravar
         /// </summary>
         public Task<Domain.Totvs.Dtos.Writes.Result> GetChangedBatchItems(string user_name, string doc_company, int branchCode, int orderCode, int? batchCode, DateTime? startDate, DateTime? endDate);
+
+        /// <summary>
+        /// altera os dados adicionais de um pedido de venda (POST sales-order/v2/additional-order): rastreio, estágio do e-commerce, entrega
+        /// antecipada, tipo de experiência
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PostAdditionalOrder(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderAdditional body);
+
+        /// <summary>
+        /// altera transportadora, redespacho, frete e endereço de entrega de um pedido de venda (POST sales-order/v2/shipping-order)
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PostShippingOrder(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderShipping body);
+
+        /// <summary>
+        /// inclui linhas de observação num pedido de venda (POST sales-order/v2/observations-order). Não idempotente: o mesmo corpo em
+        /// 10 minutos volta 409 (T5)
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PostObservationsOrder(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderObservations body);
+
+        /// <summary>
+        /// altera medida de rolo e previsão de faturamento dos itens de um pedido de venda (POST sales-order/v2/additional-items)
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PostAdditionalItems(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderItemsAdditional body);
     }
 }

@@ -1177,6 +1177,90 @@ namespace Hangfire.Controllers.Totvs
         }
 
         /// <summary>
+        /// altera os dados adicionais de um pedido de venda (POST sales-order/v2/additional-order): rastreio, estágio do e-commerce, entrega
+        /// antecipada (entryType N ou S), tipo de experiência. O pedido vai por orderId ou por branchCode + orderCode
+        /// </summary>
+        [HttpPost("SalesOrders/{docCompany}/Additional")]
+        [Tags("TotvsSalesOrders")]
+        public async Task<ActionResult> SalesOrderAdditional(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.SalesOrders.OrderAdditional body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.SalesOrders.OrderAdditional> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsSalesOrdersService.PostAdditionalOrder(userName, docCompany, body));
+        }
+
+        /// <summary>
+        /// altera transportadora, redespacho, frete e endereço de entrega de um pedido de venda (POST sales-order/v2/shipping-order); o frete
+        /// muda o total do pedido
+        /// </summary>
+        [HttpPost("SalesOrders/{docCompany}/Shipping")]
+        [Tags("TotvsSalesOrders")]
+        public async Task<ActionResult> SalesOrderShipping(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.SalesOrders.OrderShipping body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.SalesOrders.OrderShipping> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsSalesOrdersService.PostShippingOrder(userName, docCompany, body));
+        }
+
+        /// <summary>
+        /// inclui linhas de observação num pedido de venda e na nota (POST sales-order/v2/observations-order). Repetir duplica as linhas: o
+        /// mesmo corpo em 10 minutos volta 409
+        /// </summary>
+        [HttpPost("SalesOrders/{docCompany}/Observations")]
+        [Tags("TotvsSalesOrders")]
+        public async Task<ActionResult> SalesOrderObservations(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.SalesOrders.OrderObservations body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.SalesOrders.OrderObservations> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsSalesOrdersService.PostObservationsOrder(userName, docCompany, body));
+        }
+
+        /// <summary>
+        /// altera a medida de rolo e a previsão de faturamento dos itens de um pedido de venda (POST sales-order/v2/additional-items), com o
+        /// produto por código ou SKU
+        /// </summary>
+        [HttpPost("SalesOrders/{docCompany}/Items/Additional")]
+        [Tags("TotvsSalesOrders")]
+        public async Task<ActionResult> SalesOrderItemsAdditional(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.SalesOrders.OrderItemsAdditional body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.SalesOrders.OrderItemsAdditional> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsSalesOrdersService.PostAdditionalItems(userName, docCompany, body));
+        }
+
+        /// <summary>
         /// resposta das leituras sem persistência (docs/PLANO-TOTVS-METODOS-FALTANTES.md §8.1, T11): 200 com o JSON ou o arquivo; 404 quando
         /// a Totvs não acha; 429 com Retry-After; 502 para 5xx, falta de resposta ou JSON inválido; 422 nos demais (empresa não cadastrada,
         /// 400 da Totvs)
