@@ -1114,6 +1114,48 @@ namespace Hangfire.Controllers.Totvs
             WriteResponse(await _totvsPeopleService.DeleteMessages(userName, docCompany, personCode, sequence));
 
         /// <summary>
+        /// inclui ou altera uma cor (POST product/v2/colors). Um code que já existe é alterado, e o nome novo vale em todas as referências
+        /// que usam a cor; as lojas de colorInfoAdditionals precisam ser da empresa
+        /// </summary>
+        [HttpPost("Products/{docCompany}/Colors")]
+        [Tags("TotvsProductCatalogs")]
+        public async Task<ActionResult> Colors(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.Products.Colors.UpsertColor body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.Products.Colors.UpsertColor> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsProductCatalogsService.PostColors(userName, docCompany, body));
+        }
+
+        /// <summary>
+        /// inclui uma grade de tamanhos (POST product/v2/grids); a resposta traz o gridCode. Não há rota para alterar ou excluir grade, e o
+        /// mesmo corpo em 10 minutos volta 409
+        /// </summary>
+        [HttpPost("Products/{docCompany}/Grids")]
+        [Tags("TotvsProductCatalogs")]
+        public async Task<ActionResult> Grids(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.Products.Grids.InsertGrid body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.Products.Grids.InsertGrid> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsProductCatalogsService.PostGrids(userName, docCompany, body));
+        }
+
+        /// <summary>
         /// resposta das leituras sem persistência (docs/PLANO-TOTVS-METODOS-FALTANTES.md §8.1, T11): 200 com o JSON ou o arquivo; 404 quando
         /// a Totvs não acha; 429 com Retry-After; 502 para 5xx, falta de resposta ou JSON inválido; 422 nos demais (empresa não cadastrada,
         /// 400 da Totvs)

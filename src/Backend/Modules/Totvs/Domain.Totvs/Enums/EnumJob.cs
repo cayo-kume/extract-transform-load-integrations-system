@@ -109,5 +109,7 @@
         TotvsPostMessages = 13044,   //Script067_Insert_Totvs_People_Writes_Jobs_Into_Jobs_Table.sql
         TotvsPutChangeMessages = 13045,   //Script067_Insert_Totvs_People_Writes_Jobs_Into_Jobs_Table.sql
         TotvsDeleteMessages = 13046,   //Script067_Insert_Totvs_People_Writes_Jobs_Into_Jobs_Table.sql
+        TotvsPostColors = 13124,   //Script068_Insert_Totvs_Products_Writes_Jobs_Into_Jobs_Table.sql
+        TotvsPostGrids = 13126,   //Script068_Insert_Totvs_Products_Writes_Jobs_Into_Jobs_Table.sql
     }
 }

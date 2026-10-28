@@ -64,5 +64,17 @@
         /// sincroniza o catálogo de escalas de tabela de preço pelo GET product/v2/price-table-scales (janela de alteração, como as filiais; só grava os novos ou alterados)
         /// </summary>
         public Task<bool?> GetPriceTableScales();
+
+        /// <summary>
+        /// inclui ou altera uma cor (POST product/v2/colors): um code que já existe é alterado, e o nome novo vale em todas as referências.
+        /// As lojas dos dados adicionais precisam ser da empresa (422 sem chamar a API)
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PostColors(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Colors.UpsertColor body);
+
+        /// <summary>
+        /// inclui uma grade de tamanhos (POST product/v2/grids); a resposta traz o gridCode. Não idempotente: o mesmo corpo em 10 minutos
+        /// volta 409 (T5)
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PostGrids(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Grids.InsertGrid body);
     }
 }

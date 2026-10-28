@@ -2327,7 +2327,7 @@ onda 2 que entrar monta a base das leituras sem persistência (T11, §8.1).
 | PR-1 | 1 | `TotvsProductCatalogsService` | `GetClassificationType`, `GetClassifications`, `GetCategory`, `GetGrid`, `GetMeasurementUnit`, `PostSearchColors`, `GetAdditionalFieldsTypes`, `GetProductGrouperConfiguration`, `GetInstructionItems`, `PostCompositions`; `GetPriceTablesHeaders`, `GetPriceTableScales` (PR5) | 13080–13091 | — **Implementada em 27/10/2026** (§10.5) |
 | PR-2 | 1 | `TotvsProductPricesService`, `TotvsProductsService` | fase 3, partes 4 a 6 (`PostSearchPrices`, `PostSearchCosts`, `PostSearchBalances`, com a escolha da PR2 sobre `PostOmniChangedBalances`); `PostSearchPriceTables`, `GetPromotion` (PR5); `GetSimilar`; `PostSearchBatch` (PR6); `PostSearchProductCodes` (PR3) | 13015–13017, 13092–13097 | PR-1 (cabeçalhos das tabelas de preço). **Parte 1 (preços, custos e saldos) implementada em 27/10/2026** (§10.6); **parte 2 (`PostSearchPriceTables`, `GetPromotion`) em 27/10/2026** (§10.7); **parte 3 (`GetSimilar`, `PostSearchBatch`, `PostSearchProductCodes`) em 27/10/2026** (§10.8): fase concluída, menos o `PostOmniChangedBalances` (13096 reservado, PR2) |
 | PR-3 | 2 | `TotvsProductsService` | `GetProducts`, `GetKardexMovement`, `GetGridFrequency`, `GetMeasurementConversions`, `GetCompositionProduct`, `GetCompositionGroupProduct` | 13100–13105 | base T11 **Implementada em 28/10/2026** (§10.13) |
-| PR-4 | 3 | `TotvsProductCatalogsService` | `PostColors`, `PostGrids` | 13124, 13126 | AP-1, PR-1 |
+| PR-4 | 3 | `TotvsProductCatalogsService` | `PostColors`, `PostGrids` | 13124, 13126 | AP-1, PR-1 **Implementada em 28/10/2026** (§10.15) |
 | PR-5 | 4 | `TotvsProductCatalogsService`, `TotvsProductsService` | `PostClassifications`, `PostCreateClassificationRelationship`, `PostUpdateClassificationRelationship` (sem a classificação 6000, PR10), `PostBarcodes`, `PostUpdateBarcodes`, `PostReferences` (sem `values`, PR11); lote: `PostCreateBatch`, `PutBatchInfo`, `PostBatchPreferentialSalesOrder` (PR6) | 13120–13123, 13125, 13127, 13135–13137 | PR-4 |
 | PR-6 | 5 | `TotvsProductsService`, `TotvsProductPricesService` | `PutProducts`, `PutBranchInfo`, `PutData` (só listas de produto, PR9); `PostCreateValues`, `PostUpdateValues`, `PostUpdatePromotionValues`, `PostPromotionItems` (PR7) | 13128–13134 | PR-2 (preços e custos lidos antes de escrever), T4, T5 |
 | — | fora | — | `PostSearchProducts` (PR1) | — | — |
@@ -2969,3 +2969,25 @@ a chamada no próprio método):
 
 **Não verificado:** a chamada real em homologação (T1: precisa do usuário de integração, §1.3), o formato do `status` (número, D6) e se
 a `priority` é mesmo obrigatória; o `Script066`/`Script067` em banco e as rotas pelo host.
+
+### 10.15 Fase PR-4: cores e grades (28/10/2026)
+
+**O que entrou** (§5.5, no `TotvsProductCatalogsService`, pela base da §10.14; grupo `Totvs:Writes:Products:Enabled`, desligado; jobs no
+`Script068`):
+* `PostColors` (13124): `POST TotvsJobs/Totvs/Products/{docCompany}/Colors` com o `UpsertColor` → `POST product/v2/colors`; chave = `code`.
+  É inclusão **e** alteração (um `code` que já existe é renomeado em todas as referências): valores absolutos, sem trava. As lojas de
+  `colorInfoAdditionals` precisam ser da empresa em `TotvsBranches` (422 sem chamar a API, passo 3 da §1.2);
+* `PostGrids` (13126): `POST .../Products/{docCompany}/Grids` com o `InsertGrid` → `POST product/v2/grids`; chave = `gridCode` ou, sem ele,
+  `name`. Só inclusão e sem rota para desfazer: **com a trava T5** (repetir sem `gridCode` criaria outra grade). A resposta (201,
+  `gridCode` e `name`) volta em `response`;
+* validadores `UpsertColorValidator` (`code` até 10 e `name` até 40, obrigatórios; por loja: `branchCode` obrigatório com até 4 dígitos e
+  sem repetição, `auxiliaryCode` 10, `auxiliaryName` 80, `pantoneCode` 40) e `InsertGridValidator` (`gridCode` opcional com até 6 dígitos,
+  `name` obrigatório até 40, `type` até 40, pelo menos um tamanho, cada um obrigatório com até 10 e sem repetição, sem diferença de
+  maiúsculas e espaços).
+
+**Conferido sem a API** (mesmo console da §10.14): 7 corpos nos validadores; corpo da cor e da grade sem nulos (a grade sem `gridCode`); cor
+aceita e repetida (chama de novo); cor com uma loja de outra empresa (422 sem chamar, com a loja na mensagem); cor sem dados por loja; grade
+aceita com o `gridCode` na resposta, repetida (**409 sem chamar**) e com código existente (400 da Totvs como mensagem).
+
+**Não verificado:** a chamada real em homologação (T1); se a Totvs numera a grade sem `gridCode` (o swagger declara o campo como inteiro
+não anulável); o `Script068` em banco e as rotas pelo host.
