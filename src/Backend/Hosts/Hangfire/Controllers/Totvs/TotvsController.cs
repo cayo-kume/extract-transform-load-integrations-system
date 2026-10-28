@@ -1478,6 +1478,151 @@ namespace Hangfire.Controllers.Totvs
 
             return WriteResponse(await _totvsProductsService.PutBatchInfo(userName, docCompany, body));
         }
+
+        /// <summary>
+        /// altera dados fiscais e indicadores de um produto numa empresa (PUT product/v2/products/{code}/{branchCode}): NCM, CST, peso,
+        /// produção própria, inativo (tira o produto de venda na loja) e tipos de material
+        /// </summary>
+        [HttpPut("Products/{docCompany}/{code:int:range(1,999999999)}/{branchCode:int:range(1,9999)}")]
+        [Tags("TotvsProducts")]
+        public async Task<ActionResult> PutProduct(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            int code,
+            int branchCode,
+            [FromBody] Domain.Totvs.Dtos.Writes.Products.Data.ProductBranchUpdate body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.Products.Data.ProductBranchUpdate> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsProductsService.PutProducts(userName, docCompany, code, branchCode, body));
+        }
+        /// <summary>
+        /// altera indicadores e tipo SPED dos produtos numa empresa (PUT product/v2/branch-info/{branchCode}); filtro por lista de produtos
+        /// ou de códigos de barras, até 500 (PR9)
+        /// </summary>
+        [HttpPut("Products/{docCompany}/BranchInfo/{branchCode:int:range(1,9999)}")]
+        [Tags("TotvsProducts")]
+        public async Task<ActionResult> PutProductsBranchInfo(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            int branchCode,
+            [FromBody] Domain.Totvs.Dtos.Writes.Products.Data.UpsertProductBranchInfo body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.Products.Data.UpsertProductBranchInfo> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsProductsService.PutBranchInfo(userName, docCompany, branchCode, body));
+        }
+        /// <summary>
+        /// altera dados fiscais dos produtos (PUT product/v2/data): NCM, unidade, CST, peso, CEST e prefixo EAN; filtro por lista, até 500 (PR9)
+        /// </summary>
+        [HttpPut("Products/{docCompany}/Data")]
+        [Tags("TotvsProducts")]
+        public async Task<ActionResult> PutProductsData(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.Products.Data.UpdateProductData body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.Products.Data.UpdateProductData> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsProductsService.PutData(userName, docCompany, body));
+        }
+        /// <summary>
+        /// inclui preço ou custo dos produtos (POST product/v2/values/create). Vale na hora para PDVs e e-commerce: só códigos e lojas permitidos em
+        /// Totvs:Writes:Products:AllowedValueCodes/AllowedValueBranches, e variação acima do limite só com ?confirmVariation=true (PR7)
+        /// </summary>
+        [HttpPost("Products/{docCompany}/Values/Create")]
+        [Tags("TotvsProductPrices")]
+        public async Task<ActionResult> ProductValuesCreate(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.Products.Values.ProductValues body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.Products.Values.ProductValues> validator,
+            [FromQuery] bool confirmVariation = false
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsProductPricesService.PostCreateValues(userName, docCompany, body, confirmVariation));
+        }
+        /// <summary>
+        /// altera preço ou custo dos produtos (POST product/v2/values/update), com as mesmas travas da inclusão; sem valor gravado para conferir, só
+        /// com ?confirmVariation=true (PR7)
+        /// </summary>
+        [HttpPost("Products/{docCompany}/Values/Update")]
+        [Tags("TotvsProductPrices")]
+        public async Task<ActionResult> ProductValuesUpdate(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.Products.Values.ProductValues body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.Products.Values.ProductValues> validator,
+            [FromQuery] bool confirmVariation = false
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsProductPricesService.PostUpdateValues(userName, docCompany, body, confirmVariation));
+        }
+        /// <summary>
+        /// altera valores de promoção numa campanha da loja (POST product/v2/promotion-values/update); com a promoção no banco, só aberta e com o
+        /// valor abaixo do anterior
+        /// </summary>
+        [HttpPost("Products/{docCompany}/PromotionValues/Update")]
+        [Tags("TotvsProductPrices")]
+        public async Task<ActionResult> PromotionValuesUpdate(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.Products.Values.PromotionItems body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.Products.Values.PromotionItems> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsProductPricesService.PostUpdatePromotionValues(userName, docCompany, body));
+        }
+        /// <summary>
+        /// inclui produtos numa campanha da loja (POST product/v2/promotion-items); com a promoção no banco, só aberta. O mesmo corpo em 10 minutos
+        /// volta 409
+        /// </summary>
+        [HttpPost("Products/{docCompany}/PromotionItems")]
+        [Tags("TotvsProductPrices")]
+        public async Task<ActionResult> PromotionItemsInsert(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.Products.Values.PromotionItems body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.Products.Values.PromotionItems> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsProductPricesService.PostPromotionItems(userName, docCompany, body));
+        }
         /// <summary>
         /// troca os pedidos de venda preferenciais de um item de lote (POST product/v2/batch-preferentialsalesorder). A Totvs apaga antes todos
         /// os do item, então uma lista vazia só apaga: ela exige ?clear=true

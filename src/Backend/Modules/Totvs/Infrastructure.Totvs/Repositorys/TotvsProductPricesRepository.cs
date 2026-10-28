@@ -174,5 +174,26 @@ namespace Infrastructure.Totvs.Repositorys
 
             return true;
         }
+
+        public async Task<IEnumerable<Domain.Totvs.Entities.Writes.Products.CurrentProductValue?>> GetCurrentValues(string doc_company, List<int> productCodes)
+        {
+            var result = new List<Domain.Totvs.Entities.Writes.Products.CurrentProductValue?>();
+
+            // em blocos, para o IN não crescer sem limite
+            foreach (var chunk in productCodes.Distinct().Chunk(500))
+            {
+                string sql = _totvsCommandHandler.CreateGetCurrentProductValuesQuery(doc_company, chunk.ToList());
+                result.AddRange(await _coreRepository.GetRecords<Domain.Totvs.Entities.Writes.Products.CurrentProductValue>(sql));
+            }
+
+            return result;
+        }
+
+        public async Task<IEnumerable<Domain.Totvs.Entities.Writes.Products.PromotionItemState?>> GetPromotionItems(string doc_company, int branchCode, int promotionCode)
+        {
+            string sql = _totvsCommandHandler.CreateGetPromotionItemsQuery(doc_company, branchCode, promotionCode);
+
+            return await _coreRepository.GetRecords<Domain.Totvs.Entities.Writes.Products.PromotionItemState>(sql);
+        }
     }
 }

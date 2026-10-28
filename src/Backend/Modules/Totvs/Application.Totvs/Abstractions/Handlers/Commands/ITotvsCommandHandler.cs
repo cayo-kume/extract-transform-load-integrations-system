@@ -104,6 +104,8 @@
         public string CreateGetBillingSuggestionsByKeysQuery(string doc_company, List<(int branchCode, int suggestionCode)> keys);
         public string CreateGetPurchaseOrderStatusQuery(string doc_company, int branchCode, int orderCode);
         public string CreateGetSaleOrderStatusQuery(string doc_company, int branchCode, int orderCode);
+        public string CreateGetCurrentProductValuesQuery(string doc_company, List<int> productCodes);
+        public string CreateGetPromotionItemsQuery(string doc_company, int branchCode, int promotionCode);
         public string CreateGetSaleOrderProductsQuery(string doc_company, int branchCode, int orderCode);
         public string CreateGetPurchaseOrderBySupplierOrderCodeQuery(string doc_company, int branchCode, int? supplierCode, string? supplierCpfCnpj, string supplierOrderCode);
         public string CreateGetPurchaseOrderProductsQuery(string doc_company, int branchCode, int orderCode);

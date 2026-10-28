@@ -45,6 +45,11 @@ namespace Application.Totvs.Abstractions.Services
         public bool IsWriteEnabled(string group);
 
         /// <summary>
+        /// outra chave do grupo de escrita na configuração (Totvs:Writes:&lt;grupo&gt;:&lt;nome&gt;), como as listas permitidas da PR7; null quando ausente
+        /// </summary>
+        public string? GetWriteSetting(string group, string name);
+
+        /// <summary>
         /// access_token do authorization/v2/token da empresa, em cache até perto do expires_in.
         /// null quando o login falha (a mensagem vai para o log da execução)
         /// </summary>

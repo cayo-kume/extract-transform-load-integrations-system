@@ -29,5 +29,27 @@
         /// erro na Totvs); só grava os itens novos ou cujo hash mudou
         /// </summary>
         public Task<bool?> GetPromotion();
+
+        /// <summary>
+        /// inclui preço ou custo dos produtos (POST product/v2/values/create), com os códigos e lojas permitidos e a trava de variação (PR7)
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PostCreateValues(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Values.ProductValues body, bool confirmVariation);
+
+        /// <summary>
+        /// altera preço ou custo dos produtos (POST product/v2/values/update), com os códigos e lojas permitidos e a trava de variação (PR7); sem
+        /// valor gravado para conferir, recusa salvo confirmVariation
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PostUpdateValues(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Values.ProductValues body, bool confirmVariation);
+
+        /// <summary>
+        /// altera valores de promoção dos produtos numa campanha (POST product/v2/promotion-values/update); com a promoção no banco, só aberta e
+        /// com o valor abaixo do anterior
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PostUpdatePromotionValues(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Values.PromotionItems body);
+
+        /// <summary>
+        /// inclui produtos numa campanha (POST product/v2/promotion-items); com a promoção no banco, só aberta; o mesmo corpo em 10 minutos volta 409
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PostPromotionItems(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Values.PromotionItems body);
     }
 }

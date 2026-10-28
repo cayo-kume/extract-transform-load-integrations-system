@@ -728,6 +728,31 @@ namespace Application.Totvs.Handlers.Commands
                      ORDER BY ORDERCODE DESC";
         }
 
+        public string CreateGetCurrentProductValuesQuery(string doc_company, List<int> productCodes)
+        {
+            // preço e custo gravados pelas leituras da fase 3, no mesmo formato da escrita (P/C + código)
+            var codes = String.Join(",", productCodes);
+
+            return @$"SELECT BRANCHCODE AS branchCode, PRODUCTCODE AS productCode, 'P' AS valueType, PRICECODE AS valueCode, [PRICE] AS value
+                     FROM TOTVS.TOTVSPRICES
+                     WHERE DOC_COMPANY = '{doc_company}'
+                     AND PRODUCTCODE IN ({codes})
+                     UNION ALL
+                     SELECT BRANCHCODE, PRODUCTCODE, 'C', COSTCODE, [COST]
+                     FROM TOTVS.TOTVSCOSTS
+                     WHERE DOC_COMPANY = '{doc_company}'
+                     AND PRODUCTCODE IN ({codes})";
+        }
+
+        public string CreateGetPromotionItemsQuery(string doc_company, int branchCode, int promotionCode)
+        {
+            return @$"SELECT PRODUCTCODE AS productCode, PREVIOUSVALUE AS previousValue, [STATUS] AS status
+                     FROM TOTVS.TOTVSPROMOTIONS
+                     WHERE DOC_COMPANY = '{doc_company}'
+                     AND BRANCHCODE = {branchCode}
+                     AND PROMOTIONCODE = {promotionCode}";
+        }
+
         public string CreateGetSaleOrderStatusQuery(string doc_company, int branchCode, int orderCode)
         {
             // situação gravada pela leitura (nome do StatusOrderType); sem linha, o pedido ainda não chegou ao banco

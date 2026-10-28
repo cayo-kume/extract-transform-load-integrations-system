@@ -109,5 +109,20 @@
         /// havia
         /// </summary>
         public Task<Domain.Totvs.Dtos.Writes.Result> PostBatchPreferentialSalesOrder(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Batches.BatchPreferentialSalesOrder body);
+
+        /// <summary>
+        /// altera dados fiscais e indicadores de um produto numa empresa (PUT product/v2/products/{code}/{branchCode})
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PutProducts(string user_name, string doc_company, int code, int branchCode, Domain.Totvs.Dtos.Writes.Products.Data.ProductBranchUpdate body);
+
+        /// <summary>
+        /// altera indicadores e tipo SPED dos produtos do filtro numa empresa (PUT product/v2/branch-info/{branchCode}); filtro só por lista (PR9)
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PutBranchInfo(string user_name, string doc_company, int branchCode, Domain.Totvs.Dtos.Writes.Products.Data.UpsertProductBranchInfo body);
+
+        /// <summary>
+        /// altera dados fiscais dos produtos do filtro (PUT product/v2/data); filtro só por lista (PR9)
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PutData(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Data.UpdateProductData body);
     }
 }

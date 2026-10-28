@@ -72,6 +72,9 @@ namespace Application.Totvs.Services
         public bool IsWriteEnabled(string group) =>
             bool.TryParse(_configuration[$"Totvs:Writes:{group}:Enabled"], out var enabled) && enabled;
 
+        public string? GetWriteSetting(string group, string name) =>
+            _configuration[$"Totvs:Writes:{group}:{name}"];
+
         public async Task<string?> GetToken(Company company)
         {
             var key = $"{TokenKey}:{company.doc_company}";

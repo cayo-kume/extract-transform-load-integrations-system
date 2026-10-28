@@ -231,6 +231,13 @@ Os nomes dos métodos são os da **documentação oficial** (`PostSearch*`, `Get
 | `TotvsProductsService` | `PostCreateBatch` | `POST product/v2/batch/create` (com a trava de repetição) | 13135 | `Totvs:Writes:Products:Enabled` |
 | `TotvsProductsService` | `PutBatchInfo` | `PUT product/v2/batch-info` | 13136 | `Totvs:Writes:Products:Enabled` |
 | `TotvsProductsService` | `PostBatchPreferentialSalesOrder` | `POST product/v2/batch-preferentialsalesorder` | 13137 | `Totvs:Writes:Products:Enabled` |
+| `TotvsProductsService` | `PutProducts` | `PUT product/v2/products/{code}/{branchCode}` | 13128 | `Totvs:Writes:Products:Enabled` |
+| `TotvsProductsService` | `PutBranchInfo` | `PUT product/v2/branch-info/{branchCode}` | 13129 | `Totvs:Writes:Products:Enabled` |
+| `TotvsProductsService` | `PutData` | `PUT product/v2/data` | 13130 | `Totvs:Writes:Products:Enabled` |
+| `TotvsProductPricesService` | `PostCreateValues` | `POST product/v2/values/create` (códigos e lojas permitidos, trava de variação) | 13131 | `Totvs:Writes:Products:Enabled` |
+| `TotvsProductPricesService` | `PostUpdateValues` | `POST product/v2/values/update` (códigos e lojas permitidos, trava de variação) | 13132 | `Totvs:Writes:Products:Enabled` |
+| `TotvsProductPricesService` | `PostUpdatePromotionValues` | `POST product/v2/promotion-values/update` | 13133 | `Totvs:Writes:Products:Enabled` |
+| `TotvsProductPricesService` | `PostPromotionItems` | `POST product/v2/promotion-items` (com a trava de repetição) | 13134 | `Totvs:Writes:Products:Enabled` |
 | `TotvsPurchaseOrdersService` | `PostPurchaseOrdersChangeStatus` | `POST purchase-order/v2/orders/change-status` | 13182 | `Totvs:Writes:PurchaseOrders:Enabled` |
 | `TotvsPurchaseOrdersService` | `PostPurchaseOrders` | `POST purchase-order/v2/orders` (com a trava de repetição) | 13180 | `Totvs:Writes:PurchaseOrders:Enabled` |
 | `TotvsPurchaseOrdersService` | `PostPurchaseOrdersQuantityItems` | `POST purchase-order/v2/quantity-items` | 13181 | `Totvs:Writes:PurchaseOrders:Enabled` |
@@ -382,6 +389,7 @@ O DbUp executa cada script uma única vez, em ordem alfabética. Alterar um scri
 | `Script073` | Jobs das escritas de documento da API Purchase Order (inclusão, quantidade dos itens e vínculo com lote, 13180, 13181 e 13184) |
 | `Script074` | Jobs das escritas de documento da API Sales Order (situação, capa, itens, lotes e contagens, 13199, 13200, 13205, 13206, 13208 e 13211–13214) |
 | `Script075` | Jobs das escritas de bônus da API Person (crédito e consumo, 13047 e 13048) |
+| `Script076` | Jobs das escritas de dados fiscais, preço, custo e promoção da API Product (13128–13134) |
 
 **Regras gerais das tabelas e dos merges:**
 * Toda tabela de dados existe em dois schemas: `untreated` (recebe o bulk insert, sem chave) e `totvs` (tabela final, com PK). A exceção é `totvs.TotvsRequests`, que só recebe inserts.
@@ -529,6 +537,13 @@ escritas de pedido de venda, a **chave do pedido** é `branchCode` + `orderCode`
 | POST | `Products/{docCompany}/Batches/Create` | `batchs` (loja da empresa, produto, saldo; itens com nota de inspeção por `supplierCode` **ou** `supplierCpfCnpj`) | `PostCreateBatch` |
 | PUT | `Products/{docCompany}/BatchInfo` | `batchItems` (loja + lote + sequência **ou** `itemClient`; `dataChanged` com pelo menos um dado) | `PutBatchInfo` |
 | POST | `Products/{docCompany}/BatchPreferentialSalesOrder` | item por lote + sequência **ou** `batchItemBarCode`; pedidos por loja e `orderCode` **ou** `orderId`. Lista vazia só com `?clear=true` (só apaga) | `PostBatchPreferentialSalesOrder` |
+| PUT | `Products/{docCompany}/{code}/{branchCode}` | pelo menos um entre `ncmCode` (8 dígitos), `cstCode`, `weight` e os indicadores (`isInactive` tira de venda na loja) | `PutProducts` |
+| PUT | `Products/{docCompany}/BranchInfo/{branchCode}` | `filter` (`productCodeList` **ou** `barCodeList`, até 500; grupo e referência não aceitos) e pelo menos um indicador ou `spedItemType` | `PutBranchInfo` |
+| PUT | `Products/{docCompany}/Data` | `filter` (idem) e pelo menos um entre `ncmCode`, `measuredUnit`, `cstCode`, `weight`, `cestCode`, `prefixEanGtin` (nunca vazio) | `PutData` |
+| POST | `Products/{docCompany}/Values/Create` | `products` (até 500; `values` com `branchCode`, `valueType` `C`/`P`, `valueCode`, `value` > 0). Query `confirmVariation` | `PostCreateValues` (só códigos e lojas permitidos; variação acima do limite: 422 sem `?confirmVariation=true`) |
+| POST | `Products/{docCompany}/Values/Update` | o mesmo corpo. Query `confirmVariation` | `PostUpdateValues` (idem; sem valor gravado para conferir: 422 sem `?confirmVariation=true`) |
+| POST | `Products/{docCompany}/PromotionValues/Update` | `branchCode`, `promotionCode`, `items` (`productCode`, `promotionValue` > 0) | `PostUpdatePromotionValues` (com a promoção no banco: só aberta e com valor abaixo do anterior) |
+| POST | `Products/{docCompany}/PromotionItems` | o mesmo corpo | `PostPromotionItems` (com a promoção no banco: só aberta) |
 | POST | `PurchaseOrders/{docCompany}/ChangeStatus` | `branchCode` (loja da empresa), `orderCode`, `status` (1 em andamento, 5 bloqueado) | `PostPurchaseOrdersChangeStatus` (com o pedido no banco, só entre essas duas situações) |
 | POST | `PurchaseOrders/{docCompany}` | loja da empresa, fornecedor e comprador (código **ou** CPF/CNPJ), operação, condição, `status` (1 ou 5), `supplierOrderCode` (**obrigatório**), `totalAmountOrder` e pelo menos um item (`productCode` **ou** `productSku`, valor, quantidade, `itemsValues` com `C`/`P`); classificações, observações, despesas, descontos, campos e dados adicionais | `PostPurchaseOrders` (devolve loja e número; o mesmo `supplierOrderCode` do fornecedor já gravado volta 422) |
 | POST | `PurchaseOrders/{docCompany}/QuantityItems` | `branchCode`, `orderCode`, `items` (`productCode`, `quantity` ≥ 0, sem repetição) | `PostPurchaseOrdersQuantityItems` (com o pedido no banco: atendido ou cancelado, produto fora do pedido e quantidade abaixo da recebida voltam 422) |
@@ -639,6 +654,7 @@ Os jobs ficam em `auditing.Jobs`, com os mesmos ids em `EnumJob`.
 | 13040–13043 | `TotvsPostIndividualCustomers`, `TotvsPostLegalCustomers`, `TotvsPostCustomerRepresentatives`, `TotvsPostRemoveClassificationRelationship` | escrita |
 | 13044–13048 | `TotvsPostMessages`, `TotvsPutChangeMessages`, `TotvsDeleteMessages`, `TotvsPostBonusDueDate`, `TotvsPostBonusConsume` | escrita |
 | 13120–13127 | `TotvsPostBarcodes`, `TotvsPostUpdateBarcodes`, `TotvsPostCreateClassificationRelationship`, `TotvsPostUpdateClassificationRelationship`, `TotvsPostColors`, `TotvsPostClassifications`, `TotvsPostGrids`, `TotvsPostReferences` | escrita |
+| 13128–13134 | `TotvsPutProducts`, `TotvsPutBranchInfo`, `TotvsPutData`, `TotvsPostCreateValues`, `TotvsPostUpdateValues`, `TotvsPostUpdatePromotionValues`, `TotvsPostPromotionItems` | escrita |
 | 13135–13137 | `TotvsPostCreateBatch`, `TotvsPutBatchInfo`, `TotvsPostBatchPreferentialSalesOrder` | escrita |
 | 13180–13182, 13184 | `TotvsPostPurchaseOrders`, `TotvsPostPurchaseOrdersQuantityItems`, `TotvsPostPurchaseOrdersChangeStatus`, `TotvsPostPurchaseOrderBatchLink` | escrita |
 | 13199–13203, 13205–13208 | `TotvsPostSalesOrderOrdersChangeStatus`, `TotvsPostSalesOrderHeader`, `TotvsPostSalesOrderAdditionalOrder`, `TotvsPostSalesOrderShippingOrder`, `TotvsPostSalesOrderObservationsOrder`, `TotvsPostSalesOrderItems`, `TotvsDeleteSalesOrderItems`, `TotvsPostSalesOrderAdditionalItems`, `TotvsPostSalesOrderQuantityItems` | escrita |
@@ -656,6 +672,7 @@ Toda execução grava `auditing.Logs` e, conforme o caso:
 |---|---|---|
 | `appsettings.json` do host | `Totvs:BaseUrl` | Endereço da API; homologação é só outro valor no `appsettings` do ambiente |
 | `appsettings.json` do host | `Totvs:Writes:<grupo>:Enabled` | Liga as escritas de um grupo (`AccountsPayable`, `Bonus`, `People`, `Products`, `PurchaseOrders`, `SalesOrders`). Sem a chave, ou com `false`, a rota devolve 422 sem chamar a Totvs |
+| `appsettings.json` do host | `Totvs:Writes:Products:AllowedValueCodes`, `AllowedValueBranches`, `MaxValueVariationPercent` | Escrita de preço e custo (PR7): tipos e códigos permitidos (`P1,C1`: P preço, C custo), lojas permitidas (`1,101`) e a variação máxima contra o valor gravado (padrão 20). Lista vazia recusa toda escrita de valor |
 | `appsettings.json` do host | `ConnectionStrings` | Conexão com o SQL Server (dados e auditoria) |
 | Banco | `totvs.TotvsParameters` | CNPJ (`doc_company`) e credenciais (`client_id`, `client_secret`, `username`, `password`) de cada empresa |
 

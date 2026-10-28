@@ -1977,5 +1977,19 @@ namespace Application.Totvs.Services
 
             return key.Length > 400 ? key[..400] : key;
         }
+
+        // dados fiscais e indicadores por empresa (§5.6): valores absolutos, sem trava. A loja do caminho precisa ser da empresa
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PutProducts(string user_name, string doc_company, int code, int branchCode, Domain.Totvs.Dtos.Writes.Products.Data.ProductBranchUpdate body) =>
+            await WriteProducts(user_name, doc_company, EnumJob.TotvsPutProducts, HttpMethod.Put, $"product/v2/products/{code}/{branchCode}", $"{code}|{branchCode}", body,
+                "Confira os dados do produto na loja antes de repetir.", branches: [branchCode]);
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PutBranchInfo(string user_name, string doc_company, int branchCode, Domain.Totvs.Dtos.Writes.Products.Data.UpsertProductBranchInfo body) =>
+            await WriteProducts(user_name, doc_company, EnumJob.TotvsPutBranchInfo, HttpMethod.Put, $"product/v2/branch-info/{branchCode}",
+                $"{branchCode}|{ProductsKey(body.filter!.productCodeList?.Select(x => x.ToString()) ?? body.filter.barCodeList!)}", body, "Confira os dados dos produtos na loja antes de repetir.",
+                branches: [branchCode]);
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PutData(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Data.UpdateProductData body) =>
+            await WriteProducts(user_name, doc_company, EnumJob.TotvsPutData, HttpMethod.Put, "product/v2/data",
+                ProductsKey(body.filter!.productCodeList?.Select(x => x.ToString()) ?? body.filter.barCodeList!), body, "Confira os dados fiscais dos produtos antes de repetir.");
     }
 }

@@ -1213,5 +1213,166 @@ namespace Application.Totvs.Services
 
             return (result.items.Select((x, i) => (x, (JObject)json[i])).ToList(), result.totalPages);
         }
+
+        // grupo das escritas desta API na configuração (Totvs:Writes:Products:Enabled, T4) e as chaves da PR7 no mesmo grupo
+        private const string WritesGroup = "Products";
+        private const decimal DefaultMaxVariationPercent = 20m;
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostCreateValues(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Values.ProductValues body, bool confirmVariation) =>
+            await WriteValues(user_name, doc_company, EnumJob.TotvsPostCreateValues, "product/v2/values/create", body, confirmVariation, update: false);
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostUpdateValues(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Values.ProductValues body, bool confirmVariation) =>
+            await WriteValues(user_name, doc_company, EnumJob.TotvsPostUpdateValues, "product/v2/values/update", body, confirmVariation, update: true);
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostUpdatePromotionValues(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Values.PromotionItems body) =>
+            await WritePromotion(user_name, doc_company, EnumJob.TotvsPostUpdatePromotionValues, "product/v2/promotion-values/update", body, update: true);
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostPromotionItems(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Values.PromotionItems body) =>
+            await WritePromotion(user_name, doc_company, EnumJob.TotvsPostPromotionItems, "product/v2/promotion-items", body, update: false);
+
+        // preço e custo (§5.7, PR7): só os códigos (tipo + código, ex.: P1, C2) e as lojas permitidos em Totvs:Writes:Products:AllowedValueCodes e
+        // AllowedValueBranches (vazio recusa tudo) e, sem ?confirmVariation=true, variação até MaxValueVariationPercent contra o valor gravado em
+        // TotvsPrices/TotvsCosts; na alteração, sem valor gravado não há como conferir e a escrita é recusada. Valor absoluto: sem trava (T5)
+        private async Task<Domain.Totvs.Dtos.Writes.Result> WriteValues(string user_name, string doc_company, EnumJob job, string route, Domain.Totvs.Dtos.Writes.Products.Values.ProductValues body, bool confirmVariation, bool update)
+        {
+            _logger
+                .Clear()
+                .AddLog(job);
+
+            var key = ProductsKey(body.products!.Select(x => x.productCode!.Value));
+
+            try
+            {
+                if (!_totvsService.IsWriteEnabled(WritesGroup))
+                    return _totvsService.WriteDisabled(WritesGroup, key);
+
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return _totvsService.CompanyNotFound(doc_company, key);
+
+                var values = body.products!.SelectMany(p => p.values!.Select(v => (product: p.productCode!.Value, branch: v.branchCode!.Value, type: v.valueType!, code: v.valueCode!.Value, value: v.value!.Value))).ToList();
+                var companyBranches = await _totvsService.GetBranchCodes(company);
+                var outside = values.Select(x => x.branch).Distinct().Where(x => !companyBranches.Contains(x)).ToList();
+
+                if (outside.Count > 0)
+                    return _totvsService.BranchNotFound(doc_company, key, outside.Select(x => x.ToString()));
+
+                var allowedCodes = SettingList(_totvsService.GetWriteSetting(WritesGroup, "AllowedValueCodes"));
+                var allowedBranches = SettingList(_totvsService.GetWriteSetting(WritesGroup, "AllowedValueBranches"));
+                string? refused = null;
+
+                if (allowedCodes.Count == 0 || allowedBranches.Count == 0)
+                    refused = $"Escrita de preço e custo sem códigos ou lojas permitidos (Totvs:Writes:{WritesGroup}:AllowedValueCodes e AllowedValueBranches, PR7).";
+                else if (values.Where(x => !allowedCodes.Contains($"{x.type}{x.code}") || !allowedBranches.Contains(x.branch.ToString())).Select(x => $"{x.product}/{x.branch}/{x.type}{x.code}").ToList() is { Count: > 0 } denied)
+                    refused = $"Código de valor ou loja fora dos permitidos (PR7): {String.Join(", ", denied.Take(20))}.";
+                else if (!confirmVariation)
+                {
+                    var max = Decimal.TryParse(_totvsService.GetWriteSetting(WritesGroup, "MaxValueVariationPercent"), System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var configured)
+                        ? configured : DefaultMaxVariationPercent;
+                    var current = (await _totvsProductPricesRepository.GetCurrentValues(doc_company, values.Select(x => x.product).ToList()))
+                        .Where(x => x is not null)
+                        .ToDictionary(x => (x!.productCode, x.branchCode, x.valueType, x.valueCode), x => x!.value);
+                    var problems = new List<string>();
+
+                    foreach (var x in values)
+                    {
+                        var stored = current.GetValueOrDefault((x.product, x.branch, x.type, x.code));
+
+                        if (stored is null or 0)
+                        {
+                            if (update)
+                                problems.Add($"{x.product}/{x.branch}/{x.type}{x.code} sem valor gravado");
+                        }
+                        else if (Math.Abs(x.value - stored.Value) / stored.Value * 100 > max)
+                            problems.Add($"{x.product}/{x.branch}/{x.type}{x.code} de {stored:0.00} para {x.value:0.00}");
+                    }
+
+                    if (problems.Count > 0)
+                        refused = $"Variação acima de {max}% ou sem valor gravado para conferir (PR7; para seguir assim, ?confirmVariation=true): {String.Join(", ", problems.Take(20))}.";
+                }
+
+                if (refused is not null)
+                {
+                    _logger.AddMessage(refused);
+
+                    return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, message = refused };
+                }
+
+                return await _totvsService.Write(company, job, user_name, key, HttpMethod.Post, route, body, "Confira os preços e custos dos produtos antes de repetir.");
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        // valores e itens de promoção (§5.7): a loja precisa ser da empresa; com a promoção em TotvsPromotions, ela precisa estar aberta (A) e, na
+        // alteração, o valor de promoção abaixo do anterior. Incluir itens não é idempotente: trava (T5)
+        private async Task<Domain.Totvs.Dtos.Writes.Result> WritePromotion(string user_name, string doc_company, EnumJob job, string route, Domain.Totvs.Dtos.Writes.Products.Values.PromotionItems body, bool update)
+        {
+            _logger
+                .Clear()
+                .AddLog(job);
+
+            var key = $"{body.branchCode}|{body.promotionCode}";
+
+            try
+            {
+                if (!_totvsService.IsWriteEnabled(WritesGroup))
+                    return _totvsService.WriteDisabled(WritesGroup, key);
+
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return _totvsService.CompanyNotFound(doc_company, key);
+
+                if (!(await _totvsService.GetBranchCodes(company)).Contains(body.branchCode!.Value))
+                    return _totvsService.BranchNotFound(doc_company, key, [body.branchCode.Value.ToString()]);
+
+                var stored = (await _totvsProductPricesRepository.GetPromotionItems(doc_company, body.branchCode.Value, body.promotionCode!.Value)).Where(x => x is not null).ToList();
+                string? refused = null;
+
+                if (stored.Count > 0 && stored.Any(x => x!.status != "A"))
+                    refused = $"A promoção {key} não está aberta em totvs.TotvsPromotions (situação {stored.First(x => x!.status != "A")!.status}).";
+                else if (update)
+                {
+                    var notBelow = body.items!
+                        .Select(i => (item: i, previous: stored.FirstOrDefault(s => s!.productCode == i.productCode)?.previousValue))
+                        .Where(x => x.previous is decimal previous && x.item.promotionValue >= previous)
+                        .Select(x => $"{x.item.productCode} ({x.item.promotionValue:0.00} >= {x.previous:0.00})")
+                        .ToList();
+
+                    if (notBelow.Count > 0)
+                        refused = $"Valor de promoção não abaixo do valor anterior: {String.Join(", ", notBelow.Take(20))}.";
+                }
+
+                if (refused is not null)
+                {
+                    _logger.AddMessage(refused);
+
+                    return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, message = refused };
+                }
+
+                return await _totvsService.Write(company, job, user_name, key, HttpMethod.Post, route, body, "Confira os itens da promoção na Totvs antes de repetir.", repeatLock: !update);
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        // lista da configuração separada por vírgula, sem espaços nem diferença de maiúsculas
+        private static HashSet<string> SettingList(string? setting) =>
+            (setting ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(x => x.ToUpperInvariant()).ToHashSet();
+
+        private static string ProductsKey(IEnumerable<int> productCodes)
+        {
+            var key = String.Join(",", productCodes);
+
+            return key.Length > 400 ? key[..400] : key;
+        }
     }
 }

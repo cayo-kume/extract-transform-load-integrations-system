@@ -2329,7 +2329,7 @@ onda 2 que entrar monta a base das leituras sem persistência (T11, §8.1).
 | PR-3 | 2 | `TotvsProductsService` | `GetProducts`, `GetKardexMovement`, `GetGridFrequency`, `GetMeasurementConversions`, `GetCompositionProduct`, `GetCompositionGroupProduct` | 13100–13105 | base T11 **Implementada em 28/10/2026** (§10.13) |
 | PR-4 | 3 | `TotvsProductCatalogsService` | `PostColors`, `PostGrids` | 13124, 13126 | AP-1, PR-1 **Implementada em 28/10/2026** (§10.15) |
 | PR-5 | 4 | `TotvsProductCatalogsService`, `TotvsProductsService` | `PostClassifications`, `PostCreateClassificationRelationship`, `PostUpdateClassificationRelationship` (sem a classificação 6000, PR10), `PostBarcodes`, `PostUpdateBarcodes`, `PostReferences` (sem `values`, PR11); lote: `PostCreateBatch`, `PutBatchInfo`, `PostBatchPreferentialSalesOrder` (PR6) | 13120–13123, 13125, 13127, 13135–13137 | PR-4. **Implementada em 28/10/2026** (§10.22), sem a conferência nos catálogos |
-| PR-6 | 5 | `TotvsProductsService`, `TotvsProductPricesService` | `PutProducts`, `PutBranchInfo`, `PutData` (só listas de produto, PR9); `PostCreateValues`, `PostUpdateValues`, `PostUpdatePromotionValues`, `PostPromotionItems` (PR7) | 13128–13134 | PR-2 (preços e custos lidos antes de escrever), T4, T5 |
+| PR-6 | 5 | `TotvsProductsService`, `TotvsProductPricesService` | `PutProducts`, `PutBranchInfo`, `PutData` (só listas de produto, PR9); `PostCreateValues`, `PostUpdateValues`, `PostUpdatePromotionValues`, `PostPromotionItems` (PR7) | 13128–13134 | PR-2 (preços e custos lidos antes de escrever), T4, T5. **Implementada em 28/10/2026** (§10.27) |
 | — | fora | — | `PostSearchProducts` (PR1) | — | — |
 
 #### Purchase Order (`TotvsPurchaseOrdersService`, §6)
@@ -3383,3 +3383,43 @@ com saldo (lê o saldo e chama), acima do saldo e sem saldo na loja (422 sem cha
 
 **Não verificado:** a chamada em homologação (gera e consome crédito de verdade) e se o consumo exige a loja no token; o `Script075` em banco
 e as rotas pelo host.
+
+### 10.27 Fase PR-6: dados fiscais do produto, preço, custo e promoção (28/10/2026)
+
+| Peça | Onde |
+|---|---|
+| DTOs `ProductBranchUpdate`, `ProductDataFilter`, `UpsertProductBranchInfo`, `UpdateProductData` | `Domain.Totvs/Dtos/Writes/Products/Data` |
+| DTOs `ProductValues`, `ProductValuesItem`, `ProductValue`, `PromotionItems`, `PromotionItem` | `Domain.Totvs/Dtos/Writes/Products/Values` |
+| Validadores, um por DTO de entrada, e o `ProductDataFilterValidator` | `Application.Totvs/Validations/Writes/Products/Data` e `.../Values` |
+| `GetCurrentValues` (preço de `TotvsPrices` e custo de `TotvsCosts` como P/C + código) e `GetPromotionItems` (`TotvsPromotions`) | `ITotvsProductPricesRepository`, `TotvsCommandHandler` |
+| `ITotvsService.GetWriteSetting` (outras chaves do grupo de escrita) | `TotvsService` |
+| `PutProducts` (13128), `PutBranchInfo` (13129), `PutData` (13130) | `TotvsProductsService` (helper `WriteProducts` da PR-5) |
+| `PostCreateValues` (13131), `PostUpdateValues` (13132), `PostUpdatePromotionValues` (13133), `PostPromotionItems` (13134) | `TotvsProductPricesService` (PR12) |
+| 3 rotas `PUT` e 4 `POST` em `Products/{docCompany}/...`; `?confirmVariation` nas de valor | `TotvsController` |
+| `AllowedValueCodes`, `AllowedValueBranches`, `MaxValueVariationPercent` no grupo `Products` do `appsettings.json` | host |
+| `Script076` (jobs) | `Infrastructure.Totvs/Scripts/SQLServer` |
+
+**Regras:**
+* **PR7 — códigos e lojas permitidos:** cada valor precisa estar em `Totvs:Writes:Products:AllowedValueCodes` (tipo + código: `P1`, `C2`) e
+  a loja em `AllowedValueBranches`; vazio recusa toda escrita de valor (422). As chaves ficaram no grupo `Products`, no lugar do
+  `Totvs:Writes:Values:AllowedCodes` proposto, para a escrita de valor continuar sob o `Products:Enabled`.
+* **PR7 — trava de variação:** contra o valor gravado em `TotvsPrices`/`TotvsCosts`, variação acima de `MaxValueVariationPercent` (padrão
+  20) volta 422 com os itens; na alteração, valor sem registro local também (não há como conferir). `?confirmVariation=true` passa as duas.
+* **`valueType` como letra** (`C`/`P`), como no pedido de compra, que a homologação aceitou; o schema declara um enum inteiro com os nomes
+  `Cost`/`Price`: a confirmar na chamada real.
+* **PR9:** `PutBranchInfo` e `PutData` só por lista de produtos ou de códigos de barras (até 500, sem repetição); `groupCode` e
+  `referenceCode` (grupo inteiro) recusados no validador.
+* **Promoção:** com a promoção em `TotvsPromotions`, só aberta (`A`); na alteração, o valor de promoção abaixo do anterior (a confirmar se a
+  Totvs aceita acima). Incluir itens tem a trava T5; os outros são valores absolutos.
+* NCM com 8 dígitos, sem pontuação (a confirmar se a Totvs aceita com ponto); `prefixEanGtin` nunca vazio (não aceita remoção).
+* **PR11 continua:** os `values` da inclusão de referência seguem recusados; liberar é decisão do negócio, agora que as travas da PR7 existem.
+
+**Testes (console de rascunho, Totvs falsa):** dados do produto vazios, NCM com ponto, CST 9, peso com 4 casas; PUT com código e loja no
+caminho; loja de fora. Indicadores sem filtro, com as duas listas, por grupo, 501 produtos; por lista de códigos de barras (SPED como número).
+Dados fiscais com prefixo vazio; por lista de produtos. Preço válido e inválido; sem códigos configurados, código e loja fora dos
+permitidos (422); 100→110 (chama), 100→150 (422), o mesmo com `confirmVariation` (chama); alteração de custo sem valor gravado (422),
+inclusão sem valor gravado (chama). Promoção válida e inválida; fora do banco (chama); valor igual ao anterior (422); encerrada (422);
+itens numa promoção aberta (chama) e repetidos (409).
+
+**Não verificado:** a chamada em homologação (muda preço de verdade nos PDVs da homologação), o formato do `valueType` e a diferença entre
+`create` e `update` de valor; o `Script076` em banco e as rotas pelo host.
