@@ -1297,5 +1297,77 @@ namespace Application.Totvs.Services
                 await _logger.CommitAllChanges();
             }
         }
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostIndividualCustomers(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.People.Customers.IndividualCustomer body) =>
+            await WriteCustomer(user_name, doc_company, EnumJob.TotvsPostIndividualCustomers, "person/v2/individual-customers", body.cpf!, body.branchInsertCode!.Value,
+                body.limits?.Select(x => x.branchCode!.Value), body);
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostLegalCustomers(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.People.Customers.LegalCustomer body) =>
+            await WriteCustomer(user_name, doc_company, EnumJob.TotvsPostLegalCustomers, "person/v2/legal-customers", body.cnpj!, body.branchInsertCode!.Value,
+                body.limits?.Select(x => x.branchCode!.Value), body);
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostRemoveClassificationRelationship(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.People.Classifications.RemoveClassificationRelationship body)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsPostRemoveClassificationRelationship);
+
+            var key = body.personCode!.Value.ToString();
+
+            try
+            {
+                if (!_totvsService.IsWriteEnabled(WritesGroup))
+                    return _totvsService.WriteDisabled(WritesGroup, key);
+
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return _totvsService.CompanyNotFound(doc_company, key);
+
+                // tirar de novo o que já saiu não muda nada: sem trava
+                return await _totvsService.Write(company, EnumJob.TotvsPostRemoveClassificationRelationship, user_name, key, HttpMethod.Post,
+                    "person/v2/classification-relationship/remove", body, "Confira as classificações da pessoa antes de repetir.");
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        // cliente PF e PJ (docs/PLANO-TOTVS-METODOS-FALTANTES.md §3.4.1): a mesma rota cria ou altera pelo documento, que é a chave em TotvsRequests;
+        // a resposta traz o customerCode. Reenviar o mesmo corpo não muda nada, então não há trava. A loja de cadastro e as dos limites precisam
+        // ser da empresa. O cliente chega ao banco pelo próximo job de PF/PJ (PE11)
+        private async Task<Domain.Totvs.Dtos.Writes.Result> WriteCustomer(string user_name, string doc_company, EnumJob job, string route, string key, int branchInsertCode, IEnumerable<int>? limitBranches, object body)
+        {
+            _logger
+                .Clear()
+                .AddLog(job);
+
+            try
+            {
+                if (!_totvsService.IsWriteEnabled(WritesGroup))
+                    return _totvsService.WriteDisabled(WritesGroup, key);
+
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return _totvsService.CompanyNotFound(doc_company, key);
+
+                var branchCodes = await _totvsService.GetBranchCodes(company);
+                var outside = (limitBranches ?? []).Prepend(branchInsertCode).Distinct().Where(x => !branchCodes.Contains(x)).ToList();
+
+                if (outside.Count > 0)
+                    return _totvsService.BranchNotFound(doc_company, key, outside.Select(x => x.ToString()));
+
+                return await _totvsService.Write(company, job, user_name, key, HttpMethod.Post, route, body,
+                    "Confira o cliente pelo GET Customers/{docCompany}/{code} antes de repetir.");
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
     }
 }

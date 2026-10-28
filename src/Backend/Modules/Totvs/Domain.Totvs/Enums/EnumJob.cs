@@ -106,6 +106,10 @@
         TotvsPostDuplicates = 13018,   //Script032_Insert_Totvs_Accounts_Payable_Writes_Jobs_Into_Jobs_Table.sql
         TotvsPostGroupDuplicates = 13019,   //Script032_Insert_Totvs_Accounts_Payable_Writes_Jobs_Into_Jobs_Table.sql
         TotvsPostDuplicatesInstallmentsStage = 13020,   //Script032_Insert_Totvs_Accounts_Payable_Writes_Jobs_Into_Jobs_Table.sql
+        TotvsPostIndividualCustomers = 13040,   //Script071_Insert_Totvs_Customers_Writes_Jobs_Into_Jobs_Table.sql
+        TotvsPostLegalCustomers = 13041,   //Script071_Insert_Totvs_Customers_Writes_Jobs_Into_Jobs_Table.sql
+        TotvsPostCustomerRepresentatives = 13042,   //Script071_Insert_Totvs_Customers_Writes_Jobs_Into_Jobs_Table.sql
+        TotvsPostRemoveClassificationRelationship = 13043,   //Script071_Insert_Totvs_Customers_Writes_Jobs_Into_Jobs_Table.sql
         TotvsPostMessages = 13044,   //Script067_Insert_Totvs_People_Writes_Jobs_Into_Jobs_Table.sql
         TotvsPutChangeMessages = 13045,   //Script067_Insert_Totvs_People_Writes_Jobs_Into_Jobs_Table.sql
         TotvsDeleteMessages = 13046,   //Script067_Insert_Totvs_People_Writes_Jobs_Into_Jobs_Table.sql

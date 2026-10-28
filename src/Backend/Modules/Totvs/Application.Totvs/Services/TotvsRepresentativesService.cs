@@ -28,6 +28,9 @@ namespace Application.Totvs.Services
         private readonly IValidator<Domain.Totvs.Dtos.Reads.People.Representatives.Representative> _representativeValidator;
         private readonly IValidator<Domain.Totvs.Dtos.Reads.People.ReceptionSales.ReceptionSale> _receptionSaleValidator;
 
+        // grupo das escritas da API Person na configuração (Totvs:Writes:People:Enabled, T4)
+        private const string WritesGroup = "People";
+
         private const string RepresentativesKey = "Totvs:Representatives";
 
         // máximo da busca de representantes (swagger da API Person); a base tem 20 representantes (testado), então a janela é lida
@@ -676,6 +679,35 @@ namespace Application.Totvs.Services
                     _logger.AddRecord($"{record.branchCode}|{record.movementDate:yyyy-MM-dd}|{record.sequence}", json);
 
             return _listSomenteNovos.Count;
+        }
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostCustomerRepresentatives(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.People.Representatives.CustomerRepresentative body)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsPostCustomerRepresentatives);
+
+            var key = $"{(object?)body.representativeCode ?? body.representativeCpfCnpj}|{body.customerCodeList?.Count ?? body.customerCpfCnpjList?.Count}";
+
+            try
+            {
+                if (!_totvsService.IsWriteEnabled(WritesGroup))
+                    return _totvsService.WriteDisabled(WritesGroup, key);
+
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return _totvsService.CompanyNotFound(doc_company, key);
+
+                // relacionar de novo quem já está na carteira não muda nada: sem trava
+                return await _totvsService.Write(company, EnumJob.TotvsPostCustomerRepresentatives, user_name, key, HttpMethod.Post,
+                    "person/v2/customer-representatives", body, "Confira a carteira do representante antes de repetir.");
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
         }
     }
 }

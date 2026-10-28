@@ -14,7 +14,7 @@ namespace Application.Totvs.Services
         private static readonly HashSet<string> Always = new(StringComparer.OrdinalIgnoreCase)
         {
             "cpf", "personCpf", "sellerCpf", "rg", "rgIe", "ctps", "ctpsSerial", "pisNumber", "ricNumber", "passportNumber", "foreignDocumentNumber",
-            "voterRegistrationNumber", "driverLicenseNumber", "driverLicenseRegistrationNumber", "driverLicenseSecurityNumber",
+            "voterRegistrationNumber", "driverLicenseNumber", "driverLicenseRegistrationNumber", "driverLicenseSecurityNumber", "nitNumber", "cifNumber",
             "accountNumber", "accountDigit", "pixKey"
         };
 

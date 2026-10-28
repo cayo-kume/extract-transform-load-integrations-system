@@ -1156,6 +1156,90 @@ namespace Hangfire.Controllers.Totvs
             WriteResponse(await _totvsPeopleService.DeleteMessages(userName, docCompany, personCode, sequence));
 
         /// <summary>
+        /// cria ou altera um cliente pessoa física pelo cpf (POST person/v2/individual-customers); a resposta traz o customerCode. Campo ausente
+        /// não muda; "" e 0 zeram; os enums vão pelo nome. Altera cliente em uso nas lojas, inclusive bloqueio e limite de crédito
+        /// </summary>
+        [HttpPost("IndividualCustomers/{docCompany}")]
+        [Tags("TotvsPeople")]
+        public async Task<ActionResult> IndividualCustomers(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.People.Customers.IndividualCustomer body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.People.Customers.IndividualCustomer> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsPeopleService.PostIndividualCustomers(userName, docCompany, body));
+        }
+
+        /// <summary>
+        /// cria ou altera um cliente pessoa jurídica pelo cnpj (POST person/v2/legal-customers); a resposta traz o customerCode. Mesmas regras do
+        /// cliente pessoa física
+        /// </summary>
+        [HttpPost("LegalCustomers/{docCompany}")]
+        [Tags("TotvsPeople")]
+        public async Task<ActionResult> LegalCustomers(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.People.Customers.LegalCustomer body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.People.Customers.LegalCustomer> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsPeopleService.PostLegalCustomers(userName, docCompany, body));
+        }
+
+        /// <summary>
+        /// relaciona clientes a um representante (POST person/v2/customer-representatives): muda a carteira, que define comissão e roteamento de
+        /// pedidos, e a API não tem rota para desfazer
+        /// </summary>
+        [HttpPost("CustomerRepresentatives/{docCompany}")]
+        [Tags("TotvsPeople")]
+        public async Task<ActionResult> CustomerRepresentatives(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.People.Representatives.CustomerRepresentative body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.People.Representatives.CustomerRepresentative> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsRepresentativesService.PostCustomerRepresentatives(userName, docCompany, body));
+        }
+
+        /// <summary>
+        /// tira classificações de uma pessoa (POST person/v2/classification-relationship/remove), o par da lista classifications das escritas de
+        /// cliente, que só inclui
+        /// </summary>
+        [HttpPost("ClassificationRelationship/{docCompany}/Remove")]
+        [Tags("TotvsPeople")]
+        public async Task<ActionResult> RemoveClassificationRelationship(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.People.Classifications.RemoveClassificationRelationship body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.People.Classifications.RemoveClassificationRelationship> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsPeopleService.PostRemoveClassificationRelationship(userName, docCompany, body));
+        }
+
+        /// <summary>
         /// inclui ou altera uma cor (POST product/v2/colors). Um code que já existe é alterado, e o nome novo vale em todas as referências
         /// que usam a cor; as lojas de colorInfoAdditionals precisam ser da empresa
         /// </summary>

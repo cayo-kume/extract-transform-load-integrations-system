@@ -2311,7 +2311,7 @@ onda 2 que entrar monta a base das leituras sem persistência (T11, §8.1).
 | PE-3 | 2 | `TotvsPeopleService` | `GetBranches`, `GetPersonStatistics` | 13036, 13037 | base T11 **Implementada em 28/10/2026** (§10.13) |
 | PE-4 | 2 | `TotvsBonusService` | token por loja (PE3) + `PostListBalanceBonus` | 13038 | PE-3 **Implementada em 28/10/2026** (§10.13) |
 | PE-5 | 3 | `TotvsPeopleService` | `PostMessages`, `PutChangeMessages`, `DeleteMessages` | 13044–13046 | AP-1 **Implementada em 28/10/2026** (§10.14), com a base comum das escritas e a trava T5 |
-| PE-6 | 4 | `TotvsPeopleService`, `TotvsRepresentativesService` | `PostRemoveClassificationRelationship`, `PostCustomerRepresentatives`, `PostIndividualCustomers`, `PostLegalCustomers` | 13040–13043 | PE-1 (valida os códigos nos catálogos), PE-5, T3 e T6 |
+| PE-6 | 4 | `TotvsPeopleService`, `TotvsRepresentativesService` | `PostRemoveClassificationRelationship`, `PostCustomerRepresentatives`, `PostIndividualCustomers`, `PostLegalCustomers` | 13040–13043 | PE-1 (valida os códigos nos catálogos), PE-5, T3 e T6. **Implementada em 28/10/2026** (§10.21), sem a conferência nos catálogos |
 | PE-7 | 5 | `TotvsBonusService` | `PostBonusDueDate`, `PostBonusConsume` | 13047, 13048 | PE-4 (saldo antes do consumo, PE4), T4, T5 |
 
 #### Seller (`TotvsSellersService`, §4)
@@ -3155,3 +3155,48 @@ desligada; agrupamento aceito com a chave gerada na resposta, repetido (409) e c
 
 **Não verificado:** a chamada em homologação (cria duplicata de verdade no financeiro da homologação: fica para a rodada da onda 4); se a API
 aceita agrupar uma parcela só (§2.2).
+
+### 10.21 Fase PE-6: clientes, representante do cliente e remoção de classificação (28/10/2026)
+
+| Peça | Onde |
+|---|---|
+| DTOs `IndividualCustomer`, `LegalCustomer` e as filhas (`PhoneIn`, `AddressIn`, `EmailIn`, `ReferenceIn`, `ObservationIn`, `AdditionalFieldIn`, `ClassificationIn`, `LimitIn`, `SocialNetworkIn`, `BankAccountIn`, `IndividualAdditional`, `PartnerIn`, `ContactIn`, `Preferences`), `CustomerEnumNames` | `Domain.Totvs/Dtos/Writes/People/Customers` |
+| `CustomerRepresentative`; `RemoveClassificationRelationship`, `RemoveClassification` | `.../People/Representatives`, `.../People/Classifications` |
+| `RawJsonConverter` (o `value` do campo adicional vai à Totvs como chegou) | `Domain.Totvs/Dtos/Writes` |
+| Validadores de cliente (um por classe), `CustomerRules` (CPF e CNPJ com dígito verificador, data, enum pelo nome, `value`); `CustomerRepresentativeValidator`; `RemoveClassificationRelationshipValidator` | `Application.Totvs/Validations/Writes/People/...` |
+| `PostIndividualCustomers` (13040), `PostLegalCustomers` (13041), `PostRemoveClassificationRelationship` (13043) | `TotvsPeopleService` (PE9) |
+| `PostCustomerRepresentatives` (13042) | `TotvsRepresentativesService` (PE9) |
+| Rotas `POST IndividualCustomers/{docCompany}`, `LegalCustomers/{docCompany}`, `CustomerRepresentatives/{docCompany}`, `ClassificationRelationship/{docCompany}/Remove` | `TotvsController` |
+| `Script071` (jobs 13040–13043) | `Infrastructure.Totvs/Scripts/SQLServer` |
+
+**Regras:**
+* **Enums pelo nome (PE6):** o swagger da API Person declara esses enums como `string` (`gender`: `NotInformed`, `Female`, `Male`...). Os
+  DTOs levam o nome como texto, conferido contra `CustomerEnumNames`; assim `""` e `"NotInformed"`, que zeram o campo, passam como a
+  descrição manda. Vale também para quem chama o host, que lê o corpo com o `System.Text.Json`.
+* **Zerar:** nulo não muda e não vai; `""` (texto, data e enum) e `0` (número) passam no validador e vão à Totvs.
+* **Obrigatórios do validador:** `branchInsertCode`, o documento (`cpf` ou `cnpj`, com dígito verificador; é a chave em `TotvsRequests`) e
+  `name` (o service não sabe se é inclusão). Nos filhos: `code` do campo adicional, tipo e código da classificação, `branchCode` do limite,
+  sócio por `cpfPartner` **ou** `partnerCode`. No máximo um `isDefault` em telefones, e-mails e contatos; participação dos sócios até 100.
+* **Datas** em texto `yyyy-MM-dd` (a descrição diz "1900-01-01"); `insertDate` e o nascimento do contato são `date-time`.
+* **`value` do campo adicional:** chega como `JsonElement` e vai como veio (texto até 80, número com até 12 inteiros e 6 decimais ou data
+  `DD/MM/YYYY`), pelo `RawJsonConverter`.
+* **Lojas:** a loja de cadastro e as dos limites precisam ser da empresa (422 sem chamar).
+* **Sem trava (T5):** cliente é inclusão ou alteração pelo documento; vínculo e remoção repetidos não mudam nada.
+* **T6:** os documentos da PF (`cpf`, `rg`, `ctps`, PIS, RIC, passaporte, CNH, título, NIT e CIF), a conta, o dígito e a chave PIX vão
+  mascarados para o `request_body`; o CPF fica inteiro na chave. `nitNumber` e `cifNumber` entraram na lista do `TotvsMasking`. O CPF do
+  sócio e os de `customerCpfCnpjList` são mascarados pela regra dos campos de CPF ou CNPJ.
+
+**Fora do plano:** a conferência dos tipos de telefone, e-mail, contato e classificação nos catálogos da PE-1 (PE6, "quando gravados") não
+entrou: a Totvs recusa um código inexistente com 400, que volta como 422 com a mensagem dela.
+
+**Testes (console de rascunho, Totvs falsa):** PF lida do JSON como o host lê (enums em texto, `value` como `JsonElement`) e validada;
+vazia; CPF com dígito errado, nome de 61, data `dd/MM/yyyy`, enum desconhecido; zerar com `""`, `0` e `NotInformed`; dois telefones
+padrão, CEP com traço, loja do limite repetida, `value` grande e sem `code`; filhos com enum e tamanho errados. PF aceita (200 com o
+`customerCode`), corpo enviado com os enums pelo nome, o `value` como veio e sem nulos; corpo gravado sem CPF, RG, passaporte, PIS, conta e
+PIX; reenviada chama de novo; limite e loja de cadastro de outra empresa (422 sem chamar); 400 da Totvs. PJ válida e com CNPJ, UF, sócios,
+contatos, e-mail e frete errados; aceita, com `isCommercialExp: false` enviado e o CPF do sócio mascarado no gravado. Vínculo: válido, sem
+nada, com os dois de cada, cliente repetido, documento ruim, 501 clientes; aceito por código e por documento. Remoção: válida, vazia, sem
+código e repetida; aceita. Escrita desligada.
+
+**Não verificado:** a chamada em homologação (cria ou altera cliente de verdade), inclusive o enum pelo nome, o reset com `""` e o
+`isCommercialExp`; se a remoção sem `classificationCode` tira todas do tipo; o `Script071` em banco e as rotas pelo host.

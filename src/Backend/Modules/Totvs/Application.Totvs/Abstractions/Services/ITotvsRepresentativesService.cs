@@ -22,5 +22,11 @@
         /// só grava as novas ou alteradas
         /// </summary>
         public Task<bool?> GetSearchReceptionSale();
+
+        /// <summary>
+        /// relaciona clientes a um representante (POST person/v2/customer-representatives). A API não tem rota para desfazer o vínculo; ele
+        /// volta ao banco pelos jobs de PF/PJ e de representantes
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PostCustomerRepresentatives(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.People.Representatives.CustomerRepresentative body);
     }
 }

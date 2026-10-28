@@ -57,5 +57,21 @@
         /// exclui uma mensagem da pessoa (DELETE person/v2/messages), em definitivo e só se não lida (a Totvs recusa as outras); cancelar pelo PutChangeMessages é o caminho normal (PE8)
         /// </summary>
         public Task<Domain.Totvs.Dtos.Writes.Result> DeleteMessages(string user_name, string doc_company, int personCode, int sequence);
+
+        /// <summary>
+        /// cria ou altera um cliente pessoa física pelo cpf (POST person/v2/individual-customers); a resposta traz o customerCode. Os documentos,
+        /// a conta e a chave PIX vão mascarados para totvs.TotvsRequests (T6)
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PostIndividualCustomers(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.People.Customers.IndividualCustomer body);
+
+        /// <summary>
+        /// cria ou altera um cliente pessoa jurídica pelo cnpj (POST person/v2/legal-customers); a resposta traz o customerCode
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PostLegalCustomers(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.People.Customers.LegalCustomer body);
+
+        /// <summary>
+        /// tira classificações de uma pessoa (POST person/v2/classification-relationship/remove)
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PostRemoveClassificationRelationship(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.People.Classifications.RemoveClassificationRelationship body);
     }
 }

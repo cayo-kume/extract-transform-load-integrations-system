@@ -214,6 +214,10 @@ Os nomes dos métodos são os da **documentação oficial** (`PostSearch*`, `Get
 | `TotvsPeopleService` | `PostMessages` | `POST person/v2/messages` (com a trava de repetição) | 13044 | `Totvs:Writes:People:Enabled` |
 | `TotvsPeopleService` | `PutChangeMessages` | `PUT person/v2/messages/change` | 13045 | `Totvs:Writes:People:Enabled` |
 | `TotvsPeopleService` | `DeleteMessages` | `DELETE person/v2/messages` | 13046 | `Totvs:Writes:People:Enabled` |
+| `TotvsPeopleService` | `PostIndividualCustomers` | `POST person/v2/individual-customers` (inclusão e alteração) | 13040 | `Totvs:Writes:People:Enabled` |
+| `TotvsPeopleService` | `PostLegalCustomers` | `POST person/v2/legal-customers` (inclusão e alteração) | 13041 | `Totvs:Writes:People:Enabled` |
+| `TotvsRepresentativesService` | `PostCustomerRepresentatives` | `POST person/v2/customer-representatives` | 13042 | `Totvs:Writes:People:Enabled` |
+| `TotvsPeopleService` | `PostRemoveClassificationRelationship` | `POST person/v2/classification-relationship/remove` | 13043 | `Totvs:Writes:People:Enabled` |
 | `TotvsProductCatalogsService` | `PostColors` | `POST product/v2/colors` (inclusão e alteração) | 13124 | `Totvs:Writes:Products:Enabled` |
 | `TotvsProductCatalogsService` | `PostGrids` | `POST product/v2/grids` (com a trava de repetição) | 13126 | `Totvs:Writes:Products:Enabled` |
 | `TotvsPurchaseOrdersService` | `PostPurchaseOrdersChangeStatus` | `POST purchase-order/v2/orders/change-status` | 13182 | `Totvs:Writes:PurchaseOrders:Enabled` |
@@ -350,6 +354,7 @@ O DbUp executa cada script uma única vez, em ordem alfabética. Alterar um scri
 | `Script068` | Jobs das escritas da API Product (cores e grades, 13124 e 13126) |
 | `Script069` | Jobs das escritas da API Purchase Order (situação do pedido, 13182) |
 | `Script070` | Jobs das escritas da API Sales Order (dados adicionais, transporte, observações e itens, 13201–13203 e 13207) |
+| `Script071` | Jobs das escritas de cadastro da API Person (clientes PF e PJ, representante do cliente e remoção de classificação, 13040–13043) |
 
 **Regras gerais das tabelas e dos merges:**
 * Toda tabela de dados existe em dois schemas: `untreated` (recebe o bulk insert, sem chave) e `totvs` (tabela final, com PK). A exceção é `totvs.TotvsRequests`, que só recebe inserts.
@@ -480,6 +485,10 @@ escritas de pedido de venda, a **chave do pedido** é `branchCode` + `orderCode`
 | POST | `Messages/{docCompany}` | `personCode` **ou** `personCpfCnpj`; `messages` (`description` até 200, `priority`) | `PostMessages` (devolve as `sequence`) |
 | PUT | `Messages/{docCompany}/Change` | `filter` (`personCode` **ou** `personCpfCnpj`, `sequence`); `description` (obrigatória: a Totvs recusa a alteração sem ela); `status` (1 não lida, 2 lida, 3 cancelada) e `priority` opcionais | `PutChangeMessages` |
 | DELETE | `Messages/{docCompany}/{personCode}/{sequence}` | — (exclusão definitiva, só de mensagem **não lida**; prefira o `PUT` com `status` 3) | `DeleteMessages` |
+| POST | `IndividualCustomers/{docCompany}` | `branchInsertCode` (loja da empresa), `cpf` (com dígito verificador), `name` e o que mudar: campo ausente não muda; `""`, `0` e `"NotInformed"` zeram; enums **pelo nome** (`gender`: `Female`...); listas de telefones, endereços, e-mails, classificações (só inclui), limites por loja da empresa, contas bancárias e `individualAdditionals` | `PostIndividualCustomers` (devolve o `customerCode`) |
+| POST | `LegalCustomers/{docCompany}` | `branchInsertCode`, `cnpj` (com dígito verificador), `name` e o que mudar, com as mesmas regras; sócios (`cpfPartner` **ou** `partnerCode`, participação até 100), contatos e `preferences` | `PostLegalCustomers` (devolve o `customerCode`) |
+| POST | `CustomerRepresentatives/{docCompany}` | `representativeCode` **ou** `representativeCpfCnpj`; `customerCodeList` **ou** `customerCpfCnpjList` (até 500, sem repetição) | `PostCustomerRepresentatives` (sem rota para desfazer) |
+| POST | `ClassificationRelationship/{docCompany}/Remove` | `personCode`, `classifications` (`classificationTypeCode` e `classificationCode`) | `PostRemoveClassificationRelationship` |
 | POST | `Products/{docCompany}/Colors` | `code` (10), `name` (40); `colorInfoAdditionals` por loja da empresa (`branchCode`, `auxiliaryCode`, `auxiliaryName`, `pantoneCode`, usos) | `PostColors` (um `code` existente é renomeado em todas as referências) |
 | POST | `Products/{docCompany}/Grids` | `gridCode` (opcional, 6), `name` (40), `type`; `gridSizes` (`name` até 10, sem repetição) | `PostGrids` (devolve o `gridCode`) |
 | POST | `PurchaseOrders/{docCompany}/ChangeStatus` | `branchCode` (loja da empresa), `orderCode`, `status` (1 em andamento, 5 bloqueado) | `PostPurchaseOrdersChangeStatus` (com o pedido no banco, só entre essas duas situações) |
@@ -576,6 +585,7 @@ Os jobs ficam em `auditing.Jobs`, com os mesmos ids em `EnumJob`.
 | 13018 | `TotvsPostDuplicates` | escrita |
 | 13019 | `TotvsPostGroupDuplicates` | escrita |
 | 13020 | `TotvsPostDuplicatesInstallmentsStage` | escrita |
+| 13040–13043 | `TotvsPostIndividualCustomers`, `TotvsPostLegalCustomers`, `TotvsPostCustomerRepresentatives`, `TotvsPostRemoveClassificationRelationship` | escrita |
 | 13044–13046 | `TotvsPostMessages`, `TotvsPutChangeMessages`, `TotvsDeleteMessages` | escrita |
 | 13124, 13126 | `TotvsPostColors`, `TotvsPostGrids` | escrita |
 | 13182 | `TotvsPostPurchaseOrdersChangeStatus` | escrita |
