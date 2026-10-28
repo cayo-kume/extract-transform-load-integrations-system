@@ -543,7 +543,7 @@ escritas de pedido de venda, a **chave do pedido** é `branchCode` + `orderCode`
 | POST | `Products/{docCompany}/BarCodes/Update` | `products` (`productCode`; `barCodes` com `barCode`, `quantity` decimal > 0, `isMainCode`) | `PostUpdateBarcodes` |
 | POST | `Products/{docCompany}/ClassificationRelationships/Create` | `products` (`productCode` **ou** `referenceId`; `classifications` com `typeCode`, nunca 6000, e `code`) | `PostCreateClassificationRelationship` |
 | POST | `Products/{docCompany}/ClassificationRelationships/Update` | o mesmo corpo | `PostUpdateClassificationRelationship` |
-| POST | `Products/{docCompany}/References` | máscara, grade, um grupo por nível, empresas (lojas da empresa), SKUs com nome, cor, tamanho e unidade, cada um com a classificação 6000 da marca (`2` ou `4`); sem `values` | `PostReferences` (devolve os `productCode`) |
+| POST | `Products/{docCompany}/References` | máscara, grade, um grupo por nível (grupos que já existem no ERP, PRDFL018, com a descrição; a combinação precisa ser nova), empresas (lojas da empresa), SKUs com nome, cor, tamanho e unidade, cada um com a classificação 6000 da marca (`2` ou `4`); sem `values` | `PostReferences` (devolve os `productCode`) |
 | POST | `Products/{docCompany}/Batches/Create` | `batchs` (loja da empresa, produto, saldo; itens com nota de inspeção por `supplierCode` **ou** `supplierCpfCnpj`) | `PostCreateBatch` |
 | PUT | `Products/{docCompany}/BatchInfo` | `batchItems` (loja + lote + sequência **ou** `itemClient`; `dataChanged` com pelo menos um dado) | `PutBatchInfo` |
 | POST | `Products/{docCompany}/BatchPreferentialSalesOrder` | item por lote + sequência **ou** `batchItemBarCode`; pedidos por loja e `orderCode` **ou** `orderId`. Lista vazia só com `?clear=true` (só apaga) | `PostBatchPreferentialSalesOrder` |
@@ -763,7 +763,7 @@ cada fase ("Não verificado"). Em resumo:
 
 * **Execução em banco e pelo host:** os scripts e as rotas ainda não rodaram pelo host; a modelagem foi conferida com chamadas reais à API
   e as escritas com um console contra a homologação, sem banco.
-* **Homologação:** as ondas 3, 4 e 5 foram testadas (plano, §10.19, §10.25 e §10.32 a §10.40), inclusive a troca de estágio da parcela (AP-1). Sem verificar: a inclusão de referência
+* **Homologação:** as ondas 3, 4 e 5 foram testadas (plano, §10.19, §10.25 e §10.32 a §10.41), inclusive a troca de estágio da parcela (AP-1). Sem verificar: a inclusão de referência
   (falta a máscara do PRDFM236 com os níveis), os lotes e o que depende deles (a homologação não tem lote nem produto com controle de lote:
   `ProductNotFound`), a sugestão por nuance (503 sem corpo), o vínculo com contagem real (o formato foi conferido) e o **consumo de bônus**
   (o crédito é aceito, mas o saldo continua 0: a conferir no PESFC054). A manifestação foi feita com uma nota fictícia (efeito fiscal com a área

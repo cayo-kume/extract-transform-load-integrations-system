@@ -90,7 +90,8 @@
 
         /// <summary>
         /// inclui uma referência com os SKUs (POST product/v2/references); a resposta traz os productCode gerados. Sem preços (PR11); o mesmo
-        /// corpo em 10 minutos volta 409 (T5)
+        /// corpo em 10 minutos volta 409 (T5). Cada grupo dos níveis precisa já existir (PRDFL018) e a combinação ser nova: grupo inexistente
+        /// volta 500 sem corpo, e sem o código 400 (testado)
         /// </summary>
         public Task<Domain.Totvs.Dtos.Writes.Result> PostReferences(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.References.InsertReference body);
 

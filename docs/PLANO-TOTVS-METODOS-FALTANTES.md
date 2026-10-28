@@ -3715,3 +3715,21 @@ estava (bloqueado, sem o produto).
 `batch/create`. **Seguem abertos:** a sugestão por nuance (503, a levar à Totvs), a referência (as descrições dos grupos OA24 e BE), o
 `batch-link` do pedido de compra (precisa da nota de entrada do 1\|143), a contagem sem pedido e o saldo de bônus (o `TP_BONUS_DESCONTO`
 da loja 1 é 14, como pede o consumo).
+
+### 10.41 PR-5: inclusão de referência (28/10/2026)
+
+A máscara do produto 15687 (PRDFM236): código nível **1** "PRODUTO OPEN ERA", **3 níveis** (OE ANO, OE MOD, OE REF), grupos `OA24` / `BE` /
+`11405`. O botão "Nr. automático" do último nível abre o **PRDFL018 (Lista Grupo)**: os grupos de cada nível são um cadastro próprio, e a
+referência só combina grupos que já existem. Modos `erp2`, `erp3`, `clean` e `ref` do console da §10.32.
+
+| Tentativa | Resultado |
+|---|---|
+| Último nível com um código novo (`97159`, que não existe no PRDFL018), com e sem CST, peso e CEST | **500 sem corpo**, nada gravado (conferido no PRDFM236) |
+| Último nível sem código | **400 `GeneralMessage: Object reference not set` (`ReferenceRepository.GetByParentReference`)**: a API não numera o nível |
+| `OA24 BE` com sete grupos existentes do PRDFL018 | Todas as combinações já eram referências (a busca por `referenceCodeList` confere; o `totalItems` é o tamanho da página, não o total) |
+| **`OA24` / `BL` / `11405`**, grupos existentes, com a descrição de todos os níveis, grade 7, SKU cor 107 tamanho PP, CST 0, NCM, CEST, peso e marca 4 | **201** com o `productCode` **31219**; relida como `OA24 BL 11405` (`referenceId` 8247), grade 7, peso 0,3, cor 107 |
+
+**Regra (anotada na interface e no README):** cada grupo precisa existir no ERP e a combinação ser nova; o validador já exigia o código e a
+descrição de todos os níveis. A PR-5 fica verificada em homologação, menos a classificação no tipo 9001 (`ORA-02291`).
+
+**Ficou na homologação:** a referência `OA24 BL 11405` "TESTE INTEGRACAO BL 11405" com o produto 31219 (cor 107, tamanho PP).
