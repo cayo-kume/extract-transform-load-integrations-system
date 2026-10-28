@@ -1,0 +1,17 @@
+{
+  "count": 1,
+  "totalPages": 1,
+  "hasNext": false,
+  "totalItems": 1,
+  "items": [
+    {
+      "code": 1,
+      "name": "Exemplo name",
+      "type": "Exemplo type",
+      "maxChangeFilterDate": "2026-10-28T00:00:00",
+      "grid": [
+        "Exemplo grid"
+      ]
+    }
+  ]
+}

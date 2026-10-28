@@ -1,0 +1,10 @@
+{
+  "representativeCode": 1,
+  "representativeCpfCnpj": "12345678000190",
+  "customerCodeList": [
+    1
+  ],
+  "customerCpfCnpjList": [
+    "12345678000190"
+  ]
+}

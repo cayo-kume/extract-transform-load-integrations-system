@@ -1,0 +1,106 @@
+{
+  "branchCnpj": "12345678000190",
+  "supplierCpfCnpj": "12345678000190",
+  "duplicateCode": 1000,
+  "installments": [
+    {
+      "installmentCode": 1,
+      "bearerCode": 1,
+      "issueDate": "2026-10-28T00:00:00",
+      "dueDate": "2026-10-28T00:00:00",
+      "arrivalDate": "2026-10-28T00:00:00",
+      "document": 1,
+      "prevision": 1,
+      "stage": 1,
+      "duplicateValue": 10.5,
+      "punctualityDiscountValue": 10.5,
+      "punctualityDiscountPercentage": 10.5,
+      "advanceDiscountValue1": 10.5,
+      "advanceDiscountPercentage1": 10.5,
+      "advanceDiscountValue2": 10.5,
+      "advanceDiscountPercentage2": 10.5,
+      "advanceDiscountDate1": "2026-10-28T00:00:00",
+      "advanceDiscountDate2": "2026-10-28T00:00:00",
+      "advanceDiscount1": 0,
+      "advanceDiscount2": 0,
+      "advanceDiscount": 0,
+      "assessmentValue": 10.5,
+      "assessmentPercentage": 10.5,
+      "assessmentDate": "2026-10-28T00:00:00",
+      "interestDayValue": 10.5,
+      "interestDayPercentage": 10.5,
+      "expenseFinancial": 10.5,
+      "additionValue": 10.5,
+      "outherAdditionalsValue": 10.5,
+      "supplierOutputDate": "2026-10-28T00:00:00",
+      "indemnityValue": 10.5,
+      "isAccumulatedDiscount": true,
+      "taxValue": 10.5,
+      "taxCalculationBasePercentage": 10.5,
+      "expenses": [
+        {
+          "expenseCode": 1,
+          "costCenterCode": 1,
+          "proratedPercentage": 10.5,
+          "proratedValue": 10.5
+        }
+      ],
+      "observations": [
+        {
+          "observation": "Exemplo observation"
+        }
+      ],
+      "billingAccept": {
+        "barCode": "Exemplo barCode",
+        "assignorCnpj": "12345678000190"
+      },
+      "classifications": [
+        {
+          "classificationType": 1,
+          "classificationTypeDescription": "Exem",
+          "classificationCode": "Exemplo cl",
+          "classificationDescription": "Exem"
+        }
+      ],
+      "additionalFields": [
+        {
+          "typeFieldCode": 1,
+          "descriptionField": "Exemplo descriptionField",
+          "numericField": 10.5,
+          "dateField": "2026-10-28T00:00:00"
+        }
+      ],
+      "taxAdditional": {
+        "revenue": 1,
+        "calculationPeriod": "2026-10-28T00:00:00",
+        "competenceDate": "2026-10-28T00:00:00",
+        "reference": "Exemplo reference",
+        "grossRevenueValue": 10.5,
+        "isThirteenthSalary": true,
+        "otherEntitiesValue": 10.5
+      },
+      "taxDuplicates": [
+        {
+          "tax": 1,
+          "branchCnpj": "12345678000190",
+          "suplierCpfCnpj": "12345678000190",
+          "duplicateCodeTax": 1000,
+          "installmentCodeTax": 1,
+          "ratePercentage": 10.5,
+          "taxValue": 10.5,
+          "status": 0,
+          "baseCalculationValue": 10.5,
+          "baseCalculationPercentage": 10.5,
+          "retentionType": 1,
+          "dirfRevenue": "Exem"
+        }
+      ],
+      "businessUnits": [
+        {
+          "classificationCode": "Exemplo cl",
+          "proratedPercentage": 10.5
+        }
+      ]
+    }
+  ]
+}

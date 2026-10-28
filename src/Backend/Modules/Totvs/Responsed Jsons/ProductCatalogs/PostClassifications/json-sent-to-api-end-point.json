@@ -1,0 +1,12 @@
+{
+  "typeCode": 1,
+  "description": "Exemplo description",
+  "auxiliaryDescription": "Exemplo auxiliaryDescription",
+  "classifications": [
+    {
+      "code": "Exemplo code",
+      "description": "Exemplo description",
+      "auxiliaryDescription": "Exemplo auxiliaryDescription"
+    }
+  ]
+}

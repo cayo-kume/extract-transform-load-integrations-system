@@ -1,0 +1,26 @@
+{
+  "count": 1,
+  "totalPages": 1,
+  "hasNext": false,
+  "totalItems": 1,
+  "items": [
+    {
+      "productCode": 1,
+      "productName": "Exemplo productName",
+      "productSku": "Exemplo productSku",
+      "referenceCode": "Exemplo referenceCode",
+      "colorCode": "Exemplo colorCode",
+      "colorName": "Exemplo colorName",
+      "sizeName": "Exemplo sizeName",
+      "maxChangeFilterDate": "2026-10-28T00:00:00",
+      "costs": [
+        {
+          "branchCode": 1,
+          "costCode": 10.5,
+          "costName": "Exemplo costName",
+          "cost": 10.5
+        }
+      ]
+    }
+  ]
+}

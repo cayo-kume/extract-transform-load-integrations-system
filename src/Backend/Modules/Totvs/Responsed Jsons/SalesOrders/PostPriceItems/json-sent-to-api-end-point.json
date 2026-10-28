@@ -1,0 +1,12 @@
+{
+  "branchCode": 1,
+  "orderCode": 1,
+  "orderId": "Exemplo orderId",
+  "items": [
+    {
+      "productCode": 1,
+      "productSku": "Exemplo productSku",
+      "price": 10.5
+    }
+  ]
+}

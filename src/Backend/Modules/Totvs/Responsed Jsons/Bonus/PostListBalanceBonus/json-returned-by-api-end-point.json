@@ -1,0 +1,9 @@
+{
+  "balanceBonus": [
+    {
+      "branchCode": 1,
+      "branchCnpj": "12345678000190",
+      "balanceValue": 10.5
+    }
+  ]
+}

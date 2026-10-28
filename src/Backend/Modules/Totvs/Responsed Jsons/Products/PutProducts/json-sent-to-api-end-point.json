@@ -1,0 +1,10 @@
+{
+  "ncmCode": "Exemplo ncmCode",
+  "cstCode": 0,
+  "weight": 10.5,
+  "isOwnProduction": true,
+  "isInactive": true,
+  "isFinishedProduct": true,
+  "isRawMaterial": true,
+  "isBulkMaterial": true
+}

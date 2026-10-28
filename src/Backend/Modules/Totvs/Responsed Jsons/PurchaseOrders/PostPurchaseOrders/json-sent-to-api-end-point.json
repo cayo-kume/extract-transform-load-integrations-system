@@ -1,0 +1,90 @@
+{
+  "branchCode": 1,
+  "supplierCode": 1,
+  "supplierCpfCnpj": "12345678000190",
+  "buyerCode": 1,
+  "buyerCpfCnpj": "12345678000190",
+  "operationCode": 1,
+  "paymentConditionCode": 1,
+  "status": 1,
+  "orderDate": "2026-10-28T00:00:00",
+  "supplierOrderCode": "Exemplo supplierOrde",
+  "paymentType": 1,
+  "shippingCompanyCode": 1,
+  "shippingCompanyCpfCnpj": "12345678000190",
+  "freightType": 1,
+  "deliveryForecastDate": "2026-10-28T00:00:00",
+  "deliveryDeadlineDate": "2026-10-28T00:00:00",
+  "basePaymentDate": "2026-10-28T00:00:00",
+  "totalAmountOrder": 10.5,
+  "items": [
+    {
+      "productCode": 1,
+      "productSku": "Exemplo productSku",
+      "value": 10.5,
+      "discountPercentage": 10.5,
+      "ipiPercentage": 10.5,
+      "quantity": 10.5,
+      "deliveryForecastDate": "2026-10-28T00:00:00",
+      "deliveryDeadlineDate": "2026-10-28T00:00:00",
+      "itemsValues": [
+        {
+          "valueType": "P",
+          "valueCode": 1,
+          "value": 10.5
+        }
+      ],
+      "itemsExpenses": [
+        {
+          "expenseCode": 1,
+          "expensePercentage": 10.5,
+          "costCenter": 1
+        }
+      ]
+    }
+  ],
+  "classifications": [
+    {
+      "classificationTypeCode": 1,
+      "classificationCode": "Exemplo cl"
+    }
+  ],
+  "observations": [
+    {
+      "observation": "Exemplo observation",
+      "visualizationType": 1
+    }
+  ],
+  "expenses": [
+    {
+      "expenseCode": 1,
+      "expensePercentage": 10.5,
+      "costCenter": 1
+    }
+  ],
+  "discounts": [
+    {
+      "discountTypeCode": 1,
+      "discountPercentage": 10.5
+    }
+  ],
+  "additionalFields": [
+    {
+      "code": 1,
+      "value": null
+    }
+  ],
+  "additionalData": {
+    "currencyCode": 1,
+    "currencyRateValue": 10.5,
+    "costCenter": 1,
+    "maximumExtraQuantityPercentage": 10.5,
+    "maximumExtraQuantity": 10.5,
+    "settleType": 0,
+    "accessoryExpensePercentage": 10.5,
+    "freightPercentage": 10.5,
+    "insurancePercentage": 10.5,
+    "interstatePurchaseReason": "Exemplo interstatePurchaseReason",
+    "taxRuleCode": 1
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "branchCode": 1,
+  "orderCode": 1,
+  "orderId": "Exemplo orderId",
+  "shippingCompanyCode": 1,
+  "shippingCompanyCpfCnpj": "12345678000190",
+  "redispatchingShippingCompanyCode": 1,
+  "redispatchingShippingCompanyCpfCnpj": "12345678000190",
+  "redispatchingFreightType": 1,
+  "freightType": 1,
+  "freightPercentage": 10.5,
+  "freightValue": 10.5,
+  "shippingAddress": {
+    "cep": "01001000",
+    "publicPlace": "Exemplo pu",
+    "address": "Exemplo address",
+    "number": 1,
+    "complement": "Exemplo complement"
+  }
+}

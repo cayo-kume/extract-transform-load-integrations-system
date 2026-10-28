@@ -1,0 +1,21 @@
+{
+  "branchCode": 1,
+  "personCode": 1,
+  "bonusType": 1,
+  "movementDate": "2026-10-28T00:00:00",
+  "bonusValue": 10.5,
+  "usedValue": 10.5,
+  "startDate": "2026-10-28T00:00:00",
+  "endDate": "2026-10-28T00:00:00",
+  "transactionBranchCode": 1,
+  "transactionDate": "2026-10-28T00:00:00",
+  "transactionNumber": 1,
+  "invoiceBranchCode": 1,
+  "invoiceClientCode": 1,
+  "invoiceNumber": 1,
+  "installmentNumber": 1,
+  "settlementBranchCode": 1,
+  "settlementDate": "2026-10-28T00:00:00",
+  "settlementSequenceNumber": 1,
+  "historic": "Exemplo historic"
+}

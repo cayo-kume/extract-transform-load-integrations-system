@@ -1,0 +1,11 @@
+{
+  "StartChangeDate": "2026-10-28T00:00:00",
+  "EndChangeDate": "2026-10-28T00:00:00",
+  "ClassificationTypeList": [
+    1
+  ],
+  "IsGroup": true,
+  "Order": "Exemplo Order",
+  "Page": 1,
+  "PageSize": 1
+}

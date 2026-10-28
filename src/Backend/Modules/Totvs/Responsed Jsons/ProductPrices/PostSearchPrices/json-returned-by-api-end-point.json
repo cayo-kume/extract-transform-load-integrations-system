@@ -1,0 +1,66 @@
+{
+  "count": 1,
+  "totalPages": 1,
+  "hasNext": false,
+  "totalItems": 1,
+  "items": [
+    {
+      "productCode": 1,
+      "productName": "Exemplo productName",
+      "productSku": "Exemplo productSku",
+      "referenceCode": "Exemplo referenceCode",
+      "colorCode": "Exemplo colorCode",
+      "colorName": "Exemplo colorName",
+      "sizeName": "Exemplo sizeName",
+      "maxChangeFilterDate": "2026-10-28T00:00:00",
+      "prices": [
+        {
+          "branchCode": 1,
+          "priceCode": 10.5,
+          "priceName": "Exemplo priceName",
+          "price": 10.5,
+          "promotionalPrice": 10.5,
+          "promotionalInformation": {
+            "branchCode": 1,
+            "code": 1,
+            "description": "Exemplo description",
+            "startDate": "2026-10-28T00:00:00",
+            "endDate": "2026-10-28T00:00:00"
+          },
+          "informationOtherPromotions": [
+            {
+              "branchCode": 1,
+              "code": 1,
+              "description": "Exemplo description",
+              "startDate": "2026-10-28T00:00:00",
+              "endDate": "2026-10-28T00:00:00",
+              "price": 10.5
+            }
+          ]
+        }
+      ],
+      "digitalPromotionPrices": {
+        "code": 1,
+        "description": "Exemplo description",
+        "startDate": "2026-10-28T00:00:00",
+        "endDate": "2026-10-28T00:00:00",
+        "price": 10.5,
+        "branchs": [
+          1
+        ],
+        "informationOtherDigitalPromotions": [
+          {
+            "code": 1,
+            "description": "Exemplo description",
+            "startDate": "2026-10-28T00:00:00",
+            "endDate": "2026-10-28T00:00:00",
+            "price": 10.5,
+            "branchs": [
+              1
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

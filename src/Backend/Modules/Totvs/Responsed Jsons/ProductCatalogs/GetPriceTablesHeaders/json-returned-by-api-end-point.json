@@ -1,0 +1,55 @@
+{
+  "count": 1,
+  "totalPages": 1,
+  "hasNext": false,
+  "totalItems": 1,
+  "items": [
+    {
+      "code": 1,
+      "description": "Exemplo description",
+      "codeName": "Exemplo codeName",
+      "type": 1,
+      "maxChangeFilterDate": "2026-10-28T00:00:00",
+      "startDate": "2026-10-28T00:00:00",
+      "endDate": "2026-10-28T00:00:00",
+      "variationPercentage": 10.5,
+      "variationValue": 10.5,
+      "salesOrderClassification": [
+        {
+          "typeCode": 1,
+          "typeName": "Exemplo typeName",
+          "code": "Exemplo code",
+          "name": "Exemplo name"
+        }
+      ],
+      "personClassification": [
+        {
+          "typeCode": 1,
+          "typeName": "Exemplo typeName",
+          "code": "Exemplo code",
+          "name": "Exemplo name"
+        }
+      ],
+      "paymentConditions": [
+        {
+          "code": 1,
+          "name": "Exemplo name"
+        }
+      ],
+      "averagePeriod": [
+        {
+          "quantity": 1,
+          "variationValue": 10.5,
+          "variationPercentage": 10.5
+        }
+      ],
+      "averagePeriodQuantity": [
+        {
+          "averagePeriod": 1,
+          "variationQuantity": 10.5,
+          "variationPercentage": 10.5
+        }
+      ]
+    }
+  ]
+}

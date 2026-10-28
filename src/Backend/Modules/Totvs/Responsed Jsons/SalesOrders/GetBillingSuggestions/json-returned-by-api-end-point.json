@@ -1,0 +1,40 @@
+{
+  "count": 1,
+  "totalPages": 1,
+  "hasNext": false,
+  "totalItems": 1,
+  "items": [
+    {
+      "branchCode": 1,
+      "suggestionCode": 1,
+      "statusSuggestion": 1,
+      "suggestionDate": "2026-10-28T00:00:00",
+      "maxChangeFilterDate": "2026-10-28T00:00:00",
+      "orders": [
+        {
+          "orderBranchCode": 1,
+          "orderCode": 1,
+          "quantity": 10.5,
+          "suggestedQuantity": 10.5,
+          "pendingQuantity": 10.5,
+          "value": 10.5,
+          "suggestedValue": 10.5,
+          "pendingValue": 10.5,
+          "orderItems": [
+            {
+              "productCode": 1,
+              "description": "Exemplo description",
+              "standardBarCode": "Exemplo standardBarCode",
+              "sizeName": "Exemplo sizeName",
+              "colorName": "Exemplo colorName",
+              "quantity": 10.5,
+              "suggestedQuantity": 10.5,
+              "pendingQuantity": 10.5,
+              "price": 10.5
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

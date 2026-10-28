@@ -1,0 +1,13 @@
+{
+  "branchCode": 1,
+  "batchCode": 1,
+  "sequence": 1,
+  "batchItemBarCode": "Exemplo batchItemBarCode",
+  "preferentialSalesOrder": [
+    {
+      "branchCode": 1,
+      "orderCode": 1,
+      "orderId": "Exemplo orderId"
+    }
+  ]
+}

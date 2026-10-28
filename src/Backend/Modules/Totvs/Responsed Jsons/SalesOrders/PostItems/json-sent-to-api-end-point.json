@@ -1,0 +1,45 @@
+{
+  "branchCode": 1,
+  "orderCode": 1,
+  "orderId": "Exemplo orderId",
+  "items": [
+    {
+      "productCode": 1,
+      "productSku": "Exemplo productSku",
+      "quantity": 10.5,
+      "originalPrice": 10.5,
+      "price": 10.5,
+      "discountPercentage": 10.5,
+      "discountValue": 10.5,
+      "billingForecastDate": "2026-10-28T00:00:00",
+      "billingStartDate": "2026-10-28T00:00:00",
+      "customerOrderCode": 1,
+      "customerProductCode": "Exemplo customerProd",
+      "rollMeasureCode": 1,
+      "sequentials": [
+        "Exemplo sequentials"
+      ],
+      "sequentialsValues": [
+        {
+          "code": "Exemplo code",
+          "freightValue": 10.5,
+          "discountValue": 10.5
+        }
+      ],
+      "groupObservations": [
+        {
+          "observation": "Exemplo observation"
+        }
+      ],
+      "commissioneds": [
+        {
+          "representativeCode": 1,
+          "representativeCpfCnpj": "12345678000190",
+          "commissionedType": 1,
+          "commissionPercentageBilling": 10.5,
+          "commissionPercentageReceipt": 10.5
+        }
+      ]
+    }
+  ]
+}

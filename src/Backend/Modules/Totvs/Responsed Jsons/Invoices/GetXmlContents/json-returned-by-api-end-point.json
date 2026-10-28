@@ -1,0 +1,5 @@
+{
+  "processingType": "Authorized",
+  "mainInvoiceXml": "<base64>",
+  "cancelInvoiceXml": "<base64>"
+}

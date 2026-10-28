@@ -1,0 +1,13 @@
+{
+  "BranchCode": 1,
+  "PromotionCode": 1,
+  "ClassificationTypeCode": 1,
+  "ClassificationCode": "Exemplo ClassificationCode",
+  "Status": 1,
+  "StartDate": "2026-10-28T00:00:00",
+  "EndDate": "2026-10-28T00:00:00",
+  "StartChangeDate": "2026-10-28T00:00:00",
+  "EndChangeDate": "2026-10-28T00:00:00",
+  "Page": 1,
+  "PageSize": 1
+}

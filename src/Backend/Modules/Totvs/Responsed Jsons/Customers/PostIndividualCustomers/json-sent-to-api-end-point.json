@@ -1,0 +1,182 @@
+{
+  "branchInsertCode": 1,
+  "insertDate": "2026-10-28T00:00:00",
+  "name": "Exemplo name",
+  "cpf": "12345678909",
+  "rg": "Exemplo rg",
+  "rgFederalAgency": "Exemplo rg",
+  "birthDate": "1990-01-01",
+  "gender": "NotInformed",
+  "isInactive": true,
+  "maritalStatus": "NotInformed",
+  "motherName": "Exemplo motherName",
+  "fatherName": "Exemplo fatherName",
+  "nationality": "Exemplo nationality",
+  "homeTown": "Exemplo homeTown",
+  "monthlyIncome": 10.5,
+  "occupation": "Exemplo occupation",
+  "hireDate": "2026-10-28",
+  "workPlace": "Exemplo workPlace",
+  "ctps": 1000,
+  "ctpsSerial": 1000,
+  "homePage": "Exemplo homePage",
+  "employee": 1,
+  "employeeIsInactive": true,
+  "registrationStatus": "Normal",
+  "isBloqued": true,
+  "isFinalCNSR": true,
+  "suframaCode": 1,
+  "taxCodeNumber": "Exemplo taxCodeNumbe",
+  "phones": [
+    {
+      "typeCode": 1,
+      "number": "Exemplo number",
+      "branchLine": 1,
+      "isDefault": true
+    }
+  ],
+  "addresses": [
+    {
+      "addressType": "Commercial",
+      "sequence": 1,
+      "postOfficeBox": 1,
+      "cep": "01001000",
+      "cityName": "Exemplo cityName",
+      "stateAbbreviation": "SP",
+      "publicPlace": "Exemplo pu",
+      "address": "Exemplo address",
+      "number": 1,
+      "reference": "Exemplo reference",
+      "complement": "Exemplo complement",
+      "neighborhood": "Exemplo neighborhood"
+    }
+  ],
+  "emails": [
+    {
+      "typeCode": 1,
+      "email": "exemplo@exemplo.com.br",
+      "isDefault": true
+    }
+  ],
+  "references": [
+    {
+      "sequence": 1,
+      "type": "Banking",
+      "description": "Exemplo description",
+      "phoneNumber": "11999999999",
+      "responsiblePersonName": "Exemplo responsiblePersonName",
+      "isInactive": true
+    }
+  ],
+  "observations": [
+    {
+      "observation": "Exemplo observation",
+      "sequence": 1
+    }
+  ],
+  "additionalFields": [
+    {
+      "code": 1,
+      "value": null
+    }
+  ],
+  "classifications": [
+    {
+      "classificationTypeCode": 1,
+      "classificationCode": "Exemplo cl"
+    }
+  ],
+  "limits": [
+    {
+      "branchCode": 1,
+      "limitValue": 10.5,
+      "saleLimitValue": 10.5,
+      "monthlyLimitValue": 10.5
+    }
+  ],
+  "socialNetworks": [
+    {
+      "sequence": 1,
+      "typeCode": 1,
+      "address": "Exemplo address"
+    }
+  ],
+  "individualAdditionals": {
+    "educationLevel": "Illiterate",
+    "numberOfChildren": 1,
+    "numberOfDependents": 1,
+    "residenceMonths": 1,
+    "workMonths": 1,
+    "previousWorkPlace": "Exemplo previousWorkPlace",
+    "residingSinceDate": "2026-10-28",
+    "homeType": "Owned",
+    "carType": "DontHave",
+    "score": 10.5,
+    "risk": 10.5,
+    "spcUpdateDate": "2026-10-28",
+    "isStreetVendor": true,
+    "streetVendorNumber": "Exemplo streetVendorNumber",
+    "rgType": 1,
+    "rgIssueDate": "2026-10-28",
+    "passportNumber": "Exemplo passportNumber",
+    "passportCountryCode": 1,
+    "driverLicenseNumber": "Exemplo driverLicenseNumber",
+    "driverLicenseExpirationDate": "2026-10-28",
+    "firstDriverLicenseDate": "2026-10-28",
+    "driverLicenseAgency": "Exemplo driverLicenseAgency",
+    "driverLicenseCategory": "A",
+    "voterRegistrationNumber": "Exemplo voterRegistrationNumber",
+    "voterZone": "Exemplo voterZone",
+    "voterSection": "Exemplo voterSection",
+    "militaryCertificateType": "NotSubject",
+    "militaryCategory": "FirstCategory",
+    "militaryDispensation": "Exemplo militaryDispensation",
+    "nitNumber": "Exemplo nitNumber",
+    "ctpsState": "SP",
+    "isInformalWorker": true,
+    "pisNumber": "Exemplo pisNumber",
+    "pisIssueDate": "2026-10-28",
+    "pisState": "SP",
+    "ruralProducerRegistration": "Exemplo ruralProducerRegistration",
+    "ruralProducerState": "SP",
+    "cifIssuer": "Exemplo cifIssuer",
+    "cifState": "SP",
+    "cifNumber": "Exemplo cifNumber",
+    "birthState": "SP",
+    "passportIssuer": "Exemplo passportIssuer",
+    "passportState": "SP",
+    "passportExpirationDate": "2026-10-28",
+    "ricNumber": "Exemplo ricNumber",
+    "ricState": "SP",
+    "ricIssuer": "Exemplo ricIssuer",
+    "ricCityCode": 1,
+    "ricIssueDate": "2026-10-28",
+    "ricExpirationDate": "2026-10-28",
+    "foreignDocumentNumber": "Exemplo foreignDocumentNumber",
+    "nickname": "Exemplo nickname",
+    "crcNumber": "Exemplo crcNumber",
+    "driverLicenseSecurityNumber": "Exemplo driverLicenseSecurityNumber",
+    "driverLicenseRegistrationNumber": "Exemplo driverLicenseRegistrationNumber",
+    "crcRegistrationDate": "2026-10-28",
+    "crcExpirationDate": "2026-10-28",
+    "socialName": "Exemplo socialName",
+    "homeTown": 1
+  },
+  "bankAccounts": [
+    {
+      "holderName": "Exemplo holderName",
+      "additionalData": "Exemplo additionalData",
+      "bankNumber": 1,
+      "branchNumber": 1,
+      "accountNumber": "Exemplo accountNumber",
+      "personType": "NotInformed",
+      "accountDigit": "Exemplo accountDigit",
+      "accountType": "CurrentAccount",
+      "purposeType": "ElectronicScheduling",
+      "compensationType": 1,
+      "checkType": "Common",
+      "pixKeyType": "Phone",
+      "pixKey": "Exemplo pixKey"
+    }
+  ]
+}

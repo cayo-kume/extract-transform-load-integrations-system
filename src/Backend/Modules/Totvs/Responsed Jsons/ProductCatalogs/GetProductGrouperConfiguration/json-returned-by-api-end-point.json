@@ -1,0 +1,22 @@
+{
+  "count": 1,
+  "totalPages": 1,
+  "hasNext": false,
+  "totalItems": 1,
+  "items": [
+    {
+      "grouperCode": 1,
+      "description": "Exemplo description",
+      "type": 1,
+      "maxChangeFilterDate": "2026-10-28T00:00:00",
+      "productGrouperItemConfigurationList": [
+        {
+          "order": 1,
+          "code": 1,
+          "description": "Exemplo description",
+          "isMandatory": true
+        }
+      ]
+    }
+  ]
+}

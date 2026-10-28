@@ -1,0 +1,43 @@
+{
+  "count": 1,
+  "totalPages": 1,
+  "hasNext": false,
+  "totalItems": 1,
+  "items": [
+    {
+      "gridCode": 1,
+      "sizeCode": "Exemplo sizeCode",
+      "sizeDescription": "Exemplo sizeDescription",
+      "productCode": 1,
+      "colorCode": "Exemplo colorCode",
+      "colorDescription": "Exemplo colorDescription",
+      "groupSequenceCode": 1,
+      "gridFrequencies": [
+        {
+          "gridCode": 1,
+          "sizeCode": 1,
+          "sizeDescription": "Exemplo sizeDescription",
+          "sequentialNumber": 1,
+          "frequency": 10.5
+        }
+      ],
+      "gridFrequencyGroups": [
+        {
+          "sequentialNumber": 1,
+          "frequency": 10.5,
+          "inactive": true,
+          "isDefault": true
+        }
+      ],
+      "gridFrequencyColors": [
+        {
+          "sequenceCode": 1,
+          "sizeCode": 1,
+          "colorCode": "Exemplo colorCode",
+          "sequentialNumber": 1,
+          "frequency": 10.5
+        }
+      ]
+    }
+  ]
+}

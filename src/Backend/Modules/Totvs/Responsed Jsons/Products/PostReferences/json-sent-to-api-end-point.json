@@ -1,0 +1,127 @@
+{
+  "referenceSettingsCode": 1,
+  "referenceName": "Exemplo referenceName",
+  "gridCode": 1,
+  "observation": "Exemplo observation",
+  "groups": [
+    {
+      "levelNumber": 1,
+      "groupCode": "Exemplo gr",
+      "groupName": "Exemplo groupName"
+    }
+  ],
+  "branchs": [
+    {
+      "branchCode": 1,
+      "isOwnProduction": true,
+      "isInactive": true,
+      "isFinishedProduct": true,
+      "isRawMaterial": true,
+      "isBulkMaterial": true,
+      "isFractionalQuantity": true,
+      "spedItemType": 0,
+      "inspectionType": 0,
+      "batchType": 1
+    }
+  ],
+  "skus": [
+    {
+      "productCode": 1,
+      "productName": "Exemplo productName",
+      "colorCode": "Exemplo co",
+      "sizeName": "Exemplo si",
+      "ncmCode": "Exemplo ncmCode",
+      "measuredUnit": "Exe",
+      "cstCode": 0,
+      "weight": 10.5,
+      "prefixEanGtin": "Exemplo prefixEanGti",
+      "cestCode": "Exemplo cestCode",
+      "conservationInstructionCode": 1,
+      "classifications": [
+        {
+          "typeCode": 1,
+          "code": "Exemplo co"
+        }
+      ],
+      "additionalFields": [
+        {
+          "code": 1,
+          "value": null
+        }
+      ],
+      "suppliers": [
+        {
+          "supplierCpfCnpj": "12345678000190",
+          "originalCode": "Exemplo originalCode",
+          "isMainSupplier": true
+        }
+      ],
+      "manufacturers": [
+        {
+          "manufacturerCpfCnpj": "12345678000190",
+          "originalCode": "Exemplo originalCode"
+        }
+      ],
+      "barCodes": [
+        {
+          "barCode": "Exemplo barCode",
+          "quantity": 1,
+          "isMainCode": true,
+          "inRfid": true
+        }
+      ],
+      "locations": [
+        {
+          "branchCode": 1,
+          "locationCode": "Exemplo locatio"
+        }
+      ],
+      "values": [
+        {
+          "branchCode": 1,
+          "valueType": 1,
+          "valueCode": 1,
+          "value": 10.5
+        }
+      ],
+      "images": [
+        {
+          "code": 1,
+          "imageTypeCode": 1
+        }
+      ]
+    }
+  ],
+  "values": [
+    {
+      "branchCode": 1,
+      "valueType": 1,
+      "valueCode": 1,
+      "value": 10.5
+    }
+  ],
+  "images": [
+    {
+      "code": 1,
+      "imageTypeCode": 1
+    }
+  ],
+  "referenceWeb": {
+    "status": 1,
+    "description": "Exemplo description",
+    "weight": 10.5,
+    "height": 10.5,
+    "width": 10.5,
+    "length": 10.5,
+    "packWeight": 10.5,
+    "packHeight": 10.5,
+    "packWidth": 10.5,
+    "packLength": 10.5,
+    "descriptiveList": [
+      {
+        "type": 1,
+        "description": "Exemplo description"
+      }
+    ]
+  }
+}

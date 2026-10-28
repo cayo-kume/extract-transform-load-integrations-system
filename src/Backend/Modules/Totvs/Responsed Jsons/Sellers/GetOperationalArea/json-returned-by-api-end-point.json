@@ -1,0 +1,17 @@
+{
+  "count": 1,
+  "totalPages": 1,
+  "hasNext": false,
+  "totalItems": 1,
+  "items": [
+    {
+      "operationalAreaCode": 1,
+      "operationalAreaName": "Exemplo operationalAreaName",
+      "operationalAreaType": "Representative",
+      "operationalAreaGroupCode": 1,
+      "operationalAreaGroupDescription": "Exemplo operationalAreaGroupDescription",
+      "numberOfDays": 1,
+      "maxChangeFilterDate": "2026-10-28T00:00:00"
+    }
+  ]
+}

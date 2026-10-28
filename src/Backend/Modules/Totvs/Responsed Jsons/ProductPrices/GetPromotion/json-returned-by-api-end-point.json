@@ -1,0 +1,20 @@
+{
+  "count": 1,
+  "totalPages": 1,
+  "hasNext": false,
+  "totalItems": 1,
+  "items": [
+    {
+      "branchCode": 1,
+      "promotionCode": 1,
+      "promotionDescription": "Exemplo promotionDescription",
+      "startDate": "2026-10-28T00:00:00",
+      "endDate": "2026-10-28T00:00:00",
+      "maxChangeFilterDate": "2026-10-28T00:00:00",
+      "productCode": 1,
+      "previousValue": 10.5,
+      "promotionValue": 10.5,
+      "status": "Exemplo status"
+    }
+  ]
+}

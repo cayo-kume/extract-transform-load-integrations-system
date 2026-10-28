@@ -1,0 +1,19 @@
+{
+  "branchCode": 1,
+  "orderCode": 1,
+  "items": [
+    {
+      "code": 1,
+      "isUpdateQuantity": true,
+      "batchItems": [
+        {
+          "branchCode": 1,
+          "code": 1,
+          "sequence": 1,
+          "barCode": "Exemplo barCode",
+          "quantity": 10.5
+        }
+      ]
+    }
+  ]
+}

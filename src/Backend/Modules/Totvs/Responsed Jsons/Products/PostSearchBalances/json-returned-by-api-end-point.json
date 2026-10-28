@@ -1,0 +1,52 @@
+{
+  "count": 1,
+  "totalPages": 1,
+  "hasNext": false,
+  "totalItems": 1,
+  "items": [
+    {
+      "productCode": 1,
+      "productName": "Exemplo productName",
+      "productSku": "Exemplo productSku",
+      "referenceCode": "Exemplo referenceCode",
+      "colorCode": "Exemplo colorCode",
+      "colorName": "Exemplo colorName",
+      "sizeName": "Exemplo sizeName",
+      "maxChangeFilterDate": "2026-10-28T00:00:00",
+      "balances": [
+        {
+          "branchCode": 1,
+          "stockCode": 10.5,
+          "stockDescription": "Exemplo stockDescription",
+          "stock": 10.5,
+          "salesOrder": 10.5,
+          "inputTransaction": 10.5,
+          "outputTransaction": 10.5,
+          "productionPlanning": 10.5,
+          "purchaseOrder": 10.5,
+          "productionOrderProgress": 10.5,
+          "productionOrderWaitLib": 10.5,
+          "stockTemp": 10.5,
+          "measurementConversion": [
+            {
+              "sequence": 1,
+              "description": "Exemplo description",
+              "operationConversionType": "Exemplo operationConversionType",
+              "conversionFactor": 10.5,
+              "measurementUnitOrigin": "Exemplo measurementUnitOrigin",
+              "measurementUnitDestiny": "Exemplo measurementUnitDestiny",
+              "isDefault": true
+            }
+          ]
+        }
+      ],
+      "locations": [
+        {
+          "branchCode": 1,
+          "locationCode": "Exemplo locationCode",
+          "description": "Exemplo description"
+        }
+      ]
+    }
+  ]
+}

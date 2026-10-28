@@ -1,0 +1,29 @@
+{
+  "count": 1,
+  "totalPages": 1,
+  "hasNext": false,
+  "totalItems": 1,
+  "items": [
+    {
+      "productCode": 1,
+      "productDescription": "Exemplo productDescription",
+      "groupCode": "Exemplo gr",
+      "groupSequenceCode": 1,
+      "compositions": [
+        {
+          "codeOrder": 1,
+          "code": 1,
+          "description": "Exemplo description",
+          "typeDescription": "Exemplo typeDescription",
+          "itemsComposition": [
+            {
+              "fiberCode": 1,
+              "fiberDescription": "Exemplo fiberDescription",
+              "fiberPercentage": 10.5
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

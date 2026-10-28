@@ -1,0 +1,15 @@
+{
+  "StartChangeDate": "2026-10-28T00:00:00",
+  "EndChangeDate": "2026-10-28T00:00:00",
+  "CodeList": [
+    1
+  ],
+  "GrouperCodeList": [
+    1
+  ],
+  "Description": "Exemplo Description",
+  "Order": "Exemplo Order",
+  "Page": 1,
+  "PageSize": 1,
+  "Expand": "Exemplo Expand"
+}

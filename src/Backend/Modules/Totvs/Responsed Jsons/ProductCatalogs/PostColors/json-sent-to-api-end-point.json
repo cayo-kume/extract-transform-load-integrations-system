@@ -1,0 +1,15 @@
+{
+  "code": "Exemplo co",
+  "name": "Exemplo name",
+  "colorInfoAdditionals": [
+    {
+      "branchCode": 1,
+      "auxiliaryCode": "Exemplo au",
+      "auxiliaryName": "Exemplo auxiliaryName",
+      "pantoneCode": "Exemplo pantoneCode",
+      "isFinishedProduct": true,
+      "isRawMaterial": true,
+      "isBulkMaterial": true
+    }
+  ]
+}

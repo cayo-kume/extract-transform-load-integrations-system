@@ -1,0 +1,134 @@
+{
+  "branchInsertCode": 1,
+  "insertDate": "2026-10-28T00:00:00",
+  "cnpj": "12345678000190",
+  "name": "Exemplo name",
+  "fantasyName": "Exemplo fantasyName",
+  "isInactive": true,
+  "uf": "NotInformed",
+  "numberStateRegistration": "Exemplo numberStat",
+  "dateFoundation": "2026-10-28",
+  "codeActivity": 1,
+  "numberEmployees": "NotInformed",
+  "monthlyInvoicing": 10.5,
+  "shareCapital": 10.5,
+  "homePage": "Exemplo homePage",
+  "registrationStatus": "Normal",
+  "codeActivityCnae": 1,
+  "codeActivityCnae2": 1,
+  "typeTaxRegime": "NotInformed",
+  "typeSubTributary": "NotInformed",
+  "suframaCode": 1,
+  "registrationMunicipal": "Exemplo registrati",
+  "descriptionJuntaCial": "Exemplo descriptionJ",
+  "dateRegJuntaCial": "2026-10-28",
+  "foreignIdentification": "Exemplo foreignIdent",
+  "initialDateActivity": "2026-10-28",
+  "finalDateActivity": "2026-10-28",
+  "isCommercialExp": true,
+  "isFinalCNSR": true,
+  "phones": [
+    {
+      "typeCode": 1,
+      "number": "Exemplo number",
+      "branchLine": 1,
+      "isDefault": true
+    }
+  ],
+  "addresses": [
+    {
+      "addressType": "Commercial",
+      "sequence": 1,
+      "postOfficeBox": 1,
+      "cep": "01001000",
+      "cityName": "Exemplo cityName",
+      "stateAbbreviation": "SP",
+      "publicPlace": "Exemplo pu",
+      "address": "Exemplo address",
+      "number": 1,
+      "reference": "Exemplo reference",
+      "complement": "Exemplo complement",
+      "neighborhood": "Exemplo neighborhood"
+    }
+  ],
+  "emails": [
+    {
+      "typeCode": 1,
+      "email": "exemplo@exemplo.com.br",
+      "isDefault": true
+    }
+  ],
+  "partners": [
+    {
+      "cpfPartner": "12345678909",
+      "partnerCode": 1,
+      "percentageParticipation": 10.5
+    }
+  ],
+  "observations": [
+    {
+      "observation": "Exemplo observation",
+      "sequence": 1
+    }
+  ],
+  "additionalFields": [
+    {
+      "code": 1,
+      "value": null
+    }
+  ],
+  "classifications": [
+    {
+      "classificationTypeCode": 1,
+      "classificationCode": "Exemplo cl"
+    }
+  ],
+  "references": [
+    {
+      "sequence": 1,
+      "type": "Banking",
+      "description": "Exemplo description",
+      "phoneNumber": "11999999999",
+      "responsiblePersonName": "Exemplo responsiblePersonName",
+      "isInactive": true
+    }
+  ],
+  "socialNetworks": [
+    {
+      "sequence": 1,
+      "typeCode": 1,
+      "address": "Exemplo address"
+    }
+  ],
+  "contacts": [
+    {
+      "sequence": 1,
+      "typeCode": 1,
+      "name": "Exemplo name",
+      "function": "Exemplo function",
+      "phoneNumber": "11999999999",
+      "cellNumber": "11999999999",
+      "email": "exemplo@exemplo.com.br",
+      "birthDate": "2026-10-28T00:00:00",
+      "isDefault": true
+    }
+  ],
+  "limits": [
+    {
+      "branchCode": 1,
+      "limitValue": 10.5,
+      "saleLimitValue": 10.5,
+      "monthlyLimitValue": 10.5
+    }
+  ],
+  "preferences": {
+    "paymentConditionCode": 1,
+    "shippingCompanyCode": 1,
+    "freightType": "NotInformed",
+    "bridgeShippingCompanyCode": 1,
+    "maximumAverageTerm": 1,
+    "priceTableCode": 1,
+    "orderPriority": 1,
+    "bearerCode": 1
+  }
+}

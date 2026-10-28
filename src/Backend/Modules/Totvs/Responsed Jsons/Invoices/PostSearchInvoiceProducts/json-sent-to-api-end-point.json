@@ -1,0 +1,49 @@
+{
+  "filter": {
+    "branchCodeList": [
+      1
+    ],
+    "ProductCodeList": [
+      1
+    ],
+    "BatchBarCodeList": [
+      "Exemplo BatchBarCodeList"
+    ],
+    "invoiceCodeList": [
+      1
+    ],
+    "operationType": 1,
+    "modality": 1,
+    "origin": 1,
+    "invoiceStatusList": [
+      "Canceled"
+    ],
+    "personCodeList": [
+      1
+    ],
+    "ignorePersonCodeList": [
+      1
+    ],
+    "operationCodeList": [
+      1
+    ],
+    "personCpfCnpjList": [
+      "12345678000190"
+    ],
+    "ignorePersonCpfCnpjList": [
+      "12345678000190"
+    ],
+    "startIssueDate": "2026-10-28T00:00:00",
+    "endIssueDate": "2026-10-28T00:00:00",
+    "acessKeyList": [
+      "Exemplo acessKeyList"
+    ]
+  },
+  "option": {
+    "isReturn": true
+  },
+  "page": 1,
+  "pageSize": 1,
+  "expand": "Exemplo expand",
+  "order": "Exemplo order"
+}

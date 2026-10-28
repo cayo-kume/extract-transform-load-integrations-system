@@ -1,0 +1,24 @@
+{
+  "branchCode": 1,
+  "orderCode": 1,
+  "orderId": "Exemplo orderId",
+  "items": [
+    {
+      "productCode": 1,
+      "name": "Exemplo name",
+      "referenceCode": "Exemplo referenceCode",
+      "referenceName": "Exemplo referenceName",
+      "productSku": "Exemplo productSku",
+      "colorCode": "Exemplo co",
+      "colorName": "Exemplo colorName",
+      "sizeName": "Exemplo si",
+      "quantity": 10.5,
+      "pendingQuantity": 10.5,
+      "originalPrice": 10.5,
+      "grossPrice": 10.5,
+      "itemDiscount": 10.5,
+      "orderDiscount": 10.5,
+      "netPrice": 10.5
+    }
+  ]
+}

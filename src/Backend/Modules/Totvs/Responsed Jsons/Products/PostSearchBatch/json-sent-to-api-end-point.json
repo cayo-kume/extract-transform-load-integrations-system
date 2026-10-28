@@ -1,0 +1,25 @@
+{
+  "filter": {
+    "branchCode": 1,
+    "updatedDateStart": "2026-10-28T00:00:00",
+    "updatedDateEnd": "2026-10-28T00:00:00",
+    "batchCode": 1,
+    "batchType": 1,
+    "productCodeList": [
+      1
+    ],
+    "conditioningTypeCode": "Exe",
+    "balanceCodeList": [
+      1
+    ],
+    "situationsList": [
+      1
+    ],
+    "balanceStart": 10.5,
+    "balanceEnd": 10.5,
+    "hasBalance": true
+  },
+  "page": 1,
+  "pageSize": 1,
+  "expand": "Exemplo expand"
+}

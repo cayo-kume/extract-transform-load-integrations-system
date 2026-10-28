@@ -725,15 +725,53 @@ Uma resposta real de cada rota, com os dados trocados por **dados fictícios** p
 
 As leituras sob demanda usam as mesmas buscas, com a lista de chave; a resposta tem o mesmo formato das pastas acima.
 
+### Rotas do plano de métodos faltantes (montadas pelo swagger)
+
+As 107 rotas novas (catálogos, leituras recorrentes e sem persistência, escritas) têm um exemplo **montado a partir do swagger oficial**, não
+de uma chamada real: mostram a estrutura, os tipos e os enums de cada corpo, com valores fictícios pelas mesmas regras de cima (textos
+`Exemplo <campo>`, documentos e CEP com dígitos fictícios, enums no formato que a rota usa, listas com 1 item, XML e PDF como `<base64>`).
+Por virem do schema, os pares "um ou outro" (código **ou** CPF/CNPJ, `productCode` **ou** `productSku`...) aparecem com os dois lados: o
+corpo de verdade leva só um, como o validador da rota exige.
+
+| Arquivo | Conteúdo |
+|---|---|
+| `json-sent-to-api-end-point.json` | Corpo enviado à Totvs (escritas e buscas `POST`) |
+| `parameters-sent-to-api-end-point.json` | Parâmetros de query (leituras `GET` e remoções `DELETE`), sem os `ValidationResult.*` e o `LastChangeUser`, que nunca são enviados |
+| `json-returned-by-api-end-point.json` | Resposta da Totvs (200 ou 201) |
+
+| Pasta | Métodos |
+|---|---|
+| `PersonCatalogs/` | `GetClassifications`, `GetEmailTypes`, `GetPhoneTypes`, `GetContactTypes` |
+| `Representatives/`, `ReceptionSales/` | `PostSearchRepresentatives`, `PostCustomerRepresentatives`; `GetSearchReceptionSale` |
+| `People/`, `Bonus/`, `Branches/` | `GetPersonStatistics`, mensagens, `PostRemoveClassificationRelationship`; `PostListBalanceBonus`, `PostBonusDueDate`, `PostBonusConsume`; `GetBranches` |
+| `Customers/`, `LegalEntities/` | `PostIndividualCustomers`; `PostLegalCustomers` |
+| `Sellers/` | `GetOperationalArea` e as rotas por CEP, cidade e estado |
+| `ProductCatalogs/` | Os 12 catálogos da PR-1, `PostColors`, `PostGrids`, `PostClassifications` |
+| `ProductPrices/` | Preços, custos, tabelas de preço, promoções e as escritas de valor e de promoção |
+| `Products/` | Saldos, similares, lotes, códigos, kardex, grade, conversões, composições e as escritas de produto (códigos de barras, classificações, referência, lotes, dados fiscais) |
+| `PurchaseOrders/` | Situação, inclusão, quantidade, cancelamento e vínculo com lote |
+| `SalesOrders/` | Catálogos, lotes, sugestões, notas e pendentes do pedido e as 18 escritas |
+| `Invoices/` | Inutilizações, centros de custo, XML, DANFE, impressão de transação, itens, condicional, produtos das notas e manifestação |
+| `Duplicates/` | `PostDuplicates`, `PostGroupDuplicates`, `PostDuplicatesInstallmentsStage` |
+
 ---
 
 ## Pendências
 
-* **Preços, custos e saldos** (jobs 13015–13017): implementados (fase PR-2, parte 1); a carga inicial dos saldos leva horas (~27 min por loja, estimado) e precisa de proteção contra execução simultânea quando os jobs da Totvs forem registrados no Hangfire.
-* **Execução em banco:** os scripts e as rotas ainda não rodaram pelo host; a modelagem foi conferida com chamadas reais à API, sem banco.
-* **`referencedInvoices`:** comentado no `expand` das notas até a Totvs corrigir o erro 400.
-* **Escritas:** só a troca de estágio da parcela está implementada; as demais seguem as fases do plano (`docs/PLANO-TOTVS-METODOS-FALTANTES.md`, §9.4). A primeira chamada real em homologação ainda não foi feita.
+O plano de métodos faltantes (`docs/PLANO-TOTVS-METODOS-FALTANTES.md`) está implementado em todas as ondas; o que falta está no fim da §10 de
+cada fase ("Não verificado"). Em resumo:
 
+* **Execução em banco e pelo host:** os scripts e as rotas ainda não rodaram pelo host; a modelagem foi conferida com chamadas reais à API
+  e as escritas com um console contra a homologação, sem banco.
+* **Homologação:** as ondas 3 e 4 foram testadas (plano, §10.19 e §10.25), menos a inclusão de referência, os lotes, as contagens, a sugestão
+  por nuance e a capa do pedido de venda; a onda 5 (bônus, preço, custo, promoção, dados fiscais do produto, cancelamentos, pedido B2C, PDV e
+  manifestação) ainda não, e a manifestação depende da área fiscal.
+* **Produção:** espera a autenticação dos endpoints de inbound (T2) e a liberação de cada grupo de escrita pelo negócio, inclusive as listas
+  de códigos e lojas de preço (PR7).
+* **Preços, custos e saldos** (jobs 13015–13017): a carga inicial dos saldos leva horas (~27 min por loja, estimado) e precisa de proteção
+  contra execução simultânea quando os jobs da Totvs forem registrados no Hangfire.
+* **`referencedInvoices`:** comentado no `expand` das notas até a Totvs corrigir o erro 400 (o teste da F3 com o `item-detail-search` está
+  pendente).
 ---
 
 ## Documentação complementar

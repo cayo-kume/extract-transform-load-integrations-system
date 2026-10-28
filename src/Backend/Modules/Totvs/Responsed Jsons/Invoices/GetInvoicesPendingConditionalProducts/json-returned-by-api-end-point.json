@@ -1,0 +1,17 @@
+{
+  "items": [
+    {
+      "productCode": 1,
+      "name": "Exemplo name",
+      "sellerCode": 1,
+      "referenceCode": "Exemplo referenceCode",
+      "outputQuantity": 10.5,
+      "outputNetValue": 10.5,
+      "inputQuantity": 10.5,
+      "inputNetValue": 10.5,
+      "balanceQuantity": 10.5,
+      "balanceNetValue": 10.5,
+      "balanceUnitNetValue": 10.5
+    }
+  ]
+}

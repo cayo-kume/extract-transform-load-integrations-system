@@ -1,0 +1,19 @@
+{
+  "items": [
+    {
+      "accessKey": "35123456789012345678901234567890123456789012",
+      "branchCnpj": "12345678000190",
+      "issuerCnpj": "12345678000190",
+      "issuerCorporateName": "Exemplo issuerCorporateName",
+      "invoiceCode": 1,
+      "issueDate": "2026-10-28T00:00:00",
+      "serialCode": "Exemplo serialCode",
+      "nsu": 1000,
+      "operationType": "Input",
+      "invoiceStatus": "Authorized",
+      "totalValue": 10.5,
+      "invoiceXml": "<base64>",
+      "documentType": 55
+    }
+  ]
+}

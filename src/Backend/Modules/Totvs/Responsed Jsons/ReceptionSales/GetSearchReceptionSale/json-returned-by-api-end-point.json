@@ -1,0 +1,37 @@
+{
+  "count": 1,
+  "totalPages": 1,
+  "hasNext": false,
+  "totalItems": 1,
+  "items": [
+    {
+      "branchCode": 1,
+      "movementDate": "2026-10-28",
+      "sequence": 1,
+      "customerCode": 1,
+      "customerName": "Exemplo customerName",
+      "sellerCode": 1,
+      "sellerName": "Exemplo sellerName",
+      "representativeCode": 1,
+      "representativeName": "Exemplo representativeName",
+      "guideCode": 1,
+      "guideName": "Exemplo guideName",
+      "receptionType": "Exemplo receptionType",
+      "checkInTime": "Exemplo checkInTime",
+      "observation": "Exemplo observation",
+      "documentTypeList": [
+        1
+      ],
+      "phones": [
+        {
+          "Sequence": 1,
+          "typeCode": 1,
+          "typeName": "Exemplo typeName",
+          "number": "Exemplo number",
+          "branchLine": 1,
+          "isDefault": true
+        }
+      ]
+    }
+  ]
+}

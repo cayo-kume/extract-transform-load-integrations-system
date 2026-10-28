@@ -1,0 +1,14 @@
+{
+  "count": 1,
+  "totalPages": 1,
+  "hasNext": false,
+  "totalItems": 1,
+  "items": [
+    {
+      "operationalAreaCode": 1,
+      "operationalAreaName": "Exemplo operationalAreaName",
+      "cep": "01001000",
+      "maxChangeFilterDate": "2026-10-28T00:00:00"
+    }
+  ]
+}

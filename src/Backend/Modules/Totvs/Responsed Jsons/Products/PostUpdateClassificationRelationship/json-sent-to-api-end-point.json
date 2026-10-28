@@ -1,0 +1,14 @@
+{
+  "products": [
+    {
+      "productCode": 1,
+      "referenceId": 1,
+      "classifications": [
+        {
+          "typeCode": 1,
+          "code": "Exemplo co"
+        }
+      ]
+    }
+  ]
+}

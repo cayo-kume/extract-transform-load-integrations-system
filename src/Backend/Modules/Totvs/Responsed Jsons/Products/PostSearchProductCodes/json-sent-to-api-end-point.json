@@ -1,0 +1,127 @@
+{
+  "filter": {
+    "change": {
+      "startDate": "2026-10-28T00:00:00",
+      "endDate": "2026-10-28T00:00:00",
+      "inProduct": true,
+      "inBranchInfo": true,
+      "branchInfoCodeList": [
+        1
+      ],
+      "inPrice": true,
+      "inPromotionalPrice": true,
+      "inScheduledPrice": true,
+      "inDigitalPromotionPrice": true,
+      "branchPriceCodeList": [
+        1
+      ],
+      "priceCodeList": [
+        1
+      ],
+      "inCost": true,
+      "branchCostCodeList": [
+        1
+      ],
+      "costCodeList": [
+        1
+      ],
+      "isIgnoreStandardPrice": true,
+      "inStock": true,
+      "branchStockCodeList": [
+        1
+      ],
+      "stockCodeList": [
+        1
+      ],
+      "inPriceTableItem": true,
+      "branchPriceTableCodeList": [
+        1
+      ],
+      "priceTableCodeList": [
+        1
+      ],
+      "inSalesOrder": true,
+      "branchSalesOrderCodeList": [
+        1
+      ],
+      "inPurchaseOrder": true,
+      "branchPurchaseOrderCodeList": [
+        1
+      ],
+      "inTransaction": true,
+      "branchTransactionCodeList": [
+        1
+      ],
+      "inMeasurementTableOmni": true,
+      "inBarCode": true,
+      "inWebInfo": true
+    },
+    "startProductCode": 1,
+    "endProductCode": 1,
+    "productCodeList": [
+      1
+    ],
+    "referenceCodeList": [
+      "Exemplo referenceCodeList"
+    ],
+    "productName": "Exemplo productName",
+    "groupCodeList": [
+      "Exemplo groupCodeList"
+    ],
+    "hasPrice": true,
+    "branchPriceCodeList": [
+      1
+    ],
+    "priceCodeList": [
+      1
+    ],
+    "hasCost": true,
+    "branchCostCodeList": [
+      1
+    ],
+    "costCodeList": [
+      1
+    ],
+    "hasPriceTableItem": true,
+    "branchPriceTableCodeList": [
+      1
+    ],
+    "priceTableCodeList": [
+      1
+    ],
+    "hasStock": true,
+    "branchStockCode": 1,
+    "stockCode": 1,
+    "hasWebInfo": true,
+    "branchInfo": {
+      "branchCode": 1,
+      "isActive": true,
+      "isFinishedProduct": true,
+      "isRawMaterial": true,
+      "isBulkMaterial": true,
+      "isOwnProduction": true
+    },
+    "classifications": [
+      {
+        "type": 1,
+        "codeList": [
+          "Exemplo codeList"
+        ]
+      }
+    ],
+    "suppliers": [
+      {
+        "code": 1,
+        "originalCode": "Exemplo originalCode"
+      }
+    ],
+    "manufacturers": [
+      {
+        "code": 1
+      }
+    ]
+  },
+  "page": 1,
+  "pageSize": 1,
+  "order": "Exemplo order"
+}

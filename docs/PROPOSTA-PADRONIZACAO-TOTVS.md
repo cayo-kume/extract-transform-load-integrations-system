@@ -10,6 +10,11 @@ Ao contrário do Oto, o Totvs tem a **mesma natureza** do Movidesk e do AfterSal
 `/api/totvsmoda`) e **grava** no banco. Por isso a referência principal é o fluxo de **leitura recorrente** do
 Movidesk (`GetTickets`, `GetPeople`, `GetServices`) e o padrão de cache de `docs/PADRAO-CACHE-INTEGRACOES.md`.
 
+**Escopo ampliado (27–28/10/2026):** além das leituras desta proposta, o módulo passou a **escrever** na Totvs e a ter leituras sob
+demanda sem persistência, cobrindo as rotas da documentação oficial que faltavam. O desenho, as decisões e a execução fase a fase estão em
+`docs/PLANO-TOTVS-METODOS-FALTANTES.md` (base de escrita na §1, decisões comuns na §9.1, fases na §9.4, execução na §10); aqui ficam só os
+pontos que mudam esta proposta: §1, §5.5, §6.4 e §7.
+
 ---
 
 ## 1. Situação atual (inventário)
@@ -28,6 +33,7 @@ Movidesk (`GetTickets`, `GetPeople`, `GetServices`) e o padrão de cache de `doc
 | Scripts | `Script001` (insert em `auditing.Apps`, app 130) e `Script002` (insert de jobs **todo comentado**) | Numeração refeita (§5.4) |
 | Jobs | `Domain.Totvs.Enums.EnumJob` só tem `None`; os ids comentados (1900–1909) não batem com a faixa do `Script002` (13000–13999) | Faixa 13000–13999 (§7) |
 | Documentação | Sem `README.md` e sem pasta de JSONs de referência | README e `Responsed Jsons` (§9) |
+| Escritas | Nenhuma | Escritas de contas a pagar, pessoa, produto, pedido de compra, pedido de venda e fiscal, cada grupo atrás de `Totvs:Writes:<grupo>:Enabled` (desligado por padrão), pela base comum `ITotvsService.Write` (plano, §1 e §10.14) |
 
 Conclusão: o módulo **não compila**. O `dotnet build` de `Infrastructure.Totvs` para em `Application.Totvs` com
 10 erros `CS0117` (`EnumJob` não contém `TotvsCustomers`, `TotvsFiscal`...): os services usam
@@ -799,6 +805,11 @@ tinha rotas sob demanda; elas entram na fase 3 (§9), e com elas a tabela `totvs
 à `MovideskRequests`: só inserção, direto no schema `totvs`, com `request_body` sempre preenchido porque as buscas da
 Totvs são `POST` com filtro. A rota gravada nunca leva o token.
 
+Com as escritas (plano, §1 e §10), a tabela também registra cada escrita, com o `status_code` da resposta (`Script066`: 0 para exceção, nulo
+para login que falhou), que a **trava de repetição** (T5: mesma rota + chave + corpo em 10 minutos volta 409) consulta. Os documentos da pessoa
+física, a conta bancária e a chave PIX vão **mascarados** nos dois corpos (T6, `TotvsMasking`); os arquivos (XML, PDF) ficam só com o
+tamanho.
+
 ---
 
 ## 6. Infrastructure.Totvs e host
@@ -876,6 +887,13 @@ com a lista de chave (`personCodeList`, `branchCodeList` + `orderCodeList`...) e
 | GET | `Invoices/{docCompany}/{branchCode}/{invoiceSequence}` | `invoices/search` com `branchCodeList` + `invoiceSequenceList` | `GetInvoiceByKey` |
 | GET | `Products/{docCompany}/{code}` | `products/search` com `productCodeList` | `GetProductByCode` |
 
+**Escritas e leituras sem persistência (plano de métodos faltantes):** as rotas seguem o mesmo desenho (cabeçalho `X-User-Name`,
+`docCompany` por `^\d{14}$`) e o corpo é validado no controller antes de chamar a Totvs. As escritas respondem pelo `WriteResponse`: **200**
+aceita, **400** corpo inválido, **404** a Totvs não achou o registro, **409** repetição recusada pela trava (ou conflito da Totvs), **422**
+grupo desligado, empresa ou loja de fora, conferência local ou recusa da Totvs, **429** com `Retry-After` e **502** sem resposta certa da Totvs
+(sem nova tentativa: a escrita pode ter sido feita). As leituras sem persistência devolvem o JSON (ou o arquivo) pelo `ReadResponse`. A lista
+completa das rotas está no README do módulo.
+
 ---
 
 ## 7. Auditoria (jobs)
@@ -910,6 +928,11 @@ intervalo do job, como no Movidesk).
 | 13500+ | `sp_Totvs<Tabela>_Sync` | procedure | o do job de origem | não existem (`IdType = 1`, `IdParent` = job de origem) |
 
 Os jobs sob demanda têm `IntervalTimeInMinutes = 0` (não são recorrentes), como no Movidesk.
+
+Os jobs das escritas e das leituras novas (plano de métodos faltantes) ficam na mesma faixa, por API (Person 13030–13069, Seller 13070–13079,
+Product 13080–13179, Purchase Order 13180–13189, Sales Order 13190–13249, Fiscal 13250–13299; contas a pagar 13018–13020), todos com
+`IntervalTimeInMinutes = 0` nas escritas e registrados pelos scripts de cada fase (`Script032` e `Script067` a `Script079` para as escritas).
+A lista completa está no README do módulo.
 
 O nome do job é `Totvs` + o nome do método (mantido, §2.3), como no Movidesk (`MovideskGetTickets`). Os ids
 ficam reservados agora, mas cada job só entra no banco junto com o seu service (§5.4).

@@ -1,0 +1,94 @@
+{
+  "branchCode": 1,
+  "invoiceSequence": 1,
+  "invoiceDate": "2026-10-28T00:00:00",
+  "inTransactionAgroup": true,
+  "items": [
+    {
+      "sequence": 1,
+      "code": "Exemplo code",
+      "name": "Exemplo name",
+      "ncm": "Exemplo ncm",
+      "cfop": 1,
+      "measureUnit": "Exemplo measureUnit",
+      "quantity": 10.5,
+      "grossValue": 10.5,
+      "discountValue": 10.5,
+      "netValue": 10.5,
+      "unitGrossValue": 10.5,
+      "unitDiscountValue": 10.5,
+      "unitNetValue": 10.5,
+      "additionalValue": 10.5,
+      "freightValue": 10.5,
+      "insuranceValue": 10.5,
+      "invoiceItemsProduct": [
+        {
+          "productCode": 1,
+          "productName": "Exemplo productName",
+          "dealerCode": 1,
+          "quantity": 10.5,
+          "unitGrossValue": 10.5,
+          "unitDiscountValue": 10.5,
+          "unitNetValue": 10.5,
+          "grossValue": 10.5,
+          "discountValue": 10.5,
+          "netValue": 10.5,
+          "referencedInvoices": [
+            {
+              "accessKey": "35123456789012345678901234567890123456789012",
+              "satSerialCode": "Exemplo satSerialCode",
+              "issueDate": "2026-10-28T00:00:00",
+              "invoiceSequenceItem": 1,
+              "invoiceCode": 1,
+              "invoiceSerialCode": "Exemplo invoiceSerialCode",
+              "unitNetValue": 10.5,
+              "quantity": 10.5,
+              "cfop": 1,
+              "branchCode": 1,
+              "branchCnpj": "12345678000190",
+              "terminalCode": 1
+            }
+          ],
+          "transactions": [
+            {
+              "branchCode": 1,
+              "transactionDate": "2026-10-28T00:00:00",
+              "transactionCode": 1,
+              "quantity": 10.5,
+              "salesOrder": {
+                "branchCode": 1,
+                "orderCode": 1,
+                "orderId": "Exemplo orderId",
+                "customerOrderCode": "Exemplo customerOrderCode"
+              }
+            }
+          ]
+        }
+      ],
+      "invoiceItemTax": [
+        {
+          "code": 1,
+          "name": "Exemplo name",
+          "cst": "Exempl",
+          "taxPercentage": 10.5,
+          "calculationBasisPercentage": 10.5,
+          "calculationBasisDiscountPercentage": 10.5,
+          "calculationBasisValue": 10.5,
+          "freeValue": 10.5,
+          "otherValue": 10.5,
+          "taxValue": 10.5,
+          "benefitCode": "Exemplo benefitCode",
+          "unencumberedValue": 10.5,
+          "unencumberedReason": 1,
+          "deferredBaseValue": 10.5,
+          "taxClassificationCode": "Exemplo ta"
+        }
+      ],
+      "barcodes": [
+        {
+          "barcode": "Exemplo barcode"
+        }
+      ]
+    }
+  ]
+}

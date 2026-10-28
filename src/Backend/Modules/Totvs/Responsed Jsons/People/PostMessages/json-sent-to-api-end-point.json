@@ -1,0 +1,10 @@
+{
+  "personCode": 1,
+  "personCpfCnpj": "12345678000190",
+  "messages": [
+    {
+      "description": "Exemplo description",
+      "priority": 1
+    }
+  ]
+}

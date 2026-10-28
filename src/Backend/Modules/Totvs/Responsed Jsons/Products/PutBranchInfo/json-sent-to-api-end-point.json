@@ -1,0 +1,18 @@
+{
+  "filter": {
+    "productCodeList": [
+      1
+    ],
+    "barCodeList": [
+      "Exemplo barCodeList"
+    ],
+    "groupCode": "Exemplo gr",
+    "referenceCode": "Exemplo referenceCode"
+  },
+  "isOwnProduction": true,
+  "isInactive": true,
+  "isFinishedProduct": true,
+  "isRawMaterial": true,
+  "isBulkMaterial": true,
+  "spedItemType": 0
+}

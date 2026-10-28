@@ -1,0 +1,15 @@
+{
+  "count": 1,
+  "totalPages": 1,
+  "hasNext": false,
+  "totalItems": 1,
+  "items": [
+    {
+      "typeCode": 1,
+      "typeDescription": "Exemplo typeDescription",
+      "code": "Exemplo co",
+      "description": "Exemplo description",
+      "maxChangeFilterDate": "2026-10-28T00:00:00"
+    }
+  ]
+}

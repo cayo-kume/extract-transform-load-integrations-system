@@ -1,0 +1,36 @@
+{
+  "branchCode": 1,
+  "orderCode": 1,
+  "orderId": "Exemplo orderId",
+  "invoices": [
+    {
+      "accessKey": "35123456789012345678901234567890123456789012",
+      "code": 1,
+      "serial": "Exe",
+      "issueDate": "2026-10-28T00:00:00",
+      "status": 1,
+      "shippingCompanyName": "Exemplo shippingCompanyName",
+      "packageNumber": 1,
+      "grossWeight": 10.5,
+      "netWeight": 10.5,
+      "trackingCode": "Exemplo trackingCode",
+      "discountPercentage": 10.5,
+      "quantity": 10.5,
+      "productValue": 10.5,
+      "additionalValue": 10.5,
+      "shippingValue": 10.5,
+      "InsuranceValue": 10.5,
+      "ipiValue": 10.5,
+      "totalValue": 10.5,
+      "transactionBranchCode": 1,
+      "transactionDate": "2026-10-28T00:00:00",
+      "transactionCode": 1,
+      "electronic": {
+        "accessKey": "35123456789012345678901234567890123456789012",
+        "electronicInvoiceStatus": "Authorized",
+        "receipt": 1000,
+        "receivementDate": "2026-10-28T00:00:00"
+      }
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "branchCode": 1,
+  "batchCode": 1,
+  "sequence": 1,
+  "batchItemBarCode": "Exemplo batchItemBarCode",
+  "orderCode": 1,
+  "invoice": {
+    "accessKey": "35123456789012345678901234567890123456789012",
+    "serialCode": "Exemplo serialCode",
+    "invoiceCode": 1000
+  }
+}

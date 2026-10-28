@@ -3517,3 +3517,13 @@ texto pelo nome; loja de fora (422); grupo desligado.
 o plano manda implementar estão no módulo; ficam fora `products/search` (PR1) e `digital-certificates` (F2), por decisão, e o
 `PostOmniChangedBalances` (13096 reservado, PR2). Antes de produção continuam valendo a T2 (autenticação dos endpoints de inbound) e, para a
 onda 5, a rodada em homologação e a liberação de cada grupo de escrita pelo negócio (`Bonus`, `Invoices` e as listas de valor da PR7).
+
+### 10.31 Documentação: exemplos e proposta (28/10/2026)
+
+* **`Responsed Jsons`:** um exemplo para cada uma das 107 rotas novas, **montado pelo swagger oficial** (estrutura, tipos e enums com valores
+  fictícios), já que as chamadas reais das fases não gravaram as respostas: `json-sent-to-api-end-point.json` (corpo), `parameters-sent-to-...`
+  (query dos `GET` e `DELETE`) e `json-returned-by-...` (resposta). Os pares "um ou outro" aparecem com os dois lados; o README avisa.
+* **`docs/PROPOSTA-PADRONIZACAO-TOTVS.md`:** escrita no escopo (§2.4 deste plano): o escopo ampliado na abertura, a linha "Escritas" no
+  inventário (§1), o `status_code`, a trava e a máscara no log (§5.5), as respostas das escritas no controller (§6.4) e as faixas dos jobs
+  novos (§7).
+* **README:** a seção dos exemplos e as pendências, que ainda diziam "só a troca de estágio da parcela está implementada".

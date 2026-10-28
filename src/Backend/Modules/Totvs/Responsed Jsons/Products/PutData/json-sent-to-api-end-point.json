@@ -1,0 +1,18 @@
+{
+  "filter": {
+    "productCodeList": [
+      1
+    ],
+    "barCodeList": [
+      "Exemplo barCodeList"
+    ],
+    "groupCode": "Exemplo gr",
+    "referenceCode": "Exemplo referenceCode"
+  },
+  "ncmCode": "Exemplo ncmCode",
+  "measuredUnit": "Exe",
+  "cstCode": 0,
+  "weight": 10.5,
+  "cestCode": "Exemplo cestCode",
+  "prefixEanGtin": "Exemplo prefixEanGti"
+}

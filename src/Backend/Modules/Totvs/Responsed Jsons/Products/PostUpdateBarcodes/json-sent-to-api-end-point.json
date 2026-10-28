@@ -1,0 +1,14 @@
+{
+  "products": [
+    {
+      "productCode": 1,
+      "barCodes": [
+        {
+          "barCode": "Exemplo barCode",
+          "quantity": 10.5,
+          "isMainCode": true
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "batchs": [
+    {
+      "branchCode": 1,
+      "productCode": 1,
+      "batchCode": 1,
+      "balanceCode": 1,
+      "batchProvider": "Exemplo batchProvider",
+      "batchClient": "Exemplo batchClient",
+      "batchManufacturingDate": "2026-10-28T00:00:00",
+      "batchExpirationDate": "2026-10-28T00:00:00",
+      "batchType": 1,
+      "batchItem": [
+        {
+          "batchItemSequential": 1,
+          "status": 1,
+          "itemProvider": "Exemplo itemProvider",
+          "itemClient": "Exemplo itemClient",
+          "quantityItem": 10.5,
+          "quantityTare": 10.5,
+          "quantityWeigth": 10.5,
+          "quantityMeters": 10.5,
+          "nuance": "Exemplo nuance",
+          "quantityCone": 10.5,
+          "locationBatch": "Exemp",
+          "branchSalesOrder": 1,
+          "salesOrder": 1,
+          "typeTare": 1,
+          "additionalFields": [
+            {
+              "code": 1,
+              "value": null
+            }
+          ],
+          "invoice": {
+            "supplierCode": 1,
+            "supplierCpfCnpj": "12345678000190",
+            "invoiceCode": 1,
+            "inspectionLayout": 1,
+            "quantityInspection": 1,
+            "inspectionFields": [
+              {
+                "field": 1,
+                "inspectionValue": null
+              }
+            ]
+          },
+          "conditioningType": "Exemplo co",
+          "balance": 10.5,
+          "quantityIssued": 10.5,
+          "quantityCanceled": 10.5,
+          "quantityYield": 10.5
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "personCode": 1,
+  "classifications": [
+    {
+      "classificationTypeCode": 1,
+      "classificationCode": "Exemplo cl"
+    }
+  ]
+}

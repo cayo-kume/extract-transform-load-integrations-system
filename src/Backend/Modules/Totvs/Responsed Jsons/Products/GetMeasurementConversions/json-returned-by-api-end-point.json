@@ -1,0 +1,19 @@
+{
+  "products": [
+    {
+      "productCode": 1,
+      "productDescription": "Exemplo productDescription",
+      "conversions": [
+        {
+          "sequence": 1,
+          "description": "Exemplo description",
+          "species": "Exemplo species",
+          "operationType": "Exemplo operationType",
+          "quantity": 10.5,
+          "supplierCode": 1,
+          "defaultIndicator": "Exemplo defaultIndicator"
+        }
+      ]
+    }
+  ]
+}

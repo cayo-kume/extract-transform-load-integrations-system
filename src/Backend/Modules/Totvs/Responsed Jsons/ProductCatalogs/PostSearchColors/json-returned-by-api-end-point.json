@@ -1,0 +1,27 @@
+{
+  "count": 1,
+  "totalPages": 1,
+  "hasNext": false,
+  "totalItems": 1,
+  "items": [
+    {
+      "colorCode": "Exemplo co",
+      "colorName": "Exemplo colorName",
+      "additionalColorInformation": [
+        {
+          "branchCode": 1,
+          "groupName": "Exemplo gr",
+          "auxiliaryCode": "Exemplo au",
+          "auxiliaryName": "Exemplo auxiliaryName",
+          "pantoneCode": "Exemplo pantoneCode",
+          "colorType": "Ex",
+          "colorTypeName": "Exemplo colorTypeName",
+          "isActive": true,
+          "isFinishedProduct": true,
+          "isRawMaterial": true,
+          "isBulkMaterial": true
+        }
+      ]
+    }
+  ]
+}

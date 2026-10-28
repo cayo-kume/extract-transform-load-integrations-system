@@ -1,0 +1,9 @@
+{
+  "personCpf": "12345678909",
+  "branchList": [
+    {
+      "branchCode": 1,
+      "branchCnpj": "12345678000190"
+    }
+  ]
+}

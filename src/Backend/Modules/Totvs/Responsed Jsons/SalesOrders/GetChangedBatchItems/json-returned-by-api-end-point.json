@@ -1,0 +1,14 @@
+{
+  "items": [
+    {
+      "orderCode": 1,
+      "productCode": 1,
+      "branchCode": 1,
+      "batchCode": 1,
+      "sequence": 1,
+      "itemBatchKey": "Exemplo itemBatchKey",
+      "itemBar": "Exemplo itemBar",
+      "changeDate": "2026-10-28T00:00:00"
+    }
+  ]
+}

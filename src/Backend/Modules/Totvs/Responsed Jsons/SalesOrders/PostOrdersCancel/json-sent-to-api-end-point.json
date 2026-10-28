@@ -1,0 +1,7 @@
+{
+  "branchCode": 1,
+  "orderCode": 1,
+  "orderId": "Exemplo orderId",
+  "reasonCancellationCode": 1,
+  "ReasonCancellationDescription": "Exemplo ReasonCancellationDescription"
+}

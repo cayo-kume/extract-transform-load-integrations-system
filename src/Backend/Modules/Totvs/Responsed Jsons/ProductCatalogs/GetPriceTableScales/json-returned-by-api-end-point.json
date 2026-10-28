@@ -1,0 +1,20 @@
+{
+  "count": 1,
+  "totalPages": 1,
+  "hasNext": false,
+  "totalItems": 1,
+  "items": [
+    {
+      "scaleCode": 1,
+      "scaleDescription": "Exemplo scaleDescription",
+      "maxChangeFilterDate": "2026-10-28T00:00:00",
+      "scales": [
+        {
+          "quantity": 1,
+          "variationValue": 10.5,
+          "variationPercentage": 10.5
+        }
+      ]
+    }
+  ]
+}

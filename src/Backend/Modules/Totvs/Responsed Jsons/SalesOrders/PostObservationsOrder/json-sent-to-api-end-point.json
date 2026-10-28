@@ -1,0 +1,16 @@
+{
+  "branchCode": 1,
+  "orderCode": 1,
+  "orderId": "Exemplo orderId",
+  "observations": [
+    {
+      "observation": "Exemplo observation",
+      "visualizationType": 1
+    }
+  ],
+  "invoiceObservations": [
+    {
+      "observation": "Exemplo observation"
+    }
+  ]
+}

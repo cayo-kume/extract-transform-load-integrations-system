@@ -1,0 +1,19 @@
+{
+  "startChangeDate": "2026-10-28T00:00:00",
+  "endChangeDate": "2026-10-28T00:00:00",
+  "codeList": [
+    1
+  ],
+  "fibers": [
+    {
+      "code": 1,
+      "percentage": 10.5
+    }
+  ],
+  "description": "Exemplo description",
+  "fiberDescription": "Exemplo fiberDescription",
+  "order": "Exemplo order",
+  "page": 1,
+  "pageSize": 1,
+  "expand": "Exemplo expand"
+}

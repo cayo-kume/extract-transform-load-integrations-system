@@ -1,0 +1,62 @@
+{
+  "filter": {
+    "change": {
+      "startDate": "2026-10-28T00:00:00",
+      "endDate": "2026-10-28T00:00:00",
+      "inClassification": true,
+      "classificationTypeCodeList": [
+        1
+      ],
+      "inAddress": true,
+      "inPhone": true,
+      "inObservation": true,
+      "inRepresentative": true,
+      "inCustomer": true,
+      "inSalesRegion": true,
+      "inPriceTable": true,
+      "inRepresentativeParameter": true,
+      "branchRepresentativeParameterList": [
+        1
+      ]
+    },
+    "representativeCodeList": [
+      1
+    ],
+    "cpfCnpjList": [
+      "12345678000190"
+    ],
+    "supervisorCodeList": [
+      1
+    ],
+    "supervisorcpfCnpjList": [
+      "12345678000190"
+    ],
+    "classifications": [
+      {
+        "type": 1,
+        "codeList": [
+          "Exemplo codeList"
+        ]
+      }
+    ]
+  },
+  "option": {
+    "classificationTypeCodeList": [
+      1
+    ],
+    "additionalFieldCodeList": [
+      1
+    ],
+    "branchStaticDataList": [
+      1
+    ],
+    "branchRepresentativeParameterList": [
+      1
+    ],
+    "QuantityOcurrenceCustomerObservation": 1
+  },
+  "expand": "Exemplo expand",
+  "page": 1,
+  "pageSize": 1,
+  "order": "Exemplo order"
+}

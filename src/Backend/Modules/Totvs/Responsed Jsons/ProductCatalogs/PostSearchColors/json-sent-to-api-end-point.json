@@ -1,0 +1,21 @@
+{
+  "filter": {
+    "change": {
+      "startDate": "2026-10-28T00:00:00",
+      "endDate": "2026-10-28T00:00:00"
+    },
+    "colorCodeList": [
+      "Exemplo colorCodeList"
+    ],
+    "isActive": true,
+    "isFinishedProduct": true,
+    "isRawMaterial": true,
+    "isBulkMaterial": true,
+    "colorType": "Ex",
+    "auxiliaryCode": "Exemplo au",
+    "pantoneCode": "Exemplo pantoneCode"
+  },
+  "expand": "Exemplo expand",
+  "page": 1,
+  "pageSize": 1
+}

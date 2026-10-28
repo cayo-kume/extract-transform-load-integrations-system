@@ -1,0 +1,10 @@
+{
+  "filter": {
+    "personCode": 1,
+    "personCpfCnpj": "12345678000190",
+    "sequence": 1
+  },
+  "description": "Exemplo description",
+  "status": "Unread",
+  "priority": 1
+}

@@ -1,0 +1,28 @@
+{
+  "count": 1,
+  "totalPages": 1,
+  "hasNext": false,
+  "totalItems": 1,
+  "items": [
+    {
+      "productCode": 1,
+      "groupSequenceCode": 1,
+      "lastChageDate": "2026-10-28T00:00:00",
+      "similarProductList": [
+        {
+          "productCode": 1
+        }
+      ],
+      "similarGroupProductList": [
+        {
+          "productCode": 1
+        }
+      ],
+      "similarRefereceGroupProductList": [
+        {
+          "productCode": 1
+        }
+      ]
+    }
+  ]
+}

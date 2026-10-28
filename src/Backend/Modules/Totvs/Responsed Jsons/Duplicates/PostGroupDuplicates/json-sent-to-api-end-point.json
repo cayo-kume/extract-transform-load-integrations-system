@@ -1,0 +1,15 @@
+{
+  "branchCnpj": "12345678000190",
+  "supplierCpfCnpj": "12345678000190",
+  "duplicateCode": 1000,
+  "document": 1,
+  "dueDate": "2026-10-28T00:00:00",
+  "groupInstallments": [
+    {
+      "branchCnpj": "12345678000190",
+      "supplierCpfCnpj": "12345678000190",
+      "duplicateCode": 1000,
+      "installmentCode": 1
+    }
+  ]
+}

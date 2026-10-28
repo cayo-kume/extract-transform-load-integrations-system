@@ -1,0 +1,11 @@
+{
+  "StartMovementDate": "2026-10-28T00:00:00",
+  "EndMovementDate": "2026-10-28T00:00:00",
+  "StartRegistrationDate": "2026-10-28T00:00:00",
+  "EndRegistrationDate": "2026-10-28T00:00:00",
+  "ReceptionTypeList": [
+    "Exemplo ReceptionTypeList"
+  ],
+  "Page": 1,
+  "PageSize": 1
+}

@@ -1,0 +1,31 @@
+{
+  "batchItems": [
+    {
+      "branchCode": 1,
+      "batchCode": 1,
+      "sequence": 1,
+      "itemClient": "Exemplo itemClient",
+      "dataChanged": {
+        "nuance": "Exemplo nuance",
+        "location": "Exemp",
+        "itemClient": "Exemplo itemClient",
+        "itemProvider": "Exemplo itemProvider",
+        "branchSalesOrder": 1,
+        "salesOrder": 1,
+        "additionalFields": [
+          {
+            "code": 1,
+            "value": null
+          }
+        ],
+        "conditioningType": "Exemplo co",
+        "quantityItem": 10.5,
+        "quantityYield": 10.5,
+        "quantityMeters": 10.5,
+        "supplierWidth": 10.5,
+        "realWidth": 10.5,
+        "grammage": 1
+      }
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "BranchCode": 1,
+  "OrderCode": 1,
+  "OrderId": "Exemplo OrderId",
+  "MaxChangeFilterDate": "2026-10-28T00:00:00",
+  "InvoiceStatusType": [
+    "Exemplo InvoiceStatusType"
+  ]
+}

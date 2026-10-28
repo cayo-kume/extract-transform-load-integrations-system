@@ -1,0 +1,9 @@
+{
+  "skus": [
+    {
+      "productCode": 1,
+      "colorCode": "Exemplo colorCode",
+      "sizeName": "Exemplo sizeName"
+    }
+  ]
+}

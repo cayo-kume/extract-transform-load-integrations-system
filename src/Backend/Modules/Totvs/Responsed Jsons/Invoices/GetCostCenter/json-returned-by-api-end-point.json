@@ -1,0 +1,24 @@
+{
+  "count": 1,
+  "totalPages": 1,
+  "hasNext": false,
+  "totalItems": 1,
+  "items": [
+    {
+      "code": 1,
+      "description": "Exemplo description",
+      "class": 1,
+      "classType": 1,
+      "indirectType": 1,
+      "isInactive": true,
+      "classifications": [
+        {
+          "typeCode": 1,
+          "typeDescription": "Exemplo typeDescription",
+          "code": "Exemplo code",
+          "description": "Exemplo description"
+        }
+      ]
+    }
+  ]
+}

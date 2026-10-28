@@ -1,0 +1,17 @@
+{
+  "count": 1,
+  "totalPages": 1,
+  "hasNext": false,
+  "totalItems": 1,
+  "items": [
+    {
+      "code": 1,
+      "description": "Exemplo description",
+      "title": "Exemplo title",
+      "type": 1,
+      "size": 1,
+      "decimal": 1,
+      "maxChangeFilterDate": "2026-10-28T00:00:00"
+    }
+  ]
+}

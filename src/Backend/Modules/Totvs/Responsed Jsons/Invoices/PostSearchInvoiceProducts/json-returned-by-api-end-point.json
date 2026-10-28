@@ -1,0 +1,63 @@
+{
+  "count": 1,
+  "totalPages": 1,
+  "hasNext": false,
+  "totalItems": 1,
+  "items": [
+    {
+      "branchCode": 1,
+      "branchCnpj": "12345678000190",
+      "invoiceSequence": 1,
+      "invoiceDate": "2026-10-28T00:00:00",
+      "personCode": 1,
+      "personName": "Exemplo personName",
+      "personCpfCnpj": "12345678000190",
+      "invoiceCode": 1,
+      "serialCode": "Exemplo serialCode",
+      "invoiceStatus": "Canceled",
+      "transactionBranchCode": 1,
+      "transactionDate": "2026-10-28T00:00:00",
+      "transactionCode": 1,
+      "origin": 1,
+      "documentType": 1,
+      "operationType": 1,
+      "operationCode": 1,
+      "operatioName": "Exemplo operatioName",
+      "issueDate": "2026-10-28T00:00:00",
+      "accessKey": "35123456789012345678901234567890123456789012",
+      "couponCode": 1,
+      "serialMachine": "Exemplo serialMachine",
+      "productCode": 1,
+      "productName": "Exemplo productName",
+      "quantity": 10.5,
+      "unitGrossValue": 10.5,
+      "unitDiscountValue": 10.5,
+      "unitNetValue": 10.5,
+      "itemSequence": 1,
+      "itemCode": "Exemplo itemCode",
+      "itemName": "Exemplo itemName",
+      "ncm": "Exemplo ncm",
+      "cfop": 1,
+      "measureUnit": "Exemplo measureUnit",
+      "kitCode": "Exemplo kitCode",
+      "kitSequence": 1,
+      "returnedQuantity": 10.5,
+      "batchItems": [
+        {
+          "branchCode": 1,
+          "invoiceSequence": 1,
+          "invoiceDate": "2026-10-28T00:00:00",
+          "invoiceItemNumber": 1,
+          "productCode": 1,
+          "sequence": 1,
+          "branchCodeBatch": 1,
+          "batchNumber": 1,
+          "itemBatchNumber": 1,
+          "quantityBatch": 10.5,
+          "batchBarcode": "Exemplo batchBarcode"
+        }
+      ],
+      "calculatedIbsCbs": true
+    }
+  ]
+}

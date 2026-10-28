@@ -1,0 +1,203 @@
+{
+  "orderId": "Exemplo orderId",
+  "branchCode": 1,
+  "customerOrderCode": "Exemplo customerOrderCode",
+  "integrationCode": "Exemplo integrationCode",
+  "orderDate": "2026-10-28T00:00:00",
+  "customerCode": 1,
+  "customerCpfCnpj": "12345678000190",
+  "representativeCode": 1,
+  "representativeCpfCnpj": "12345678000190",
+  "intermediaryCode": 1,
+  "intermediaryCnpj": "12345678000190",
+  "guideCode": 1,
+  "guideCpfCnpj": "12345678000190",
+  "sellerCode": 1,
+  "sellerCpfCnpj": "12345678000190",
+  "operationCode": 1,
+  "paymentConditionCode": 1,
+  "paymentBaseDate": "2026-10-28T00:00:00",
+  "priorityCode": 1,
+  "arrivalDate": "2026-10-28T00:00:00",
+  "shippingCompanyCode": 1,
+  "shippingCompanyCpfCnpj": "12345678000190",
+  "redispatchingShippingCompanyCode": 1,
+  "redispatchingShippingCompanyCpfCnpj": "12345678000190",
+  "redispatchingFreightType": 1,
+  "billingForecastDate": "2026-10-28T00:00:00",
+  "billingLimitDate": "2026-10-28T00:00:00",
+  "freightType": 1,
+  "freightPercentage": 10.5,
+  "freightValue": 10.5,
+  "packageNumber": 10.5,
+  "weight": 10.5,
+  "statusOrder": 1,
+  "reasonBlockingCode": 1,
+  "omniSiteId": 1,
+  "shippingService": "Exemplo sh",
+  "experienceType": "Ecommerce",
+  "chargeType": 0,
+  "priceTableCode": 1,
+  "additionalValue": 10.5,
+  "batchOrder": "Exemplo ba",
+  "totalAmountOrder": 10.5,
+  "receivingPerson": "Exemplo receivingPerson",
+  "rollMeasureCode": 1,
+  "buyerCustomerCode": 1,
+  "buyerCustomerCpfCnpj": "12345678000190",
+  "discounts": [
+    {
+      "typeDiscountCode": 1,
+      "discountValue": 10.5,
+      "discountPercentage": 10.5
+    }
+  ],
+  "items": [
+    {
+      "productCode": 1,
+      "productSku": "Exemplo productSku",
+      "quantity": 10.5,
+      "originalPrice": 10.5,
+      "price": 10.5,
+      "discountPercentage": 10.5,
+      "discountValue": 10.5,
+      "billingForecastDate": "2026-10-28T00:00:00",
+      "billingStartDate": "2026-10-28T00:00:00",
+      "customerOrderCode": 1,
+      "customerProductCode": "Exemplo customerProd",
+      "rollMeasureCode": 1,
+      "sequentials": [
+        "Exemplo sequentials"
+      ],
+      "sequentialsValues": [
+        {
+          "code": "Exemplo code",
+          "freightValue": 10.5,
+          "discountValue": 10.5
+        }
+      ],
+      "groupObservations": [
+        {
+          "observation": "Exemplo observation"
+        }
+      ],
+      "outsourceds": [
+        {
+          "cep": "01001000",
+          "cityName": "Exemplo cityName",
+          "stateAbbreviation": "SP",
+          "publicPlace": "Exemplo pu",
+          "address": "Exemplo address",
+          "number": 1,
+          "neighborhood": "Exemplo neighborhood",
+          "complement": "Exemplo complement",
+          "customerCode": 1,
+          "customerCpfCnpj": "12345678000190",
+          "distributionQuantity": 10.5
+        }
+      ],
+      "commissioneds": [
+        {
+          "representativeCode": 1,
+          "representativeCpfCnpj": "12345678000190",
+          "commissionedType": 1,
+          "commissionPercentageBilling": 10.5,
+          "commissionPercentageReceipt": 10.5
+        }
+      ]
+    }
+  ],
+  "classifications": [
+    {
+      "classificationTypeCode": 1,
+      "classificationCode": "Exemplo cl"
+    }
+  ],
+  "payments": [
+    {
+      "documentType": 1,
+      "nsu": 1000,
+      "alphanumericNsu": "Exemplo alphanumericNsu",
+      "authorizationCode": "Exemplo authorizatio",
+      "creditCardOperator": "Exemplo creditCardOperator",
+      "creditCardBrand": "Exemplo creditCardBrand",
+      "assignorCode": 1,
+      "installment": 1,
+      "paymentValue": 10.5,
+      "documentNumber": 1000,
+      "financialOperatorCode": 1,
+      "financialOperatorCnpj": "12345678000190",
+      "currentAccountCode": 1,
+      "paymentType": 0,
+      "paymentBranch": 1,
+      "paymentBranchCnpj": "12345678000190",
+      "ourNumber": 1000
+    }
+  ],
+  "observations": [
+    {
+      "observation": "Exemplo observation",
+      "visualizationType": 1
+    }
+  ],
+  "invoiceObservations": [
+    {
+      "observation": "Exemplo observation"
+    }
+  ],
+  "representativeObservations": [
+    {
+      "observation": "Exemplo observation",
+      "visualizationType": 1
+    }
+  ],
+  "shippingAddress": {
+    "cep": "01001000",
+    "cityName": "Exemplo cityName",
+    "stateAbbreviation": "SP",
+    "publicPlace": "Exemplo pu",
+    "address": "Exemplo address",
+    "number": 1,
+    "neighborhood": "Exemplo neighborhood",
+    "complement": "Exemplo complement"
+  },
+  "gifts": [
+    {
+      "productCode": 1,
+      "productSku": "Exemplo productSku",
+      "quantity": 10.5,
+      "price": 10.5
+    }
+  ],
+  "commissioneds": [
+    {
+      "representativeCode": 1,
+      "representativeCpfCnpj": "12345678000190",
+      "commissionedType": 1,
+      "commissionPercentageBilling": 10.5,
+      "commissionPercentageReceipt": 10.5
+    }
+  ],
+  "outsourceds": [
+    {
+      "cep": "01001000",
+      "cityName": "Exemplo cityName",
+      "stateAbbreviation": "SP",
+      "publicPlace": "Exemplo pu",
+      "address": "Exemplo address",
+      "number": 1,
+      "neighborhood": "Exemplo neighborhood",
+      "complement": "Exemplo complement",
+      "customerCode": 1,
+      "customerCpfCnpj": "12345678000190",
+      "operationCode": 1
+    }
+  ],
+  "billingPercentageLimitDates": [
+    {
+      "billingForecastDate": "2026-10-28T00:00:00",
+      "billingPercentageLimit": 10.5,
+      "limitType": 1
+    }
+  ]
+}

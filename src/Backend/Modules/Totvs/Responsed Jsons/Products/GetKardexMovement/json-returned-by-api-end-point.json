@@ -1,0 +1,28 @@
+{
+  "branchCode": 1,
+  "balanceType": 1,
+  "productCode": 1,
+  "productName": "Exemplo productName",
+  "groupSequenceCode": 1,
+  "groupCode": "Exemplo groupCode",
+  "groupName": "Exemplo groupName",
+  "colorCode": "Exemplo colorCode",
+  "colorName": "Exemplo colorName",
+  "sizeName": "Exemplo sizeName",
+  "previousBalance": 10.5,
+  "movements": [
+    {
+      "movementDate": "2026-10-28",
+      "historyCode": 1,
+      "historyName": "Exemplo historyName",
+      "operationCode": 1,
+      "operationName": "Exemplo operationName",
+      "documentType": 1,
+      "documentNumber": 1,
+      "unitValue": 10.5,
+      "inQuantity": 10.5,
+      "outQuantity": 10.5,
+      "balance": 10.5
+    }
+  ]
+}
