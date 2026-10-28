@@ -2312,7 +2312,7 @@ onda 2 que entrar monta a base das leituras sem persistência (T11, §8.1).
 | PE-4 | 2 | `TotvsBonusService` | token por loja (PE3) + `PostListBalanceBonus` | 13038 | PE-3 **Implementada em 28/10/2026** (§10.13) |
 | PE-5 | 3 | `TotvsPeopleService` | `PostMessages`, `PutChangeMessages`, `DeleteMessages` | 13044–13046 | AP-1 **Implementada em 28/10/2026** (§10.14), com a base comum das escritas e a trava T5 |
 | PE-6 | 4 | `TotvsPeopleService`, `TotvsRepresentativesService` | `PostRemoveClassificationRelationship`, `PostCustomerRepresentatives`, `PostIndividualCustomers`, `PostLegalCustomers` | 13040–13043 | PE-1 (valida os códigos nos catálogos), PE-5, T3 e T6. **Implementada em 28/10/2026** (§10.21), sem a conferência nos catálogos |
-| PE-7 | 5 | `TotvsBonusService` | `PostBonusDueDate`, `PostBonusConsume` | 13047, 13048 | PE-4 (saldo antes do consumo, PE4), T4, T5 |
+| PE-7 | 5 | `TotvsBonusService` | `PostBonusDueDate`, `PostBonusConsume` | 13047, 13048 | PE-4 (saldo antes do consumo, PE4), T4, T5. **Implementada em 28/10/2026** (§10.26) |
 
 #### Seller (`TotvsSellersService`, §4)
 
@@ -3351,3 +3351,35 @@ clientes 58243 (PF) e 58245 (PJ, com CPF/CNPJ gerados) e o vínculo do 58243 com
 produto de teste), as rotas de lote (`batch/create`, `batch-info`, `batch-preferentialsalesorder`, `batch-link`, vínculo e remoção de
 itens de lote no pedido de venda) e as contagens e a sugestão por nuance (sem dados na homologação), a capa do pedido de venda, a
 classificação de produto com sucesso (depende da `ORA-02291`) e o tipo de classificação 6000 recusado (só no validador).
+
+### 10.26 Fase PE-7: crédito e consumo de bônus (28/10/2026)
+
+Primeira fase da onda 5 (efeito financeiro).
+
+| Peça | Onde |
+|---|---|
+| DTOs `BonusDueDate`, `BonusConsumption` | `Domain.Totvs/Dtos/Writes/People/Bonus` |
+| `BonusDueDateValidator`, `BonusConsumptionValidator` | `Application.Totvs/Validations/Writes/People/Bonus` |
+| `PostBonusDueDate` (13047), `PostBonusConsume` (13048) | `TotvsBonusService` |
+| Rotas `POST BonusDueDate/{docCompany}` e `POST BonusConsume/{docCompany}` | `TotvsController` |
+| Grupo de escrita `Bonus` (`Totvs:Writes:Bonus:Enabled`, falso no `appsettings.json`) | `TotvsBonusService`, host |
+| `Script075` (jobs) | `Infrastructure.Totvs/Scripts/SQLServer` |
+
+**Regras:**
+* **PE5:** as escritas de bônus têm o grupo próprio `Bonus` (no lugar da chave `Totvs:EnableBonusWrites` proposta, para seguir a T4), desligado
+  por padrão; publicar em produção continua esperando a T2.
+* **PE4:** com o `personCpfCnpj`, o consumo lê antes o saldo da loja pelo `list-balance-bonus` (a leitura fica em `TotvsRequests`, com o
+  documento mascarado) e devolve 422 sem chamar o consumo se o saldo for menor ou não houver saldo na loja. Pelo `personCode` não há
+  conferência: a leitura de saldo pede o documento. Se a leitura falhar, o consumo segue e a Totvs decide.
+* **Trava (T5)** nas duas: sem estorno pela API, repetir duplicaria o crédito ou o débito; a dica do 502 manda conferir o saldo.
+* **Token:** o comum da empresa, como no `PostListBalanceBonus` (a PE-4 mostrou que a loja no token não muda o resultado da leitura); se a
+  homologação recusar o consumo por falta da loja no token, entra o token por loja da PE3.
+* **Validador:** crédito com tipo de 1 a 15, valor positivo, utilizado até o valor, validade em ordem e não vencida, e cada grupo de origem
+  completo; consumo por código **ou** documento e valor com até 9 inteiros e 2 decimais.
+
+**Testes (console de rascunho, Totvs falsa):** crédito válido, vazio e com tipo 16, valor 0, utilizado acima, validade invertida e vencida,
+origem pela metade; aceito, repetido (409), loja de fora (422), grupo desligado. Consumo válido e com os dois documentos, sem loja, 3 casas;
+com saldo (lê o saldo e chama), acima do saldo e sem saldo na loja (422 sem chamar o consumo), por código (sem leitura de saldo).
+
+**Não verificado:** a chamada em homologação (gera e consome crédito de verdade) e se o consumo exige a loja no token; o `Script075` em banco
+e as rotas pelo host.

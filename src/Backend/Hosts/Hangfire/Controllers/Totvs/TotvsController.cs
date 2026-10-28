@@ -926,6 +926,47 @@ namespace Hangfire.Controllers.Totvs
         }
 
         /// <summary>
+        /// gera crédito de bônus desconto para o cliente (POST person/v2/bonus-due-date). Efeito financeiro e sem estorno pela API: só com
+        /// Totvs:Writes:Bonus:Enabled; o mesmo corpo em 10 minutos volta 409
+        /// </summary>
+        [HttpPost("BonusDueDate/{docCompany}")]
+        [Tags("TotvsPeople")]
+        public async Task<ActionResult> BonusDueDate(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.People.Bonus.BonusDueDate body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.People.Bonus.BonusDueDate> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsBonusService.PostBonusDueDate(userName, docCompany, body));
+        }
+        /// <summary>
+        /// consome saldo de bônus do cliente numa loja (POST person/v2/bonus-consume). Com o personCpfCnpj, o saldo da loja é conferido antes (422
+        /// se menor). Efeito financeiro e sem estorno: só com Totvs:Writes:Bonus:Enabled; o mesmo corpo em 10 minutos volta 409
+        /// </summary>
+        [HttpPost("BonusConsume/{docCompany}")]
+        [Tags("TotvsPeople")]
+        public async Task<ActionResult> BonusConsume(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.People.Bonus.BonusConsumption body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.People.Bonus.BonusConsumption> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsBonusService.PostBonusConsume(userName, docCompany, body));
+        }
+
+        /// <summary>
         /// resolve um código (produto, pack, barras, RFID, item de lote) para o produto (GET product/v2/products/{code}), sem gravar
         /// </summary>
         [HttpGet("Products/{docCompany}/Codes/{code}")]

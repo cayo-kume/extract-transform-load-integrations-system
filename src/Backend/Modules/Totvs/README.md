@@ -218,6 +218,8 @@ Os nomes dos métodos são os da **documentação oficial** (`PostSearch*`, `Get
 | `TotvsPeopleService` | `PostLegalCustomers` | `POST person/v2/legal-customers` (inclusão e alteração) | 13041 | `Totvs:Writes:People:Enabled` |
 | `TotvsRepresentativesService` | `PostCustomerRepresentatives` | `POST person/v2/customer-representatives` | 13042 | `Totvs:Writes:People:Enabled` |
 | `TotvsPeopleService` | `PostRemoveClassificationRelationship` | `POST person/v2/classification-relationship/remove` | 13043 | `Totvs:Writes:People:Enabled` |
+| `TotvsBonusService` | `PostBonusDueDate` | `POST person/v2/bonus-due-date` (efeito financeiro; com a trava de repetição) | 13047 | `Totvs:Writes:Bonus:Enabled` |
+| `TotvsBonusService` | `PostBonusConsume` | `POST person/v2/bonus-consume` (efeito financeiro; saldo conferido antes; com a trava de repetição) | 13048 | `Totvs:Writes:Bonus:Enabled` |
 | `TotvsProductCatalogsService` | `PostColors` | `POST product/v2/colors` (inclusão e alteração) | 13124 | `Totvs:Writes:Products:Enabled` |
 | `TotvsProductCatalogsService` | `PostGrids` | `POST product/v2/grids` (com a trava de repetição) | 13126 | `Totvs:Writes:Products:Enabled` |
 | `TotvsProductCatalogsService` | `PostClassifications` | `POST product/v2/classifications` (inclusão e alteração; sem o tipo 6000) | 13125 | `Totvs:Writes:Products:Enabled` |
@@ -379,6 +381,7 @@ O DbUp executa cada script uma única vez, em ordem alfabética. Alterar um scri
 | `Script072` | Jobs das escritas de cadastro da API Product (códigos de barras, classificações, referência e lotes, 13120–13123, 13125, 13127 e 13135–13137) |
 | `Script073` | Jobs das escritas de documento da API Purchase Order (inclusão, quantidade dos itens e vínculo com lote, 13180, 13181 e 13184) |
 | `Script074` | Jobs das escritas de documento da API Sales Order (situação, capa, itens, lotes e contagens, 13199, 13200, 13205, 13206, 13208 e 13211–13214) |
+| `Script075` | Jobs das escritas de bônus da API Person (crédito e consumo, 13047 e 13048) |
 
 **Regras gerais das tabelas e dos merges:**
 * Toda tabela de dados existe em dois schemas: `untreated` (recebe o bulk insert, sem chave) e `totvs` (tabela final, com PK). A exceção é `totvs.TotvsRequests`, que só recebe inserts.
@@ -513,6 +516,8 @@ escritas de pedido de venda, a **chave do pedido** é `branchCode` + `orderCode`
 | POST | `LegalCustomers/{docCompany}` | `branchInsertCode`, `cnpj` (com dígito verificador), `name` e o que mudar, com as mesmas regras; sócios (`cpfPartner` **ou** `partnerCode`, participação até 100), contatos e `preferences` | `PostLegalCustomers` (devolve o `customerCode`) |
 | POST | `CustomerRepresentatives/{docCompany}` | `representativeCode` **ou** `representativeCpfCnpj`; `customerCodeList` **ou** `customerCpfCnpjList` (até 500, sem repetição) | `PostCustomerRepresentatives` (sem rota para desfazer) |
 | POST | `ClassificationRelationship/{docCompany}/Remove` | `personCode`, `classifications` (`classificationTypeCode` e `classificationCode`) | `PostRemoveClassificationRelationship` |
+| POST | `BonusDueDate/{docCompany}` | `branchCode`, `personCode`, `bonusType` (1 a 15), `movementDate`, `bonusValue`, validade (`startDate`, `endDate` não vencida); `usedValue` e a origem (transação, fatura ou liquidação, cada uma completa) | `PostBonusDueDate` (gera crédito; sem estorno) |
+| POST | `BonusConsume/{docCompany}` | `personCode` **ou** `personCpfCnpj`, `branchCode`, `usedValue` | `PostBonusConsume` (com o documento, saldo da loja conferido antes: 422 se menor; sem estorno) |
 | POST | `Products/{docCompany}/Colors` | `code` (10), `name` (40); `colorInfoAdditionals` por loja da empresa (`branchCode`, `auxiliaryCode`, `auxiliaryName`, `pantoneCode`, usos) | `PostColors` (um `code` existente é renomeado em todas as referências) |
 | POST | `Products/{docCompany}/Grids` | `gridCode` (opcional, 6), `name` (40), `type`; `gridSizes` (`name` até 10, sem repetição) | `PostGrids` (devolve o `gridCode`) |
 | POST | `Products/{docCompany}/Classifications` | `typeCode` (4, nunca 6000), `description` (40), `auxiliaryDescription` (100); `classifications` (`code` 10, sem repetição) | `PostClassifications` (inclui ou renomeia) |
@@ -632,7 +637,7 @@ Os jobs ficam em `auditing.Jobs`, com os mesmos ids em `EnumJob`.
 | 13019 | `TotvsPostGroupDuplicates` | escrita |
 | 13020 | `TotvsPostDuplicatesInstallmentsStage` | escrita |
 | 13040–13043 | `TotvsPostIndividualCustomers`, `TotvsPostLegalCustomers`, `TotvsPostCustomerRepresentatives`, `TotvsPostRemoveClassificationRelationship` | escrita |
-| 13044–13046 | `TotvsPostMessages`, `TotvsPutChangeMessages`, `TotvsDeleteMessages` | escrita |
+| 13044–13048 | `TotvsPostMessages`, `TotvsPutChangeMessages`, `TotvsDeleteMessages`, `TotvsPostBonusDueDate`, `TotvsPostBonusConsume` | escrita |
 | 13120–13127 | `TotvsPostBarcodes`, `TotvsPostUpdateBarcodes`, `TotvsPostCreateClassificationRelationship`, `TotvsPostUpdateClassificationRelationship`, `TotvsPostColors`, `TotvsPostClassifications`, `TotvsPostGrids`, `TotvsPostReferences` | escrita |
 | 13135–13137 | `TotvsPostCreateBatch`, `TotvsPutBatchInfo`, `TotvsPostBatchPreferentialSalesOrder` | escrita |
 | 13180–13182, 13184 | `TotvsPostPurchaseOrders`, `TotvsPostPurchaseOrdersQuantityItems`, `TotvsPostPurchaseOrdersChangeStatus`, `TotvsPostPurchaseOrderBatchLink` | escrita |
@@ -650,7 +655,7 @@ Toda execução grava `auditing.Logs` e, conforme o caso:
 | Onde | Chave | Uso |
 |---|---|---|
 | `appsettings.json` do host | `Totvs:BaseUrl` | Endereço da API; homologação é só outro valor no `appsettings` do ambiente |
-| `appsettings.json` do host | `Totvs:Writes:<grupo>:Enabled` | Liga as escritas de um grupo (`AccountsPayable`, `People`, `Products`, `PurchaseOrders`, `SalesOrders`). Sem a chave, ou com `false`, a rota devolve 422 sem chamar a Totvs |
+| `appsettings.json` do host | `Totvs:Writes:<grupo>:Enabled` | Liga as escritas de um grupo (`AccountsPayable`, `Bonus`, `People`, `Products`, `PurchaseOrders`, `SalesOrders`). Sem a chave, ou com `false`, a rota devolve 422 sem chamar a Totvs |
 | `appsettings.json` do host | `ConnectionStrings` | Conexão com o SQL Server (dados e auditoria) |
 | Banco | `totvs.TotvsParameters` | CNPJ (`doc_company`) e credenciais (`client_id`, `client_secret`, `username`, `password`) de cada empresa |
 

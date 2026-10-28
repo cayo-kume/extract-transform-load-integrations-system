@@ -113,6 +113,8 @@
         TotvsPostMessages = 13044,   //Script067_Insert_Totvs_People_Writes_Jobs_Into_Jobs_Table.sql
         TotvsPutChangeMessages = 13045,   //Script067_Insert_Totvs_People_Writes_Jobs_Into_Jobs_Table.sql
         TotvsDeleteMessages = 13046,   //Script067_Insert_Totvs_People_Writes_Jobs_Into_Jobs_Table.sql
+        TotvsPostBonusDueDate = 13047,   //Script075_Insert_Totvs_Bonus_Writes_Jobs_Into_Jobs_Table.sql
+        TotvsPostBonusConsume = 13048,   //Script075_Insert_Totvs_Bonus_Writes_Jobs_Into_Jobs_Table.sql
         TotvsPostBarcodes = 13120,   //Script072_Insert_Totvs_Products_Catalog_Writes_Jobs_Into_Jobs_Table.sql
         TotvsPostUpdateBarcodes = 13121,   //Script072_Insert_Totvs_Products_Catalog_Writes_Jobs_Into_Jobs_Table.sql
         TotvsPostCreateClassificationRelationship = 13122,   //Script072_Insert_Totvs_Products_Catalog_Writes_Jobs_Into_Jobs_Table.sql
