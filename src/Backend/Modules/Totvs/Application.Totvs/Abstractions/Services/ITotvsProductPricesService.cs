@@ -31,7 +31,8 @@
         public Task<bool?> GetPromotion();
 
         /// <summary>
-        /// inclui preço ou custo dos produtos (POST product/v2/values/create), com os códigos e lojas permitidos e a trava de variação (PR7)
+        /// inclui preço ou custo dos produtos (POST product/v2/values/create), com os códigos e lojas permitidos e a trava de variação (PR7); código
+        /// que o produto já tem na loja volta 400 AlreadyExist (testado): a alteração é pelo PostUpdateValues
         /// </summary>
         public Task<Domain.Totvs.Dtos.Writes.Result> PostCreateValues(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Values.ProductValues body, bool confirmVariation);
 

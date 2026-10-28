@@ -3512,6 +3512,7 @@ de 43, modelo 56, operação `E`. Aceita (chave com as duas chaves de acesso), X
 texto pelo nome; loja de fora (422); grupo desligado.
 
 **Não verificado:** a chamada em homologação (efeito fiscal incerto: só com a área fiscal de acordo); o `Script079` em banco e a rota pelo host.
+(Feita depois com uma nota fictícia: §10.32.)
 
 **Onda 5 implementada** (PE-7, PR-6, PO-4, SO-5 e FI-3), conferida só com a Totvs falsa. Com ela, todas as rotas da documentação oficial que
 o plano manda implementar estão no módulo; ficam fora `products/search` (PR1) e `digital-certificates` (F2), por decisão, e o
@@ -3527,3 +3528,35 @@ onda 5, a rodada em homologação e a liberação de cada grupo de escrita pelo 
   inventário (§1), o `status_code`, a trava e a máscara no log (§5.5), as respostas das escritas no controller (§6.4) e as faixas dos jobs
   novos (§7).
 * **README:** a seção dos exemplos e as pendências, que ainda diziam "só a troca de estágio da parcela está implementada".
+
+### 10.32 Rodada da onda 5 em homologação (28/10/2026)
+
+Mesmo console das §10.19 e §10.25 (usuário pessoal `cayo.kume`, services de verdade, tabelas em memória), três rodadas. A descoberta só leu a
+homologação (cliente de teste 58243, produto 15687 e o preço código 1 da loja 1, a promoção aberta 3 da loja 1, o pedido de compra de teste
+1\|141, o pedido de venda 106\|266 como modelo e um motivo de cancelamento); as escritas esperaram confirmação, e a manifestação, uma segunda.
+
+| Fase | Rota | Resultado |
+|---|---|---|
+| PE-7 | `POST bonus-due-date` | 201 com o tipo 1 e com o tipo 14 (R$ 1,00, validade de 30 dias), mas o **saldo relido continua 0** (`list-balance-bonus`, também minutos depois) |
+| PE-7 | `POST bonus-consume` | Pelo CPF: **422 sem chamar** pela conferência do saldo (PE4, saldo 0). Pelo código: **400 `ValueGreaterThanBalance`** (saldo 0). O consumo com sucesso não foi verificado |
+| PR-6 | `PUT products/{code}/{branch}`, `PUT branch-info/{branch}`, `PUT data` | 200 nos três, regravando NCM, unidade e "ativo" com os valores atuais; o `branch-info` devolve as contagens de linhas alteradas |
+| PR-6 | `POST values/create` | Código que o produto já tem na loja: **400 `AlreadyExist`**: a inclusão é só para código novo (anotado na interface e no README) |
+| PR-6 | `POST values/update` | 200: preço de 298 para 300,98 (relido) e de volta para 298. **+50% sem `confirmVariation`: 422 sem chamar** (PR7) |
+| PR-6 | `POST promotion-values/update` | 200, com o mesmo valor de promoção (148) do produto 16413 na promoção 3 |
+| PR-6 | `POST promotion-items` | 201, incluindo o produto 15687 na promoção 3 (a 268,20) |
+| PO-4 | `POST orders/cancel` | 200: o pedido de compra de teste 1\|141 relido como **6 (cancelado)**; à Totvs foram só loja e pedido |
+| SO-5 | `POST b2c-orders` | **`priorityCode` 0: 400 `EmptyField`** (a Totvs trata o 0 como vazio; o validador passou a pedir 1 a 99). Com 1: **201** com `branchCode`, `orderCode` e `orderId` (pedido 106\|267). Repetido: **422 sem chamar** pela busca do `orderId` (SO5) |
+| SO-5 | `POST price-items`, `POST cancel-items` | No pedido B2C: **400 `CannotChangedOrderEcommerce`** (o B2C é do e-commerce, como na SO-3; anotado). No pedido comum 106\|266, com um item incluído para o teste: 200 nos dois, relido com o preço 99,99 e a unidade cancelada |
+| SO-5 | `POST pdv-transactions` | 200; o pedido relido com `hasPdvTransaction` verdadeiro |
+| SO-5 | `POST orders/cancel` | 200: o pedido B2C relido como `Canceled`, com as 2 unidades canceladas |
+| FI-3 | `POST invoices/manifestations` | 200 com uma nota **fictícia** (chave de 44 dígitos inventada, emissor de uma duplicata real, loja 1); o XML foi à Totvs e só o tamanho ficou no log |
+
+**Corrigido:** `B2COrderValidator` pede `priorityCode` de 1 a 99 (antes, de 0 a 99).
+
+**Ficaram na homologação:** dois créditos de bônus de R$ 1,00 (tipos 1 e 14) do cliente 58243 na loja 1, o produto 15687 na promoção 3 da
+loja 1, o pedido de compra 1\|141 cancelado, o pedido B2C 106\|267 (`TESTEINT10281138`) cancelado e com a transação de PDV de teste, o item
+3964 cancelado no pedido 106\|266 e a nota fictícia no painel de manifestação (FISFP153).
+
+**Não verificado em homologação:** o consumo de bônus com sucesso (o crédito não chega ao saldo: a conferir no PESFC054 do ERP se os créditos
+aparecem e com qual situação, e o parâmetro `TP_BONUS_DESCONTO` da loja 1), a inclusão de custo (`valueType` `C`) e a inclusão de valor
+em código novo, e o efeito fiscal da manifestação (só com a área fiscal).

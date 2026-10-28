@@ -234,7 +234,7 @@ Os nomes dos métodos são os da **documentação oficial** (`PostSearch*`, `Get
 | `TotvsProductsService` | `PutProducts` | `PUT product/v2/products/{code}/{branchCode}` | 13128 | `Totvs:Writes:Products:Enabled` |
 | `TotvsProductsService` | `PutBranchInfo` | `PUT product/v2/branch-info/{branchCode}` | 13129 | `Totvs:Writes:Products:Enabled` |
 | `TotvsProductsService` | `PutData` | `PUT product/v2/data` | 13130 | `Totvs:Writes:Products:Enabled` |
-| `TotvsProductPricesService` | `PostCreateValues` | `POST product/v2/values/create` (códigos e lojas permitidos, trava de variação) | 13131 | `Totvs:Writes:Products:Enabled` |
+| `TotvsProductPricesService` | `PostCreateValues` | `POST product/v2/values/create` (códigos e lojas permitidos, trava de variação; código que já existe: 400 `AlreadyExist`) | 13131 | `Totvs:Writes:Products:Enabled` |
 | `TotvsProductPricesService` | `PostUpdateValues` | `POST product/v2/values/update` (códigos e lojas permitidos, trava de variação) | 13132 | `Totvs:Writes:Products:Enabled` |
 | `TotvsProductPricesService` | `PostUpdatePromotionValues` | `POST product/v2/promotion-values/update` | 13133 | `Totvs:Writes:Products:Enabled` |
 | `TotvsProductPricesService` | `PostPromotionItems` | `POST product/v2/promotion-items` (com a trava de repetição) | 13134 | `Totvs:Writes:Products:Enabled` |
@@ -259,8 +259,8 @@ Os nomes dos métodos são os da **documentação oficial** (`PostSearch*`, `Get
 | `TotvsSalesOrdersService` | `PostB2COrders` | `POST sales-order/v2/b2c-orders` (orderId conferido antes; com a trava de repetição) | 13197 | `Totvs:Writes:SalesOrders:Enabled` |
 | `TotvsSalesOrdersService` | `PostOrdersCancel` | `POST sales-order/v2/orders/cancel` (irreversível) | 13198 | `Totvs:Writes:SalesOrders:Enabled` |
 | `TotvsSalesOrdersService` | `PostPdvTransactions` | `POST sales-order/v2/pdv-transactions` (com a trava de repetição) | 13204 | `Totvs:Writes:SalesOrders:Enabled` |
-| `TotvsSalesOrdersService` | `PostPriceItems` | `POST sales-order/v2/price-items` | 13209 | `Totvs:Writes:SalesOrders:Enabled` |
-| `TotvsSalesOrdersService` | `PostCancelItems` | `POST sales-order/v2/cancel-items` (com a trava de repetição) | 13210 | `Totvs:Writes:SalesOrders:Enabled` |
+| `TotvsSalesOrdersService` | `PostPriceItems` | `POST sales-order/v2/price-items` (pedido do e-commerce, inclusive o B2C: 400 `CannotChangedOrderEcommerce`) | 13209 | `Totvs:Writes:SalesOrders:Enabled` |
+| `TotvsSalesOrdersService` | `PostCancelItems` | `POST sales-order/v2/cancel-items` (com a trava de repetição; pedido do e-commerce, inclusive o B2C: 400 `CannotChangedOrderEcommerce`) | 13210 | `Totvs:Writes:SalesOrders:Enabled` |
 | `TotvsInvoicesService` | `PostInvoicesManifestations` | `POST fiscal/v2/invoices/manifestations` (efeito fiscal a confirmar; XML fora do log) | 13258 | `Totvs:Writes:Invoices:Enabled` |
 
 **Leituras sob demanda** (um registro por chave)
@@ -572,7 +572,7 @@ escritas de pedido de venda, a **chave do pedido** é `branchCode` + `orderCode`
 | POST | `SalesOrders/{docCompany}/BatchItems` | `branchCode`, `orderCode`; `items` (`code` do produto, `isUpdateQuantity`, `batchItems` por loja + lote + sequência **ou** `barCode`, com a quantidade) | `PostRelationshipBatchItems` |
 | DELETE | `SalesOrders/{docCompany}/BatchItems` | query: chave do pedido, `productCode` **ou** `productSku`, `batchSequence` | `DeleteBatchItems` |
 | POST | `SalesOrders/{docCompany}/BatchItems/SuggestNuance` | só a chave do pedido | `PostSuggestBatchItemsNuance` (o ERP escolhe os lotes) |
-| POST | `SalesOrders/{docCompany}/B2C` | `orderId`, loja, data, cliente e representante (código **ou** CPF/CNPJ), operação, condição, prioridade, `statusOrder` (1, 5, 8), total e itens; pagamentos (soma igual ao total; cartão com NSU, autorização, operadora e bandeira), descontos, classificações, observações, endereço, brindes, comissionados, terceiros | `PostB2COrders` (orderId existente: 422 com o pedido; sem como conferir: não inclui) |
+| POST | `SalesOrders/{docCompany}/B2C` | `orderId`, loja, data, cliente e representante (código **ou** CPF/CNPJ), operação, condição, prioridade (1 a 99: o 0 a Totvs recusa como vazio), `statusOrder` (1, 5, 8), total e itens; pagamentos (soma igual ao total; cartão com NSU, autorização, operadora e bandeira), descontos, classificações, observações, endereço, brindes, comissionados, terceiros | `PostB2COrders` (orderId existente: 422 com o pedido; sem como conferir: não inclui) |
 | POST | `SalesOrders/{docCompany}/Cancel` | chave do pedido; `reasonCancellationCode`, `ReasonCancellationDescription` (R maiúsculo) | `PostOrdersCancel` (com o pedido no banco: cancelado ou atendido voltam 422) |
 | POST | `SalesOrders/{docCompany}/Items/Price` | chave do pedido; `items` (`productCode` **ou** `productSku`, `price` > 0) | `PostPriceItems` |
 | POST | `SalesOrders/{docCompany}/Items/Cancel` | chave do pedido; `items` (produto, `cancelQuantity` > 0, `reasonCancellationCode`) | `PostCancelItems` (com o item no banco, até a pendente) |
@@ -763,9 +763,9 @@ cada fase ("Não verificado"). Em resumo:
 
 * **Execução em banco e pelo host:** os scripts e as rotas ainda não rodaram pelo host; a modelagem foi conferida com chamadas reais à API
   e as escritas com um console contra a homologação, sem banco.
-* **Homologação:** as ondas 3 e 4 foram testadas (plano, §10.19 e §10.25), menos a inclusão de referência, os lotes, as contagens, a sugestão
-  por nuance e a capa do pedido de venda; a onda 5 (bônus, preço, custo, promoção, dados fiscais do produto, cancelamentos, pedido B2C, PDV e
-  manifestação) ainda não, e a manifestação depende da área fiscal.
+* **Homologação:** as ondas 3, 4 e 5 foram testadas (plano, §10.19, §10.25 e §10.32), menos a inclusão de referência, os lotes, as contagens,
+  a sugestão por nuance e a capa do pedido de venda. Na onda 5, o **consumo de bônus** não foi verificado: o crédito é aceito (201), mas o
+  saldo continua 0 (a conferir no PESFC054 do ERP), e a manifestação foi feita com uma nota fictícia (o efeito fiscal depende da área fiscal).
 * **Produção:** espera a autenticação dos endpoints de inbound (T2) e a liberação de cada grupo de escrita pelo negócio, inclusive as listas
   de códigos e lojas de preço (PR7).
 * **Preços, custos e saldos** (jobs 13015–13017): a carga inicial dos saldos leva horas (~27 min por loja, estimado) e precisa de proteção

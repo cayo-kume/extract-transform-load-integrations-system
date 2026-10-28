@@ -134,13 +134,14 @@
         public Task<Domain.Totvs.Dtos.Writes.Result> PostOrdersCancel(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderCancel body);
 
         /// <summary>
-        /// altera o preço dos itens do pedido de venda (POST sales-order/v2/price-items)
+        /// altera o preço dos itens do pedido de venda (POST sales-order/v2/price-items); pedido do e-commerce, inclusive o B2C, volta 400
+        /// CannotChangedOrderEcommerce (testado)
         /// </summary>
         public Task<Domain.Totvs.Dtos.Writes.Result> PostPriceItems(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderItemsPrice body);
 
         /// <summary>
         /// cancela quantidades dos itens do pedido de venda (POST sales-order/v2/cancel-items); com o item no banco, até a pendente (SO7). O mesmo
-        /// corpo em 10 minutos volta 409 (T5)
+        /// corpo em 10 minutos volta 409 (T5). Pedido do e-commerce, inclusive o B2C, volta 400 CannotChangedOrderEcommerce (testado)
         /// </summary>
         public Task<Domain.Totvs.Dtos.Writes.Result> PostCancelItems(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderItemsCancel body);
 

@@ -74,8 +74,8 @@ namespace Application.Totvs.Validations.Writes.SalesOrders.B2COrders
             RuleFor(x => x.priorityCode)
                 .NotNull()
                 .WithMessage("O campo 'priorityCode' é obrigatório.")
-                .InclusiveBetween(0, 99)
-                .WithMessage("O campo 'priorityCode' deve ter até 2 dígitos.");
+                .InclusiveBetween(1, 99)
+                .WithMessage("O campo 'priorityCode' deve ser de 1 a 99 (a Totvs recusa o 0 como campo vazio).");
 
             RuleFor(x => x.statusOrder)
                 .NotNull()
