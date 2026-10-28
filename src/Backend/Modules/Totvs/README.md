@@ -221,7 +221,7 @@ Os nomes dos métodos são os da **documentação oficial** (`PostSearch*`, `Get
 | `TotvsBonusService` | `PostBonusDueDate` | `POST person/v2/bonus-due-date` (efeito financeiro; com a trava de repetição) | 13047 | `Totvs:Writes:Bonus:Enabled` |
 | `TotvsBonusService` | `PostBonusConsume` | `POST person/v2/bonus-consume` (efeito financeiro; saldo conferido antes; com a trava de repetição) | 13048 | `Totvs:Writes:Bonus:Enabled` |
 | `TotvsProductCatalogsService` | `PostColors` | `POST product/v2/colors` (inclusão e alteração) | 13124 | `Totvs:Writes:Products:Enabled` |
-| `TotvsProductCatalogsService` | `PostGrids` | `POST product/v2/grids` (com a trava de repetição) | 13126 | `Totvs:Writes:Products:Enabled` |
+| `TotvsProductCatalogsService` | `PostGrids` | `POST product/v2/grids` (só inclui: código ou nome existente volta 400 `AlreadyExist`; com a trava de repetição) | 13126 | `Totvs:Writes:Products:Enabled` |
 | `TotvsProductCatalogsService` | `PostClassifications` | `POST product/v2/classifications` (inclusão e alteração; sem o tipo 6000) | 13125 | `Totvs:Writes:Products:Enabled` |
 | `TotvsProductsService` | `PostBarcodes` | `POST product/v2/barcodes` | 13120 | `Totvs:Writes:Products:Enabled` |
 | `TotvsProductsService` | `PostUpdateBarcodes` | `POST product/v2/barcodes/update` | 13121 | `Totvs:Writes:Products:Enabled` |
@@ -772,8 +772,9 @@ cada fase ("Não verificado"). Em resumo:
   de códigos e lojas de preço (PR7).
 * **Preços, custos e saldos** (jobs 13015–13017): a carga inicial dos saldos leva horas (~27 min por loja, estimado) e precisa de proteção
   contra execução simultânea quando os jobs da Totvs forem registrados no Hangfire.
-* **`referencedInvoices`:** comentado no `expand` das notas até a Totvs corrigir o erro 400 (o teste da F3 com o `item-detail-search` está
-  pendente).
+* **`referencedInvoices`:** comentado no `expand` das notas até a Totvs corrigir o erro 400. O `item-detail-search` não serve de contorno
+  (F3, plano §10.35): para a devolução que falha, ele responde 200, mas com `referencedInvoices` vazio. Para a Totvs: o 400 do
+  `invoices/search` com a nota 2/31392 de 28/09/2026 da homologação (devolução de venda, CFOP 1202).
 ---
 
 ## Documentação complementar

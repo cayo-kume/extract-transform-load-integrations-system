@@ -72,7 +72,8 @@
         public Task<Domain.Totvs.Dtos.Writes.Result> PostColors(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Colors.UpsertColor body);
 
         /// <summary>
-        /// inclui uma grade de tamanhos (POST product/v2/grids); a resposta traz o gridCode. Não idempotente: o mesmo corpo em 10 minutos
+        /// inclui uma grade de tamanhos (POST product/v2/grids); a resposta traz o gridCode. Só inclui: gridCode ou nome que já existem voltam
+        /// 400 AlreadyExist (testado), e os tamanhos de uma grade existente só mudam no ERP. Não idempotente: o mesmo corpo em 10 minutos
         /// volta 409 (T5)
         /// </summary>
         public Task<Domain.Totvs.Dtos.Writes.Result> PostGrids(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Grids.InsertGrid body);

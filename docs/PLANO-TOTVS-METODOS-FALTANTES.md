@@ -2199,7 +2199,7 @@ lugar nenhum. Parâmetros: `BranchCode*`, `EnviromentType*` (`EnviromentType`: `
 |---|---|---|
 | F1 | Implementar `invoices/manifestations`? | **Respondida (27/10/2026):** implementar mesmo sem caso de uso (T14): o chamador informa os dados do documento (a integração não tem NSU nem XML de terceiros). Efeito fiscal incerto: testes só em homologação |
 | F2 | Expor `digital-certificates`? | **Não**: devolve a senha e a chave privada do certificado. Só um monitor de vencimento, se pedido, sem gravar o JSON |
-| F3 | Usar `item-detail-search` como contorno do `referencedInvoices` (400 no `invoices/search`)? | Testar com uma nota que falha; se funcionar, gravar só `TotvsInvoicesItemsProductsReferenced` por uma procedure própria (entrega separada) |
+| F3 | Usar `item-detail-search` como contorno do `referencedInvoices` (400 no `invoices/search`)? | Testar com uma nota que falha; se funcionar, gravar só `TotvsInvoicesItemsProductsReferenced` por uma procedure própria (entrega separada). **Testada em 28/10/2026 (§10.35): não serve** (200 com a lista vazia) |
 | F4 | Intervalo das inutilizações | 120 min (volume baixo); 3 min só se houver consumidor que precise |
 | F5 | Hash dos centros de custo em coluna (`json_hash`) com o cache montado do banco, em vez do cache em memória das comissões? | Sim; e rever o das comissões, cujo cache expira entre duas execuções |
 | F6 | Persistir o XML das NF-e? | Não; criar `TotvsInvoicesXml` só se aparecer consumidor |
@@ -3600,3 +3600,22 @@ homologação.
 
 **Não verificado em homologação:** bloquear pedido de compra parcialmente recebido (não há um, e a volta iria para em andamento, não para o
 estado original).
+
+### 10.35 Pendências das ondas 1 e 2 em homologação (28/10/2026)
+
+No console da §10.32 (modo `w12`), as duas pendências das ondas 1 e 2 que a homologação permitia testar.
+
+**F3 (§10.12): o `item-detail-search` não serve de contorno do `referencedInvoices`.** A busca de notas das 24 lojas com `items,referencedInvoices`
+falhou já na primeira página dos últimos 30 dias (400 `GetReferencedInvoices`); relendo em páginas de 10 e de 1, a nota que falha sozinha é a
+**2/31392 de 28/09/2026**, uma devolução de venda (entrada, CFOP 1202, 1 item). O `item-detail-search` dela responde **200** (~2,8 KB, com
+itens, produtos por item e impostos), mas o `referencedInvoices` do produto vem **vazio** (`[]`). Sem o contorno, o campo continua
+comentado no `expand` e as notas referenciadas das devoluções ficam de fora até a Totvs corrigir o 400; a nota acima é o exemplo para o
+chamado.
+
+**PR-1 (§10.5): a data do pai com mudança só na filha não pode ser testada pela API.** O `POST grids` só inclui: a grade de teste 29 (§10.19)
+mandada de novo com o `gridCode`, com um tamanho a mais, voltou **400 `AlreadyExist`** (código e nome); trocando só o nome, o mesmo. A
+grade relida não mudou (`maxChangeFilterDate` de 08:32:07). Os tamanhos de uma grade existente só mudam no ERP (PRDFM008): o teste precisa
+de alguém que altere um tamanho da grade 29 lá, e então basta reler a data. Anotado na interface e no README.
+
+**Não verificado:** a PR-1 (acima); os tamanhos dos textos das regiões (SE-1, sem regiões na homologação); os scripts `033`–`065` em banco,
+as rotas pelo host, a carga inicial inteira dos saldos (PR-2) e o `ReadResponse` por HTTP (FI-2).
