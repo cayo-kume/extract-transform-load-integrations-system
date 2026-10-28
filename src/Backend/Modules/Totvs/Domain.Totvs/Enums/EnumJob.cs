@@ -60,6 +60,10 @@
         TotvsGetPriceTablesHeaders = 13090,   //Script047_Insert_Totvs_Product_Catalogs_Jobs_Into_Jobs_Table.sql
         TotvsGetPriceTableScales = 13091,   //Script047_Insert_Totvs_Product_Catalogs_Jobs_Into_Jobs_Table.sql
 
+        // itens das tabelas de preço e promoções (fase PR-2, parte 2), a cada 2 horas
+        TotvsPostSearchPriceTables = 13092,   //Script053_Insert_Totvs_Product_Prices_Jobs_Into_Jobs_Table.sql
+        TotvsGetPromotion = 13093,   //Script053_Insert_Totvs_Product_Prices_Jobs_Into_Jobs_Table.sql
+
         // escritas (TotvsController, com X-User-Name; não recorrentes): docs/PLANO-TOTVS-METODOS-FALTANTES.md §9.4
         TotvsPostDuplicates = 13018,   //Script032_Insert_Totvs_Accounts_Payable_Writes_Jobs_Into_Jobs_Table.sql (fase AP-2)
         TotvsPostGroupDuplicates = 13019,   //Script032_Insert_Totvs_Accounts_Payable_Writes_Jobs_Into_Jobs_Table.sql (fase AP-2)

@@ -168,6 +168,8 @@ Os nomes dos métodos são os da **documentação oficial** (`PostSearch*`, `Get
 | `TotvsProductsService` | `PostSearchReferences` | `POST product/v2/references/search` (uma chamada por marca) | `TotvsSkus` e 21 filhas/netas | 13000 | 120 min |
 | `TotvsProductPricesService` | `PostSearchPrices` | `POST product/v2/prices/search` (todos os códigos, uma chamada por loja; carga inicial por produto) | `TotvsPrices` e outras promoções | 13015 | 3 min |
 | `TotvsProductPricesService` | `PostSearchCosts` | `POST product/v2/costs/search` (idem) | `TotvsCosts` | 13016 | 3 min |
+| `TotvsProductPricesService` | `PostSearchPriceTables` | `POST product/v2/price-tables/search` (tabelas vigentes de `TotvsPriceTables`, uma chamada por tabela) | `TotvsPriceTablesItems` e preços | 13092 | 120 min |
+| `TotvsProductPricesService` | `GetPromotion` | `GET product/v2/promotion` (cada loja inteira, com hash) | `TotvsPromotions` | 13093 | 120 min |
 | `TotvsProductsService` | `PostSearchBalances` | `POST product/v2/balances/search` (idem, com pendentes e locais) | `TotvsBalances` e locais | 13017 | 3 min |
 | `TotvsPurchaseOrdersService` | `PostSearchPurchaseOrders` | `POST purchase-order/v2/search` | `TotvsPurchaseOrders` e 2 filhas | 13004 | 3 min |
 | `TotvsSalesOrdersService` | `PostSearchSalesOrders` | `POST sales-order/v2/orders/search` | `TotvsSaleOrders` e 10 filhas/netas | 13005 | 3 min |
@@ -304,6 +306,7 @@ O DbUp executa cada script uma única vez, em ordem alfabética. Alterar um scri
 | `Script042`–`044` | Regiões de atuação |
 | `Script045`–`047` | Catálogos da API Product |
 | `Script048`–`050` | Preços, custos e saldos |
+| `Script051`–`053` | Itens das tabelas de preço e promoções |
 
 **Regras gerais das tabelas e dos merges:**
 * Toda tabela de dados existe em dois schemas: `untreated` (recebe o bulk insert, sem chave) e `totvs` (tabela final, com PK). A exceção é `totvs.TotvsRequests`, que só recebe inserts.
@@ -330,6 +333,8 @@ Rota base: `TotvsJobs/Totvs`. O verbo segue a documentação oficial: `POST` nas
 | POST | `Products` | `TotvsProductsService.PostSearchReferences` |
 | POST | `Products/Prices` | `TotvsProductPricesService.PostSearchPrices` |
 | POST | `Products/Costs` | `TotvsProductPricesService.PostSearchCosts` |
+| POST | `Products/PriceTables` | `TotvsProductPricesService.PostSearchPriceTables` |
+| GET | `Products/Promotions` | `TotvsProductPricesService.GetPromotion` |
 | POST | `Products/Balances` | `TotvsProductsService.PostSearchBalances` |
 | POST | `PurchaseOrders` | `TotvsPurchaseOrdersService.PostSearchPurchaseOrders` |
 | POST | `SalesOrders` | `TotvsSalesOrdersService.PostSearchSalesOrders` |
@@ -406,7 +411,7 @@ Os jobs ficam em `auditing.Jobs`, com os mesmos ids em `EnumJob`.
 | Faixa | Tipo (`IdType`) | Conteúdo |
 |---|---|---|
 | 13000–13499 | 2 (Integração) | Leituras, com `IdParent = 130` (app Totvs) |
-| 13500–13999 | 1 (Procedure) | Procedures `sp_<Tabela>_Sync` (13500–13633), com `IdParent` = job da leitura e o mesmo intervalo |
+| 13500–13999 | 1 (Procedure) | Procedures `sp_<Tabela>_Sync` (13500–13636), com `IdParent` = job da leitura e o mesmo intervalo |
 
 | Id | Job | Intervalo |
 |---|---|---|
@@ -448,6 +453,8 @@ Os jobs ficam em `auditing.Jobs`, com os mesmos ids em `EnumJob`.
 | 13089 | `TotvsPostCompositions` | 120 min |
 | 13090 | `TotvsGetPriceTablesHeaders` | 120 min |
 | 13091 | `TotvsGetPriceTableScales` | 120 min |
+| 13092 | `TotvsPostSearchPriceTables` | 120 min |
+| 13093 | `TotvsGetPromotion` | 120 min |
 | 13018 | `TotvsPostDuplicates` | escrita (reservado, fase AP-2) |
 | 13019 | `TotvsPostGroupDuplicates` | escrita (reservado, fase AP-2) |
 | 13020 | `TotvsPostDuplicatesInstallmentsStage` | escrita |

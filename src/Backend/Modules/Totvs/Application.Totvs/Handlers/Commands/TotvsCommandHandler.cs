@@ -529,5 +529,43 @@ namespace Application.Totvs.Handlers.Commands
                      AND PRODUCTCODE IN ({String.Join(", ", productCodes)})
                      GROUP BY PRODUCTCODE";
         }
+
+        public string CreateGetActivePriceTableCodesQuery(string doc_company)
+        {
+            // tabelas de preço vigentes do cabeçalho (GetPriceTablesHeaders): sem período final ou com ele de hoje em diante
+            return @$"SELECT CODE
+                     FROM TOTVS.TOTVSPRICETABLES
+                     WHERE DOC_COMPANY = '{doc_company}'
+                     AND (ENDDATE IS NULL OR ENDDATE >= CAST(GETDATE() AS DATE))
+                     ORDER BY CODE";
+        }
+
+        public string CreateGetPriceTableItemsStateQuery(string doc_company, int priceTableCode)
+        {
+            // estado da tabela: maior alteração (null só com a carga inicial), maior produto (onde a carga inicial continua) e começo da carga
+            return @$"SELECT MAX(MAXCHANGEFILTERDATE) AS LASTCHANGE, MAX(PRODUCTCODE) AS MAXPRODUCTCODE, MIN(INTEGRATED_OR_UPDATED_AT) AS FIRSTINTEGRATED
+                     FROM TOTVS.TOTVSPRICETABLESITEMS
+                     WHERE DOC_COMPANY = '{doc_company}'
+                     AND PRICETABLECODE = {priceTableCode}";
+        }
+
+        public string CreateGetPriceTableItemsChangesQuery(string doc_company, int priceTableCode, List<int> productCodes)
+        {
+            // com lista vazia o IN () é SQL inválido; o repositório não chama a query nesse caso
+            return @$"SELECT PRODUCTCODE, MAXCHANGEFILTERDATE
+                     FROM TOTVS.TOTVSPRICETABLESITEMS
+                     WHERE DOC_COMPANY = '{doc_company}'
+                     AND PRICETABLECODE = {priceTableCode}
+                     AND PRODUCTCODE IN ({String.Join(", ", productCodes)})";
+        }
+
+        public string CreateGetPromotionsHashesQuery(string doc_company, int branchCode)
+        {
+            // itens de promoção gravados da loja, com o hash do JSON (o filtro de data da rota dá erro na Totvs: a loja é lida inteira)
+            return @$"SELECT BRANCHCODE, PROMOTIONCODE, PRODUCTCODE, JSON_HASH
+                     FROM TOTVS.TOTVSPROMOTIONS
+                     WHERE DOC_COMPANY = '{doc_company}'
+                     AND BRANCHCODE = {branchCode}";
+        }
     }
 }

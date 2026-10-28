@@ -950,6 +950,8 @@ Entidades com os mesmos nomes da API; enums (`categoryType`, `type`) gravados pe
 * **Risco de perder alteração:** o swagger diz que `maxChangeFilterDate` é o "maior valor entre DT_CADASTRO da promoção e
   do item", e o filtro é "data de cadastro". Mudança de valor ou de situação pode não entrar na janela. Proposta (PR15):
   além da janela, reler a cada execução as promoções `Status=Open` com `EndDate` ≥ hoje. A confirmar com chamada real.
+  **Na implementação (§10.7)** o filtro de data da rota dá erro na Totvs (`ORA-00920`): cada loja é lida inteira e o hash de
+  cada item (`json_hash`, T9) pega também a troca de valor e de situação, o que resolve a PR15 sem a releitura das abertas.
 * O preço promocional **vigente** por produto já virá do `PostSearchPrices` (`isPromotionalPrice`, 5.9); esta tabela é o
   cadastro das campanhas (período, valor anterior, situação), que serve de base para as escritas de 5.7.
 
@@ -2317,7 +2319,7 @@ onda 2 que entrar monta a base das leituras sem persistência (T11, §8.1).
 | Fase | Onda | Service | Métodos | Jobs | Depende de |
 |---|---|---|---|---|---|
 | PR-1 | 1 | `TotvsProductCatalogsService` | `GetClassificationType`, `GetClassifications`, `GetCategory`, `GetGrid`, `GetMeasurementUnit`, `PostSearchColors`, `GetAdditionalFieldsTypes`, `GetProductGrouperConfiguration`, `GetInstructionItems`, `PostCompositions`; `GetPriceTablesHeaders`, `GetPriceTableScales` (PR5) | 13080–13091 | — **Implementada em 27/10/2026** (§10.5) |
-| PR-2 | 1 | `TotvsProductPricesService`, `TotvsProductsService` | fase 3, partes 4 a 6 (`PostSearchPrices`, `PostSearchCosts`, `PostSearchBalances`, com a escolha da PR2 sobre `PostOmniChangedBalances`); `PostSearchPriceTables`, `GetPromotion` (PR5); `GetSimilar`; `PostSearchBatch` (PR6); `PostSearchProductCodes` (PR3) | 13015–13017, 13092–13097 | PR-1 (cabeçalhos das tabelas de preço). **Parte 1 (preços, custos e saldos) implementada em 27/10/2026** (§10.6) |
+| PR-2 | 1 | `TotvsProductPricesService`, `TotvsProductsService` | fase 3, partes 4 a 6 (`PostSearchPrices`, `PostSearchCosts`, `PostSearchBalances`, com a escolha da PR2 sobre `PostOmniChangedBalances`); `PostSearchPriceTables`, `GetPromotion` (PR5); `GetSimilar`; `PostSearchBatch` (PR6); `PostSearchProductCodes` (PR3) | 13015–13017, 13092–13097 | PR-1 (cabeçalhos das tabelas de preço). **Parte 1 (preços, custos e saldos) implementada em 27/10/2026** (§10.6); **parte 2 (`PostSearchPriceTables`, `GetPromotion`) em 27/10/2026** (§10.7) |
 | PR-3 | 2 | `TotvsProductsService` | `GetProducts`, `GetKardexMovement`, `GetGridFrequency`, `GetMeasurementConversions`, `GetCompositionProduct`, `GetCompositionGroupProduct` | 13100–13105 | base T11 |
 | PR-4 | 3 | `TotvsProductCatalogsService` | `PostColors`, `PostGrids` | 13124, 13126 | AP-1, PR-1 |
 | PR-5 | 4 | `TotvsProductCatalogsService`, `TotvsProductsService` | `PostClassifications`, `PostCreateClassificationRelationship`, `PostUpdateClassificationRelationship` (sem a classificação 6000, PR10), `PostBarcodes`, `PostUpdateBarcodes`, `PostReferences` (sem `values`, PR11); lote: `PostCreateBatch`, `PutBatchInfo`, `PostBatchPreferentialSalesOrder` (PR6) | 13120–13123, 13125, 13127, 13135–13137 | PR-4 |
@@ -2624,3 +2626,42 @@ o estado da loja semeado para a carga inicial começar nos últimos 250 produtos
 **Não verificado:** os scripts `048`–`050` em banco, as rotas pelo host e a carga inicial inteira (o teste semeou o estado da loja
 1 perto do último produto). Os jobs da Totvs ainda não estão registrados no Hangfire; quando forem, a carga inicial dos saldos
 (horas) precisa de proteção contra execução simultânea do mesmo job.
+
+### 10.7 Fase PR-2, parte 2: itens das tabelas de preço e promoções (27/10/2026)
+
+**O que entrou** (no `TotvsProductPricesService`, os dois a cada 120 min, PR5):
+* `PostSearchPriceTables` (job 13092): as tabelas vigentes de `TotvsPriceTables` (cabeçalho da PR-1: sem `endDate` ou com ela de
+  hoje em diante), uma chamada por tabela (`option.priceTableCode` aceita uma só) com todas as lojas da empresa. Mesmo desenho dos
+  preços (§10.6): carga inicial por faixa de produto, retomável, e depois a janela com `change.inPriceTableItem`,
+  `branchPriceTableCodeList` e `priceTableCodeList`, em fatias de 30 dias, com cache de estado por tabela
+  (`Totvs:PriceTableItems:<cnpj>:<tabela>`). Tabelas `TotvsPriceTablesItems` (tabela + produto, com `referenceId`) e
+  `TotvsPriceTablesItemsPrices` (+ loja + escala; o preço que sai do produto regravado é apagado no merge), com FK para o
+  cabeçalho;
+* `GetPromotion` (job 13093): uma leitura por loja (`BranchCode` é obrigatório), todas as páginas, e o hash do JSON de cada item
+  (promoção × produto) comparado com o `json_hash` gravado (T9): só o item novo ou alterado é gravado, página a página.
+  Tabela `TotvsPromotions` (loja + promoção + produto, com valores, período e situação). O item que sai da promoção fica no banco
+  com a última situação;
+* `Script051`–`053` (procedures **13634–13636**), rotas `POST TotvsJobs/Totvs/Products/PriceTables` e
+  `GET .../Products/Promotions`.
+
+**Achados na chamada real (27/10/2026):**
+* `promotion` recusa `PageSize` acima de **100** (o swagger diz 500); `StartChangeDate`/`EndChangeDate` dão 400 `ORA-00920`
+  (erro da Totvs) em todo formato de data testado, e só o `StartChangeDate` é ignorado. Daí a leitura inteira com hash;
+* o filtro `Status` só aceita o nome do enum (`Open`, `Blocked`, `Closed`), mas a resposta traz a letra (`A`, `B`, `E`), gravada
+  como veio;
+* só as matrizes têm promoção: 5 962 itens na loja 1 e 20 142 na 101 (15 promoções, 19 929 abertas e 6 175 encerradas); as
+  outras lojas devolvem 0;
+* a base não tem tabela de preço: `price-tables/search` responde 400 `PriceTableCode N not found`. Implementado pela T14 e
+  conferido com respostas sintéticas.
+
+**Conferido com o console descartável** (banco falso):
+* promoções, API real (lojas 1, 2 e 101): a 1ª execução grava os 26 104 itens em 263 chamadas (44 s); a 2ª não grava nada
+  (30 s); com o valor do 1º item de cada página alterado, regrava só os 262; com o valor de volta, os mesmos 262; com 500 na
+  3ª página de cada loja, grava as 2 primeiras páginas (400 itens), registra o erro e segue para a próxima loja, e a execução
+  seguinte grava os 25 704 que faltavam;
+* tabelas de preço: contra a API (tabela inexistente), o 400 vai para o log e nada é gravado; sintético, a carga inicial grava 2
+  produtos (preço repetido por loja e escala descartado, produto sem preço gravado sem filhas) e a janela regrava o produto com
+  data nova, ficando só o preço que veio; a 2ª execução faz 1 chamada e não grava nada;
+* as colunas das 3 `DataTable` batem com o `Script051`.
+
+**Não verificado:** os scripts `051`–`053` em banco e as rotas pelo host.

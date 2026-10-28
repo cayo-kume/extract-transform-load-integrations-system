@@ -283,6 +283,30 @@ namespace Hangfire.Controllers.Totvs
         }
 
         /// <summary>
+        /// sincroniza os itens das tabelas de preço vigentes, por loja e escala (POST product/v2/price-tables/search)
+        /// </summary>
+        [HttpPost("Products/PriceTables")]
+        [Tags("TotvsProducts")]
+        public async Task<ActionResult> ProductPriceTables()
+        {
+            var result = await _totvsProductPricesService.PostSearchPriceTables();
+
+            return Ok($"Records integrated successfully.");
+        }
+
+        /// <summary>
+        /// sincroniza os itens de promoção de todas as lojas (GET product/v2/promotion)
+        /// </summary>
+        [HttpGet("Products/Promotions")]
+        [Tags("TotvsProducts")]
+        public async Task<ActionResult> ProductPromotions()
+        {
+            var result = await _totvsProductPricesService.GetPromotion();
+
+            return Ok($"Records integrated successfully.");
+        }
+
+        /// <summary>
         /// sincroniza os saldos de todos os tipos, por loja de cada marca, com pendentes e locais (POST product/v2/balances/search)
         /// </summary>
         [HttpPost("Products/Balances")]

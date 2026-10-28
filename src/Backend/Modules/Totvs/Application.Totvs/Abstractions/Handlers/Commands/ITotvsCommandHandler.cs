@@ -79,5 +79,10 @@
         public string CreateGetCostsChangesQuery(string doc_company, int branchCode, List<int> productCodes);
         public string CreateGetBalancesStateQuery(string doc_company, int branchCode);
         public string CreateGetBalancesChangesQuery(string doc_company, int branchCode, List<int> productCodes);
+
+        public string CreateGetActivePriceTableCodesQuery(string doc_company);
+        public string CreateGetPriceTableItemsStateQuery(string doc_company, int priceTableCode);
+        public string CreateGetPriceTableItemsChangesQuery(string doc_company, int priceTableCode, List<int> productCodes);
+        public string CreateGetPromotionsHashesQuery(string doc_company, int branchCode);
     }
 }
