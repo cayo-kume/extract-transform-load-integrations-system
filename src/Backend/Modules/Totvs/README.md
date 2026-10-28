@@ -261,6 +261,7 @@ Os nomes dos métodos são os da **documentação oficial** (`PostSearch*`, `Get
 | `TotvsSalesOrdersService` | `PostPdvTransactions` | `POST sales-order/v2/pdv-transactions` (com a trava de repetição) | 13204 | `Totvs:Writes:SalesOrders:Enabled` |
 | `TotvsSalesOrdersService` | `PostPriceItems` | `POST sales-order/v2/price-items` | 13209 | `Totvs:Writes:SalesOrders:Enabled` |
 | `TotvsSalesOrdersService` | `PostCancelItems` | `POST sales-order/v2/cancel-items` (com a trava de repetição) | 13210 | `Totvs:Writes:SalesOrders:Enabled` |
+| `TotvsInvoicesService` | `PostInvoicesManifestations` | `POST fiscal/v2/invoices/manifestations` (efeito fiscal a confirmar; XML fora do log) | 13258 | `Totvs:Writes:Invoices:Enabled` |
 
 **Leituras sob demanda** (um registro por chave)
 
@@ -398,6 +399,7 @@ O DbUp executa cada script uma única vez, em ordem alfabética. Alterar um scri
 | `Script076` | Jobs das escritas de dados fiscais, preço, custo e promoção da API Product (13128–13134) |
 | `Script077` | Job do cancelamento de pedido de compra (13183) |
 | `Script078` | Jobs das escritas da API Sales Order com efeito financeiro (pedido B2C, cancelamentos, preço dos itens e transação PDV, 13197, 13198, 13204, 13209 e 13210) |
+| `Script079` | Job da manifestação do destinatário (13258) |
 
 **Regras gerais das tabelas e dos merges:**
 * Toda tabela de dados existe em dois schemas: `untreated` (recebe o bulk insert, sem chave) e `totvs` (tabela final, com PK). A exceção é `totvs.TotvsRequests`, que só recebe inserts.
@@ -575,6 +577,7 @@ escritas de pedido de venda, a **chave do pedido** é `branchCode` + `orderCode`
 | POST | `SalesOrders/{docCompany}/Items/Price` | chave do pedido; `items` (`productCode` **ou** `productSku`, `price` > 0) | `PostPriceItems` |
 | POST | `SalesOrders/{docCompany}/Items/Cancel` | chave do pedido; `items` (produto, `cancelQuantity` > 0, `reasonCancellationCode`) | `PostCancelItems` (com o item no banco, até a pendente) |
 | POST | `SalesOrders/{docCompany}/PdvTransactions` | chave do pedido; `transactionId`, loja, código e data da transação | `PostPdvTransactions` |
+| POST | `InvoicesManifestations/{docCompany}` | `items` (até 8): `accessKey` (44 dígitos), `branchCnpj` (loja da empresa), emissor, número, emissão, série, `nsu`, `operationType` e `invoiceStatus` pelo nome, total, `invoiceXml`, `documentType` (55, 57, 59, 81) | `PostInvoicesManifestations` (o XML vai à Totvs, mas só o tamanho fica em `TotvsRequests`) |
 
 | Código | Quando |
 |---|---|
@@ -658,6 +661,7 @@ Os jobs ficam em `auditing.Jobs`, com os mesmos ids em `EnumJob`.
 | 13255 | `TotvsGetSearchInvoicesItemDetail` | sob demanda, sem gravar |
 | 13256 | `TotvsGetInvoicesPendingConditionalProducts` | sob demanda, sem gravar |
 | 13257 | `TotvsPostSearchInvoiceProducts` | sob demanda, sem gravar |
+| 13258 | `TotvsPostInvoicesManifestations` | escrita |
 | 13036–13038 | `TotvsGetBranches`, `TotvsGetPersonStatistics`, `TotvsPostListBalanceBonus` | sob demanda, sem gravar |
 | 13100–13105 | `TotvsGetProducts`, `TotvsGetKardexMovement`, `TotvsGetGridFrequency`, `TotvsGetMeasurementConversions`, `TotvsGetCompositionProduct`, `TotvsGetCompositionGroupProduct` | sob demanda, sem gravar |
 | 13185 | `TotvsGetPurchaseOrderByKey` | sob demanda |
@@ -686,7 +690,7 @@ Toda execução grava `auditing.Logs` e, conforme o caso:
 | Onde | Chave | Uso |
 |---|---|---|
 | `appsettings.json` do host | `Totvs:BaseUrl` | Endereço da API; homologação é só outro valor no `appsettings` do ambiente |
-| `appsettings.json` do host | `Totvs:Writes:<grupo>:Enabled` | Liga as escritas de um grupo (`AccountsPayable`, `Bonus`, `People`, `Products`, `PurchaseOrders`, `SalesOrders`). Sem a chave, ou com `false`, a rota devolve 422 sem chamar a Totvs |
+| `appsettings.json` do host | `Totvs:Writes:<grupo>:Enabled` | Liga as escritas de um grupo (`AccountsPayable`, `Bonus`, `Invoices`, `People`, `Products`, `PurchaseOrders`, `SalesOrders`). Sem a chave, ou com `false`, a rota devolve 422 sem chamar a Totvs |
 | `appsettings.json` do host | `Totvs:Writes:Products:AllowedValueCodes`, `AllowedValueBranches`, `MaxValueVariationPercent` | Escrita de preço e custo (PR7): tipos e códigos permitidos (`P1,C1`: P preço, C custo), lojas permitidas (`1,101`) e a variação máxima contra o valor gravado (padrão 20). Lista vazia recusa toda escrita de valor |
 | `appsettings.json` do host | `ConnectionStrings` | Conexão com o SQL Server (dados e auditoria) |
 | Banco | `totvs.TotvsParameters` | CNPJ (`doc_company`) e credenciais (`client_id`, `client_secret`, `username`, `password`) de cada empresa |

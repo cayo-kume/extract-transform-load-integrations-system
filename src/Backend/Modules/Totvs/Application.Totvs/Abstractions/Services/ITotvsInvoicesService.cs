@@ -57,5 +57,11 @@
         /// devolve uma página de produtos das notas (POST fiscal/v2/invoice-products/search), com o corpo de quem chamou, sem gravar
         /// </summary>
         public Task<Domain.Totvs.Dtos.Writes.Result> PostSearchInvoiceProducts(string user_name, string doc_company, Domain.Totvs.Dtos.Reads.Invoices.InvoiceProductSearch body);
+
+        /// <summary>
+        /// inclui ou altera documentos no painel de manifestação do destinatário (POST fiscal/v2/invoices/manifestations). Efeito fiscal a
+        /// confirmar (F1); o XML não é gravado em totvs.TotvsRequests, só o tamanho
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PostInvoicesManifestations(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Fiscal.Manifestation body);
     }
 }

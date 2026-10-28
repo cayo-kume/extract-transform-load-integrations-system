@@ -875,6 +875,27 @@ namespace Hangfire.Controllers.Totvs
         }
 
         /// <summary>
+        /// inclui ou altera documentos no painel de manifestação do destinatário (POST fiscal/v2/invoices/manifestations), até 8 por chamada. O corpo
+        /// não traz o tipo do evento e o efeito fiscal é a confirmar (F1): só com Totvs:Writes:Invoices:Enabled; o XML não é gravado em TotvsRequests
+        /// </summary>
+        [HttpPost("InvoicesManifestations/{docCompany}")]
+        [Tags("TotvsInvoices")]
+        public async Task<ActionResult> InvoicesManifestations(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.Fiscal.Manifestation body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.Fiscal.Manifestation> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsInvoicesService.PostInvoicesManifestations(userName, docCompany, body));
+        }
+
+        /// <summary>
         /// devolve os dados de uma loja pelo código (1 a 4 dígitos) ou CNPJ (GET person/v2/branches/{branchId}), sem gravar
         /// </summary>
         [HttpGet("Branches/{docCompany}/{branchId}")]

@@ -85,9 +85,10 @@ namespace Application.Totvs.Abstractions.Services
         /// escrita na Totvs (docs/PLANO-TOTVS-METODOS-FALTANTES.md §1.2): serializa o corpo sem os nulos, chama a rota com uma nova tentativa
         /// só em 401 e 429 (nunca em 5xx: a escrita pode ter sido feita), registra em totvs.TotvsRequests o corpo enviado, o recebido e o status
         /// e devolve o Result. Com repeatLock, recusa com 409 (sem chamar a API) a mesma rota + chave + corpo dos últimos 10 minutos que a Totvs
-        /// aceitou ou que ficou sem resposta certa (T5). checkHint completa a mensagem quando não dá para saber se a Totvs gravou
+        /// aceitou ou que ficou sem resposta certa (T5). checkHint completa a mensagem quando não dá para saber se a Totvs gravou. Com loggedBody, é ele
+        /// que vai para request_body (o corpo sem o que não deve ser gravado)
         /// </summary>
-        public Task<Domain.Totvs.Dtos.Writes.Result> Write(Company company, Domain.Totvs.Enums.EnumJob job, string user_name, string key, HttpMethod method, string route, object? body, string checkHint, bool repeatLock = false);
+        public Task<Domain.Totvs.Dtos.Writes.Result> Write(Company company, Domain.Totvs.Enums.EnumJob job, string user_name, string key, HttpMethod method, string route, object? body, string checkHint, bool repeatLock = false, object? loggedBody = null);
 
         /// <summary>
         /// Result da escrita desligada por configuração (T4: 422 sem chamar a API)

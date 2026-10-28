@@ -2357,7 +2357,7 @@ onda 2 que entrar monta a base das leituras sem persistência (T11, §8.1).
 |---|---|---|---|---|
 | FI-1 | 1 | `GetCostCenter` (hash em coluna, F5), `GetInvoicesDisable` (F4) | 13251, 13250 | — **Implementada em 27/10/2026** (§10.10). Com ela, a onda 1 fica concluída |
 | FI-2 | 2 | base das leituras sem persistência (§8.1) + `GetXmlContents`, `PostSearchDanfe`, `PostTransactionPrint` (F9), `GetInvoicesPendingConditionalProducts`, `GetSearchInvoicesItemDetail` (com o teste da F3), `PostSearchInvoiceProducts` (F10) | 13252–13257 | — (se for a primeira fase da onda 2, é ela que monta a base T11). **Parte 1 (base T11, `GetXmlContents`, `PostSearchDanfe`, `PostTransactionPrint`) implementada em 28/10/2026** (§10.11); **parte 2 (`GetSearchInvoicesItemDetail`, `GetInvoicesPendingConditionalProducts`, `PostSearchInvoiceProducts`) em 28/10/2026** (§10.12): fase concluída, menos o teste da F3 |
-| FI-3 | 5 | `PostInvoicesManifestations` (F1: implementada mesmo sem caso de uso) | 13258 | AP-1, T1 |
+| FI-3 | 5 | `PostInvoicesManifestations` (F1: implementada mesmo sem caso de uso) | 13258 | AP-1, T1. **Implementada em 28/10/2026** (§10.30) |
 | — | fora | `GetDigitalCertificates` (F2) | — | — |
 
 Dentro de cada fase vale a "Ordem de execução" da seção da API (§2.7, §3.8, §4.5, §5.13, §6.9, §7.8, §8.15); ela foi
@@ -3485,3 +3485,35 @@ cancelado no banco (422). Preço sem valor e com 7 casas; alterado. Cancelamento
 dentro (chama), repetido (409). Transação sem id; ligada; repetida (409).
 
 **Não verificado:** a chamada em homologação (cria e cancela pedido de verdade); o `Script078` em banco e as rotas pelo host.
+
+### 10.30 Fase FI-3: manifestação do destinatário (28/10/2026)
+
+| Peça | Onde |
+|---|---|
+| DTOs `Manifestation`, `ManifestationItem`, enum `ManifestationDocumentType` (55, 57, 59, 81) | `Domain.Totvs/Dtos/Writes/Fiscal` |
+| `ManifestationValidator` | `Application.Totvs/Validations/Writes/Fiscal` |
+| `PostInvoicesManifestations` (13258) | `TotvsInvoicesService` (grupo de escrita `Invoices`) |
+| `loggedBody` no `ITotvsService.Write`: o corpo gravado em `TotvsRequests` pode ser outro que o enviado (e a trava compara o gravado) | `TotvsService` |
+| Rota `POST InvoicesManifestations/{docCompany}`; grupo `Invoices` no `appsettings.json` (desligado) | `TotvsController`, host |
+| `Script079` (job) | `Infrastructure.Totvs/Scripts/SQLServer` |
+
+**Regras:**
+* De 1 a 8 documentos (as chaves unidas por `|` cabem nos 400 caracteres de `field_key_value`, F1); chave de 44 dígitos sem repetição; CNPJs
+  com 14 dígitos; os campos sem `nullable` no swagger (número, NSU, emissão, total, modelo) obrigatórios; `documentType` pelo **modelo**
+  (55, 57, 59, 81), como número; `operationType` e `invoiceStatus` pelo nome (string no swagger).
+* Cada `branchCnpj` precisa ser loja da empresa (422 sem chamar, com os CNPJs de fora).
+* **XML fora do log (§8.1):** o `invoiceXml` vai à Totvs, mas o `request_body` gravado o troca por `invoiceXmlLength`, pelo `loggedBody` novo
+  da base comum.
+* Inclusão ou alteração no painel: sem trava (T5). Grupo de escrita próprio (`Invoices`), desligado: o efeito fiscal (evento na SEFAZ ou só
+  o painel FISFP153) é a confirmar com a área fiscal antes de qualquer chamada (F1).
+
+**Testes (console de rascunho, Totvs falsa):** manifestação válida; vazia; 9 documentos e chave repetida; documento sem os obrigatórios, chave
+de 43, modelo 56, operação `E`. Aceita (chave com as duas chaves de acesso), XML enviado e só o tamanho gravado, modelo como número e enums de
+texto pelo nome; loja de fora (422); grupo desligado.
+
+**Não verificado:** a chamada em homologação (efeito fiscal incerto: só com a área fiscal de acordo); o `Script079` em banco e a rota pelo host.
+
+**Onda 5 implementada** (PE-7, PR-6, PO-4, SO-5 e FI-3), conferida só com a Totvs falsa. Com ela, todas as rotas da documentação oficial que
+o plano manda implementar estão no módulo; ficam fora `products/search` (PR1) e `digital-certificates` (F2), por decisão, e o
+`PostOmniChangedBalances` (13096 reservado, PR2). Antes de produção continuam valendo a T2 (autenticação dos endpoints de inbound) e, para a
+onda 5, a rodada em homologação e a liberação de cada grupo de escrita pelo negócio (`Bonus`, `Invoices` e as listas de valor da PR7).

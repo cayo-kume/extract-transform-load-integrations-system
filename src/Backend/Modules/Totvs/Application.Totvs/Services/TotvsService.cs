@@ -258,14 +258,18 @@ namespace Application.Totvs.Services
             return new Domain.Totvs.Dtos.Writes.Result { success = true, key = key, statusCode = 200, apiCalled = true, data = data };
         }
 
-        public async Task<Domain.Totvs.Dtos.Writes.Result> Write(Company company, Domain.Totvs.Enums.EnumJob job, string user_name, string key, HttpMethod method, string route, object? body, string checkHint, bool repeatLock = false)
+        public async Task<Domain.Totvs.Dtos.Writes.Result> Write(Company company, Domain.Totvs.Enums.EnumJob job, string user_name, string key, HttpMethod method, string route, object? body, string checkHint, bool repeatLock = false, object? loggedBody = null)
         {
             var routeName = route.Split('?')[0];
 
             // nulos não vão (os campos dos DTOs de escrita são anuláveis); enums como número, salvo os que declaram outro formato (T3)
             var requestBody = body is null ? null : JsonConvert.SerializeObject(body, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
 
-            if (repeatLock && await RepeatedWrite(company, key, route, requestBody, checkHint) is { } repeated)
+            // o que vai para totvs.TotvsRequests: o próprio corpo ou, com loggedBody, uma versão sem o que não deve ser gravado (o XML da nota na
+            // manifestação, F1). A trava compara a mesma versão
+            var storedBody = loggedBody is null ? requestBody : JsonConvert.SerializeObject(loggedBody, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
+
+            if (repeatLock && await RepeatedWrite(company, key, route, storedBody, checkHint) is { } repeated)
                 return repeated;
 
             ApiResponse? response = null;
@@ -310,7 +314,7 @@ namespace Application.Totvs.Services
             {
                 // sem resposta (timeout, rede): a escrita pode ter sido feita. O status 0 marca a dúvida para a trava de repetição
                 var failure = $"Exceção ao chamar a API: {ex.Message.TrimEnd('.')}";
-                SaveRequest(job, user_name, method.Method, route, company.doc_company!, key, failure, false, requestBody, 0);
+                SaveRequest(job, user_name, method.Method, route, company.doc_company!, key, failure, false, storedBody, 0);
                 _logger.AddMessage($"{routeName} ({key}, empresa {company.doc_company}): {failure}. {checkHint}");
 
                 return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, apiCalled = true, message = $"{failure}. {checkHint}" };
@@ -319,12 +323,12 @@ namespace Application.Totvs.Services
             if (response is null)
             {
                 // login falhou: nenhuma chamada à rota
-                SaveRequest(job, user_name, method.Method, route, company.doc_company!, key, null, false, requestBody);
+                SaveRequest(job, user_name, method.Method, route, company.doc_company!, key, null, false, storedBody);
 
                 return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, message = $"Falha na autenticação da Totvs (empresa {company.doc_company}). Veja o log da execução." };
             }
 
-            SaveRequest(job, user_name, method.Method, route, company.doc_company!, key, response.Content, response.IsSuccess, requestBody, response.StatusCode);
+            SaveRequest(job, user_name, method.Method, route, company.doc_company!, key, response.Content, response.IsSuccess, storedBody, response.StatusCode);
 
             if (!response.IsSuccess)
             {

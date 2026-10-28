@@ -1440,5 +1440,56 @@ namespace Application.Totvs.Services
 
             return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, statusCode = 0, apiCalled = false, message = message };
         }
+
+        // grupo das escritas da API Fiscal na configuração (Totvs:Writes:Invoices:Enabled, T4)
+        private const string WritesGroup = "Invoices";
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostInvoicesManifestations(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Fiscal.Manifestation body)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsPostInvoicesManifestations);
+
+            var key = String.Join("|", body.items!.Select(x => x.accessKey));
+
+            try
+            {
+                if (!_totvsService.IsWriteEnabled(WritesGroup))
+                    return _totvsService.WriteDisabled(WritesGroup, key);
+
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return _totvsService.CompanyNotFound(doc_company, key);
+
+                var outside = new List<string>();
+
+                foreach (var cnpj in body.items!.Select(x => x.branchCnpj!).Distinct())
+                    if (await _totvsService.GetBranchCodeByCnpj(company, cnpj) is null)
+                        outside.Add(cnpj);
+
+                if (outside.Count > 0)
+                    return _totvsService.BranchNotFound(doc_company, key, outside);
+
+                // o XML da nota não vai para totvs.TotvsRequests: no lugar dele, o tamanho (F1, §8.1)
+                var logged = JObject.FromObject(body, JsonSerializer.Create(new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
+
+                foreach (var item in logged["items"]!.OfType<JObject>())
+                    if (item["invoiceXml"] is JToken xml)
+                    {
+                        item["invoiceXmlLength"] = xml.ToString().Length;
+                        item.Remove("invoiceXml");
+                    }
+
+                // inclusão ou alteração no painel: repetir dá no mesmo, sem trava. O efeito fiscal é a confirmar (F1)
+                return await _totvsService.Write(company, EnumJob.TotvsPostInvoicesManifestations, user_name, key, HttpMethod.Post, "fiscal/v2/invoices/manifestations", body,
+                    "Confira o painel de manifestação (FISFP153) antes de repetir.", loggedBody: logged);
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
     }
 }
