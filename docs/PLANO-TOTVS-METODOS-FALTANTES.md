@@ -3636,3 +3636,23 @@ As perguntas que as §10.20 a §10.24 deixaram para a chamada real, no console d
 pedido 106\|266.
 
 **Sem mudança de regra:** as respostas confirmaram o que os validadores já faziam; mudaram só as mensagens e os comentários da interface.
+
+### 10.37 Rodada com dados cadastrados no ERP (28/10/2026)
+
+O usuário cadastrou na homologação um lote do produto 15687 (PRDFM059), trocou o tamanho da grade de teste 29 de `U` para `P` (PRDFM008) e
+mandou a tela do bônus do cliente 58243 (PESFC054). Console da §10.32, modo `erp`.
+
+| Ponto | Resultado |
+|---|---|
+| PR-1: data do pai com mudança só na filha | **Muda:** a grade 29 relida tem `maxChangeFilterDate` 12:51:08 (antes 08:32:07) e o tamanho `P`. A grade continua no desenho por data; ficam a confirmar a fibra e as filhas da tabela de preço |
+| PE-7: saldo de bônus | O PESFC054 mostra **um** movimento de 28/10 (gerado 1,00, utilizado 0, saldo 1,00, validade 28/10 a 27/11), mas o **"Saldo atual" da própria tela é 0,00**, como o `list-balance-bonus`. Os dois créditos do mesmo dia (tipos 1 e 14, §10.32) viraram um movimento só: a chave do movimento é loja + pessoa + data. Um crédito tipo 14 com movimento e início **ontem** (201) também não mudou o saldo (0): não é a data de início. O saldo atual vem de outra regra do ERP (o parâmetro `TP_BONUS_DESCONTO` da loja ou o tipo do bônus): a conferir no ERP |
+| PR-6: inclusão em código novo | O produto 15687 já tem os **6** códigos de preço e os **8** de custo válidos da homologação na loja 1 (a Totvs diz quais existem pela lista de não encontrados): nada a incluir nele; fica para um produto que não tenha um dos códigos |
+| Lote do PRDFM059 | Lote 1/223436545 (tipo 1, tecido) **sem itens** (`batchItem` vazio): `batch-info`, `batch-preferentialsalesorder` e o vínculo no pedido de venda voltaram 400 "sequence 1 not found", com as mensagens certas (o pedido preferencial também pede que o pedido tenha o produto do lote). O `batch/create` na loja 1 deu **400 `ProductNotBatch`** (na 106, `ProductNotFound`): o produto não está marcado como controlado por lote (PRDFM236, Opções, Dados emp. grade). A sugestão por nuance deu 503 de novo |
+| PO-3: `batch-link` | **400 `EmptyField: Invoice`**: a nota de entrada do pedido é obrigatória. **Corrigido:** o `BatchLinkValidator` passou a exigir o `invoice` (antes, opcional); anotado na interface e no README |
+| PO-2/PO-4: pedido parcialmente recebido | Criado o pedido de compra **1\|143**, em andamento, 2 un do produto 15687 (R$ 100,00 cada), para o usuário receber 1 un no ERP |
+
+**Ficou na homologação:** o crédito de bônus de 27/10 do cliente 58243 e o pedido de compra 1\|143 (em andamento, para o recebimento parcial).
+
+**Próximos passos (com o ERP):** item no lote 223436545 e o produto 15687 marcado como controlado por lote na loja 1; recebimento de 1 un
+do pedido 1\|143 (a nota de entrada também serve ao `batch-link`); a regra do saldo de bônus; e os pontos da §10.36 que pedem cadastro
+(máscara de referência, contagem, região de atuação, painel FISFP153, tipo de classificação criado à mão).

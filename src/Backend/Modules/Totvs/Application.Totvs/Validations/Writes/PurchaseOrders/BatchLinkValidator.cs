@@ -5,7 +5,8 @@ namespace Application.Totvs.Validations.Writes.PurchaseOrders
 {
     /// <summary>
     /// valida o corpo do vínculo de item de lote com pedido de compra no controller (corpo inválido volta 400): a loja do lote, o item por lote +
-    /// sequência ou pela barra, um ou outro, o pedido e a nota pela chave de acesso ou pela série e número
+    /// sequência ou pela barra, um ou outro, o pedido e a nota (obrigatória: sem ela a Totvs volta 400 EmptyField, testado) pela chave de
+    /// acesso ou pela série e número
     /// </summary>
     public class BatchLinkValidator : AbstractValidator<BatchLink>
     {
@@ -40,6 +41,10 @@ namespace Application.Totvs.Validations.Writes.PurchaseOrders
                 .WithMessage("O campo 'orderCode' é obrigatório (o pedido do vínculo).")
                 .InclusiveBetween(1, 999_999_999)
                 .WithMessage("O campo 'orderCode' deve ter de 1 a 9 dígitos.");
+
+            RuleFor(x => x.invoice)
+                .NotNull()
+                .WithMessage("O campo 'invoice' é obrigatório (a nota de entrada do pedido).");
 
             RuleFor(x => x.invoice!)
                 .ChildRules(i =>

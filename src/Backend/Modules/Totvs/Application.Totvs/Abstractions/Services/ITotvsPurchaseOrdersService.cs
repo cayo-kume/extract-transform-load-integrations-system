@@ -33,7 +33,8 @@
         public Task<Domain.Totvs.Dtos.Writes.Result> PostPurchaseOrdersQuantityItems(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.PurchaseOrders.RequestedQuantity body);
 
         /// <summary>
-        /// cria ou troca o vínculo de um item de lote com um pedido de compra (POST purchase-order/v2/purchase-order/batch-link)
+        /// cria ou troca o vínculo de um item de lote com um pedido de compra (POST purchase-order/v2/purchase-order/batch-link); a nota de
+        /// entrada do pedido é obrigatória (testado)
         /// </summary>
         public Task<Domain.Totvs.Dtos.Writes.Result> PostPurchaseOrderBatchLink(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.PurchaseOrders.BatchLink body);
 
