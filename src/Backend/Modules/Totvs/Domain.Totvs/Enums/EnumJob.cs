@@ -113,8 +113,17 @@
         TotvsPostMessages = 13044,   //Script067_Insert_Totvs_People_Writes_Jobs_Into_Jobs_Table.sql
         TotvsPutChangeMessages = 13045,   //Script067_Insert_Totvs_People_Writes_Jobs_Into_Jobs_Table.sql
         TotvsDeleteMessages = 13046,   //Script067_Insert_Totvs_People_Writes_Jobs_Into_Jobs_Table.sql
+        TotvsPostBarcodes = 13120,   //Script072_Insert_Totvs_Products_Catalog_Writes_Jobs_Into_Jobs_Table.sql
+        TotvsPostUpdateBarcodes = 13121,   //Script072_Insert_Totvs_Products_Catalog_Writes_Jobs_Into_Jobs_Table.sql
+        TotvsPostCreateClassificationRelationship = 13122,   //Script072_Insert_Totvs_Products_Catalog_Writes_Jobs_Into_Jobs_Table.sql
+        TotvsPostUpdateClassificationRelationship = 13123,   //Script072_Insert_Totvs_Products_Catalog_Writes_Jobs_Into_Jobs_Table.sql
         TotvsPostColors = 13124,   //Script068_Insert_Totvs_Products_Writes_Jobs_Into_Jobs_Table.sql
+        TotvsPostClassifications = 13125,   //Script072_Insert_Totvs_Products_Catalog_Writes_Jobs_Into_Jobs_Table.sql
         TotvsPostGrids = 13126,   //Script068_Insert_Totvs_Products_Writes_Jobs_Into_Jobs_Table.sql
+        TotvsPostReferences = 13127,   //Script072_Insert_Totvs_Products_Catalog_Writes_Jobs_Into_Jobs_Table.sql
+        TotvsPostCreateBatch = 13135,   //Script072_Insert_Totvs_Products_Catalog_Writes_Jobs_Into_Jobs_Table.sql
+        TotvsPutBatchInfo = 13136,   //Script072_Insert_Totvs_Products_Catalog_Writes_Jobs_Into_Jobs_Table.sql
+        TotvsPostBatchPreferentialSalesOrder = 13137,   //Script072_Insert_Totvs_Products_Catalog_Writes_Jobs_Into_Jobs_Table.sql
         TotvsPostPurchaseOrdersChangeStatus = 13182,   //Script069_Insert_Totvs_Purchase_Orders_Writes_Jobs_Into_Jobs_Table.sql
         TotvsPostSalesOrderAdditionalOrder = 13201,   //Script070_Insert_Totvs_Sales_Orders_Writes_Jobs_Into_Jobs_Table.sql
         TotvsPostSalesOrderShippingOrder = 13202,   //Script070_Insert_Totvs_Sales_Orders_Writes_Jobs_Into_Jobs_Table.sql

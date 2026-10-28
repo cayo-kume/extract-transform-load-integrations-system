@@ -76,5 +76,11 @@
         /// volta 409 (T5)
         /// </summary>
         public Task<Domain.Totvs.Dtos.Writes.Result> PostGrids(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Grids.InsertGrid body);
+
+        /// <summary>
+        /// inclui ou altera um tipo de classificação de produto e as classificações dele (POST product/v2/classifications). O tipo 6000 (marca)
+        /// é recusado no controller (PR10)
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PostClassifications(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Classifications.UpsertTypeClassification body);
     }
 }

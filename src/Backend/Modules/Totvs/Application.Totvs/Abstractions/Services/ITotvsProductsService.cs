@@ -67,5 +67,47 @@
         /// devolve a composição por grupo (GET product/v2/composition-group-product), sem gravar
         /// </summary>
         public Task<Domain.Totvs.Dtos.Writes.Result> GetCompositionGroupProduct(string user_name, string doc_company, List<int>? productCodeList, List<int>? groupCodeList, List<string>? referenceCodeList, int page, int pageSize);
+
+        /// <summary>
+        /// inclui códigos de barras nos produtos (POST product/v2/barcodes)
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PostBarcodes(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.BarCodes.InsertProductBarCodes body);
+
+        /// <summary>
+        /// altera a quantidade e o padrão de códigos de barras existentes (POST product/v2/barcodes/update)
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PostUpdateBarcodes(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.BarCodes.UpdateProductBarCodes body);
+
+        /// <summary>
+        /// inclui classificações em produtos ou grupos (POST product/v2/classification-relationship/create); o tipo 6000 é recusado (PR10)
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PostCreateClassificationRelationship(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Classifications.ProductClassifications body);
+
+        /// <summary>
+        /// altera classificações de produtos ou grupos (POST product/v2/classification-relationship/update); o tipo 6000 é recusado (PR10)
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PostUpdateClassificationRelationship(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Classifications.ProductClassifications body);
+
+        /// <summary>
+        /// inclui uma referência com os SKUs (POST product/v2/references); a resposta traz os productCode gerados. Sem preços (PR11); o mesmo
+        /// corpo em 10 minutos volta 409 (T5)
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PostReferences(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.References.InsertReference body);
+
+        /// <summary>
+        /// inclui lotes e itens de lote (POST product/v2/batch/create); o mesmo corpo em 10 minutos volta 409 (T5)
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PostCreateBatch(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Batches.InsertBatches body);
+
+        /// <summary>
+        /// altera dados de itens de lote (PUT product/v2/batch-info)
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PutBatchInfo(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Batches.UpdateBatchInfo body);
+
+        /// <summary>
+        /// troca os pedidos de venda preferenciais de um item de lote (POST product/v2/batch-preferentialsalesorder): a Totvs apaga antes os que
+        /// havia
+        /// </summary>
+        public Task<Domain.Totvs.Dtos.Writes.Result> PostBatchPreferentialSalesOrder(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Batches.BatchPreferentialSalesOrder body);
     }
 }

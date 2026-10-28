@@ -2328,7 +2328,7 @@ onda 2 que entrar monta a base das leituras sem persistência (T11, §8.1).
 | PR-2 | 1 | `TotvsProductPricesService`, `TotvsProductsService` | fase 3, partes 4 a 6 (`PostSearchPrices`, `PostSearchCosts`, `PostSearchBalances`, com a escolha da PR2 sobre `PostOmniChangedBalances`); `PostSearchPriceTables`, `GetPromotion` (PR5); `GetSimilar`; `PostSearchBatch` (PR6); `PostSearchProductCodes` (PR3) | 13015–13017, 13092–13097 | PR-1 (cabeçalhos das tabelas de preço). **Parte 1 (preços, custos e saldos) implementada em 27/10/2026** (§10.6); **parte 2 (`PostSearchPriceTables`, `GetPromotion`) em 27/10/2026** (§10.7); **parte 3 (`GetSimilar`, `PostSearchBatch`, `PostSearchProductCodes`) em 27/10/2026** (§10.8): fase concluída, menos o `PostOmniChangedBalances` (13096 reservado, PR2) |
 | PR-3 | 2 | `TotvsProductsService` | `GetProducts`, `GetKardexMovement`, `GetGridFrequency`, `GetMeasurementConversions`, `GetCompositionProduct`, `GetCompositionGroupProduct` | 13100–13105 | base T11 **Implementada em 28/10/2026** (§10.13) |
 | PR-4 | 3 | `TotvsProductCatalogsService` | `PostColors`, `PostGrids` | 13124, 13126 | AP-1, PR-1 **Implementada em 28/10/2026** (§10.15) |
-| PR-5 | 4 | `TotvsProductCatalogsService`, `TotvsProductsService` | `PostClassifications`, `PostCreateClassificationRelationship`, `PostUpdateClassificationRelationship` (sem a classificação 6000, PR10), `PostBarcodes`, `PostUpdateBarcodes`, `PostReferences` (sem `values`, PR11); lote: `PostCreateBatch`, `PutBatchInfo`, `PostBatchPreferentialSalesOrder` (PR6) | 13120–13123, 13125, 13127, 13135–13137 | PR-4 |
+| PR-5 | 4 | `TotvsProductCatalogsService`, `TotvsProductsService` | `PostClassifications`, `PostCreateClassificationRelationship`, `PostUpdateClassificationRelationship` (sem a classificação 6000, PR10), `PostBarcodes`, `PostUpdateBarcodes`, `PostReferences` (sem `values`, PR11); lote: `PostCreateBatch`, `PutBatchInfo`, `PostBatchPreferentialSalesOrder` (PR6) | 13120–13123, 13125, 13127, 13135–13137 | PR-4. **Implementada em 28/10/2026** (§10.22), sem a conferência nos catálogos |
 | PR-6 | 5 | `TotvsProductsService`, `TotvsProductPricesService` | `PutProducts`, `PutBranchInfo`, `PutData` (só listas de produto, PR9); `PostCreateValues`, `PostUpdateValues`, `PostUpdatePromotionValues`, `PostPromotionItems` (PR7) | 13128–13134 | PR-2 (preços e custos lidos antes de escrever), T4, T5 |
 | — | fora | — | `PostSearchProducts` (PR1) | — | — |
 
@@ -3200,3 +3200,50 @@ código e repetida; aceita. Escrita desligada.
 
 **Não verificado:** a chamada em homologação (cria ou altera cliente de verdade), inclusive o enum pelo nome, o reset com `""` e o
 `isCommercialExp`; se a remoção sem `classificationCode` tira todas do tipo; o `Script071` em banco e as rotas pelo host.
+
+### 10.22 Fase PR-5: classificações, códigos de barras, referência e lotes de produto (28/10/2026)
+
+| Peça | Onde |
+|---|---|
+| DTOs: `Classifications` (`UpsertTypeClassification`, `UpsertClassification`, `ProductClassifications`, `ProductClassification`, `ProductClassificationItem`), `BarCodes` (inclusão e alteração), `References` (`InsertReference` e filhos, `ProductWebStatusType`), `Batches` (inclusão, `UpdateBatchInfo`, `BatchPreferentialSalesOrder`, `BatchItemStatusType`); enums comuns `SpedItemType`, `InspectionType`, `BatchType`, `TaxStatusCodeType` | `Domain.Totvs/Dtos/Writes/Products/...` |
+| Um validador por classe, nas pastas de cada recurso | `Application.Totvs/Validations/Writes/Products/...` |
+| `PostClassifications` (13125) | `TotvsProductCatalogsService` |
+| `PostBarcodes` (13120), `PostUpdateBarcodes` (13121), `PostCreateClassificationRelationship` (13122), `PostUpdateClassificationRelationship` (13123), `PostReferences` (13127), `PostCreateBatch` (13135), `PutBatchInfo` (13136), `PostBatchPreferentialSalesOrder` (13137), pelo helper `WriteProducts` | `TotvsProductsService` |
+| 9 rotas `Products/{docCompany}/...` (§5.5, §5.6, §5.8) | `TotvsController` |
+| `Script072` (jobs) | `Infrastructure.Totvs/Scripts/SQLServer` |
+
+**Regras:**
+* **PR10:** o tipo 6000 (marca, `TotvsProductBrands.ClassificationType`) é recusado no tipo de classificação e nas classificações de
+  produto; mudança de marca só pelo ERP.
+* **Referência:** cada SKU leva a classificação 6000 com uma das marcas de `TotvsProductBrands` (`2` ou `4`), senão a referência nunca
+  entra no `PostSearchReferences`; `values` (na raiz e nos SKUs) recusados até a PR7 (PR11); cor e tamanho sem repetição; um grupo por nível;
+  um fornecedor e um código padrão por SKU. Lojas das empresas e das localizações conferidas (422 sem chamar).
+* **Códigos de barras:** no máximo um padrão por produto (é o SKU das integrações), nenhum código repetido no corpo; `quantity` inteira na
+  inclusão e decimal na alteração, como no schema.
+* **Lotes:** fornecedor da nota de inspeção por código **ou** CPF/CNPJ; pedido de venda com loja e número juntos; item por loja + lote +
+  sequência **ou** lote do cliente; lojas dos lotes e dos pedidos relacionados conferidas. O `batch-preferentialsalesorder` apaga antes
+  todos os pedidos do item: a lista vazia, que só apaga, exige `?clear=true` (400 sem ele).
+* **Trava (T5):** referência e lote (sem `batchCode` a Totvs gera outro a cada chamada). As outras são inclusão/alteração ou trocam a lista
+  inteira: sem trava.
+* **Chave em `TotvsRequests`:** os produtos separados por vírgula, cortados em 400 caracteres (§5.5); grupos como `r:<referenceId>`; na
+  referência, `máscara|grupos pelo nível`; nos lotes, `loja|produto|lote` ou o lote do cliente.
+* O `value` dos campos adicionais e o `inspectionValue` vão como chegaram (`RawJsonConverter`), conferidos pela regra do `value` da PE-6.
+
+**Fora do plano:** a conferência nos catálogos carregados (`TotvsClassifications`, `TotvsGridsSizes`, `TotvsColors`,
+`TotvsAdditionalFieldsTypes`, `TotvsMeasurementUnits`) não entrou, como na PE-6: a Totvs recusa o código inexistente com 400.
+
+**Também nesta fase:** os arquivos com mais de um validador foram separados, um por arquivo, como no resto do módulo (inclusive o
+`InstallmentValidator` da AP-2). E um defeito achado no teste: regras de lista com `NotEmpty` e dois `Must` só protegiam o último contra
+lista nula, então um corpo sem a lista estourava exceção em vez de 400; os `Must` foram para uma regra própria com `When`.
+
+**Testes (console de rascunho, Totvs falsa):** tipo de classificação válido, 6000, código repetido sem diferença de maiúsculas, descrição
+de 41; aceito. Classificação de produto válida (produto e grupo), produto e grupo juntos, 6000, tipo repetido, sem classificação; incluída
+(chave `1001,r:55`) e alterada. Códigos de barras válidos, dois padrões, código repetido entre produtos, quantidade 0, produto repetido;
+incluídos com a quantidade inteira; alteração sem quantidade e com 4 casas; alterados com decimal; 60 produtos com a chave cortada em 400.
+Referência válida; vazia; SKU sem marca, com marca 9, cor e tamanho repetidos, preço; nível e loja repetidos, `spedItemType` fora do
+swagger, web sem situação; incluída (os `productCode` na resposta, chave `10|01.02`, enums como número, sem `values`), repetida (409),
+localização em loja de fora (422). Lote válido, sem obrigatórios, fornecedor duplo, pedido sem loja, quantidade negativa; incluído,
+repetido (409), loja de fora (422). Itens de lote: válido, pelos dois jeitos, sem dados, pedido sem loja; alterados por `PUT`. Pedidos
+preferenciais: válido, item e pedido pelos dois jeitos, pedido repetido; trocados; pedido em loja de fora (422).
+
+**Não verificado:** a chamada em homologação; o `Script072` em banco e as rotas pelo host (inclusive o `?clear=true`).

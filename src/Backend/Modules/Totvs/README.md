@@ -220,6 +220,15 @@ Os nomes dos métodos são os da **documentação oficial** (`PostSearch*`, `Get
 | `TotvsPeopleService` | `PostRemoveClassificationRelationship` | `POST person/v2/classification-relationship/remove` | 13043 | `Totvs:Writes:People:Enabled` |
 | `TotvsProductCatalogsService` | `PostColors` | `POST product/v2/colors` (inclusão e alteração) | 13124 | `Totvs:Writes:Products:Enabled` |
 | `TotvsProductCatalogsService` | `PostGrids` | `POST product/v2/grids` (com a trava de repetição) | 13126 | `Totvs:Writes:Products:Enabled` |
+| `TotvsProductCatalogsService` | `PostClassifications` | `POST product/v2/classifications` (inclusão e alteração; sem o tipo 6000) | 13125 | `Totvs:Writes:Products:Enabled` |
+| `TotvsProductsService` | `PostBarcodes` | `POST product/v2/barcodes` | 13120 | `Totvs:Writes:Products:Enabled` |
+| `TotvsProductsService` | `PostUpdateBarcodes` | `POST product/v2/barcodes/update` | 13121 | `Totvs:Writes:Products:Enabled` |
+| `TotvsProductsService` | `PostCreateClassificationRelationship` | `POST product/v2/classification-relationship/create` (sem o tipo 6000) | 13122 | `Totvs:Writes:Products:Enabled` |
+| `TotvsProductsService` | `PostUpdateClassificationRelationship` | `POST product/v2/classification-relationship/update` (sem o tipo 6000) | 13123 | `Totvs:Writes:Products:Enabled` |
+| `TotvsProductsService` | `PostReferences` | `POST product/v2/references` (com a trava de repetição; sem preços) | 13127 | `Totvs:Writes:Products:Enabled` |
+| `TotvsProductsService` | `PostCreateBatch` | `POST product/v2/batch/create` (com a trava de repetição) | 13135 | `Totvs:Writes:Products:Enabled` |
+| `TotvsProductsService` | `PutBatchInfo` | `PUT product/v2/batch-info` | 13136 | `Totvs:Writes:Products:Enabled` |
+| `TotvsProductsService` | `PostBatchPreferentialSalesOrder` | `POST product/v2/batch-preferentialsalesorder` | 13137 | `Totvs:Writes:Products:Enabled` |
 | `TotvsPurchaseOrdersService` | `PostPurchaseOrdersChangeStatus` | `POST purchase-order/v2/orders/change-status` | 13182 | `Totvs:Writes:PurchaseOrders:Enabled` |
 | `TotvsSalesOrdersService` | `PostAdditionalOrder` | `POST sales-order/v2/additional-order` | 13201 | `Totvs:Writes:SalesOrders:Enabled` |
 | `TotvsSalesOrdersService` | `PostShippingOrder` | `POST sales-order/v2/shipping-order` | 13202 | `Totvs:Writes:SalesOrders:Enabled` |
@@ -355,6 +364,7 @@ O DbUp executa cada script uma única vez, em ordem alfabética. Alterar um scri
 | `Script069` | Jobs das escritas da API Purchase Order (situação do pedido, 13182) |
 | `Script070` | Jobs das escritas da API Sales Order (dados adicionais, transporte, observações e itens, 13201–13203 e 13207) |
 | `Script071` | Jobs das escritas de cadastro da API Person (clientes PF e PJ, representante do cliente e remoção de classificação, 13040–13043) |
+| `Script072` | Jobs das escritas de cadastro da API Product (códigos de barras, classificações, referência e lotes, 13120–13123, 13125, 13127 e 13135–13137) |
 
 **Regras gerais das tabelas e dos merges:**
 * Toda tabela de dados existe em dois schemas: `untreated` (recebe o bulk insert, sem chave) e `totvs` (tabela final, com PK). A exceção é `totvs.TotvsRequests`, que só recebe inserts.
@@ -491,6 +501,15 @@ escritas de pedido de venda, a **chave do pedido** é `branchCode` + `orderCode`
 | POST | `ClassificationRelationship/{docCompany}/Remove` | `personCode`, `classifications` (`classificationTypeCode` e `classificationCode`) | `PostRemoveClassificationRelationship` |
 | POST | `Products/{docCompany}/Colors` | `code` (10), `name` (40); `colorInfoAdditionals` por loja da empresa (`branchCode`, `auxiliaryCode`, `auxiliaryName`, `pantoneCode`, usos) | `PostColors` (um `code` existente é renomeado em todas as referências) |
 | POST | `Products/{docCompany}/Grids` | `gridCode` (opcional, 6), `name` (40), `type`; `gridSizes` (`name` até 10, sem repetição) | `PostGrids` (devolve o `gridCode`) |
+| POST | `Products/{docCompany}/Classifications` | `typeCode` (4, nunca 6000), `description` (40), `auxiliaryDescription` (100); `classifications` (`code` 10, sem repetição) | `PostClassifications` (inclui ou renomeia) |
+| POST | `Products/{docCompany}/BarCodes` | `products` (`productCode`; `barCodes` com `barCode` 40, `quantity` inteira > 0, no máximo um `isMainCode`, `inRfid`); código sem repetição no corpo | `PostBarcodes` |
+| POST | `Products/{docCompany}/BarCodes/Update` | `products` (`productCode`; `barCodes` com `barCode`, `quantity` decimal > 0, `isMainCode`) | `PostUpdateBarcodes` |
+| POST | `Products/{docCompany}/ClassificationRelationships/Create` | `products` (`productCode` **ou** `referenceId`; `classifications` com `typeCode`, nunca 6000, e `code`) | `PostCreateClassificationRelationship` |
+| POST | `Products/{docCompany}/ClassificationRelationships/Update` | o mesmo corpo | `PostUpdateClassificationRelationship` |
+| POST | `Products/{docCompany}/References` | máscara, grade, um grupo por nível, empresas (lojas da empresa), SKUs com nome, cor, tamanho e unidade, cada um com a classificação 6000 da marca (`2` ou `4`); sem `values` | `PostReferences` (devolve os `productCode`) |
+| POST | `Products/{docCompany}/Batches/Create` | `batchs` (loja da empresa, produto, saldo; itens com nota de inspeção por `supplierCode` **ou** `supplierCpfCnpj`) | `PostCreateBatch` |
+| PUT | `Products/{docCompany}/BatchInfo` | `batchItems` (loja + lote + sequência **ou** `itemClient`; `dataChanged` com pelo menos um dado) | `PutBatchInfo` |
+| POST | `Products/{docCompany}/BatchPreferentialSalesOrder` | item por lote + sequência **ou** `batchItemBarCode`; pedidos por loja e `orderCode` **ou** `orderId`. Lista vazia só com `?clear=true` (só apaga) | `PostBatchPreferentialSalesOrder` |
 | POST | `PurchaseOrders/{docCompany}/ChangeStatus` | `branchCode` (loja da empresa), `orderCode`, `status` (1 em andamento, 5 bloqueado) | `PostPurchaseOrdersChangeStatus` (com o pedido no banco, só entre essas duas situações) |
 | POST | `SalesOrders/{docCompany}/Additional` | chave do pedido; `shippingService`, `trackingId`, `ecommerceStage`, `omniSiteId`, `compensationDays`, `anticipationDay`, `entryType` (`N`/`S`), `experienceType` (1 a 5) | `PostAdditionalOrder` |
 | POST | `SalesOrders/{docCompany}/Shipping` | chave do pedido; transportadora e redespacho (código **ou** CPF/CNPJ, com o tipo de frete), `freightPercentage`, `freightValue`, `shippingAddress` | `PostShippingOrder` (muda o total do pedido; recusado em pedido bloqueado ou do e-commerce) |
@@ -587,7 +606,8 @@ Os jobs ficam em `auditing.Jobs`, com os mesmos ids em `EnumJob`.
 | 13020 | `TotvsPostDuplicatesInstallmentsStage` | escrita |
 | 13040–13043 | `TotvsPostIndividualCustomers`, `TotvsPostLegalCustomers`, `TotvsPostCustomerRepresentatives`, `TotvsPostRemoveClassificationRelationship` | escrita |
 | 13044–13046 | `TotvsPostMessages`, `TotvsPutChangeMessages`, `TotvsDeleteMessages` | escrita |
-| 13124, 13126 | `TotvsPostColors`, `TotvsPostGrids` | escrita |
+| 13120–13127 | `TotvsPostBarcodes`, `TotvsPostUpdateBarcodes`, `TotvsPostCreateClassificationRelationship`, `TotvsPostUpdateClassificationRelationship`, `TotvsPostColors`, `TotvsPostClassifications`, `TotvsPostGrids`, `TotvsPostReferences` | escrita |
+| 13135–13137 | `TotvsPostCreateBatch`, `TotvsPutBatchInfo`, `TotvsPostBatchPreferentialSalesOrder` | escrita |
 | 13182 | `TotvsPostPurchaseOrdersChangeStatus` | escrita |
 | 13201–13203, 13207 | `TotvsPostSalesOrderAdditionalOrder`, `TotvsPostSalesOrderShippingOrder`, `TotvsPostSalesOrderObservationsOrder`, `TotvsPostSalesOrderAdditionalItems` | escrita |
 

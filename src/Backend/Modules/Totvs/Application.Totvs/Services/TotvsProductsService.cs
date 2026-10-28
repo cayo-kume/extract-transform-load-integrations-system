@@ -30,6 +30,9 @@ namespace Application.Totvs.Services
         private readonly IValidator<Domain.Totvs.Dtos.Reads.Products.Similars.ProductSimilar> _productSimilarValidator;
         private readonly IValidator<Domain.Totvs.Dtos.Reads.Products.Batches.Batch> _batchValidator;
 
+        // grupo das escritas desta API na configuração (Totvs:Writes:Products:Enabled, T4)
+        private const string WritesGroup = "Products";
+
         private const string SkusKey = "Totvs:Skus";
         private const string BalancesKey = "Totvs:Balances";
         private const string StockCodesKey = "Totvs:StockCodes";
@@ -1887,6 +1890,92 @@ namespace Application.Totvs.Services
                 _logger.SetLogEndDate();
                 await _logger.CommitAllChanges();
             }
+        }
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostBarcodes(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.BarCodes.InsertProductBarCodes body) =>
+            await WriteProducts(user_name, doc_company, EnumJob.TotvsPostBarcodes, HttpMethod.Post, "product/v2/barcodes", ProductsKey(body.products!.Select(x => x.productCode.ToString())),
+                body, "Confira os códigos de barras dos produtos antes de repetir.");
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostUpdateBarcodes(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.BarCodes.UpdateProductBarCodes body) =>
+            await WriteProducts(user_name, doc_company, EnumJob.TotvsPostUpdateBarcodes, HttpMethod.Post, "product/v2/barcodes/update", ProductsKey(body.products!.Select(x => x.productCode.ToString())),
+                body, "Confira os códigos de barras dos produtos antes de repetir.");
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostCreateClassificationRelationship(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Classifications.ProductClassifications body) =>
+            await WriteProducts(user_name, doc_company, EnumJob.TotvsPostCreateClassificationRelationship, HttpMethod.Post, "product/v2/classification-relationship/create",
+                ProductsKey(body.products!.Select(x => x.productCode?.ToString() ?? $"r:{x.referenceId}")), body, "Confira as classificações dos produtos antes de repetir.");
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostUpdateClassificationRelationship(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Classifications.ProductClassifications body) =>
+            await WriteProducts(user_name, doc_company, EnumJob.TotvsPostUpdateClassificationRelationship, HttpMethod.Post, "product/v2/classification-relationship/update",
+                ProductsKey(body.products!.Select(x => x.productCode?.ToString() ?? $"r:{x.referenceId}")), body, "Confira as classificações dos produtos antes de repetir.");
+
+        // cria produto vendável sem rota de exclusão: o mesmo corpo em 10 minutos volta 409 (T5). Lojas da referência e das localizações conferidas
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostReferences(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.References.InsertReference body) =>
+            await WriteProducts(user_name, doc_company, EnumJob.TotvsPostReferences, HttpMethod.Post, "product/v2/references",
+                $"{body.referenceSettingsCode}|{String.Join(".", body.groups!.OrderBy(x => x.levelNumber).Select(x => x.groupCode))}", body,
+                "Confira a referência pelo GET Products/{docCompany}/{code} antes de repetir.", repeatLock: true,
+                branches: body.branchs!.Select(x => x.branchCode!.Value).Concat(body.skus!.SelectMany(x => x.locations ?? []).Select(x => x.branchCode!.Value)));
+
+        // sem batchCode a Totvs gera outro lote a cada chamada: trava (T5)
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostCreateBatch(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Batches.InsertBatches body) =>
+            await WriteProducts(user_name, doc_company, EnumJob.TotvsPostCreateBatch, HttpMethod.Post, "product/v2/batch/create",
+                ProductsKey(body.batchs!.Select(x => $"{x.branchCode}|{x.productCode}|{x.batchCode}")), body, "Confira os lotes do produto antes de repetir.", repeatLock: true,
+                branches: body.batchs!.Select(x => x.branchCode!.Value).Concat(body.batchs!.SelectMany(x => x.batchItem ?? []).Where(x => x.branchSalesOrder is not null).Select(x => x.branchSalesOrder!.Value)));
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PutBatchInfo(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Batches.UpdateBatchInfo body) =>
+            await WriteProducts(user_name, doc_company, EnumJob.TotvsPutBatchInfo, HttpMethod.Put, "product/v2/batch-info",
+                ProductsKey(body.batchItems!.Select(x => x.itemClient ?? $"{x.branchCode}|{x.batchCode}|{x.sequence}")), body, "Confira os itens de lote antes de repetir.",
+                branches: body.batchItems!.Where(x => x.branchCode is not null).Select(x => x.branchCode!.Value));
+
+        // a Totvs apaga antes todos os pedidos preferenciais do item: reenviar dá no mesmo, sem trava
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostBatchPreferentialSalesOrder(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Batches.BatchPreferentialSalesOrder body) =>
+            await WriteProducts(user_name, doc_company, EnumJob.TotvsPostBatchPreferentialSalesOrder, HttpMethod.Post, "product/v2/batch-preferentialsalesorder",
+                body.batchItemBarCode is null ? $"{body.branchCode}|{body.batchCode}|{body.sequence}" : $"{body.branchCode}|{body.batchItemBarCode}", body,
+                "Confira os pedidos preferenciais do item de lote antes de repetir.",
+                branches: (body.preferentialSalesOrder ?? []).Select(x => x.branchCode!.Value).Prepend(body.branchCode!.Value));
+
+        // escritas da API Product (docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.5, §5.6 e §5.8) pela base comum: liga/desliga, empresa, lojas da
+        // empresa e a chamada. Os registros chegam ao banco pelos jobs de catálogo e de referências
+        private async Task<Domain.Totvs.Dtos.Writes.Result> WriteProducts(string user_name, string doc_company, EnumJob job, HttpMethod method, string route, string key, object body,
+            string checkHint, bool repeatLock = false, IEnumerable<int>? branches = null)
+        {
+            _logger
+                .Clear()
+                .AddLog(job);
+
+            try
+            {
+                if (!_totvsService.IsWriteEnabled(WritesGroup))
+                    return _totvsService.WriteDisabled(WritesGroup, key);
+
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return _totvsService.CompanyNotFound(doc_company, key);
+
+                if (branches is not null)
+                {
+                    var branchCodes = await _totvsService.GetBranchCodes(company);
+                    var outside = branches.Distinct().Where(x => !branchCodes.Contains(x)).ToList();
+
+                    if (outside.Count > 0)
+                        return _totvsService.BranchNotFound(doc_company, key, outside.Select(x => x.ToString()));
+                }
+
+                return await _totvsService.Write(company, job, user_name, key, method, route, body, checkHint, repeatLock);
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        // chave das escritas com lista: os itens separados por vírgula, cortados em 400 caracteres (§5.5)
+        private static string ProductsKey(IEnumerable<string?> items)
+        {
+            var key = String.Join(",", items);
+
+            return key.Length > 400 ? key[..400] : key;
         }
     }
 }

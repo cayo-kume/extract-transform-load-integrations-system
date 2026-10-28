@@ -1282,6 +1282,186 @@ namespace Hangfire.Controllers.Totvs
         }
 
         /// <summary>
+        /// inclui ou altera um tipo de classificação de produto e as classificações dele (POST product/v2/classifications). Renomear muda a
+        /// categorização de todos os produtos do tipo; o tipo 6000 (marca) é recusado (PR10)
+        /// </summary>
+        [HttpPost("Products/{docCompany}/Classifications")]
+        [Tags("TotvsProductCatalogs")]
+        public async Task<ActionResult> ProductClassifications(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.Products.Classifications.UpsertTypeClassification body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.Products.Classifications.UpsertTypeClassification> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsProductCatalogsService.PostClassifications(userName, docCompany, body));
+        }
+        /// <summary>
+        /// inclui códigos de barras nos produtos (POST product/v2/barcodes). O código padrão (isMainCode) é o SKU das integrações de e-commerce
+        /// </summary>
+        [HttpPost("Products/{docCompany}/BarCodes")]
+        [Tags("TotvsProducts")]
+        public async Task<ActionResult> ProductBarCodes(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.Products.BarCodes.InsertProductBarCodes body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.Products.BarCodes.InsertProductBarCodes> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsProductsService.PostBarcodes(userName, docCompany, body));
+        }
+        /// <summary>
+        /// altera a quantidade e o padrão de códigos de barras existentes (POST product/v2/barcodes/update); o código não muda
+        /// </summary>
+        [HttpPost("Products/{docCompany}/BarCodes/Update")]
+        [Tags("TotvsProducts")]
+        public async Task<ActionResult> ProductBarCodesUpdate(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.Products.BarCodes.UpdateProductBarCodes body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.Products.BarCodes.UpdateProductBarCodes> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsProductsService.PostUpdateBarcodes(userName, docCompany, body));
+        }
+        /// <summary>
+        /// inclui classificações em produtos (productCode) ou grupos (referenceId) (POST product/v2/classification-relationship/create); o tipo 6000
+        /// (marca) é recusado (PR10)
+        /// </summary>
+        [HttpPost("Products/{docCompany}/ClassificationRelationships/Create")]
+        [Tags("TotvsProducts")]
+        public async Task<ActionResult> ProductClassificationRelationshipsCreate(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.Products.Classifications.ProductClassifications body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.Products.Classifications.ProductClassifications> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsProductsService.PostCreateClassificationRelationship(userName, docCompany, body));
+        }
+        /// <summary>
+        /// altera classificações de produtos ou grupos (POST product/v2/classification-relationship/update); o tipo 6000 (marca) é recusado (PR10)
+        /// </summary>
+        [HttpPost("Products/{docCompany}/ClassificationRelationships/Update")]
+        [Tags("TotvsProducts")]
+        public async Task<ActionResult> ProductClassificationRelationshipsUpdate(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.Products.Classifications.ProductClassifications body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.Products.Classifications.ProductClassifications> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsProductsService.PostUpdateClassificationRelationship(userName, docCompany, body));
+        }
+        /// <summary>
+        /// inclui uma referência com os SKUs (POST product/v2/references); a resposta traz os productCode gerados. Cada SKU leva a classificação 6000
+        /// (marca); preços e custos são recusados (PR11). Sem rota de exclusão: o mesmo corpo em 10 minutos volta 409
+        /// </summary>
+        [HttpPost("Products/{docCompany}/References")]
+        [Tags("TotvsProducts")]
+        public async Task<ActionResult> ProductReferences(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.Products.References.InsertReference body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.Products.References.InsertReference> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsProductsService.PostReferences(userName, docCompany, body));
+        }
+        /// <summary>
+        /// inclui lotes e itens de lote (POST product/v2/batch/create); sem batchCode a Totvs gera o número. O mesmo corpo em 10 minutos volta 409
+        /// </summary>
+        [HttpPost("Products/{docCompany}/Batches/Create")]
+        [Tags("TotvsProducts")]
+        public async Task<ActionResult> ProductBatchesCreate(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.Products.Batches.InsertBatches body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.Products.Batches.InsertBatches> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsProductsService.PostCreateBatch(userName, docCompany, body));
+        }
+        /// <summary>
+        /// altera dados de itens de lote (PUT product/v2/batch-info), cada item por loja + lote + sequência ou pelo lote do cliente
+        /// </summary>
+        [HttpPut("Products/{docCompany}/BatchInfo")]
+        [Tags("TotvsProducts")]
+        public async Task<ActionResult> ProductBatchInfo(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.Products.Batches.UpdateBatchInfo body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.Products.Batches.UpdateBatchInfo> validator
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            return WriteResponse(await _totvsProductsService.PutBatchInfo(userName, docCompany, body));
+        }
+        /// <summary>
+        /// troca os pedidos de venda preferenciais de um item de lote (POST product/v2/batch-preferentialsalesorder). A Totvs apaga antes todos
+        /// os do item, então uma lista vazia só apaga: ela exige ?clear=true
+        /// </summary>
+        [HttpPost("Products/{docCompany}/BatchPreferentialSalesOrder")]
+        [Tags("TotvsProducts")]
+        public async Task<ActionResult> ProductBatchPreferentialSalesOrder(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            [FromBody] Domain.Totvs.Dtos.Writes.Products.Batches.BatchPreferentialSalesOrder body,
+            [FromServices] IValidator<Domain.Totvs.Dtos.Writes.Products.Batches.BatchPreferentialSalesOrder> validator,
+            [FromQuery] bool clear = false
+        )
+        {
+            var validation = await validator.ValidateAsync(body);
+
+            if (!validation.IsValid)
+                return BadRequest(validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }));
+
+            if (!clear && body.preferentialSalesOrder is not { Count: > 0 })
+                return BadRequest(new[] { new { field = "preferentialSalesOrder", message = "Lista vazia só apaga os pedidos preferenciais do item: para isso, chame com ?clear=true." } });
+
+            return WriteResponse(await _totvsProductsService.PostBatchPreferentialSalesOrder(userName, docCompany, body));
+        }
+
+        /// <summary>
         /// põe um pedido de compra em andamento (1) ou bloqueado (5) (POST purchase-order/v2/orders/change-status). Com o pedido no banco, a
         /// troca só vale entre essas duas situações (422 sem chamar a Totvs nos demais casos)
         /// </summary>

@@ -1669,5 +1669,34 @@ namespace Application.Totvs.Services
                 await _logger.CommitAllChanges();
             }
         }
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostClassifications(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Classifications.UpsertTypeClassification body)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsPostClassifications);
+
+            var key = body.typeCode!.Value.ToString();
+
+            try
+            {
+                if (!_totvsService.IsWriteEnabled(WritesGroup))
+                    return _totvsService.WriteDisabled(WritesGroup, key);
+
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return _totvsService.CompanyNotFound(doc_company, key);
+
+                // inclusão e alteração pelo typeCode e pelos code: reenviar não muda nada, sem trava. O tipo 6000 já foi recusado no validador (PR10)
+                return await _totvsService.Write(company, EnumJob.TotvsPostClassifications, user_name, key, HttpMethod.Post, "product/v2/classifications", body,
+                    "Confira o tipo de classificação na Totvs antes de repetir.");
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
     }
 }
