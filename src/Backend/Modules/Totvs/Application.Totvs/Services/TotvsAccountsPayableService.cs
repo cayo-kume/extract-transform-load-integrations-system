@@ -618,7 +618,7 @@ namespace Application.Totvs.Services
                 {
                     // sem resposta (timeout, rede): a escrita pode ter sido feita; conferir antes de repetir
                     var failure = $"Exceção ao chamar a API: {ex.Message.TrimEnd('.')}";
-                    _totvsService.SaveRequest(EnumJob.TotvsPostDuplicatesInstallmentsStage, user_name, "POST", route, doc_company, key, failure, false, requestBody);
+                    _totvsService.SaveRequest(EnumJob.TotvsPostDuplicatesInstallmentsStage, user_name, "POST", route, doc_company, key, failure, false, requestBody, 0);
                     _logger.AddMessage($"Parcela {key} (empresa {doc_company}): {failure}. Confira o estágio na Totvs antes de repetir.");
 
                     return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, apiCalled = true, message = $"{failure}. Confira o estágio na Totvs antes de repetir." };
@@ -632,7 +632,7 @@ namespace Application.Totvs.Services
                     return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, message = $"Falha na autenticação da Totvs (empresa {doc_company}). Veja o log da execução." };
                 }
 
-                _totvsService.SaveRequest(EnumJob.TotvsPostDuplicatesInstallmentsStage, user_name, "POST", route, doc_company, key, response.Content, response.IsSuccess, requestBody);
+                _totvsService.SaveRequest(EnumJob.TotvsPostDuplicatesInstallmentsStage, user_name, "POST", route, doc_company, key, response.Content, response.IsSuccess, requestBody, response.StatusCode);
 
                 if (!response.IsSuccess)
                 {

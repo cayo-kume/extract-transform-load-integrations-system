@@ -3582,3 +3582,21 @@ O que a §10.25 deixou sem verificar, no console da §10.32 (modo `w4`, duas rod
 **Não verificado em homologação:** o lote e tudo o que depende dele (`batch-info`, `batch-preferentialsalesorder`, `relationship-batch-items`,
 `DELETE batch-items`, `batch-link`, a sugestão por nuance): a homologação não usa lote, e falta um produto com controle de lote (matéria-prima,
 PRDFM059); a referência (precisa do código e dos níveis de uma máscara do PRDFM236); o vínculo com uma contagem real.
+
+### 10.34 Segunda rodada da onda 3 em homologação (28/10/2026)
+
+O que a §10.19 deixou sem verificar, no console da §10.32 (modo `w3`, duas rodadas).
+
+| Fase | Rota | Resultado |
+|---|---|---|
+| AP-1 | `POST duplicates/installments/stage` | 200 em todas as trocas da parcela 1 da agrupadora de teste 9063293510 (§10.25): para 2 com o fornecedor pelo CNPJ, de volta para 1 pelo código (220), para 5 e de volta para 1; a duplicata relida mudou o `maxChangeFilterDate` (o estágio continua fora da busca) |
+| SO-3 | `POST additional-order` (`experienceType`) | O pedido 106\|266 já estava `ShipFromStore`. `ClickAndCollect` (3, número): 200 e **relido pelo nome**; de volta para `ShipFromStore` (2): 200 e relido |
+
+**Corrigido:** a AP-1, a primeira escrita e anterior ao `Script066`, não passava o `status_code` ao `SaveRequest` (gravava nulo, e a trava T5 lê
+essa coluna). Agora grava o código da resposta e 0 na exceção, como a base comum; conferido na Totvs falsa (200, 400 e exceção) e na
+homologação.
+
+**Ficou na homologação:** a parcela 1 da duplicata 9063293510 no estágio 1, como estava; o pedido 106\|266 com `ShipFromStore`, como estava.
+
+**Não verificado em homologação:** bloquear pedido de compra parcialmente recebido (não há um, e a volta iria para em andamento, não para o
+estado original).
