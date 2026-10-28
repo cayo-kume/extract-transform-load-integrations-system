@@ -40,7 +40,7 @@ namespace Application.Totvs.Validations.Writes.AccountsPayable
 
             RuleFor(x => x.groupInstallments)
                 .Must(x => x is { Count: >= 2 })
-                .WithMessage("Informe pelo menos duas parcelas em 'groupInstallments': agrupar uma parcela só não faz sentido.")
+                .WithMessage("Informe pelo menos duas parcelas em 'groupInstallments': com uma só a Totvs recusa (400 InvalidField).")
                 .Must(x => x!.Where(i => i is not null).GroupBy(i => (i.branchCnpj, i.supplierCpfCnpj, i.duplicateCode, i.installmentCode)).All(g => g.Count() == 1))
                 .WithMessage("A mesma parcela aparece mais de uma vez em 'groupInstallments'.")
                 .When(x => x.groupInstallments is { Count: >= 2 }, ApplyConditionTo.CurrentValidator);

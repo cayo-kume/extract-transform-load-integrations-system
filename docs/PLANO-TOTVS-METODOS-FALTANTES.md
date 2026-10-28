@@ -3619,3 +3619,20 @@ de alguém que altere um tamanho da grade 29 lá, e então basta reler a data. A
 
 **Não verificado:** a PR-1 (acima); os tamanhos dos textos das regiões (SE-1, sem regiões na homologação); os scripts `033`–`065` em banco,
 as rotas pelo host, a carga inicial inteira dos saldos (PR-2) e o `ReadResponse` por HTTP (FI-2).
+
+### 10.36 Dúvidas pontuais das escritas em homologação (28/10/2026)
+
+As perguntas que as §10.20 a §10.24 deixaram para a chamada real, no console da §10.32 (modo `pq`), só com dados de teste.
+
+| Fase | Pergunta | Resultado |
+|---|---|---|
+| AP-2 | A Totvs agrupa uma parcela só? | **Não:** 400 `InvalidField: GroupInstallments` (duplicata de teste 9036687146, 1 parcela real de R$ 1,00). O validador já exigia duas; a mensagem passou a citar a recusa |
+| PO-3 | Quantidade 0 cancela o item? | **Não:** 200, e o item relido fica com `quantity` 0 e `canceledQuantity` nulo. Para cancelar, o `PostPurchaseOrdersCancel` (o pedido de teste 1\|142 foi cancelado assim, 200). Anotado na interface |
+| SO-4 | A situação aceita número? | **Sim:** `"5"` deixou o pedido 106\|266 `Blocked` (relido); de volta `InProgress` pelo nome. O validador continua só com os nomes (o swagger declara texto) |
+| SO-4 | A capa sem `averagePaymentPeriod` mantém o prazo (SO8)? | A capa só com a prioridade (2) deu 200 e a condição de pagamento continuou a mesma (1, à vista); o prazo médio **não vem na leitura** do pedido, então não dá para conferir ele mesmo |
+| PE-6 | A remoção sem `classificationCode` tira todas do tipo? | **Sim:** com as classificações 2/1 (OURO) e 2/2 (PRATA) no cliente 58243, a remoção só com o tipo 2 deu 201 e o cliente relido ficou sem nenhuma. O validador já exigia o código; a mensagem e a interface passaram a dizer que foi testado |
+
+**Ficou na homologação:** a duplicata 9036687146 (R$ 1,00, real), o pedido de compra 1\|142 cancelado (quantidade 0) e a prioridade 2 no
+pedido 106\|266.
+
+**Sem mudança de regra:** as respostas confirmaram o que os validadores já faziam; mudaram só as mensagens e os comentários da interface.

@@ -70,7 +70,8 @@
         public Task<Domain.Totvs.Dtos.Writes.Result> PostLegalCustomers(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.People.Customers.LegalCustomer body);
 
         /// <summary>
-        /// tira classificações de uma pessoa (POST person/v2/classification-relationship/remove)
+        /// tira classificações de uma pessoa (POST person/v2/classification-relationship/remove); sem o classificationCode a Totvs tira todas
+        /// as do tipo (testado), por isso o validador o exige
         /// </summary>
         public Task<Domain.Totvs.Dtos.Writes.Result> PostRemoveClassificationRelationship(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.People.Classifications.RemoveClassificationRelationship body);
     }

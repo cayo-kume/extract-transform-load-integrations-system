@@ -27,7 +27,8 @@
 
         /// <summary>
         /// troca a quantidade pedida dos itens (POST purchase-order/v2/quantity-items). Com o pedido no banco: atendido ou cancelado, produto fora
-        /// do pedido e quantidade abaixo da recebida voltam 422 sem chamar a Totvs (DP7)
+        /// do pedido e quantidade abaixo da recebida voltam 422 sem chamar a Totvs (DP7). Quantidade 0 deixa o item com 0, sem cancelar
+        /// (testado): o cancelamento é pelo PostPurchaseOrdersCancel
         /// </summary>
         public Task<Domain.Totvs.Dtos.Writes.Result> PostPurchaseOrdersQuantityItems(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.PurchaseOrders.RequestedQuantity body);
 

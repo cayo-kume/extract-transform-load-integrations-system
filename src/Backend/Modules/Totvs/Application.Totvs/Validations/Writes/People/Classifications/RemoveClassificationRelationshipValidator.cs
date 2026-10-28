@@ -35,7 +35,7 @@ namespace Application.Totvs.Validations.Writes.People.Classifications
 
                     c.RuleFor(x => x.classificationCode)
                         .NotEmpty()
-                        .WithMessage("O campo 'classificationCode' é obrigatório (sem ele a Totvs pode tirar todas as classificações do tipo).")
+                        .WithMessage("O campo 'classificationCode' é obrigatório (sem ele a Totvs tira todas as classificações do tipo).")
                         .MaximumLength(10)
                         .WithMessage("O campo 'classificationCode' aceita até 10 caracteres.");
                 })

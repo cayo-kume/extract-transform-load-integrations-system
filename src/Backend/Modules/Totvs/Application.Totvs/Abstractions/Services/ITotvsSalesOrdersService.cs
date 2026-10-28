@@ -74,13 +74,14 @@
         public Task<Domain.Totvs.Dtos.Writes.Result> PostAdditionalItems(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderItemsAdditional body);
 
         /// <summary>
-        /// muda a situação do pedido de venda (POST sales-order/v2/orders/change-status), pelo nome; BillingReleased libera para faturar
+        /// muda a situação do pedido de venda (POST sales-order/v2/orders/change-status), pelo nome (a Totvs aceita também o número,
+        /// testado; o validador fica nos nomes); BillingReleased libera para faturar
         /// </summary>
         public Task<Domain.Totvs.Dtos.Writes.Result> PostOrdersChangeStatus(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderStatusChange body);
 
         /// <summary>
         /// altera a capa do pedido de venda (POST sales-order/v2/header). Com o pedido no banco, operação e tabela de preço só mudam em
-        /// andamento ou bloqueado (SO7)
+        /// andamento ou bloqueado (SO7). Só com a prioridade, a condição de pagamento continua a mesma (testado; o prazo médio não vem na leitura)
         /// </summary>
         public Task<Domain.Totvs.Dtos.Writes.Result> PostHeader(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderHeader body);
 
