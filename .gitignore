@@ -41,3 +41,5 @@ TestResults.xml
 [Cc]overage*/
 # chaves da Linx Microvix (modelo em Script003_Insert_Values_Into_LinxMicrovix_Parameters_Table.sql.example)
 src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/Infrastructure.LinxMicrovix.Outbound/Scripts/SQLServer/Script003_Insert_Values_Into_LinxMicrovix_Parameters_Table.sql
+# credenciais do Linx Commerce (modelo em Script003_Insert_Values_Into_LinxCommerce_Parameters_Table.sql.example)
+src/Backend/Modules/LinxCommerce/Infrastructure.LinxCommerce/Scripts/SQLServer/Script003_Insert_Values_Into_LinxCommerce_Parameters_Table.sql

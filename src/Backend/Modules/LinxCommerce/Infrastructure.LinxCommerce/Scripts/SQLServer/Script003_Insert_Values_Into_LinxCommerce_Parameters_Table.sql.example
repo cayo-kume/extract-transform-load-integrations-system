@@ -1,0 +1,7 @@
+--modelo do Script003: copie para Script003_Insert_Values_Into_LinxCommerce_Parameters_Table.sql (fora do git, no .gitignore)
+--e troque os valores pelos de cada cliente. As credenciais nunca entram em documento, comentário ou appsettings.
+--o DbUp só lê arquivos .sql: este modelo nunca é executado.
+--em 29/10/2026 não havia credenciais do Linx Commerce: sem este script a tabela fica vazia e os jobs só registram que não há cliente
+INSERT INTO [linxcommerce].[LinxCommerceParameters] (integrated_or_updated_at, [doc_company], base_url, user_name, api_key)
+VALUES
+(SYSDATETIMEOFFSET() AT TIME ZONE 'E. South America Standard Time', '44065634000106', 'https://misha.layer.core.dcg.com.br', '<usuário da API>', '<chave da API>'); --HOLDING NEWBLOOMERS

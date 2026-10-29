@@ -3,7 +3,7 @@ using Infrastructure.AfterSale.DependencyInjection;
 using Infrastructure.Shared;
 //using Infrastructure.Dootax;
 //using Infrastructure.Jadlog.DependencyInjection;
-//using Infrastructure.LinxCommerce.DependencyInjection;
+using Infrastructure.LinxCommerce.DependencyInjection;
 using Infrastructure.LinxMicrovix.Outbound.DependencyInjection;
 using Infrastructure.Movidesk.DependencyInjection;
 //using Infrastructure.Oto;
@@ -21,7 +21,7 @@ namespace Hangfire.Extensions
         {
             builder.Services.AddScopedSharedServices();
 
-            //builder.Services.AddScopedLinxCommerceServices(builder.Configuration);
+            builder.Services.AddScopedLinxCommerceServices(builder.Configuration);
             builder.Services.AddScopedLinxMicrovixServices(builder.Configuration);
             //builder.Services.AddScopedFlashCourierServices(builder.Configuration);
             //builder.Services.AddScopedTotalExpressServices(builder.Configuration);

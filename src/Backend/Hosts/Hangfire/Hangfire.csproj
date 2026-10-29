@@ -16,6 +16,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Modules\General\AfterSale\Application.AfterSale\Application.AfterSale.csproj" />
     <ProjectReference Include="..\..\Modules\General\AfterSale\Infrastructure.AfterSale\Infrastructure.AfterSale.csproj" />
+    <ProjectReference Include="..\..\Modules\LinxCommerce\Application.LinxCommerce\Application.LinxCommerce.csproj" />
+    <ProjectReference Include="..\..\Modules\LinxCommerce\Infrastructure.LinxCommerce\Infrastructure.LinxCommerce.csproj" />
     <ProjectReference Include="..\..\Modules\LinxMicrovix\LinxMicrovix - Outbound Web Service\Application.LinxMicrovix.Outbound\Application.LinxMicrovix.Outbound.csproj" />
     <ProjectReference Include="..\..\Modules\LinxMicrovix\LinxMicrovix - Outbound Web Service\Infrastructure.LinxMicrovix.Outbound\Infrastructure.LinxMicrovix.Outbound.csproj" />
     <ProjectReference Include="..\..\Modules\General\Movidesk\Application.Movidesk\Application.Movidesk.csproj" />

@@ -1,16 +1,13 @@
-﻿using Application.LinxCommerce.Abstractions.Services;
+﻿using Application.LinxCommerce.Abstractions.Handlers.Commands;
+using Application.LinxCommerce.Abstractions.Services;
+using Application.LinxCommerce.Handlers.Commands;
 using Application.LinxCommerce.Services;
-using Domain.Core.Abstractions.Api;
-using Domain.LinxCommerce.CustomValidations.Customer;
-using Domain.LinxCommerce.CustomValidations.Order;
-using Domain.LinxCommerce.CustomValidations.Product;
-using Domain.LinxCommerce.CustomValidations.SalesRepresentative;
-using Domain.LinxCommerce.CustomValidations.Sku;
-using Domain.LinxCommerce.Interfaces.Repositorys;
+using Application.LinxCommerce.Validations.Orders;
+using Domain.LinxCommerce.Abstractions.Repositorys;
+using Domain.Shared.Abstractions.Api;
 using FluentValidation;
-using Infrastructure.Core.Api;
-using Infrastructure.LinxCommerce.Repository;
 using Infrastructure.LinxCommerce.Repositorys;
+using Infrastructure.Shared.Api;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -21,76 +18,33 @@ namespace Infrastructure.LinxCommerce.DependencyInjection
     {
         public static IServiceCollection AddScopedLinxCommerceServices(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddScopedLinxCommerceValidations();
-
+            // sem BaseAddress: cada cliente tem o seu ambiente (base_url de linxcommerce.LinxCommerceParameters) e a rota vai absoluta
             services.AddKeyedScoped<IApiClient>("LinxCommerceAPI", (sp, _) =>
                 new ApiClient(sp.GetRequiredService<IHttpClientFactory>(), sp.GetRequiredService<ILogger<ApiClient>>(), "LinxCommerceAPI"));
             services.AddHttpClient("LinxCommerceAPI", client =>
             {
-                client.BaseAddress = new Uri(configuration["LinxCommerce:BaseUrl"]!);
                 client.Timeout = new TimeSpan(0, 20, 0);
             });
 
-            services.AddScoped<IOrderService, OrderService>();
-            services.AddScoped<IOrderRepository, OrderRepository>();
+            services.AddScoped<ILinxCommerceService, LinxCommerceService>();
+            services.AddScoped<ILinxCommerceRepository, LinxCommerceRepository>();
 
-            //services.AddScoped<IProductService<SearchProductResponse.Root>, ProductService<SearchProductResponse.Root>>();
-            //services.AddScoped<IProductRepository, ProductRepository>();
+            services.AddScoped<ILinxCommerceOrdersService, LinxCommerceOrdersService>();
+            services.AddScoped<ILinxCommerceOrdersRepository, LinxCommerceOrdersRepository>();
 
-            services.AddScoped<ISKUService, SKUService>();
-            services.AddScoped<ISKURepository, SKURepository>();
+            services.AddScoped<ILinxCommerceCustomersService, LinxCommerceCustomersService>();
+            services.AddScoped<ILinxCommerceCustomersRepository, LinxCommerceCustomersRepository>();
 
-            services.AddScoped<ISalesRepresentativeService, SalesRepresentativeService>();
-            services.AddScoped<ISalesRepresentativeRepository, SalesRepresentativeRepository>();
+            services.AddScoped<ILinxCommerceCatalogService, LinxCommerceCatalogService>();
+            services.AddScoped<ILinxCommerceCatalogRepository, LinxCommerceCatalogRepository>();
 
-            services.AddScoped<ICustomerService, CustomerService>();
-            services.AddScoped<ICustomerRepository, CustomerRepository>();
+            services.AddScoped<ILinxCommerceSalesRepresentativesService, LinxCommerceSalesRepresentativesService>();
+            services.AddScoped<ILinxCommerceSalesRepresentativesRepository, LinxCommerceSalesRepresentativesRepository>();
 
-            return services;
-        }
+            services.AddScoped<ILinxCommerceCommandHandler, LinxCommerceCommandHandler>();
 
-        private static IServiceCollection AddScopedLinxCommerceValidations(this IServiceCollection services)
-        {
-            services.AddValidatorsFromAssemblyContaining<ProductValidator>();
-            services.AddValidatorsFromAssemblyContaining<VideoValidator>();
-            services.AddValidatorsFromAssemblyContaining<ImageValidator>();
-            services.AddValidatorsFromAssemblyContaining<MediaAssociationValidator>();
-            services.AddValidatorsFromAssemblyContaining<MidiaValidator>();
-
-            services.AddValidatorsFromAssemblyContaining<SkuValidator>();
-            services.AddValidatorsFromAssemblyContaining<Domain.LinxCommerce.CustomValidations.Sku.MetadataValueValidator>();
-            services.AddValidatorsFromAssemblyContaining<ParentRelationValidator>();
-
-            services.AddValidatorsFromAssemblyContaining<PersonValidator>();
-            services.AddValidatorsFromAssemblyContaining<ContactValidator>();
-            services.AddValidatorsFromAssemblyContaining<EmailConfirmationValidator>();
-            services.AddValidatorsFromAssemblyContaining<GroupsValidator>();
-            services.AddValidatorsFromAssemblyContaining<PersonAddressValidator>();
-
+            // registra todos os validadores do assembly numa chamada só, como o Movidesk (o código antigo fazia 36 chamadas)
             services.AddValidatorsFromAssemblyContaining<OrderValidator>();
-            services.AddValidatorsFromAssemblyContaining<OrderTagValidator>();
-            services.AddValidatorsFromAssemblyContaining<OrderShipmentValidator>();
-            services.AddValidatorsFromAssemblyContaining<OrderPaymentMethodValidator>();
-            services.AddValidatorsFromAssemblyContaining<OrderPaymentInfoValidator>();
-            services.AddValidatorsFromAssemblyContaining<OrderItemValidator>();
-            services.AddValidatorsFromAssemblyContaining<OrderInvoiceValidator>();
-            services.AddValidatorsFromAssemblyContaining<OrderDiscountValidator>();
-            services.AddValidatorsFromAssemblyContaining<OrderDeliveryMethodValidator>();
-            services.AddValidatorsFromAssemblyContaining<OrderAddressValidator>();
-            services.AddValidatorsFromAssemblyContaining<OrderSellerValidator>();
-            services.AddValidatorsFromAssemblyContaining<OrderMultiSiteTenantValidator>();
-            services.AddValidatorsFromAssemblyContaining<OrderTypeValidator>();
-            services.AddValidatorsFromAssemblyContaining<OrderStatusValidator>();
-
-            services.AddValidatorsFromAssemblyContaining<SalesRepresentativeValidator>();
-            services.AddValidatorsFromAssemblyContaining<SalesRepresentativeAddressValidator>();
-            services.AddValidatorsFromAssemblyContaining<SalesRepresentativeComissionValidator>();
-            services.AddValidatorsFromAssemblyContaining<SalesRepresentativeContactDataValidator>();
-            services.AddValidatorsFromAssemblyContaining<SalesRepresentativeIdentificationValidator>();
-            services.AddValidatorsFromAssemblyContaining<SalesRepresentativeMaxDiscountValidator>();
-            services.AddValidatorsFromAssemblyContaining<SalesRepresentativePortfolioValidator>();
-            services.AddValidatorsFromAssemblyContaining<SalesRepresentativeShippingRegionValidator>();
-            services.AddValidatorsFromAssemblyContaining<SalesRepresentativeWebSiteSettingsValidator>();
 
             return services;
         }

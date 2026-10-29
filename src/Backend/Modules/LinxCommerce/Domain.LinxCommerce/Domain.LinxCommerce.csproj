@@ -7,11 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\newbloomers-core-dlls\src\Domain.Core\Domain.Core.csproj" />
+    <ProjectReference Include="..\..\..\shared\Domain.Shared\Domain.Shared.csproj" />
   </ItemGroup>
 
 </Project>
