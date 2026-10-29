@@ -15,5 +15,13 @@
         LinxCommerceSearchProduct = 7003,   //Script012_Insert_LinxCommerce_Catalog_Jobs_Into_Jobs_Table.sql
         LinxCommerceSearchSKU = 7004,   //Script012_Insert_LinxCommerce_Catalog_Jobs_Into_Jobs_Table.sql
         LinxCommerceSearchSalesRepresentative = 7005,   //Script015_Insert_LinxCommerce_Sales_Representatives_Jobs_Into_Jobs_Table.sql
+
+        // sob demanda (LinxCommerceController, com X-User-Name; não recorrentes): a partir de 7010
+        LinxCommerceGetOrder = 7010,   //Script017_Insert_LinxCommerce_On_Demand_Jobs_Into_Jobs_Table.sql
+        LinxCommerceGetOrderByNumber = 7011,   //Script017_Insert_LinxCommerce_On_Demand_Jobs_Into_Jobs_Table.sql
+        LinxCommerceGetCustomer = 7012,   //Script017_Insert_LinxCommerce_On_Demand_Jobs_Into_Jobs_Table.sql
+        LinxCommerceGetProduct = 7013,   //Script017_Insert_LinxCommerce_On_Demand_Jobs_Into_Jobs_Table.sql
+        LinxCommerceGetSKU = 7014,   //Script017_Insert_LinxCommerce_On_Demand_Jobs_Into_Jobs_Table.sql
+        LinxCommerceGetSalesRepresentative = 7015,   //Script017_Insert_LinxCommerce_On_Demand_Jobs_Into_Jobs_Table.sql
     }
 }

@@ -200,6 +200,72 @@ namespace Application.LinxCommerce.Services
         }
 
         /// <summary>
+        /// busca um pedido pelo OrderID, grava (sempre, sem consultar o cache) e registra a chamada em linxcommerce.LinxCommerceRequests
+        /// </summary>
+        public async Task<bool?> GetOrder(string user_name, string doc_company, Guid orderId) =>
+            await GetOrderOnDemand(EnumJob.LinxCommerceGetOrder, user_name, doc_company, "Sales/API.svc/web/GetOrder", orderId.ToString(), $"pedido {orderId}",
+                order => ConverterValidatorsExtensions.ConvertToGuidValidation(order.OrderID) == orderId);
+
+        /// <summary>
+        /// busca um pedido pelo número (o corpo é o número, como no código antigo), grava e registra a chamada
+        /// </summary>
+        public async Task<bool?> GetOrderByNumber(string user_name, string doc_company, string orderNumber) =>
+            await GetOrderOnDemand(EnumJob.LinxCommerceGetOrderByNumber, user_name, doc_company, "Sales/API.svc/web/GetOrderByNumber", orderNumber, $"pedido número {orderNumber}",
+                order => order.OrderNumber == orderNumber && ConverterValidatorsExtensions.ConvertToGuidValidation(order.OrderID) != Guid.Empty);
+
+        /// <summary>
+        /// o fluxo das duas rotas sob demanda de pedido. "Não existe" é o 404 ou a resposta 2xx sem o pedido pedido (sem resposta
+        /// real, a forma como o Linx Commerce responde um id inexistente está a conferir, docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md §9)
+        /// </summary>
+        private async Task<bool?> GetOrderOnDemand(EnumJob job, string user_name, string doc_company, string route, string body, string key, Func<Domain.LinxCommerce.Dtos.Reads.Orders.Order, bool> isRequested)
+        {
+            _logger
+                .Clear()
+                .AddLog(job);
+
+            try
+            {
+                var company = await _linxCommerceService.GetCompany(doc_company);
+
+                if (company is null)
+                {
+                    // nenhuma chamada à API: não há o que registrar em LinxCommerceRequests (igual ao Totvs)
+                    _logger.AddMessage($"Empresa {doc_company} não cadastrada em linxcommerce.LinxCommerceParameters.");
+                    return null;
+                }
+
+                // a chave em LinxCommerceRequests é o próprio id ou número, como nas outras rotas sob demanda
+                var response = await _linxCommerceService.ReadOnDemand<Domain.LinxCommerce.Dtos.Reads.Orders.Order>(company, job, user_name, route, body, body);
+
+                if (response.StatusCode == 404 || (response.IsValid && !isRequested(response.Dto!)))
+                {
+                    _logger.AddMessage($"{key} não encontrado no Linx Commerce (empresa {doc_company}).");
+                    return false;
+                }
+
+                if (!response.IsValid)
+                    return null;   // a mensagem já foi para o log
+
+                var order = response.Dto!;
+                var orderId = ConverterValidatorsExtensions.ConvertToGuidValidation(order.OrderID);
+
+                // atualiza o cache do SearchOrders, se ele estiver carregado, para a próxima execução não buscar o pedido de novo
+                _cache.TryGetValue($"{OrdersKey}:{doc_company}", out Dictionary<Guid, DateTimeOffset?>? ordersCache);
+
+                await SaveOrders(doc_company, _linxCommerceService.GetBatchTime(), [order], new Dictionary<Guid, string> { { orderId, response.Json! } }, ordersCache ?? []);
+
+                _logger.AddMessage($"Concluída com sucesso: {key} inserido ou atualizado!");
+
+                return true;
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        /// <summary>
         /// cache de estado da empresa (OrderID -> ModifiedDate gravada). Os ids que ainda não estão nele são lidos do banco, em
         /// lotes, e entram no cache: um pedido que não estava na primeira execução também é encontrado
         /// </summary>

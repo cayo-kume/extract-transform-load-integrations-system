@@ -3,6 +3,7 @@ using Application.Shared.Abstractions.Services;
 using Domain.LinxCommerce.Abstractions.Repositorys;
 using Domain.LinxCommerce.Dtos.Reads.Base;
 using Domain.LinxCommerce.Entities.Parameters;
+using Domain.LinxCommerce.Enums;
 using Domain.Shared.Abstractions.Api;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
@@ -178,14 +179,99 @@ namespace Application.LinxCommerce.Services
             return null;
         }
 
+        public async Task<Company?> GetCompany(string doc_company) =>
+            (await GetCompanys()).FirstOrDefault(x => x.doc_company == doc_company);
+
+        public async Task<OnDemandResponse<T>> ReadOnDemand<T>(Company company, EnumJob job, string user_name, string route, object body, string key) where T : class
+        {
+            var requestBody = JsonConvert.SerializeObject(body);
+            var (response, failure) = await Send(company, route, requestBody);
+
+            if (response is null)
+            {
+                // registra a tentativa mesmo quando a chamada não chega a ter resposta (timeout, rede)
+                _logger.AddMessage($"Falha ao chamar o Linx Commerce em {route} ({key}, empresa {company.doc_company}): {failure}");
+                SaveRequest(job, user_name, route, company.doc_company!, key, requestBody, $"Exceção ao chamar a API: {failure}", false, 0);
+
+                return new OnDemandResponse<T>();
+            }
+
+            T? dto = null;
+            string? json = null;
+
+            if (response.IsSuccess)
+            {
+                try
+                {
+                    dto = JsonConvert.DeserializeObject<T>(response.Content ?? String.Empty, JsonSettings);
+                    json = dto is null ? null : RecordJson(Parse(response.Content!));
+                }
+                catch (JsonException)
+                {
+                    dto = null;   // tratado abaixo como resposta inválida
+                }
+            }
+
+            if (!response.IsSuccess)
+                _logger.AddMessage($"Erro do Linx Commerce em {route} ({key}, empresa {company.doc_company}): {response.StatusCode} {Truncate(response.Content)}");
+            else if (dto is null)
+                _logger.AddMessage($"Resposta inválida do Linx Commerce em {route} ({key}, empresa {company.doc_company}): {Truncate(response.Content)}");
+
+            // o corpo da resposta vai sem os campos sensíveis; resposta que não é JSON, cortada
+            SaveRequest(job, user_name, route, company.doc_company!, key, requestBody, json ?? Truncate(response.Content), dto is not null, response.StatusCode);
+
+            return new OnDemandResponse<T> { StatusCode = response.StatusCode, Dto = dto, Json = json };
+        }
+
+        private void SaveRequest(EnumJob job, string user_name, string route, string doc_company, string key, string requestBody, string? responseBody, bool isSuccess, int? statusCode) =>
+            _linxCommerceRepository.InsertIntoLinxCommerceRequests(
+                new Domain.LinxCommerce.Entities.Requests.Request(
+                    execution: _logger.GetExecutionGuid() ?? Guid.Empty,
+                    job: job,
+                    user_name: user_name,
+                    http_method: "POST",
+                    // a rota, sem o endereço do cliente nem o cabeçalho de autenticação
+                    route: $"v1/{route}",
+                    doc_company: doc_company,
+                    field_key_value: key,
+                    request_body: requestBody,
+                    response_body: responseBody,
+                    is_success: isSuccess,
+                    status_code: statusCode
+                )
+            );
+
         /// <summary>
-        /// POST v1/{route} no ambiente do cliente com o Basic usuário:chave. Uma nova tentativa: 429 espera o Retry-After e
-        /// 502/503/504 espera 10 s (são leituras). Erro HTTP ou exceção viram mensagem no log e devolvem null
+        /// POST v1/{route} das leituras recorrentes: erro HTTP ou exceção viram mensagem no log e devolvem null
         /// </summary>
         private async Task<ApiResponse?> Post(Company company, string route, object body, string context)
         {
+            var (response, failure) = await Send(company, route, JsonConvert.SerializeObject(body));
+
+            if (response is null)
+            {
+                _logger.AddMessage($"Falha ao chamar o Linx Commerce em {route} ({context}): {failure}");
+
+                return null;
+            }
+
+            if (!response.IsSuccess)
+            {
+                _logger.AddMessage($"Erro do Linx Commerce em {route} ({context}): {response.StatusCode} {Truncate(response.Content)}");
+
+                return null;
+            }
+
+            return response;
+        }
+
+        /// <summary>
+        /// POST v1/{route} no ambiente do cliente com o Basic usuário:chave. Uma nova tentativa: 429 espera o Retry-After e
+        /// 502/503/504 espera 10 s (são leituras). Exceção de rede ou timeout devolve a mensagem dela, sem resposta
+        /// </summary>
+        private async Task<(ApiResponse? response, string? failure)> Send(Company company, string route, string requestBody)
+        {
             var url = $"{company.base_url.TrimEnd('/')}/v1/{route}";
-            var requestBody = JsonConvert.SerializeObject(body);
             var authorization = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{company.user_name}:{company.api_key}"));
 
             ApiResponse? response = null;
@@ -206,9 +292,7 @@ namespace Application.LinxCommerce.Services
                 catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
                 {
                     // a mensagem da exceção não traz o cabeçalho de autenticação
-                    _logger.AddMessage($"Falha ao chamar o Linx Commerce em {route} ({context}): {ex.Message}");
-
-                    return null;
+                    return (null, ex.Message);
                 }
 
                 if (attempt == 1 && response.StatusCode == 429)
@@ -227,14 +311,7 @@ namespace Application.LinxCommerce.Services
                 break;
             }
 
-            if (response is null || !response.IsSuccess)
-            {
-                _logger.AddMessage($"Erro do Linx Commerce em {route} ({context}): {response?.StatusCode} {Truncate(response?.Content)}");
-
-                return null;
-            }
-
-            return response;
+            return (response, null);
         }
 
         // DateParseHandling.None: o JSON gravado fica com as datas como a API mandou

@@ -118,36 +118,7 @@ namespace Application.LinxCommerce.Services
                     if (failed)
                         continue;
 
-                    var _listSomenteNovos = new List<Domain.LinxCommerce.Entities.Reads.Catalog.Product>();
-
-                    foreach (var product in products)
-                    {
-                        var validations = _productValidator.Validate(product);
-
-                        if (validations.Errors.Count > 0)
-                        {
-                            var message = String.Empty;
-                            validations.Errors.ForEach(s => message += $"produto {product.ProductID}, {s.PropertyName}: {s.ErrorMessage}\n");
-                            _logger.AddMessage(message);
-                        }
-
-                        _listSomenteNovos.Add(new Domain.LinxCommerce.Entities.Reads.Catalog.Product(company.doc_company!, batchTime, product));
-                    }
-
-                    if (_listSomenteNovos.Count == 0)
-                        continue;
-
-                    await _linxCommerceCatalogRepository.BulkInsertIntoLinxCommerceProducts(_listSomenteNovos, _logger.GetExecutionGuid());
-
-                    foreach (var record in _listSomenteNovos)
-                    {
-                        if (productsJson.TryGetValue(record.ProductID, out var json))
-                            _logger.AddRecord(record.ProductID.ToString(), json);
-
-                        productsCache[record.ProductID] = record.ModifiedDate;
-                    }
-
-                    totalInseridos += _listSomenteNovos.Count;
+                    totalInseridos += await SaveProducts(company.doc_company!, batchTime, products, productsJson, productsCache);
                 }
 
                 _logger.AddMessage(
@@ -244,36 +215,7 @@ namespace Application.LinxCommerce.Services
                     if (failed)
                         continue;
 
-                    var _listSomenteNovos = new List<Domain.LinxCommerce.Entities.Reads.Catalog.Sku>();
-
-                    foreach (var sku in skus)
-                    {
-                        var validations = _skuValidator.Validate(sku);
-
-                        if (validations.Errors.Count > 0)
-                        {
-                            var message = String.Empty;
-                            validations.Errors.ForEach(s => message += $"SKU {sku.ProductID} ({sku.SKU}), {s.PropertyName}: {s.ErrorMessage}\n");
-                            _logger.AddMessage(message);
-                        }
-
-                        _listSomenteNovos.Add(new Domain.LinxCommerce.Entities.Reads.Catalog.Sku(company.doc_company!, batchTime, sku));
-                    }
-
-                    if (_listSomenteNovos.Count == 0)
-                        continue;
-
-                    await _linxCommerceCatalogRepository.BulkInsertIntoLinxCommerceSkus(_listSomenteNovos, _logger.GetExecutionGuid());
-
-                    foreach (var record in _listSomenteNovos)
-                    {
-                        if (skusJson.TryGetValue(record.ProductID, out var json))
-                            _logger.AddRecord(record.ProductID.ToString(), json);
-
-                        skusCache[record.ProductID] = record.ModifiedDate;
-                    }
-
-                    totalInseridos += _listSomenteNovos.Count;
+                    totalInseridos += await SaveSkus(company.doc_company!, batchTime, skus, skusJson, skusCache);
                 }
 
                 _logger.AddMessage(
@@ -287,6 +229,188 @@ namespace Application.LinxCommerce.Services
                 _logger.SetLogEndDate();
                 await _logger.CommitAllChanges();
             }
+        }
+
+        /// <summary>
+        /// busca um produto pelo ProductID, grava (sempre, sem consultar o cache) e registra a chamada em linxcommerce.LinxCommerceRequests
+        /// </summary>
+        public async Task<bool?> GetProduct(string user_name, string doc_company, int productId)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.LinxCommerceGetProduct);
+
+            try
+            {
+                var company = await _linxCommerceService.GetCompany(doc_company);
+
+                if (company is null)
+                {
+                    // nenhuma chamada à API: não há o que registrar em LinxCommerceRequests (igual ao Totvs)
+                    _logger.AddMessage($"Empresa {doc_company} não cadastrada em linxcommerce.LinxCommerceParameters.");
+                    return null;
+                }
+
+                var response = await _linxCommerceService.ReadOnDemand<Domain.LinxCommerce.Dtos.Reads.Catalog.Product>(company, EnumJob.LinxCommerceGetProduct, user_name, "Catalog/API.svc/web/GetProduct", productId, productId.ToString());
+
+                // "não existe" é o 404 ou a resposta 2xx sem o produto pedido (a conferir com a API real)
+                if (response.StatusCode == 404 || (response.IsValid && ConverterValidatorsExtensions.ConvertToInt32Validation(response.Dto!.ProductID) != productId))
+                {
+                    _logger.AddMessage($"Produto {productId} não encontrado no Linx Commerce (empresa {doc_company}).");
+                    return false;
+                }
+
+                if (!response.IsValid)
+                    return null;   // a mensagem já foi para o log
+
+                // atualiza o cache do SearchProduct, se ele estiver carregado
+                _cache.TryGetValue($"{ProductsKey}:{doc_company}", out Dictionary<int, DateTimeOffset?>? productsCache);
+
+                await SaveProducts(doc_company, _linxCommerceService.GetBatchTime(), [response.Dto!], new Dictionary<int, string> { { productId, response.Json! } }, productsCache ?? []);
+
+                _logger.AddMessage($"Concluída com sucesso: produto {productId} inserido ou atualizado!");
+
+                return true;
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        /// <summary>
+        /// busca um SKU pelo ProductID, grava (sempre, sem consultar o cache) e registra a chamada em linxcommerce.LinxCommerceRequests
+        /// </summary>
+        public async Task<bool?> GetSKU(string user_name, string doc_company, int productId)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.LinxCommerceGetSKU);
+
+            try
+            {
+                var company = await _linxCommerceService.GetCompany(doc_company);
+
+                if (company is null)
+                {
+                    // nenhuma chamada à API: não há o que registrar em LinxCommerceRequests (igual ao Totvs)
+                    _logger.AddMessage($"Empresa {doc_company} não cadastrada em linxcommerce.LinxCommerceParameters.");
+                    return null;
+                }
+
+                var response = await _linxCommerceService.ReadOnDemand<Domain.LinxCommerce.Dtos.Reads.Catalog.Sku>(company, EnumJob.LinxCommerceGetSKU, user_name, "Catalog/API.svc/web/GetSKU", productId, productId.ToString());
+
+                // "não existe" é o 404 ou a resposta 2xx sem o SKU pedido (a conferir com a API real)
+                if (response.StatusCode == 404 || (response.IsValid && ConverterValidatorsExtensions.ConvertToInt32Validation(response.Dto!.ProductID) != productId))
+                {
+                    _logger.AddMessage($"SKU {productId} não encontrado no Linx Commerce (empresa {doc_company}).");
+                    return false;
+                }
+
+                if (!response.IsValid)
+                    return null;   // a mensagem já foi para o log
+
+                // atualiza o cache do SearchSKU, se ele estiver carregado
+                _cache.TryGetValue($"{SkusKey}:{doc_company}", out Dictionary<int, DateTimeOffset?>? skusCache);
+
+                await SaveSkus(doc_company, _linxCommerceService.GetBatchTime(), [response.Dto!], new Dictionary<int, string> { { productId, response.Json! } }, skusCache ?? []);
+
+                _logger.AddMessage($"Concluída com sucesso: SKU {productId} inserido ou atualizado!");
+
+                return true;
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        /// <summary>
+        /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
+        /// Devolve a quantidade de produtos gravados.
+        /// </summary>
+        private async Task<int> SaveProducts(
+            string doc_company,
+            DateTime batchTime,
+            List<Domain.LinxCommerce.Dtos.Reads.Catalog.Product> products,
+            IReadOnlyDictionary<int, string> productsJson,
+            Dictionary<int, DateTimeOffset?> productsCache)
+        {
+            var _listSomenteNovos = new List<Domain.LinxCommerce.Entities.Reads.Catalog.Product>();
+
+            foreach (var product in products)
+            {
+                var validations = _productValidator.Validate(product);
+
+                if (validations.Errors.Count > 0)
+                {
+                    var message = String.Empty;
+                    validations.Errors.ForEach(s => message += $"produto {product.ProductID}, {s.PropertyName}: {s.ErrorMessage}\n");
+                    _logger.AddMessage(message);
+                }
+
+                _listSomenteNovos.Add(new Domain.LinxCommerce.Entities.Reads.Catalog.Product(doc_company, batchTime, product));
+            }
+
+            if (_listSomenteNovos.Count == 0)
+                return 0;
+
+            await _linxCommerceCatalogRepository.BulkInsertIntoLinxCommerceProducts(_listSomenteNovos, _logger.GetExecutionGuid());
+
+            foreach (var record in _listSomenteNovos)
+            {
+                if (productsJson.TryGetValue(record.ProductID, out var json))
+                    _logger.AddRecord(record.ProductID.ToString(), json);
+
+                productsCache[record.ProductID] = record.ModifiedDate;
+            }
+
+            return _listSomenteNovos.Count;
+        }
+
+        /// <summary>
+        /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
+        /// Devolve a quantidade de SKUs gravados.
+        /// </summary>
+        private async Task<int> SaveSkus(
+            string doc_company,
+            DateTime batchTime,
+            List<Domain.LinxCommerce.Dtos.Reads.Catalog.Sku> skus,
+            IReadOnlyDictionary<int, string> skusJson,
+            Dictionary<int, DateTimeOffset?> skusCache)
+        {
+            var _listSomenteNovos = new List<Domain.LinxCommerce.Entities.Reads.Catalog.Sku>();
+
+            foreach (var sku in skus)
+            {
+                var validations = _skuValidator.Validate(sku);
+
+                if (validations.Errors.Count > 0)
+                {
+                    var message = String.Empty;
+                    validations.Errors.ForEach(s => message += $"SKU {sku.ProductID} ({sku.SKU}), {s.PropertyName}: {s.ErrorMessage}\n");
+                    _logger.AddMessage(message);
+                }
+
+                _listSomenteNovos.Add(new Domain.LinxCommerce.Entities.Reads.Catalog.Sku(doc_company, batchTime, sku));
+            }
+
+            if (_listSomenteNovos.Count == 0)
+                return 0;
+
+            await _linxCommerceCatalogRepository.BulkInsertIntoLinxCommerceSkus(_listSomenteNovos, _logger.GetExecutionGuid());
+
+            foreach (var record in _listSomenteNovos)
+            {
+                if (skusJson.TryGetValue(record.ProductID, out var json))
+                    _logger.AddRecord(record.ProductID.ToString(), json);
+
+                skusCache[record.ProductID] = record.ModifiedDate;
+            }
+
+            return _listSomenteNovos.Count;
         }
     }
 }

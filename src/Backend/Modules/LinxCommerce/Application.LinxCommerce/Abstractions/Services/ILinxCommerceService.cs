@@ -1,4 +1,6 @@
-﻿using Domain.LinxCommerce.Entities.Parameters;
+﻿using Domain.LinxCommerce.Dtos.Reads.Base;
+using Domain.LinxCommerce.Entities.Parameters;
+using Domain.LinxCommerce.Enums;
 
 namespace Application.LinxCommerce.Abstractions.Services
 {
@@ -31,5 +33,16 @@ namespace Application.LinxCommerce.Abstractions.Services
         /// chamada falhou (a mensagem vai para o log)
         /// </summary>
         public Task<(T dto, string json)?> Get<T>(Company company, string route, object body, string key) where T : class;
+
+        /// <summary>
+        /// cliente de linxcommerce.LinxCommerceParameters pelo CNPJ, ou null se não estiver cadastrado (rotas sob demanda)
+        /// </summary>
+        public Task<Company?> GetCompany(string doc_company);
+
+        /// <summary>
+        /// chamada sob demanda (POST v1/{route}): devolve o status, o DTO e o JSON sem os campos sensíveis, e registra a chamada em
+        /// linxcommerce.LinxCommerceRequests, inclusive quando ela falha (docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md 5.5)
+        /// </summary>
+        public Task<OnDemandResponse<T>> ReadOnDemand<T>(Company company, EnumJob job, string user_name, string route, object body, string key) where T : class;
     }
 }

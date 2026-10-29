@@ -1,5 +1,6 @@
 using Application.LinxCommerce.Abstractions.Services;
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
 
 namespace Hangfire.Controllers.LinxCommerce
 {
@@ -32,5 +33,31 @@ namespace Hangfire.Controllers.LinxCommerce
 
             return Ok($"Records integrated successfully.");
         }
+
+        /// <summary>
+        /// busca um produto pelo ProductID (Catalog GetProduct) e grava; a chamada fica em linxcommerce.LinxCommerceRequests
+        /// </summary>
+        [HttpGet("Products/{docCompany}/{productId:int:min(1)}")]
+        [Tags("LinxCommerceCatalog")]
+        public async Task<ActionResult> Product(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            int productId,
+            [FromServices] ILinxCommerceCatalogService linxCommerceCatalogService
+        ) =>
+            OnDemandResponse(await linxCommerceCatalogService.GetProduct(userName, docCompany, productId), $"Product {productId}");
+
+        /// <summary>
+        /// busca um SKU pelo ProductID (Catalog GetSKU) e grava; a chamada fica em linxcommerce.LinxCommerceRequests
+        /// </summary>
+        [HttpGet("Skus/{docCompany}/{productId:int:min(1)}")]
+        [Tags("LinxCommerceCatalog")]
+        public async Task<ActionResult> Sku(
+            [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
+            [RegularExpression(@"^\d{14}$")] string docCompany,
+            int productId,
+            [FromServices] ILinxCommerceCatalogService linxCommerceCatalogService
+        ) =>
+            OnDemandResponse(await linxCommerceCatalogService.GetSKU(userName, docCompany, productId), $"SKU {productId}");
     }
 }

@@ -1,6 +1,7 @@
 # Proposta — padronização do módulo LinxCommerce (padrão Movidesk / AfterSale)
 
-Documento para revisão. **Fases 1 e 2 implementadas em 29/10/2026** (§9): o que está marcado como **(proposto)** segue
+Documento para revisão. **Fases 1, 2 e 4 e as leituras sob demanda da fase 3 implementadas em 29/10/2026** (§9); as escritas
+continuam fora. O que está marcado como **(proposto)** segue
 o que já foi decidido no Totvs (`docs/PROPOSTA-PADRONIZACAO-TOTVS.md`) e no LinxMicrovix
 (`docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md`) e foi implementado com as recomendações da §10.2, que continuam
 pendentes de confirmação por quem usa o módulo. Nada foi conferido com a API real: não há credenciais (§9, "Não
@@ -688,6 +689,35 @@ API real.
 §10.2 e de teste em homologação.
 
 **Fase 4 — README** do módulo no formato do Totvs e do Microvix.
+
+**Fases 3 (só as leituras sob demanda) e 4 implementadas (29/10/2026):**
+
+* **Rotas `GET` com `X-User-Name`** (até 100 caracteres) e `docCompany` por `^\d{14}$`, no desenho do Totvs:
+  `Orders/{docCompany}/{orderId:guid}`, `Orders/{docCompany}/Number/{orderNumber}` (`^[A-Za-z0-9._-]{1,50}$`),
+  `Customers/{docCompany}/{customerId}`, `Products/{docCompany}/{productId}`, `Skus/{docCompany}/{productId}` e
+  `SalesRepresentatives/{docCompany}/{salesRepresentativeId}` (ids `int:min(1)`). Respostas: 200 gravado, 404 não existe, 422
+  cliente não cadastrado ou resposta inválida, 400 de validação.
+* **Services:** `GetOrder`, `GetOrderByNumber`, `GetCustomer` (a busca por `CustomerID` diz o tipo; depois `GetPerson` ou
+  `GetCompany`), `GetProduct`, `GetSKU` e `GetSalesRepresentative`, com o contrato `true`/`false`/`null` do Totvs. Gravam sempre,
+  pelo mesmo método do job (as gravações de produto, SKU e vendedor saíram do corpo do job para métodos privados), e atualizam o cache
+  do job quando ele está carregado. "Não existe" é o 404 ou a resposta 2xx sem o registro pedido (a conferir).
+* **Comum:** `LinxCommerceService.GetCompany` e `ReadOnDemand`, que devolve status, DTO e JSON e grava cada chamada em
+  `linxcommerce.LinxCommerceRequests`: rota `v1/...` sem o endereço do cliente nem a autenticação, corpo enviado, resposta sem os
+  campos sensíveis, `is_success` (2xx com JSON válido) e `status_code` (0 na exceção). O envio HTTP com nova tentativa ficou num
+  `Send` privado, usado pelas leituras recorrentes e pelas sob demanda.
+* **Scripts:** `Script016_Create_LinxCommerce_Requests_Table.sql` (já com `status_code`) e
+  `Script017_Insert_LinxCommerce_On_Demand_Jobs_Into_Jobs_Table.sql` (jobs 7010–7015, `IntervalTimeInMinutes = 0`); `EnumJob` com os
+  6 valores novos.
+* **README** em `src/Backend/Modules/LinxCommerce/README.md`.
+* **As escritas continuam fora** (pendência 1 da §10.2).
+
+**Verificado (29/10/2026):** `dotnet build` do host com 0 erros e nenhum aviso de código no módulo; os 16 scripts rodaram sem erro no
+SQL Server local (37 jobs em `auditing.Jobs`); contra a API simulada, 14 de 14 chamadas com a resposta esperada: as 6 rotas com
+registro existente (200, gravado pai e filhas), pedido por id e por número, cliente e o 404 dos inexistentes, sem `X-User-Name` (400),
+CNPJ com 13 dígitos (400), número de pedido com aspas (400), cliente não cadastrado (422, sem chamada à API) e id zero (404 da rota).
+`LinxCommerceRequests` registrou as 10 chamadas à API com a chave, o status e nenhum campo sensível; os logs ficaram fechados. Depois do
+teste, o banco local voltou ao estado anterior. **Não verificado:** como o Linx Commerce responde um id inexistente e o corpo real do
+`GetOrderByNumber`.
 
 ---
 

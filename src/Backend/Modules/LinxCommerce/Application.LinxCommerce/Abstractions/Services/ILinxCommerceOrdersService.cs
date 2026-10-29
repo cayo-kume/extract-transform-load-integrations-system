@@ -12,5 +12,17 @@
         /// sincroniza os status de pedido (POST Sales/SearchOrderStatus, lidos inteiros)
         /// </summary>
         public Task<bool?> SearchOrderStatus();
+
+        /// <summary>
+        /// busca um pedido pelo OrderID (POST Sales/GetOrder) e grava sempre, sem consultar o cache; a chamada é registrada em
+        /// linxcommerce.LinxCommerceRequests. true gravado, false não existe no Linx Commerce, null empresa não cadastrada ou
+        /// resposta inválida
+        /// </summary>
+        public Task<bool?> GetOrder(string user_name, string doc_company, Guid orderId);
+
+        /// <summary>
+        /// busca um pedido pelo número (POST Sales/GetOrderByNumber); mesmo contrato do GetOrder
+        /// </summary>
+        public Task<bool?> GetOrderByNumber(string user_name, string doc_company, string orderNumber);
     }
 }
