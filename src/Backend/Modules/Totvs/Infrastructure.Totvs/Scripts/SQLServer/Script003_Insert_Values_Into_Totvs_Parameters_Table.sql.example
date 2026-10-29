@@ -1,6 +1,0 @@
---modelo do Script003: copie para Script003_Insert_Values_Into_Totvs_Parameters_Table.sql (fora do git, no .gitignore)
---e troque os valores pelas credenciais NOVAS da Totvs (as antigas estão no histórico do git e devem ser trocadas).
---o DbUp só lê arquivos .sql: este modelo nunca é executado.
-INSERT INTO [totvs].[TotvsParameters] (integrated_or_updated_at, [doc_company], client_id, client_secret, username, [password])
-VALUES
-(SYSDATETIMEOFFSET() AT TIME ZONE 'E. South America Standard Time', '44065634000106', '<client_id>', '<client_secret>', '<username>', '<password>'); --HOLDING NEWBLOOMERS (EMPRESA 900 NA TOTVS)

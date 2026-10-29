@@ -361,7 +361,7 @@ O DbUp executa cada script uma única vez, em ordem alfabética. Alterar um scri
 |---|---|
 | `Script001` | Schema `totvs` e `totvs.TotvsParameters` |
 | `Script002` | App `130 - Totvs` em `auditing.Apps` |
-| `Script003` | A holding em `TotvsParameters`, com as credenciais. **Fica fora do git** (`.gitignore`); o modelo é o `Script003_...sql.example` |
+| `Script003` | A holding em `TotvsParameters`, com as credenciais de produção, como o AfterSale e o Movidesk. As de homologação ficam em `Homologacao/Script003_..._Homologacao.sql`, numa subpasta que o DbUp do deploy não lê: rodar à mão só no banco de homologação ou local, no lugar do `Script003` |
 | `Script004`–`006` | Filiais |
 | `Script007`–`009` | Vendedores |
 | `Script010`–`012` | Produtos |
@@ -695,7 +695,7 @@ Toda execução grava `auditing.Logs` e, conforme o caso:
 | `appsettings.json` do host | `ConnectionStrings` | Conexão com o SQL Server (dados e auditoria) |
 | Banco | `totvs.TotvsParameters` | CNPJ (`doc_company`) e credenciais (`client_id`, `client_secret`, `username`, `password`) de cada empresa |
 
-As credenciais ficam só no banco (via `Script003`, fora do git) e nunca são gravadas em logs.
+As credenciais vão para o banco pelo `Script003` (e pelo de homologação, à mão) e nunca são gravadas em logs.
 
 ---
 
