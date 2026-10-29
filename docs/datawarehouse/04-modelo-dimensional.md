@@ -1,16 +1,16 @@
 # DW do NEWBLOOMERS · 04. Modelo dimensional e histórico
 
-> Guia 4 de 11 do guia do DW, versão 5. Seções deste arquivo: 6 e 7. Os números de seção são os mesmos em todos os arquivos desta pasta. Mapa de seções e ordem de leitura: [00-ordem-de-leitura.md](00-ordem-de-leitura.md).
+> Guia 4 de 12 do guia do DW, versão 7. Seções deste arquivo: 6 e 7. Os números de seção são os mesmos em todos os arquivos desta pasta. Mapa de seções e ordem de leitura: [00-ordem-de-leitura.md](00-ordem-de-leitura.md).
 
 ---
 
 ## 6. Histórico (snapshots)
 
-Exemplo para `totvs.TotvsInvoices`. A `dw_landing` guarda o estado atual, com `row_hash` (SHA-256 das colunas de negócio). O snapshot abre e fecha versões. A chave é a PK da origem. O snapshot é incremental: compara só as linhas gravadas na landing desde a execução anterior, controladas por `carregado_em` e por um watermark próprio em `dw_control.watermark` (fonte `dw_history`, entidade `totvs_invoices`), e não a tabela inteira.
+Exemplo para `totvs.TotvsInvoices`. A `dw_landing` guarda o estado atual, com `row_hash` (SHA-256 das colunas de negócio). O snapshot abre e fecha versões. A chave é a PK da origem. O snapshot é incremental: compara só as linhas gravadas na landing desde a execução anterior, controladas por `loaded_at` e por um watermark próprio em `dw_control.Watermark` (`source = 'dw_history'`, `entity = 'TotvsInvoices'`), e não a tabela inteira. O mesmo mecanismo vale para saldos, custos e preços (`TotvsBalances`, `TotvsCosts`, `TotvsPrices`), que são a única forma de ter histórico de estoque e de valores (7.4).
 
 ```sql
--- dw_landing.totvs_invoices: espelho de totvs.TotvsInvoices, com as colunas que o DW usa
-CREATE TABLE dw_landing.totvs_invoices (
+-- dw_landing.TotvsInvoices: espelho de totvs.TotvsInvoices, com as colunas que o DW usa (nomes da origem)
+CREATE TABLE dw_landing.TotvsInvoices (
     doc_company           NVARCHAR(14)  NOT NULL,
     branchCode            INT           NOT NULL,
     invoiceSequence       INT           NOT NULL,
@@ -25,63 +25,63 @@ CREATE TABLE dw_landing.totvs_invoices (
     totalValue            DECIMAL(18,6) NULL,
     shippingValue         DECIMAL(18,6) NULL,
     origin                NVARCHAR(20)  NULL,
-    origem_atualizado_em  DATETIME      NOT NULL,   -- maxChangeFilterDate; se vier nulo, integrated_or_updated_at
+    source_updated_at     DATETIME      NOT NULL,   -- maxChangeFilterDate; se vier nulo, integrated_or_updated_at
     row_hash              BINARY(32)    NOT NULL,   -- SHA-256 das colunas de negócio
     -- gravado em todo INSERT e em todo UPDATE com mudança de hash; o snapshot lê só as linhas acima do watermark dele
-    carregado_em          DATETIME2(3)  NOT NULL CONSTRAINT df_landing_inv_load DEFAULT (SYSUTCDATETIME() AT TIME ZONE 'UTC' AT TIME ZONE 'E. South America Standard Time'),
-    CONSTRAINT pk_landing_totvs_invoices PRIMARY KEY (doc_company, branchCode, invoiceSequence, invoiceDate)
+    loaded_at             DATETIME2(3)  NOT NULL CONSTRAINT df_landing_TotvsInvoices_loaded DEFAULT (SYSUTCDATETIME() AT TIME ZONE 'UTC' AT TIME ZONE 'E. South America Standard Time'),
+    CONSTRAINT pk_landing_TotvsInvoices PRIMARY KEY (doc_company, branchCode, invoiceSequence, invoiceDate)
 );
-CREATE INDEX ix_landing_totvs_invoices_carregado_em ON dw_landing.totvs_invoices (carregado_em);   -- filtro do snapshot incremental
+CREATE INDEX ix_landing_TotvsInvoices_loaded_at ON dw_landing.TotvsInvoices (loaded_at);   -- filtro do snapshot incremental
 GO
 
--- dw_history.totvs_invoices: uma linha por versão
-CREATE TABLE dw_history.totvs_invoices (
+-- dw_history.TotvsInvoices: uma linha por versão
+CREATE TABLE dw_history.TotvsInvoices (
     doc_company      NVARCHAR(14)  NOT NULL,
     branchCode       INT           NOT NULL,
     invoiceSequence  INT           NOT NULL,
     invoiceDate      DATETIME      NOT NULL,
-    valid_from       DATETIME2(3)  NOT NULL,   -- origem_atualizado_em da versão
-    valid_to         DATETIME2(3)  NULL,       -- origem_atualizado_em da versão seguinte
+    valid_from       DATETIME2(3)  NOT NULL,   -- source_updated_at da versão
+    valid_to         DATETIME2(3)  NULL,       -- source_updated_at da versão seguinte
     is_current       BIT           NOT NULL,
     row_hash         BINARY(32)    NOT NULL,
     invoiceStatus    NVARCHAR(20)  NULL,
     totalValue       DECIMAL(18,6) NULL,       -- demais colunas de negócio
-    CONSTRAINT pk_history_totvs_invoices PRIMARY KEY (doc_company, branchCode, invoiceSequence, invoiceDate, valid_from)
+    CONSTRAINT pk_history_TotvsInvoices PRIMARY KEY (doc_company, branchCode, invoiceSequence, invoiceDate, valid_from)
 );
 GO
 
--- dw_history.sp_totvs_invoices_snapshot: chamada pelo job, depois da carga da landing.
--- Incremental: só as linhas que a carga gravou na landing desde o último snapshot (carregado_em acima do watermark).
+-- dw_history.sp_TotvsInvoices_Snapshot: chamada pelo job, depois da carga da landing.
+-- Incremental: só as linhas que a carga gravou na landing desde o último snapshot (loaded_at acima do watermark).
 -- Na primeira execução não há watermark, então todas as linhas entram.
-CREATE OR ALTER PROCEDURE dw_history.sp_totvs_invoices_snapshot
+CREATE OR ALTER PROCEDURE dw_history.sp_TotvsInvoices_Snapshot
 AS
 BEGIN
     SET NOCOUNT ON;
     SET XACT_ABORT ON;
 
-    DECLARE @desde DATETIME2(3) = ISNULL(
-        (SELECT ultimo_valor FROM dw_control.watermark WHERE fonte = 'dw_history' AND entidade = 'totvs_invoices'),
+    DECLARE @since DATETIME2(3) = ISNULL(
+        (SELECT last_value FROM dw_control.Watermark WHERE source = 'dw_history' AND entity = 'TotvsInvoices'),
         '1900-01-01');
-    DECLARE @ate   DATETIME2(3) = (SELECT MAX(carregado_em) FROM dw_landing.totvs_invoices);
+    DECLARE @until DATETIME2(3) = (SELECT MAX(loaded_at) FROM dw_landing.TotvsInvoices);
 
-    IF @ate IS NULL OR @ate <= @desde
+    IF @until IS NULL OR @until <= @since
         RETURN;   -- a carga não gravou nada desde o último snapshot
 
     BEGIN TRANSACTION;
 
     -- 0. candidatas: só as linhas gravadas desde o último snapshot (a tabela temporária evita ler a landing duas vezes)
-    SELECT doc_company, branchCode, invoiceSequence, invoiceDate, origem_atualizado_em, row_hash, invoiceStatus, totalValue
-      INTO #candidatas
-      FROM dw_landing.totvs_invoices
-     WHERE carregado_em > @desde
-       AND carregado_em <= @ate;
+    SELECT doc_company, branchCode, invoiceSequence, invoiceDate, source_updated_at, row_hash, invoiceStatus, totalValue
+      INTO #candidates
+      FROM dw_landing.TotvsInvoices
+     WHERE loaded_at > @since
+       AND loaded_at <= @until;
 
     -- 1. fecha a versão vigente das candidatas cujo hash mudou
     UPDATE h
-       SET h.valid_to   = s.origem_atualizado_em,
+       SET h.valid_to   = s.source_updated_at,
            h.is_current = 0
-      FROM dw_history.totvs_invoices AS h
-      JOIN #candidatas AS s
+      FROM dw_history.TotvsInvoices AS h
+      JOIN #candidates AS s
         ON s.doc_company = h.doc_company
        AND s.branchCode = h.branchCode
        AND s.invoiceSequence = h.invoiceSequence
@@ -90,12 +90,12 @@ BEGIN
        AND h.row_hash <> s.row_hash;
 
     -- 2. abre a versão nova: candidatas novas, ou as que acabaram de ser fechadas
-    INSERT INTO dw_history.totvs_invoices
+    INSERT INTO dw_history.TotvsInvoices
         (doc_company, branchCode, invoiceSequence, invoiceDate, valid_from, valid_to, is_current, row_hash, invoiceStatus, totalValue)
     SELECT s.doc_company, s.branchCode, s.invoiceSequence, s.invoiceDate,
-           s.origem_atualizado_em, NULL, 1, s.row_hash, s.invoiceStatus, s.totalValue
-      FROM #candidatas AS s
-      LEFT JOIN dw_history.totvs_invoices AS h
+           s.source_updated_at, NULL, 1, s.row_hash, s.invoiceStatus, s.totalValue
+      FROM #candidates AS s
+      LEFT JOIN dw_history.TotvsInvoices AS h
         ON h.doc_company = s.doc_company
        AND h.branchCode = s.branchCode
        AND h.invoiceSequence = s.invoiceSequence
@@ -104,78 +104,128 @@ BEGIN
      WHERE h.doc_company IS NULL;
 
     -- 3. avança o watermark na mesma transação: se o snapshot falhar, a próxima execução relê as mesmas linhas
-    MERGE dw_control.watermark AS w
-    USING (SELECT 'dw_history' AS fonte, 'totvs_invoices' AS entidade) AS o
-       ON w.fonte = o.fonte AND w.entidade = o.entidade
+    MERGE dw_control.Watermark AS w
+    USING (SELECT 'dw_history' AS source, 'TotvsInvoices' AS entity) AS o
+       ON w.source = o.source AND w.entity = o.entity
     WHEN MATCHED THEN
-        UPDATE SET ultimo_valor = @ate,
-                   atualizado_em = SYSUTCDATETIME() AT TIME ZONE 'UTC' AT TIME ZONE 'E. South America Standard Time'
+        UPDATE SET last_value = @until,
+                   updated_at = SYSUTCDATETIME() AT TIME ZONE 'UTC' AT TIME ZONE 'E. South America Standard Time'
     WHEN NOT MATCHED THEN
-        INSERT (fonte, entidade, ultimo_valor) VALUES (o.fonte, o.entidade, @ate);
+        INSERT (source, entity, last_value) VALUES (o.source, o.entity, @until);
 
     COMMIT TRANSACTION;
 END;
 ```
 
-- O snapshot depende de `carregado_em` marcar mudança de conteúdo. Por isso a procedure de carga da landing (`dw_landing.sp_totvs_invoices_load`) grava `carregado_em` em todo INSERT e só atualiza uma linha existente quando o `row_hash` muda (`WHEN MATCHED AND destino.row_hash <> origem.row_hash`), gravando `carregado_em` nesse UPDATE. As linhas relidas pela sobreposição de 3 dias (5.2, regra 1) sem alteração não mudam de `carregado_em` e não entram no snapshot.
-- O watermark do snapshot fica em `dw_control.watermark`, com fonte `dw_history` e a entidade da tabela. O `ultimo_valor` dele é o `carregado_em` da landing, não o `integrated_or_updated_at` da origem (8.1). Zerar esse watermark refaz o snapshot da tabela inteira, sem duplicar: as linhas com o mesmo hash da versão vigente não geram versão nova.
-- A data da mudança é `origem_atualizado_em`. Se duas versões da mesma nota tiverem a mesma data, a PK de `dw_history` colide. A carga de teste precisa confirmar que `maxChangeFilterDate` é preenchida e muda a cada alteração; se não mudar, a PK passa a incluir `carregado_em` (seção 15).
+- O snapshot depende de `loaded_at` marcar mudança de conteúdo. Por isso a procedure de carga da landing (`dw_landing.sp_TotvsInvoices_Load`) grava `loaded_at` em todo INSERT e só atualiza uma linha existente quando o `row_hash` muda (`WHEN MATCHED AND target.row_hash <> source.row_hash`), gravando `loaded_at` nesse UPDATE. As linhas relidas pela sobreposição de 3 dias (5.2, regra 1) sem alteração não mudam de `loaded_at` e não entram no snapshot.
+- O watermark do snapshot fica em `dw_control.Watermark`, com `source = 'dw_history'` e a entidade da tabela. O `last_value` dele é o `loaded_at` da landing, não o `integrated_or_updated_at` da origem (8.1). Zerar esse watermark refaz o snapshot da tabela inteira, sem duplicar: as linhas com o mesmo hash da versão vigente não geram versão nova.
+- A data da mudança é `source_updated_at`. Se duas versões da mesma nota tiverem a mesma data, a PK de `dw_history` colide. A carga de teste precisa confirmar que `maxChangeFilterDate` é preenchida e muda a cada alteração; se não mudar, a PK passa a incluir `loaded_at` (seção 15).
 - Para tabelas com `lastChangeDate` em vez de `maxChangeFilterDate` (como `TotvsSaleOrdersProducts`), o campo muda, e a lógica é a mesma.
-- A frequência é horária para notas e pedidos e diária para cadastros (pergunta 9, 3.3).
+- Saldos, custos e preços mudam a cada venda e a cada reajuste. O snapshot deles é diário, no fim do dia, para gerar uma versão por dia em que houve mudança, e não uma por venda (7.4, pergunta 10). O das tabelas Linx roda uma vez, na carga do legado (7.5).
+- A frequência é horária para notas e pedidos e diária para cadastros, saldos, custos e preços (pergunta 9, 3.3).
 
 ---
 
 ## 7. Modelo dimensional
 
+Os fatos e as dimensões que recebem mais de um ERP levam `source_erp` (`totvs`, `linxmicrovix`, `linxcommerce`) na chave natural, porque os códigos dos ERPs colidem entre si (um `cod_cliente` do Linx não é o `code` da Totvs). A loja é a exceção: os dois ERPs falam do mesmo CNPJ, então a loja Linx é ligada à linha da `DimStore` pelo CNPJ (7.5). O produto Linx tem de/para por referência, cor e tamanho (pergunta 34).
+
 ### 7.1 Dimensões
 
 | Dimensão | Grão | Fontes | SCD | Observação |
 |---|---|---|---|---|
-| `dim_tempo` | dia | gerada por procedure; `dw_reference.feriados` | — | Ano, mês, semana ISO, dia útil, feriado, data em horário de Brasília. Cobre 2020 a 2035 (ajustar) |
-| `dim_loja` | loja (`doc_company`, `branchCode`) | `totvs.TotvsBranches` | 2 (snapshot) | Muda de nome, marca e situação |
-| `dim_produto` | SKU | `totvs.TotvsSkus`, `totvs.TotvsSkusColors` | 2 (snapshot) | Linha, coleção e situação mudam |
-| `dim_marca` | marca | derivada de produto | 1 | Misha, Open Era, Margaux e outras (nomes usados no Oto deste repositório) |
-| `dim_cliente` | cliente (`doc_company`, código) | `totvs.TotvsPeople`, `totvs.TotvsLegalEntities`; UF, faixa etária, hash e documento mascarado vêm de `dw_personal_data` (8.3) | 1 (pergunta 11) | Dado pessoal tratado (seção 12 e 5.2, regra 6). CPF/CNPJ como hash com pepper |
-| `dim_vendedor` | vendedor | `totvs.TotvsSellers` | 1 | |
-| `dim_fornecedor` | fornecedor | `totvs.TotvsLegalEntities`, `totvs.TotvsProductsSuppliers` | 1 | |
-| `dim_pagamento` | forma de pagamento | `totvs.TotvsInvoicesPayments` | 1 | Colunas de forma de pagamento a confirmar na carga de teste |
-| `dim_operacao` | operação da nota | `totvs.TotvsInvoices` (`operationCode`, `operatioName`, `operationType`) | 1 | Confirmada (pergunta 26) |
-| `dim_canal` | canal | `dw_reference.regra_canal` (tabela carregada por script) | 1 | Regra decidida (pergunta 15): pedido de `TotvsSaleOrders` com `integrationCode` não nulo é e-commerce; nulo é loja. A tabela mapeia cada `integrationCode` para o nome do canal. A função herdada `calcula_id_canal` não é usada |
+| `DimDate` | dia | gerada por procedure; `dw_reference.Holidays` | — | Ano, mês, semana ISO, dia útil, feriado, data em horário de Brasília. Cobre 2010 a 2035, para alcançar o legado Linx (ajustar) |
+| `DimStore` | loja (`doc_company`, `branchCode`) | `totvs.TotvsBranches` (`cnpj`, `description`, `fantasyName`, `branchGroupName`); `linxmicrovix.LinxLojas` só para a loja sem CNPJ na Totvs | 2 (snapshot) | Muda de nome, marca e situação. O CNPJ é o atributo que liga o legado Linx (7.5); a raiz do CNPJ define a série do pedido (`MI-`, `OA-`), como em `docs/regras-prefixo-pedidos.md` |
+| `DimProduct` | produto (`doc_company`, `source_erp`, código do produto) | Totvs: `TotvsSkusColorsProducts` (`code` = `productCode` das notas, pedidos, saldos, custos e preços; tamanho, `isActive`, `isBlocked`, datas de venda), com a hierarquia referência (`TotvsSkus`: `referenceCode`, `name`, `gridCode`) → cor (`TotvsSkusColors`) → tamanho (`size`, `TotvsGridsSizes`) e a categoria (`TotvsSkusReferenceCategories`, `TotvsCategories`, com `parentCategoryCode`). Linx: `LinxProdutos` (`cod_produto`, `referencia`, `desc_cor`, `desc_tamanho`, `desc_linha`, `desc_marca`, `desc_colecao`, `desativado`) | 2 (snapshot) | Linha, coleção, categoria e situação mudam. O produto Linx recebe `matched_product_sk` quando `referencia`, `desc_cor` e `desc_tamanho` casam com `referenceCode`, cor e `size` da Totvs; sem casamento, fica membro próprio (pergunta 34, 7.5) |
+| `DimBrand` | marca | derivada de produto: Totvs, a matriz dona da referência (raiz do CNPJ `38367316` Misha, `42538267` Open Era) ou uma classificação, a confirmar na carga de teste; Linx, `LinxProdutos.desc_marca` | 1 | Misha, Open Era, Margaux e outras (nomes usados no Oto deste repositório e em `docs/regras-prefixo-pedidos.md`) |
+| `DimCustomer` | cliente (`doc_company`, `source_erp`, código) | Totvs: `TotvsPeople`, `TotvsLegalEntities`; Linx: `LinxClientesFornec`, `LinxCommerceCustomers`. UF, faixa etária, hash e documento mascarado vêm de `dw_personal_data` (8.3) | 1 (pergunta 11) | Dado pessoal tratado (seção 12 e 5.2, regra 6). O `doc_hash` é o mesmo nos dois ERPs para o mesmo CPF, então liga o cliente Linx ao cliente Totvs sem expor o documento |
+| `DimSeller` | vendedor (`doc_company`, `source_erp`, código) | Totvs: `TotvsSellers`; Linx: `LinxVendedores` (`cod_vendedor`, `nome_vendedor`, `tipo_vendedor`, `ativo`) | 1 | Membros próprios por ERP; a loja do vendedor Linx vem de `cnpj_emp` |
+| `DimSupplier` | fornecedor | `totvs.TotvsLegalEntities`, `totvs.TotvsProductsSuppliers` | 1 | |
+| `DimPaymentMethod` | forma de pagamento | Totvs: `TotvsInvoicesPayments`; Linx: as colunas `forma_*` e `total_*` de `LinxMovimento` (dinheiro, cheque, cartão, crediário, convênio, pix, depósito), viradas em linhas | 1 | Colunas de forma de pagamento da Totvs a confirmar na carga de teste |
+| `DimOperation` | operação | Totvs: `TotvsInvoices` (`operationCode`, `operatioName`, `operationType`); Linx: `LinxMovimento` (`cod_natureza_operacao`, `natureza_operacao`, `operacao`, `tipo_transacao`) | 1 | Confirmada (pergunta 26). `source_erp` na chave |
+| `DimChannel` | canal × tipo de pedido | `dw_reference.ChannelRules` (tabela carregada por script) | 1 | Canal (pergunta 15): na Totvs, pedido com `integrationCode` não nulo é e-commerce, nulo é loja; a nota herda o canal do pedido que fatura (`TotvsInvoicesSalesOrders`), e nota sem pedido é loja. No Linx, `LinxMovimento` é loja, `LinxB2CPedidos` e `LinxCommerceOrders` são e-commerce (`WebSiteName` e `MarketPlaceBrand` como subcanal). Tipo do pedido, pelas regras de `docs/regras-prefixo-pedidos.md`: `VD` venda direta (`representativeName LIKE '%VENDA DIRETA%' OR '%VD%'`), `LJ` reposição de lojas (`'%REPOSICAO LOJAS%'`), `VF` venda fácil ou prateleira infinita (`operationName LIKE '%VENDA PRATELEIRA%'`), `RC` recebimento, `RV` reversa, `ST` e-commerce, `PDV` nota de loja (`inclusionComponentCode LIKE '%PDVFM%'`). `LJ` e `RC` não são venda (7.2). A função herdada `calcula_id_canal` não é usada |
 
-Fora do escopo desta versão, por não terem tabela de dados aqui: `dim_transportadora` (Jadlog, TotalExpress, Stone), `dim_deposito` (estoque) e a dimensão de LinxProdutos/LinxLojas/LinxVendedores (Linx).
+Fase 4 (7.6): `DimSalesRepresentative` (`TotvsRepresentatives`), `DimRegion` (`TotvsOperationalAreas`) e `DimPromotion` (`TotvsPromotions`). Fora do escopo, por não terem tabela de dados aqui: `DimCarrier` (Jadlog, TotalExpress, Stone) e `DimWarehouse` (os depósitos da Totvs são o `stockCode` de `TotvsBalances`, tratado em 7.4).
 
-**Membro desconhecido** em todas: uma linha com chave natural `0`, descrição "NÃO INFORMADO" e chave substituta fixa. Uma checagem alerta se a proporção de linhas nesse membro passar do limite. Chave natural nula vai para o membro desconhecido, antes de gerar a chave substituta.
+**Membro desconhecido** em todas: uma linha com chave natural `0`, descrição "NOT INFORMED" e chave substituta fixa. Uma checagem alerta se a proporção de linhas nesse membro passar do limite. Chave natural nula vai para o membro desconhecido, antes de gerar a chave substituta.
 
-**Chaves substitutas:** `sk = CONVERT(CHAR(32), HASHBYTES('MD5', CONCAT_WS('|', <chave natural>)), 2)`. A chave natural é a PK da origem, com `doc_company`. A expressão fica inline nas procedures, e não em função escalar, por desempenho. Em dimensões SCD2, a chave inclui `valid_from`. Os fatos gravam a `sk` da versão vigente na data do evento. Reprocessar uma dimensão não muda as chaves. A v1 usava `IDENTITY`, e nesse caso um full refresh quebraria os fatos.
+**Chaves substitutas:** `sk = CONVERT(CHAR(32), HASHBYTES('MD5', CONCAT_WS('|', <chave natural>)), 2)`. A chave natural é a PK da origem, com `doc_company` e, onde há mais de um ERP, `source_erp`. A expressão fica inline nas procedures, e não em função escalar, por desempenho. Em dimensões SCD2, a chave inclui `valid_from`. Os fatos gravam a `sk` da versão vigente na data do evento. Reprocessar uma dimensão não muda as chaves. A v1 usava `IDENTITY`, e nesse caso um full refresh quebraria os fatos.
 
 ### 7.2 Fatos
 
-| Fato | Grão (PK da origem) | Fontes | Carga |
+| Fato | Grão | Fontes | Carga |
 |---|---|---|---|
-| `fato_venda_item` | item de nota (`doc_company`, `branchCode`, `invoiceSequence`, `invoiceDate`, `sequence`) | `totvs.TotvsInvoicesItems` | MERGE pela PK, recarga completa a cada execução (pergunta 8, 9.1); otimizar depois de medir |
-| `fato_pedido_item` | item de pedido (`doc_company`, `branchCode`, `orderCode`, `productCode`) | `totvs.TotvsSaleOrdersProducts` | MERGE, recarga completa |
-| `fato_pagamento` | pagamento da nota (`doc_company`, `branchCode`, `invoiceSequence`, `invoiceDate`, `documentNumber`, `installment`) | `totvs.TotvsInvoicesPayments` | MERGE |
-| `fato_atendimento` | ticket (`doc_company`, `id`) | `movidesk.MovideskTickets`, `MovideskTicketsActions` | Fase 2 |
-| `fato_reembolso` | reembolso (`doc_company`, `id`) | `aftersale.AfterSaleRefunds` | Fase 2. Separado de atendimento porque o grão é outro |
+| `FactSalesItem` | linha de produto vendido: Totvs, item × produto da nota (`TotvsInvoicesItemsProducts`: `doc_company`, `branchCode`, `invoiceSequence`, `invoiceDate`, `itemSequence`, `productCode`); Linx, linha de `LinxMovimento` (`cnpj_emp`, `transacao`). Chave do fato: (`source_erp`, `source_key`), 8.4 | Totvs: `TotvsInvoicesItemsProducts` (quantidade e valores do produto), `TotvsInvoicesItems` (CFOP, NCM, frete, seguro e acréscimo do item, rateados pelos produtos), `TotvsInvoicesItemsTaxes` (impostos), `TotvsInvoices` (status, operação, cliente, data), `TotvsInvoicesSalesOrders` (canal e tipo do pedido). Linx: `LinxMovimento`, `LinxMovimentoPrincipal` (`estornada`), `LinxMovimentoDevolucoesItens` | MERGE pela chave, recarga completa a cada execução (pergunta 8, 9.1); otimizar depois de medir. Linx: carga única (7.5) |
+| `FactOrderItem` | linha de produto do pedido: Totvs (`doc_company`, `branchCode`, `orderCode`, `productCode`); Linx Microvix B2C (`id_pedido_item`); Linx Commerce (`OrderID`, `OrderItemID`). Chave (`source_erp`, `source_key`) | `totvs.TotvsSaleOrdersProducts` e `TotvsSaleOrders` (canal, tipo e partes do número do pedido, 4.2); `linxmicrovix.LinxB2CPedidosItens` e `LinxB2CPedidos`; `linxcommerce.LinxCommerceOrdersItems` e `LinxCommerceOrders` | MERGE, recarga completa. Linx: carga única. É a origem de `dw_outbound.OtoOrders` e `WmsOrders` |
+| `FactInvoicePayment` | pagamento da nota (`doc_company`, `branchCode`, `invoiceSequence`, `invoiceDate`, `documentNumber`, `installment`) | `totvs.TotvsInvoicesPayments`; Linx, só se o fechamento exigir: `LinxMovimentoPlanos` | MERGE |
+| `FactMonthlyStock` | loja × produto × `stockCode` × fim de mês (7.4) | `dw_history.TotvsBalances` | Fase 2. INSERT do último dia de cada mês; posições diárias por view sobre o histórico |
+| `FactTicket` | ticket (`doc_company`, `id`) | `movidesk.MovideskTickets`, `MovideskTicketsActions` | Fase 2 |
+| `FactRefund` | reembolso (`doc_company`, `id`) | `aftersale.AfterSaleRefunds` | Fase 2. Separado de `FactTicket` porque o grão é outro |
 
-Fora do escopo desta versão: `fato_estoque_diario` (estoque), `fato_entrega` (logística) e fatos de Linx e e-commerce. Entram quando as fontes tiverem tabelas neste repositório.
+Fase 4 (7.6): `FactPurchaseOrderItem`, `FactAccountsPayable`, `FactCommission`, `FactStoreReception` e `FactApiRequest`. Fora do escopo desta versão: `FactShipment` (logística) e pagamentos de outros canais (Pagarme). Entram quando as fontes tiverem tabelas neste repositório.
+
+**Grão do fato de venda, item × produto:** na Totvs, o item da nota (`TotvsInvoicesItems`, uma referência e cor) se abre em produtos (`TotvsInvoicesItemsProducts`, um por tamanho), cada um com quantidade e valores próprios (1.2, item 13). O fato usa o produto, que é o grão das vendas, dos saldos, dos custos e dos preços. O que só existe no item (frete, seguro, acréscimo, impostos de `TotvsInvoicesItemsTaxes`) é rateado pelos produtos do item, proporcional ao valor líquido. Item sem produto (serviço ou item sem grade) entra com `productCode` no membro desconhecido. Checagem: a soma dos produtos de um item bate com o valor do item.
 
 **Fonte de verdade por canal (para evitar contagem dupla):**
 
-- **Venda faturada:** a nota do Totvs. Hoje todas as lojas faturam pelo Totvs: a venda por Linx foi descontinuada (pergunta 13). O passado das lojas que vendiam por Linx entra com o histórico de Linx Microvix e Linx Commerce (carga única, legado), ligado a `dim_loja` pelo mapa CNPJ × ERP × período em `dw_reference`, para saber quanto cada loja vendeu nos anos em que vendia pela Linx. A mesma nota nunca entra por dois ERPs. Checagem de unicidade por chave da nota.
-- **Pedido de e-commerce:** pedido de `totvs.TotvsSaleOrders` com `integrationCode` não nulo (pergunta 15). O prefixo `MI-`/`OA-` do número (1.2, item 11), usado pelo Oto e pelo Stone, não é o critério do DW. Nunca somar pedido e nota do mesmo cliente como se fossem vendas separadas.
+- **Venda faturada:** a nota do Totvs. Hoje todas as lojas faturam pelo Totvs: a venda por Linx foi descontinuada (pergunta 13). O passado das lojas que vendiam por Linx entra pelo legado (7.5), ligado a `DimStore` pelo CNPJ, para saber quanto cada loja vendeu nos anos em que vendia pela Linx. A mesma nota nunca entra por dois ERPs: um CNPJ tem Linx até a data da migração e Totvs depois, e a checagem de unicidade por chave da nota pega sobreposição.
+- **Pedido de e-commerce:** pedido de `totvs.TotvsSaleOrders` com `integrationCode` não nulo (pergunta 15). A nota que fatura esse pedido recebe o mesmo canal por `TotvsInvoicesSalesOrders` (1.2, item 14). O prefixo `MI-`/`OA-` do número (1.2, item 11), usado pelo Oto e pelo Stone, não é o critério do DW: o DW o produz, pelas partes do número, para os consumidores (4.2). Nunca somar pedido e nota do mesmo cliente como se fossem vendas separadas: o pedido mede captado; a nota mede faturado.
+- **Reposição de lojas (`LJ`) e recebimento (`RC`) não são venda:** são transferência entre o CD e a loja e compra do fornecedor. Entram em `FactOrderItem` com o tipo em `DimChannel`, e `datamart.DailySales` os exclui de captado e faturado.
 
 ### 7.3 Métricas canônicas (uma definição, em um lugar)
 
-Regras herdadas do legado, que ainda precisam ser confirmadas com quem usa os números. Ficam em T-SQL, como colunas nos agregados de `datamart` (ex.: `valor_faturado`, `valor_captado`). As ferramentas de BI só agregam essas colunas; nenhuma recalcula a regra.
+Regras herdadas do legado, que ainda precisam ser confirmadas com quem usa os números. Ficam em T-SQL, como colunas nos agregados de `datamart` (ex.: `invoiced_amount`, `captured_amount`). As ferramentas de BI só agregam essas colunas; nenhuma recalcula a regra.
 
-- **Faturado, ramo Totvs:** notas com `invoiceStatus` em (Authorized, Generated, Issued, Normal) e `eletronicElectronicInvoiceStatus` em (Authorized, Generated). Valor = total menos frete. Positivo para saída; negativo para entrada e para devolução (modo de operação 3). Confirmar os nomes de status contra os valores que a Totvs devolve na carga de teste.
-- **Captado (Flash):** pedidos do Totvs fora dos status PartiallyAnswered, Attended, Canceled e InComposition, pela data do pedido.
-- **Realizado (`fl_operacao_realizada`):** autorizada eletronicamente, ou não cancelada e originada de PEDFP144 ou PDVFM001. Vem da lógica do legado, e a origem dos códigos (PEDFP144, PDVFM001) precisa de confirmação.
-- **Faturado, ramo Linx (histórico, legado):** `DESC_SEFAZ_SITUACAO = 'Autorizada'` e `CANCELADO = 'N'`, para quando o histórico Linx entrar (pergunta 13). O Flash usa filtros de status diferentes para cada ERP, o que pode explicar parte de uma divergência futura.
+- **Faturado, ramo Totvs (`invoiced_amount`):** notas com `invoiceStatus` em (Authorized, Generated, Issued, Normal) e `eletronicElectronicInvoiceStatus` em (Authorized, Generated). Valor = total menos frete. Positivo para saída; negativo para entrada e para devolução (modo de operação 3). Confirmar os nomes de status contra os valores que a Totvs devolve na carga de teste.
+- **Faturado, ramo Linx (legado):** linhas de `LinxMovimento` com `cancelado = 'N'` e `desc_sefaz_situacao = 'Autorizada'`, e `estornada` falso em `LinxMovimentoPrincipal`. Devolução pelas linhas de `LinxMovimentoDevolucoesItens` e pela natureza de operação. O Flash usava filtros de status diferentes para cada ERP, o que pode explicar parte de uma divergência com o passado.
+- **Captado (`captured_amount`, o Flash):** pedidos do Totvs fora dos status PartiallyAnswered, Attended, Canceled e InComposition, pela data do pedido, excluídos os tipos `LJ` e `RC` (7.2).
+- **Realizado (`is_realized_operation`):** autorizada eletronicamente, ou não cancelada e originada de PEDFP144 ou PDVFM001. Vem da lógica do legado, e a origem dos códigos (PEDFP144, PDVFM001) precisa de confirmação.
+- **Custo e margem:** `unit_cost` da linha de venda é o custo vigente do produto na loja na data da venda, lido de `dw_history.TotvsCosts` com o `costCode` que tiver o papel `margin_cost` em `dw_reference.ValueCodes` (8.7): o código 2 `ULTIMA COMPRA` (pergunta 33, decidida). No Linx, `LinxMovimento.preco_custo`. Margem = líquido menos custo × quantidade. A medida se chama `unit_cost`, e não "custo médio", porque o custo escolhido é o da última compra; os outros sete tipos de custo ficam só no histórico.
+- **Preço de tabela:** `list_price` da linha é o preço vigente em `dw_history.TotvsPrices` do código com papel `list_price_store` (1 `VENDA LOJA`) no canal loja e `list_price_ecommerce` (4 `VENDA ECOMMERCE`) no e-commerce; no Linx, `LinxMovimento.preco_tabela_epoca`. Desconto real = preço de tabela menos preço praticado. A linha leva também `original_price` (5 `VENDA ORIGINAL`, antes da remarcação) e `promotional_price` (6 `VENDA PROMOCIONAL`), para medir remarcação e promoção (8.4).
 
 ⚠️ Antes de publicar qualquer total, as definições precisam ser reconciliadas com o DW atual e aprovadas por quem usa os números.
 
-### 7.4 Fora do escopo desta versão: estoque, logística e pagamentos de outros canais
+### 7.4 Estoque, custos e preços (Totvs)
 
-Estoque, logística e pagamentos de outros canais não têm tabelas de dados neste repositório. Quando o módulo correspondente criar as tabelas, a modelagem entra no mesmo padrão. O volume dessas fontes precisa ser medido na carga de teste do banco zerado antes de qualquer decisão sobre retenção ou granularidade (perguntas 10 e 14).
+`totvs.TotvsBalances` guarda a posição atual de cada produto em cada loja e depósito (`stockCode`): `stock`, `salesOrder` (reservado por pedido), `purchaseOrder` (a receber), `inputTransaction`, `outputTransaction` e outras colunas de produção. `TotvsCosts` e `TotvsPrices` guardam o custo e o preço vigentes por loja, produto e código. Nenhuma das três tem histórico: cada venda ou reajuste sobrescreve a linha (1.2, item 15).
+
+- **Histórico por mudança, não por dia (pergunta 10, decidida).** As três tabelas entram em `dw_landing` e `dw_history` como as demais (seção 6), com snapshot diário no fim do dia. Cada versão do histórico é uma posição que durou pelo menos um dia. A posição de qualquer data é lida com `valid_from <= data < valid_to`. Não é "append" nem "substituir o dia": é o mesmo SCD2 do resto do DW.
+- **`FactMonthlyStock`:** uma linha por loja, produto, `stockCode` e último dia do mês, com `quantity`, `reserved_by_order`, `incoming_from_purchase` e o custo vigente, para valorizar o estoque. É o fato que o `datamart` agrega; posições diárias saem de `dw_intermediate.vw_StockPosition`, sobre `dw_history.TotvsBalances`, quando alguém precisar (8.5).
+- **Retenção (pergunta 14, decidida):** histórico desde a primeira carga, sem limite, até a medição do volume na carga de teste. O teto é uma versão por produto × loja × depósito por dia em que houve mudança: com 30 lojas e 50 mil produtos ativos, 1,5 milhão por dia; o número real é bem menor, porque só o que vendeu ou foi reajustado muda. Se a medição exigir, a retenção passa a ser por versão (apagar versões fechadas com mais de N anos), nunca o fato mensal (arquivo 12).
+- **Códigos:** o módulo lê todos os `stockCode`, `costCode` e `priceCode`, e cada linha traz o nome do código (`stockDescription`, `costName`, `priceName`). O catálogo de custo e preço veio da tela PRDFL003 e está em `dw_reference.ValueCodes` (8.7): oito custos e seis preços. Os papéis de preço e o custo da margem (2 `ULTIMA COMPRA`) estão atribuídos; o depósito vendável (`stockCode`, que não está na PRDFL003) é o que resta da pergunta 33.
+- **Carga inicial:** a carga dos saldos na Totvs leva cerca de 27 minutos por loja (README do módulo); o DW só lê depois que a tabela confiável estiver completa.
+
+### 7.5 Legado Linx: Microvix e Commerce
+
+Os dois módulos estão no padrão do repositório, mas a Newbloomers não vende mais por eles (1.2, item 7). O DW faz uma carga única do histórico e mantém o watermark, para absorver correções, sem agenda própria.
+
+| Origem | Destino no DW | Ligação com a Totvs |
+|---|---|---|
+| `linxmicrovix.LinxMovimento` (linha de produto vendido), `LinxMovimentoPrincipal` (`valor_nota`, `estornada`), `LinxMovimentoDevolucoesItens` | `FactSalesItem`, `source_erp = linxmicrovix`, `source_key = doc_company|cnpj_emp|transacao` | Loja pelo CNPJ (`cnpj_emp` = `TotvsBranches.cnpj`); data por `data_documento`; produto pelo de/para (abaixo); vendedor e cliente nos membros Linx das dimensões |
+| `linxmicrovix.LinxB2CPedidos`, `LinxB2CPedidosItens` | `FactOrderItem`, `source_erp = linxmicrovix`, canal e-commerce | `cod_cliente_erp` liga ao cliente Linx; `cnpj_origem_venda` liga à loja |
+| `linxcommerce.LinxCommerceOrders`, `LinxCommerceOrdersItems`, `LinxCommerceOrdersInvoices` | `FactOrderItem`, `source_erp = linxcommerce`, canal e-commerce (`WebSiteName`, `MarketPlaceBrand`) | `CustomerCPF`/`CustomerCNPJ` viram `doc_hash`; a nota do pedido (`LinxCommerceOrdersInvoices`) não entra como venda faturada, para não contar duas vezes com o ERP da época |
+| `linxmicrovix.LinxLojas` | `DimStore` (só a loja sem CNPJ na Totvs) e exceções do mapa em `dw_reference.StoreErpMap` | CNPJ |
+| `linxmicrovix.LinxProdutos` | `DimProduct`, membros `linxmicrovix`, com `matched_product_sk` | De/para por referência, cor e tamanho (pergunta 34) |
+| `linxmicrovix.LinxVendedores`, `LinxClientesFornec`; `linxcommerce.LinxCommerceCustomers` | `DimSeller` e `DimCustomer`, membros Linx; dado identificador em `dw_personal_data` (5.2, regra 6) | Cliente pelo `doc_hash` do CPF; vendedor sem ligação |
+
+- **De/para de produto (pergunta 34, decidida):** `dw_intermediate.sp_ProductMatch_Load` casa `LinxProdutos.referencia`, `desc_cor` e `desc_tamanho` com `TotvsSkus.referenceCode`, o nome da cor em `TotvsSkusColors` e o `size` de `TotvsSkusColorsProducts`, depois de normalizar os textos (maiúsculas, sem acento, sem espaço nas pontas). O resultado fica em `DimProduct.matched_product_sk` do membro Linx, apontando para o produto Totvs; sem casamento, o membro Linx fica sem ligação, e a comparação por produto entre os anos usa `COALESCE(matched_product_sk, sk)`. Uma checagem mede a proporção de produtos Linx casados, por marca; a meta é definida depois da primeira execução. Os pares que o texto não resolver podem ser corrigidos em `dw_reference.ProductErpMap`, carregada por script.
+- **Período por loja:** a data de corte de cada CNPJ é a última venda Linx autorizada e a primeira nota Totvs. A checagem de unicidade por chave da nota e uma checagem de sobreposição por CNPJ e dia garantem que nenhum dia soma os dois ERPs. Exceções (CNPJ que mudou, loja que migrou em etapas) ficam em `dw_reference.StoreErpMap`, com `cnpj`, `source_erp`, `valid_from` e `valid_to`.
+- **Linx Commerce** só entra quando houver carga real (1.2, item 17). As colunas acima vêm dos scripts, não de uma resposta da API.
+- **Carga única:** uma procedure por fato (`dw_intermediate.sp_LinxLegacy_Load`) lê a `dw_landing` do Linx e grava as linhas no formato unificado; roda na fase 3 e fica disponível para reexecução. O snapshot das tabelas Linx roda uma vez, na mesma carga.
+
+### 7.6 Fase 4: compras, contas a pagar, comissões, recepção de loja, representantes e auditoria de envios
+
+Tabelas que os módulos já carregam e que viram fatos próprios depois das fases 1 a 3, no mesmo padrão:
+
+| Fato ou dimensão | Grão (PK da origem) | Fonte | Observação |
+|---|---|---|---|
+| `FactPurchaseOrderItem` | item do pedido de compra (`doc_company`, `branchCode`, `orderCode`, `productCode`) | `totvs.TotvsPurchaseOrdersProducts`, `TotvsPurchaseOrders` (fornecedor, comprador, status, datas de entrega) | Quantidades pedida, recebida (`settledQuantity`), cancelada e extra; `DimSupplier` |
+| `FactAccountsPayable` | parcela da duplicata (`doc_company`, `branchCode`, `supplierCode`, `duplicateCode`, `installmentCode`) | `totvs.TotvsDuplicates` | Emissão, vencimento, baixa, valor, juros, desconto, pago; `status` |
+| `FactCommission` | fechamento por comissionado (`doc_company`, `closingBranchCode`, `closingCode`, `commissionedCpfCnpj`) | `totvs.TotvsCommissionsPaid` | CPF/CNPJ do comissionado vira `doc_hash` (5.2, regra 6); a base está vazia hoje (README do módulo) |
+| `FactStoreReception` | atendimento recebido na loja (`doc_company`, `branchCode`, `movementDate`, `sequence`) | `totvs.TotvsReceptionSales` | Cliente, vendedor, guia e tipo de recepção: base para taxa de conversão (recepções × vendas por loja e dia) |
+| `FactApiRequest` | chamada a um SaaS (`source_module`, `id`) | `totvs.TotvsRequests`, `linxmicrovix.LinxMicrovixRequests`, `linxcommerce.LinxCommerceRequests`, `movidesk.MovideskRequests`, `aftersale.AfterSaleRequests` (1.2, item 10) | Quem (`user_name`), quando (`request_date`), o quê (`http_method`, `route`, `field_key_value`), em qual SaaS (`source_module`) e com que resultado (`is_success`, `status_code`). Sem corpo da requisição: `request_body` e `response_body` ficam na origem. Responde "em tal dia, tal usuário inseriu, alterou ou excluiu tal registro em tal SaaS" |
+| `DimSalesRepresentative` | representante (`doc_company`, `code`) | `totvs.TotvsRepresentatives` | SCD1. Carteira em `TotvsSellersCustomers` e `TotvsPeopleRepresentatives`, se o B2B precisar |
+| `DimRegion` | área operacional (`doc_company`, `operationalAreaCode`) | `totvs.TotvsOperationalAreas` (CEPs, cidades e estados nas filhas) | SCD1 |
+| `DimPromotion` | promoção por loja e produto | `totvs.TotvsPromotions`, `TotvsPricesOtherPromotions` | SCD1; `TotvsPriceTables` e `TotvsPriceTablesItems` para preço B2B |
+
+Fora do escopo desta versão, por não terem tabela de dados aqui: logística (`FactShipment`) e pagamentos de outros canais (Pagarme). Entram quando os módulos criarem as tabelas (1.1); até lá, esses módulos são consumidores (4.2).

@@ -7,6 +7,10 @@
     <Project Path="src/Backend/Hosts/Quartz/Quartz.csproj" />
   </Folder>
   <Folder Name="/src/Backend/Modules/" />
+  <Folder Name="/src/Backend/Modules/DataWarehouse/">
+    <Project Path="src/Backend/Modules/DataWarehouse/Domain.DataWarehouse/Domain.DataWarehouse.csproj" />
+    <Project Path="src/Backend/Modules/DataWarehouse/Infrastructure.DataWarehouse/Infrastructure.DataWarehouse.csproj" />
+  </Folder>
   <Folder Name="/src/Backend/Modules/General/" />
   <Folder Name="/src/Backend/Modules/General/Aftersale/">
     <Project Path="src/Backend/Modules/General/AfterSale/Application.AfterSale/Application.AfterSale.csproj" />
