@@ -32,7 +32,7 @@ create table [untreated].B2CConsultaProdutos (
 	[comprimento_para_frete]      decimal(28,8),
 	[peso_bruto]                  decimal(28,8),
 	[portal]                      int,
-	[descricao_completa_commerce] nvarchar(8000),
+	[descricao_completa_commerce] nvarchar(max), --até 8000 caracteres (validador); nvarchar só vai até 4000 ou max
 	[canais_ecommerce_publicados] int,
 	[inicio_publicacao_produto]   datetime,
 	[fim_publicacao_produto]      datetime,
@@ -73,7 +73,7 @@ create table [linxmicrovix].B2CConsultaProdutos (
 	[comprimento_para_frete]      decimal(28,8),
 	[peso_bruto]                  decimal(28,8),
 	[portal]                      int not null,
-	[descricao_completa_commerce] nvarchar(8000),
+	[descricao_completa_commerce] nvarchar(max), --até 8000 caracteres (validador); nvarchar só vai até 4000 ou max
 	[canais_ecommerce_publicados] int,
 	[inicio_publicacao_produto]   datetime,
 	[fim_publicacao_produto]      datetime,

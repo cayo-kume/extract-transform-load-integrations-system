@@ -1,6 +1,10 @@
 /****** Alter Charset Database ******/
-ALTER DATABASE Company
-COLLATE Latin1_General_100_CI_AS_SC_UTF8;
+--o banco é o da connection string do migrator (CURRENT), não um nome fixo. Só muda a collation quando ela é outra:
+--o ALTER exige o banco sem outras conexões. No Azure SQL Database (EngineEdition 5) a collation não muda depois de
+--criado: o banco precisa nascer com Latin1_General_100_CI_AS_SC_UTF8.
+IF CAST(SERVERPROPERTY('EngineEdition') AS INT) <> 5
+   AND CAST(DATABASEPROPERTYEX(DB_NAME(), 'Collation') AS NVARCHAR(128)) <> 'Latin1_General_100_CI_AS_SC_UTF8'
+    EXEC('ALTER DATABASE CURRENT COLLATE Latin1_General_100_CI_AS_SC_UTF8');
 GO
 
 /****** Create Schemas ******/
