@@ -5,6 +5,8 @@
     /// </summary>
     public class Request
     {
+        // padrão das tabelas de dados: horário da gravação, em Brasília, pelo qual o DW lê o log (Script080)
+        public DateTime integrated_or_updated_at { get; private set; }
         public DateTime request_date { get; private set; }
         public Guid execution { get; private set; }
         public int id_job { get; private set; }
@@ -29,6 +31,7 @@
         public Request(Guid execution, Enum job, string user_name, string http_method, string route, string doc_company, string? field_key_value, string? request_body, string? response_body, bool is_success, int? status_code = null)
         {
             request_date = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time"));
+            integrated_or_updated_at = request_date;
 
             this.execution = execution;
             id_job = Convert.ToInt32(job);
