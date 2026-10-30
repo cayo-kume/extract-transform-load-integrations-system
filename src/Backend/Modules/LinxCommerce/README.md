@@ -362,7 +362,7 @@ do `.example`, fora do git) e nunca são gravadas em logs nem em `LinxCommerceRe
 * **Escritas:** o rastreio do pedido e a carteira de vendedores não foram migrados; voltam só com a regra definida por quem usa
   (proposta, §4.6 e §10.2).
 * **Consumidores do legado:** o Oto e a Stone continuam lendo `linx_commerce`; a adaptação para `linxcommerce` é decidida à parte.
-* **Pasta `Responsed Jsons`:** entra com as primeiras respostas reais, com os dados trocados por dados fictícios, como no Totvs.
+* **Pasta `docs/Responsed Jsons`:** entra com as primeiras respostas reais, com os dados trocados por dados fictícios, como no Totvs.
 
 ---
 

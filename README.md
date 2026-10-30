@@ -77,7 +77,8 @@ Cada módulo segue o mesmo desenho:
 ├── Domain.<Módulo>/          DTOs (Dtos/Reads e Dtos/Writes), entidades, enums (EnumJob) e interfaces dos repositórios
 ├── Application.<Módulo>/     services (regras de leitura e escrita), command handlers (SQL) e validadores
 ├── Infrastructure.<Módulo>/  repositórios, injeção de dependência e Scripts/SQLServer (DbUp)
-├── docs/                     propostas, planos, implementações e modelagens do módulo
+├── docs/                     propostas, planos, implementações e modelagens do módulo, e as respostas de
+│                             exemplo da API (Responsed Jsons ou Responsed XMLs, com dados fictícios)
 └── README.md                 documentação do módulo
 ```
 

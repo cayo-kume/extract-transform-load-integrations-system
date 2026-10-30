@@ -661,7 +661,7 @@ modelagem acima:
 | 69255 | aberto em 15/10/2026, status Novo | 1 ação, 1 cliente, 16 campos adicionais (formulário atual, regra `132441`), campo do tipo arquivo |
 | 1000 | aberto em 09/11/2021, status Fechado | 2 ações com **anexos**, 2 linhas de responsáveis, 3 de status, 13 campos adicionais (formulário antigo, regra `44550`), datas de resolução/fechamento e tempos preenchidos |
 
-As duas respostas estão em `src/Backend/Modules/General/Movidesk/Responsed Jsons/Ticket/GetTicketById/`
+As duas respostas estão em `src/Backend/Modules/General/Movidesk/docs/Responsed Jsons/Ticket/GetTicketById/`
 (`json-returned-by-api-end-point-new-form.json` = 69255 e `...-old-form.json` = 1000), com nomes, e-mails,
 telefones, ids de pessoa, textos, anexos e valores dos campos adicionais trocados por dados de exemplo. A estrutura,
 os tipos, os nulos, as datas e o formato dos valores (vírgula/ponto, quantidade de dígitos) foram mantidos.

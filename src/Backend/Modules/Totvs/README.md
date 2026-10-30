@@ -42,7 +42,7 @@ A documentação não descreve tudo; o que segue foi conferido com chamadas reai
 * **Notas com `referencedInvoices`:** para algumas devoluções de venda a busca responde `400` (`InvoiceDomainService.GetReferencedInvoices`). O campo está **comentado** no `expand` das notas; o contorno (reler a página em partes) continua no método para quando for religado.
 * **`branchCodeList` é obrigatório** nas buscas de documentos.
 
-Os JSONs usados para conferir a modelagem estão na pasta [`Responsed Jsons`](#pasta-responsed-jsons), com os dados reais trocados por dados fictícios.
+Os JSONs usados para conferir a modelagem estão na pasta [`Responsed Jsons`](#pasta-docsresponsed-jsons), com os dados reais trocados por dados fictícios.
 
 ---
 
@@ -53,7 +53,8 @@ Totvs/
 ├── Domain.Totvs          ← contratos, DTOs, entidades e enums (sem dependência de infraestrutura)
 ├── Application.Totvs     ← services (regras de integração), queries SQL e validações
 ├── Infrastructure.Totvs  ← repositórios, injeção de dependência e scripts de banco
-└── Responsed Jsons       ← uma resposta de exemplo por rota (dados fictícios)
+└── docs                  ← propostas, planos e implementações do módulo
+    └── Responsed Jsons  ← uma resposta de exemplo por rota (dados fictícios)
 ```
 
 ### Referências entre projetos
@@ -674,7 +675,7 @@ As credenciais vão para o banco pelo `Script003` (e pelo de homologação, à m
 
 ---
 
-## Pasta `Responsed Jsons`
+## Pasta `docs/Responsed Jsons`
 
 Uma resposta real de cada rota, com os dados trocados por **dados fictícios** para não expor informações no histórico do git:
 

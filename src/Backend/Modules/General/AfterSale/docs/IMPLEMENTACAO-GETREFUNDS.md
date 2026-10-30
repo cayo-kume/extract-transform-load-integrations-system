@@ -4,7 +4,7 @@ Guia para aplicação **manual**. Nada foi alterado no código.
 
 Fonte: especificação OpenAPI 1.0.8 (`api.swaggerhub.com/apis/send42/public-api/1.0.8`) e a resposta
 real salva em
-[`Responsed Jsons/Refund/SearchRefunds/json-returned-by-api-end-point.json`](../Responsed%20Jsons/Refund/SearchRefunds/json-returned-by-api-end-point.json).
+[`Responsed Jsons/Refund/SearchRefunds/json-returned-by-api-end-point.json`](Responsed%20Jsons/Refund/SearchRefunds/json-returned-by-api-end-point.json).
 
 O desenho é o mesmo do `AfterSaleReversesService.GetReverses`, que lê a lista resumida de
 reversas e grava em `aftersale.AfterSaleSummarizedReverses`. Aqui a lista resumida de reembolsos vai

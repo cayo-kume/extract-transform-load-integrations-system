@@ -39,7 +39,7 @@ Módulo do sistema de integrações (ETL) responsável por **ler** os dados da A
 * O `GET /tickets` (lista) só devolve tickets atualizados nos **últimos 90 dias**; tickets mais antigos só pelo `GET Tickets/{docCompany}/{id}`.
 
 ### Disclaimer sobre a documentação da API
-A modelagem foi conferida com respostas reais da API, porque a documentação não descreve tudo (por exemplo, a numeração dos níveis de serviço no ticket, `changedDate` nulo em pessoas nunca alteradas e o formato da resposta 404 de cada rota). Os JSONs usados estão na pasta [`Responsed Jsons`](#pasta-responsed-jsons), com os dados reais trocados por dados fictícios.
+A modelagem foi conferida com respostas reais da API, porque a documentação não descreve tudo (por exemplo, a numeração dos níveis de serviço no ticket, `changedDate` nulo em pessoas nunca alteradas e o formato da resposta 404 de cada rota). Os JSONs usados estão na pasta [`Responsed Jsons`](#pasta-docsresponsed-jsons), com os dados reais trocados por dados fictícios.
 
 ---
 
@@ -50,7 +50,8 @@ Movidesk/
 ├── Domain.Movidesk          ← contratos, DTOs, entidades e enums (sem dependência de infraestrutura)
 ├── Application.Movidesk     ← services (regras de integração), queries SQL e validações
 ├── Infrastructure.Movidesk  ← repositórios, injeção de dependência e scripts de banco
-└── Responsed Jsons          ← JSONs de referência (dados fictícios) usados para montar DTOs e entidades
+└── docs                     ← propostas, planos e implementações do módulo
+    └── Responsed Jsons  ← JSONs de referência (dados fictícios) usados para montar DTOs e entidades
 ```
 
 ### Referências entre projetos
@@ -395,7 +396,7 @@ Os tokens ficam só no banco e nunca são gravados em logs: a rota registrada em
 
 ---
 
-## Pasta `Responsed Jsons`
+## Pasta `docs/Responsed Jsons`
 
 Respostas reais da API, com os dados trocados por **dados fictícios** para não expor informações no histórico do git:
 

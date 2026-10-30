@@ -38,7 +38,7 @@ Módulo do sistema de integrações (ETL) responsável por:
 ### Disclaimer sobre a documentação da API
 A documentação pública da AfterSale está desatualizada em vários pontos. Com um Bearer Token válido, foi feita uma requisição em cada end-point e a resposta real trouxe campos diferentes dos documentados.
 
-Por isso foi feito um de/para entre o JSON da documentação e o JSON retornado pela API. Campos que não aparecem nos dois não foram contemplados, porque não foi possível afirmar o seu tipo. Os JSONs usados estão na pasta [`Responsed Jsons`](#pasta-responsed-jsons).
+Por isso foi feito um de/para entre o JSON da documentação e o JSON retornado pela API. Campos que não aparecem nos dois não foram contemplados, porque não foi possível afirmar o seu tipo. Os JSONs usados estão na pasta [`Responsed Jsons`](#pasta-docsresponsed-jsons).
 
 ---
 
@@ -49,7 +49,8 @@ AfterSale/
 ├── Domain.AfterSale          ← contratos, DTOs, entidades e enums (sem dependência de infraestrutura)
 ├── Application.AfterSale     ← services (regras de integração), queries SQL e validações
 ├── Infrastructure.AfterSale  ← repositórios, injeção de dependência e scripts de banco
-└── Responsed Jsons           ← JSONs de referência usados para montar DTOs e entidades
+└── docs                      ← propostas, planos e implementações do módulo
+    └── Responsed Jsons  ← JSONs de referência usados para montar DTOs e entidades
 ```
 
 ### Referências entre projetos
@@ -369,7 +370,7 @@ validação) e `auditing.Records` (registros integrados).
 
 ---
 
-## Pasta `Responsed Jsons`
+## Pasta `docs/Responsed Jsons`
 
 JSONs de referência por rota (`Me`, `Refund/*`, `Reverse/*`), usados para montar DTOs e entidades:
 

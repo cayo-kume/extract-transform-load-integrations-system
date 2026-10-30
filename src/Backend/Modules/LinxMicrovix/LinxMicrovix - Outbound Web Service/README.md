@@ -63,7 +63,7 @@ A documentação não descreve tudo; o que segue foi conferido com chamadas reai
 * **Parte da chave vazia** vira o valor padrão (0, texto vazio ou 1900-01-01); só o registro sem nenhuma parte da
   chave é descartado.
 
-Os XMLs usados para conferir a modelagem estão na pasta [`Responsed XMLs`](#pasta-responsed-xmls), com os dados reais
+Os XMLs usados para conferir a modelagem estão na pasta [`Responsed XMLs`](#pasta-docsresponsed-xmls), com os dados reais
 trocados por dados fictícios.
 
 ---
@@ -75,7 +75,8 @@ LinxMicrovix - Outbound Web Service/
 ├── Domain.LinxMicrovix.Outbound          ← contratos, DTOs, entidades e enums (sem dependência de infraestrutura)
 ├── Application.LinxMicrovix.Outbound     ← services (leituras), queries SQL e validações
 ├── Infrastructure.LinxMicrovix.Outbound  ← repositórios, injeção de dependência e scripts de banco
-└── Responsed XMLs                        ← uma resposta de exemplo por método (dados fictícios)
+└── docs                                  ← propostas, planos e implementações do módulo
+    └── Responsed XMLs  ← uma resposta de exemplo por método (dados fictícios)
 ```
 
 ### Referências entre projetos
@@ -788,9 +789,9 @@ demanda é registrado com a chave trocada por `(oculta)`.
 
 ---
 
-## Pasta `Responsed XMLs`
+## Pasta `docs/Responsed XMLs`
 
-A primeira página real de cada método (`Responsed XMLs/<Service>/<Método>/xml-returned-by-api-end-point.xml`), com
+A primeira página real de cada método (`docs/Responsed XMLs/<Service>/<Método>/xml-returned-by-api-end-point.xml`), com
 os dados trocados por **dados fictícios** para não expor informações no histórico do git:
 
 * as linhas foram cortadas em 2; o envelope (`<C>`, `ResponseResult`) ficou como veio;

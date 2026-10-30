@@ -233,6 +233,8 @@ função local, então é exceção ao §2.1 e ao §2.2.
 * Cada módulo tem uma pasta `docs/` na raiz (ao lado do `README.md`), com as propostas, os planos, as implementações e as
   modelagens dele (ex.: `src/Backend/Modules/Totvs/docs`). Os do Shared ficam em `src/Backend/Shared/docs`, e o guia do
   data warehouse em `src/Backend/Modules/DataWarehouse/docs`.
+* As respostas de exemplo da API, usadas para montar DTOs e entidades (`Responsed Jsons` ou `Responsed XMLs`, com os
+  dados trocados por dados fictícios), também ficam dentro do `docs/` do módulo.
 * A pasta `docs/` da raiz do repositório guarda só o que vale para todos os módulos: os padrões, o `MIGRATOR-CSX.md` e a
   revisão contra o padrão.
 * Ao mover um documento, os links relativos dele e para ele são refeitos a partir do novo lugar.
