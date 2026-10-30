@@ -1,3 +1,7 @@
+/****** dbo.sp_Create_Merge_Procedure 0.9.1 ******/
+--nas tabelas com a coluna timestamp (Linx Microvix), o bloco "delete duplicate rows" seleciona também o timestamp (menos quando
+--já é parte da PK), que o output usa (deleted.timestamp) e que desempata a ordem: fica a linha mais nova.
+
 set ansi_nulls on
 go
 
@@ -21,7 +25,7 @@ begin
 		@complete_table_name	 varchar(300) = concat(@schema_name, '.', @table_name),
 		@complete_untreated_name varchar(300) = concat('untreated', '.', @table_name),
 
-		@procedure_version		 varchar(10) = '0.9.0',
+		@procedure_version		 varchar(10) = '0.9.1',
 		@procedure_name			 varchar(300) = concat(@schema_name, ".sp_", @table_name, '_Sync'),
 
 		@transaction_name		 varchar(32) = concat('t_', left(@table_name, 30))
@@ -264,8 +268,10 @@ begin
 
 		"	--delete duplicate rows", char(10),
 		"	;with repeating_rows as (", char(10),
-		"		select ", @pk_column_list, ", integrated_or_updated_at,", char(10),
-		"			row_number() over (partition by ", @pk_column_list, " order by integrated_or_updated_at desc) as rn", char(10),
+		--com timestamp, a coluna entra no select (o output usa deleted.timestamp) e desempata a ordem; quando ela já é
+		--parte da PK (LinxMovimentoAcoesPromocionais), já está no @pk_column_list e não pode entrar duas vezes
+		"		select ", @pk_column_list, ", integrated_or_updated_at", iif(@has_timestamp_column = 1 and charindex('[timestamp]', @pk_column_list) = 0, ", [timestamp]", ""), ",", char(10),
+		"			row_number() over (partition by ", @pk_column_list, " order by integrated_or_updated_at desc", iif(@has_timestamp_column = 1, ", [timestamp] desc", ""), ") as rn", char(10),
 		"		from ", @complete_untreated_name, " r)", char(10),
 		"	delete", char(10),
 		"	from repeating_rows", char(10),

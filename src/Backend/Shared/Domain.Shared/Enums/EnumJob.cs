@@ -1,7 +1,7 @@
 ﻿namespace Domain.Shared.Enums
 {
     /// <summary>
-    /// Qualquer alteração neste arquivo deve refletir nos códigos do arquivo Script006_Insert_Into_Types_Table.sql
+    /// O Shared não cadastra jobs próprios: os jobs ficam nos scripts de jobs de cada módulo
     /// </summary>
     public enum EnumJob
     {

@@ -189,3 +189,91 @@ Conforme em todas as seções. Observação: `TotvsMasking` e `TotvsQuery` estã
 
 Em todos, depois de cada passo: build do host Hangfire, comparação dos avisos e, nos scripts, a conferência de que as
 tabelas, procedures, índices, FKs e jobs continuam os mesmos.
+
+---
+
+## 6. LinxCommerce (`src/Backend/Modules/LinxCommerce`) — aplicado (`27b6e0d`, `0d40186`, `c7921cf`)
+
+### 6.1 §2 e §2.1 Métodos privados
+
+Os `Save*` (`SaveProducts`, `SaveSkus`, `SaveCustomers`, `SaveOrders`, `SaveSalesRepresentatives`) têm 2 pais cada e
+ficam. Têm um só pai:
+
+| Service | Método | Pai | Proposta |
+|---|---|---|---|
+| `LinxCommerceOrdersService` | `GetOrdersCache` (1 chamada, `return` só no fim) | `SearchOrders` | Código direto no pai |
+| `LinxCommerceService` | `SaveRequest` (2 chamadas no mesmo pai) | `ReadOnDemand` | Função local |
+| `LinxCommerceService` | `Cnpj()` | `GetCompanys` | **Decidir:** é um `[GeneratedRegex] private static partial Regex`, que o gerador de código só aceita na classe (não vira função local nem código direto). Proposta: fica como está, junto dos campos, como exceção ao §2.1 e ao §2.2 |
+
+### 6.2 §2.2 Ordem dos membros
+
+As cinco services têm privados sem o separador; na `LinxCommerceService` o único privado antes dos públicos é o
+`Cnpj()` acima.
+
+### 6.3 §2.3 `Validations` espelha os DTOs
+
+Os 26 validadores estão em `Validations/{Base,Catalog,Customers,Orders,SalesRepresentatives}`, e os DTOs em
+`Dtos/Reads/...`. Proposta: mover para `Validations/Reads/...`, com o namespace acompanhando.
+
+### 6.4 §2.4 Um command handler por service
+
+O `LinxCommerceCommandHandler` tem 8 queries:
+
+| Handler novo | Repositório | Queries |
+|---|---|---|
+| `LinxCommerceCatalogCommandHandler` | `LinxCommerceCatalogRepository` | 4 |
+| `LinxCommerceOrdersCommandHandler` | `LinxCommerceOrdersRepository` | 2 |
+| `LinxCommerceCustomersCommandHandler` | `LinxCommerceCustomersRepository` | 1 |
+| `LinxCommerceCommandHandler` (comum) | `LinxCommerceRepository` | 1 |
+
+O `LinxCommerceSalesRepresentativesRepository` já não recebe handler.
+
+### 6.5 §3 Scripts DbUp
+
+18 scripts soltos, já em trios por service, mais os jobs sob demanda num script à parte (017) e um `ALTER` (018).
+
+| Pasta | Script | Conteúdo (origem) |
+|---|---|---|
+| `Parameters/` | 001–004 | Schema e parâmetros (001), app 70 (002), credenciais (003, `.sql` fora do git e `.example`) e `LinxCommerceRequests` já com `integrated_or_updated_at` (016 + **018 incorporado**, 018 excluído) |
+| `Orders/` | 005–007 | Tabelas, procedures e jobs (004–006), com os jobs sob demanda de pedidos (de 017) |
+| `Customers/` | 008–010 | (007–009), com o sob demanda de cliente (de 017) |
+| `Catalog/` | 011–013 | (010–012), com os sob demanda de produto e SKU (de 017) |
+| `SalesRepresentatives/` | 014–016 | (013–015), com o sob demanda de vendedor (de 017) |
+
+* O `.gitignore` aponta para `SQLServer/Script003_...sql`: o caminho passa para `Parameters/`, para o arquivo com as
+  credenciais continuar fora do git.
+* `migrator.csx` com subpastas e o sorter; README, `EnumJob` (cita o `Script017`) e a premissa 10 do DW (cita o
+  `Script018`).
+
+---
+
+## 7. Shared (`src/Backend/Shared`) — aplicado
+
+> Decisões: `Cnpj()` do LinxCommerce ficou como exceção; os scripts 005 e 006 do Shared saíram e o 007 virou 005; os scripts do
+> Shared ficaram direto em `SQLServer/`; a versão 0.9.1 da `sp_Create_Merge_Procedure` está no `Script003` e o 008 saiu.
+
+### 7.1 Código
+
+O Shared não tem services de integração: `LoggerService` e os repositórios não têm privados, e o `ApiClient` tem dois
+(`CreateClient` e `BuildUrl`, com 7 pais cada). Há um só `CommandHandler`, comum. Nada a mudar pelo padrão; opcional:
+o separador no `ApiClient`, por consistência.
+
+### 7.2 Scripts
+
+| Script | Situação |
+|---|---|
+| `Script001` | Schemas `auditing`, `general` e `untreated`, o tipo `dbo.MergeOutput` e as tabelas de auditoria (os `ALTER TABLE` são as FKs da própria criação) |
+| `Script002` | Procedures `auditing.sp_Log_*` |
+| `Script003` | `dbo.sp_Create_Merge_Procedure` |
+| `Script004` | Procedures de manutenção em `dbo` |
+| `Script005` e `Script006` | **Inteiramente comentados** (apps e jobs do sistema antigo): não executam nada |
+| `Script007` | `auditing.Types` |
+| `Script008` | Versão 0.9.1 da `sp_Create_Merge_Procedure` (correção do `timestamp` duplicado no Linx Microvix), em script novo |
+
+* §3.3: a versão do `Script008` vai para o `Script003` e o 008 sai. Os merges que os módulos geram num banco novo
+  continuam iguais, porque são gerados pela versão final da procedure.
+* **Decidir:** os scripts 005 e 006 não fazem nada. Proposta: excluí-los e renumerar o 007 (o resultado num banco novo é
+  o mesmo).
+* **Decidir:** pastas. O Shared não tem services; proposta: deixar os scripts direto em `SQLServer/` (é a base que os
+  outros módulos usam) e manter o `migrator.csx` como está. Alternativa: `Auditing/` (001, 002, 007), `Merge/` (003) e
+  `Maintenance/` (004).

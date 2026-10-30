@@ -113,13 +113,9 @@ Vantagens do `subst`:
 
 ## Scripts SQL aplicados
 
-Os arquivos são executados em ordem alfabética:
-
-- `Script001_Create_Me_Tables.sql`
-- `Script002_Create_Refunds_Tables.sql`
-- `Script003_Create_Reverses_Tables.sql`
-- `Script004_Insert_Into_Apps_Table.sql`
-- `Script005_Insert_Into_Jobs_Table.sql`
+Os scripts ficam em subpastas (`Parameters/` e uma por service; no DW, uma por camada) e o `migrator.csx` de cada módulo os executa
+na ordem do número do arquivo (`IncludeSubDirectories` e o sorter pelo nome do arquivo). A lista de cada módulo está no README dele;
+o padrão está em `docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md` (seção 3).
 
 ## ⚠️ Inconsistência importante
 

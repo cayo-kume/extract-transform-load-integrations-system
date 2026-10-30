@@ -210,6 +210,12 @@ segue as dependências: view e função inline precisam que os objetos lidos já
 de `Intermediate/`, onde `fn_StockPosition` lê `DimStore` e `DimProduct`); procedure pode citar tabela criada depois.
 Um objeto refeito numa fase seguinte (`create or alter` de novo) fica só no script de criação, já na versão final.
 
+O `Shared` (auditoria, `sp_Create_Merge_Procedure` e manutenção) não tem services nem parâmetros: os scripts ficam direto em
+`SQLServer/`, sem subpastas. Script que não executa nada (inteiramente comentado) sai.
+
+Um método `[GeneratedRegex] private static partial Regex` fica na classe, junto dos campos: o gerador de código não aceita
+função local, então é exceção ao §2.1 e ao §2.2.
+
 ### 3.5 Ao mover ou renomear scripts
 
 * Um script que está no `.gitignore` (ex.: o `Script003` com as chaves) precisa ter o **caminho atualizado** no

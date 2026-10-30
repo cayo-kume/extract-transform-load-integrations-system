@@ -183,6 +183,8 @@ SQLServer/
 └── <Service>/         um trio por service: _Tables, _Sync_Procedures e _Jobs_Into_Jobs_Table
 ```
 
+O `Shared`, base dos outros, não tem services e mantém os 5 scripts direto em `SQLServer/`.
+
 A numeração é única e sequencial no módulo e define a ordem de execução (o `migrator.csx` lê as subpastas e ordena pelo
 número). No DW as pastas são por camada (`Parameters`, `Landing`, `History`, `PersonalData`, `Dimensions`,
 `Intermediate`, `Facts`, `Datamart`, `Outbound`, `Checks`). Uma correção de tabela, procedure ou view vai no script de
@@ -315,9 +317,6 @@ O cache segue [docs/PADRAO-CACHE-INTEGRACOES.md](docs/PADRAO-CACHE-INTEGRACOES.m
 * **Agendamento:** o Hangfire (servidor, dashboard e jobs recorrentes) está desligado no host; os jobs rodam pelas rotas,
   chamadas por um agendador externo. Os hosts `Quartz` e `AzureWebJob` não são usados.
 * **Autenticação:** o `[Authorize]` dos controllers está comentado.
-* **Padronização ainda não aplicada:** o **LinxCommerce** (scripts soltos em `SQLServer/`, jobs sob demanda num script à
-  parte e um `ALTER` no `Script018`) e o **Shared** (`Script008_Alter_Merge_Procedure_Timestamp_Duplicates`) ainda não
-  foram revisados contra o padrão.
 * **Testes:** a pasta `tests` está vazia.
 
 ---
@@ -331,5 +330,5 @@ O cache segue [docs/PADRAO-CACHE-INTEGRACOES.md](docs/PADRAO-CACHE-INTEGRACOES.m
 | [docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md](docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md) | Padrão de código e scripts |
 | [docs/PADRAO-CACHE-INTEGRACOES.md](docs/PADRAO-CACHE-INTEGRACOES.md) | Padrão de cache |
 | [docs/MIGRATOR-CSX.md](docs/MIGRATOR-CSX.md) | Como rodar o `migrator.csx` |
-| [docs/REVISAO-PADRAO-CODIGO-E-SCRIPTS.md](docs/REVISAO-PADRAO-CODIGO-E-SCRIPTS.md) | Revisão dos módulos contra o padrão |
+| [docs/REVISAO-PADRAO-CODIGO-E-SCRIPTS.md](docs/REVISAO-PADRAO-CODIGO-E-SCRIPTS.md) | Revisão dos módulos contra o padrão (todos os módulos do host e o Shared já seguem) |
 | `docs/PROPOSTA-*`, `docs/IMPLEMENTACAO-*`, `docs/PLANO-*` | Histórico das propostas e implementações de cada módulo |
