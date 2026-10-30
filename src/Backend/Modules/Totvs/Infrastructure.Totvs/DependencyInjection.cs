@@ -2,7 +2,7 @@
 using Application.Totvs.Abstractions.Services;
 using Application.Totvs.Handlers.Commands;
 using Application.Totvs.Services;
-using Application.Totvs.Validations.Sellers;
+using Application.Totvs.Validations.Reads.Sellers;
 using Domain.Shared.Abstractions.Api;
 using Domain.Totvs.Abstractions.Repositorys;
 using FluentValidation;
