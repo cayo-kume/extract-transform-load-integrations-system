@@ -653,7 +653,7 @@ Infrastructure.LinxMicrovix.Outbound/
 ├── DependencyInjection.cs      (AddScopedLinxMicrovixServices)
 ├── Repositorys/                (LinxMicrovixRepository e um por service)
 └── Scripts/
-    ├── SQLServer/              (migrator.csx, scripts gerais e uma pasta por service em Erp/ e B2C/)
+    ├── SQLServer/              (migrator.csx, Parameters/ com os scripts gerais e uma pasta por service em Erp/ e B2C/)
     ├── MySQL/                  (migrator.csx)
     └── PostgreSQL/             (migrator.csx)
 ```
@@ -671,16 +671,16 @@ O host chama o método em `Hosts/Hangfire/Extensions/ServicesExtensions.cs`.
 ### Scripts de banco (SQL Server)
 
 O DbUp executa cada script uma única vez. Alterar um script que já rodou não muda um banco existente: para isso é
-preciso um script novo. Cada service tem a sua pasta (`Erp/<Service>` ou `B2C/<Service>`) com um trio de scripts:
+preciso um script novo. Os scripts gerais do módulo ficam em `Parameters/` e cada service tem a sua pasta (`Erp/<Service>` ou `B2C/<Service>`) com um trio de scripts:
 tabelas, procedures e jobs (os recorrentes e os sob demanda do service). O `migrator.csx` lê as subpastas e executa
 na ordem do número do arquivo, não na da pasta.
 
 | Pasta | Script | Conteúdo |
 |---|---|---|
-| raiz | `Script001` | Schema `linxmicrovix` e `linxmicrovix.LinxMicrovixParameters` |
-| raiz | `Script002` | App `80 - LinxMicrovix` em `auditing.Apps` (um app para o ERP e o B2C) |
-| raiz | `Script003` | Os clientes em `LinxMicrovixParameters`, com as chaves. **Fica fora do git** (`.gitignore`); o modelo é o `Script003_...sql.example` |
-| raiz | `Script004` | `linxmicrovix.LinxMicrovixRequests` (log das chamadas sob demanda) |
+| `Parameters/` | `Script001` | Schema `linxmicrovix` e `linxmicrovix.LinxMicrovixParameters` |
+| `Parameters/` | `Script002` | App `80 - LinxMicrovix` em `auditing.Apps` (um app para o ERP e o B2C) |
+| `Parameters/` | `Script003` | Os clientes em `LinxMicrovixParameters`, com as chaves. **Fica fora do git** (`.gitignore`); o modelo é o `Script003_...sql.example` |
+| `Parameters/` | `Script004` | `linxmicrovix.LinxMicrovixRequests` (log das chamadas sob demanda) |
 | `Erp/Stores/` | `Script005`–`007` | Stores |
 | `Erp/ProductAttributes/` | `Script008`–`010` | Product Attributes |
 | `Erp/Taxes/` | `Script011`–`013` | Taxes |

@@ -15,7 +15,7 @@ Console.WriteLine($"Conectando em: {connectionString}");
 EnsureDatabase.For.SqlDatabase(connectionString);
 
 // 2. Configura o DbUp
-// os scripts ficam em subpastas por service (Erp/<Service>, B2C/<Service>); o DbUp nomeia cada um pelo caminho
+// os scripts ficam em subpastas (Parameters, com os gerais, e uma por service: Erp/<Service>, B2C/<Service>); o DbUp nomeia cada um pelo caminho
 // (ex.: Erp.Stores.Script005_...sql), então a ordem de execução é a do número do arquivo, não a da pasta
 var upgrader = DeployChanges.To
     .SqlDatabase(connectionString)
