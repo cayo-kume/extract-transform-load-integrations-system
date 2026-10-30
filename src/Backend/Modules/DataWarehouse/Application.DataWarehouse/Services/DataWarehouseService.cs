@@ -36,8 +36,12 @@ namespace Application.DataWarehouse.Services
             ("[datawarehouse].vw_Check_ItemProducts", false),
             ("[datawarehouse].vw_Check_OrderTypeUnknown", false),
             ("[datawarehouse].vw_Check_MissingChildren", false),
-            ("[datamart].vw_Check_InvoicedReconciliation", false)
+            ("[datamart].vw_Check_InvoicedReconciliation", false),
+            ("[datawarehouse].vw_Check_StockNegativeOrNoCost", false)
         ];
+
+        // fuso das datas do DW (horário de Brasília): decide o dia 1 da posição de estoque
+        private static readonly TimeZoneInfo Brasilia = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
 
         public DataWarehouseService(ILoggerService logger, IDataWarehouseRepository dataWarehouseRepository, IConfiguration configuration) =>
             (_logger, _dataWarehouseRepository, _configuration) = (logger, dataWarehouseRepository, configuration);
@@ -47,6 +51,38 @@ namespace Application.DataWarehouse.Services
 
         public Task<bool?> RunDaily() =>
             Run(EnumJob.DataWarehouseDaily, daily: true);
+
+        public async Task<bool?> RunMonthlyStock(DateOnly? positionDate)
+        {
+            if (!await RunLock.WaitAsync(0))
+                return null;
+
+            _logger
+                .Clear()
+                .AddLog(EnumJob.DataWarehouseMonthlyStock);
+
+            try
+            {
+                await Step("[datawarehouse].sp_FactMonthlyStock_Load",
+                    new Dictionary<string, object?> { { "position_date", positionDate?.ToDateTime(TimeOnly.MinValue) } });
+
+                var blocked = await RunChecks();
+
+                _logger.AddMessage(blocked ? "Concluída com checagem bloqueante: veja dw_control.CheckResult." : "Concluída com sucesso!");
+
+                return !blocked;
+            }
+            catch (Exception ex)
+            {
+                _logger.AddMessage($"Posição de estoque interrompida: {ex.Message}", String.Empty, ex.Message, ex.StackTrace ?? String.Empty);
+
+                return false;
+            }
+            finally
+            {
+                await CommitLogAndRelease();
+            }
+        }
 
         public async Task<bool?> RunShortCycle()
         {
@@ -115,6 +151,7 @@ namespace Application.DataWarehouse.Services
                 // passo 5: dado pessoal
                 await Step("[dw_personal_data].sp_Customer_Load");
                 await Step("[dw_personal_data].sp_OrderShippingAddress_Load");
+                await Step("[dw_personal_data].sp_ServiceCustomer_Load");
 
                 // passo 6: dimensões, fatos e agregados
                 if (daily)
@@ -122,7 +159,7 @@ namespace Application.DataWarehouse.Services
 
                 await Step("[datawarehouse].sp_DimStore_Load");
                 await Step("[datawarehouse].sp_DimProduct_Load");
-                await DimCustomer();
+                await PepperStep("[datawarehouse].sp_DimCustomer_Load");
                 await Step("[datawarehouse].sp_DimSeller_Load");
                 await Step("[datawarehouse].sp_DimSupplier_Load");
                 await Step("[datawarehouse].sp_DimPaymentMethod_Load");
@@ -132,6 +169,13 @@ namespace Application.DataWarehouse.Services
                 await Step("[datawarehouse].sp_FactSalesItem_Load");
                 await Step("[datawarehouse].sp_FactOrderItem_Load");
                 await Step("[datawarehouse].sp_FactInvoicePayment_Load");
+                await PepperStep("[datawarehouse].sp_FactTicket_Load");
+                await PepperStep("[datawarehouse].sp_FactRefund_Load");
+
+                // posição de estoque do mês que fechou: no ciclo diário do dia 1 (8.5)
+                if (daily && TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, Brasilia).Day == 1)
+                    await Step("[datawarehouse].sp_FactMonthlyStock_Load");
+
                 await Step("[datamart].sp_DailySales_Refresh");
 
                 // passo 7: checagens
@@ -170,20 +214,20 @@ namespace Application.DataWarehouse.Services
         }
 
         /// <summary>
-        /// o pepper vem da configuração (DataWarehouse:Pepper) e só passa como parâmetro (12.3). Sem ele, a dimensão de cliente
-        /// fica como está e o resto da carga segue
+        /// procedures que calculam o doc_hash (DimCustomer, FactTicket, FactRefund). O pepper vem da configuração
+        /// (DataWarehouse:Pepper) e só passa como parâmetro (12.3). Sem ele, a tabela fica como está e o resto da carga segue
         /// </summary>
-        private async Task DimCustomer()
+        private async Task PepperStep(string procedureName)
         {
             var pepper = _configuration["DataWarehouse:Pepper"];
 
             if (String.IsNullOrWhiteSpace(pepper))
             {
-                _logger.AddMessage("DataWarehouse:Pepper não configurado: DimCustomer não foi atualizada.");
+                _logger.AddMessage($"DataWarehouse:Pepper não configurado: {procedureName} não foi executada.");
                 return;
             }
 
-            await Step("[datawarehouse].sp_DimCustomer_Load", new Dictionary<string, object?> { { "pepper", pepper } });
+            await Step(procedureName, new Dictionary<string, object?> { { "pepper", pepper } });
         }
 
         private async Task<int> Step(string procedureName, IDictionary<string, object?>? parameters = null)

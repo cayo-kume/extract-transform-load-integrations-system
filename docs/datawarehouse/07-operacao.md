@@ -16,12 +16,12 @@ A ordem importa porque cada passo lê o que o anterior gravou. O job que dispara
 | 2 | Atualiza a `dw_landing` por MERGE, das tabelas confiáveis com `integrated_or_updated_at` acima do watermark menos 3 dias (5.2, regra 1), e avança o watermark após o sucesso de cada tabela | `dw_landing.sp_<Tabela>_Load` |
 | 3 | Detecta exclusões de filhas: anti-join entre as chaves da landing e da tabela confiável; chave ausente recebe `missing_since` (5.2, regra 3) | `dw_landing.sp_<Tabela>_DetectMissing` (no ciclo diário) |
 | 4 | Roda os snapshots SCD2, só sobre as linhas que o passo 2 gravou (seção 6). A cada hora para notas e pedidos; diária, no fim do dia, para cadastros, saldos, custos e preços (3.3, 7.4) | `dw_history.sp_<Tabela>_Snapshot` |
-| 5 | Carrega `dw_personal_data` direto das tabelas de origem (5.2, regra 6) | `dw_personal_data.sp_Customer_Load`, `dw_personal_data.sp_OrderShippingAddress_Load` |
-| 6 | Carrega dimensões (a de cliente recebe `@pepper`, 8.3; `DimDate` só no ciclo diário), depois fatos, que leem as views de `dw_intermediate` (formato unificado, regras, canal, tipo e partes do número do pedido), depois agregados | `datawarehouse.sp_Dim*_Load`, `dw_intermediate.vw_*`, `datawarehouse.sp_Fact*_Load`, `datamart.sp_*_Refresh` |
+| 5 | Carrega `dw_personal_data` direto das tabelas de origem (5.2, regra 6) | `dw_personal_data.sp_Customer_Load`, `dw_personal_data.sp_OrderShippingAddress_Load`, `dw_personal_data.sp_ServiceCustomer_Load` |
+| 6 | Carrega dimensões (a de cliente recebe `@pepper`, 8.3; `DimDate` só no ciclo diário), depois fatos (os de ticket e reembolso também recebem `@pepper`; o de estoque só no ciclo diário do dia 1), que leem as views de `dw_intermediate` (formato unificado, regras, canal, tipo e partes do número do pedido), depois agregados | `datawarehouse.sp_Dim*_Load`, `dw_intermediate.vw_*`, `datawarehouse.sp_Fact*_Load`, `datamart.sp_*_Refresh` |
 | 7 | Roda as checagens: conta as linhas de cada view e grava o resultado | `datawarehouse.vw_Check_*`, `dw_control.CheckResult` |
 | 8 | Registra início, mensagens e fim da execução | `auditing.Logs` e `auditing.Messages`, pelo `ILoggerService` do Shared (9.4) |
 
-Vendas e pedidos passam por essa sequência a cada hora; cadastros, saldos, custos e preços, uma vez por dia. A primeira carga usa as janelas da 5.2, regra 5. `FactMonthlyStock` é carregado uma vez por mês, no primeiro dia do mês seguinte (8.5). As views de `dw_outbound` não têm passo: as do ciclo horário refletem o passo 6 assim que ele termina; as da logística refletem o ciclo curto da 10.3. Cada consumidor varre quando quiser (4.2).
+Vendas e pedidos passam por essa sequência a cada hora; cadastros, saldos, custos e preços, uma vez por dia. A primeira carga usa as janelas da 5.2, regra 5. `FactMonthlyStock` é carregado uma vez por mês, pelo ciclo diário do primeiro dia do mês seguinte; um mês se refaz pela entrada `RunMonthlyStock` (8.5, 9.4). As views de `dw_outbound` não têm passo: as do ciclo horário refletem o passo 6 assim que ele termina; as da logística refletem o ciclo curto da 10.3. Cada consumidor varre quando quiser (4.2).
 
 ### 10.2 Carga única do legado Linx
 
@@ -58,7 +58,7 @@ A logística precisa do que os jobs da Totvs acabaram de trazer (pergunta 35, de
 | Total mensal por loja vs fechamento de referência | `datamart.vw_Check_InvoicedReconciliation` (9.3) | Diário | Diferença acima de R$ 1,00 por loja e mês |
 | Sobreposição de ERPs no mesmo CNPJ e dia | `vw_Check_ErpOverlap` (9.3) | Na carga do legado e diário | Bloqueia |
 | Produtos Linx sem de/para | `vw_Check_ProductMatch` (9.3) | Na carga do legado | Alerta; meta definida depois da primeira execução (pergunta 34) |
-| Posição de estoque negativa ou sem custo | View de checagem sobre `FactMonthlyStock` | Mensal | Alerta |
+| Posição de estoque negativa ou sem custo | `vw_Check_StockNegativeOrNoCost`, sobre a última posição de `FactMonthlyStock`, por loja | Mensal | Alerta |
 | Consumidor atrasado | `dw_control.Watermark` de cada módulo de saída comparado ao `updated_at` da view | Diário; a cada hora para a logística | Alerta se o watermark do consumidor ficar mais de 1 dia atrás (4.2); logística, mais de 30 minutos (10.3) |
 
 Os limites são ponto de partida. Ajustar após duas semanas de carga.

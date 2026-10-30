@@ -17,5 +17,11 @@ namespace Application.DataWarehouse.Abstractions.Services
         /// ciclo curto de 3 minutos da logística (10.3): landing de pedidos, notas e clientes e o dado pessoal de entrega
         /// </summary>
         public Task<bool?> RunShortCycle();
+
+        /// <summary>
+        /// recarga da posição de estoque de um fim de mês (FactMonthlyStock, 8.5). Sem data, o último dia do mês anterior; o ciclo
+        /// diário já faz isso no dia 1, e esta entrada serve para refazer um mês
+        /// </summary>
+        public Task<bool?> RunMonthlyStock(DateOnly? positionDate);
     }
 }

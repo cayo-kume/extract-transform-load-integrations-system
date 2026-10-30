@@ -5,7 +5,7 @@ namespace Domain.DataWarehouse.Abstractions.Repositorys
     public interface IDataWarehouseRepository
     {
         /// <summary>
-        /// origens do catálogo dw_control.LandingSource
+        /// origens ligadas do catálogo dw_control.LandingSource
         /// </summary>
         public Task<IEnumerable<LandingSource>> GetLandingSources();
 

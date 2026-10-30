@@ -136,17 +136,21 @@ CREATE TABLE datawarehouse.FactMonthlyStock (
     store_sk                 CHAR(32)       NOT NULL,
     product_sk               CHAR(32)       NOT NULL,
     stock_code               INT            NOT NULL,   -- depósito da Totvs; o vendável é o da pergunta 33
+    doc_company              NVARCHAR(14)   NOT NULL,   -- degeneradas, para rastrear a origem
+    branch_code              INT            NOT NULL,
+    product_code             INT            NOT NULL,
+    stock_description        NVARCHAR(60)   NULL,
     quantity                 DECIMAL(18,6)  NOT NULL,   -- stock
     reserved_by_order        DECIMAL(18,6)  NOT NULL,   -- salesOrder
     incoming_from_purchase   DECIMAL(18,6)  NOT NULL,   -- purchaseOrder
-    unit_cost                DECIMAL(18,6)  NULL,       -- dw_history.TotvsCosts vigente em position_date, código com papel margin_cost (2 ULTIMA COMPRA)
+    unit_cost                DECIMAL(18,6)  NULL,       -- dw_history.TotvsCosts vigente no fim de position_date, código com papel margin_cost (2 ULTIMA COMPRA)
     loaded_at                DATETIME2(3)   NOT NULL CONSTRAINT df_FactMonthlyStock_loaded DEFAULT (SYSUTCDATETIME() AT TIME ZONE 'UTC' AT TIME ZONE 'E. South America Standard Time'),
     CONSTRAINT pk_FactMonthlyStock PRIMARY KEY (position_date, store_sk, product_sk, stock_code)
 );
 ```
 
-- Carregado por `datawarehouse.sp_FactMonthlyStock_Load @position_date`, que lê a versão de `dw_history.TotvsBalances` vigente na data (`valid_from <= @position_date < ISNULL(valid_to, '9999-12-31')`). Reexecutar para um mês já carregado substitui as linhas daquele mês.
-- Posições diárias: `dw_intermediate.vw_StockPosition` recebe a data como filtro e lê o histórico com o mesmo critério; não é materializada.
+- Carregado por `datawarehouse.sp_FactMonthlyStock_Load @position_date` (sem data, o último dia do mês anterior), que lê a versão de `dw_history.TotvsBalances` vigente no fim do dia: `valid_from < dia seguinte` e `valid_to` nulo ou a partir do dia seguinte. Loja e produto são os da época (SCD2). Reexecutar uma data substitui as linhas dela.
+- Posições diárias: `dw_intermediate.fn_StockPosition(@position_date)`, função de tabela com o mesmo critério e as mesmas colunas, não materializada; `sp_FactMonthlyStock_Load` usa a mesma função. Uma view não recebe a data como parâmetro, por isso é função.
 
 ### 8.6 Views de saída
 

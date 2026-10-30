@@ -34,6 +34,13 @@ namespace Hangfire.Controllers.DataWarehouse
             RunResponse(await _dataWarehouseService.RunShortCycle());
 
         /// <summary>
+        /// refaz a posição de estoque de um fim de mês (positionDate=yyyy-MM-dd); sem data, o último dia do mês anterior
+        /// </summary>
+        [HttpPost("RunMonthlyStock")]
+        public async Task<ActionResult> RunMonthlyStock([FromQuery] DateOnly? positionDate) =>
+            RunResponse(await _dataWarehouseService.RunMonthlyStock(positionDate));
+
+        /// <summary>
         /// true concluída (200), false com erro ou checagem bloqueante (500, detalhe no log da execução), null já havia uma carga
         /// rodando (409)
         /// </summary>

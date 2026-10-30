@@ -22,7 +22,8 @@ namespace Infrastructure.DataWarehouse.Repositorys
 
         public async Task<IEnumerable<LandingSource>> GetLandingSources()
         {
-            const string sql = "select source_schema, source_table, detect_missing, history_frequency from [dw_control].LandingSource order by source_schema, source_table";
+            // só as ligadas: a de saldos nasce desligada até a carga inicial na Totvs terminar (Script007)
+            const string sql = "select source_schema, source_table, detect_missing, history_frequency from [dw_control].LandingSource where is_enabled = 1 order by source_schema, source_table";
 
             var sources = await _coreRepository.GetRecords<LandingSource>(sql);
 
