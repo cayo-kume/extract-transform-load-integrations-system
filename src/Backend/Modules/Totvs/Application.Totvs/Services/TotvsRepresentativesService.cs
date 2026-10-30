@@ -618,13 +618,11 @@ namespace Application.Totvs.Services
                 _logger.SetLogEndDate();
                 await _logger.CommitAllChanges();
             }
-        }
 
-        /// <summary>
-        /// chave da recepção: loja + data do movimento (só o dia) + sequência
-        /// </summary>
-        private static (int branchCode, DateTime movementDate, int sequence) ReceptionKey(string? branchCode, string? movementDate, string? sequence) =>
-            (ConverterValidatorsExtensions.ConvertToInt32Validation(branchCode), ConverterValidatorsExtensions.ConvertToDateTimeValidation(movementDate).Date, ConverterValidatorsExtensions.ConvertToInt32Validation(sequence));
+            // chave da recepção: loja + data do movimento (só o dia) + sequência
+            static (int branchCode, DateTime movementDate, int sequence) ReceptionKey(string? branchCode, string? movementDate, string? sequence) =>
+                (ConverterValidatorsExtensions.ConvertToInt32Validation(branchCode), ConverterValidatorsExtensions.ConvertToDateTimeValidation(movementDate).Date, ConverterValidatorsExtensions.ConvertToInt32Validation(sequence));
+        }
 
         /// <summary>
         /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.

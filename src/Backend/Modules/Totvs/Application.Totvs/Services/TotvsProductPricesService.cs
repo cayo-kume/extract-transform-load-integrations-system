@@ -115,187 +115,259 @@ namespace Application.Totvs.Services
                 _logger.SetLogEndDate();
                 await _logger.CommitAllChanges();
             }
-        }
 
-        /// <summary>
-        /// preços de uma loja. Sem maxChangeFilterDate gravado, a loja está na carga inicial: o filter.change aceita no máximo 1 ano
-        /// (testado), então ela é lida inteira, sem change, em ordem de produto a partir do maior gravado, e cada página é gravada ao chegar
-        /// (uma falha para a loja, e a próxima execução continua de onde parou). Depois, a janela vai do maior maxChangeFilterDate − 1 h
-        /// (ou do começo da carga inicial − 1 h) até agora, em fatias de {WindowDays} dias. Devolve a quantidade de produtos gravados
-        /// </summary>
-        private async Task<int> SyncPrices(Domain.Totvs.Entities.Parameters.Company company, string brandClassificationCode, int branchCode, List<int> codes)
-        {
-            var batchTime = _totvsService.GetBatchTime();
-            var state = await _totvsProductPricesRepository.GetPricesState(company.doc_company!, branchCode);
-            var total = 0;
-
-            if (state?.lastChange is null)
+            // preços de uma loja. Sem maxChangeFilterDate gravado, a loja está na carga inicial: o filter.change aceita no máximo 1 ano
+            // (testado), então ela é lida inteira, sem change, em ordem de produto a partir do maior gravado, e cada página é gravada ao chegar
+            // (uma falha para a loja, e a próxima execução continua de onde parou). Depois, a janela vai do maior maxChangeFilterDate − 1 h
+            // (ou do começo da carga inicial − 1 h) até agora, em fatias de {WindowDays} dias. Devolve a quantidade de produtos gravados
+            async Task<int> SyncPrices(Domain.Totvs.Entities.Parameters.Company company, string brandClassificationCode, int branchCode, List<int> codes)
             {
-                var startProductCode = (state?.maxProductCode ?? 0) + 1;
-                var (saved, ok) = await ReadPrices(company, branchCode, batchTime, false, page => PricesBody(brandClassificationCode, branchCode, codes, page, startProductCode, null, null), $"carga inicial a partir do produto {startProductCode}");
+                var batchTime = _totvsService.GetBatchTime();
+                var state = await _totvsProductPricesRepository.GetPricesState(company.doc_company!, branchCode);
+                var total = 0;
 
-                total += saved;
-
-                if (!ok)
-                    return total;
-            }
-
-            var since = (state?.lastChange ?? state?.firstIntegrated ?? batchTime).AddHours(-1);
-
-            for (var windowStart = since; windowStart < batchTime; windowStart = windowStart.AddDays(WindowDays))
-            {
-                var windowEnd = windowStart.AddDays(WindowDays) < batchTime ? windowStart.AddDays(WindowDays) : batchTime;
-                var (saved, ok) = await ReadPrices(company, branchCode, batchTime, true, page => PricesBody(brandClassificationCode, branchCode, codes, page, null, windowStart, windowEnd), $"janela {windowStart:dd/MM/yyyy HH:mm} a {windowEnd:dd/MM/yyyy HH:mm}");
-
-                total += saved;
-
-                // fatia incompleta para a loja: a próxima execução relê desde o MAX(maxChangeFilterDate)
-                if (!ok)
-                    break;
-            }
-
-            return total;
-        }
-
-        /// <summary>
-        /// corpo do product/v2/prices/search de uma loja: na carga inicial, a faixa de produto (startProductCode exige endProductCode, testado);
-        /// na janela, o filter.change. Sempre a marca (classificação 6000) e a ordem por produto
-        /// </summary>
-        private static string PricesBody(string brandClassificationCode, int branchCode, List<int> codes, int page, int? startProductCode, DateTime? windowStart, DateTime? windowEnd) =>
-            JsonConvert.SerializeObject(new
-            {
-                filter = new
+                if (state?.lastChange is null)
                 {
-                    classifications = new[] { new { type = TotvsProductBrands.ClassificationType, codeList = new[] { brandClassificationCode } } },
-                    startProductCode,
-                    endProductCode = startProductCode is null ? (int?)null : LastProductCode,
-                    change = windowStart is null ? null : new
-                    {
-                        startDate = $"{windowStart:yyyy-MM-ddTHH:mm:ss}",
-                        endDate = $"{windowEnd:yyyy-MM-ddTHH:mm:ss}",
-                        inPrice = true,
-                        // inPrice não pega a mudança de promoção: vai também o inPromotionalPrice (docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.9)
-                        inPromotionalPrice = true,
-                        branchPriceCodeList = new[] { branchCode },
-                        priceCodeList = codes
-                    }
-                },
-                option = new
+                    var startProductCode = (state?.maxProductCode ?? 0) + 1;
+                    var (saved, ok) = await ReadPrices(company, branchCode, batchTime, false, page => PricesBody(brandClassificationCode, branchCode, codes, page, startProductCode, null, null), $"carga inicial a partir do produto {startProductCode}");
+
+                    total += saved;
+
+                    if (!ok)
+                        return total;
+                }
+
+                var since = (state?.lastChange ?? state?.firstIntegrated ?? batchTime).AddHours(-1);
+
+                for (var windowStart = since; windowStart < batchTime; windowStart = windowStart.AddDays(WindowDays))
                 {
-                    prices = new[]
+                    var windowEnd = windowStart.AddDays(WindowDays) < batchTime ? windowStart.AddDays(WindowDays) : batchTime;
+                    var (saved, ok) = await ReadPrices(company, branchCode, batchTime, true, page => PricesBody(brandClassificationCode, branchCode, codes, page, null, windowStart, windowEnd), $"janela {windowStart:dd/MM/yyyy HH:mm} a {windowEnd:dd/MM/yyyy HH:mm}");
+
+                    total += saved;
+
+                    // fatia incompleta para a loja: a próxima execução relê desde o MAX(maxChangeFilterDate)
+                    if (!ok)
+                        break;
+                }
+
+                return total;
+
+                // corpo do product/v2/prices/search de uma loja: na carga inicial, a faixa de produto (startProductCode exige endProductCode, testado);
+                // na janela, o filter.change. Sempre a marca (classificação 6000) e a ordem por produto
+                static string PricesBody(string brandClassificationCode, int branchCode, List<int> codes, int page, int? startProductCode, DateTime? windowStart, DateTime? windowEnd) =>
+                    JsonConvert.SerializeObject(new
                     {
-                        new
+                        filter = new
                         {
-                            branchCode,
-                            priceCodeList = codes,
-                            // o preço programado (PRDFM232) não tem campo próprio na resposta: fica de fora
-                            isPromotionalPrice = true,
-                            isScheduledPrice = false
+                            classifications = new[] { new { type = TotvsProductBrands.ClassificationType, codeList = new[] { brandClassificationCode } } },
+                            startProductCode,
+                            endProductCode = startProductCode is null ? (int?)null : LastProductCode,
+                            change = windowStart is null ? null : new
+                            {
+                                startDate = $"{windowStart:yyyy-MM-ddTHH:mm:ss}",
+                                endDate = $"{windowEnd:yyyy-MM-ddTHH:mm:ss}",
+                                inPrice = true,
+                                // inPrice não pega a mudança de promoção: vai também o inPromotionalPrice (docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.9)
+                                inPromotionalPrice = true,
+                                branchPriceCodeList = new[] { branchCode },
+                                priceCodeList = codes
+                            }
+                        },
+                        option = new
+                        {
+                            prices = new[]
+                            {
+                                new
+                                {
+                                    branchCode,
+                                    priceCodeList = codes,
+                                    // o preço programado (PRDFM232) não tem campo próprio na resposta: fica de fora
+                                    isPromotionalPrice = true,
+                                    isScheduledPrice = false
+                                }
+                            }
+                        },
+                        order = "productCode",
+                        expand = "promotionalInformation,informationOtherPromotions",
+                        page,
+                        pageSize = PricesPageSize
+                    }, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
+
+                // lê as páginas de uma consulta da loja e grava cada uma ao chegar. Na janela, descarta o produto cujo maxChangeFilterDate não é
+                // mais recente que o gravado (cache de estado por loja). Devolve os produtos gravados e se a leitura chegou ao fim
+                async Task<(int saved, bool ok)> ReadPrices(Domain.Totvs.Entities.Parameters.Company company, int branchCode, DateTime batchTime, bool useCache, Func<int, string> body, string context)
+                {
+                    var saved = 0;
+                    var page = 1;
+                    var totalPages = 1;
+
+                    while (page <= totalPages)
+                    {
+                        var result = await GetValuePage<Domain.Totvs.Dtos.Reads.Products.Values.ProductPrice>(company, "product/v2/prices/search", body(page), $"loja {branchCode}, {context}, página {page}");
+
+                        if (result is null)
+                            return (saved, false);
+
+                        var items = result.Value.items;
+                        Dictionary<int, DateTime?>? itemsCache = null;
+
+                        if (useCache && items.Count > 0)
+                        {
+                            // cache de estado: produto -> maior maxChangeFilterDate gravado, por empresa e loja
+                            itemsCache = await _cache.GetOrCreateAsync($"{PricesKey}:{company.doc_company}:{branchCode}", async entry =>
+                            {
+                                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(2);
+                                entry.SlidingExpiration = TimeSpan.FromMinutes(30);
+
+                                var list = await _totvsProductPricesRepository.GetPricesChanges(
+                                    company.doc_company!,
+                                    branchCode,
+                                    items.Select(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.productCode)).Where(x => x != 0).Distinct().ToList()
+                                );
+
+                                return list
+                                    .Where(x => x != null)
+                                    .GroupBy(x => x!.productCode)
+                                    .ToDictionary(g => g.Key, g => g.First()!.maxChangeFilterDate);
+                            });
+
+                            // mantém só os novos ou com maxChangeFilterDate mais recente que o gravado (sem data, regrava)
+                            items.RemoveAll(x =>
+                                itemsCache!.TryGetValue(ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.productCode), out var y) &&
+                                NullableConverters.ToNullableDateTime(x.dto.maxChangeFilterDate) <= y
+                            );
                         }
-                    }
-                },
-                order = "productCode",
-                expand = "promotionalInformation,informationOtherPromotions",
-                page,
-                pageSize = PricesPageSize
-            }, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
 
-        /// <summary>
-        /// lê as páginas de uma consulta da loja e grava cada uma ao chegar. Na janela, descarta o produto cujo maxChangeFilterDate não é
-        /// mais recente que o gravado (cache de estado por loja). Devolve os produtos gravados e se a leitura chegou ao fim
-        /// </summary>
-        private async Task<(int saved, bool ok)> ReadPrices(Domain.Totvs.Entities.Parameters.Company company, int branchCode, DateTime batchTime, bool useCache, Func<int, string> body, string context)
-        {
-            var saved = 0;
-            var page = 1;
-            var totalPages = 1;
+                        // valida, monta uma linha por loja e código (com o mesmo horário de lote), grava e atualiza o cache da loja.
+                        // Devolve a quantidade de produtos gravados.
+                        var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.Products.Values.Price>();
+                        var records = new List<(int productCode, DateTime? maxChangeFilterDate, string json)>();
 
-            while (page <= totalPages)
-            {
-                var result = await GetValuePage<Domain.Totvs.Dtos.Reads.Products.Values.ProductPrice>(company, "product/v2/prices/search", body(page), $"loja {branchCode}, {context}, página {page}");
+                        // o mesmo produto pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
+                        foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.productCode) != 0).GroupBy(x => x.dto.productCode).Select(g => g.Last()))
+                        {
+                            var productCode = ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.productCode);
+                            var validations = _productPriceValidator.Validate(item.dto);
 
-                if (result is null)
-                    return (saved, false);
+                            if (validations.Errors.Count > 0)
+                            {
+                                var message = String.Empty;
+                                validations.Errors.ForEach(s => message += $"preços do produto {productCode} na loja {branchCode}: {s.ErrorMessage}\n");
+                                _logger.AddMessage(message);
+                            }
 
-                var items = result.Value.items;
-                Dictionary<int, DateTime?>? itemsCache = null;
+                            var rows = (item.dto.prices ?? [])
+                                .Select(x => new Domain.Totvs.Entities.Reads.Products.Values.Price(company.doc_company!, batchTime, item.dto, x))
+                                .Where(x => x.branchCode != 0 && x.priceCode != 0)
+                                .GroupBy(x => (x.branchCode, x.priceCode))
+                                .Select(g => g.Last())
+                                .ToList();
 
-                if (useCache && items.Count > 0)
-                {
-                    // cache de estado: produto -> maior maxChangeFilterDate gravado, por empresa e loja
-                    itemsCache = await _cache.GetOrCreateAsync($"{PricesKey}:{company.doc_company}:{branchCode}", async entry =>
-                    {
-                        entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(2);
-                        entry.SlidingExpiration = TimeSpan.FromMinutes(30);
+                            _listSomenteNovos.AddRange(rows);
+                            records.Add((productCode, NullableConverters.ToNullableDateTime(item.dto.maxChangeFilterDate), item.json.ToString(Formatting.None)));
+                        }
 
-                        var list = await _totvsProductPricesRepository.GetPricesChanges(
-                            company.doc_company!,
-                            branchCode,
-                            items.Select(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.productCode)).Where(x => x != 0).Distinct().ToList()
-                        );
+                        if (_listSomenteNovos.Count > 0)
+                        {
+                            await _totvsProductPricesRepository.BulkInsertIntoTotvsPrices(_listSomenteNovos, _logger.GetExecutionGuid());
 
-                        return list
-                            .Where(x => x != null)
-                            .GroupBy(x => x!.productCode)
-                            .ToDictionary(g => g.Key, g => g.First()!.maxChangeFilterDate);
-                    });
+                            foreach (var (productCode, maxChangeFilterDate, json) in records)
+                            {
+                                _logger.AddRecord($"{productCode}|{branchCode}", json);
 
-                    // mantém só os novos ou com maxChangeFilterDate mais recente que o gravado (sem data, regrava)
-                    items.RemoveAll(x =>
-                        itemsCache!.TryGetValue(ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.productCode), out var y) &&
-                        NullableConverters.ToNullableDateTime(x.dto.maxChangeFilterDate) <= y
-                    );
-                }
+                                if (itemsCache is not null)
+                                    itemsCache[productCode] = maxChangeFilterDate;
+                            }
 
-                // valida, monta uma linha por loja e código (com o mesmo horário de lote), grava e atualiza o cache da loja.
-                // Devolve a quantidade de produtos gravados.
-                var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.Products.Values.Price>();
-                var records = new List<(int productCode, DateTime? maxChangeFilterDate, string json)>();
+                            saved += records.Count;
+                        }
 
-                // o mesmo produto pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
-                foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.productCode) != 0).GroupBy(x => x.dto.productCode).Select(g => g.Last()))
-                {
-                    var productCode = ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.productCode);
-                    var validations = _productPriceValidator.Validate(item.dto);
-
-                    if (validations.Errors.Count > 0)
-                    {
-                        var message = String.Empty;
-                        validations.Errors.ForEach(s => message += $"preços do produto {productCode} na loja {branchCode}: {s.ErrorMessage}\n");
-                        _logger.AddMessage(message);
+                        totalPages = result.Value.totalPages;
+                        page++;
                     }
 
-                    var rows = (item.dto.prices ?? [])
-                        .Select(x => new Domain.Totvs.Entities.Reads.Products.Values.Price(company.doc_company!, batchTime, item.dto, x))
-                        .Where(x => x.branchCode != 0 && x.priceCode != 0)
-                        .GroupBy(x => (x.branchCode, x.priceCode))
-                        .Select(g => g.Last())
-                        .ToList();
-
-                    _listSomenteNovos.AddRange(rows);
-                    records.Add((productCode, NullableConverters.ToNullableDateTime(item.dto.maxChangeFilterDate), item.json.ToString(Formatting.None)));
+                    return (saved, true);
                 }
-
-                if (_listSomenteNovos.Count > 0)
-                {
-                    await _totvsProductPricesRepository.BulkInsertIntoTotvsPrices(_listSomenteNovos, _logger.GetExecutionGuid());
-
-                    foreach (var (productCode, maxChangeFilterDate, json) in records)
-                    {
-                        _logger.AddRecord($"{productCode}|{branchCode}", json);
-
-                        if (itemsCache is not null)
-                            itemsCache[productCode] = maxChangeFilterDate;
-                    }
-
-                    saved += records.Count;
-                }
-
-                totalPages = result.Value.totalPages;
-                page++;
             }
 
-            return (saved, true);
+            // todos os códigos de preço do cadastro (PRDFL003), descobertos pela própria API e guardados em cache (2 h / 30 min): os códigos de 1 a 999 vão numa chamada, e a API
+            // responde 400 com "Price N not found" para cada um que não existe (testado: 1 a 6); o resto é a lista
+            async Task<List<int>?> GetPriceCodes(Domain.Totvs.Entities.Parameters.Company company)
+            {
+                var key = $"{PriceCodesKey}:{company.doc_company}";
+
+                if (_cache.TryGetValue(key, out List<int>? cached) && cached is not null)
+                    return cached;
+
+                var (baseBranchCode, brandClassificationCode) = TotvsProductBrands.BaseBranchCodes.First();
+                var allCodes = Enumerable.Range(1, MaxValueCode).ToList();
+
+                var requestBody = JsonConvert.SerializeObject(new
+                {
+                    filter = new
+                    {
+                        productCodeList = new[] { 1 }
+                    },
+                    option = new
+                    {
+                        prices = new[] { new { branchCode = baseBranchCode, priceCodeList = allCodes, isPromotionalPrice = false, isScheduledPrice = false } }
+                    },
+                    page = 1,
+                    pageSize = 1
+                });
+
+                var response = await SendValueRequest(company, "product/v2/prices/search", requestBody);
+                var codes = new List<int>();
+
+                if (response is not null && (response.IsSuccess || response.StatusCode == 400))
+                {
+                    // a validação dos códigos vem antes da busca: o produto do filtro não precisa existir
+                    var missing = new HashSet<int>();
+                    var other = false;
+
+                    // o corpo do 400 é a lista de DomainNotificationMessage (code, message), lida como no TotvsAccountsPayableService
+                    try
+                    {
+                        if (JToken.Parse(response.Content ?? String.Empty) is JArray messages)
+                        {
+                            foreach (var message in messages.OfType<JObject>())
+                            {
+                                var match = Regex.Match((string?)message["message"] ?? String.Empty, @"^Price (\d+) not found");
+
+                                if ((string?)message["code"] == "NotFound" && match.Success)
+                                    missing.Add(int.Parse(match.Groups[1].Value));
+                                else
+                                    other = true;
+                            }
+                        }
+                        else
+                            other = true;   // 200 com os 999 códigos: não acontece; tratado como falha da descoberta
+                    }
+                    catch (JsonReaderException)
+                    {
+                        other = true;
+                    }
+
+                    codes = other ? [] : allCodes.Where(x => !missing.Contains(x)).ToList();
+                }
+
+                if (codes.Count == 0)
+                {
+                    var body = response?.Content?.Length > 800 ? response.Content[..800] : response?.Content;
+                    _logger.AddMessage($"Empresa {company.doc_company}: não foi possível descobrir os códigos de preço em product/v2/prices/search ({response?.StatusCode} {body}).");
+
+                    return null;
+                }
+
+                _cache.Set(key, codes, new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(2),
+                    SlidingExpiration = TimeSpan.FromMinutes(30)
+                });
+
+                return codes;
+            }
         }
 
         public async Task<bool?> PostSearchCosts()
@@ -342,181 +414,253 @@ namespace Application.Totvs.Services
                 _logger.SetLogEndDate();
                 await _logger.CommitAllChanges();
             }
-        }
 
-        /// <summary>
-        /// custos de uma loja. Sem maxChangeFilterDate gravado, a loja está na carga inicial: o filter.change aceita no máximo 1 ano
-        /// (testado), então ela é lida inteira, sem change, em ordem de produto a partir do maior gravado, e cada página é gravada ao chegar
-        /// (uma falha para a loja, e a próxima execução continua de onde parou). Depois, a janela vai do maior maxChangeFilterDate − 1 h
-        /// (ou do começo da carga inicial − 1 h) até agora, em fatias de {WindowDays} dias. Devolve a quantidade de produtos gravados
-        /// </summary>
-        private async Task<int> SyncCosts(Domain.Totvs.Entities.Parameters.Company company, string brandClassificationCode, int branchCode, List<int> codes)
-        {
-            var batchTime = _totvsService.GetBatchTime();
-            var state = await _totvsProductPricesRepository.GetCostsState(company.doc_company!, branchCode);
-            var total = 0;
-
-            if (state?.lastChange is null)
+            // custos de uma loja. Sem maxChangeFilterDate gravado, a loja está na carga inicial: o filter.change aceita no máximo 1 ano
+            // (testado), então ela é lida inteira, sem change, em ordem de produto a partir do maior gravado, e cada página é gravada ao chegar
+            // (uma falha para a loja, e a próxima execução continua de onde parou). Depois, a janela vai do maior maxChangeFilterDate − 1 h
+            // (ou do começo da carga inicial − 1 h) até agora, em fatias de {WindowDays} dias. Devolve a quantidade de produtos gravados
+            async Task<int> SyncCosts(Domain.Totvs.Entities.Parameters.Company company, string brandClassificationCode, int branchCode, List<int> codes)
             {
-                var startProductCode = (state?.maxProductCode ?? 0) + 1;
-                var (saved, ok) = await ReadCosts(company, branchCode, batchTime, false, page => CostsBody(brandClassificationCode, branchCode, codes, page, startProductCode, null, null), $"carga inicial a partir do produto {startProductCode}");
+                var batchTime = _totvsService.GetBatchTime();
+                var state = await _totvsProductPricesRepository.GetCostsState(company.doc_company!, branchCode);
+                var total = 0;
 
-                total += saved;
-
-                if (!ok)
-                    return total;
-            }
-
-            var since = (state?.lastChange ?? state?.firstIntegrated ?? batchTime).AddHours(-1);
-
-            for (var windowStart = since; windowStart < batchTime; windowStart = windowStart.AddDays(WindowDays))
-            {
-                var windowEnd = windowStart.AddDays(WindowDays) < batchTime ? windowStart.AddDays(WindowDays) : batchTime;
-                var (saved, ok) = await ReadCosts(company, branchCode, batchTime, true, page => CostsBody(brandClassificationCode, branchCode, codes, page, null, windowStart, windowEnd), $"janela {windowStart:dd/MM/yyyy HH:mm} a {windowEnd:dd/MM/yyyy HH:mm}");
-
-                total += saved;
-
-                // fatia incompleta para a loja: a próxima execução relê desde o MAX(maxChangeFilterDate)
-                if (!ok)
-                    break;
-            }
-
-            return total;
-        }
-
-        /// <summary>
-        /// corpo do product/v2/costs/search de uma loja: na carga inicial, a faixa de produto (startProductCode exige endProductCode, testado);
-        /// na janela, o filter.change. Sempre a marca (classificação 6000) e a ordem por produto
-        /// </summary>
-        private static string CostsBody(string brandClassificationCode, int branchCode, List<int> codes, int page, int? startProductCode, DateTime? windowStart, DateTime? windowEnd) =>
-            JsonConvert.SerializeObject(new
-            {
-                filter = new
+                if (state?.lastChange is null)
                 {
-                    classifications = new[] { new { type = TotvsProductBrands.ClassificationType, codeList = new[] { brandClassificationCode } } },
-                    startProductCode,
-                    endProductCode = startProductCode is null ? (int?)null : LastProductCode,
-                    change = windowStart is null ? null : new
-                    {
-                        startDate = $"{windowStart:yyyy-MM-ddTHH:mm:ss}",
-                        endDate = $"{windowEnd:yyyy-MM-ddTHH:mm:ss}",
-                        inCost = true,
-                        branchCostCodeList = new[] { branchCode },
-                        costCodeList = codes
-                    }
-                },
-                option = new
+                    var startProductCode = (state?.maxProductCode ?? 0) + 1;
+                    var (saved, ok) = await ReadCosts(company, branchCode, batchTime, false, page => CostsBody(brandClassificationCode, branchCode, codes, page, startProductCode, null, null), $"carga inicial a partir do produto {startProductCode}");
+
+                    total += saved;
+
+                    if (!ok)
+                        return total;
+                }
+
+                var since = (state?.lastChange ?? state?.firstIntegrated ?? batchTime).AddHours(-1);
+
+                for (var windowStart = since; windowStart < batchTime; windowStart = windowStart.AddDays(WindowDays))
                 {
-                    costs = new[]
+                    var windowEnd = windowStart.AddDays(WindowDays) < batchTime ? windowStart.AddDays(WindowDays) : batchTime;
+                    var (saved, ok) = await ReadCosts(company, branchCode, batchTime, true, page => CostsBody(brandClassificationCode, branchCode, codes, page, null, windowStart, windowEnd), $"janela {windowStart:dd/MM/yyyy HH:mm} a {windowEnd:dd/MM/yyyy HH:mm}");
+
+                    total += saved;
+
+                    // fatia incompleta para a loja: a próxima execução relê desde o MAX(maxChangeFilterDate)
+                    if (!ok)
+                        break;
+                }
+
+                return total;
+
+                // corpo do product/v2/costs/search de uma loja: na carga inicial, a faixa de produto (startProductCode exige endProductCode, testado);
+                // na janela, o filter.change. Sempre a marca (classificação 6000) e a ordem por produto
+                static string CostsBody(string brandClassificationCode, int branchCode, List<int> codes, int page, int? startProductCode, DateTime? windowStart, DateTime? windowEnd) =>
+                    JsonConvert.SerializeObject(new
                     {
-                        new
+                        filter = new
                         {
-                            branchCode,
-                            costCodeList = codes
+                            classifications = new[] { new { type = TotvsProductBrands.ClassificationType, codeList = new[] { brandClassificationCode } } },
+                            startProductCode,
+                            endProductCode = startProductCode is null ? (int?)null : LastProductCode,
+                            change = windowStart is null ? null : new
+                            {
+                                startDate = $"{windowStart:yyyy-MM-ddTHH:mm:ss}",
+                                endDate = $"{windowEnd:yyyy-MM-ddTHH:mm:ss}",
+                                inCost = true,
+                                branchCostCodeList = new[] { branchCode },
+                                costCodeList = codes
+                            }
+                        },
+                        option = new
+                        {
+                            costs = new[]
+                            {
+                                new
+                                {
+                                    branchCode,
+                                    costCodeList = codes
+                                }
+                            }
+                        },
+                        order = "productCode",
+                        page,
+                        pageSize = CostsPageSize
+                    }, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
+
+                // lê as páginas de uma consulta da loja e grava cada uma ao chegar. Na janela, descarta o produto cujo maxChangeFilterDate não é
+                // mais recente que o gravado (cache de estado por loja). Devolve os produtos gravados e se a leitura chegou ao fim
+                async Task<(int saved, bool ok)> ReadCosts(Domain.Totvs.Entities.Parameters.Company company, int branchCode, DateTime batchTime, bool useCache, Func<int, string> body, string context)
+                {
+                    var saved = 0;
+                    var page = 1;
+                    var totalPages = 1;
+
+                    while (page <= totalPages)
+                    {
+                        var result = await GetValuePage<Domain.Totvs.Dtos.Reads.Products.Values.ProductCost>(company, "product/v2/costs/search", body(page), $"loja {branchCode}, {context}, página {page}");
+
+                        if (result is null)
+                            return (saved, false);
+
+                        var items = result.Value.items;
+                        Dictionary<int, DateTime?>? itemsCache = null;
+
+                        if (useCache && items.Count > 0)
+                        {
+                            // cache de estado: produto -> maior maxChangeFilterDate gravado, por empresa e loja
+                            itemsCache = await _cache.GetOrCreateAsync($"{CostsKey}:{company.doc_company}:{branchCode}", async entry =>
+                            {
+                                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(2);
+                                entry.SlidingExpiration = TimeSpan.FromMinutes(30);
+
+                                var list = await _totvsProductPricesRepository.GetCostsChanges(
+                                    company.doc_company!,
+                                    branchCode,
+                                    items.Select(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.productCode)).Where(x => x != 0).Distinct().ToList()
+                                );
+
+                                return list
+                                    .Where(x => x != null)
+                                    .GroupBy(x => x!.productCode)
+                                    .ToDictionary(g => g.Key, g => g.First()!.maxChangeFilterDate);
+                            });
+
+                            // mantém só os novos ou com maxChangeFilterDate mais recente que o gravado (sem data, regrava)
+                            items.RemoveAll(x =>
+                                itemsCache!.TryGetValue(ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.productCode), out var y) &&
+                                NullableConverters.ToNullableDateTime(x.dto.maxChangeFilterDate) <= y
+                            );
                         }
-                    }
-                },
-                order = "productCode",
-                page,
-                pageSize = CostsPageSize
-            }, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
 
-        /// <summary>
-        /// lê as páginas de uma consulta da loja e grava cada uma ao chegar. Na janela, descarta o produto cujo maxChangeFilterDate não é
-        /// mais recente que o gravado (cache de estado por loja). Devolve os produtos gravados e se a leitura chegou ao fim
-        /// </summary>
-        private async Task<(int saved, bool ok)> ReadCosts(Domain.Totvs.Entities.Parameters.Company company, int branchCode, DateTime batchTime, bool useCache, Func<int, string> body, string context)
-        {
-            var saved = 0;
-            var page = 1;
-            var totalPages = 1;
+                        // valida, monta uma linha por loja e código (com o mesmo horário de lote), grava e atualiza o cache da loja.
+                        // Devolve a quantidade de produtos gravados.
+                        var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.Products.Values.Cost>();
+                        var records = new List<(int productCode, DateTime? maxChangeFilterDate, string json)>();
 
-            while (page <= totalPages)
-            {
-                var result = await GetValuePage<Domain.Totvs.Dtos.Reads.Products.Values.ProductCost>(company, "product/v2/costs/search", body(page), $"loja {branchCode}, {context}, página {page}");
+                        // o mesmo produto pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
+                        foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.productCode) != 0).GroupBy(x => x.dto.productCode).Select(g => g.Last()))
+                        {
+                            var productCode = ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.productCode);
+                            var validations = _productCostValidator.Validate(item.dto);
 
-                if (result is null)
-                    return (saved, false);
+                            if (validations.Errors.Count > 0)
+                            {
+                                var message = String.Empty;
+                                validations.Errors.ForEach(s => message += $"custos do produto {productCode} na loja {branchCode}: {s.ErrorMessage}\n");
+                                _logger.AddMessage(message);
+                            }
 
-                var items = result.Value.items;
-                Dictionary<int, DateTime?>? itemsCache = null;
+                            var rows = (item.dto.costs ?? [])
+                                .Select(x => new Domain.Totvs.Entities.Reads.Products.Values.Cost(company.doc_company!, batchTime, item.dto, x))
+                                .Where(x => x.branchCode != 0 && x.costCode != 0)
+                                .GroupBy(x => (x.branchCode, x.costCode))
+                                .Select(g => g.Last())
+                                .ToList();
 
-                if (useCache && items.Count > 0)
-                {
-                    // cache de estado: produto -> maior maxChangeFilterDate gravado, por empresa e loja
-                    itemsCache = await _cache.GetOrCreateAsync($"{CostsKey}:{company.doc_company}:{branchCode}", async entry =>
-                    {
-                        entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(2);
-                        entry.SlidingExpiration = TimeSpan.FromMinutes(30);
+                            _listSomenteNovos.AddRange(rows);
+                            records.Add((productCode, NullableConverters.ToNullableDateTime(item.dto.maxChangeFilterDate), item.json.ToString(Formatting.None)));
+                        }
 
-                        var list = await _totvsProductPricesRepository.GetCostsChanges(
-                            company.doc_company!,
-                            branchCode,
-                            items.Select(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.productCode)).Where(x => x != 0).Distinct().ToList()
-                        );
+                        if (_listSomenteNovos.Count > 0)
+                        {
+                            await _totvsProductPricesRepository.BulkInsertIntoTotvsCosts(_listSomenteNovos, _logger.GetExecutionGuid());
 
-                        return list
-                            .Where(x => x != null)
-                            .GroupBy(x => x!.productCode)
-                            .ToDictionary(g => g.Key, g => g.First()!.maxChangeFilterDate);
-                    });
+                            foreach (var (productCode, maxChangeFilterDate, json) in records)
+                            {
+                                _logger.AddRecord($"{productCode}|{branchCode}", json);
 
-                    // mantém só os novos ou com maxChangeFilterDate mais recente que o gravado (sem data, regrava)
-                    items.RemoveAll(x =>
-                        itemsCache!.TryGetValue(ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.productCode), out var y) &&
-                        NullableConverters.ToNullableDateTime(x.dto.maxChangeFilterDate) <= y
-                    );
-                }
+                                if (itemsCache is not null)
+                                    itemsCache[productCode] = maxChangeFilterDate;
+                            }
 
-                // valida, monta uma linha por loja e código (com o mesmo horário de lote), grava e atualiza o cache da loja.
-                // Devolve a quantidade de produtos gravados.
-                var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.Products.Values.Cost>();
-                var records = new List<(int productCode, DateTime? maxChangeFilterDate, string json)>();
+                            saved += records.Count;
+                        }
 
-                // o mesmo produto pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
-                foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.productCode) != 0).GroupBy(x => x.dto.productCode).Select(g => g.Last()))
-                {
-                    var productCode = ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.productCode);
-                    var validations = _productCostValidator.Validate(item.dto);
-
-                    if (validations.Errors.Count > 0)
-                    {
-                        var message = String.Empty;
-                        validations.Errors.ForEach(s => message += $"custos do produto {productCode} na loja {branchCode}: {s.ErrorMessage}\n");
-                        _logger.AddMessage(message);
+                        totalPages = result.Value.totalPages;
+                        page++;
                     }
 
-                    var rows = (item.dto.costs ?? [])
-                        .Select(x => new Domain.Totvs.Entities.Reads.Products.Values.Cost(company.doc_company!, batchTime, item.dto, x))
-                        .Where(x => x.branchCode != 0 && x.costCode != 0)
-                        .GroupBy(x => (x.branchCode, x.costCode))
-                        .Select(g => g.Last())
-                        .ToList();
-
-                    _listSomenteNovos.AddRange(rows);
-                    records.Add((productCode, NullableConverters.ToNullableDateTime(item.dto.maxChangeFilterDate), item.json.ToString(Formatting.None)));
+                    return (saved, true);
                 }
-
-                if (_listSomenteNovos.Count > 0)
-                {
-                    await _totvsProductPricesRepository.BulkInsertIntoTotvsCosts(_listSomenteNovos, _logger.GetExecutionGuid());
-
-                    foreach (var (productCode, maxChangeFilterDate, json) in records)
-                    {
-                        _logger.AddRecord($"{productCode}|{branchCode}", json);
-
-                        if (itemsCache is not null)
-                            itemsCache[productCode] = maxChangeFilterDate;
-                    }
-
-                    saved += records.Count;
-                }
-
-                totalPages = result.Value.totalPages;
-                page++;
             }
 
-            return (saved, true);
+            // todos os códigos de custo do cadastro (PRDFL003), descobertos pela própria API e guardados em cache (2 h / 30 min): os códigos de 1 a 999 vão numa chamada, e a API
+            // responde 400 com "Cost N not found" para cada um que não existe (testado: 1 a 8); o resto é a lista
+            async Task<List<int>?> GetCostCodes(Domain.Totvs.Entities.Parameters.Company company)
+            {
+                var key = $"{CostCodesKey}:{company.doc_company}";
+
+                if (_cache.TryGetValue(key, out List<int>? cached) && cached is not null)
+                    return cached;
+
+                var (baseBranchCode, brandClassificationCode) = TotvsProductBrands.BaseBranchCodes.First();
+                var allCodes = Enumerable.Range(1, MaxValueCode).ToList();
+
+                var requestBody = JsonConvert.SerializeObject(new
+                {
+                    filter = new
+                    {
+                        productCodeList = new[] { 1 }
+                    },
+                    option = new
+                    {
+                        costs = new[] { new { branchCode = baseBranchCode, costCodeList = allCodes } }
+                    },
+                    page = 1,
+                    pageSize = 1
+                });
+
+                var response = await SendValueRequest(company, "product/v2/costs/search", requestBody);
+                var codes = new List<int>();
+
+                if (response is not null && (response.IsSuccess || response.StatusCode == 400))
+                {
+                    // a validação dos códigos vem antes da busca: o produto do filtro não precisa existir
+                    var missing = new HashSet<int>();
+                    var other = false;
+
+                    // o corpo do 400 é a lista de DomainNotificationMessage (code, message), lida como no TotvsAccountsPayableService
+                    try
+                    {
+                        if (JToken.Parse(response.Content ?? String.Empty) is JArray messages)
+                        {
+                            foreach (var message in messages.OfType<JObject>())
+                            {
+                                var match = Regex.Match((string?)message["message"] ?? String.Empty, @"^Cost (\d+) not found");
+
+                                if ((string?)message["code"] == "NotFound" && match.Success)
+                                    missing.Add(int.Parse(match.Groups[1].Value));
+                                else
+                                    other = true;
+                            }
+                        }
+                        else
+                            other = true;   // 200 com os 999 códigos: não acontece; tratado como falha da descoberta
+                    }
+                    catch (JsonReaderException)
+                    {
+                        other = true;
+                    }
+
+                    codes = other ? [] : allCodes.Where(x => !missing.Contains(x)).ToList();
+                }
+
+                if (codes.Count == 0)
+                {
+                    var body = response?.Content?.Length > 800 ? response.Content[..800] : response?.Content;
+                    _logger.AddMessage($"Empresa {company.doc_company}: não foi possível descobrir os códigos de custo em product/v2/costs/search ({response?.StatusCode} {body}).");
+
+                    return null;
+                }
+
+                _cache.Set(key, codes, new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(2),
+                    SlidingExpiration = TimeSpan.FromMinutes(30)
+                });
+
+                return codes;
+            }
         }
 
         public async Task<bool?> PostSearchPriceTables()
@@ -561,162 +705,156 @@ namespace Application.Totvs.Services
                 _logger.SetLogEndDate();
                 await _logger.CommitAllChanges();
             }
-        }
 
-        /// <summary>
-        /// itens de uma tabela de preço, com o desenho dos preços: sem maxChangeFilterDate gravado, a tabela é lida inteira, sem change,
-        /// em ordem de produto a partir do maior gravado, cada página gravada ao chegar; depois, a janela do maior maxChangeFilterDate − 1 h
-        /// (ou do começo da carga inicial − 1 h) até agora, em fatias de {WindowDays} dias. Devolve a quantidade de produtos gravados
-        /// </summary>
-        private async Task<int> SyncPriceTable(Domain.Totvs.Entities.Parameters.Company company, int priceTableCode, List<int> branchCodes)
-        {
-            var batchTime = _totvsService.GetBatchTime();
-            var state = await _totvsProductPricesRepository.GetPriceTableItemsState(company.doc_company!, priceTableCode);
-            var total = 0;
-
-            if (state?.lastChange is null)
+            // itens de uma tabela de preço, com o desenho dos preços: sem maxChangeFilterDate gravado, a tabela é lida inteira, sem change,
+            // em ordem de produto a partir do maior gravado, cada página gravada ao chegar; depois, a janela do maior maxChangeFilterDate − 1 h
+            // (ou do começo da carga inicial − 1 h) até agora, em fatias de {WindowDays} dias. Devolve a quantidade de produtos gravados
+            async Task<int> SyncPriceTable(Domain.Totvs.Entities.Parameters.Company company, int priceTableCode, List<int> branchCodes)
             {
-                var startProductCode = (state?.maxProductCode ?? 0) + 1;
-                var (saved, ok) = await ReadPriceTable(company, priceTableCode, batchTime, false, page => PriceTablesBody(priceTableCode, branchCodes, page, startProductCode, null, null), $"carga inicial a partir do produto {startProductCode}");
+                var batchTime = _totvsService.GetBatchTime();
+                var state = await _totvsProductPricesRepository.GetPriceTableItemsState(company.doc_company!, priceTableCode);
+                var total = 0;
 
-                total += saved;
-
-                if (!ok)
-                    return total;
-            }
-
-            var since = (state?.lastChange ?? state?.firstIntegrated ?? batchTime).AddHours(-1);
-
-            for (var windowStart = since; windowStart < batchTime; windowStart = windowStart.AddDays(WindowDays))
-            {
-                var windowEnd = windowStart.AddDays(WindowDays) < batchTime ? windowStart.AddDays(WindowDays) : batchTime;
-                var (saved, ok) = await ReadPriceTable(company, priceTableCode, batchTime, true, page => PriceTablesBody(priceTableCode, branchCodes, page, null, windowStart, windowEnd), $"janela {windowStart:dd/MM/yyyy HH:mm} a {windowEnd:dd/MM/yyyy HH:mm}");
-
-                total += saved;
-
-                if (!ok)
-                    break;
-            }
-
-            return total;
-        }
-
-        /// <summary>
-        /// corpo do product/v2/price-tables/search de uma tabela: na carga inicial, a faixa de produto; na janela, o filter.change com
-        /// inPriceTableItem (que exige as lojas e a tabela)
-        /// </summary>
-        private static string PriceTablesBody(int priceTableCode, List<int> branchCodes, int page, int? startProductCode, DateTime? windowStart, DateTime? windowEnd) =>
-            JsonConvert.SerializeObject(new
-            {
-                filter = new
+                if (state?.lastChange is null)
                 {
-                    startProductCode,
-                    endProductCode = startProductCode is null ? (int?)null : LastProductCode,
-                    change = windowStart is null ? null : new
-                    {
-                        startDate = $"{windowStart:yyyy-MM-ddTHH:mm:ss}",
-                        endDate = $"{windowEnd:yyyy-MM-ddTHH:mm:ss}",
-                        inPriceTableItem = true,
-                        branchPriceTableCodeList = branchCodes,
-                        priceTableCodeList = new[] { priceTableCode }
-                    }
-                },
-                option = new
-                {
-                    branchCodeList = branchCodes,
-                    priceTableCode
-                },
-                order = "productCode",
-                page,
-                pageSize = PriceTablesPageSize
-            }, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
+                    var startProductCode = (state?.maxProductCode ?? 0) + 1;
+                    var (saved, ok) = await ReadPriceTable(company, priceTableCode, batchTime, false, page => PriceTablesBody(priceTableCode, branchCodes, page, startProductCode, null, null), $"carga inicial a partir do produto {startProductCode}");
 
-        /// <summary>
-        /// lê as páginas de uma tabela de preço e grava cada uma ao chegar; na janela, descarta o produto cujo maxChangeFilterDate não é
-        /// mais recente que o gravado (cache de estado por tabela). Devolve os produtos gravados e se a leitura chegou ao fim
-        /// </summary>
-        private async Task<(int saved, bool ok)> ReadPriceTable(Domain.Totvs.Entities.Parameters.Company company, int priceTableCode, DateTime batchTime, bool useCache, Func<int, string> body, string context)
-        {
-            var saved = 0;
-            var page = 1;
-            var totalPages = 1;
+                    total += saved;
 
-            while (page <= totalPages)
-            {
-                var result = await GetValuePage<Domain.Totvs.Dtos.Reads.Products.PriceTables.PriceTableProduct>(company, "product/v2/price-tables/search", body(page), $"tabela {priceTableCode}, {context}, página {page}");
-
-                if (result is null)
-                    return (saved, false);
-
-                var items = result.Value.items;
-                Dictionary<int, DateTime?>? itemsCache = null;
-
-                if (useCache && items.Count > 0)
-                {
-                    // cache de estado: produto -> maxChangeFilterDate gravado, por empresa e tabela
-                    itemsCache = await _cache.GetOrCreateAsync($"{PriceTableItemsKey}:{company.doc_company}:{priceTableCode}", async entry =>
-                    {
-                        entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(2);
-                        entry.SlidingExpiration = TimeSpan.FromMinutes(30);
-
-                        var list = await _totvsProductPricesRepository.GetPriceTableItemsChanges(
-                            company.doc_company!,
-                            priceTableCode,
-                            items.Select(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.productCode)).Where(x => x != 0).Distinct().ToList()
-                        );
-
-                        return list
-                            .Where(x => x != null)
-                            .GroupBy(x => x!.productCode)
-                            .ToDictionary(g => g.Key, g => g.First()!.maxChangeFilterDate);
-                    });
-
-                    // mantém só os novos ou com maxChangeFilterDate mais recente que o gravado (sem data, regrava)
-                    items.RemoveAll(x =>
-                        itemsCache!.TryGetValue(ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.productCode), out var y) &&
-                        NullableConverters.ToNullableDateTime(x.dto.maxChangeFilterDate) <= y
-                    );
+                    if (!ok)
+                        return total;
                 }
 
-                // valida, monta os itens com os preços por loja e escala (com o mesmo horário de lote), grava e atualiza o cache da tabela.
-                // Devolve a quantidade de produtos gravados.
-                var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Products.PriceTables.PriceTableItem record, string json)>();
+                var since = (state?.lastChange ?? state?.firstIntegrated ?? batchTime).AddHours(-1);
 
-                // o mesmo produto pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
-                foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.productCode) != 0).GroupBy(x => x.dto.productCode).Select(g => g.Last()))
+                for (var windowStart = since; windowStart < batchTime; windowStart = windowStart.AddDays(WindowDays))
                 {
-                    var validations = _priceTableProductValidator.Validate(item.dto);
+                    var windowEnd = windowStart.AddDays(WindowDays) < batchTime ? windowStart.AddDays(WindowDays) : batchTime;
+                    var (saved, ok) = await ReadPriceTable(company, priceTableCode, batchTime, true, page => PriceTablesBody(priceTableCode, branchCodes, page, null, windowStart, windowEnd), $"janela {windowStart:dd/MM/yyyy HH:mm} a {windowEnd:dd/MM/yyyy HH:mm}");
 
-                    if (validations.Errors.Count > 0)
-                    {
-                        var message = String.Empty;
-                        validations.Errors.ForEach(s => message += $"tabela de preço {priceTableCode}, produto {item.dto.productCode}: {s.ErrorMessage}\n");
-                        _logger.AddMessage(message);
-                    }
+                    total += saved;
 
-                    _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.PriceTables.PriceTableItem(company.doc_company!, batchTime, priceTableCode, item.dto), item.json.ToString(Formatting.None)));
+                    if (!ok)
+                        break;
                 }
 
-                if (_listSomenteNovos.Count > 0)
-                {
-                    await _totvsProductPricesRepository.BulkInsertIntoTotvsPriceTablesItems(_listSomenteNovos.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
+                return total;
 
-                    foreach (var (record, json) in _listSomenteNovos)
+                // corpo do product/v2/price-tables/search de uma tabela: na carga inicial, a faixa de produto; na janela, o filter.change com
+                // inPriceTableItem (que exige as lojas e a tabela)
+                static string PriceTablesBody(int priceTableCode, List<int> branchCodes, int page, int? startProductCode, DateTime? windowStart, DateTime? windowEnd) =>
+                    JsonConvert.SerializeObject(new
                     {
-                        _logger.AddRecord($"{priceTableCode}|{record.productCode}", json);
+                        filter = new
+                        {
+                            startProductCode,
+                            endProductCode = startProductCode is null ? (int?)null : LastProductCode,
+                            change = windowStart is null ? null : new
+                            {
+                                startDate = $"{windowStart:yyyy-MM-ddTHH:mm:ss}",
+                                endDate = $"{windowEnd:yyyy-MM-ddTHH:mm:ss}",
+                                inPriceTableItem = true,
+                                branchPriceTableCodeList = branchCodes,
+                                priceTableCodeList = new[] { priceTableCode }
+                            }
+                        },
+                        option = new
+                        {
+                            branchCodeList = branchCodes,
+                            priceTableCode
+                        },
+                        order = "productCode",
+                        page,
+                        pageSize = PriceTablesPageSize
+                    }, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
 
-                        if (itemsCache is not null)
-                            itemsCache[record.productCode] = record.maxChangeFilterDate;
+                // lê as páginas de uma tabela de preço e grava cada uma ao chegar; na janela, descarta o produto cujo maxChangeFilterDate não é
+                // mais recente que o gravado (cache de estado por tabela). Devolve os produtos gravados e se a leitura chegou ao fim
+                async Task<(int saved, bool ok)> ReadPriceTable(Domain.Totvs.Entities.Parameters.Company company, int priceTableCode, DateTime batchTime, bool useCache, Func<int, string> body, string context)
+                {
+                    var saved = 0;
+                    var page = 1;
+                    var totalPages = 1;
+
+                    while (page <= totalPages)
+                    {
+                        var result = await GetValuePage<Domain.Totvs.Dtos.Reads.Products.PriceTables.PriceTableProduct>(company, "product/v2/price-tables/search", body(page), $"tabela {priceTableCode}, {context}, página {page}");
+
+                        if (result is null)
+                            return (saved, false);
+
+                        var items = result.Value.items;
+                        Dictionary<int, DateTime?>? itemsCache = null;
+
+                        if (useCache && items.Count > 0)
+                        {
+                            // cache de estado: produto -> maxChangeFilterDate gravado, por empresa e tabela
+                            itemsCache = await _cache.GetOrCreateAsync($"{PriceTableItemsKey}:{company.doc_company}:{priceTableCode}", async entry =>
+                            {
+                                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(2);
+                                entry.SlidingExpiration = TimeSpan.FromMinutes(30);
+
+                                var list = await _totvsProductPricesRepository.GetPriceTableItemsChanges(
+                                    company.doc_company!,
+                                    priceTableCode,
+                                    items.Select(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.productCode)).Where(x => x != 0).Distinct().ToList()
+                                );
+
+                                return list
+                                    .Where(x => x != null)
+                                    .GroupBy(x => x!.productCode)
+                                    .ToDictionary(g => g.Key, g => g.First()!.maxChangeFilterDate);
+                            });
+
+                            // mantém só os novos ou com maxChangeFilterDate mais recente que o gravado (sem data, regrava)
+                            items.RemoveAll(x =>
+                                itemsCache!.TryGetValue(ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.productCode), out var y) &&
+                                NullableConverters.ToNullableDateTime(x.dto.maxChangeFilterDate) <= y
+                            );
+                        }
+
+                        // valida, monta os itens com os preços por loja e escala (com o mesmo horário de lote), grava e atualiza o cache da tabela.
+                        // Devolve a quantidade de produtos gravados.
+                        var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Products.PriceTables.PriceTableItem record, string json)>();
+
+                        // o mesmo produto pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
+                        foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.productCode) != 0).GroupBy(x => x.dto.productCode).Select(g => g.Last()))
+                        {
+                            var validations = _priceTableProductValidator.Validate(item.dto);
+
+                            if (validations.Errors.Count > 0)
+                            {
+                                var message = String.Empty;
+                                validations.Errors.ForEach(s => message += $"tabela de preço {priceTableCode}, produto {item.dto.productCode}: {s.ErrorMessage}\n");
+                                _logger.AddMessage(message);
+                            }
+
+                            _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.PriceTables.PriceTableItem(company.doc_company!, batchTime, priceTableCode, item.dto), item.json.ToString(Formatting.None)));
+                        }
+
+                        if (_listSomenteNovos.Count > 0)
+                        {
+                            await _totvsProductPricesRepository.BulkInsertIntoTotvsPriceTablesItems(_listSomenteNovos.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
+
+                            foreach (var (record, json) in _listSomenteNovos)
+                            {
+                                _logger.AddRecord($"{priceTableCode}|{record.productCode}", json);
+
+                                if (itemsCache is not null)
+                                    itemsCache[record.productCode] = record.maxChangeFilterDate;
+                            }
+
+                            saved += _listSomenteNovos.Count;
+                        }
+
+                        totalPages = result.Value.totalPages;
+                        page++;
                     }
 
-                    saved += _listSomenteNovos.Count;
+                    return (saved, true);
                 }
-
-                totalPages = result.Value.totalPages;
-                page++;
             }
-
-            return (saved, true);
         }
 
         public async Task<bool?> GetPromotion()
@@ -755,323 +893,161 @@ namespace Application.Totvs.Services
                 _logger.SetLogEndDate();
                 await _logger.CommitAllChanges();
             }
-        }
 
-        /// <summary>
-        /// itens de promoção de uma loja, lidos inteiros: o StartChangeDate/EndChangeDate da rota dá erro na Totvs (400 ORA-00920 em
-        /// qualquer formato de data, testado), e o maxChangeFilterDate é só a data de cadastro (a troca de valor ou de situação pode não
-        /// mudá-lo, PR15). O hash do JSON de cada item, comparado com o json_hash gravado (T9), diz o que mudou; cada página é gravada ao
-        /// chegar. Devolve a quantidade de itens gravados
-        /// </summary>
-        private async Task<int> SyncPromotions(Domain.Totvs.Entities.Parameters.Company company, int branchCode)
-        {
-            var batchTime = _totvsService.GetBatchTime();
-            Dictionary<(int, int), string>? stored = null;
-            var total = 0;
-            var page = 1;
-            var totalPages = 1;
-
-            while (page <= totalPages)
+            // itens de promoção de uma loja, lidos inteiros: o StartChangeDate/EndChangeDate da rota dá erro na Totvs (400 ORA-00920 em
+            // qualquer formato de data, testado), e o maxChangeFilterDate é só a data de cadastro (a troca de valor ou de situação pode não
+            // mudá-lo, PR15). O hash do JSON de cada item, comparado com o json_hash gravado (T9), diz o que mudou; cada página é gravada ao
+            // chegar. Devolve a quantidade de itens gravados
+            async Task<int> SyncPromotions(Domain.Totvs.Entities.Parameters.Company company, int branchCode)
             {
-                var query = new Dictionary<string, string>
+                var batchTime = _totvsService.GetBatchTime();
+                Dictionary<(int, int), string>? stored = null;
+                var total = 0;
+                var page = 1;
+                var totalPages = 1;
+
+                while (page <= totalPages)
                 {
-                    { "BranchCode", branchCode.ToString() },
-                    { "Page", page.ToString() },
-                    { "PageSize", PromotionsPageSize.ToString() }
-                };
-
-                // uma nova tentativa: 401 renova o token, 429 espera o Retry-After e 502/503/504 espera 10 s
-                ApiResponse? response = null;
-
-                for (var attempt = 1; attempt <= 2; attempt++)
-                {
-                    var token = await _totvsService.GetToken(company);
-
-                    if (token is null)
-                        break;   // a mensagem do login já foi para o log
-
-                    response = await _apiClient.SendAsync(
-                        HttpMethod.Get,
-                        "product/v2/promotion",
-                        headers: new Dictionary<string, string> { { "Authorization", $"Bearer {token}" } },
-                        queryParams: query
-                    );
-
-                    if (attempt == 1 && response.StatusCode == 401)
+                    var query = new Dictionary<string, string>
                     {
-                        _totvsService.RemoveToken(company);
-                        continue;
+                        { "BranchCode", branchCode.ToString() },
+                        { "Page", page.ToString() },
+                        { "PageSize", PromotionsPageSize.ToString() }
+                    };
+
+                    // uma nova tentativa: 401 renova o token, 429 espera o Retry-After e 502/503/504 espera 10 s
+                    ApiResponse? response = null;
+
+                    for (var attempt = 1; attempt <= 2; attempt++)
+                    {
+                        var token = await _totvsService.GetToken(company);
+
+                        if (token is null)
+                            break;   // a mensagem do login já foi para o log
+
+                        response = await _apiClient.SendAsync(
+                            HttpMethod.Get,
+                            "product/v2/promotion",
+                            headers: new Dictionary<string, string> { { "Authorization", $"Bearer {token}" } },
+                            queryParams: query
+                        );
+
+                        if (attempt == 1 && response.StatusCode == 401)
+                        {
+                            _totvsService.RemoveToken(company);
+                            continue;
+                        }
+
+                        if (attempt == 1 && response.StatusCode == 429)
+                        {
+                            var seconds = response.Headers.TryGetValue("Retry-After", out var retryAfter) && int.TryParse(retryAfter, out var value) ? value : 5;
+                            await Task.Delay(TimeSpan.FromSeconds(Math.Clamp(seconds, 1, 60)));
+                            continue;
+                        }
+
+                        if (attempt == 1 && response.StatusCode is 502 or 503 or 504)
+                        {
+                            await Task.Delay(TimeSpan.FromSeconds(10));
+                            continue;
+                        }
+
+                        break;
                     }
 
-                    if (attempt == 1 && response.StatusCode == 429)
+                    if (response is null || !response.IsSuccess)
                     {
-                        var seconds = response.Headers.TryGetValue("Retry-After", out var retryAfter) && int.TryParse(retryAfter, out var value) ? value : 5;
-                        await Task.Delay(TimeSpan.FromSeconds(Math.Clamp(seconds, 1, 60)));
-                        continue;
+                        if (response is not null)
+                        {
+                            var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
+                            _logger.AddMessage($"Erro da API Totvs em product/v2/promotion (empresa {company.doc_company}, loja {branchCode}, página {page}): {response.StatusCode} {body}");
+                        }
+
+                        // as páginas já gravadas ficam; a próxima execução relê a loja inteira
+                        return total;
                     }
 
-                    if (attempt == 1 && response.StatusCode is 502 or 503 or 504)
+                    Page<Domain.Totvs.Dtos.Reads.Products.Promotions.Promotion>? result = null;
+                    JArray json = [];
+
+                    try
                     {
-                        await Task.Delay(TimeSpan.FromSeconds(10));
-                        continue;
+                        result = JsonConvert.DeserializeObject<Page<Domain.Totvs.Dtos.Reads.Products.Promotions.Promotion>>(response.Content ?? String.Empty);
+
+                        // DateParseHandling.None: o JSON gravado e o hash ficam com as datas como a API mandou
+                        using var reader = new JsonTextReader(new StringReader(response.Content!)) { DateParseHandling = DateParseHandling.None };
+                        json = (JObject.Load(reader)["items"] as JArray) ?? [];
+                    }
+                    catch (JsonException)
+                    {
+                        // result continua null: tratado abaixo como resposta inválida
                     }
 
-                    break;
-                }
-
-                if (response is null || !response.IsSuccess)
-                {
-                    if (response is not null)
+                    if (result?.items is null || json.Count != result.items.Count)
                     {
                         var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                        _logger.AddMessage($"Erro da API Totvs em product/v2/promotion (empresa {company.doc_company}, loja {branchCode}, página {page}): {response.StatusCode} {body}");
+                        _logger.AddMessage($"Resposta inválida da API Totvs em product/v2/promotion (empresa {company.doc_company}, loja {branchCode}, página {page}): {body}");
+
+                        return total;
                     }
 
-                    // as páginas já gravadas ficam; a próxima execução relê a loja inteira
-                    return total;
-                }
-
-                Page<Domain.Totvs.Dtos.Reads.Products.Promotions.Promotion>? result = null;
-                JArray json = [];
-
-                try
-                {
-                    result = JsonConvert.DeserializeObject<Page<Domain.Totvs.Dtos.Reads.Products.Promotions.Promotion>>(response.Content ?? String.Empty);
-
-                    // DateParseHandling.None: o JSON gravado e o hash ficam com as datas como a API mandou
-                    using var reader = new JsonTextReader(new StringReader(response.Content!)) { DateParseHandling = DateParseHandling.None };
-                    json = (JObject.Load(reader)["items"] as JArray) ?? [];
-                }
-                catch (JsonException)
-                {
-                    // result continua null: tratado abaixo como resposta inválida
-                }
-
-                if (result?.items is null || json.Count != result.items.Count)
-                {
-                    var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                    _logger.AddMessage($"Resposta inválida da API Totvs em product/v2/promotion (empresa {company.doc_company}, loja {branchCode}, página {page}): {body}");
-
-                    return total;
-                }
-
-                if (result.items.Count > 0)
-                {
-                    // o que já está gravado da loja, com o hash de cada item (sem cache: a tabela guarda o hash, T9)
-                    stored ??= (await _totvsProductPricesRepository.GetPromotionsHashes(company.doc_company!, branchCode))
-                        .Where(x => x != null)
-                        .GroupBy(x => (x!.promotionCode, x.productCode))
-                        .ToDictionary(g => g.Key, g => g.First()!.json_hash);
-
-                    // valida, monta as entidades (com o mesmo horário de lote e o hash do JSON) e grava só os itens novos ou com hash diferente do
-                    // gravado. Devolve a quantidade de itens gravados.
-                    List<(Domain.Totvs.Dtos.Reads.Products.Promotions.Promotion dto, string json)> items = result.items.Select((x, i) => (x, ((JObject)json[i]).ToString(Formatting.None))).ToList();
-
-                    var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Products.Promotions.Promotion record, string json)>();
-
-                    foreach (var item in items
-                        .Select(x => (x.dto, x.json, key: (ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.promotionCode), ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.productCode))))
-                        .Where(x => x.key.Item1 != 0 && x.key.Item2 != 0)
-                        .GroupBy(x => x.key)
-                        .Select(g => g.Last()))
+                    if (result.items.Count > 0)
                     {
-                        var hash = _logger.ComputeSha256Hash(item.json);
+                        // o que já está gravado da loja, com o hash de cada item (sem cache: a tabela guarda o hash, T9)
+                        stored ??= (await _totvsProductPricesRepository.GetPromotionsHashes(company.doc_company!, branchCode))
+                            .Where(x => x != null)
+                            .GroupBy(x => (x!.promotionCode, x.productCode))
+                            .ToDictionary(g => g.Key, g => g.First()!.json_hash);
 
-                        // sem data de alteração confiável: só regrava quando o JSON mudou
-                        if (stored.TryGetValue(item.key, out var storedHash) && storedHash == hash)
-                            continue;
+                        // valida, monta as entidades (com o mesmo horário de lote e o hash do JSON) e grava só os itens novos ou com hash diferente do
+                        // gravado. Devolve a quantidade de itens gravados.
+                        List<(Domain.Totvs.Dtos.Reads.Products.Promotions.Promotion dto, string json)> items = result.items.Select((x, i) => (x, ((JObject)json[i]).ToString(Formatting.None))).ToList();
 
-                        var validations = _promotionValidator.Validate(item.dto);
+                        var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Products.Promotions.Promotion record, string json)>();
 
-                        if (validations.Errors.Count > 0)
+                        foreach (var item in items
+                            .Select(x => (x.dto, x.json, key: (ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.promotionCode), ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.productCode))))
+                            .Where(x => x.key.Item1 != 0 && x.key.Item2 != 0)
+                            .GroupBy(x => x.key)
+                            .Select(g => g.Last()))
                         {
-                            var message = String.Empty;
-                            validations.Errors.ForEach(s => message += $"promoção {item.key.Item1} da loja {branchCode}, produto {item.key.Item2}: {s.ErrorMessage}\n");
-                            _logger.AddMessage(message);
+                            var hash = _logger.ComputeSha256Hash(item.json);
+
+                            // sem data de alteração confiável: só regrava quando o JSON mudou
+                            if (stored.TryGetValue(item.key, out var storedHash) && storedHash == hash)
+                                continue;
+
+                            var validations = _promotionValidator.Validate(item.dto);
+
+                            if (validations.Errors.Count > 0)
+                            {
+                                var message = String.Empty;
+                                validations.Errors.ForEach(s => message += $"promoção {item.key.Item1} da loja {branchCode}, produto {item.key.Item2}: {s.ErrorMessage}\n");
+                                _logger.AddMessage(message);
+                            }
+
+                            _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Promotions.Promotion(company.doc_company!, batchTime, hash, item.dto), item.json));
                         }
 
-                        _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Promotions.Promotion(company.doc_company!, batchTime, hash, item.dto), item.json));
-                    }
-
-                    if (_listSomenteNovos.Count > 0)
-                    {
-                        await _totvsProductPricesRepository.BulkInsertIntoTotvsPromotions(_listSomenteNovos.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
-
-                        foreach (var (record, recordJson) in _listSomenteNovos)
+                        if (_listSomenteNovos.Count > 0)
                         {
-                            _logger.AddRecord($"{record.branchCode}|{record.promotionCode}|{record.productCode}", recordJson);
-                            stored[(record.promotionCode, record.productCode)] = record.json_hash;
-                        }
+                            await _totvsProductPricesRepository.BulkInsertIntoTotvsPromotions(_listSomenteNovos.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
 
-                        total += _listSomenteNovos.Count;
-                    }
-                }
+                            foreach (var (record, recordJson) in _listSomenteNovos)
+                            {
+                                _logger.AddRecord($"{record.branchCode}|{record.promotionCode}|{record.productCode}", recordJson);
+                                stored[(record.promotionCode, record.productCode)] = record.json_hash;
+                            }
 
-                totalPages = result.totalPages;
-                page++;
-            }
-
-            return total;
-        }
-
-        /// <summary>
-        /// todos os códigos de preço do cadastro (PRDFL003), descobertos pela própria API e guardados em cache (2 h / 30 min): os códigos de 1 a 999 vão numa chamada, e a API
-        /// responde 400 com "Price N not found" para cada um que não existe (testado: 1 a 6); o resto é a lista
-        /// </summary>
-        private async Task<List<int>?> GetPriceCodes(Domain.Totvs.Entities.Parameters.Company company)
-        {
-            var key = $"{PriceCodesKey}:{company.doc_company}";
-
-            if (_cache.TryGetValue(key, out List<int>? cached) && cached is not null)
-                return cached;
-
-            var (baseBranchCode, brandClassificationCode) = TotvsProductBrands.BaseBranchCodes.First();
-            var allCodes = Enumerable.Range(1, MaxValueCode).ToList();
-
-            var requestBody = JsonConvert.SerializeObject(new
-            {
-                filter = new
-                {
-                    productCodeList = new[] { 1 }
-                },
-                option = new
-                {
-                    prices = new[] { new { branchCode = baseBranchCode, priceCodeList = allCodes, isPromotionalPrice = false, isScheduledPrice = false } }
-                },
-                page = 1,
-                pageSize = 1
-            });
-
-            var response = await SendValueRequest(company, "product/v2/prices/search", requestBody);
-            var codes = new List<int>();
-
-            if (response is not null && (response.IsSuccess || response.StatusCode == 400))
-            {
-                // a validação dos códigos vem antes da busca: o produto do filtro não precisa existir
-                var missing = new HashSet<int>();
-                var other = false;
-
-                // o corpo do 400 é a lista de DomainNotificationMessage (code, message), lida como no TotvsAccountsPayableService
-                try
-                {
-                    if (JToken.Parse(response.Content ?? String.Empty) is JArray messages)
-                    {
-                        foreach (var message in messages.OfType<JObject>())
-                        {
-                            var match = Regex.Match((string?)message["message"] ?? String.Empty, @"^Price (\d+) not found");
-
-                            if ((string?)message["code"] == "NotFound" && match.Success)
-                                missing.Add(int.Parse(match.Groups[1].Value));
-                            else
-                                other = true;
+                            total += _listSomenteNovos.Count;
                         }
                     }
-                    else
-                        other = true;   // 200 com os 999 códigos: não acontece; tratado como falha da descoberta
-                }
-                catch (JsonReaderException)
-                {
-                    other = true;
+
+                    totalPages = result.totalPages;
+                    page++;
                 }
 
-                codes = other ? [] : allCodes.Where(x => !missing.Contains(x)).ToList();
+                return total;
             }
-
-            if (codes.Count == 0)
-            {
-                var body = response?.Content?.Length > 800 ? response.Content[..800] : response?.Content;
-                _logger.AddMessage($"Empresa {company.doc_company}: não foi possível descobrir os códigos de preço em product/v2/prices/search ({response?.StatusCode} {body}).");
-
-                return null;
-            }
-
-            _cache.Set(key, codes, new MemoryCacheEntryOptions
-            {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(2),
-                SlidingExpiration = TimeSpan.FromMinutes(30)
-            });
-
-            return codes;
-        }
-
-        /// <summary>
-        /// todos os códigos de custo do cadastro (PRDFL003), descobertos pela própria API e guardados em cache (2 h / 30 min): os códigos de 1 a 999 vão numa chamada, e a API
-        /// responde 400 com "Cost N not found" para cada um que não existe (testado: 1 a 8); o resto é a lista
-        /// </summary>
-        private async Task<List<int>?> GetCostCodes(Domain.Totvs.Entities.Parameters.Company company)
-        {
-            var key = $"{CostCodesKey}:{company.doc_company}";
-
-            if (_cache.TryGetValue(key, out List<int>? cached) && cached is not null)
-                return cached;
-
-            var (baseBranchCode, brandClassificationCode) = TotvsProductBrands.BaseBranchCodes.First();
-            var allCodes = Enumerable.Range(1, MaxValueCode).ToList();
-
-            var requestBody = JsonConvert.SerializeObject(new
-            {
-                filter = new
-                {
-                    productCodeList = new[] { 1 }
-                },
-                option = new
-                {
-                    costs = new[] { new { branchCode = baseBranchCode, costCodeList = allCodes } }
-                },
-                page = 1,
-                pageSize = 1
-            });
-
-            var response = await SendValueRequest(company, "product/v2/costs/search", requestBody);
-            var codes = new List<int>();
-
-            if (response is not null && (response.IsSuccess || response.StatusCode == 400))
-            {
-                // a validação dos códigos vem antes da busca: o produto do filtro não precisa existir
-                var missing = new HashSet<int>();
-                var other = false;
-
-                // o corpo do 400 é a lista de DomainNotificationMessage (code, message), lida como no TotvsAccountsPayableService
-                try
-                {
-                    if (JToken.Parse(response.Content ?? String.Empty) is JArray messages)
-                    {
-                        foreach (var message in messages.OfType<JObject>())
-                        {
-                            var match = Regex.Match((string?)message["message"] ?? String.Empty, @"^Cost (\d+) not found");
-
-                            if ((string?)message["code"] == "NotFound" && match.Success)
-                                missing.Add(int.Parse(match.Groups[1].Value));
-                            else
-                                other = true;
-                        }
-                    }
-                    else
-                        other = true;   // 200 com os 999 códigos: não acontece; tratado como falha da descoberta
-                }
-                catch (JsonReaderException)
-                {
-                    other = true;
-                }
-
-                codes = other ? [] : allCodes.Where(x => !missing.Contains(x)).ToList();
-            }
-
-            if (codes.Count == 0)
-            {
-                var body = response?.Content?.Length > 800 ? response.Content[..800] : response?.Content;
-                _logger.AddMessage($"Empresa {company.doc_company}: não foi possível descobrir os códigos de custo em product/v2/costs/search ({response?.StatusCode} {body}).");
-
-                return null;
-            }
-
-            _cache.Set(key, codes, new MemoryCacheEntryOptions
-            {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(2),
-                SlidingExpiration = TimeSpan.FromMinutes(30)
-            });
-
-            return codes;
         }
 
         /// <summary>
@@ -1193,7 +1169,9 @@ namespace Application.Totvs.Services
                 .Clear()
                 .AddLog(job);
 
-            var key = ProductsKey(body.products!.Select(x => x.productCode!.Value));
+            // códigos dos produtos separados por vírgula, cortados em 400 caracteres
+            var key = String.Join(",", body.products!.Select(x => x.productCode!.Value));
+            key = key.Length > 400 ? key[..400] : key;
 
             try
             {
@@ -1260,6 +1238,10 @@ namespace Application.Totvs.Services
                 _logger.SetLogEndDate();
                 await _logger.CommitAllChanges();
             }
+
+            // lista da configuração separada por vírgula, sem espaços nem diferença de maiúsculas
+            static HashSet<string> SettingList(string? setting) =>
+                (setting ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(x => x.ToUpperInvariant()).ToHashSet();
         }
 
         // valores e itens de promoção (§5.7): a loja precisa ser da empresa; com a promoção em TotvsPromotions, ela precisa estar aberta (A) e, na
@@ -1316,17 +1298,6 @@ namespace Application.Totvs.Services
                 _logger.SetLogEndDate();
                 await _logger.CommitAllChanges();
             }
-        }
-
-        // lista da configuração separada por vírgula, sem espaços nem diferença de maiúsculas
-        private static HashSet<string> SettingList(string? setting) =>
-            (setting ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(x => x.ToUpperInvariant()).ToHashSet();
-
-        private static string ProductsKey(IEnumerable<int> productCodes)
-        {
-            var key = String.Join(",", productCodes);
-
-            return key.Length > 400 ? key[..400] : key;
         }
     }
 }

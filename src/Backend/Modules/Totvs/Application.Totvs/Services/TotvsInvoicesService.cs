@@ -1192,6 +1192,27 @@ namespace Application.Totvs.Services
                 response = Truncate(response.Content),
                 retryAfterSeconds = response.Headers.TryGetValue("Retry-After", out var retryAfter) && int.TryParse(retryAfter, out var seconds) ? seconds : null
             };
+
+            // as mensagens da Totvs (lista de DomainNotificationMessage), como no TotvsAccountsPayableService
+            static string TotvsMessage(ApiResponse response)
+            {
+                try
+                {
+                    if (!String.IsNullOrWhiteSpace(response.Content) && JToken.Parse(response.Content) is JArray messages)
+                    {
+                        var text = String.Join(" | ", messages.OfType<JObject>().Select(m => $"{m["code"]}: {m["message"]}").Where(m => m != ": "));
+
+                        if (!String.IsNullOrEmpty(text))
+                            return text;
+                    }
+                }
+                catch (JsonReaderException)
+                {
+                    // corpo em texto: usa o corpo como veio
+                }
+
+                return String.IsNullOrWhiteSpace(response.Content) ? $"A Totvs devolveu {response.StatusCode} sem corpo." : Truncate(response.Content)!;
+            }
         }
 
         private Domain.Totvs.Dtos.Writes.Result CompanyNotFound(string doc_company, string key)
@@ -1228,29 +1249,6 @@ namespace Application.Totvs.Services
         }
 
         private static string? Truncate(string? content) => content?.Length > 800 ? content[..800] : content;
-
-        /// <summary>
-        /// as mensagens da Totvs (lista de DomainNotificationMessage), como no TotvsAccountsPayableService
-        /// </summary>
-        private static string TotvsMessage(ApiResponse response)
-        {
-            try
-            {
-                if (!String.IsNullOrWhiteSpace(response.Content) && JToken.Parse(response.Content) is JArray messages)
-                {
-                    var text = String.Join(" | ", messages.OfType<JObject>().Select(m => $"{m["code"]}: {m["message"]}").Where(m => m != ": "));
-
-                    if (!String.IsNullOrEmpty(text))
-                        return text;
-                }
-            }
-            catch (JsonReaderException)
-            {
-                // corpo em texto: usa o corpo como veio
-            }
-
-            return String.IsNullOrWhiteSpace(response.Content) ? $"A Totvs devolveu {response.StatusCode} sem corpo." : Truncate(response.Content)!;
-        }
 
         // status das leituras sem persistência (§8.1)
         private static class StatusCodes

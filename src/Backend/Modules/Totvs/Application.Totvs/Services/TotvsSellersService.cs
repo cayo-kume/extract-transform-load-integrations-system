@@ -401,114 +401,112 @@ namespace Application.Totvs.Services
                 _logger.SetLogEndDate();
                 await _logger.CommitAllChanges();
             }
-        }
 
-        /// <summary>
-        /// lê todas as páginas de uma das quatro rotas de região de atuação (Page/PageSize, sem filtro de data). Devolve cada item
-        /// com o seu JSON, sem o maxChangeFilterDate (que, preenchido, mudaria o hash a cada execução), ou null se alguma página
-        /// falhou (a mensagem vai para o log)
-        /// </summary>
-        private async Task<List<(T dto, JObject json)>?> GetOperationalAreaPages<T>(Domain.Totvs.Entities.Parameters.Company company, string route)
-        {
-            var items = new List<(T dto, JObject json)>();
-            var page = 1;
-            var totalPages = 1;
-
-            while (page <= totalPages)
+            // lê todas as páginas de uma das quatro rotas de região de atuação (Page/PageSize, sem filtro de data). Devolve cada item
+            // com o seu JSON, sem o maxChangeFilterDate (que, preenchido, mudaria o hash a cada execução), ou null se alguma página
+            // falhou (a mensagem vai para o log)
+            async Task<List<(T dto, JObject json)>?> GetOperationalAreaPages<T>(Domain.Totvs.Entities.Parameters.Company company, string route)
             {
-                var query = new Dictionary<string, string>
+                var items = new List<(T dto, JObject json)>();
+                var page = 1;
+                var totalPages = 1;
+
+                while (page <= totalPages)
                 {
-                    { "Page", page.ToString() },
-                    { "PageSize", OperationalAreasPageSize.ToString() }
-                };
-
-                // uma nova tentativa: 401 renova o token, 429 espera o Retry-After e 502/503/504 espera 10 s
-                ApiResponse? response = null;
-
-                for (var attempt = 1; attempt <= 2; attempt++)
-                {
-                    var token = await _totvsService.GetToken(company);
-
-                    if (token is null)
-                        break;   // a mensagem do login já foi para o log
-
-                    response = await _apiClient.SendAsync(
-                        HttpMethod.Get,
-                        route,
-                        headers: new Dictionary<string, string> { { "Authorization", $"Bearer {token}" } },
-                        queryParams: query
-                    );
-
-                    if (attempt == 1 && response.StatusCode == 401)
+                    var query = new Dictionary<string, string>
                     {
-                        _totvsService.RemoveToken(company);
-                        continue;
+                        { "Page", page.ToString() },
+                        { "PageSize", OperationalAreasPageSize.ToString() }
+                    };
+
+                    // uma nova tentativa: 401 renova o token, 429 espera o Retry-After e 502/503/504 espera 10 s
+                    ApiResponse? response = null;
+
+                    for (var attempt = 1; attempt <= 2; attempt++)
+                    {
+                        var token = await _totvsService.GetToken(company);
+
+                        if (token is null)
+                            break;   // a mensagem do login já foi para o log
+
+                        response = await _apiClient.SendAsync(
+                            HttpMethod.Get,
+                            route,
+                            headers: new Dictionary<string, string> { { "Authorization", $"Bearer {token}" } },
+                            queryParams: query
+                        );
+
+                        if (attempt == 1 && response.StatusCode == 401)
+                        {
+                            _totvsService.RemoveToken(company);
+                            continue;
+                        }
+
+                        if (attempt == 1 && response.StatusCode == 429)
+                        {
+                            var seconds = response.Headers.TryGetValue("Retry-After", out var retryAfter) && int.TryParse(retryAfter, out var value) ? value : 5;
+                            await Task.Delay(TimeSpan.FromSeconds(Math.Clamp(seconds, 1, 60)));
+                            continue;
+                        }
+
+                        if (attempt == 1 && response.StatusCode is 502 or 503 or 504)
+                        {
+                            await Task.Delay(TimeSpan.FromSeconds(10));
+                            continue;
+                        }
+
+                        break;
                     }
 
-                    if (attempt == 1 && response.StatusCode == 429)
+                    if (response is null || !response.IsSuccess)
                     {
-                        var seconds = response.Headers.TryGetValue("Retry-After", out var retryAfter) && int.TryParse(retryAfter, out var value) ? value : 5;
-                        await Task.Delay(TimeSpan.FromSeconds(Math.Clamp(seconds, 1, 60)));
-                        continue;
+                        if (response is not null)
+                        {
+                            var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
+                            _logger.AddMessage($"Erro da API Totvs em {route} (empresa {company.doc_company}, página {page}): {response.StatusCode} {body}");
+                        }
+
+                        return null;
                     }
 
-                    if (attempt == 1 && response.StatusCode is 502 or 503 or 504)
+                    Page<T>? result = null;
+                    JArray json = [];
+
+                    try
                     {
-                        await Task.Delay(TimeSpan.FromSeconds(10));
-                        continue;
+                        result = JsonConvert.DeserializeObject<Page<T>>(response.Content ?? String.Empty);
+
+                        // DateParseHandling.None: o JSON gravado e o hash ficam com as datas como a API mandou
+                        using var reader = new JsonTextReader(new StringReader(response.Content!)) { DateParseHandling = DateParseHandling.None };
+                        json = (JObject.Load(reader)["items"] as JArray) ?? [];
+                    }
+                    catch (JsonException)
+                    {
+                        // result continua null: tratado abaixo como resposta inválida
                     }
 
-                    break;
-                }
-
-                if (response is null || !response.IsSuccess)
-                {
-                    if (response is not null)
+                    if (result?.items is null || json.Count != result.items.Count)
                     {
                         var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                        _logger.AddMessage($"Erro da API Totvs em {route} (empresa {company.doc_company}, página {page}): {response.StatusCode} {body}");
+                        _logger.AddMessage($"Resposta inválida da API Totvs em {route} (empresa {company.doc_company}, página {page}): {body}");
+
+                        return null;
                     }
 
-                    return null;
+                    // cada item pareado com o seu JSON pela posição
+                    for (var i = 0; i < json.Count; i++)
+                    {
+                        var item = (JObject)json[i];
+                        item.Remove("maxChangeFilterDate");
+                        items.Add((result.items[i], item));
+                    }
+
+                    totalPages = result.totalPages;
+                    page++;
                 }
 
-                Page<T>? result = null;
-                JArray json = [];
-
-                try
-                {
-                    result = JsonConvert.DeserializeObject<Page<T>>(response.Content ?? String.Empty);
-
-                    // DateParseHandling.None: o JSON gravado e o hash ficam com as datas como a API mandou
-                    using var reader = new JsonTextReader(new StringReader(response.Content!)) { DateParseHandling = DateParseHandling.None };
-                    json = (JObject.Load(reader)["items"] as JArray) ?? [];
-                }
-                catch (JsonException)
-                {
-                    // result continua null: tratado abaixo como resposta inválida
-                }
-
-                if (result?.items is null || json.Count != result.items.Count)
-                {
-                    var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                    _logger.AddMessage($"Resposta inválida da API Totvs em {route} (empresa {company.doc_company}, página {page}): {body}");
-
-                    return null;
-                }
-
-                // cada item pareado com o seu JSON pela posição
-                for (var i = 0; i < json.Count; i++)
-                {
-                    var item = (JObject)json[i];
-                    item.Remove("maxChangeFilterDate");
-                    items.Add((result.items[i], item));
-                }
-
-                totalPages = result.totalPages;
-                page++;
+                return items;
             }
-
-            return items;
         }
     }
 }

@@ -256,6 +256,26 @@ namespace Application.Totvs.Services
             _logger.AddMessage($"Concluída com sucesso: {routeName} ({key}) devolvido.");
 
             return new Domain.Totvs.Dtos.Writes.Result { success = true, key = key, statusCode = 200, apiCalled = true, data = data };
+
+            // o 400 de chave inexistente da Totvs (KeyNotFound no xml-contents e nas buscas por chave, NotFound no list-balance-bonus) é um 404
+            static bool IsNotFound(ApiResponse response)
+            {
+                if (response.StatusCode == 404)
+                    return true;
+
+                if (response.StatusCode != 400 || String.IsNullOrWhiteSpace(response.Content))
+                    return false;
+
+                try
+                {
+                    return Newtonsoft.Json.Linq.JToken.Parse(response.Content) is Newtonsoft.Json.Linq.JArray messages
+                        && messages.OfType<Newtonsoft.Json.Linq.JObject>().Any(m => (string?)m["code"] is "KeyNotFound" or "NotFound" or "PathParamNotFound");
+                }
+                catch (JsonReaderException)
+                {
+                    return false;
+                }
+            }
         }
 
         public async Task<Domain.Totvs.Dtos.Writes.Result> Write(Company company, Domain.Totvs.Enums.EnumJob job, string user_name, string key, HttpMethod method, string route, object? body, string checkHint, bool repeatLock = false, object? loggedBody = null)
@@ -351,6 +371,31 @@ namespace Application.Totvs.Services
             _logger.AddMessage($"Concluída com sucesso: {routeName} ({key}, empresa {company.doc_company}).");
 
             return new Domain.Totvs.Dtos.Writes.Result { success = true, key = key, statusCode = response.StatusCode, apiCalled = true, response = response.Content };
+
+            // trava de repetição (T5): a mesma rota + chave + corpo nos últimos 10 minutos, aceita pela Totvs ou sem saber se ela gravou (5xx ou
+            // exceção), volta 409 sem chamar a API. A recusa da Totvs (4xx) e o login que falhou não travam: nada foi gravado
+            async Task<Domain.Totvs.Dtos.Writes.Result?> RepeatedWrite(Company company, string key, string route, string? requestBody, string checkHint)
+            {
+                // request_date é gravado no horário de Brasília (Request)
+                var since = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time")).AddMinutes(-RepeatLockMinutes);
+
+                // o banco guarda o corpo mascarado (T6): a comparação é com a mesma máscara, e a chave inteira separa quem a máscara igualaria
+                var maskedBody = TotvsMasking.Body(requestBody);
+
+                var previous = (await _totvsRepository.GetRecentRequests(company.doc_company!, route, key, since))
+                    .FirstOrDefault(x => x is not null && x.request_body == maskedBody && (x.is_success || x.status_code == 0 || x.status_code >= 500));
+
+                if (previous is null)
+                    return null;
+
+                var message = previous.is_success
+                    ? $"A mesma escrita foi aceita pela Totvs às {previous.request_date:HH:mm:ss}: repetir em menos de {RepeatLockMinutes} minutos é recusado."
+                    : $"A mesma escrita ficou sem resposta certa às {previous.request_date:HH:mm:ss} e pode ter sido feita. {checkHint}";
+
+                _logger.AddMessage($"{route.Split('?')[0]} ({key}, empresa {company.doc_company}): repetição recusada. {message}");
+
+                return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, statusCode = 409, message = message };
+            }
         }
 
         public Domain.Totvs.Dtos.Writes.Result WriteDisabled(string group, string key)
@@ -360,31 +405,6 @@ namespace Application.Totvs.Services
             _logger.AddMessage(message);
 
             return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, message = message };
-        }
-
-        // trava de repetição (T5): a mesma rota + chave + corpo nos últimos 10 minutos, aceita pela Totvs ou sem saber se ela gravou (5xx ou
-        // exceção), volta 409 sem chamar a API. A recusa da Totvs (4xx) e o login que falhou não travam: nada foi gravado
-        private async Task<Domain.Totvs.Dtos.Writes.Result?> RepeatedWrite(Company company, string key, string route, string? requestBody, string checkHint)
-        {
-            // request_date é gravado no horário de Brasília (Request)
-            var since = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time")).AddMinutes(-RepeatLockMinutes);
-
-            // o banco guarda o corpo mascarado (T6): a comparação é com a mesma máscara, e a chave inteira separa quem a máscara igualaria
-            var maskedBody = TotvsMasking.Body(requestBody);
-
-            var previous = (await _totvsRepository.GetRecentRequests(company.doc_company!, route, key, since))
-                .FirstOrDefault(x => x is not null && x.request_body == maskedBody && (x.is_success || x.status_code == 0 || x.status_code >= 500));
-
-            if (previous is null)
-                return null;
-
-            var message = previous.is_success
-                ? $"A mesma escrita foi aceita pela Totvs às {previous.request_date:HH:mm:ss}: repetir em menos de {RepeatLockMinutes} minutos é recusado."
-                : $"A mesma escrita ficou sem resposta certa às {previous.request_date:HH:mm:ss} e pode ter sido feita. {checkHint}";
-
-            _logger.AddMessage($"{route.Split('?')[0]} ({key}, empresa {company.doc_company}): repetição recusada. {message}");
-
-            return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, statusCode = 409, message = message };
         }
 
         public Domain.Totvs.Dtos.Writes.Result CompanyNotFound(string doc_company, string key)
@@ -402,26 +422,6 @@ namespace Application.Totvs.Services
             _logger.AddMessage(message);
 
             return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, statusCode = 0, apiCalled = false, message = message };
-        }
-
-        // o 400 de chave inexistente da Totvs (KeyNotFound no xml-contents e nas buscas por chave, NotFound no list-balance-bonus) é um 404
-        private static bool IsNotFound(ApiResponse response)
-        {
-            if (response.StatusCode == 404)
-                return true;
-
-            if (response.StatusCode != 400 || String.IsNullOrWhiteSpace(response.Content))
-                return false;
-
-            try
-            {
-                return Newtonsoft.Json.Linq.JToken.Parse(response.Content) is Newtonsoft.Json.Linq.JArray messages
-                    && messages.OfType<Newtonsoft.Json.Linq.JObject>().Any(m => (string?)m["code"] is "KeyNotFound" or "NotFound" or "PathParamNotFound");
-            }
-            catch (JsonReaderException)
-            {
-                return false;
-            }
         }
 
         // as mensagens da Totvs (lista de DomainNotificationMessage), como no TotvsAccountsPayableService

@@ -287,6 +287,11 @@ namespace Application.Totvs.Services
                 _logger.SetLogEndDate();
                 await _logger.CommitAllChanges();
             }
+
+            // chave da duplicata: o mesmo duplicateCode volta uma vez por parcela e pode se repetir entre fornecedores e lojas (testado)
+            static (int branchCode, int supplierCode, long duplicateCode, int installmentCode) DuplicateKey(Domain.Totvs.Dtos.Reads.AccountsPayable.Duplicate x) =>
+                (ConverterValidatorsExtensions.ConvertToInt32Validation(x.branchCode), ConverterValidatorsExtensions.ConvertToInt32Validation(x.supplierCode),
+                 ConverterValidatorsExtensions.ConvertToInt64Validation(x.duplicateCode), ConverterValidatorsExtensions.ConvertToInt32Validation(x.installmentCode));
         }
 
         public async Task<bool?> PostSearchComissionsPaid()
@@ -494,21 +499,12 @@ namespace Application.Totvs.Services
                 _logger.SetLogEndDate();
                 await _logger.CommitAllChanges();
             }
+
+            // chave do fechamento de comissão: loja e número do fechamento + CPF/CNPJ do comissionado (uma linha por comissionado)
+            static (int, int, string) CommissionKey(Domain.Totvs.Dtos.Reads.AccountsPayable.CommissionPaid x) =>
+                (ConverterValidatorsExtensions.ConvertToInt32Validation(x.closingBranchCode), ConverterValidatorsExtensions.ConvertToInt32Validation(x.closingCode),
+                 ConverterValidatorsExtensions.StringLengthValidation(x.commissionedCpfCnpj, 14));
         }
-
-        /// <summary>
-        /// chave da duplicata: o mesmo duplicateCode volta uma vez por parcela e pode se repetir entre fornecedores e lojas (testado)
-        /// </summary>
-        private static (int branchCode, int supplierCode, long duplicateCode, int installmentCode) DuplicateKey(Domain.Totvs.Dtos.Reads.AccountsPayable.Duplicate x) =>
-            (ConverterValidatorsExtensions.ConvertToInt32Validation(x.branchCode), ConverterValidatorsExtensions.ConvertToInt32Validation(x.supplierCode),
-             ConverterValidatorsExtensions.ConvertToInt64Validation(x.duplicateCode), ConverterValidatorsExtensions.ConvertToInt32Validation(x.installmentCode));
-
-        /// <summary>
-        /// chave do fechamento de comissão: loja e número do fechamento + CPF/CNPJ do comissionado (uma linha por comissionado)
-        /// </summary>
-        private static (int, int, string) CommissionKey(Domain.Totvs.Dtos.Reads.AccountsPayable.CommissionPaid x) =>
-            (ConverterValidatorsExtensions.ConvertToInt32Validation(x.closingBranchCode), ConverterValidatorsExtensions.ConvertToInt32Validation(x.closingCode),
-             ConverterValidatorsExtensions.StringLengthValidation(x.commissionedCpfCnpj, 14));
 
         /// <summary>
         /// troca o estágio de uma parcela (docs/PLANO-TOTVS-METODOS-FALTANTES.md §1.2 e §2.3). A Totvs valida a transição: a
@@ -641,6 +637,31 @@ namespace Application.Totvs.Services
                 _logger.SetLogEndDate();
                 await _logger.CommitAllChanges();
             }
+
+            // mensagens da Totvs num erro: o 400 traz DomainNotificationMessage[] (code, message, detailedMessage); outro corpo vai
+            // como veio, cortado
+            static string TotvsMessage(ApiResponse response)
+            {
+                try
+                {
+                    if (!String.IsNullOrWhiteSpace(response.Content) && JToken.Parse(response.Content) is JArray messages)
+                    {
+                        var text = String.Join(" | ", messages.OfType<JObject>().Select(m => $"{m["code"]}: {m["message"]}").Where(m => m != ": "));
+
+                        if (!String.IsNullOrEmpty(text))
+                            return text;
+                    }
+                }
+                catch (JsonReaderException)
+                {
+                    // corpo em texto: usa o corpo como veio
+                }
+
+                if (String.IsNullOrWhiteSpace(response.Content))
+                    return $"A Totvs devolveu {response.StatusCode} sem corpo.";
+
+                return response.Content.Length > 800 ? response.Content[..800] : response.Content;
+            }
         }
 
         /// <summary>
@@ -717,33 +738,6 @@ namespace Application.Totvs.Services
                 _logger.SetLogEndDate();
                 await _logger.CommitAllChanges();
             }
-        }
-
-        /// <summary>
-        /// mensagens da Totvs num erro: o 400 traz DomainNotificationMessage[] (code, message, detailedMessage); outro corpo vai
-        /// como veio, cortado
-        /// </summary>
-        private static string TotvsMessage(ApiResponse response)
-        {
-            try
-            {
-                if (!String.IsNullOrWhiteSpace(response.Content) && JToken.Parse(response.Content) is JArray messages)
-                {
-                    var text = String.Join(" | ", messages.OfType<JObject>().Select(m => $"{m["code"]}: {m["message"]}").Where(m => m != ": "));
-
-                    if (!String.IsNullOrEmpty(text))
-                        return text;
-                }
-            }
-            catch (JsonReaderException)
-            {
-                // corpo em texto: usa o corpo como veio
-            }
-
-            if (String.IsNullOrWhiteSpace(response.Content))
-                return $"A Totvs devolveu {response.StatusCode} sem corpo.";
-
-            return response.Content.Length > 800 ? response.Content[..800] : response.Content;
         }
     }
 }
