@@ -520,7 +520,44 @@ namespace Application.Totvs.Services
                         NullableConverters.ToNullableDateTime(x.dto.maxChangeFilterDate) <= y.maxChangeFilterDate
                     );
 
-                    totalInseridos += await SaveSaleDiscountTypes(company.doc_company!, batchTime, items, itemsCache);
+                    // valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa. Sem a chave, o registro vai
+                    // para o log e não é gravado. Devolve a quantidade de registros gravados.
+                    var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.SalesOrders.Catalogs.SaleDiscountType record, string json)>();
+
+                    foreach (var item in items)
+                    {
+                        var validations = _saleDiscountTypeValidator.Validate(item.dto);
+
+                        if (validations.Errors.Count > 0)
+                        {
+                            var message = String.Empty;
+                            validations.Errors.ForEach(s => message += $"tipo de desconto {ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.code)}: {s.ErrorMessage}\n");
+                            _logger.AddMessage(message);
+                        }
+
+                        if (ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.code) != 0)
+                            _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.SalesOrders.Catalogs.SaleDiscountType(company.doc_company!, batchTime, item.dto), item.json.ToString(Formatting.None)));
+                    }
+
+                    // o mesmo registro pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
+                    var records = _listSomenteNovos.GroupBy(x => x.record.code).Select(g => g.Last()).ToList();
+
+                    if (records.Count == 0)
+                        continue;
+
+                    await _totvsSalesOrdersRepository.BulkInsertIntoTotvsSaleDiscountTypes(records.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
+
+                    foreach (var (record, json) in records)
+                    {
+                        var key = record.code;
+
+                        _logger.AddRecord(key.ToString(), json);
+
+                        if (itemsCache is not null)
+                            itemsCache[key] = record;
+                    }
+
+                    totalInseridos += records.Count;
                 }
 
                 _logger.AddMessage(
@@ -587,7 +624,44 @@ namespace Application.Totvs.Services
                         NullableConverters.ToNullableDateTime(x.dto.maxChangeFilterDate) <= y.maxChangeFilterDate
                     );
 
-                    totalInseridos += await SaveSaleClassifications(company.doc_company!, batchTime, items, itemsCache);
+                    // valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa. Sem a chave, o registro vai
+                    // para o log e não é gravado. Devolve a quantidade de registros gravados.
+                    var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.SalesOrders.Catalogs.SaleClassification record, string json)>();
+
+                    foreach (var item in items)
+                    {
+                        var validations = _saleClassificationValidator.Validate(item.dto);
+
+                        if (validations.Errors.Count > 0)
+                        {
+                            var message = String.Empty;
+                            validations.Errors.ForEach(s => message += $"classificação {$"{ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.typeCode)}|{(item.dto.code ?? String.Empty).ToUpperInvariant()}"}: {s.ErrorMessage}\n");
+                            _logger.AddMessage(message);
+                        }
+
+                        if (ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.typeCode) != 0 && !String.IsNullOrWhiteSpace(item.dto.code))
+                            _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.SalesOrders.Catalogs.SaleClassification(company.doc_company!, batchTime, item.dto), item.json.ToString(Formatting.None)));
+                    }
+
+                    // o mesmo registro pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
+                    var records = _listSomenteNovos.GroupBy(x => $"{x.record.typeCode}|{x.record.code.ToUpperInvariant()}").Select(g => g.Last()).ToList();
+
+                    if (records.Count == 0)
+                        continue;
+
+                    await _totvsSalesOrdersRepository.BulkInsertIntoTotvsSaleClassifications(records.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
+
+                    foreach (var (record, json) in records)
+                    {
+                        var key = $"{record.typeCode}|{record.code.ToUpperInvariant()}";
+
+                        _logger.AddRecord(key.ToString(), json);
+
+                        if (itemsCache is not null)
+                            itemsCache[key] = record;
+                    }
+
+                    totalInseridos += records.Count;
                 }
 
                 _logger.AddMessage(
@@ -655,7 +729,44 @@ namespace Application.Totvs.Services
                         NullableConverters.ToNullableDateTime(x.dto.maxChangeFilterDate) <= y.maxChangeFilterDate
                     );
 
-                    totalInseridos += await SaveSaleOrderBatches(company.doc_company!, batchTime, items, itemsCache);
+                    // valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa. Sem a chave, o registro vai
+                    // para o log e não é gravado. Devolve a quantidade de registros gravados.
+                    var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.SalesOrders.Catalogs.SaleOrderBatch record, string json)>();
+
+                    foreach (var item in items)
+                    {
+                        var validations = _saleOrderBatchValidator.Validate(item.dto);
+
+                        if (validations.Errors.Count > 0)
+                        {
+                            var message = String.Empty;
+                            validations.Errors.ForEach(s => message += $"lote de pedidos {(item.dto.code ?? String.Empty).ToUpperInvariant()}: {s.ErrorMessage}\n");
+                            _logger.AddMessage(message);
+                        }
+
+                        if (!String.IsNullOrWhiteSpace(item.dto.code))
+                            _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.SalesOrders.Catalogs.SaleOrderBatch(company.doc_company!, batchTime, item.dto), item.json.ToString(Formatting.None)));
+                    }
+
+                    // o mesmo registro pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
+                    var records = _listSomenteNovos.GroupBy(x => x.record.code.ToUpperInvariant()).Select(g => g.Last()).ToList();
+
+                    if (records.Count == 0)
+                        continue;
+
+                    await _totvsSalesOrdersRepository.BulkInsertIntoTotvsSaleOrderBatches(records.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
+
+                    foreach (var (record, json) in records)
+                    {
+                        var key = record.code.ToUpperInvariant();
+
+                        _logger.AddRecord(key.ToString(), json);
+
+                        if (itemsCache is not null)
+                            itemsCache[key] = record;
+                    }
+
+                    totalInseridos += records.Count;
                 }
 
                 _logger.AddMessage(
@@ -747,7 +858,46 @@ namespace Application.Totvs.Services
                             NullableConverters.ToNullableDateTime(x.dto.maxChangeFilterDate) <= y
                         );
 
-                        totalInseridos += await SaveBillingSuggestions(company.doc_company!, _totvsService.GetBatchTime(), items, itemsCache);
+                        // valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
+                        // Devolve a quantidade de sugestões gravadas.
+                        var batchTime = _totvsService.GetBatchTime();
+
+                        var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.SalesOrders.BillingSuggestions.BillingSuggestion record, string json)>();
+
+                        foreach (var item in items)
+                        {
+                            var validations = _billingSuggestionValidator.Validate(item.dto);
+
+                            if (validations.Errors.Count > 0)
+                            {
+                                var message = String.Empty;
+                                validations.Errors.ForEach(s => message += $"sugestão de faturamento {item.dto.branchCode}/{item.dto.suggestionCode}: {s.ErrorMessage}\n");
+                                _logger.AddMessage(message);
+                            }
+
+                            var record = new Domain.Totvs.Entities.Reads.SalesOrders.BillingSuggestions.BillingSuggestion(company.doc_company!, batchTime, item.dto);
+
+                            if (record.branchCode != 0 && record.suggestionCode != 0)
+                                _listSomenteNovos.Add((record, item.json.ToString(Formatting.None)));
+                        }
+
+                        // a mesma sugestão pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
+                        var records = _listSomenteNovos.GroupBy(x => (x.record.branchCode, x.record.suggestionCode)).Select(g => g.Last()).ToList();
+
+                        if (records.Count == 0)
+                            continue;
+
+                        await _totvsSalesOrdersRepository.BulkInsertIntoTotvsBillingSuggestions(records.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
+
+                        foreach (var (record, json) in records)
+                        {
+                            _logger.AddRecord($"{record.branchCode}|{record.suggestionCode}", json);
+
+                            if (itemsCache is not null)
+                                itemsCache[(record.branchCode, record.suggestionCode)] = record.maxChangeFilterDate;
+                        }
+
+                        totalInseridos += records.Count;
                     }
                 }
 
@@ -762,198 +912,6 @@ namespace Application.Totvs.Services
                 _logger.SetLogEndDate();
                 await _logger.CommitAllChanges();
             }
-        }
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
-        /// Devolve a quantidade de sugestões gravadas.
-        /// </summary>
-        private async Task<int> SaveBillingSuggestions(
-            string doc_company,
-            DateTime batchTime,
-            List<(Domain.Totvs.Dtos.Reads.SalesOrders.BillingSuggestions.BillingSuggestion dto, JObject json)> items,
-            Dictionary<(int, int), DateTime?>? itemsCache)
-        {
-            var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.SalesOrders.BillingSuggestions.BillingSuggestion record, string json)>();
-
-            foreach (var item in items)
-            {
-                var validations = _billingSuggestionValidator.Validate(item.dto);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"sugestão de faturamento {item.dto.branchCode}/{item.dto.suggestionCode}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                var record = new Domain.Totvs.Entities.Reads.SalesOrders.BillingSuggestions.BillingSuggestion(doc_company, batchTime, item.dto);
-
-                if (record.branchCode != 0 && record.suggestionCode != 0)
-                    _listSomenteNovos.Add((record, item.json.ToString(Formatting.None)));
-            }
-
-            // a mesma sugestão pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
-            var records = _listSomenteNovos.GroupBy(x => (x.record.branchCode, x.record.suggestionCode)).Select(g => g.Last()).ToList();
-
-            if (records.Count == 0)
-                return 0;
-
-            await _totvsSalesOrdersRepository.BulkInsertIntoTotvsBillingSuggestions(records.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
-
-            foreach (var (record, json) in records)
-            {
-                _logger.AddRecord($"{record.branchCode}|{record.suggestionCode}", json);
-
-                if (itemsCache is not null)
-                    itemsCache[(record.branchCode, record.suggestionCode)] = record.maxChangeFilterDate;
-            }
-
-            return records.Count;
-        }
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa. Sem a chave, o registro vai
-        /// para o log e não é gravado. Devolve a quantidade de registros gravados.
-        /// </summary>
-        private async Task<int> SaveSaleDiscountTypes(
-            string doc_company,
-            DateTime batchTime,
-            List<(Domain.Totvs.Dtos.Reads.SalesOrders.Catalogs.SaleDiscountType dto, JObject json)> items,
-            Dictionary<int, Domain.Totvs.Entities.Reads.SalesOrders.Catalogs.SaleDiscountType>? itemsCache)
-        {
-            var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.SalesOrders.Catalogs.SaleDiscountType record, string json)>();
-
-            foreach (var item in items)
-            {
-                var validations = _saleDiscountTypeValidator.Validate(item.dto);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"tipo de desconto {ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.code)}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                if (ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.code) != 0)
-                    _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.SalesOrders.Catalogs.SaleDiscountType(doc_company, batchTime, item.dto), item.json.ToString(Formatting.None)));
-            }
-
-            // o mesmo registro pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
-            var records = _listSomenteNovos.GroupBy(x => x.record.code).Select(g => g.Last()).ToList();
-
-            if (records.Count == 0)
-                return 0;
-
-            await _totvsSalesOrdersRepository.BulkInsertIntoTotvsSaleDiscountTypes(records.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
-
-            foreach (var (record, json) in records)
-            {
-                var key = record.code;
-
-                _logger.AddRecord(key.ToString(), json);
-
-                if (itemsCache is not null)
-                    itemsCache[key] = record;
-            }
-
-            return records.Count;
-        }
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa. Sem a chave, o registro vai
-        /// para o log e não é gravado. Devolve a quantidade de registros gravados.
-        /// </summary>
-        private async Task<int> SaveSaleClassifications(
-            string doc_company,
-            DateTime batchTime,
-            List<(Domain.Totvs.Dtos.Reads.SalesOrders.Catalogs.SaleClassification dto, JObject json)> items,
-            Dictionary<string, Domain.Totvs.Entities.Reads.SalesOrders.Catalogs.SaleClassification>? itemsCache)
-        {
-            var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.SalesOrders.Catalogs.SaleClassification record, string json)>();
-
-            foreach (var item in items)
-            {
-                var validations = _saleClassificationValidator.Validate(item.dto);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"classificação {$"{ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.typeCode)}|{(item.dto.code ?? String.Empty).ToUpperInvariant()}"}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                if (ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.typeCode) != 0 && !String.IsNullOrWhiteSpace(item.dto.code))
-                    _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.SalesOrders.Catalogs.SaleClassification(doc_company, batchTime, item.dto), item.json.ToString(Formatting.None)));
-            }
-
-            // o mesmo registro pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
-            var records = _listSomenteNovos.GroupBy(x => $"{x.record.typeCode}|{x.record.code.ToUpperInvariant()}").Select(g => g.Last()).ToList();
-
-            if (records.Count == 0)
-                return 0;
-
-            await _totvsSalesOrdersRepository.BulkInsertIntoTotvsSaleClassifications(records.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
-
-            foreach (var (record, json) in records)
-            {
-                var key = $"{record.typeCode}|{record.code.ToUpperInvariant()}";
-
-                _logger.AddRecord(key.ToString(), json);
-
-                if (itemsCache is not null)
-                    itemsCache[key] = record;
-            }
-
-            return records.Count;
-        }
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa. Sem a chave, o registro vai
-        /// para o log e não é gravado. Devolve a quantidade de registros gravados.
-        /// </summary>
-        private async Task<int> SaveSaleOrderBatches(
-            string doc_company,
-            DateTime batchTime,
-            List<(Domain.Totvs.Dtos.Reads.SalesOrders.Catalogs.SaleOrderBatch dto, JObject json)> items,
-            Dictionary<string, Domain.Totvs.Entities.Reads.SalesOrders.Catalogs.SaleOrderBatch>? itemsCache)
-        {
-            var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.SalesOrders.Catalogs.SaleOrderBatch record, string json)>();
-
-            foreach (var item in items)
-            {
-                var validations = _saleOrderBatchValidator.Validate(item.dto);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"lote de pedidos {(item.dto.code ?? String.Empty).ToUpperInvariant()}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                if (!String.IsNullOrWhiteSpace(item.dto.code))
-                    _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.SalesOrders.Catalogs.SaleOrderBatch(doc_company, batchTime, item.dto), item.json.ToString(Formatting.None)));
-            }
-
-            // o mesmo registro pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
-            var records = _listSomenteNovos.GroupBy(x => x.record.code.ToUpperInvariant()).Select(g => g.Last()).ToList();
-
-            if (records.Count == 0)
-                return 0;
-
-            await _totvsSalesOrdersRepository.BulkInsertIntoTotvsSaleOrderBatches(records.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
-
-            foreach (var (record, json) in records)
-            {
-                var key = record.code.ToUpperInvariant();
-
-                _logger.AddRecord(key.ToString(), json);
-
-                if (itemsCache is not null)
-                    itemsCache[key] = record;
-            }
-
-            return records.Count;
         }
 
         /// <summary>

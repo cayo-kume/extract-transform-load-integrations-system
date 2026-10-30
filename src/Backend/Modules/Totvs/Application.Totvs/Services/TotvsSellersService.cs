@@ -219,7 +219,40 @@ namespace Application.Totvs.Services
                         NullableConverters.ToNullableDateTime(x.maxChangeFilterDate) <= y.maxChangeFilterDate
                     );
 
-                    totalInseridos += await SaveSellers(company.doc_company!, batchTime, sellers, sellersJson, sellersCache);
+                    // valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
+                    // Devolve a quantidade de vendedores gravados.
+                    var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.Sellers.Seller>();
+
+                    // o mesmo vendedor pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
+                    foreach (var seller in sellers.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.sellerCode) != 0).GroupBy(x => x.sellerCode).Select(g => g.Last()))
+                    {
+                        var validations = _sellerValidator.Validate(seller);
+
+                        if (validations.Errors.Count > 0)
+                        {
+                            var message = String.Empty;
+                            validations.Errors.ForEach(s => message += $"vendedor {seller.sellerCode}: {s.ErrorMessage}\n");
+                            _logger.AddMessage(message);
+                        }
+
+                        _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.Sellers.Seller(company.doc_company!, batchTime, seller));
+                    }
+
+                    if (_listSomenteNovos.Count == 0)
+                        continue;
+
+                    await _totvsSellersRepository.BulkInsertIntoTotvsSellers(_listSomenteNovos, _logger.GetExecutionGuid());
+
+                    foreach (var record in _listSomenteNovos)
+                    {
+                        if (sellersJson.TryGetValue(record.sellerCode, out var json))
+                            _logger.AddRecord(record.sellerCode.ToString(), json);
+
+                        if (sellersCache is not null)
+                            sellersCache[record.sellerCode] = record;
+                    }
+
+                    totalInseridos += _listSomenteNovos.Count;
                 }
 
                 _logger.AddMessage(
@@ -280,7 +313,81 @@ namespace Application.Totvs.Services
                         .GroupBy(x => x!.operationalAreaCode)
                         .ToDictionary(g => g.Key, g => g.First()!.json_hash);
 
-                    totalInseridos += await SaveOperationalAreas(company.doc_company!, batchTime, areas, states, ceps, cities, stored);
+                    // agrupa estados, CEPs e cidades por região, calcula o hash da região agrupada e grava só as novas ou com hash diferente
+                    // do gravado (com as filhas). Filha de região que não veio no operational-area vai para o log e é descartada (a FK
+                    // recusaria). Devolve a quantidade de regiões gravadas.
+                    static int AreaCode(string? code) => ConverterValidatorsExtensions.ConvertToInt32Validation(code);
+
+                    // a mesma região pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
+                    var areasByCode = areas
+                        .Where(x => AreaCode(x.dto.operationalAreaCode) != 0)
+                        .GroupBy(x => AreaCode(x.dto.operationalAreaCode))
+                        .ToDictionary(g => g.Key, g => g.Last());
+
+                    var statesByArea = states.ToLookup(x => AreaCode(x.dto.operationalAreaCode));
+                    var cepsByArea = ceps.ToLookup(x => AreaCode(x.dto.operationalAreaCode));
+                    var citiesByArea = cities.ToLookup(x => AreaCode(x.dto.operationalAreaCode));
+
+                    foreach (var orphan in statesByArea.Select(g => g.Key).Concat(cepsByArea.Select(g => g.Key)).Concat(citiesByArea.Select(g => g.Key)).Distinct().Where(x => !areasByCode.ContainsKey(x)))
+                        _logger.AddMessage($"Região de atuação {orphan} (empresa {company.doc_company}) tem estados, CEPs ou cidades, mas não veio em seller/v2/operational-area: descartados.");
+
+                    var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.Sellers.OperationalArea>();
+                    var areasJson = new Dictionary<int, string>();
+
+                    foreach (var (code, area) in areasByCode)
+                    {
+                        // filhas na ordem da chave: a ordem das páginas não muda o hash
+                        var areaStates = statesByArea[code].OrderBy(x => AreaCode(x.dto.stateCode)).ToList();
+                        var areaCeps = cepsByArea[code].OrderBy(x => x.dto.cep, StringComparer.Ordinal).ToList();
+                        var areaCities = citiesByArea[code].OrderBy(x => AreaCode(x.dto.cityCode)).ToList();
+
+                        var json = new JObject(
+                            new JProperty("operationalArea", area.json),
+                            new JProperty("states", new JArray(areaStates.Select(x => x.json))),
+                            new JProperty("ceps", new JArray(areaCeps.Select(x => x.json))),
+                            new JProperty("cities", new JArray(areaCities.Select(x => x.json)))
+                        ).ToString(Formatting.None);
+
+                        var hash = _logger.ComputeSha256Hash(json);
+
+                        // sem data de alteração: só regrava quando a região agrupada mudou
+                        if (stored.TryGetValue(code, out var storedHash) && storedHash == hash)
+                            continue;
+
+                        var messages = new List<string>();
+
+                        _operationalAreaValidator.Validate(area.dto).Errors.ForEach(s => messages.Add($"região de atuação {code}: {s.ErrorMessage}"));
+                        areaStates.ForEach(x => _operationalAreaStateValidator.Validate(x.dto).Errors.ForEach(s => messages.Add($"região de atuação {code}, estado {x.dto.stateCode}: {s.ErrorMessage}")));
+                        areaCeps.ForEach(x => _operationalAreaCepValidator.Validate(x.dto).Errors.ForEach(s => messages.Add($"região de atuação {code}, CEP {x.dto.cep}: {s.ErrorMessage}")));
+                        areaCities.ForEach(x => _operationalAreaCityValidator.Validate(x.dto).Errors.ForEach(s => messages.Add($"região de atuação {code}, cidade {x.dto.cityCode}: {s.ErrorMessage}")));
+
+                        if (messages.Count > 0)
+                            _logger.AddMessage(String.Join("\n", messages) + "\n");
+
+                        _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.Sellers.OperationalArea(
+                            company.doc_company!,
+                            batchTime,
+                            hash,
+                            area.dto,
+                            // sem a chave a linha violaria a PK
+                            areaStates.Select(x => x.dto).Where(x => AreaCode(x.stateCode) != 0),
+                            areaCeps.Select(x => x.dto).Where(x => !String.IsNullOrWhiteSpace(x.cep)),
+                            areaCities.Select(x => x.dto).Where(x => AreaCode(x.cityCode) != 0)
+                        ));
+
+                        areasJson[code] = json;
+                    }
+
+                    if (_listSomenteNovos.Count == 0)
+                        continue;
+
+                    await _totvsSellersRepository.BulkInsertIntoTotvsOperationalAreas(_listSomenteNovos, _logger.GetExecutionGuid());
+
+                    foreach (var record in _listSomenteNovos)
+                        if (areasJson.TryGetValue(record.operationalAreaCode, out var json))
+                            _logger.AddRecord(record.operationalAreaCode.ToString(), json);
+
+                    totalInseridos += _listSomenteNovos.Count;
                 }
 
                 _logger.AddMessage(
@@ -402,139 +509,6 @@ namespace Application.Totvs.Services
             }
 
             return items;
-        }
-
-        /// <summary>
-        /// agrupa estados, CEPs e cidades por região, calcula o hash da região agrupada e grava só as novas ou com hash diferente
-        /// do gravado (com as filhas). Filha de região que não veio no operational-area vai para o log e é descartada (a FK
-        /// recusaria). Devolve a quantidade de regiões gravadas.
-        /// </summary>
-        private async Task<int> SaveOperationalAreas(
-            string doc_company,
-            DateTime batchTime,
-            List<(Domain.Totvs.Dtos.Reads.Sellers.OperationalArea dto, JObject json)> areas,
-            List<(Domain.Totvs.Dtos.Reads.Sellers.OperationalAreaState dto, JObject json)> states,
-            List<(Domain.Totvs.Dtos.Reads.Sellers.OperationalAreaCep dto, JObject json)> ceps,
-            List<(Domain.Totvs.Dtos.Reads.Sellers.OperationalAreaCity dto, JObject json)> cities,
-            IReadOnlyDictionary<int, string> stored)
-        {
-            static int AreaCode(string? code) => ConverterValidatorsExtensions.ConvertToInt32Validation(code);
-
-            // a mesma região pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
-            var areasByCode = areas
-                .Where(x => AreaCode(x.dto.operationalAreaCode) != 0)
-                .GroupBy(x => AreaCode(x.dto.operationalAreaCode))
-                .ToDictionary(g => g.Key, g => g.Last());
-
-            var statesByArea = states.ToLookup(x => AreaCode(x.dto.operationalAreaCode));
-            var cepsByArea = ceps.ToLookup(x => AreaCode(x.dto.operationalAreaCode));
-            var citiesByArea = cities.ToLookup(x => AreaCode(x.dto.operationalAreaCode));
-
-            foreach (var orphan in statesByArea.Select(g => g.Key).Concat(cepsByArea.Select(g => g.Key)).Concat(citiesByArea.Select(g => g.Key)).Distinct().Where(x => !areasByCode.ContainsKey(x)))
-                _logger.AddMessage($"Região de atuação {orphan} (empresa {doc_company}) tem estados, CEPs ou cidades, mas não veio em seller/v2/operational-area: descartados.");
-
-            var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.Sellers.OperationalArea>();
-            var areasJson = new Dictionary<int, string>();
-
-            foreach (var (code, area) in areasByCode)
-            {
-                // filhas na ordem da chave: a ordem das páginas não muda o hash
-                var areaStates = statesByArea[code].OrderBy(x => AreaCode(x.dto.stateCode)).ToList();
-                var areaCeps = cepsByArea[code].OrderBy(x => x.dto.cep, StringComparer.Ordinal).ToList();
-                var areaCities = citiesByArea[code].OrderBy(x => AreaCode(x.dto.cityCode)).ToList();
-
-                var json = new JObject(
-                    new JProperty("operationalArea", area.json),
-                    new JProperty("states", new JArray(areaStates.Select(x => x.json))),
-                    new JProperty("ceps", new JArray(areaCeps.Select(x => x.json))),
-                    new JProperty("cities", new JArray(areaCities.Select(x => x.json)))
-                ).ToString(Formatting.None);
-
-                var hash = _logger.ComputeSha256Hash(json);
-
-                // sem data de alteração: só regrava quando a região agrupada mudou
-                if (stored.TryGetValue(code, out var storedHash) && storedHash == hash)
-                    continue;
-
-                var messages = new List<string>();
-
-                _operationalAreaValidator.Validate(area.dto).Errors.ForEach(s => messages.Add($"região de atuação {code}: {s.ErrorMessage}"));
-                areaStates.ForEach(x => _operationalAreaStateValidator.Validate(x.dto).Errors.ForEach(s => messages.Add($"região de atuação {code}, estado {x.dto.stateCode}: {s.ErrorMessage}")));
-                areaCeps.ForEach(x => _operationalAreaCepValidator.Validate(x.dto).Errors.ForEach(s => messages.Add($"região de atuação {code}, CEP {x.dto.cep}: {s.ErrorMessage}")));
-                areaCities.ForEach(x => _operationalAreaCityValidator.Validate(x.dto).Errors.ForEach(s => messages.Add($"região de atuação {code}, cidade {x.dto.cityCode}: {s.ErrorMessage}")));
-
-                if (messages.Count > 0)
-                    _logger.AddMessage(String.Join("\n", messages) + "\n");
-
-                _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.Sellers.OperationalArea(
-                    doc_company,
-                    batchTime,
-                    hash,
-                    area.dto,
-                    // sem a chave a linha violaria a PK
-                    areaStates.Select(x => x.dto).Where(x => AreaCode(x.stateCode) != 0),
-                    areaCeps.Select(x => x.dto).Where(x => !String.IsNullOrWhiteSpace(x.cep)),
-                    areaCities.Select(x => x.dto).Where(x => AreaCode(x.cityCode) != 0)
-                ));
-
-                areasJson[code] = json;
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _totvsSellersRepository.BulkInsertIntoTotvsOperationalAreas(_listSomenteNovos, _logger.GetExecutionGuid());
-
-            foreach (var record in _listSomenteNovos)
-                if (areasJson.TryGetValue(record.operationalAreaCode, out var json))
-                    _logger.AddRecord(record.operationalAreaCode.ToString(), json);
-
-            return _listSomenteNovos.Count;
-        }
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
-        /// Devolve a quantidade de vendedores gravados.
-        /// </summary>
-        private async Task<int> SaveSellers(
-            string doc_company,
-            DateTime batchTime,
-            IEnumerable<Domain.Totvs.Dtos.Reads.Sellers.Seller> sellers,
-            IReadOnlyDictionary<int, string> sellersJson,
-            Dictionary<int, Domain.Totvs.Entities.Reads.Sellers.Seller>? sellersCache)
-        {
-            var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.Sellers.Seller>();
-
-            // o mesmo vendedor pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
-            foreach (var seller in sellers.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.sellerCode) != 0).GroupBy(x => x.sellerCode).Select(g => g.Last()))
-            {
-                var validations = _sellerValidator.Validate(seller);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"vendedor {seller.sellerCode}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.Sellers.Seller(doc_company, batchTime, seller));
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _totvsSellersRepository.BulkInsertIntoTotvsSellers(_listSomenteNovos, _logger.GetExecutionGuid());
-
-            foreach (var record in _listSomenteNovos)
-            {
-                if (sellersJson.TryGetValue(record.sellerCode, out var json))
-                    _logger.AddRecord(record.sellerCode.ToString(), json);
-
-                if (sellersCache is not null)
-                    sellersCache[record.sellerCode] = record;
-            }
-
-            return _listSomenteNovos.Count;
         }
     }
 }

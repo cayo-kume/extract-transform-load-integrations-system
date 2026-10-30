@@ -148,7 +148,41 @@ namespace Application.Totvs.Services
                         NullableConverters.ToNullableDateTime(x.dto.maxChangeFilterDate) <= y.maxChangeFilterDate
                     );
 
-                    totalInseridos += await SaveClassificationTypes(company.doc_company!, batchTime, items, itemsCache);
+                    // valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
+                    // Devolve a quantidade de registros gravados.
+                    var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Products.Catalogs.ClassificationType record, string json)>();
+
+                    // o mesmo registro pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
+                    foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.code) != 0).GroupBy(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.code)).Select(g => g.Last()))
+                    {
+                        var validations = _classificationTypeValidator.Validate(item.dto);
+
+                        if (validations.Errors.Count > 0)
+                        {
+                            var message = String.Empty;
+                            validations.Errors.ForEach(s => message += $"tipo de classificação {ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.code)}: {s.ErrorMessage}\n");
+                            _logger.AddMessage(message);
+                        }
+
+                        _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Catalogs.ClassificationType(company.doc_company!, batchTime, item.dto), item.json.ToString(Formatting.None)));
+                    }
+
+                    if (_listSomenteNovos.Count == 0)
+                        continue;
+
+                    await _totvsProductCatalogsRepository.BulkInsertIntoTotvsClassificationTypes(_listSomenteNovos.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
+
+                    foreach (var (record, json) in _listSomenteNovos)
+                    {
+                        var key = record.code;
+
+                        _logger.AddRecord(key.ToString(), json);
+
+                        if (itemsCache is not null)
+                            itemsCache[key] = record;
+                    }
+
+                    totalInseridos += _listSomenteNovos.Count;
                 }
 
                 _logger.AddMessage(
@@ -221,7 +255,41 @@ namespace Application.Totvs.Services
                         NullableConverters.ToNullableDateTime(x.dto.maxChangeFilterDate) <= y.maxChangeFilterDate
                     );
 
-                    totalInseridos += await SaveProductClassifications(company.doc_company!, batchTime, items, itemsCache);
+                    // valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
+                    // Devolve a quantidade de registros gravados.
+                    var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Products.Catalogs.ProductClassification record, string json)>();
+
+                    // o mesmo registro pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
+                    foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.typeCode) != 0 && !String.IsNullOrWhiteSpace(x.dto.code)).GroupBy(x => $"{ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.typeCode)}|{(x.dto.code ?? String.Empty).ToUpperInvariant()}").Select(g => g.Last()))
+                    {
+                        var validations = _productClassificationValidator.Validate(item.dto);
+
+                        if (validations.Errors.Count > 0)
+                        {
+                            var message = String.Empty;
+                            validations.Errors.ForEach(s => message += $"classificação {$"{ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.typeCode)}|{(item.dto.code ?? String.Empty).ToUpperInvariant()}"}: {s.ErrorMessage}\n");
+                            _logger.AddMessage(message);
+                        }
+
+                        _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Catalogs.ProductClassification(company.doc_company!, batchTime, item.dto), item.json.ToString(Formatting.None)));
+                    }
+
+                    if (_listSomenteNovos.Count == 0)
+                        continue;
+
+                    await _totvsProductCatalogsRepository.BulkInsertIntoTotvsProductClassifications(_listSomenteNovos.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
+
+                    foreach (var (record, json) in _listSomenteNovos)
+                    {
+                        var key = $"{record.typeCode}|{record.code.ToUpperInvariant()}";
+
+                        _logger.AddRecord(key.ToString(), json);
+
+                        if (itemsCache is not null)
+                            itemsCache[key] = record;
+                    }
+
+                    totalInseridos += _listSomenteNovos.Count;
                 }
 
                 _logger.AddMessage(
@@ -295,7 +363,41 @@ namespace Application.Totvs.Services
                         NullableConverters.ToNullableDateTime(x.dto.maxChangeFilterDate) <= y.maxChangeFilterDate
                     );
 
-                    totalInseridos += await SaveCategories(company.doc_company!, batchTime, items, itemsCache);
+                    // valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
+                    // Devolve a quantidade de registros gravados.
+                    var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Products.Catalogs.Category record, string json)>();
+
+                    // o mesmo registro pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
+                    foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.code) != 0).GroupBy(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.code)).Select(g => g.Last()))
+                    {
+                        var validations = _categoryValidator.Validate(item.dto);
+
+                        if (validations.Errors.Count > 0)
+                        {
+                            var message = String.Empty;
+                            validations.Errors.ForEach(s => message += $"categoria {ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.code)}: {s.ErrorMessage}\n");
+                            _logger.AddMessage(message);
+                        }
+
+                        _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Catalogs.Category(company.doc_company!, batchTime, item.dto), item.json.ToString(Formatting.None)));
+                    }
+
+                    if (_listSomenteNovos.Count == 0)
+                        continue;
+
+                    await _totvsProductCatalogsRepository.BulkInsertIntoTotvsCategories(_listSomenteNovos.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
+
+                    foreach (var (record, json) in _listSomenteNovos)
+                    {
+                        var key = record.code;
+
+                        _logger.AddRecord(key.ToString(), json);
+
+                        if (itemsCache is not null)
+                            itemsCache[key] = record;
+                    }
+
+                    totalInseridos += _listSomenteNovos.Count;
                 }
 
                 _logger.AddMessage(
@@ -369,7 +471,41 @@ namespace Application.Totvs.Services
                         NullableConverters.ToNullableDateTime(x.dto.maxChangeFilterDate) <= y.maxChangeFilterDate
                     );
 
-                    totalInseridos += await SaveGrids(company.doc_company!, batchTime, items, itemsCache);
+                    // valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
+                    // Devolve a quantidade de registros gravados.
+                    var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Products.Catalogs.Grid record, string json)>();
+
+                    // o mesmo registro pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
+                    foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.code) != 0).GroupBy(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.code)).Select(g => g.Last()))
+                    {
+                        var validations = _gridValidator.Validate(item.dto);
+
+                        if (validations.Errors.Count > 0)
+                        {
+                            var message = String.Empty;
+                            validations.Errors.ForEach(s => message += $"grade {ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.code)}: {s.ErrorMessage}\n");
+                            _logger.AddMessage(message);
+                        }
+
+                        _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Catalogs.Grid(company.doc_company!, batchTime, item.dto), item.json.ToString(Formatting.None)));
+                    }
+
+                    if (_listSomenteNovos.Count == 0)
+                        continue;
+
+                    await _totvsProductCatalogsRepository.BulkInsertIntoTotvsGrids(_listSomenteNovos.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
+
+                    foreach (var (record, json) in _listSomenteNovos)
+                    {
+                        var key = record.code;
+
+                        _logger.AddRecord(key.ToString(), json);
+
+                        if (itemsCache is not null)
+                            itemsCache[key] = record;
+                    }
+
+                    totalInseridos += _listSomenteNovos.Count;
                 }
 
                 _logger.AddMessage(
@@ -443,7 +579,41 @@ namespace Application.Totvs.Services
                         NullableConverters.ToNullableDateTime(x.dto.maxChangeFilterDate) <= y.maxChangeFilterDate
                     );
 
-                    totalInseridos += await SaveMeasurementUnits(company.doc_company!, batchTime, items, itemsCache);
+                    // valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
+                    // Devolve a quantidade de registros gravados.
+                    var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Products.Catalogs.MeasurementUnit record, string json)>();
+
+                    // o mesmo registro pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
+                    foreach (var item in items.Where(x => !String.IsNullOrWhiteSpace(x.dto.code)).GroupBy(x => (x.dto.code ?? String.Empty).ToUpperInvariant()).Select(g => g.Last()))
+                    {
+                        var validations = _measurementUnitValidator.Validate(item.dto);
+
+                        if (validations.Errors.Count > 0)
+                        {
+                            var message = String.Empty;
+                            validations.Errors.ForEach(s => message += $"unidade de medida {(item.dto.code ?? String.Empty).ToUpperInvariant()}: {s.ErrorMessage}\n");
+                            _logger.AddMessage(message);
+                        }
+
+                        _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Catalogs.MeasurementUnit(company.doc_company!, batchTime, item.dto), item.json.ToString(Formatting.None)));
+                    }
+
+                    if (_listSomenteNovos.Count == 0)
+                        continue;
+
+                    await _totvsProductCatalogsRepository.BulkInsertIntoTotvsMeasurementUnits(_listSomenteNovos.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
+
+                    foreach (var (record, json) in _listSomenteNovos)
+                    {
+                        var key = record.code.ToUpperInvariant();
+
+                        _logger.AddRecord(key.ToString(), json);
+
+                        if (itemsCache is not null)
+                            itemsCache[key] = record;
+                    }
+
+                    totalInseridos += _listSomenteNovos.Count;
                 }
 
                 _logger.AddMessage(
@@ -498,7 +668,41 @@ namespace Application.Totvs.Services
                         .GroupBy(x => x!.colorCode.ToUpperInvariant())
                         .ToDictionary(g => g.Key, g => g.First()!.json_hash);
 
-                    totalInseridos += await SaveColors(company.doc_company!, batchTime, items, stored);
+                    // valida, monta as entidades (com o mesmo horário de lote e o hash do JSON) e grava só as cores novas ou com hash
+                    // diferente do gravado. Devolve a quantidade de cores gravadas.
+                    var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Products.Catalogs.Color record, string json)>();
+
+                    // o mesmo registro pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
+                    foreach (var item in items.Where(x => !String.IsNullOrWhiteSpace(x.dto.colorCode)).GroupBy(x => (x.dto.colorCode ?? String.Empty).ToUpperInvariant()).Select(g => g.Last()))
+                    {
+                        var json = item.json.ToString(Formatting.None);
+                        var hash = _logger.ComputeSha256Hash(json);
+
+                        // sem data de alteração: só regrava quando o JSON mudou
+                        if (stored.TryGetValue((item.dto.colorCode ?? String.Empty).ToUpperInvariant(), out var storedHash) && storedHash == hash)
+                            continue;
+
+                        var validations = _colorValidator.Validate(item.dto);
+
+                        if (validations.Errors.Count > 0)
+                        {
+                            var message = String.Empty;
+                            validations.Errors.ForEach(s => message += $"cor {(item.dto.colorCode ?? String.Empty).ToUpperInvariant()}: {s.ErrorMessage}\n");
+                            _logger.AddMessage(message);
+                        }
+
+                        _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Catalogs.Color(company.doc_company!, batchTime, hash, item.dto), json));
+                    }
+
+                    if (_listSomenteNovos.Count == 0)
+                        continue;
+
+                    await _totvsProductCatalogsRepository.BulkInsertIntoTotvsColors(_listSomenteNovos.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
+
+                    foreach (var (record, json) in _listSomenteNovos)
+                        _logger.AddRecord(record.colorCode.ToUpperInvariant().ToString(), json);
+
+                    totalInseridos += _listSomenteNovos.Count;
                 }
 
                 _logger.AddMessage(
@@ -572,7 +776,41 @@ namespace Application.Totvs.Services
                         NullableConverters.ToNullableDateTime(x.dto.maxChangeFilterDate) <= y.maxChangeFilterDate
                     );
 
-                    totalInseridos += await SaveAdditionalFieldsTypes(company.doc_company!, batchTime, items, itemsCache);
+                    // valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
+                    // Devolve a quantidade de registros gravados.
+                    var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Products.Catalogs.AdditionalFieldType record, string json)>();
+
+                    // o mesmo registro pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
+                    foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.code) != 0).GroupBy(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.code)).Select(g => g.Last()))
+                    {
+                        var validations = _additionalFieldTypeValidator.Validate(item.dto);
+
+                        if (validations.Errors.Count > 0)
+                        {
+                            var message = String.Empty;
+                            validations.Errors.ForEach(s => message += $"tipo de campo adicional {ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.code)}: {s.ErrorMessage}\n");
+                            _logger.AddMessage(message);
+                        }
+
+                        _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Catalogs.AdditionalFieldType(company.doc_company!, batchTime, item.dto), item.json.ToString(Formatting.None)));
+                    }
+
+                    if (_listSomenteNovos.Count == 0)
+                        continue;
+
+                    await _totvsProductCatalogsRepository.BulkInsertIntoTotvsAdditionalFieldsTypes(_listSomenteNovos.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
+
+                    foreach (var (record, json) in _listSomenteNovos)
+                    {
+                        var key = record.code;
+
+                        _logger.AddRecord(key.ToString(), json);
+
+                        if (itemsCache is not null)
+                            itemsCache[key] = record;
+                    }
+
+                    totalInseridos += _listSomenteNovos.Count;
                 }
 
                 _logger.AddMessage(
@@ -646,7 +884,41 @@ namespace Application.Totvs.Services
                         NullableConverters.ToNullableDateTime(x.dto.maxChangeFilterDate) <= y.maxChangeFilterDate
                     );
 
-                    totalInseridos += await SaveProductGrouperConfigurations(company.doc_company!, batchTime, items, itemsCache);
+                    // valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
+                    // Devolve a quantidade de registros gravados.
+                    var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Products.Catalogs.ProductGrouperConfiguration record, string json)>();
+
+                    // o mesmo registro pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
+                    foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.grouperCode) != 0).GroupBy(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.grouperCode)).Select(g => g.Last()))
+                    {
+                        var validations = _productGrouperConfigurationValidator.Validate(item.dto);
+
+                        if (validations.Errors.Count > 0)
+                        {
+                            var message = String.Empty;
+                            validations.Errors.ForEach(s => message += $"agrupador {ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.grouperCode)}: {s.ErrorMessage}\n");
+                            _logger.AddMessage(message);
+                        }
+
+                        _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Catalogs.ProductGrouperConfiguration(company.doc_company!, batchTime, item.dto), item.json.ToString(Formatting.None)));
+                    }
+
+                    if (_listSomenteNovos.Count == 0)
+                        continue;
+
+                    await _totvsProductCatalogsRepository.BulkInsertIntoTotvsProductGrouperConfigurations(_listSomenteNovos.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
+
+                    foreach (var (record, json) in _listSomenteNovos)
+                    {
+                        var key = record.grouperCode;
+
+                        _logger.AddRecord(key.ToString(), json);
+
+                        if (itemsCache is not null)
+                            itemsCache[key] = record;
+                    }
+
+                    totalInseridos += _listSomenteNovos.Count;
                 }
 
                 _logger.AddMessage(
@@ -720,7 +992,41 @@ namespace Application.Totvs.Services
                         NullableConverters.ToNullableDateTime(x.dto.maxChangeFilterDate) <= y.maxChangeFilterDate
                     );
 
-                    totalInseridos += await SaveInstructionItems(company.doc_company!, batchTime, items, itemsCache);
+                    // valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
+                    // Devolve a quantidade de registros gravados.
+                    var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Products.Catalogs.InstructionItem record, string json)>();
+
+                    // o mesmo registro pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
+                    foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.code) != 0).GroupBy(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.code)).Select(g => g.Last()))
+                    {
+                        var validations = _instructionItemValidator.Validate(item.dto);
+
+                        if (validations.Errors.Count > 0)
+                        {
+                            var message = String.Empty;
+                            validations.Errors.ForEach(s => message += $"item de instrução {ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.code)}: {s.ErrorMessage}\n");
+                            _logger.AddMessage(message);
+                        }
+
+                        _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Catalogs.InstructionItem(company.doc_company!, batchTime, item.dto), item.json.ToString(Formatting.None)));
+                    }
+
+                    if (_listSomenteNovos.Count == 0)
+                        continue;
+
+                    await _totvsProductCatalogsRepository.BulkInsertIntoTotvsInstructionItems(_listSomenteNovos.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
+
+                    foreach (var (record, json) in _listSomenteNovos)
+                    {
+                        var key = record.code;
+
+                        _logger.AddRecord(key.ToString(), json);
+
+                        if (itemsCache is not null)
+                            itemsCache[key] = record;
+                    }
+
+                    totalInseridos += _listSomenteNovos.Count;
                 }
 
                 _logger.AddMessage(
@@ -795,7 +1101,41 @@ namespace Application.Totvs.Services
                         NullableConverters.ToNullableDateTime(x.dto.maxChangeFilterDate) <= y.maxChangeFilterDate
                     );
 
-                    totalInseridos += await SaveCompositions(company.doc_company!, batchTime, items, itemsCache);
+                    // valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
+                    // Devolve a quantidade de registros gravados.
+                    var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Products.Catalogs.Composition record, string json)>();
+
+                    // o mesmo registro pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
+                    foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.code) != 0).GroupBy(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.code)).Select(g => g.Last()))
+                    {
+                        var validations = _compositionValidator.Validate(item.dto);
+
+                        if (validations.Errors.Count > 0)
+                        {
+                            var message = String.Empty;
+                            validations.Errors.ForEach(s => message += $"composição {ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.code)}: {s.ErrorMessage}\n");
+                            _logger.AddMessage(message);
+                        }
+
+                        _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Catalogs.Composition(company.doc_company!, batchTime, item.dto), item.json.ToString(Formatting.None)));
+                    }
+
+                    if (_listSomenteNovos.Count == 0)
+                        continue;
+
+                    await _totvsProductCatalogsRepository.BulkInsertIntoTotvsCompositions(_listSomenteNovos.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
+
+                    foreach (var (record, json) in _listSomenteNovos)
+                    {
+                        var key = record.code;
+
+                        _logger.AddRecord(key.ToString(), json);
+
+                        if (itemsCache is not null)
+                            itemsCache[key] = record;
+                    }
+
+                    totalInseridos += _listSomenteNovos.Count;
                 }
 
                 _logger.AddMessage(
@@ -869,7 +1209,41 @@ namespace Application.Totvs.Services
                         NullableConverters.ToNullableDateTime(x.dto.maxChangeFilterDate) <= y.maxChangeFilterDate
                     );
 
-                    totalInseridos += await SavePriceTables(company.doc_company!, batchTime, items, itemsCache);
+                    // valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
+                    // Devolve a quantidade de registros gravados.
+                    var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Products.Catalogs.PriceTable record, string json)>();
+
+                    // o mesmo registro pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
+                    foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.code) != 0).GroupBy(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.code)).Select(g => g.Last()))
+                    {
+                        var validations = _priceTableValidator.Validate(item.dto);
+
+                        if (validations.Errors.Count > 0)
+                        {
+                            var message = String.Empty;
+                            validations.Errors.ForEach(s => message += $"tabela de preço {ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.code)}: {s.ErrorMessage}\n");
+                            _logger.AddMessage(message);
+                        }
+
+                        _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Catalogs.PriceTable(company.doc_company!, batchTime, item.dto), item.json.ToString(Formatting.None)));
+                    }
+
+                    if (_listSomenteNovos.Count == 0)
+                        continue;
+
+                    await _totvsProductCatalogsRepository.BulkInsertIntoTotvsPriceTables(_listSomenteNovos.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
+
+                    foreach (var (record, json) in _listSomenteNovos)
+                    {
+                        var key = record.code;
+
+                        _logger.AddRecord(key.ToString(), json);
+
+                        if (itemsCache is not null)
+                            itemsCache[key] = record;
+                    }
+
+                    totalInseridos += _listSomenteNovos.Count;
                 }
 
                 _logger.AddMessage(
@@ -942,7 +1316,41 @@ namespace Application.Totvs.Services
                         NullableConverters.ToNullableDateTime(x.dto.maxChangeFilterDate) <= y.maxChangeFilterDate
                     );
 
-                    totalInseridos += await SavePriceTableScales(company.doc_company!, batchTime, items, itemsCache);
+                    // valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
+                    // Devolve a quantidade de registros gravados.
+                    var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Products.Catalogs.PriceTableScale record, string json)>();
+
+                    // o mesmo registro pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
+                    foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.scaleCode) != 0).GroupBy(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.scaleCode)).Select(g => g.Last()))
+                    {
+                        var validations = _priceTableScaleValidator.Validate(item.dto);
+
+                        if (validations.Errors.Count > 0)
+                        {
+                            var message = String.Empty;
+                            validations.Errors.ForEach(s => message += $"escala {ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.scaleCode)}: {s.ErrorMessage}\n");
+                            _logger.AddMessage(message);
+                        }
+
+                        _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Catalogs.PriceTableScale(company.doc_company!, batchTime, item.dto), item.json.ToString(Formatting.None)));
+                    }
+
+                    if (_listSomenteNovos.Count == 0)
+                        continue;
+
+                    await _totvsProductCatalogsRepository.BulkInsertIntoTotvsPriceTableScales(_listSomenteNovos.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
+
+                    foreach (var (record, json) in _listSomenteNovos)
+                    {
+                        var key = record.scaleCode;
+
+                        _logger.AddRecord(key.ToString(), json);
+
+                        if (itemsCache is not null)
+                            itemsCache[key] = record;
+                    }
+
+                    totalInseridos += _listSomenteNovos.Count;
                 }
 
                 _logger.AddMessage(
@@ -1063,546 +1471,6 @@ namespace Application.Totvs.Services
             }
 
             return items;
-        }
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
-        /// Devolve a quantidade de registros gravados.
-        /// </summary>
-        private async Task<int> SaveClassificationTypes(
-            string doc_company,
-            DateTime batchTime,
-            List<(Domain.Totvs.Dtos.Reads.Products.Catalogs.ClassificationType dto, JObject json)> items,
-            Dictionary<int, Domain.Totvs.Entities.Reads.Products.Catalogs.ClassificationType>? itemsCache)
-        {
-            var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Products.Catalogs.ClassificationType record, string json)>();
-
-            // o mesmo registro pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
-            foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.code) != 0).GroupBy(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.code)).Select(g => g.Last()))
-            {
-                var validations = _classificationTypeValidator.Validate(item.dto);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"tipo de classificação {ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.code)}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Catalogs.ClassificationType(doc_company, batchTime, item.dto), item.json.ToString(Formatting.None)));
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _totvsProductCatalogsRepository.BulkInsertIntoTotvsClassificationTypes(_listSomenteNovos.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
-
-            foreach (var (record, json) in _listSomenteNovos)
-            {
-                var key = record.code;
-
-                _logger.AddRecord(key.ToString(), json);
-
-                if (itemsCache is not null)
-                    itemsCache[key] = record;
-            }
-
-            return _listSomenteNovos.Count;
-        }
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
-        /// Devolve a quantidade de registros gravados.
-        /// </summary>
-        private async Task<int> SaveProductClassifications(
-            string doc_company,
-            DateTime batchTime,
-            List<(Domain.Totvs.Dtos.Reads.Products.Catalogs.ProductClassification dto, JObject json)> items,
-            Dictionary<string, Domain.Totvs.Entities.Reads.Products.Catalogs.ProductClassification>? itemsCache)
-        {
-            var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Products.Catalogs.ProductClassification record, string json)>();
-
-            // o mesmo registro pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
-            foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.typeCode) != 0 && !String.IsNullOrWhiteSpace(x.dto.code)).GroupBy(x => $"{ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.typeCode)}|{(x.dto.code ?? String.Empty).ToUpperInvariant()}").Select(g => g.Last()))
-            {
-                var validations = _productClassificationValidator.Validate(item.dto);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"classificação {$"{ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.typeCode)}|{(item.dto.code ?? String.Empty).ToUpperInvariant()}"}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Catalogs.ProductClassification(doc_company, batchTime, item.dto), item.json.ToString(Formatting.None)));
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _totvsProductCatalogsRepository.BulkInsertIntoTotvsProductClassifications(_listSomenteNovos.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
-
-            foreach (var (record, json) in _listSomenteNovos)
-            {
-                var key = $"{record.typeCode}|{record.code.ToUpperInvariant()}";
-
-                _logger.AddRecord(key.ToString(), json);
-
-                if (itemsCache is not null)
-                    itemsCache[key] = record;
-            }
-
-            return _listSomenteNovos.Count;
-        }
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
-        /// Devolve a quantidade de registros gravados.
-        /// </summary>
-        private async Task<int> SaveCategories(
-            string doc_company,
-            DateTime batchTime,
-            List<(Domain.Totvs.Dtos.Reads.Products.Catalogs.Category dto, JObject json)> items,
-            Dictionary<int, Domain.Totvs.Entities.Reads.Products.Catalogs.Category>? itemsCache)
-        {
-            var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Products.Catalogs.Category record, string json)>();
-
-            // o mesmo registro pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
-            foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.code) != 0).GroupBy(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.code)).Select(g => g.Last()))
-            {
-                var validations = _categoryValidator.Validate(item.dto);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"categoria {ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.code)}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Catalogs.Category(doc_company, batchTime, item.dto), item.json.ToString(Formatting.None)));
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _totvsProductCatalogsRepository.BulkInsertIntoTotvsCategories(_listSomenteNovos.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
-
-            foreach (var (record, json) in _listSomenteNovos)
-            {
-                var key = record.code;
-
-                _logger.AddRecord(key.ToString(), json);
-
-                if (itemsCache is not null)
-                    itemsCache[key] = record;
-            }
-
-            return _listSomenteNovos.Count;
-        }
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
-        /// Devolve a quantidade de registros gravados.
-        /// </summary>
-        private async Task<int> SaveGrids(
-            string doc_company,
-            DateTime batchTime,
-            List<(Domain.Totvs.Dtos.Reads.Products.Catalogs.Grid dto, JObject json)> items,
-            Dictionary<int, Domain.Totvs.Entities.Reads.Products.Catalogs.Grid>? itemsCache)
-        {
-            var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Products.Catalogs.Grid record, string json)>();
-
-            // o mesmo registro pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
-            foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.code) != 0).GroupBy(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.code)).Select(g => g.Last()))
-            {
-                var validations = _gridValidator.Validate(item.dto);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"grade {ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.code)}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Catalogs.Grid(doc_company, batchTime, item.dto), item.json.ToString(Formatting.None)));
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _totvsProductCatalogsRepository.BulkInsertIntoTotvsGrids(_listSomenteNovos.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
-
-            foreach (var (record, json) in _listSomenteNovos)
-            {
-                var key = record.code;
-
-                _logger.AddRecord(key.ToString(), json);
-
-                if (itemsCache is not null)
-                    itemsCache[key] = record;
-            }
-
-            return _listSomenteNovos.Count;
-        }
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
-        /// Devolve a quantidade de registros gravados.
-        /// </summary>
-        private async Task<int> SaveMeasurementUnits(
-            string doc_company,
-            DateTime batchTime,
-            List<(Domain.Totvs.Dtos.Reads.Products.Catalogs.MeasurementUnit dto, JObject json)> items,
-            Dictionary<string, Domain.Totvs.Entities.Reads.Products.Catalogs.MeasurementUnit>? itemsCache)
-        {
-            var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Products.Catalogs.MeasurementUnit record, string json)>();
-
-            // o mesmo registro pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
-            foreach (var item in items.Where(x => !String.IsNullOrWhiteSpace(x.dto.code)).GroupBy(x => (x.dto.code ?? String.Empty).ToUpperInvariant()).Select(g => g.Last()))
-            {
-                var validations = _measurementUnitValidator.Validate(item.dto);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"unidade de medida {(item.dto.code ?? String.Empty).ToUpperInvariant()}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Catalogs.MeasurementUnit(doc_company, batchTime, item.dto), item.json.ToString(Formatting.None)));
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _totvsProductCatalogsRepository.BulkInsertIntoTotvsMeasurementUnits(_listSomenteNovos.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
-
-            foreach (var (record, json) in _listSomenteNovos)
-            {
-                var key = record.code.ToUpperInvariant();
-
-                _logger.AddRecord(key.ToString(), json);
-
-                if (itemsCache is not null)
-                    itemsCache[key] = record;
-            }
-
-            return _listSomenteNovos.Count;
-        }
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote e o hash do JSON) e grava só as cores novas ou com hash
-        /// diferente do gravado. Devolve a quantidade de cores gravadas.
-        /// </summary>
-        private async Task<int> SaveColors(
-            string doc_company,
-            DateTime batchTime,
-            List<(Domain.Totvs.Dtos.Reads.Products.Catalogs.Color dto, JObject json)> items,
-            IReadOnlyDictionary<string, string> stored)
-        {
-            var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Products.Catalogs.Color record, string json)>();
-
-            // o mesmo registro pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
-            foreach (var item in items.Where(x => !String.IsNullOrWhiteSpace(x.dto.colorCode)).GroupBy(x => (x.dto.colorCode ?? String.Empty).ToUpperInvariant()).Select(g => g.Last()))
-            {
-                var json = item.json.ToString(Formatting.None);
-                var hash = _logger.ComputeSha256Hash(json);
-
-                // sem data de alteração: só regrava quando o JSON mudou
-                if (stored.TryGetValue((item.dto.colorCode ?? String.Empty).ToUpperInvariant(), out var storedHash) && storedHash == hash)
-                    continue;
-
-                var validations = _colorValidator.Validate(item.dto);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"cor {(item.dto.colorCode ?? String.Empty).ToUpperInvariant()}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Catalogs.Color(doc_company, batchTime, hash, item.dto), json));
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _totvsProductCatalogsRepository.BulkInsertIntoTotvsColors(_listSomenteNovos.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
-
-            foreach (var (record, json) in _listSomenteNovos)
-                _logger.AddRecord(record.colorCode.ToUpperInvariant().ToString(), json);
-
-            return _listSomenteNovos.Count;
-        }
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
-        /// Devolve a quantidade de registros gravados.
-        /// </summary>
-        private async Task<int> SaveAdditionalFieldsTypes(
-            string doc_company,
-            DateTime batchTime,
-            List<(Domain.Totvs.Dtos.Reads.Products.Catalogs.AdditionalFieldType dto, JObject json)> items,
-            Dictionary<int, Domain.Totvs.Entities.Reads.Products.Catalogs.AdditionalFieldType>? itemsCache)
-        {
-            var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Products.Catalogs.AdditionalFieldType record, string json)>();
-
-            // o mesmo registro pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
-            foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.code) != 0).GroupBy(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.code)).Select(g => g.Last()))
-            {
-                var validations = _additionalFieldTypeValidator.Validate(item.dto);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"tipo de campo adicional {ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.code)}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Catalogs.AdditionalFieldType(doc_company, batchTime, item.dto), item.json.ToString(Formatting.None)));
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _totvsProductCatalogsRepository.BulkInsertIntoTotvsAdditionalFieldsTypes(_listSomenteNovos.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
-
-            foreach (var (record, json) in _listSomenteNovos)
-            {
-                var key = record.code;
-
-                _logger.AddRecord(key.ToString(), json);
-
-                if (itemsCache is not null)
-                    itemsCache[key] = record;
-            }
-
-            return _listSomenteNovos.Count;
-        }
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
-        /// Devolve a quantidade de registros gravados.
-        /// </summary>
-        private async Task<int> SaveProductGrouperConfigurations(
-            string doc_company,
-            DateTime batchTime,
-            List<(Domain.Totvs.Dtos.Reads.Products.Catalogs.ProductGrouperConfiguration dto, JObject json)> items,
-            Dictionary<int, Domain.Totvs.Entities.Reads.Products.Catalogs.ProductGrouperConfiguration>? itemsCache)
-        {
-            var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Products.Catalogs.ProductGrouperConfiguration record, string json)>();
-
-            // o mesmo registro pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
-            foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.grouperCode) != 0).GroupBy(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.grouperCode)).Select(g => g.Last()))
-            {
-                var validations = _productGrouperConfigurationValidator.Validate(item.dto);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"agrupador {ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.grouperCode)}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Catalogs.ProductGrouperConfiguration(doc_company, batchTime, item.dto), item.json.ToString(Formatting.None)));
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _totvsProductCatalogsRepository.BulkInsertIntoTotvsProductGrouperConfigurations(_listSomenteNovos.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
-
-            foreach (var (record, json) in _listSomenteNovos)
-            {
-                var key = record.grouperCode;
-
-                _logger.AddRecord(key.ToString(), json);
-
-                if (itemsCache is not null)
-                    itemsCache[key] = record;
-            }
-
-            return _listSomenteNovos.Count;
-        }
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
-        /// Devolve a quantidade de registros gravados.
-        /// </summary>
-        private async Task<int> SaveInstructionItems(
-            string doc_company,
-            DateTime batchTime,
-            List<(Domain.Totvs.Dtos.Reads.Products.Catalogs.InstructionItem dto, JObject json)> items,
-            Dictionary<int, Domain.Totvs.Entities.Reads.Products.Catalogs.InstructionItem>? itemsCache)
-        {
-            var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Products.Catalogs.InstructionItem record, string json)>();
-
-            // o mesmo registro pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
-            foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.code) != 0).GroupBy(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.code)).Select(g => g.Last()))
-            {
-                var validations = _instructionItemValidator.Validate(item.dto);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"item de instrução {ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.code)}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Catalogs.InstructionItem(doc_company, batchTime, item.dto), item.json.ToString(Formatting.None)));
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _totvsProductCatalogsRepository.BulkInsertIntoTotvsInstructionItems(_listSomenteNovos.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
-
-            foreach (var (record, json) in _listSomenteNovos)
-            {
-                var key = record.code;
-
-                _logger.AddRecord(key.ToString(), json);
-
-                if (itemsCache is not null)
-                    itemsCache[key] = record;
-            }
-
-            return _listSomenteNovos.Count;
-        }
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
-        /// Devolve a quantidade de registros gravados.
-        /// </summary>
-        private async Task<int> SaveCompositions(
-            string doc_company,
-            DateTime batchTime,
-            List<(Domain.Totvs.Dtos.Reads.Products.Catalogs.Composition dto, JObject json)> items,
-            Dictionary<int, Domain.Totvs.Entities.Reads.Products.Catalogs.Composition>? itemsCache)
-        {
-            var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Products.Catalogs.Composition record, string json)>();
-
-            // o mesmo registro pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
-            foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.code) != 0).GroupBy(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.code)).Select(g => g.Last()))
-            {
-                var validations = _compositionValidator.Validate(item.dto);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"composição {ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.code)}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Catalogs.Composition(doc_company, batchTime, item.dto), item.json.ToString(Formatting.None)));
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _totvsProductCatalogsRepository.BulkInsertIntoTotvsCompositions(_listSomenteNovos.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
-
-            foreach (var (record, json) in _listSomenteNovos)
-            {
-                var key = record.code;
-
-                _logger.AddRecord(key.ToString(), json);
-
-                if (itemsCache is not null)
-                    itemsCache[key] = record;
-            }
-
-            return _listSomenteNovos.Count;
-        }
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
-        /// Devolve a quantidade de registros gravados.
-        /// </summary>
-        private async Task<int> SavePriceTables(
-            string doc_company,
-            DateTime batchTime,
-            List<(Domain.Totvs.Dtos.Reads.Products.Catalogs.PriceTable dto, JObject json)> items,
-            Dictionary<int, Domain.Totvs.Entities.Reads.Products.Catalogs.PriceTable>? itemsCache)
-        {
-            var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Products.Catalogs.PriceTable record, string json)>();
-
-            // o mesmo registro pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
-            foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.code) != 0).GroupBy(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.code)).Select(g => g.Last()))
-            {
-                var validations = _priceTableValidator.Validate(item.dto);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"tabela de preço {ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.code)}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Catalogs.PriceTable(doc_company, batchTime, item.dto), item.json.ToString(Formatting.None)));
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _totvsProductCatalogsRepository.BulkInsertIntoTotvsPriceTables(_listSomenteNovos.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
-
-            foreach (var (record, json) in _listSomenteNovos)
-            {
-                var key = record.code;
-
-                _logger.AddRecord(key.ToString(), json);
-
-                if (itemsCache is not null)
-                    itemsCache[key] = record;
-            }
-
-            return _listSomenteNovos.Count;
-        }
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
-        /// Devolve a quantidade de registros gravados.
-        /// </summary>
-        private async Task<int> SavePriceTableScales(
-            string doc_company,
-            DateTime batchTime,
-            List<(Domain.Totvs.Dtos.Reads.Products.Catalogs.PriceTableScale dto, JObject json)> items,
-            Dictionary<int, Domain.Totvs.Entities.Reads.Products.Catalogs.PriceTableScale>? itemsCache)
-        {
-            var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Products.Catalogs.PriceTableScale record, string json)>();
-
-            // o mesmo registro pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
-            foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.scaleCode) != 0).GroupBy(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.scaleCode)).Select(g => g.Last()))
-            {
-                var validations = _priceTableScaleValidator.Validate(item.dto);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"escala {ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.scaleCode)}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Catalogs.PriceTableScale(doc_company, batchTime, item.dto), item.json.ToString(Formatting.None)));
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _totvsProductCatalogsRepository.BulkInsertIntoTotvsPriceTableScales(_listSomenteNovos.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
-
-            foreach (var (record, json) in _listSomenteNovos)
-            {
-                var key = record.scaleCode;
-
-                _logger.AddRecord(key.ToString(), json);
-
-                if (itemsCache is not null)
-                    itemsCache[key] = record;
-            }
-
-            return _listSomenteNovos.Count;
         }
 
         public async Task<Domain.Totvs.Dtos.Writes.Result> PostColors(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Colors.UpsertColor body)

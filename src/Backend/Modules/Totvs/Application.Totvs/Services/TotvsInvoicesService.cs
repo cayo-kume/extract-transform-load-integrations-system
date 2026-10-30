@@ -628,7 +628,48 @@ namespace Application.Totvs.Services
                             NullableConverters.ToNullableDateTime(x.dto.maxChangeFilterDate) <= y
                         );
 
-                        totalInseridos += await SaveInvoicesDisable(company.doc_company!, _totvsService.GetBatchTime(), items, itemsCache);
+                        // valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa. Sem loja ou número inicial
+                        // (a chave), a faixa vai para o log e não é gravada. Devolve a quantidade de faixas gravadas.
+                        var batchTime = _totvsService.GetBatchTime();
+
+                        var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Invoices.InvoiceDisable record, string json)>();
+
+                        foreach (var item in items)
+                        {
+                            var validations = _invoiceDisableValidator.Validate(item.dto);
+
+                            if (validations.Errors.Count > 0)
+                            {
+                                var message = String.Empty;
+                                validations.Errors.ForEach(s => message += $"inutilização {item.dto.branchCode}/{item.dto.documentType}/{item.dto.serialCode}/{item.dto.initialInvoiceNumber}: {s.ErrorMessage}\n");
+                                _logger.AddMessage(message);
+                            }
+
+                            var record = new Domain.Totvs.Entities.Reads.Invoices.InvoiceDisable(company.doc_company!, batchTime, item.dto);
+
+                            if (record.branchCode != 0 && record.initialInvoiceNumber != 0)
+                                _listSomenteNovos.Add((record, item.json.ToString(Formatting.None)));
+                        }
+
+                        // a mesma faixa pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
+                        var records = _listSomenteNovos.GroupBy(x => $"{x.record.branchCode}|{x.record.documentType}|{x.record.serialCode.ToUpperInvariant()}|{x.record.initialInvoiceNumber}").Select(g => g.Last()).ToList();
+
+                        if (records.Count == 0)
+                            continue;
+
+                        await _totvsInvoicesRepository.BulkInsertIntoTotvsInvoicesDisable(records.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
+
+                        foreach (var (record, json) in records)
+                        {
+                            var key = $"{record.branchCode}|{record.documentType}|{record.serialCode.ToUpperInvariant()}|{record.initialInvoiceNumber}";
+
+                            _logger.AddRecord(key, json);
+
+                            if (itemsCache is not null)
+                                itemsCache[key] = record.maxChangeFilterDate;
+                        }
+
+                        totalInseridos += records.Count;
                     }
                 }
 
@@ -643,56 +684,6 @@ namespace Application.Totvs.Services
                 _logger.SetLogEndDate();
                 await _logger.CommitAllChanges();
             }
-        }
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa. Sem loja ou número inicial
-        /// (a chave), a faixa vai para o log e não é gravada. Devolve a quantidade de faixas gravadas.
-        /// </summary>
-        private async Task<int> SaveInvoicesDisable(
-            string doc_company,
-            DateTime batchTime,
-            List<(Domain.Totvs.Dtos.Reads.Invoices.InvoiceDisable dto, JObject json)> items,
-            Dictionary<string, DateTime?>? itemsCache)
-        {
-            var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Invoices.InvoiceDisable record, string json)>();
-
-            foreach (var item in items)
-            {
-                var validations = _invoiceDisableValidator.Validate(item.dto);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"inutilização {item.dto.branchCode}/{item.dto.documentType}/{item.dto.serialCode}/{item.dto.initialInvoiceNumber}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                var record = new Domain.Totvs.Entities.Reads.Invoices.InvoiceDisable(doc_company, batchTime, item.dto);
-
-                if (record.branchCode != 0 && record.initialInvoiceNumber != 0)
-                    _listSomenteNovos.Add((record, item.json.ToString(Formatting.None)));
-            }
-
-            // a mesma faixa pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
-            var records = _listSomenteNovos.GroupBy(x => $"{x.record.branchCode}|{x.record.documentType}|{x.record.serialCode.ToUpperInvariant()}|{x.record.initialInvoiceNumber}").Select(g => g.Last()).ToList();
-
-            if (records.Count == 0)
-                return 0;
-
-            await _totvsInvoicesRepository.BulkInsertIntoTotvsInvoicesDisable(records.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
-
-            foreach (var (record, json) in records)
-            {
-                var key = $"{record.branchCode}|{record.documentType}|{record.serialCode.ToUpperInvariant()}|{record.initialInvoiceNumber}";
-
-                _logger.AddRecord(key, json);
-
-                if (itemsCache is not null)
-                    itemsCache[key] = record.maxChangeFilterDate;
-            }
-
-            return records.Count;
         }
 
         public async Task<bool?> GetCostCenter()
@@ -729,7 +720,40 @@ namespace Application.Totvs.Services
                         .GroupBy(x => x!.code)
                         .ToDictionary(g => g.Key, g => g.First()!.json_hash);
 
-                    totalInseridos += await SaveCostCenters(company.doc_company!, batchTime, items, stored);
+                    // valida, monta as entidades (com o mesmo horário de lote e o hash do JSON) e grava só os centros novos ou com hash diferente
+                    // do gravado. Devolve a quantidade de centros gravados.
+                    var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Invoices.CostCenter record, string json)>();
+
+                    foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.code) != 0).GroupBy(x => x.dto.code).Select(g => g.Last()))
+                    {
+                        var json = item.json.ToString(Formatting.None);
+                        var hash = _logger.ComputeSha256Hash(json);
+
+                        // sem data de alteração: só regrava quando o JSON mudou
+                        if (stored.TryGetValue(ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.code), out var storedHash) && storedHash == hash)
+                            continue;
+
+                        var validations = _costCenterValidator.Validate(item.dto);
+
+                        if (validations.Errors.Count > 0)
+                        {
+                            var message = String.Empty;
+                            validations.Errors.ForEach(s => message += $"centro de custo {item.dto.code}: {s.ErrorMessage}\n");
+                            _logger.AddMessage(message);
+                        }
+
+                        _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Invoices.CostCenter(company.doc_company!, batchTime, hash, item.dto), json));
+                    }
+
+                    if (_listSomenteNovos.Count == 0)
+                        continue;
+
+                    await _totvsInvoicesRepository.BulkInsertIntoTotvsCostCenters(_listSomenteNovos.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
+
+                    foreach (var (record, json) in _listSomenteNovos)
+                        _logger.AddRecord(record.code.ToString(), json);
+
+                    totalInseridos += _listSomenteNovos.Count;
                 }
 
                 _logger.AddMessage(
@@ -743,50 +767,6 @@ namespace Application.Totvs.Services
                 _logger.SetLogEndDate();
                 await _logger.CommitAllChanges();
             }
-        }
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote e o hash do JSON) e grava só os centros novos ou com hash diferente
-        /// do gravado. Devolve a quantidade de centros gravados.
-        /// </summary>
-        private async Task<int> SaveCostCenters(
-            string doc_company,
-            DateTime batchTime,
-            List<(Domain.Totvs.Dtos.Reads.Invoices.CostCenter dto, JObject json)> items,
-            Dictionary<int, string> stored)
-        {
-            var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Invoices.CostCenter record, string json)>();
-
-            foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.code) != 0).GroupBy(x => x.dto.code).Select(g => g.Last()))
-            {
-                var json = item.json.ToString(Formatting.None);
-                var hash = _logger.ComputeSha256Hash(json);
-
-                // sem data de alteração: só regrava quando o JSON mudou
-                if (stored.TryGetValue(ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.code), out var storedHash) && storedHash == hash)
-                    continue;
-
-                var validations = _costCenterValidator.Validate(item.dto);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"centro de custo {item.dto.code}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Invoices.CostCenter(doc_company, batchTime, hash, item.dto), json));
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _totvsInvoicesRepository.BulkInsertIntoTotvsCostCenters(_listSomenteNovos.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
-
-            foreach (var (record, json) in _listSomenteNovos)
-                _logger.AddRecord(record.code.ToString(), json);
-
-            return _listSomenteNovos.Count;
         }
 
         /// <summary>

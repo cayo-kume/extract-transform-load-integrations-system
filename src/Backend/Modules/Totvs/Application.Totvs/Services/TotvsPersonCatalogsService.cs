@@ -196,7 +196,42 @@ namespace Application.Totvs.Services
                         NullableConverters.ToNullableDateTime(x.maxChangeFilterDate) <= y.maxChangeFilterDate
                     );
 
-                    totalInseridos += await SavePersonClassifications(company.doc_company!, batchTime, items, itemsJson, itemsCache);
+                    // valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
+                    // Devolve a quantidade de registros gravados.
+                    var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.People.Catalogs.PersonClassification>();
+
+                    // o mesmo registro pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
+                    foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.typeCode) != 0 && !String.IsNullOrWhiteSpace(x.code)).GroupBy(x => $"{ConverterValidatorsExtensions.ConvertToInt32Validation(x.typeCode)}|{(x.code ?? String.Empty).ToUpperInvariant()}").Select(g => g.Last()))
+                    {
+                        var validations = _personClassificationValidator.Validate(item);
+
+                        if (validations.Errors.Count > 0)
+                        {
+                            var message = String.Empty;
+                            validations.Errors.ForEach(s => message += $"classificação {$"{ConverterValidatorsExtensions.ConvertToInt32Validation(item.typeCode)}|{(item.code ?? String.Empty).ToUpperInvariant()}"}: {s.ErrorMessage}\n");
+                            _logger.AddMessage(message);
+                        }
+
+                        _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.People.Catalogs.PersonClassification(company.doc_company!, batchTime, item));
+                    }
+
+                    if (_listSomenteNovos.Count == 0)
+                        continue;
+
+                    await _totvsPersonCatalogsRepository.BulkInsertIntoTotvsPersonClassifications(_listSomenteNovos, _logger.GetExecutionGuid());
+
+                    foreach (var record in _listSomenteNovos)
+                    {
+                        var key = $"{record.typeCode}|{record.code.ToUpperInvariant()}";
+
+                        if (itemsJson.TryGetValue(key, out var json))
+                            _logger.AddRecord(key.ToString(), json);
+
+                        if (itemsCache is not null)
+                            itemsCache[key] = record;
+                    }
+
+                    totalInseridos += _listSomenteNovos.Count;
                 }
 
                 _logger.AddMessage(
@@ -357,7 +392,42 @@ namespace Application.Totvs.Services
                         NullableConverters.ToNullableDateTime(x.maxChangeFilterDate) <= y.maxChangeFilterDate
                     );
 
-                    totalInseridos += await SaveEmailTypes(company.doc_company!, batchTime, items, itemsJson, itemsCache);
+                    // valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
+                    // Devolve a quantidade de registros gravados.
+                    var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.People.Catalogs.EmailType>();
+
+                    // o mesmo registro pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
+                    foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.code) != 0).GroupBy(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.code)).Select(g => g.Last()))
+                    {
+                        var validations = _emailTypeValidator.Validate(item);
+
+                        if (validations.Errors.Count > 0)
+                        {
+                            var message = String.Empty;
+                            validations.Errors.ForEach(s => message += $"tipo de e-mail {ConverterValidatorsExtensions.ConvertToInt32Validation(item.code)}: {s.ErrorMessage}\n");
+                            _logger.AddMessage(message);
+                        }
+
+                        _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.People.Catalogs.EmailType(company.doc_company!, batchTime, item));
+                    }
+
+                    if (_listSomenteNovos.Count == 0)
+                        continue;
+
+                    await _totvsPersonCatalogsRepository.BulkInsertIntoTotvsEmailTypes(_listSomenteNovos, _logger.GetExecutionGuid());
+
+                    foreach (var record in _listSomenteNovos)
+                    {
+                        var key = record.code;
+
+                        if (itemsJson.TryGetValue(key, out var json))
+                            _logger.AddRecord(key.ToString(), json);
+
+                        if (itemsCache is not null)
+                            itemsCache[key] = record;
+                    }
+
+                    totalInseridos += _listSomenteNovos.Count;
                 }
 
                 _logger.AddMessage(
@@ -518,7 +588,42 @@ namespace Application.Totvs.Services
                         NullableConverters.ToNullableDateTime(x.maxChangeFilterDate) <= y.maxChangeFilterDate
                     );
 
-                    totalInseridos += await SavePhoneTypes(company.doc_company!, batchTime, items, itemsJson, itemsCache);
+                    // valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
+                    // Devolve a quantidade de registros gravados.
+                    var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.People.Catalogs.PhoneType>();
+
+                    // o mesmo registro pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
+                    foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.code) != 0).GroupBy(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.code)).Select(g => g.Last()))
+                    {
+                        var validations = _phoneTypeValidator.Validate(item);
+
+                        if (validations.Errors.Count > 0)
+                        {
+                            var message = String.Empty;
+                            validations.Errors.ForEach(s => message += $"tipo de telefone {ConverterValidatorsExtensions.ConvertToInt32Validation(item.code)}: {s.ErrorMessage}\n");
+                            _logger.AddMessage(message);
+                        }
+
+                        _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.People.Catalogs.PhoneType(company.doc_company!, batchTime, item));
+                    }
+
+                    if (_listSomenteNovos.Count == 0)
+                        continue;
+
+                    await _totvsPersonCatalogsRepository.BulkInsertIntoTotvsPhoneTypes(_listSomenteNovos, _logger.GetExecutionGuid());
+
+                    foreach (var record in _listSomenteNovos)
+                    {
+                        var key = record.code;
+
+                        if (itemsJson.TryGetValue(key, out var json))
+                            _logger.AddRecord(key.ToString(), json);
+
+                        if (itemsCache is not null)
+                            itemsCache[key] = record;
+                    }
+
+                    totalInseridos += _listSomenteNovos.Count;
                 }
 
                 _logger.AddMessage(
@@ -679,7 +784,42 @@ namespace Application.Totvs.Services
                         NullableConverters.ToNullableDateTime(x.maxChangeFilterDate) <= y.maxChangeFilterDate
                     );
 
-                    totalInseridos += await SaveContactTypes(company.doc_company!, batchTime, items, itemsJson, itemsCache);
+                    // valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
+                    // Devolve a quantidade de registros gravados.
+                    var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.People.Catalogs.ContactType>();
+
+                    // o mesmo registro pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
+                    foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.code) != 0).GroupBy(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.code)).Select(g => g.Last()))
+                    {
+                        var validations = _contactTypeValidator.Validate(item);
+
+                        if (validations.Errors.Count > 0)
+                        {
+                            var message = String.Empty;
+                            validations.Errors.ForEach(s => message += $"tipo de contato {ConverterValidatorsExtensions.ConvertToInt32Validation(item.code)}: {s.ErrorMessage}\n");
+                            _logger.AddMessage(message);
+                        }
+
+                        _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.People.Catalogs.ContactType(company.doc_company!, batchTime, item));
+                    }
+
+                    if (_listSomenteNovos.Count == 0)
+                        continue;
+
+                    await _totvsPersonCatalogsRepository.BulkInsertIntoTotvsContactTypes(_listSomenteNovos, _logger.GetExecutionGuid());
+
+                    foreach (var record in _listSomenteNovos)
+                    {
+                        var key = record.code;
+
+                        if (itemsJson.TryGetValue(key, out var json))
+                            _logger.AddRecord(key.ToString(), json);
+
+                        if (itemsCache is not null)
+                            itemsCache[key] = record;
+                    }
+
+                    totalInseridos += _listSomenteNovos.Count;
                 }
 
                 _logger.AddMessage(
@@ -693,194 +833,6 @@ namespace Application.Totvs.Services
                 _logger.SetLogEndDate();
                 await _logger.CommitAllChanges();
             }
-        }
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
-        /// Devolve a quantidade de registros gravados.
-        /// </summary>
-        private async Task<int> SavePersonClassifications(
-            string doc_company,
-            DateTime batchTime,
-            IEnumerable<Domain.Totvs.Dtos.Reads.People.Catalogs.PersonClassification> items,
-            IReadOnlyDictionary<string, string> itemsJson,
-            Dictionary<string, Domain.Totvs.Entities.Reads.People.Catalogs.PersonClassification>? itemsCache)
-        {
-            var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.People.Catalogs.PersonClassification>();
-
-            // o mesmo registro pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
-            foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.typeCode) != 0 && !String.IsNullOrWhiteSpace(x.code)).GroupBy(x => $"{ConverterValidatorsExtensions.ConvertToInt32Validation(x.typeCode)}|{(x.code ?? String.Empty).ToUpperInvariant()}").Select(g => g.Last()))
-            {
-                var validations = _personClassificationValidator.Validate(item);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"classificação {$"{ConverterValidatorsExtensions.ConvertToInt32Validation(item.typeCode)}|{(item.code ?? String.Empty).ToUpperInvariant()}"}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.People.Catalogs.PersonClassification(doc_company, batchTime, item));
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _totvsPersonCatalogsRepository.BulkInsertIntoTotvsPersonClassifications(_listSomenteNovos, _logger.GetExecutionGuid());
-
-            foreach (var record in _listSomenteNovos)
-            {
-                var key = $"{record.typeCode}|{record.code.ToUpperInvariant()}";
-
-                if (itemsJson.TryGetValue(key, out var json))
-                    _logger.AddRecord(key.ToString(), json);
-
-                if (itemsCache is not null)
-                    itemsCache[key] = record;
-            }
-
-            return _listSomenteNovos.Count;
-        }
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
-        /// Devolve a quantidade de registros gravados.
-        /// </summary>
-        private async Task<int> SaveEmailTypes(
-            string doc_company,
-            DateTime batchTime,
-            IEnumerable<Domain.Totvs.Dtos.Reads.People.Catalogs.EmailType> items,
-            IReadOnlyDictionary<int, string> itemsJson,
-            Dictionary<int, Domain.Totvs.Entities.Reads.People.Catalogs.EmailType>? itemsCache)
-        {
-            var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.People.Catalogs.EmailType>();
-
-            // o mesmo registro pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
-            foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.code) != 0).GroupBy(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.code)).Select(g => g.Last()))
-            {
-                var validations = _emailTypeValidator.Validate(item);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"tipo de e-mail {ConverterValidatorsExtensions.ConvertToInt32Validation(item.code)}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.People.Catalogs.EmailType(doc_company, batchTime, item));
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _totvsPersonCatalogsRepository.BulkInsertIntoTotvsEmailTypes(_listSomenteNovos, _logger.GetExecutionGuid());
-
-            foreach (var record in _listSomenteNovos)
-            {
-                var key = record.code;
-
-                if (itemsJson.TryGetValue(key, out var json))
-                    _logger.AddRecord(key.ToString(), json);
-
-                if (itemsCache is not null)
-                    itemsCache[key] = record;
-            }
-
-            return _listSomenteNovos.Count;
-        }
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
-        /// Devolve a quantidade de registros gravados.
-        /// </summary>
-        private async Task<int> SavePhoneTypes(
-            string doc_company,
-            DateTime batchTime,
-            IEnumerable<Domain.Totvs.Dtos.Reads.People.Catalogs.PhoneType> items,
-            IReadOnlyDictionary<int, string> itemsJson,
-            Dictionary<int, Domain.Totvs.Entities.Reads.People.Catalogs.PhoneType>? itemsCache)
-        {
-            var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.People.Catalogs.PhoneType>();
-
-            // o mesmo registro pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
-            foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.code) != 0).GroupBy(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.code)).Select(g => g.Last()))
-            {
-                var validations = _phoneTypeValidator.Validate(item);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"tipo de telefone {ConverterValidatorsExtensions.ConvertToInt32Validation(item.code)}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.People.Catalogs.PhoneType(doc_company, batchTime, item));
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _totvsPersonCatalogsRepository.BulkInsertIntoTotvsPhoneTypes(_listSomenteNovos, _logger.GetExecutionGuid());
-
-            foreach (var record in _listSomenteNovos)
-            {
-                var key = record.code;
-
-                if (itemsJson.TryGetValue(key, out var json))
-                    _logger.AddRecord(key.ToString(), json);
-
-                if (itemsCache is not null)
-                    itemsCache[key] = record;
-            }
-
-            return _listSomenteNovos.Count;
-        }
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
-        /// Devolve a quantidade de registros gravados.
-        /// </summary>
-        private async Task<int> SaveContactTypes(
-            string doc_company,
-            DateTime batchTime,
-            IEnumerable<Domain.Totvs.Dtos.Reads.People.Catalogs.ContactType> items,
-            IReadOnlyDictionary<int, string> itemsJson,
-            Dictionary<int, Domain.Totvs.Entities.Reads.People.Catalogs.ContactType>? itemsCache)
-        {
-            var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.People.Catalogs.ContactType>();
-
-            // o mesmo registro pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
-            foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.code) != 0).GroupBy(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.code)).Select(g => g.Last()))
-            {
-                var validations = _contactTypeValidator.Validate(item);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"tipo de contato {ConverterValidatorsExtensions.ConvertToInt32Validation(item.code)}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.People.Catalogs.ContactType(doc_company, batchTime, item));
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _totvsPersonCatalogsRepository.BulkInsertIntoTotvsContactTypes(_listSomenteNovos, _logger.GetExecutionGuid());
-
-            foreach (var record in _listSomenteNovos)
-            {
-                var key = record.code;
-
-                if (itemsJson.TryGetValue(key, out var json))
-                    _logger.AddRecord(key.ToString(), json);
-
-                if (itemsCache is not null)
-                    itemsCache[key] = record;
-            }
-
-            return _listSomenteNovos.Count;
         }
     }
 }

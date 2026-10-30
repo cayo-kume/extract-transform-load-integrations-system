@@ -283,75 +283,63 @@ namespace Application.Totvs.Services
                     );
                 }
 
-                saved += await SaveBalances(company.doc_company!, batchTime, branchCode, items, itemsCache);
+                // valida, monta uma linha por loja e código (com o mesmo horário de lote), grava e atualiza o cache da loja.
+                // Devolve a quantidade de produtos gravados.
+                var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.Products.Values.Balance>();
+                var locations = new List<Domain.Totvs.Entities.Reads.Products.Values.BalanceLocation>();
+                var records = new List<(int productCode, DateTime? maxChangeFilterDate, string json)>();
+
+                // o mesmo produto pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
+                foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.productCode) != 0).GroupBy(x => x.dto.productCode).Select(g => g.Last()))
+                {
+                    var productCode = ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.productCode);
+                    var validations = _productBalanceValidator.Validate(item.dto);
+
+                    if (validations.Errors.Count > 0)
+                    {
+                        var message = String.Empty;
+                        validations.Errors.ForEach(s => message += $"saldos do produto {productCode} na loja {branchCode}: {s.ErrorMessage}\n");
+                        _logger.AddMessage(message);
+                    }
+
+                    var rows = (item.dto.balances ?? [])
+                        .Select(x => new Domain.Totvs.Entities.Reads.Products.Values.Balance(company.doc_company!, batchTime, item.dto, x))
+                        .Where(x => x.branchCode != 0 && x.stockCode != 0)
+                        .GroupBy(x => (x.branchCode, x.stockCode))
+                        .Select(g => g.Last())
+                        .ToList();
+
+                    // os locais são do produto na loja: gravados com o saldo, e o merge apaga os que saíram
+                    locations.AddRange((item.dto.locations ?? [])
+                        .Select(x => new Domain.Totvs.Entities.Reads.Products.Values.BalanceLocation(company.doc_company!, batchTime, productCode, x))
+                        .Where(x => x.branchCode != 0 && !String.IsNullOrWhiteSpace(x.locationCode))
+                        .GroupBy(x => (x.branchCode, x.locationCode.ToUpperInvariant()))
+                        .Select(g => g.Last()));
+
+                    _listSomenteNovos.AddRange(rows);
+                    records.Add((productCode, NullableConverters.ToNullableDateTime(item.dto.maxChangeFilterDate), item.json.ToString(Formatting.None)));
+                }
+
+                if (_listSomenteNovos.Count > 0)
+                {
+                    await _totvsProductsRepository.BulkInsertIntoTotvsBalances(_listSomenteNovos, locations, _logger.GetExecutionGuid());
+
+                    foreach (var (productCode, maxChangeFilterDate, json) in records)
+                    {
+                        _logger.AddRecord($"{productCode}|{branchCode}", json);
+
+                        if (itemsCache is not null)
+                            itemsCache[productCode] = maxChangeFilterDate;
+                    }
+
+                    saved += records.Count;
+                }
 
                 totalPages = result.Value.totalPages;
                 page++;
             }
 
             return (saved, true);
-        }
-
-        /// <summary>
-        /// valida, monta uma linha por loja e código (com o mesmo horário de lote), grava e atualiza o cache da loja.
-        /// Devolve a quantidade de produtos gravados.
-        /// </summary>
-        private async Task<int> SaveBalances(
-            string doc_company,
-            DateTime batchTime,
-            int branchCode,
-            List<(Domain.Totvs.Dtos.Reads.Products.Values.ProductBalance dto, JObject json)> items,
-            Dictionary<int, DateTime?>? itemsCache)
-        {
-            var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.Products.Values.Balance>();
-            var locations = new List<Domain.Totvs.Entities.Reads.Products.Values.BalanceLocation>();
-            var records = new List<(int productCode, DateTime? maxChangeFilterDate, string json)>();
-
-            // o mesmo produto pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
-            foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.productCode) != 0).GroupBy(x => x.dto.productCode).Select(g => g.Last()))
-            {
-                var productCode = ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.productCode);
-                var validations = _productBalanceValidator.Validate(item.dto);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"saldos do produto {productCode} na loja {branchCode}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                var rows = (item.dto.balances ?? [])
-                    .Select(x => new Domain.Totvs.Entities.Reads.Products.Values.Balance(doc_company, batchTime, item.dto, x))
-                    .Where(x => x.branchCode != 0 && x.stockCode != 0)
-                    .GroupBy(x => (x.branchCode, x.stockCode))
-                    .Select(g => g.Last())
-                    .ToList();
-
-                // os locais são do produto na loja: gravados com o saldo, e o merge apaga os que saíram
-                locations.AddRange((item.dto.locations ?? [])
-                    .Select(x => new Domain.Totvs.Entities.Reads.Products.Values.BalanceLocation(doc_company, batchTime, productCode, x))
-                    .Where(x => x.branchCode != 0 && !String.IsNullOrWhiteSpace(x.locationCode))
-                    .GroupBy(x => (x.branchCode, x.locationCode.ToUpperInvariant()))
-                    .Select(g => g.Last()));
-
-                _listSomenteNovos.AddRange(rows);
-                records.Add((productCode, NullableConverters.ToNullableDateTime(item.dto.maxChangeFilterDate), item.json.ToString(Formatting.None)));
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _totvsProductsRepository.BulkInsertIntoTotvsBalances(_listSomenteNovos, locations, _logger.GetExecutionGuid());
-
-            foreach (var (productCode, maxChangeFilterDate, json) in records)
-            {
-                _logger.AddRecord($"{productCode}|{branchCode}", json);
-
-                if (itemsCache is not null)
-                    itemsCache[productCode] = maxChangeFilterDate;
-            }
-
-            return records.Count;
         }
 
         /// <summary>
@@ -615,20 +603,10 @@ namespace Application.Totvs.Services
             if (items.Count == 0)
                 return (0, true);
 
-            return (await SaveSimilar(company.doc_company!, batchTime, end, items, await stored()), true);
-        }
+            // valida, monta as entidades (com o mesmo horário de lote e o hash do JSON) e grava só os produtos novos ou com hash diferente
+            // do gravado. Devolve a quantidade de produtos gravados.
+            var storedHashes = await stored();
 
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote e o hash do JSON) e grava só os produtos novos ou com hash diferente
-        /// do gravado. Devolve a quantidade de produtos gravados.
-        /// </summary>
-        private async Task<int> SaveSimilar(
-            string doc_company,
-            DateTime batchTime,
-            DateTime changeWindowEnd,
-            List<(Domain.Totvs.Dtos.Reads.Products.Similars.ProductSimilar dto, JObject json)> items,
-            Dictionary<int, string> stored)
-        {
             var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Products.Similars.ProductSimilar record, string json)>();
 
             foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.productCode) != 0).GroupBy(x => x.dto.productCode).Select(g => g.Last()))
@@ -637,7 +615,7 @@ namespace Application.Totvs.Services
                 var hash = _logger.ComputeSha256Hash(json);
 
                 // sem data de alteração: só regrava quando o JSON mudou
-                if (stored.TryGetValue(ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.productCode), out var storedHash) && storedHash == hash)
+                if (storedHashes.TryGetValue(ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.productCode), out var storedHash) && storedHash == hash)
                     continue;
 
                 var validations = _productSimilarValidator.Validate(item.dto);
@@ -649,21 +627,21 @@ namespace Application.Totvs.Services
                     _logger.AddMessage(message);
                 }
 
-                _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Similars.ProductSimilar(doc_company, batchTime, changeWindowEnd, hash, item.dto), json));
+                _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Similars.ProductSimilar(company.doc_company!, batchTime, end, hash, item.dto), json));
             }
 
             if (_listSomenteNovos.Count == 0)
-                return 0;
+                return (0, true);
 
             await _totvsProductsRepository.BulkInsertIntoTotvsProductsSimilar(_listSomenteNovos.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
 
             foreach (var (record, json) in _listSomenteNovos)
             {
                 _logger.AddRecord(record.productCode.ToString(), json);
-                stored[record.productCode] = record.json_hash;
+                storedHashes[record.productCode] = record.json_hash;
             }
 
-            return _listSomenteNovos.Count;
+            return (_listSomenteNovos.Count, true);
         }
 
         public async Task<bool?> PostSearchBatch()
@@ -747,7 +725,51 @@ namespace Application.Totvs.Services
                         .GroupBy(x => (x!.branchCode, x.batchCode, x.productCode))
                         .ToDictionary(g => g.Key, g => g.First()!.json_hash);
 
-                    total += await SaveBatches(company.doc_company!, batchTime, result.Value.items, stored);
+                    // valida, monta as entidades (com o mesmo horário de lote e o hash do JSON) e grava só os lotes novos ou com hash diferente
+                    // do gravado; lote sem batchCode (a chave) vai para o log e não é gravado. Devolve a quantidade de lotes gravados.
+                    var items = result.Value.items;
+
+                    var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Products.Batches.Batch record, string json)>();
+
+                    foreach (var item in items)
+                    {
+                        var key = (ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.branchCode), ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.batchCode), ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.productCode));
+                        var json = item.json.ToString(Formatting.None);
+                        var hash = _logger.ComputeSha256Hash(json);
+
+                        if (key.Item1 != 0 && key.Item2 != 0 && key.Item3 != 0 && stored.TryGetValue(key, out var storedHash) && storedHash == hash)
+                            continue;
+
+                        var validations = _batchValidator.Validate(item.dto);
+
+                        if (validations.Errors.Count > 0)
+                        {
+                            var message = String.Empty;
+                            validations.Errors.ForEach(s => message += $"lote {item.dto.batchCode} do produto {item.dto.productCode} na loja {item.dto.branchCode}: {s.ErrorMessage}\n");
+                            _logger.AddMessage(message);
+                        }
+
+                        if (key.Item1 == 0 || key.Item2 == 0 || key.Item3 == 0)
+                            continue;
+
+                        _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Batches.Batch(company.doc_company!, batchTime, hash, item.dto), json));
+                    }
+
+                    // o mesmo lote pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
+                    var records = _listSomenteNovos.GroupBy(x => (x.record.branchCode, x.record.batchCode, x.record.productCode)).Select(g => g.Last()).ToList();
+
+                    if (records.Count > 0)
+                    {
+                        await _totvsProductsRepository.BulkInsertIntoTotvsBatches(records.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
+
+                        foreach (var (record, json) in records)
+                        {
+                            _logger.AddRecord($"{record.branchCode}|{record.batchCode}|{record.productCode}", json);
+                            stored[(record.branchCode, record.batchCode, record.productCode)] = record.json_hash;
+                        }
+
+                        total += records.Count;
+                    }
                 }
 
                 totalPages = result.Value.totalPages;
@@ -755,59 +777,6 @@ namespace Application.Totvs.Services
             }
 
             return total;
-        }
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote e o hash do JSON) e grava só os lotes novos ou com hash diferente
-        /// do gravado; lote sem batchCode (a chave) vai para o log e não é gravado. Devolve a quantidade de lotes gravados.
-        /// </summary>
-        private async Task<int> SaveBatches(
-            string doc_company,
-            DateTime batchTime,
-            List<(Domain.Totvs.Dtos.Reads.Products.Batches.Batch dto, JObject json)> items,
-            Dictionary<(int, int, int), string> stored)
-        {
-            var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Products.Batches.Batch record, string json)>();
-
-            foreach (var item in items)
-            {
-                var key = (ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.branchCode), ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.batchCode), ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.productCode));
-                var json = item.json.ToString(Formatting.None);
-                var hash = _logger.ComputeSha256Hash(json);
-
-                if (key.Item1 != 0 && key.Item2 != 0 && key.Item3 != 0 && stored.TryGetValue(key, out var storedHash) && storedHash == hash)
-                    continue;
-
-                var validations = _batchValidator.Validate(item.dto);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"lote {item.dto.batchCode} do produto {item.dto.productCode} na loja {item.dto.branchCode}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                if (key.Item1 == 0 || key.Item2 == 0 || key.Item3 == 0)
-                    continue;
-
-                _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Batches.Batch(doc_company, batchTime, hash, item.dto), json));
-            }
-
-            // o mesmo lote pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
-            var records = _listSomenteNovos.GroupBy(x => (x.record.branchCode, x.record.batchCode, x.record.productCode)).Select(g => g.Last()).ToList();
-
-            if (records.Count == 0)
-                return 0;
-
-            await _totvsProductsRepository.BulkInsertIntoTotvsBatches(records.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
-
-            foreach (var (record, json) in records)
-            {
-                _logger.AddRecord($"{record.branchCode}|{record.batchCode}|{record.productCode}", json);
-                stored[(record.branchCode, record.batchCode, record.productCode)] = record.json_hash;
-            }
-
-            return records.Count;
         }
 
         public async Task<bool?> PostSearchProductCodes()

@@ -235,7 +235,44 @@ namespace Application.Totvs.Services
                         );
 
                         // um horário de lote por fatia: uma parcela que volta noutra fatia precisa de horário maior para a exclusão das filhas
-                        totalInseridos += await SaveDuplicates(company.doc_company!, _totvsService.GetBatchTime(), duplicates, duplicatesJson, duplicatesCache);
+                        // valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
+                        // Devolve a quantidade de parcelas gravadas.
+                        var batchTime = _totvsService.GetBatchTime();
+
+                        var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.AccountsPayable.Duplicate>();
+
+                        // a mesma parcela pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
+                        foreach (var duplicate in duplicates.Where(x => DuplicateKey(x).branchCode != 0 && DuplicateKey(x).duplicateCode != 0).GroupBy(DuplicateKey).Select(g => g.Last()))
+                        {
+                            var validations = _duplicateValidator.Validate(duplicate);
+
+                            if (validations.Errors.Count > 0)
+                            {
+                                var message = String.Empty;
+                                validations.Errors.ForEach(s => message += $"duplicata {duplicate.branchCode}/{duplicate.supplierCode}/{duplicate.duplicateCode}/{duplicate.installmentCode}: {s.ErrorMessage}\n");
+                                _logger.AddMessage(message);
+                            }
+
+                            _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.AccountsPayable.Duplicate(company.doc_company!, batchTime, duplicate));
+                        }
+
+                        if (_listSomenteNovos.Count == 0)
+                            continue;
+
+                        await _totvsAccountsPayableRepository.BulkInsertIntoTotvsDuplicates(_listSomenteNovos, _logger.GetExecutionGuid());
+
+                        foreach (var record in _listSomenteNovos)
+                        {
+                            var key = (record.branchCode, record.supplierCode, record.duplicateCode, record.installmentCode);
+
+                            if (duplicatesJson.TryGetValue(key, out var json))
+                                _logger.AddRecord($"{record.branchCode}|{record.supplierCode}|{record.duplicateCode}|{record.installmentCode}", json);
+
+                            if (duplicatesCache is not null)
+                                duplicatesCache[key] = record;
+                        }
+
+                        totalInseridos += _listSomenteNovos.Count;
                     }
                 }
 
@@ -407,7 +444,43 @@ namespace Application.Totvs.Services
                         .Where(x => commissionsJson.TryGetValue(CommissionKey(x), out var json) && !(hashCache.TryGetValue(CommissionKey(x), out var hash) && hash == _logger.ComputeSha256Hash(json)))
                         .ToList();
 
-                    totalInseridos += await SaveCommissionsPaid(company.doc_company!, _totvsService.GetBatchTime(), changed, commissionsJson, hashCache);
+                    // valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache de hash da empresa.
+                    // Devolve a quantidade de fechamentos gravados.
+                    var batchTime = _totvsService.GetBatchTime();
+
+                    var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.AccountsPayable.CommissionPaid>();
+
+                    foreach (var commission in changed.GroupBy(CommissionKey).Select(g => g.Last()))
+                    {
+                        var validations = _commissionPaidValidator.Validate(commission);
+
+                        if (validations.Errors.Count > 0)
+                        {
+                            var message = String.Empty;
+                            validations.Errors.ForEach(s => message += $"fechamento de comissão {commission.closingBranchCode}/{commission.closingCode}/{commission.commissionedCpfCnpj}: {s.ErrorMessage}\n");
+                            _logger.AddMessage(message);
+                        }
+
+                        _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.AccountsPayable.CommissionPaid(company.doc_company!, batchTime, commission));
+                    }
+
+                    if (_listSomenteNovos.Count == 0)
+                        continue;
+
+                    await _totvsAccountsPayableRepository.BulkInsertIntoTotvsCommissionsPaid(_listSomenteNovos, _logger.GetExecutionGuid());
+
+                    foreach (var record in _listSomenteNovos)
+                    {
+                        var key = (record.closingBranchCode, record.closingCode, record.commissionedCpfCnpj);
+
+                        if (commissionsJson.TryGetValue(key, out var json))
+                        {
+                            _logger.AddRecord($"{record.closingBranchCode}|{record.closingCode}|{record.commissionedCpfCnpj}", json);
+                            hashCache[key] = _logger.ComputeSha256Hash(json);
+                        }
+                    }
+
+                    totalInseridos += _listSomenteNovos.Count;
                 }
 
                 _logger.AddMessage(
@@ -436,99 +509,6 @@ namespace Application.Totvs.Services
         private static (int, int, string) CommissionKey(Domain.Totvs.Dtos.Reads.AccountsPayable.CommissionPaid x) =>
             (ConverterValidatorsExtensions.ConvertToInt32Validation(x.closingBranchCode), ConverterValidatorsExtensions.ConvertToInt32Validation(x.closingCode),
              ConverterValidatorsExtensions.StringLengthValidation(x.commissionedCpfCnpj, 14));
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
-        /// Devolve a quantidade de parcelas gravadas.
-        /// </summary>
-        private async Task<int> SaveDuplicates(
-            string doc_company,
-            DateTime batchTime,
-            IEnumerable<Domain.Totvs.Dtos.Reads.AccountsPayable.Duplicate> duplicates,
-            IReadOnlyDictionary<(int, int, long, int), string> duplicatesJson,
-            Dictionary<(int branchCode, int supplierCode, long duplicateCode, int installmentCode), Domain.Totvs.Entities.Reads.AccountsPayable.Duplicate>? duplicatesCache)
-        {
-            var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.AccountsPayable.Duplicate>();
-
-            // a mesma parcela pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
-            foreach (var duplicate in duplicates.Where(x => DuplicateKey(x).branchCode != 0 && DuplicateKey(x).duplicateCode != 0).GroupBy(DuplicateKey).Select(g => g.Last()))
-            {
-                var validations = _duplicateValidator.Validate(duplicate);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"duplicata {duplicate.branchCode}/{duplicate.supplierCode}/{duplicate.duplicateCode}/{duplicate.installmentCode}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.AccountsPayable.Duplicate(doc_company, batchTime, duplicate));
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _totvsAccountsPayableRepository.BulkInsertIntoTotvsDuplicates(_listSomenteNovos, _logger.GetExecutionGuid());
-
-            foreach (var record in _listSomenteNovos)
-            {
-                var key = (record.branchCode, record.supplierCode, record.duplicateCode, record.installmentCode);
-
-                if (duplicatesJson.TryGetValue(key, out var json))
-                    _logger.AddRecord($"{record.branchCode}|{record.supplierCode}|{record.duplicateCode}|{record.installmentCode}", json);
-
-                if (duplicatesCache is not null)
-                    duplicatesCache[key] = record;
-            }
-
-            return _listSomenteNovos.Count;
-        }
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache de hash da empresa.
-        /// Devolve a quantidade de fechamentos gravados.
-        /// </summary>
-        private async Task<int> SaveCommissionsPaid(
-            string doc_company,
-            DateTime batchTime,
-            IEnumerable<Domain.Totvs.Dtos.Reads.AccountsPayable.CommissionPaid> commissions,
-            IReadOnlyDictionary<(int, int, string), string> commissionsJson,
-            Dictionary<(int, int, string), string> hashCache)
-        {
-            var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.AccountsPayable.CommissionPaid>();
-
-            foreach (var commission in commissions.GroupBy(CommissionKey).Select(g => g.Last()))
-            {
-                var validations = _commissionPaidValidator.Validate(commission);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"fechamento de comissão {commission.closingBranchCode}/{commission.closingCode}/{commission.commissionedCpfCnpj}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.AccountsPayable.CommissionPaid(doc_company, batchTime, commission));
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _totvsAccountsPayableRepository.BulkInsertIntoTotvsCommissionsPaid(_listSomenteNovos, _logger.GetExecutionGuid());
-
-            foreach (var record in _listSomenteNovos)
-            {
-                var key = (record.closingBranchCode, record.closingCode, record.commissionedCpfCnpj);
-
-                if (commissionsJson.TryGetValue(key, out var json))
-                {
-                    _logger.AddRecord($"{record.closingBranchCode}|{record.closingCode}|{record.commissionedCpfCnpj}", json);
-                    hashCache[key] = _logger.ComputeSha256Hash(json);
-                }
-            }
-
-            return _listSomenteNovos.Count;
-        }
 
         /// <summary>
         /// troca o estágio de uma parcela (docs/PLANO-TOTVS-METODOS-FALTANTES.md §1.2 e §2.3). A Totvs valida a transição: a

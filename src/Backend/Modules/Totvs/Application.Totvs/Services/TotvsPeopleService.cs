@@ -215,7 +215,40 @@ namespace Application.Totvs.Services
                         NullableConverters.ToNullableDateTime(x.maxChangeFilterDate) <= y.maxChangeFilterDate
                     );
 
-                    totalInseridos += await SaveBranches(company.doc_company!, batchTime, branches, branchesJson, branchesCache);
+                    // valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
+                    // Devolve a quantidade de filiais gravadas.
+                    var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.People.Branches.Branch>();
+
+                    // a mesma filial pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
+                    foreach (var branch in branches.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.code) != 0).GroupBy(x => x.code).Select(g => g.Last()))
+                    {
+                        var validations = _branchValidator.Validate(branch);
+
+                        if (validations.Errors.Count > 0)
+                        {
+                            var message = String.Empty;
+                            validations.Errors.ForEach(s => message += $"filial {branch.code}: {s.ErrorMessage}\n");
+                            _logger.AddMessage(message);
+                        }
+
+                        _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.People.Branches.Branch(company.doc_company!, batchTime, branch));
+                    }
+
+                    if (_listSomenteNovos.Count == 0)
+                        continue;
+
+                    await _totvsPeopleRepository.BulkInsertIntoTotvsBranches(_listSomenteNovos, _logger.GetExecutionGuid());
+
+                    foreach (var record in _listSomenteNovos)
+                    {
+                        if (branchesJson.TryGetValue(record.code, out var json))
+                            _logger.AddRecord(record.code.ToString(), json);
+
+                        if (branchesCache is not null)
+                            branchesCache[record.code] = record;
+                    }
+
+                    totalInseridos += _listSomenteNovos.Count;
                 }
 
                 _logger.AddMessage(
@@ -1007,51 +1040,6 @@ namespace Application.Totvs.Services
                 _logger.SetLogEndDate();
                 await _logger.CommitAllChanges();
             }
-        }
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
-        /// Devolve a quantidade de filiais gravadas.
-        /// </summary>
-        private async Task<int> SaveBranches(
-            string doc_company,
-            DateTime batchTime,
-            IEnumerable<Domain.Totvs.Dtos.Reads.People.Branches.Branch> branches,
-            IReadOnlyDictionary<int, string> branchesJson,
-            Dictionary<int, Domain.Totvs.Entities.Reads.People.Branches.Branch>? branchesCache)
-        {
-            var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.People.Branches.Branch>();
-
-            // a mesma filial pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
-            foreach (var branch in branches.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.code) != 0).GroupBy(x => x.code).Select(g => g.Last()))
-            {
-                var validations = _branchValidator.Validate(branch);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"filial {branch.code}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.People.Branches.Branch(doc_company, batchTime, branch));
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _totvsPeopleRepository.BulkInsertIntoTotvsBranches(_listSomenteNovos, _logger.GetExecutionGuid());
-
-            foreach (var record in _listSomenteNovos)
-            {
-                if (branchesJson.TryGetValue(record.code, out var json))
-                    _logger.AddRecord(record.code.ToString(), json);
-
-                if (branchesCache is not null)
-                    branchesCache[record.code] = record;
-            }
-
-            return _listSomenteNovos.Count;
         }
 
         /// <summary>

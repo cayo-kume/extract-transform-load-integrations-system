@@ -247,67 +247,55 @@ namespace Application.Totvs.Services
                     );
                 }
 
-                saved += await SavePrices(company.doc_company!, batchTime, branchCode, items, itemsCache);
+                // valida, monta uma linha por loja e código (com o mesmo horário de lote), grava e atualiza o cache da loja.
+                // Devolve a quantidade de produtos gravados.
+                var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.Products.Values.Price>();
+                var records = new List<(int productCode, DateTime? maxChangeFilterDate, string json)>();
+
+                // o mesmo produto pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
+                foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.productCode) != 0).GroupBy(x => x.dto.productCode).Select(g => g.Last()))
+                {
+                    var productCode = ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.productCode);
+                    var validations = _productPriceValidator.Validate(item.dto);
+
+                    if (validations.Errors.Count > 0)
+                    {
+                        var message = String.Empty;
+                        validations.Errors.ForEach(s => message += $"preços do produto {productCode} na loja {branchCode}: {s.ErrorMessage}\n");
+                        _logger.AddMessage(message);
+                    }
+
+                    var rows = (item.dto.prices ?? [])
+                        .Select(x => new Domain.Totvs.Entities.Reads.Products.Values.Price(company.doc_company!, batchTime, item.dto, x))
+                        .Where(x => x.branchCode != 0 && x.priceCode != 0)
+                        .GroupBy(x => (x.branchCode, x.priceCode))
+                        .Select(g => g.Last())
+                        .ToList();
+
+                    _listSomenteNovos.AddRange(rows);
+                    records.Add((productCode, NullableConverters.ToNullableDateTime(item.dto.maxChangeFilterDate), item.json.ToString(Formatting.None)));
+                }
+
+                if (_listSomenteNovos.Count > 0)
+                {
+                    await _totvsProductPricesRepository.BulkInsertIntoTotvsPrices(_listSomenteNovos, _logger.GetExecutionGuid());
+
+                    foreach (var (productCode, maxChangeFilterDate, json) in records)
+                    {
+                        _logger.AddRecord($"{productCode}|{branchCode}", json);
+
+                        if (itemsCache is not null)
+                            itemsCache[productCode] = maxChangeFilterDate;
+                    }
+
+                    saved += records.Count;
+                }
 
                 totalPages = result.Value.totalPages;
                 page++;
             }
 
             return (saved, true);
-        }
-
-        /// <summary>
-        /// valida, monta uma linha por loja e código (com o mesmo horário de lote), grava e atualiza o cache da loja.
-        /// Devolve a quantidade de produtos gravados.
-        /// </summary>
-        private async Task<int> SavePrices(
-            string doc_company,
-            DateTime batchTime,
-            int branchCode,
-            List<(Domain.Totvs.Dtos.Reads.Products.Values.ProductPrice dto, JObject json)> items,
-            Dictionary<int, DateTime?>? itemsCache)
-        {
-            var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.Products.Values.Price>();
-            var records = new List<(int productCode, DateTime? maxChangeFilterDate, string json)>();
-
-            // o mesmo produto pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
-            foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.productCode) != 0).GroupBy(x => x.dto.productCode).Select(g => g.Last()))
-            {
-                var productCode = ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.productCode);
-                var validations = _productPriceValidator.Validate(item.dto);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"preços do produto {productCode} na loja {branchCode}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                var rows = (item.dto.prices ?? [])
-                    .Select(x => new Domain.Totvs.Entities.Reads.Products.Values.Price(doc_company, batchTime, item.dto, x))
-                    .Where(x => x.branchCode != 0 && x.priceCode != 0)
-                    .GroupBy(x => (x.branchCode, x.priceCode))
-                    .Select(g => g.Last())
-                    .ToList();
-
-                _listSomenteNovos.AddRange(rows);
-                records.Add((productCode, NullableConverters.ToNullableDateTime(item.dto.maxChangeFilterDate), item.json.ToString(Formatting.None)));
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _totvsProductPricesRepository.BulkInsertIntoTotvsPrices(_listSomenteNovos, _logger.GetExecutionGuid());
-
-            foreach (var (productCode, maxChangeFilterDate, json) in records)
-            {
-                _logger.AddRecord($"{productCode}|{branchCode}", json);
-
-                if (itemsCache is not null)
-                    itemsCache[productCode] = maxChangeFilterDate;
-            }
-
-            return records.Count;
         }
 
         public async Task<bool?> PostSearchCosts()
@@ -480,67 +468,55 @@ namespace Application.Totvs.Services
                     );
                 }
 
-                saved += await SaveCosts(company.doc_company!, batchTime, branchCode, items, itemsCache);
+                // valida, monta uma linha por loja e código (com o mesmo horário de lote), grava e atualiza o cache da loja.
+                // Devolve a quantidade de produtos gravados.
+                var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.Products.Values.Cost>();
+                var records = new List<(int productCode, DateTime? maxChangeFilterDate, string json)>();
+
+                // o mesmo produto pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
+                foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.productCode) != 0).GroupBy(x => x.dto.productCode).Select(g => g.Last()))
+                {
+                    var productCode = ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.productCode);
+                    var validations = _productCostValidator.Validate(item.dto);
+
+                    if (validations.Errors.Count > 0)
+                    {
+                        var message = String.Empty;
+                        validations.Errors.ForEach(s => message += $"custos do produto {productCode} na loja {branchCode}: {s.ErrorMessage}\n");
+                        _logger.AddMessage(message);
+                    }
+
+                    var rows = (item.dto.costs ?? [])
+                        .Select(x => new Domain.Totvs.Entities.Reads.Products.Values.Cost(company.doc_company!, batchTime, item.dto, x))
+                        .Where(x => x.branchCode != 0 && x.costCode != 0)
+                        .GroupBy(x => (x.branchCode, x.costCode))
+                        .Select(g => g.Last())
+                        .ToList();
+
+                    _listSomenteNovos.AddRange(rows);
+                    records.Add((productCode, NullableConverters.ToNullableDateTime(item.dto.maxChangeFilterDate), item.json.ToString(Formatting.None)));
+                }
+
+                if (_listSomenteNovos.Count > 0)
+                {
+                    await _totvsProductPricesRepository.BulkInsertIntoTotvsCosts(_listSomenteNovos, _logger.GetExecutionGuid());
+
+                    foreach (var (productCode, maxChangeFilterDate, json) in records)
+                    {
+                        _logger.AddRecord($"{productCode}|{branchCode}", json);
+
+                        if (itemsCache is not null)
+                            itemsCache[productCode] = maxChangeFilterDate;
+                    }
+
+                    saved += records.Count;
+                }
 
                 totalPages = result.Value.totalPages;
                 page++;
             }
 
             return (saved, true);
-        }
-
-        /// <summary>
-        /// valida, monta uma linha por loja e código (com o mesmo horário de lote), grava e atualiza o cache da loja.
-        /// Devolve a quantidade de produtos gravados.
-        /// </summary>
-        private async Task<int> SaveCosts(
-            string doc_company,
-            DateTime batchTime,
-            int branchCode,
-            List<(Domain.Totvs.Dtos.Reads.Products.Values.ProductCost dto, JObject json)> items,
-            Dictionary<int, DateTime?>? itemsCache)
-        {
-            var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.Products.Values.Cost>();
-            var records = new List<(int productCode, DateTime? maxChangeFilterDate, string json)>();
-
-            // o mesmo produto pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
-            foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.productCode) != 0).GroupBy(x => x.dto.productCode).Select(g => g.Last()))
-            {
-                var productCode = ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.productCode);
-                var validations = _productCostValidator.Validate(item.dto);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"custos do produto {productCode} na loja {branchCode}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                var rows = (item.dto.costs ?? [])
-                    .Select(x => new Domain.Totvs.Entities.Reads.Products.Values.Cost(doc_company, batchTime, item.dto, x))
-                    .Where(x => x.branchCode != 0 && x.costCode != 0)
-                    .GroupBy(x => (x.branchCode, x.costCode))
-                    .Select(g => g.Last())
-                    .ToList();
-
-                _listSomenteNovos.AddRange(rows);
-                records.Add((productCode, NullableConverters.ToNullableDateTime(item.dto.maxChangeFilterDate), item.json.ToString(Formatting.None)));
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _totvsProductPricesRepository.BulkInsertIntoTotvsCosts(_listSomenteNovos, _logger.GetExecutionGuid());
-
-            foreach (var (productCode, maxChangeFilterDate, json) in records)
-            {
-                _logger.AddRecord($"{productCode}|{branchCode}", json);
-
-                if (itemsCache is not null)
-                    itemsCache[productCode] = maxChangeFilterDate;
-            }
-
-            return records.Count;
         }
 
         public async Task<bool?> PostSearchPriceTables()
@@ -702,57 +678,45 @@ namespace Application.Totvs.Services
                     );
                 }
 
-                saved += await SavePriceTableItems(company.doc_company!, batchTime, priceTableCode, items, itemsCache);
+                // valida, monta os itens com os preços por loja e escala (com o mesmo horário de lote), grava e atualiza o cache da tabela.
+                // Devolve a quantidade de produtos gravados.
+                var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Products.PriceTables.PriceTableItem record, string json)>();
+
+                // o mesmo produto pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
+                foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.productCode) != 0).GroupBy(x => x.dto.productCode).Select(g => g.Last()))
+                {
+                    var validations = _priceTableProductValidator.Validate(item.dto);
+
+                    if (validations.Errors.Count > 0)
+                    {
+                        var message = String.Empty;
+                        validations.Errors.ForEach(s => message += $"tabela de preço {priceTableCode}, produto {item.dto.productCode}: {s.ErrorMessage}\n");
+                        _logger.AddMessage(message);
+                    }
+
+                    _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.PriceTables.PriceTableItem(company.doc_company!, batchTime, priceTableCode, item.dto), item.json.ToString(Formatting.None)));
+                }
+
+                if (_listSomenteNovos.Count > 0)
+                {
+                    await _totvsProductPricesRepository.BulkInsertIntoTotvsPriceTablesItems(_listSomenteNovos.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
+
+                    foreach (var (record, json) in _listSomenteNovos)
+                    {
+                        _logger.AddRecord($"{priceTableCode}|{record.productCode}", json);
+
+                        if (itemsCache is not null)
+                            itemsCache[record.productCode] = record.maxChangeFilterDate;
+                    }
+
+                    saved += _listSomenteNovos.Count;
+                }
 
                 totalPages = result.Value.totalPages;
                 page++;
             }
 
             return (saved, true);
-        }
-
-        /// <summary>
-        /// valida, monta os itens com os preços por loja e escala (com o mesmo horário de lote), grava e atualiza o cache da tabela.
-        /// Devolve a quantidade de produtos gravados.
-        /// </summary>
-        private async Task<int> SavePriceTableItems(
-            string doc_company,
-            DateTime batchTime,
-            int priceTableCode,
-            List<(Domain.Totvs.Dtos.Reads.Products.PriceTables.PriceTableProduct dto, JObject json)> items,
-            Dictionary<int, DateTime?>? itemsCache)
-        {
-            var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Products.PriceTables.PriceTableItem record, string json)>();
-
-            // o mesmo produto pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
-            foreach (var item in items.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.productCode) != 0).GroupBy(x => x.dto.productCode).Select(g => g.Last()))
-            {
-                var validations = _priceTableProductValidator.Validate(item.dto);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"tabela de preço {priceTableCode}, produto {item.dto.productCode}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.PriceTables.PriceTableItem(doc_company, batchTime, priceTableCode, item.dto), item.json.ToString(Formatting.None)));
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _totvsProductPricesRepository.BulkInsertIntoTotvsPriceTablesItems(_listSomenteNovos.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
-
-            foreach (var (record, json) in _listSomenteNovos)
-            {
-                _logger.AddRecord($"{priceTableCode}|{record.productCode}", json);
-
-                if (itemsCache is not null)
-                    itemsCache[record.productCode] = record.maxChangeFilterDate;
-            }
-
-            return _listSomenteNovos.Count;
         }
 
         public async Task<bool?> GetPromotion()
@@ -899,7 +863,48 @@ namespace Application.Totvs.Services
                         .GroupBy(x => (x!.promotionCode, x.productCode))
                         .ToDictionary(g => g.Key, g => g.First()!.json_hash);
 
-                    total += await SavePromotions(company.doc_company!, batchTime, branchCode, result.items.Select((x, i) => (x, ((JObject)json[i]).ToString(Formatting.None))).ToList(), stored);
+                    // valida, monta as entidades (com o mesmo horário de lote e o hash do JSON) e grava só os itens novos ou com hash diferente do
+                    // gravado. Devolve a quantidade de itens gravados.
+                    List<(Domain.Totvs.Dtos.Reads.Products.Promotions.Promotion dto, string json)> items = result.items.Select((x, i) => (x, ((JObject)json[i]).ToString(Formatting.None))).ToList();
+
+                    var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Products.Promotions.Promotion record, string json)>();
+
+                    foreach (var item in items
+                        .Select(x => (x.dto, x.json, key: (ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.promotionCode), ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.productCode))))
+                        .Where(x => x.key.Item1 != 0 && x.key.Item2 != 0)
+                        .GroupBy(x => x.key)
+                        .Select(g => g.Last()))
+                    {
+                        var hash = _logger.ComputeSha256Hash(item.json);
+
+                        // sem data de alteração confiável: só regrava quando o JSON mudou
+                        if (stored.TryGetValue(item.key, out var storedHash) && storedHash == hash)
+                            continue;
+
+                        var validations = _promotionValidator.Validate(item.dto);
+
+                        if (validations.Errors.Count > 0)
+                        {
+                            var message = String.Empty;
+                            validations.Errors.ForEach(s => message += $"promoção {item.key.Item1} da loja {branchCode}, produto {item.key.Item2}: {s.ErrorMessage}\n");
+                            _logger.AddMessage(message);
+                        }
+
+                        _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Promotions.Promotion(company.doc_company!, batchTime, hash, item.dto), item.json));
+                    }
+
+                    if (_listSomenteNovos.Count > 0)
+                    {
+                        await _totvsProductPricesRepository.BulkInsertIntoTotvsPromotions(_listSomenteNovos.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
+
+                        foreach (var (record, recordJson) in _listSomenteNovos)
+                        {
+                            _logger.AddRecord($"{record.branchCode}|{record.promotionCode}|{record.productCode}", recordJson);
+                            stored[(record.promotionCode, record.productCode)] = record.json_hash;
+                        }
+
+                        total += _listSomenteNovos.Count;
+                    }
                 }
 
                 totalPages = result.totalPages;
@@ -907,57 +912,6 @@ namespace Application.Totvs.Services
             }
 
             return total;
-        }
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote e o hash do JSON) e grava só os itens novos ou com hash diferente do
-        /// gravado. Devolve a quantidade de itens gravados.
-        /// </summary>
-        private async Task<int> SavePromotions(
-            string doc_company,
-            DateTime batchTime,
-            int branchCode,
-            List<(Domain.Totvs.Dtos.Reads.Products.Promotions.Promotion dto, string json)> items,
-            Dictionary<(int, int), string> stored)
-        {
-            var _listSomenteNovos = new List<(Domain.Totvs.Entities.Reads.Products.Promotions.Promotion record, string json)>();
-
-            foreach (var item in items
-                .Select(x => (x.dto, x.json, key: (ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.promotionCode), ConverterValidatorsExtensions.ConvertToInt32Validation(x.dto.productCode))))
-                .Where(x => x.key.Item1 != 0 && x.key.Item2 != 0)
-                .GroupBy(x => x.key)
-                .Select(g => g.Last()))
-            {
-                var hash = _logger.ComputeSha256Hash(item.json);
-
-                // sem data de alteração confiável: só regrava quando o JSON mudou
-                if (stored.TryGetValue(item.key, out var storedHash) && storedHash == hash)
-                    continue;
-
-                var validations = _promotionValidator.Validate(item.dto);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"promoção {item.key.Item1} da loja {branchCode}, produto {item.key.Item2}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Promotions.Promotion(doc_company, batchTime, hash, item.dto), item.json));
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _totvsProductPricesRepository.BulkInsertIntoTotvsPromotions(_listSomenteNovos.Select(x => x.record).ToList(), _logger.GetExecutionGuid());
-
-            foreach (var (record, json) in _listSomenteNovos)
-            {
-                _logger.AddRecord($"{record.branchCode}|{record.promotionCode}|{record.productCode}", json);
-                stored[(record.promotionCode, record.productCode)] = record.json_hash;
-            }
-
-            return _listSomenteNovos.Count;
         }
 
         /// <summary>

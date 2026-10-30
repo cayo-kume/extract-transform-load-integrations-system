@@ -563,7 +563,47 @@ namespace Application.Totvs.Services
                             .GroupBy(x => (x!.branchCode, x.movementDate.Date, x.sequence))
                             .ToDictionary(g => g.Key, g => g.First()!.json_hash);
 
-                        totalInseridos += await SaveReceptionSales(company.doc_company!, _totvsService.GetBatchTime(), receptions, receptionsJson, stored);
+                        // valida, monta as entidades (com o mesmo horário de lote e o hash do JSON) e grava só as recepções novas ou com hash
+                        // diferente do gravado. Devolve a quantidade de recepções gravadas.
+                        var batchTime = _totvsService.GetBatchTime();
+
+                        var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.People.ReceptionSales.ReceptionSale>();
+
+                        foreach (var reception in receptions.GroupBy(x => ReceptionKey(x.branchCode, x.movementDate, x.sequence)).Select(g => g.Last()))
+                        {
+                            var key = ReceptionKey(reception.branchCode, reception.movementDate, reception.sequence);
+
+                            if (key.branchCode == 0 || key.sequence == 0 || !receptionsJson.TryGetValue(key, out var json))
+                                continue;
+
+                            var hash = _logger.ComputeSha256Hash(json);
+
+                            // sem data de alteração: só regrava quando o JSON mudou
+                            if (stored.TryGetValue(key, out var storedHash) && storedHash == hash)
+                                continue;
+
+                            var validations = _receptionSaleValidator.Validate(reception);
+
+                            if (validations.Errors.Count > 0)
+                            {
+                                var message = String.Empty;
+                                validations.Errors.ForEach(s => message += $"recepção {key.branchCode}/{key.movementDate:dd/MM/yyyy}/{key.sequence}: {s.ErrorMessage}\n");
+                                _logger.AddMessage(message);
+                            }
+
+                            _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.People.ReceptionSales.ReceptionSale(company.doc_company!, batchTime, hash, reception));
+                        }
+
+                        if (_listSomenteNovos.Count == 0)
+                            continue;
+
+                        await _totvsRepresentativesRepository.BulkInsertIntoTotvsReceptionSales(_listSomenteNovos, _logger.GetExecutionGuid());
+
+                        foreach (var record in _listSomenteNovos)
+                            if (receptionsJson.TryGetValue((record.branchCode, record.movementDate.Date, record.sequence), out var json))
+                                _logger.AddRecord($"{record.branchCode}|{record.movementDate:yyyy-MM-dd}|{record.sequence}", json);
+
+                        totalInseridos += _listSomenteNovos.Count;
                     }
                 }
 
@@ -627,56 +667,6 @@ namespace Application.Totvs.Services
                 if (representativesCache is not null)
                     representativesCache[record.code] = record;
             }
-
-            return _listSomenteNovos.Count;
-        }
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote e o hash do JSON) e grava só as recepções novas ou com hash
-        /// diferente do gravado. Devolve a quantidade de recepções gravadas.
-        /// </summary>
-        private async Task<int> SaveReceptionSales(
-            string doc_company,
-            DateTime batchTime,
-            IEnumerable<Domain.Totvs.Dtos.Reads.People.ReceptionSales.ReceptionSale> receptions,
-            IReadOnlyDictionary<(int, DateTime, int), string> receptionsJson,
-            IReadOnlyDictionary<(int, DateTime, int), string> stored)
-        {
-            var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.People.ReceptionSales.ReceptionSale>();
-
-            foreach (var reception in receptions.GroupBy(x => ReceptionKey(x.branchCode, x.movementDate, x.sequence)).Select(g => g.Last()))
-            {
-                var key = ReceptionKey(reception.branchCode, reception.movementDate, reception.sequence);
-
-                if (key.branchCode == 0 || key.sequence == 0 || !receptionsJson.TryGetValue(key, out var json))
-                    continue;
-
-                var hash = _logger.ComputeSha256Hash(json);
-
-                // sem data de alteração: só regrava quando o JSON mudou
-                if (stored.TryGetValue(key, out var storedHash) && storedHash == hash)
-                    continue;
-
-                var validations = _receptionSaleValidator.Validate(reception);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"recepção {key.branchCode}/{key.movementDate:dd/MM/yyyy}/{key.sequence}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.People.ReceptionSales.ReceptionSale(doc_company, batchTime, hash, reception));
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _totvsRepresentativesRepository.BulkInsertIntoTotvsReceptionSales(_listSomenteNovos, _logger.GetExecutionGuid());
-
-            foreach (var record in _listSomenteNovos)
-                if (receptionsJson.TryGetValue((record.branchCode, record.movementDate.Date, record.sequence), out var json))
-                    _logger.AddRecord($"{record.branchCode}|{record.movementDate:yyyy-MM-dd}|{record.sequence}", json);
 
             return _listSomenteNovos.Count;
         }
