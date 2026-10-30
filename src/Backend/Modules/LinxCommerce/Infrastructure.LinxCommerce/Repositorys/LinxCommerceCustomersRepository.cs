@@ -9,15 +9,15 @@ namespace Infrastructure.LinxCommerce.Repositorys
 {
     public class LinxCommerceCustomersRepository : ILinxCommerceCustomersRepository
     {
-        private readonly ILinxCommerceCommandHandler _linxCommerceCommandHandler;
+        private readonly ILinxCommerceCustomersCommandHandler _linxCommerceCustomersCommandHandler;
         private readonly ISharedRepository _coreRepository;
 
-        public LinxCommerceCustomersRepository(ILinxCommerceCommandHandler linxCommerceCommandHandler, ISharedRepository coreRepository) =>
-            (_linxCommerceCommandHandler, _coreRepository) = (linxCommerceCommandHandler, coreRepository);
+        public LinxCommerceCustomersRepository(ILinxCommerceCustomersCommandHandler linxCommerceCustomersCommandHandler, ISharedRepository coreRepository) =>
+            (_linxCommerceCustomersCommandHandler, _coreRepository) = (linxCommerceCustomersCommandHandler, coreRepository);
 
         public async Task<DateTime?> GetCustomersLastBatchTime(string doc_company)
         {
-            string sql = _linxCommerceCommandHandler.CreateGetCustomersLastBatchTimeQuery(doc_company);
+            string sql = _linxCommerceCustomersCommandHandler.CreateGetCustomersLastBatchTimeQuery(doc_company);
 
             return await _coreRepository.GetRecord<DateTime?>(sql);
         }

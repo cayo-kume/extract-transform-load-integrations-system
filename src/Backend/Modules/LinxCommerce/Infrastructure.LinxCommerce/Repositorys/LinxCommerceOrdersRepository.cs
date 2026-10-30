@@ -9,15 +9,15 @@ namespace Infrastructure.LinxCommerce.Repositorys
 {
     public class LinxCommerceOrdersRepository : ILinxCommerceOrdersRepository
     {
-        private readonly ILinxCommerceCommandHandler _linxCommerceCommandHandler;
+        private readonly ILinxCommerceOrdersCommandHandler _linxCommerceOrdersCommandHandler;
         private readonly ISharedRepository _coreRepository;
 
-        public LinxCommerceOrdersRepository(ILinxCommerceCommandHandler linxCommerceCommandHandler, ISharedRepository coreRepository) =>
-            (_linxCommerceCommandHandler, _coreRepository) = (linxCommerceCommandHandler, coreRepository);
+        public LinxCommerceOrdersRepository(ILinxCommerceOrdersCommandHandler linxCommerceOrdersCommandHandler, ISharedRepository coreRepository) =>
+            (_linxCommerceOrdersCommandHandler, _coreRepository) = (linxCommerceOrdersCommandHandler, coreRepository);
 
         public async Task<DateTimeOffset?> GetOrdersLastModifiedDate(string doc_company)
         {
-            string sql = _linxCommerceCommandHandler.CreateGetOrdersLastModifiedDateQuery(doc_company);
+            string sql = _linxCommerceOrdersCommandHandler.CreateGetOrdersLastModifiedDateQuery(doc_company);
 
             return await _coreRepository.GetRecord<DateTimeOffset?>(sql);
         }
@@ -29,7 +29,7 @@ namespace Infrastructure.LinxCommerce.Repositorys
             // lotes de 1000 ids, como no GetPeopleByIds do Movidesk
             foreach (var chunk in ids.Distinct().Chunk(1000))
             {
-                string sql = _linxCommerceCommandHandler.CreateGetOrdersByIdsQuery(doc_company, chunk.ToList());
+                string sql = _linxCommerceOrdersCommandHandler.CreateGetOrdersByIdsQuery(doc_company, chunk.ToList());
 
                 result.AddRange(await _coreRepository.GetRecords<Order>(sql));
             }

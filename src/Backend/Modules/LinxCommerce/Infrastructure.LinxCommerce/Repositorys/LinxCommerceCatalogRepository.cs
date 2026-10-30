@@ -9,15 +9,15 @@ namespace Infrastructure.LinxCommerce.Repositorys
 {
     public class LinxCommerceCatalogRepository : ILinxCommerceCatalogRepository
     {
-        private readonly ILinxCommerceCommandHandler _linxCommerceCommandHandler;
+        private readonly ILinxCommerceCatalogCommandHandler _linxCommerceCatalogCommandHandler;
         private readonly ISharedRepository _coreRepository;
 
-        public LinxCommerceCatalogRepository(ILinxCommerceCommandHandler linxCommerceCommandHandler, ISharedRepository coreRepository) =>
-            (_linxCommerceCommandHandler, _coreRepository) = (linxCommerceCommandHandler, coreRepository);
+        public LinxCommerceCatalogRepository(ILinxCommerceCatalogCommandHandler linxCommerceCatalogCommandHandler, ISharedRepository coreRepository) =>
+            (_linxCommerceCatalogCommandHandler, _coreRepository) = (linxCommerceCatalogCommandHandler, coreRepository);
 
         public async Task<DateTimeOffset?> GetProductsLastModifiedDate(string doc_company)
         {
-            string sql = _linxCommerceCommandHandler.CreateGetProductsLastModifiedDateQuery(doc_company);
+            string sql = _linxCommerceCatalogCommandHandler.CreateGetProductsLastModifiedDateQuery(doc_company);
 
             return await _coreRepository.GetRecord<DateTimeOffset?>(sql);
         }
@@ -29,7 +29,7 @@ namespace Infrastructure.LinxCommerce.Repositorys
             // lotes de 1000 ids, como no GetPeopleByIds do Movidesk
             foreach (var chunk in ids.Distinct().Chunk(1000))
             {
-                string sql = _linxCommerceCommandHandler.CreateGetProductsByIdsQuery(doc_company, chunk.ToList());
+                string sql = _linxCommerceCatalogCommandHandler.CreateGetProductsByIdsQuery(doc_company, chunk.ToList());
 
                 result.AddRange(await _coreRepository.GetRecords<Product>(sql));
             }
@@ -63,7 +63,7 @@ namespace Infrastructure.LinxCommerce.Repositorys
 
         public async Task<DateTimeOffset?> GetSkusLastModifiedDate(string doc_company)
         {
-            string sql = _linxCommerceCommandHandler.CreateGetSkusLastModifiedDateQuery(doc_company);
+            string sql = _linxCommerceCatalogCommandHandler.CreateGetSkusLastModifiedDateQuery(doc_company);
 
             return await _coreRepository.GetRecord<DateTimeOffset?>(sql);
         }
@@ -74,7 +74,7 @@ namespace Infrastructure.LinxCommerce.Repositorys
 
             foreach (var chunk in ids.Distinct().Chunk(1000))
             {
-                string sql = _linxCommerceCommandHandler.CreateGetSkusByIdsQuery(doc_company, chunk.ToList());
+                string sql = _linxCommerceCatalogCommandHandler.CreateGetSkusByIdsQuery(doc_company, chunk.ToList());
 
                 result.AddRange(await _coreRepository.GetRecords<Sku>(sql));
             }

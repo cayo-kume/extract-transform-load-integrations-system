@@ -140,11 +140,11 @@ Domain.LinxCommerce/
 ```
 Application.LinxCommerce/
 ├── Abstractions/
-│   ├── Handlers/Commands/      (ILinxCommerceCommandHandler)
+│   ├── Handlers/Commands/      (ILinxCommerceCommandHandler e um por service: Orders, Customers e Catalog)
 │   └── Services/               (ILinxCommerceService e um por assunto)
-├── Handlers/Commands/          (LinxCommerceCommandHandler: as queries SQL)
+├── Handlers/Commands/          (as queries SQL: LinxCommerceOrders/Customers/CatalogCommandHandler, usados pelo repositório de cada service, e o LinxCommerceCommandHandler com a comum)
 ├── Services/                   (LinxCommerceService e um por assunto)
-└── Validations/                (um validador por DTO gravado, nas pastas do assunto; Base/ com as regras de data e decimal)
+└── Validations/                (um validador por DTO gravado, nas mesmas pastas dos DTOs: Reads/<assunto>; Reads/Base com as regras de data e decimal)
 ```
 
 ### `LinxCommerceService`: operações comuns aos outros services
@@ -231,7 +231,7 @@ Infrastructure.LinxCommerce/
 
 * `IApiClient` com a chave `"LinxCommerceAPI"` e o `HttpClient` nomeado `"LinxCommerceAPI"` **sem `BaseAddress`** (o endereço é de cada
   cliente) e timeout de 20 minutos;
-* os services, os repositórios e o `ILinxCommerceCommandHandler` (`Scoped`);
+* os services, os repositórios e os command handlers, um por service com query mais o comum `ILinxCommerceCommandHandler` (`Scoped`);
 * todos os validadores do assembly numa chamada só (`AddValidatorsFromAssemblyContaining<OrderValidator>()`).
 
 O host chama o método em `Hosts/Hangfire/Extensions/ServicesExtensions.cs`.

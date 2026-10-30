@@ -2,7 +2,7 @@
 using Application.LinxCommerce.Abstractions.Services;
 using Application.LinxCommerce.Handlers.Commands;
 using Application.LinxCommerce.Services;
-using Application.LinxCommerce.Validations.Orders;
+using Application.LinxCommerce.Validations.Reads.Orders;
 using Domain.LinxCommerce.Abstractions.Repositorys;
 using Domain.Shared.Abstractions.Api;
 using FluentValidation;
@@ -31,12 +31,15 @@ namespace Infrastructure.LinxCommerce.DependencyInjection
 
             services.AddScoped<ILinxCommerceOrdersService, LinxCommerceOrdersService>();
             services.AddScoped<ILinxCommerceOrdersRepository, LinxCommerceOrdersRepository>();
+            services.AddScoped<ILinxCommerceOrdersCommandHandler, LinxCommerceOrdersCommandHandler>();
 
             services.AddScoped<ILinxCommerceCustomersService, LinxCommerceCustomersService>();
             services.AddScoped<ILinxCommerceCustomersRepository, LinxCommerceCustomersRepository>();
+            services.AddScoped<ILinxCommerceCustomersCommandHandler, LinxCommerceCustomersCommandHandler>();
 
             services.AddScoped<ILinxCommerceCatalogService, LinxCommerceCatalogService>();
             services.AddScoped<ILinxCommerceCatalogRepository, LinxCommerceCatalogRepository>();
+            services.AddScoped<ILinxCommerceCatalogCommandHandler, LinxCommerceCatalogCommandHandler>();
 
             services.AddScoped<ILinxCommerceSalesRepresentativesService, LinxCommerceSalesRepresentativesService>();
             services.AddScoped<ILinxCommerceSalesRepresentativesRepository, LinxCommerceSalesRepresentativesRepository>();
