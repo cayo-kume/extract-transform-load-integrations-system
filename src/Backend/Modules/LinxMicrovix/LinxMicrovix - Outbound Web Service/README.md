@@ -39,7 +39,7 @@ O módulo **não escreve** no Microvix.
 | Documentação da API | Web Service de Saída Padrão v274 e WS B2C V64 (PDFs da Linx); o método `LinxMetodos` devolve o catálogo de comandos e parâmetros aceitos hoje |
 | Banco de dados | SQL Server (schemas `untreated`, `linxmicrovix` e `auditing`; o `Script001` cria `linxmicrovix` quando não existe) |
 | Multiempresa | Sim: cada CNPJ de `linxmicrovix.LinxMicrovixParameters` tem as chaves e credenciais de cada API. O CNPJ (`doc_company`) é a primeira coluna da chave de todas as tabelas |
-| Host | `src/Backend/Hosts/Hangfire` (controller `LinxMicrovixController`, `partial` por service) |
+| Host | `src/Backend/Hosts/WebApi` (controller `LinxMicrovixController`, `partial` por service) |
 
 ### Comportamentos da API que a integração trata
 A documentação não descreve tudo; o que segue foi conferido com chamadas reais (detalhes em
@@ -667,7 +667,7 @@ Infrastructure.LinxMicrovix.Outbound/
 * os 29 services, os repositórios e o `ILinxMicrovixCommandHandler` (`Scoped`);
 * todos os validadores do assembly numa chamada só.
 
-O host chama o método em `Hosts/Hangfire/Extensions/ServicesExtensions.cs`.
+O host chama o método em `Hosts/WebApi/Extensions/ServicesExtensions.cs`.
 
 ### Scripts de banco (SQL Server)
 

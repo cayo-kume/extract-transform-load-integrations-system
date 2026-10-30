@@ -568,7 +568,7 @@ Pontos do código:
 
 ## 9. Controller
 
-`src/Backend/Hosts/Hangfire/Controllers/General/MovideskController.cs`, depois do endpoint `Tickets`, com o cabeçalho
+`src/Backend/Hosts/WebApi/Controllers/General/MovideskController.cs`, depois do endpoint `Tickets`, com o cabeçalho
 `X-User-Name` igual ao `AfterSaleController`:
 ```csharp
 /// <summary>

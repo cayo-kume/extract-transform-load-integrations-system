@@ -33,7 +33,7 @@ Módulo do sistema de integrações (ETL) responsável por:
 | Documentação da API | [AfterSale Public API 1.0.8 (SwaggerHub)](https://app.swaggerhub.com/apis/send42/public-api/1.0.8) |
 | Banco de dados | SQL Server (schemas `untreated`, `aftersale` e `auditing`; o `Script001` cria `aftersale` e `untreated` quando não existem) |
 | Multiempresa | Sim: cada CNPJ cadastrado em `aftersale.AfterSaleParameters` tem o seu token; o CNPJ (`doc_company`) faz parte da chave das tabelas |
-| Host | `src/Backend/Hosts/Hangfire` (controller `AfterSaleController`) |
+| Host | `src/Backend/Hosts/WebApi` (controller `AfterSaleController`) |
 
 ### Disclaimer sobre a documentação da API
 A documentação pública da AfterSale está desatualizada em vários pontos. Com um Bearer Token válido, foi feita uma requisição em cada end-point e a resposta real trouxe campos diferentes dos documentados.
@@ -256,7 +256,7 @@ Infrastructure.AfterSale/
 * os command handlers: `IAfterSaleRefundsCommandHandler`, `IAfterSaleReversesCommandHandler` e o comum `IAfterSaleCommandHandler`;
 * todos os validadores do assembly (`AddValidatorsFromAssemblyContaining<EcommerceValidation>()`).
 
-O host chama o método em `Hosts/Hangfire/Extensions/ServicesExtensions.cs`.
+O host chama o método em `Hosts/WebApi/Extensions/ServicesExtensions.cs`.
 
 ### Scripts de banco (SQL Server)
 

@@ -110,7 +110,7 @@ Consequências da opção C:
 4. `Application.AfterSale/Services/AfterSaleReversesService.cs`, linha 783:
    `where TResponse : Domain.AfterSale.Dtos.Writes.Reverses.Base.ResponseRoot, new()` →
    `where TResponse : Domain.AfterSale.Dtos.Writes.Base.ResponseRoot, new()`
-5. `Hosts/Hangfire/Controllers/General/AfterSaleController.cs`, linha 243:
+5. `Hosts/WebApi/Controllers/General/AfterSaleController.cs`, linha 243:
    `where TResponse : Domain.AfterSale.Dtos.Writes.Reverses.Base.ResponseRoot` →
    `where TResponse : Domain.AfterSale.Dtos.Writes.Base.ResponseRoot`
 
@@ -429,7 +429,7 @@ Diferenças em relação ao `SendReverseAction` (de resto, linha a linha igual):
 
 ### Passo 6 — Endpoints
 
-[`Hosts/Hangfire/Controllers/General/AfterSaleController.cs`](../../../../Hosts/Hangfire/Controllers/General/AfterSaleController.cs)
+[`Hosts/WebApi/Controllers/General/AfterSaleController.cs`](../../../../Hosts/WebApi/Controllers/General/AfterSaleController.cs)
 — antes do `ToActionResult` (linha 243):
 
 ```csharp

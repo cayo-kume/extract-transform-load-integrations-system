@@ -399,7 +399,7 @@ Pontos do código:
 
 ## 7. Controller
 
-`src/Backend/Hosts/Hangfire/Controllers/General/MovideskController.cs`, depois do endpoint `People`:
+`src/Backend/Hosts/WebApi/Controllers/General/MovideskController.cs`, depois do endpoint `People`:
 ```csharp
 /// <summary>
 /// get one person by Cód. Ref. (GET persons?id={id}) and save it; the call is logged in movidesk.MovideskRequests

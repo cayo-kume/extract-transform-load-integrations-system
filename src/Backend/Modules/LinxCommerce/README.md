@@ -34,7 +34,7 @@ migradas: a da carteira apagava a carteira de todos os vendedores a cada execuç
 | Documentação da API | Nenhuma usada: o módulo foi escrito a partir do código antigo, sem credenciais (ver [Pendências](#pendências)) |
 | Banco de dados | SQL Server (schemas `untreated`, `linxcommerce` e `auditing`; o `Script001` cria `linxcommerce` quando não existe) |
 | Multiempresa | Sim: cada CNPJ de `linxcommerce.LinxCommerceParameters` tem o seu ambiente e as suas credenciais. O CNPJ (`doc_company`) é a primeira coluna da chave de todas as tabelas |
-| Host | `src/Backend/Hosts/Hangfire` (controller `LinxCommerceController`) |
+| Host | `src/Backend/Hosts/WebApi` (controller `LinxCommerceController`) |
 
 ### Comportamentos da API que a integração trata
 **Nada aqui foi conferido com a API real** (sem credenciais desde 2026): o que segue é o que o código antigo fazia, e cada ponto
@@ -234,7 +234,7 @@ Infrastructure.LinxCommerce/
 * os services, os repositórios e os command handlers, um por service com query mais o comum `ILinxCommerceCommandHandler` (`Scoped`);
 * todos os validadores do assembly numa chamada só (`AddValidatorsFromAssemblyContaining<OrderValidator>()`).
 
-O host chama o método em `Hosts/Hangfire/Extensions/ServicesExtensions.cs`.
+O host chama o método em `Hosts/WebApi/Extensions/ServicesExtensions.cs`.
 
 ### Scripts de banco (SQL Server)
 

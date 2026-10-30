@@ -508,7 +508,7 @@ Diferenças em relação ao `GetReverses` (de resto, linha a linha igual):
 
 ### Passo 7 — Endpoint
 
-Arquivo: [`Hosts/Hangfire/Controllers/General/AfterSaleController.cs`](../../../../Hosts/Hangfire/Controllers/General/AfterSaleController.cs)
+Arquivo: [`Hosts/WebApi/Controllers/General/AfterSaleController.cs`](../../../../Hosts/WebApi/Controllers/General/AfterSaleController.cs)
 
 Após a ação `CourierAttributes` (termina na linha 90), adicionar:
 

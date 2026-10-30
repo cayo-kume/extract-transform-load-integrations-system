@@ -31,7 +31,7 @@ Módulo do sistema de integrações (ETL) responsável por **ler** os dados da A
 | Documentação da API | [Tickets](https://atendimento.movidesk.com/kb/article/256/movidesk-ticket-api), [Pessoas](https://atendimento.movidesk.com/kb/article/189/movidesk-person-api), [Serviços](https://atendimento.movidesk.com/kb/article/7440/api-servicos) |
 | Banco de dados | SQL Server (schemas `untreated`, `movidesk` e `auditing`; o `Script001` cria `movidesk` e `untreated` quando não existem) |
 | Multiempresa | Sim: cada CNPJ cadastrado em `movidesk.MovideskParameters` tem o seu token; o CNPJ (`doc_company`) é a primeira coluna da chave de todas as tabelas |
-| Host | `src/Backend/Hosts/Hangfire` (controller `MovideskController`) |
+| Host | `src/Backend/Hosts/WebApi` (controller `MovideskController`) |
 
 ### Limites da API
 * **10 requisições por minuto** por token: as leituras esperam **6 segundos** entre uma chamada e outra.
@@ -261,7 +261,7 @@ Infrastructure.Movidesk/
 * os command handlers: `IMovideskTicketsCommandHandler`, `IMovideskPeopleCommandHandler` e o comum `IMovideskCommandHandler`;
 * todos os validadores do assembly (`AddValidatorsFromAssemblyContaining<TicketValidator>()`).
 
-O host chama o método em `Hosts/Hangfire/Extensions/ServicesExtensions.cs`.
+O host chama o método em `Hosts/WebApi/Extensions/ServicesExtensions.cs`.
 
 ### Scripts de banco (SQL Server)
 

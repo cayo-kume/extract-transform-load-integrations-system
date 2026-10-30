@@ -6,7 +6,7 @@ Código de referência:
 
 | Peça | Arquivo |
 |---|---|
-| Rotas de disparo | [DataWarehouseController.cs](../../../Hosts/Hangfire/Controllers/DataWarehouse/DataWarehouseController.cs) |
+| Rotas de disparo | [DataWarehouseController.cs](../../../Hosts/WebApi/Controllers/DataWarehouse/DataWarehouseController.cs) |
 | Orquestração (ordem dos passos, trava, log, checagens) | [DataWarehouseService.cs](../Application.DataWarehouse/Services/DataWarehouseService.cs) |
 | Acesso ao banco (procedures, catálogo, checagens) | [DataWarehouseRepository.cs](../Infrastructure.DataWarehouse/Repositorys/DataWarehouseRepository.cs) |
 | Jobs registrados em `auditing` | [EnumJob.cs](../Domain.DataWarehouse/Enums/EnumJob.cs) |
@@ -84,7 +84,7 @@ flowchart LR
 flowchart TB
     CALLER["Disparo manual (Swagger / HTTP)<br/>ou o agendador, quando existir"]
 
-    subgraph HOST["Host Hangfire (ASP.NET)"]
+    subgraph HOST["Host WebApi (ASP.NET)"]
         CTRL["DataWarehouseController<br/>POST DataWarehouseJobs/DataWarehouse/*"]
         DI["ServicesExtensions<br/>AddScopedDataWarehouseServices"]
     end

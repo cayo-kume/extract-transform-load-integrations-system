@@ -593,7 +593,7 @@ chave** (não há `id`):
 
 ### Passo 7 — Endpoints
 
-Arquivo: [`AfterSaleController.cs`](../../../../Hosts/Hangfire/Controllers/General/AfterSaleController.cs)
+Arquivo: [`AfterSaleController.cs`](../../../../Hosts/WebApi/Controllers/General/AfterSaleController.cs)
 
 Após a ação `Refunds` (termina na linha 99):
 

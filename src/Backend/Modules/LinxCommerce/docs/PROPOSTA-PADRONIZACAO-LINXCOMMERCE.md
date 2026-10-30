@@ -22,7 +22,7 @@ Commerce disponíveis, então **nenhuma chamada real** foi feita e nenhuma docum
 
 * todo o código do módulo (125 arquivos, ~6.700 linhas): 7 services, 4 repositórios, 54 entidades e respostas,
   38 validadores e um helper, a injeção de dependência e os scripts;
-* o `LinxCommerceController` e o `LinxCommerceRecurringJobsExtensions` do host Hangfire (os dois inteiros
+* o `LinxCommerceController` e o `LinxCommerceRecurringJobsExtensions` do host Hangfire (hoje WebApi) (os dois inteiros
   comentados), o `ServicesExtensions.cs` e o `appsettings.json`;
 * os módulos que **leem** as tabelas do LinxCommerce: `Oto` (`OtoCommandHandler`) e `Stone`
   (`StoneLogisticaCommandHandler`), que fazem `join` com `LINX_COMMERCE.[ORDER]`, `OrderDeliveryMethod` e
@@ -486,11 +486,11 @@ Entra com as rotas sob demanda (fase 3, §9), igual à `MovideskRequests`/`Totvs
   sobrecarga de `OrderRepository.BulkInsertIntoTableRaw` (cópia da primeira sem `OrderProperties` e sem execução),
   o `GetLostOrdersRegisters` e a `SqlConnection` aberta à mão no `SalesRepresentativeRepository`.
 
-### 6.3 Host Hangfire
+### 6.3 Host WebApi
 
 | Arquivo | Alteração |
 |---|---|
-| `Hangfire.csproj` | Referenciar `Application.LinxCommerce` e `Infrastructure.LinxCommerce` |
+| `WebApi.csproj` | Referenciar `Application.LinxCommerce` e `Infrastructure.LinxCommerce` |
 | `Extensions/ServicesExtensions.cs` | `using Infrastructure.LinxCommerce.DependencyInjection;` + `AddScopedLinxCommerceServices(builder.Configuration)` |
 | `Extensions/RecurringJobs/LinxCommerceRecurringJobsExtensions.cs` | Apagado (todo comentado, com `using` do Microvix). A recorrência passa a ser a do Movidesk e do Totvs: o intervalo de cada job em `auditing.Jobs.IntervalTimeInMinutes` (§7) |
 | `appsettings.json` | Sai a seção `LinxCommerce` (a URL vai para a tabela de parâmetros) |

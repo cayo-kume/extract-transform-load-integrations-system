@@ -1254,7 +1254,7 @@ namespace Infrastructure.Movidesk.DependencyInjection
 ```
 Os 5 `AddValidatorsFromAssemblyContaining` atuais registram o mesmo assembly 5 vezes; uma chamada basta.
 
-**Host (`src/Backend/Hosts/Hangfire`)**
+**Host (`src/Backend/Hosts/WebApi`)**
 1. `Hangfire.csproj`: + `ProjectReference` para `Application.Movidesk` e `Infrastructure.Movidesk`, como os do AfterSale.
 2. `Extensions/ServicesExtensions.cs`: descomentar `using Infrastructure.Movidesk.DependencyInjection;` e
    `builder.Services.AddScopedMovideskServices(builder.Configuration);`.

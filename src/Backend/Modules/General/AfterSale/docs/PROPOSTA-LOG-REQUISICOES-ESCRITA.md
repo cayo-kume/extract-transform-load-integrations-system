@@ -217,7 +217,7 @@ Sugestões de ajuste (opcionais):
 | Domain.Shared | `Entities/Auditing/Request.cs` (novo), `Log.cs` | Entidade e lista `Requests` no log |
 | Application.Shared | `ILoggerService`, `LoggerService`, `ICurrentUserService` (novo) | `AddRequest` e abstração do usuário |
 | Infrastructure.Shared | `LoggerRepository` | Bulk insert em `auditing.Requests` |
-| Host Hangfire | `CurrentUserService` (novo), filtro do cabeçalho, registro no DI | Leitura do `X-User-Name` |
+| Host WebApi | `CurrentUserService` (novo), filtro do cabeçalho, registro no DI | Leitura do `X-User-Name` |
 | Application.AfterSale | `AfterSaleReversesService.SendReverseAction` | `AddRequest` no lugar do `AddRecord`, captura de exceção |
 
 ## 8. Decisões para você

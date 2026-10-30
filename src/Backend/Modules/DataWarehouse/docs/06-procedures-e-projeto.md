@@ -132,7 +132,7 @@ O job é `Application.DataWarehouse.Services.DataWarehouseService`, com cinco en
 
 - **Uma carga por vez:** as três entradas escrevem nas mesmas landings, então o serviço tem uma trava no processo; uma chamada com outra carga em andamento volta sem rodar. A trava é liberada mesmo se a gravação do log falhar. O agendador que for codificado precisa da mesma trava entre processos (no Hangfire, `DisableConcurrentExecution`).
 - **Pepper:** vem da configuração `DataWarehouse:Pepper` (variável de ambiente ou segredo, nunca `appsettings`, git, tabela ou log) e só passa como parâmetro das procedures que calculam o `doc_hash`: `sp_DimCustomer_Load`, `sp_FactTicket_Load`, `sp_FactRefund_Load` e `sp_FactCommission_Load` (8.3). Sem ele, essas tabelas não são atualizadas, o log diz isso e o resto da carga segue.
-- **Disparo:** enquanto os agendadores não existem, o host Hangfire expõe `POST DataWarehouseJobs/DataWarehouse/RunHourly`, `RunDaily`, `RunShortCycle`, `RunMonthlyStock?positionDate=yyyy-MM-dd` e `RunLinxLegacy` (200 concluída, 500 falha ou checagem bloqueante, 409 outra carga em andamento). Os intervalos dos jobs ficam em `auditing.Jobs` (60, 1440 e 3 minutos; o 9003 e o 9004 são manuais).
+- **Disparo:** enquanto os agendadores não existem, o host WebApi expõe `POST DataWarehouseJobs/DataWarehouse/RunHourly`, `RunDaily`, `RunShortCycle`, `RunMonthlyStock?positionDate=yyyy-MM-dd` e `RunLinxLegacy` (200 concluída, 500 falha ou checagem bloqueante, 409 outra carga em andamento). Os intervalos dos jobs ficam em `auditing.Jobs` (60, 1440 e 3 minutos; o 9003 e o 9004 são manuais).
 
 ### 9.5 Landing e histórico gerados pelo catálogo
 

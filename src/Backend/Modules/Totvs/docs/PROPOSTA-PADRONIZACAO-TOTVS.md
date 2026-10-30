@@ -839,11 +839,11 @@ tamanho.
   códigos de barras, só os do primeiro item. Produtos, filiais e contas a pagar já usam `SelectMany`.
 * `GetExisting*` passa a devolver a entidade (§4.4), como `GetTicketsByIds` no Movidesk.
 
-### 6.3 Host Hangfire
+### 6.3 Host WebApi
 
 | Arquivo | Alteração |
 |---|---|
-| `Hangfire.csproj` | Referenciar `Application.Totvs` e `Infrastructure.Totvs` |
+| `WebApi.csproj` | Referenciar `Application.Totvs` e `Infrastructure.Totvs` |
 | `Extensions/ServicesExtensions.cs` | Descomentar com `using Infrastructure.Totvs.DependencyInjection;` + `AddScopedTotvsServices` |
 | `appsettings.json` | Manter `Totvs:BaseUrl`; tirar `BaseUrlHmg` (ou levar para o `appsettings.Development.json`) |
 | `Controllers/Totvs/TotvsController.cs` | Reescrever (abaixo) |

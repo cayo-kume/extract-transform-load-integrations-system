@@ -29,7 +29,7 @@ O módulo começou a **escrever** na Totvs (plano em [`src/Backend/Modules/Totvs
 | Documentação da API | Swagger de cada API em `.../api/totvsmoda/<api>/v2/swagger/index.html` (`person`, `seller`, `product`, `purchase-order`, `sales-order`, `accounts-payable`, `fiscal`) |
 | Banco de dados | SQL Server (schemas `untreated`, `totvs` e `auditing`; o `Script001` cria `totvs` quando não existe) |
 | Multiempresa | Sim: cada CNPJ de `totvs.TotvsParameters` tem as suas credenciais, e as buscas usam **todas as lojas** dele gravadas em `totvs.TotvsBranches`. O CNPJ (`doc_company`) é a primeira coluna da chave de todas as tabelas |
-| Host | `src/Backend/Hosts/Hangfire` (controller `TotvsController`) |
+| Host | `src/Backend/Hosts/WebApi` (controller `TotvsController`) |
 
 ### Comportamentos da API que a integração trata
 A documentação não descreve tudo; o que segue foi conferido com chamadas reais (detalhes em [`src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md`](docs/PROPOSTA-PADRONIZACAO-TOTVS.md), §5.2):
@@ -352,7 +352,7 @@ Infrastructure.Totvs/
 * os services, os repositórios e os command handlers, um por service mais o comum `ITotvsCommandHandler` (`Scoped`);
 * todos os validadores do assembly numa chamada só (`AddValidatorsFromAssemblyContaining<SellerValidator>()`).
 
-O host chama o método em `Hosts/Hangfire/Extensions/ServicesExtensions.cs`.
+O host chama o método em `Hosts/WebApi/Extensions/ServicesExtensions.cs`.
 
 ### Scripts de banco (SQL Server)
 

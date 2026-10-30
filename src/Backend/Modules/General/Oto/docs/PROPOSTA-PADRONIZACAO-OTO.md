@@ -20,7 +20,7 @@ requisições) é a referência principal, não a de leitura.
 |---|---|
 | Projetos | `Domain.Oto`, `Application.Oto`, `Infrastructure.Oto` (estão no `.slnx`) |
 | Referências | `..\..\..\..\..\newbloomers-core-dlls\src\*.Core` — **pasta que não existe mais** (os outros módulos usam `src/Backend/Shared`) |
-| Host | `Hangfire.csproj` não referencia o Oto. `AddScopedOttoServices` está comentado em `ServicesExtensions.cs` e o `OttoController` está inteiro comentado |
+| Host | `WebApi.csproj` não referencia o Oto. `AddScopedOttoServices` está comentado em `ServicesExtensions.cs` e o `OttoController` está inteiro comentado |
 | Service | `OtoService` com `SendCustomers`, `SendCustomersCashBack`, `SendProducts`, `SendOrders`, `SendStores`, `SendSellers` |
 | Montagem do JSON | `Factories/BuildObjects.cs`, com `JObject` montado à mão e todos os valores interpolados como string |
 | Controle de envio | `general.OttoSentRecordsLog` (grava o que já foi enviado; a query exclui o que já está lá) |
@@ -307,11 +307,11 @@ mas fora do escopo.
 * O `BulkInsertIntoTableRaw` atual não é `async`, cria uma lista que não usa (`sentRecordLogs`) e devolve
   `true` sempre.
 
-### 6.3 Host Hangfire
+### 6.3 Host WebApi
 
 | Arquivo | Alteração |
 |---|---|
-| `Hangfire.csproj` | Referenciar `Application.Oto` e `Infrastructure.Oto` |
+| `WebApi.csproj` | Referenciar `Application.Oto` e `Infrastructure.Oto` |
 | `Extensions/ServicesExtensions.cs` | Descomentar e trocar para `using Infrastructure.Oto.DependencyInjection;` + `AddScopedOtoServices` |
 | `appsettings.json` | Manter `Oto:BaseUrl`; tirar `BaseUrlHmg` (ou levar para o `appsettings.Development.json`) |
 | `Controllers/General/OttoController.cs` | Renomear para `OtoController.cs` e reescrever (abaixo) |

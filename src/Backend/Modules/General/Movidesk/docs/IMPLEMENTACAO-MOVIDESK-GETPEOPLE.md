@@ -709,7 +709,7 @@ Pontos do código:
 
 ## 7. Controller
 
-`src/Backend/Hosts/Hangfire/Controllers/General/MovideskController.cs`: injetar também o `IMovideskPeopleService` e
+`src/Backend/Hosts/WebApi/Controllers/General/MovideskController.cs`: injetar também o `IMovideskPeopleService` e
 trocar o endpoint comentado `Persons` por:
 ```csharp
 private readonly IMovideskTicketsService _movideskTicketsService;

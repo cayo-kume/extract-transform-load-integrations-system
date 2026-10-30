@@ -5,7 +5,7 @@ O sistema de integrações da **Newbloomers**: lê os dados dos ERPs e SaaS usad
 Linx Commerce, Movidesk e AfterSale), grava tudo num banco SQL Server com histórico de auditoria, oferece leituras e
 escritas sob demanda para outros sistemas e alimenta um **data warehouse** com dimensões, fatos e agregados.
 
-Cada integração é um pacote independente (`Domain`, `Application` e `Infrastructure`), e um único host web (`Hangfire`)
+Cada integração é um pacote independente (`Domain`, `Application` e `Infrastructure`), e um único host web (`WebApi`)
 registra todos e expõe as rotas. Este documento dá o panorama; os detalhes de cada módulo estão no README dele.
 
 ---
@@ -54,7 +54,7 @@ extract-transform-load-integrations-system/
 ├── src/
 │   ├── Backend/
 │   │   ├── Hosts/
-│   │   │   ├── Hangfire/                 host web: controllers, Swagger, registro dos módulos (o único em uso)
+│   │   │   ├── WebApi/                   host web: controllers, Swagger, registro dos módulos (o único em uso)
 │   │   │   ├── Quartz/                   worker alternativo (não usado)
 │   │   │   └── AzureWebJob/              worker alternativo (não usado)
 │   │   ├── Shared/                       auditoria, cliente HTTP, repositório comum, middlewares e scripts base
@@ -86,7 +86,7 @@ Cada módulo segue o mesmo desenho:
 
 ## Módulos
 
-Registrados no host (`src/Backend/Hosts/Hangfire/Extensions/ServicesExtensions.cs`):
+Registrados no host (`src/Backend/Hosts/WebApi/Extensions/ServicesExtensions.cs`):
 
 | Módulo | Sistema | App em `auditing.Apps` | Schema | Rota base | Rotas | README |
 |---|---|---|---|---|---|---|
@@ -201,7 +201,7 @@ criação, não num `ALTER` novo.
 
 ## Configuração
 
-`src/Backend/Hosts/Hangfire/appsettings.json`:
+`src/Backend/Hosts/WebApi/appsettings.json`:
 
 | Chave | Uso |
 |---|---|
@@ -238,12 +238,12 @@ parâmetros. Credenciais nunca são gravadas em logs nem nas tabelas de requests
 3. **Host:**
 
    ```bash
-   dotnet run --project src/Backend/Hosts/Hangfire
+   dotnet run --project src/Backend/Hosts/WebApi
    ```
 
    O Swagger abre em `http://localhost:5252/swagger`.
 
-4. **Build da solução:** o host compila sozinho (`dotnet build src/Backend/Hosts/Hangfire`); a solução inteira hoje falha
+4. **Build da solução:** o host compila sozinho (`dotnet build src/Backend/Hosts/WebApi`); a solução inteira hoje falha
    no restore de módulos fora do host (pacotes sem versão em Dootax, Oto, Stone e TotalExpress).
 
 ---
@@ -316,8 +316,8 @@ O cache segue [docs/PADRAO-CACHE-INTEGRACOES.md](docs/PADRAO-CACHE-INTEGRACOES.m
 * **Módulos fora do host:** Dootax, Mobsim, Oto, Pagarme (General) e FlashCourier, Jadlog, Stone, TotalExpress
   (Shippment) têm código do sistema antigo, mas o registro no host e os controllers estão comentados. O
   `LinxMicrovix - Inbound Web Service` (escritas do B2C) está vazio.
-* **Agendamento:** o Hangfire (servidor, dashboard e jobs recorrentes) está desligado no host; os jobs rodam pelas rotas,
-  chamadas por um agendador externo. Os hosts `Quartz` e `AzureWebJob` não são usados.
+* **Agendamento:** o Hangfire (servidor, dashboard e jobs recorrentes) está desligado no host `WebApi`; os jobs rodam
+  pelas rotas, chamadas por um agendador externo. Os hosts `Quartz` e `AzureWebJob` não são usados.
 * **Autenticação:** o `[Authorize]` dos controllers está comentado.
 * **Testes:** a pasta `tests` está vazia.
 

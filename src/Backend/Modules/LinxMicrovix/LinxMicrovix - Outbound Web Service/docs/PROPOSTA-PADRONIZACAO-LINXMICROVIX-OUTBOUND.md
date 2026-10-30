@@ -617,11 +617,11 @@ enviado em `request_body` **sem a chave** (a chave no XML é o equivalente ao to
   `GetRecord`; vários gravam em `{tableName}` ou `{tableName}_raw` **sem schema**) e o `BulkInsert` posicional de
   `B2CConsultaPedidosItensRepository`.
 
-### 6.3 Host Hangfire
+### 6.3 Host WebApi
 
 | Arquivo | Alteração |
 |---|---|
-| `Hangfire.csproj` | Referenciar `Application.LinxMicrovix.Outbound` e `Infrastructure.LinxMicrovix.Outbound` |
+| `WebApi.csproj` | Referenciar `Application.LinxMicrovix.Outbound` e `Infrastructure.LinxMicrovix.Outbound` |
 | `Extensions/ServicesExtensions.cs` | `using Infrastructure.LinxMicrovix.Outbound.DependencyInjection;` + `AddScopedLinxMicrovixServices(builder.Configuration)`; sai a linha comentada `AddValidatorsFromAssembly(Assembly.Load("Application.LinxMicrovix.Outbound"))` |
 | `Extensions/AppUseExtensions.cs`, `RecurringJobs/LinxMicrovixERPRecurringJobsExtensions.cs`, `LinxMicrovixB2CRecurringJobsExtensions.cs` | Os dois arquivos de jobs (comentados, com propriedades que não existem mais e restos da FlashCourier) e as chamadas a eles saem. A recorrência passa a ser a do Movidesk e do Totvs: o intervalo de cada job em `auditing.Jobs.IntervalTimeInMinutes` (§7); nenhum dos dois módulos registra job no Hangfire |
 | `appsettings.json` | `LinxMicrovix:BaseUrl` de produção; sai `B2CLinxMicrovix` (as credenciais B2C vão para a tabela de parâmetros) |

@@ -3782,7 +3782,7 @@ do rascunho que lê a conexão do `appsettings` sem imprimi-la.
 * **Procedures:** as **151** `sp_Totvs*_Sync` (geradas pelo `dbo.sp_Create_Merge_Procedure`) executam sem erro com as tabelas vazias
   (`@Guid` novo, dentro de transação desfeita).
 
-**Host (`Hosts/Hangfire`, `http://localhost:5252`), sem credencial da Totvs no banco:** 10 de 10 chamadas com a resposta esperada:
+**Host (`Hosts/WebApi`, `http://localhost:5252`), sem credencial da Totvs no banco:** 10 de 10 chamadas com a resposta esperada:
 escrita sem `X-User-Name` (400), `docCompany` com 13 dígitos (400), corpo inválido (400 com o campo), escrita com o grupo desligado (422,
 contas a pagar e pedido de compra), pedidos preferenciais com lista vazia sem `?clear=true` (400) e com ele (passa e volta o 422 do grupo),
 leitura sob demanda e leitura de arquivo com a empresa não cadastrada (422) e rota inexistente (404).
