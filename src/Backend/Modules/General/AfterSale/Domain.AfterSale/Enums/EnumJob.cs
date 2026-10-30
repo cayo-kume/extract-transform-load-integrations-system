@@ -20,7 +20,6 @@
         AfterSaleReturnedInvoice = 5007,
         AfterSaleReverseInvoice = 5008,
         AfterSaleStatusReverses = 5009,
-        AfterSaleHistoriesReverses = 5010,
         AfterSaleAdministrativeRecordsReverse = 5021,
         AfterSaleGetReverseById = 5022,
 

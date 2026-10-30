@@ -938,21 +938,18 @@ namespace Application.AfterSale.Services
         /// </summary>
         public Task<Domain.AfterSale.Dtos.Writes.Refunds.ChangeTotalAmount.Response.Root> PostChangeTotalAmountRefundById(string user_name, string doc_company, long id, Domain.AfterSale.Dtos.Writes.Refunds.ChangeTotalAmount.Request.Root request)
         {
-            var body = ToJsonBody(request);
+            // serializes the request ignoring null properties, so the API does not receive fields the caller did not fill
+            var body = JObject.FromObject(request, Newtonsoft.Json.JsonSerializer.Create(new Newtonsoft.Json.JsonSerializerSettings
+            {
+                NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore
+            }));
             var route = $"v3/api/refunds/{id}/change-total-amount";
 
             return SendRefundAction<Domain.AfterSale.Dtos.Writes.Refunds.ChangeTotalAmount.Response.Root>(EnumJob.AfterSaleChangeTotalAmountRefund, user_name, doc_company, id, "POST", route, body.ToString(Newtonsoft.Json.Formatting.None),
                 headers => _apiClient.PostAsync(route, body, headers));
         }
 
-        /// <summary>
-        /// serializes the request ignoring null properties, so the API does not receive fields the caller did not fill
-        /// </summary>
-        private static JObject ToJsonBody(object request) =>
-            JObject.FromObject(request, Newtonsoft.Json.JsonSerializer.Create(new Newtonsoft.Json.JsonSerializerSettings
-            {
-                NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore
-            }));
+        // ------------------------------------------------------------------------------------------------------
 
         /// <summary>
         /// common flow of the refund write routes: resolves the company token, calls the API,

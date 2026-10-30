@@ -892,6 +892,8 @@ namespace Application.AfterSale.Services
                 headers => _apiClient.PostAsync(route, body, headers));
         }
 
+        // ------------------------------------------------------------------------------------------------------
+
         /// <summary>
         /// serializes the request ignoring null properties, so the API does not receive fields the caller did not fill
         /// </summary>
