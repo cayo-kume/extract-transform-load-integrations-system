@@ -220,11 +220,19 @@ namespace Application.DataWarehouse.Services
                 await Step("[datawarehouse].sp_DimOperation_Load");
                 await Step("[datawarehouse].sp_DimChannel_Load");
                 await Step("[datawarehouse].sp_DimBrand_Load");
+                await Step("[datawarehouse].sp_DimSalesRepresentative_Load");
+                await Step("[datawarehouse].sp_DimRegion_Load");
+                await Step("[datawarehouse].sp_DimPromotion_Load");
                 await Step("[datawarehouse].sp_FactSalesItem_Load");
                 await Step("[datawarehouse].sp_FactOrderItem_Load");
                 await Step("[datawarehouse].sp_FactInvoicePayment_Load");
                 await PepperStep("[datawarehouse].sp_FactTicket_Load");
                 await PepperStep("[datawarehouse].sp_FactRefund_Load");
+                await Step("[datawarehouse].sp_FactPurchaseOrderItem_Load");
+                await Step("[datawarehouse].sp_FactAccountsPayable_Load");
+                await PepperStep("[datawarehouse].sp_FactCommission_Load");
+                await Step("[datawarehouse].sp_FactStoreReception_Load");
+                await Step("[datawarehouse].sp_FactApiRequest_Load");
 
                 // posição de estoque do mês que fechou: no ciclo diário do dia 1 (8.5)
                 if (daily && TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, Brasilia).Day == 1)
@@ -268,7 +276,7 @@ namespace Application.DataWarehouse.Services
         }
 
         /// <summary>
-        /// procedures que calculam o doc_hash (DimCustomer, FactTicket, FactRefund). O pepper vem da configuração
+        /// procedures que calculam o doc_hash (DimCustomer, FactTicket, FactRefund, FactCommission). O pepper vem da configuração
         /// (DataWarehouse:Pepper) e só passa como parâmetro (12.3). Sem ele, a tabela fica como está e o resto da carga segue
         /// </summary>
         private async Task PepperStep(string procedureName)
