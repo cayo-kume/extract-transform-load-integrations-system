@@ -5,7 +5,7 @@ using FluentValidation;
 namespace Application.Totvs.Validations.Products.Values
 {
     /// <summary>
-    /// só registra mensagens no log; tamanhos das colunas do Script048_Create_Totvs_Product_Values_Tables (o swagger não dá tamanho aos nomes)
+    /// só registra mensagens no log; tamanhos das colunas do Script011_Create_Totvs_Products_Tables (o swagger não dá tamanho aos nomes)
     /// </summary>
     public class ProductBalanceItemValidator : AbstractValidator<ProductBalanceItem>
     {

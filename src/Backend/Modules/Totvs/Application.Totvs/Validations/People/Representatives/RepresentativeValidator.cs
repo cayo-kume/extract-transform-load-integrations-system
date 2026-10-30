@@ -7,7 +7,7 @@ namespace Application.Totvs.Validations.People.Representatives
 {
     /// <summary>
     /// só registra mensagens no log; tamanhos do swagger da API Person (o representante não tem tamanho de nome e supervisor:
-    /// 100, como nas colunas do Script036_Create_Totvs_Representatives_Tables). As filhas comuns usam os validadores da PF
+    /// 100, como nas colunas do Script029_Create_Totvs_Representatives_Tables). As filhas comuns usam os validadores da PF
     /// </summary>
     public class RepresentativeValidator : AbstractValidator<Representative>
     {

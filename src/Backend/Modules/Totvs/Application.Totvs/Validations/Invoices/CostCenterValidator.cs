@@ -5,7 +5,7 @@ using FluentValidation;
 namespace Application.Totvs.Validations.Invoices
 {
     /// <summary>
-    /// só registra mensagens no log; sem tamanho no swagger, os das colunas do Script060_Create_Totvs_Fiscal_Catalogs_Tables
+    /// só registra mensagens no log; sem tamanho no swagger, os das colunas do Script023_Create_Totvs_Invoices_Tables
     /// </summary>
     public class CostCenterValidator : AbstractValidator<CostCenter>
     {

@@ -5,7 +5,7 @@ using FluentValidation;
 namespace Application.Totvs.Validations.People.Persons
 {
     /// <summary>
-    /// só registra mensagens no log; tamanhos do swagger da API Person (colunas do Script013_Create_Totvs_People_Tables)
+    /// só registra mensagens no log; tamanhos do swagger da API Person (colunas do Script005_Create_Totvs_People_Tables)
     /// </summary>
     public class AdditionalFieldValidator : AbstractValidator<AdditionalField>
     {

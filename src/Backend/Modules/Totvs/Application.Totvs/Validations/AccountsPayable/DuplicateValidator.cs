@@ -5,7 +5,7 @@ using FluentValidation;
 namespace Application.Totvs.Validations.AccountsPayable
 {
     /// <summary>
-    /// só registra mensagens no log; tamanhos do swagger da API Accounts Payable (colunas do Script022_Create_Totvs_Accounts_Payable_Tables)
+    /// só registra mensagens no log; tamanhos do swagger da API Accounts Payable (colunas do Script020_Create_Totvs_Accounts_Payable_Tables)
     /// </summary>
     public class DuplicateValidator : AbstractValidator<Duplicate>
     {

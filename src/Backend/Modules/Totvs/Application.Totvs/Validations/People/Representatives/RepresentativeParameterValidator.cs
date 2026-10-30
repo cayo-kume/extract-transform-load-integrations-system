@@ -5,7 +5,7 @@ using FluentValidation;
 namespace Application.Totvs.Validations.People.Representatives
 {
     /// <summary>
-    /// só registra mensagens no log; tamanhos do swagger da API Person e das colunas do Script036_Create_Totvs_Representatives_Tables
+    /// só registra mensagens no log; tamanhos do swagger da API Person e das colunas do Script029_Create_Totvs_Representatives_Tables
     /// </summary>
     public class RepresentativeParameterValidator : AbstractValidator<RepresentativeParameter>
     {

@@ -5,7 +5,7 @@ using FluentValidation;
 namespace Application.Totvs.Validations.SalesOrders.BillingSuggestions
 {
     /// <summary>
-    /// só registra mensagens no log; tamanhos do swagger da API Sales Order e das colunas do Script057_Create_Totvs_Sales_Order_Catalogs_Tables (textos dos itens: os tamanhos de TotvsSaleOrdersProducts)
+    /// só registra mensagens no log; tamanhos do swagger da API Sales Order e das colunas do Script017_Create_Totvs_Sales_Orders_Tables (textos dos itens: os tamanhos de TotvsSaleOrdersProducts)
     /// </summary>
     public class BillingSuggestionValidator : AbstractValidator<BillingSuggestion>
     {

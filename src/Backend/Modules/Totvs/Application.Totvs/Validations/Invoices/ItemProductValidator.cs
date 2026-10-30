@@ -6,7 +6,7 @@ namespace Application.Totvs.Validations.Invoices
 {
     /// <summary>
     /// só registra mensagens no log; tamanhos do swagger da API Fiscal onde ele informa, senão os conferidos numa amostra real
-    /// (colunas do Script025_Create_Totvs_Invoices_Tables)
+    /// (colunas do Script023_Create_Totvs_Invoices_Tables)
     /// </summary>
     public class ItemProductValidator : AbstractValidator<ItemProduct>
     {

@@ -141,6 +141,21 @@ var upgrader = DeployChanges.To
     .Build();
 ```
 
+Uma pasta com scripts que **não** devem rodar no deploy (ex.: `Homologacao/` do Totvs, com as credenciais de
+homologação) fica de fora pelo `Filter`:
+
+```csharp
+    .WithScriptsFromFileSystem(".", new FileSystemScriptOptions
+    {
+        IncludeSubDirectories = true,
+        Filter = path => !Path.GetRelativePath(".", path).StartsWith("Homologacao", StringComparison.OrdinalIgnoreCase)
+    })
+```
+
+Quando o módulo tem uma só API, as pastas das services ficam direto em `SQLServer/` (ex.: `SQLServer/People/`). Os
+scripts de jobs de escrita e de leitura sob demanda que estavam soltos vão para o script de jobs da service que usa
+cada job (`EnumJob` referenciado na service).
+
 ### 3.5 Ao mover ou renomear scripts
 
 * Um script que está no `.gitignore` (ex.: o `Script003` com as chaves) precisa ter o **caminho atualizado** no

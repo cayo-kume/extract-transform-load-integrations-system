@@ -46,7 +46,7 @@ namespace Infrastructure.Totvs.Repositorys
             var instructions = products.SelectMany(x => x.conservationInstructions).ToList();
 
             // ordem = ordem dos merges: referência, filhas da referência, cores, filhas da cor, produtos e filhas do produto
-            // (FKs e condições de exclusão do merge, Script011_Create_Totvs_Products_Sync_Procedures)
+            // (FKs e condições de exclusão do merge, Script012_Create_Totvs_Products_Sync_Procedures)
             var tables = new List<(DataTable table, IList rows)>
             {
                 (_coreRepository.CreateSystemDataTable(entity: new Sku(), tableName: "TotvsSkus"), data),

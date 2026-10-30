@@ -6,7 +6,7 @@ namespace Application.Totvs.Validations.Sellers
 {
     /// <summary>
     /// só registra mensagens no log; o swagger da API Seller não traz tamanhos, então valem os das colunas do
-    /// Script007_Create_Totvs_Sellers_Tables (os mesmos do código antigo)
+    /// Script008_Create_Totvs_Sellers_Tables (os mesmos do código antigo)
     /// </summary>
     public class SellerValidator : AbstractValidator<Seller>
     {

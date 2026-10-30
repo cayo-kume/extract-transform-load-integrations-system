@@ -1,8 +1,0 @@
-/****** Similares e lotes: procedures de sincronização (docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.2) ******/
---Produtos e lotes nunca são apagados por este fluxo; o similar, o item e o campo adicional que saíram do registro regravado são apagados.
-
-exec dbo.sp_Create_Merge_Procedure @schema_name = 'totvs', @table_name = 'TotvsProductsSimilar', @execute = 1;
-exec dbo.sp_Create_Merge_Procedure @schema_name = 'totvs', @table_name = 'TotvsProductsSimilarItems', @execute = 1, @delete_condition = 'exists (select 1 from [totvs].TotvsProductsSimilar p where p.doc_company = target.doc_company and p.productCode = target.productCode and p.integrated_or_updated_at > target.integrated_or_updated_at)';
-exec dbo.sp_Create_Merge_Procedure @schema_name = 'totvs', @table_name = 'TotvsBatches', @execute = 1;
-exec dbo.sp_Create_Merge_Procedure @schema_name = 'totvs', @table_name = 'TotvsBatchesItems', @execute = 1, @delete_condition = 'exists (select 1 from [totvs].TotvsBatches p where p.doc_company = target.doc_company and p.branchCode = target.branchCode and p.batchCode = target.batchCode and p.productCode = target.productCode and p.integrated_or_updated_at > target.integrated_or_updated_at)';
-exec dbo.sp_Create_Merge_Procedure @schema_name = 'totvs', @table_name = 'TotvsBatchesItemsAdditionalFields', @execute = 1, @delete_condition = 'exists (select 1 from [totvs].TotvsBatches p where p.doc_company = target.doc_company and p.branchCode = target.branchCode and p.batchCode = target.batchCode and p.productCode = target.productCode and p.integrated_or_updated_at > target.integrated_or_updated_at)';

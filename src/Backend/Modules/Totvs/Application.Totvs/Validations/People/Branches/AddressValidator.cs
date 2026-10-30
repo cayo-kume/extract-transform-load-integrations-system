@@ -5,7 +5,7 @@ using FluentValidation;
 namespace Application.Totvs.Validations.People.Branches
 {
     /// <summary>
-    /// só registra mensagens no log; os tamanhos são os do swagger da API Person e das colunas do Script004_Create_Totvs_Branches_Tables
+    /// só registra mensagens no log; os tamanhos são os do swagger da API Person e das colunas do Script005_Create_Totvs_People_Tables
     /// </summary>
     public class AddressValidator : AbstractValidator<Address>
     {

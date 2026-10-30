@@ -6,7 +6,7 @@ namespace Application.Totvs.Validations.People.ReceptionSales
 {
     /// <summary>
     /// só registra mensagens no log; o swagger não dá tamanho dos nomes, do tipo nem da observação (colunas do
-    /// Script039_Create_Totvs_Reception_Sales_Tables)
+    /// Script029_Create_Totvs_Representatives_Tables)
     /// </summary>
     public class ReceptionSaleValidator : AbstractValidator<ReceptionSale>
     {

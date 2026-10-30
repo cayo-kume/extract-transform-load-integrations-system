@@ -5,7 +5,7 @@ using FluentValidation;
 namespace Application.Totvs.Validations.Sellers
 {
     /// <summary>
-    /// só registra mensagens no log; tamanhos das colunas do Script007_Create_Totvs_Sellers_Tables
+    /// só registra mensagens no log; tamanhos das colunas do Script008_Create_Totvs_Sellers_Tables
     /// </summary>
     public class CustomerValidator : AbstractValidator<Customer>
     {

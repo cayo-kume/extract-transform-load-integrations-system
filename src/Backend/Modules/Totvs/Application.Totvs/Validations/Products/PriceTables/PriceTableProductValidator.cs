@@ -5,7 +5,7 @@ using FluentValidation;
 namespace Application.Totvs.Validations.Products.PriceTables
 {
     /// <summary>
-    /// só registra mensagens no log (colunas do Script051_Create_Totvs_Product_Prices_Tables)
+    /// só registra mensagens no log (colunas do Script035_Create_Totvs_Product_Prices_Tables)
     /// </summary>
     public class PriceTableProductValidator : AbstractValidator<PriceTableProduct>
     {

@@ -5,7 +5,7 @@ using FluentValidation;
 namespace Application.Totvs.Validations.Products
 {
     /// <summary>
-    /// só registra mensagens no log; tamanhos das colunas do Script010_Create_Totvs_Products_Tables (swagger da API
+    /// só registra mensagens no log; tamanhos das colunas do Script011_Create_Totvs_Products_Tables (swagger da API
     /// Product onde ele informa; senão, os do código antigo, conferidos numa amostra real)
     /// </summary>
     public class AdditionalFieldValidator : AbstractValidator<AdditionalField>

@@ -5,7 +5,7 @@ using FluentValidation;
 namespace Application.Totvs.Validations.SalesOrders.Catalogs
 {
     /// <summary>
-    /// só registra mensagens no log; tamanhos do swagger da API Sales Order e das colunas do Script057_Create_Totvs_Sales_Order_Catalogs_Tables
+    /// só registra mensagens no log; tamanhos do swagger da API Sales Order e das colunas do Script017_Create_Totvs_Sales_Orders_Tables
     /// </summary>
     public class SaleOrderBatchValidator : AbstractValidator<SaleOrderBatch>
     {

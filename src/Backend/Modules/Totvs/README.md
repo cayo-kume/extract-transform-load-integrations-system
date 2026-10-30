@@ -338,7 +338,7 @@ Infrastructure.Totvs/
 ├── DependencyInjection.cs      (AddScopedTotvsServices)
 ├── Repositorys/                (TotvsRepository e um por recurso)
 └── Scripts/
-    ├── SQLServer/              (scripts DbUp + migrator.csx)
+    ├── SQLServer/              (migrator.csx, Parameters/ com os scripts gerais, uma pasta por service e Homologacao/, fora do migrator)
     ├── MySQL/                  (migrator.csx)
     └── PostgreSQL/             (migrator.csx)
 ```
@@ -355,51 +355,26 @@ O host chama o método em `Hosts/Hangfire/Extensions/ServicesExtensions.cs`.
 
 ### Scripts de banco (SQL Server)
 
-O DbUp executa cada script uma única vez, em ordem alfabética. Alterar um script que já rodou não muda um banco existente: para isso é preciso um script novo. Cada recurso traz um trio de scripts (tabelas, procedures e jobs).
+O DbUp executa cada script uma única vez. Alterar um script que já rodou não muda um banco existente: para isso é preciso um script novo. Os scripts gerais do módulo ficam em `Parameters/` e cada service tem a sua pasta, com um trio de scripts: tabelas, procedures e jobs (os recorrentes, os sob demanda e as escritas do service). O `migrator.csx` lê as subpastas, menos `Homologacao/`, e executa na ordem do número do arquivo, não na da pasta.
 
-| Script | Conteúdo |
-|---|---|
-| `Script001` | Schema `totvs` e `totvs.TotvsParameters` |
-| `Script002` | App `130 - Totvs` em `auditing.Apps` |
-| `Script003` | A holding em `TotvsParameters`, com as credenciais de produção, como o AfterSale e o Movidesk. As de homologação ficam em `Homologacao/Script003_..._Homologacao.sql`, numa subpasta que o DbUp do deploy não lê: rodar à mão só no banco de homologação ou local, no lugar do `Script003` |
-| `Script004`–`006` | Filiais |
-| `Script007`–`009` | Vendedores |
-| `Script010`–`012` | Produtos |
-| `Script013`–`015` | Pessoas físicas e jurídicas |
-| `Script016`–`018` | Pedidos de compra |
-| `Script019`–`021` | Pedidos de venda |
-| `Script022`–`024` | Duplicatas e comissões pagas |
-| `Script025`–`027` | Notas fiscais |
-| `Script028` | `totvs.TotvsRequests` (log das chamadas sob demanda) |
-| `Script029`–`031` | Jobs das leituras sob demanda |
-| `Script032` | Jobs das escritas de contas a pagar (13018–13020) |
-| `Script033`–`035` | Catálogos da API Person (classificações e tipos de e-mail, telefone e contato) |
-| `Script036`–`038` | Representantes |
-| `Script039`–`041` | Recepção de venda |
-| `Script042`–`044` | Regiões de atuação |
-| `Script045`–`047` | Catálogos da API Product |
-| `Script048`–`050` | Preços, custos e saldos |
-| `Script051`–`053` | Itens das tabelas de preço e promoções |
-| `Script054`–`056` | Similares, lotes e a conferência das referências |
-| `Script057`–`059` | Catálogos, lotes de pedidos e sugestões de faturamento da API Sales Order |
-| `Script060`–`062` | Inutilizações e centros de custo da API Fiscal |
-| `Script063` | Jobs das leituras sem persistência da API Fiscal (XML, DANFE, impressão) |
-| `Script064` | Jobs das leituras sem persistência da API Fiscal (itens, condicional, produtos das notas) |
-| `Script065` | Jobs das leituras sob demanda do resto da onda 2 (pessoa, bônus, produto, pedido de compra e de venda) |
-| `Script066` | Coluna `status_code` em `totvs.TotvsRequests` (trava de repetição das escritas) |
-| `Script067` | Jobs das escritas da API Person (mensagens, 13044–13046) |
-| `Script068` | Jobs das escritas da API Product (cores e grades, 13124 e 13126) |
-| `Script069` | Jobs das escritas da API Purchase Order (situação do pedido, 13182) |
-| `Script070` | Jobs das escritas da API Sales Order (dados adicionais, transporte, observações e itens, 13201–13203 e 13207) |
-| `Script071` | Jobs das escritas de cadastro da API Person (clientes PF e PJ, representante do cliente e remoção de classificação, 13040–13043) |
-| `Script072` | Jobs das escritas de cadastro da API Product (códigos de barras, classificações, referência e lotes, 13120–13123, 13125, 13127 e 13135–13137) |
-| `Script073` | Jobs das escritas de documento da API Purchase Order (inclusão, quantidade dos itens e vínculo com lote, 13180, 13181 e 13184) |
-| `Script074` | Jobs das escritas de documento da API Sales Order (situação, capa, itens, lotes e contagens, 13199, 13200, 13205, 13206, 13208 e 13211–13214) |
-| `Script075` | Jobs das escritas de bônus da API Person (crédito e consumo, 13047 e 13048) |
-| `Script076` | Jobs das escritas de dados fiscais, preço, custo e promoção da API Product (13128–13134) |
-| `Script077` | Job do cancelamento de pedido de compra (13183) |
-| `Script078` | Jobs das escritas da API Sales Order com efeito financeiro (pedido B2C, cancelamentos, preço dos itens e transação PDV, 13197, 13198, 13204, 13209 e 13210) |
-| `Script079` | Job da manifestação do destinatário (13258) |
+| Pasta | Script | Conteúdo |
+|---|---|---|
+| `Parameters/` | `Script001` | Schema `totvs` e `totvs.TotvsParameters` |
+| `Parameters/` | `Script002` | App `130 - Totvs` em `auditing.Apps` |
+| `Parameters/` | `Script003` | A holding em `TotvsParameters`, com as credenciais de produção, como o AfterSale e o Movidesk. As de homologação ficam em `Homologacao/Script003_..._Homologacao.sql`, numa subpasta que o DbUp do deploy não lê: rodar à mão só no banco de homologação ou local, no lugar do `Script003` |
+| `Parameters/` | `Script004` | `totvs.TotvsRequests` (log das chamadas sob demanda e das escritas, com `status_code` e `integrated_or_updated_at`) |
+| `People/` | `Script005`–`007` | Filiais e pessoas físicas e jurídicas (leituras, escritas e sob demanda) |
+| `Sellers/` | `Script008`–`010` | Vendedores e regiões de atuação |
+| `Products/` | `Script011`–`013` | Produtos, saldos, similares e lotes |
+| `PurchaseOrders/` | `Script014`–`016` | Pedidos de compra |
+| `SalesOrders/` | `Script017`–`019` | Pedidos de venda, catálogos da API Sales Order e sugestões de faturamento |
+| `AccountsPayable/` | `Script020`–`022` | Duplicatas e comissões pagas |
+| `Invoices/` | `Script023`–`025` | Notas fiscais, inutilizações, centros de custo e leituras da API Fiscal |
+| `PersonCatalogs/` | `Script026`–`028` | Catálogos da API Person (classificações e tipos de e-mail, telefone e contato) |
+| `Representatives/` | `Script029`–`031` | Representantes e recepção de venda |
+| `ProductCatalogs/` | `Script032`–`034` | Catálogos da API Product |
+| `ProductPrices/` | `Script035`–`037` | Preços, custos, itens das tabelas de preço e promoções |
+| `Bonus/` | `Script038` | Jobs das escritas e leituras de bônus (sem tabelas) |
 
 **Regras gerais das tabelas e dos merges:**
 * Toda tabela de dados existe em dois schemas: `untreated` (recebe o bulk insert, sem chave) e `totvs` (tabela final, com PK). A exceção é `totvs.TotvsRequests`, que só recebe inserts.
