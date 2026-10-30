@@ -130,11 +130,11 @@ Domain.AfterSale/
 ```
 Application.AfterSale/
 ├── Abstractions/
-│   ├── Handlers/Commands/      (IAfterSaleCommandHandler)
+│   ├── Handlers/Commands/      (IAfterSaleCommandHandler e um por service: Refunds e Reverses)
 │   └── Services/               (IAfterSaleService, IAfterSaleMeService, IAfterSaleReversesService, IAfterSaleRefundsService)
-├── Handlers/Commands/          (AfterSaleCommandHandler: monta as queries SQL)
+├── Handlers/Commands/          (monta as queries SQL: AfterSaleRefunds/ReversesCommandHandler, usados pelo repositório de cada service, e o AfterSaleCommandHandler com as comuns)
 ├── Services/                   (AfterSaleService, AfterSaleMeService, AfterSaleReversesService, AfterSaleRefundsService)
-└── Validations/                (FluentValidation por DTO: Me, Refunds/*, Reverses/*)
+└── Validations/                (FluentValidation por DTO, nas mesmas pastas dos DTOs: Reads/Me, Reads/Refunds/*, Reads/Reverses/*)
 ```
 
 ### Services e métodos
@@ -252,7 +252,7 @@ Infrastructure.AfterSale/
 
 * `IApiClient` com a chave `"AfterSaleAPI"` e o `HttpClient` nomeado `"AfterSaleAPI"` (base `AfterSale:BaseUrl`, timeout de 20 minutos);
 * os quatro services (`AfterSaleService`, `AfterSaleMeService`, `AfterSaleReversesService`, `AfterSaleRefundsService`) e os quatro repositórios (`Scoped`);
-* `IAfterSaleCommandHandler`;
+* os command handlers: `IAfterSaleRefundsCommandHandler`, `IAfterSaleReversesCommandHandler` e o comum `IAfterSaleCommandHandler`;
 * todos os validadores do assembly (`AddValidatorsFromAssemblyContaining<EcommerceValidation>()`).
 
 O host chama o método em `Hosts/Hangfire/Extensions/ServicesExtensions.cs`.

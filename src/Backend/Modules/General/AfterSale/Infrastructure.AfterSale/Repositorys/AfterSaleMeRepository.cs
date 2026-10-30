@@ -1,5 +1,4 @@
-﻿using Application.AfterSale.Abstractions.Handlers.Commands;
-using Domain.AfterSale.Abstractions.Repositorys;
+﻿using Domain.AfterSale.Abstractions.Repositorys;
 using Domain.AfterSale.Entities.Reads.Me;
 using Domain.Shared.Abstractions.Repositorys;
 using System;
@@ -10,11 +9,10 @@ namespace Infrastructure.AfterSale.Repositorys
 {
     public class AfterSaleMeRepository : IAfterSaleMeRepository
     {
-        private readonly IAfterSaleCommandHandler _afterSaleCommandHandler;
         private readonly ISharedRepository _coreRepository;
 
-        public AfterSaleMeRepository(IAfterSaleCommandHandler afterSaleCommandHandler, ISharedRepository coreRepository) =>
-            (_afterSaleCommandHandler, _coreRepository) = (afterSaleCommandHandler, coreRepository);
+        public AfterSaleMeRepository(ISharedRepository coreRepository) =>
+            _coreRepository = coreRepository;
 
         public async Task<bool> BulkInsertIntoTableAfterSaleEcommerce(List<Ecommerce> data, Guid? parentExecutionGUID)
         {

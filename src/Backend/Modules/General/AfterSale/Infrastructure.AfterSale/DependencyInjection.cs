@@ -3,7 +3,7 @@ using Application.AfterSale.Abstractions.Services;
 using Application.AfterSale.Handlers.Commands;
 using Application.AfterSale.Services;
 using Application.AfterSale.Validations;
-using Application.AfterSale.Validations.Me;
+using Application.AfterSale.Validations.Reads.Me;
 using Domain.AfterSale.Abstractions.Repositorys;
 using Domain.Shared.Abstractions.Api;
 using FluentValidation;
@@ -32,9 +32,11 @@ namespace Infrastructure.AfterSale.DependencyInjection
 
             services.AddScoped<IAfterSaleRefundsService, AfterSaleRefundsService>();
             services.AddScoped<IAfterSaleRefundsRepository, AfterSaleRefundsRepository>();
+            services.AddScoped<IAfterSaleRefundsCommandHandler, AfterSaleRefundsCommandHandler>();
 
             services.AddScoped<IAfterSaleReversesService, AfterSaleReversesService>();
             services.AddScoped<IAfterSaleReversesRepository, AfterSaleReversesRepository>();
+            services.AddScoped<IAfterSaleReversesCommandHandler, AfterSaleReversesCommandHandler>();
             
             services.AddScoped<IAfterSaleService, AfterSaleService>();
             services.AddScoped<IAfterSaleRepository, AfterSaleRepository>();

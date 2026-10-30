@@ -9,15 +9,15 @@ namespace Infrastructure.AfterSale.Repositorys
 {
     public class AfterSaleRefundsRepository : IAfterSaleRefundsRepository
     {
-        private readonly IAfterSaleCommandHandler _afterSaleCommandHandler;
+        private readonly IAfterSaleRefundsCommandHandler _afterSaleRefundsCommandHandler;
         private readonly ISharedRepository _coreRepository;
 
-        public AfterSaleRefundsRepository(IAfterSaleCommandHandler afterSaleCommandHandler, ISharedRepository coreRepository) =>
-            (_afterSaleCommandHandler, _coreRepository) = (afterSaleCommandHandler, coreRepository);
+        public AfterSaleRefundsRepository(IAfterSaleRefundsCommandHandler afterSaleRefundsCommandHandler, ISharedRepository coreRepository) =>
+            (_afterSaleRefundsCommandHandler, _coreRepository) = (afterSaleRefundsCommandHandler, coreRepository);
 
         public async Task<IEnumerable<Domain.AfterSale.Entities.Reads.Refunds.SearchRefunds.Refund?>> GetSummarizedRefundsIdsForGetRefund()
         {
-            string sql = _afterSaleCommandHandler.CreateGetSummarizedRefundsIdsForGetRefundQuery();
+            string sql = _afterSaleRefundsCommandHandler.CreateGetSummarizedRefundsIdsForGetRefundQuery();
 
             return await _coreRepository.GetRecords<Domain.AfterSale.Entities.Reads.Refunds.SearchRefunds.Refund>(sql);
         }
@@ -32,7 +32,7 @@ namespace Infrastructure.AfterSale.Repositorys
                 for (int i = 0; i <= indice; i++)
                 {
                     var top1000List = refundsIds.Skip(i * 1000).Take(1000).ToList();
-                    string sql = _afterSaleCommandHandler.CreateGetRefundsByIdsQuery(doc_company, top1000List);
+                    string sql = _afterSaleRefundsCommandHandler.CreateGetRefundsByIdsQuery(doc_company, top1000List);
                     var result = await _coreRepository.GetRecords<Domain.AfterSale.Entities.Reads.Refunds.GetRefund.Refund>(sql);
                     list.AddRange(result);
                 }
@@ -41,7 +41,7 @@ namespace Infrastructure.AfterSale.Repositorys
             }
             else
             {
-                string sql = _afterSaleCommandHandler.CreateGetRefundsByIdsQuery(doc_company, refundsIds);
+                string sql = _afterSaleRefundsCommandHandler.CreateGetRefundsByIdsQuery(doc_company, refundsIds);
                 var result = await _coreRepository.GetRecords<Domain.AfterSale.Entities.Reads.Refunds.GetRefund.Refund>(sql);
                 list.AddRange(result);
 
@@ -93,7 +93,7 @@ namespace Infrastructure.AfterSale.Repositorys
 
         public async Task<List<Domain.AfterSale.Entities.Reads.Refunds.Status.Status?>> GetStatus(string doc_company)
         {
-            string sql = _afterSaleCommandHandler.CreateGetStatusRefundsQuery(doc_company);
+            string sql = _afterSaleRefundsCommandHandler.CreateGetStatusRefundsQuery(doc_company);
 
             var result = await _coreRepository.GetRecords<Domain.AfterSale.Entities.Reads.Refunds.Status.Status>(sql);
 
@@ -115,7 +115,7 @@ namespace Infrastructure.AfterSale.Repositorys
 
         public async Task<List<Domain.AfterSale.Entities.Reads.Refunds.Actions.Action?>> GetActions(string doc_company)
         {
-            string sql = _afterSaleCommandHandler.CreateGetActionsRefundsQuery(doc_company);
+            string sql = _afterSaleRefundsCommandHandler.CreateGetActionsRefundsQuery(doc_company);
 
             var result = await _coreRepository.GetRecords<Domain.AfterSale.Entities.Reads.Refunds.Actions.Action>(sql);
 
@@ -137,7 +137,7 @@ namespace Infrastructure.AfterSale.Repositorys
 
         public async Task<List<Domain.AfterSale.Entities.Reads.Refunds.Banks.Bank?>> GetBanks(string doc_company)
         {
-            string sql = _afterSaleCommandHandler.CreateGetBanksRefundsQuery(doc_company);
+            string sql = _afterSaleRefundsCommandHandler.CreateGetBanksRefundsQuery(doc_company);
 
             var result = await _coreRepository.GetRecords<Domain.AfterSale.Entities.Reads.Refunds.Banks.Bank>(sql);
 
@@ -159,7 +159,7 @@ namespace Infrastructure.AfterSale.Repositorys
 
         public async Task<List<Domain.AfterSale.Entities.Reads.Refunds.Types.Type?>> GetTypes(string doc_company)
         {
-            string sql = _afterSaleCommandHandler.CreateGetTypesRefundsQuery(doc_company);
+            string sql = _afterSaleRefundsCommandHandler.CreateGetTypesRefundsQuery(doc_company);
 
             var result = await _coreRepository.GetRecords<Domain.AfterSale.Entities.Reads.Refunds.Types.Type>(sql);
 
@@ -189,7 +189,7 @@ namespace Infrastructure.AfterSale.Repositorys
                 for (int i = 0; i <= indice; i++)
                 {
                     var top1000List = refundsIds.Skip(i * 1000).Take(1000).ToList();
-                    string sql = _afterSaleCommandHandler.CreateGetSummarizedRefundsByIdsQuery(doc_company, top1000List);
+                    string sql = _afterSaleRefundsCommandHandler.CreateGetSummarizedRefundsByIdsQuery(doc_company, top1000List);
                     var result = await _coreRepository.GetRecords<Domain.AfterSale.Entities.Reads.Refunds.SearchRefunds.Refund>(sql);
                     list.AddRange(result);
                 }
@@ -198,7 +198,7 @@ namespace Infrastructure.AfterSale.Repositorys
             }
             else
             {
-                string sql = _afterSaleCommandHandler.CreateGetSummarizedRefundsByIdsQuery(doc_company, refundsIds);
+                string sql = _afterSaleRefundsCommandHandler.CreateGetSummarizedRefundsByIdsQuery(doc_company, refundsIds);
                 var result = await _coreRepository.GetRecords<Domain.AfterSale.Entities.Reads.Refunds.SearchRefunds.Refund>(sql);
                 list.AddRange(result);
 

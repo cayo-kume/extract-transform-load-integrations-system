@@ -12,22 +12,22 @@ namespace Infrastructure.AfterSale.Repositorys
 {
     public class AfterSaleReversesRepository : IAfterSaleReversesRepository
     {
-        private readonly IAfterSaleCommandHandler _afterSaleCommandHandler;
+        private readonly IAfterSaleReversesCommandHandler _afterSaleReversesCommandHandler;
         private readonly ISharedRepository _coreRepository;
 
-        public AfterSaleReversesRepository(IAfterSaleCommandHandler afterSaleCommandHandler, ISharedRepository coreRepository) =>
-            (_afterSaleCommandHandler, _coreRepository) = (afterSaleCommandHandler, coreRepository);
+        public AfterSaleReversesRepository(IAfterSaleReversesCommandHandler afterSaleReversesCommandHandler, ISharedRepository coreRepository) =>
+            (_afterSaleReversesCommandHandler, _coreRepository) = (afterSaleReversesCommandHandler, coreRepository);
 
         public async Task<IEnumerable<Domain.AfterSale.Entities.Reads.Reverses.SearchReverses.Reverse?>> GetSummarizedReversesIdsForGetReverse()
         {
-            string sql = _afterSaleCommandHandler.CreateGetSummarizedReversesIdsForGetReverseQuery();
+            string sql = _afterSaleReversesCommandHandler.CreateGetSummarizedReversesIdsForGetReverseQuery();
 
             return await _coreRepository.GetRecords<Domain.AfterSale.Entities.Reads.Reverses.SearchReverses.Reverse>(sql);
         }
 
         public async Task<IEnumerable<Domain.AfterSale.Entities.Reads.Reverses.SearchReverses.Reverse?>> GetSummarizedReversesIdsForGetCourierAttributes()
         {
-            string sql = _afterSaleCommandHandler.CreateGetSummarizedReversesIdsForGetCourierAttributesQuery();
+            string sql = _afterSaleReversesCommandHandler.CreateGetSummarizedReversesIdsForGetCourierAttributesQuery();
 
             return await _coreRepository.GetRecords<Domain.AfterSale.Entities.Reads.Reverses.SearchReverses.Reverse>(sql);
         }
@@ -43,7 +43,7 @@ namespace Infrastructure.AfterSale.Repositorys
                 for (int i = 0; i <= indice; i++)
                 {
                     var top1000List = reversesIds.Skip(i * 1000).Take(1000).ToList();
-                    string sql = _afterSaleCommandHandler.CreateGetSummarizedReversesByIdsQuery(doc_company, top1000List);
+                    string sql = _afterSaleReversesCommandHandler.CreateGetSummarizedReversesByIdsQuery(doc_company, top1000List);
                     var result = await _coreRepository.GetRecords<Domain.AfterSale.Entities.Reads.Reverses.SearchReverses.Reverse>(sql);
                     list.AddRange(result);
                 }
@@ -52,7 +52,7 @@ namespace Infrastructure.AfterSale.Repositorys
             }
             else
             {
-                string sql = _afterSaleCommandHandler.CreateGetSummarizedReversesByIdsQuery(doc_company, reversesIds);
+                string sql = _afterSaleReversesCommandHandler.CreateGetSummarizedReversesByIdsQuery(doc_company, reversesIds);
                 var AddRange = await _coreRepository.GetRecords<Domain.AfterSale.Entities.Reads.Reverses.SearchReverses.Reverse>(sql);
                 list.AddRange(AddRange);
 
@@ -84,7 +84,7 @@ namespace Infrastructure.AfterSale.Repositorys
                 for (int i = 0; i <= indice; i++)
                 {
                     var top1000List = reversesIds.Skip(i * 1000).Take(1000).ToList();
-                    string sql = _afterSaleCommandHandler.CreateGetReversesByIdsQuery(doc_company, top1000List);
+                    string sql = _afterSaleReversesCommandHandler.CreateGetReversesByIdsQuery(doc_company, top1000List);
                     var result = await _coreRepository.GetRecords<Domain.AfterSale.Entities.Reads.Reverses.GetReverse.Reverse>(sql);
                     list.AddRange(result);
                 }
@@ -93,7 +93,7 @@ namespace Infrastructure.AfterSale.Repositorys
             }
             else
             {
-                string sql = _afterSaleCommandHandler.CreateGetReversesByIdsQuery(doc_company, reversesIds);
+                string sql = _afterSaleReversesCommandHandler.CreateGetReversesByIdsQuery(doc_company, reversesIds);
                 var AddRange = await _coreRepository.GetRecords<Domain.AfterSale.Entities.Reads.Reverses.GetReverse.Reverse>(sql);
                 list.AddRange(AddRange);
 
@@ -156,7 +156,7 @@ namespace Infrastructure.AfterSale.Repositorys
 
         public async Task<List<Status?>> GetStatus(string doc_company)
         {
-            string sql = _afterSaleCommandHandler.CreateGetStatusQuery(doc_company);
+            string sql = _afterSaleReversesCommandHandler.CreateGetStatusQuery(doc_company);
 
             var result = await _coreRepository.GetRecords<Status>(sql);
 
@@ -178,7 +178,7 @@ namespace Infrastructure.AfterSale.Repositorys
 
         public async Task<List<Transportation?>> GetTransportations(string doc_company)
         {
-            string sql = _afterSaleCommandHandler.CreateGetTransportationsQuery(doc_company);
+            string sql = _afterSaleReversesCommandHandler.CreateGetTransportationsQuery(doc_company);
 
             var result = await _coreRepository.GetRecords<Transportation>(sql);
 
@@ -209,7 +209,7 @@ namespace Infrastructure.AfterSale.Repositorys
                 for (int i = 0; i <= indice; i++)
                 {
                     var top1000List = reversesIds.Skip(i * 1000).Take(1000).ToList();
-                    string sql = _afterSaleCommandHandler.CreateGetCourierAttributesByReverseIdQuery(doc_company, top1000List);
+                    string sql = _afterSaleReversesCommandHandler.CreateGetCourierAttributesByReverseIdQuery(doc_company, top1000List);
                     var result = await _coreRepository.GetRecords<Domain.AfterSale.Entities.Reads.Reverses.CourierAttributes.CourierAttributes>(sql);
                     list.AddRange(result);
                 }
@@ -218,7 +218,7 @@ namespace Infrastructure.AfterSale.Repositorys
             }
             else
             {
-                string sql = _afterSaleCommandHandler.CreateGetCourierAttributesByReverseIdQuery(doc_company, reversesIds);
+                string sql = _afterSaleReversesCommandHandler.CreateGetCourierAttributesByReverseIdQuery(doc_company, reversesIds);
                 var AddRange = await _coreRepository.GetRecords<Domain.AfterSale.Entities.Reads.Reverses.CourierAttributes.CourierAttributes>(sql);
                 list.AddRange(AddRange);
 
