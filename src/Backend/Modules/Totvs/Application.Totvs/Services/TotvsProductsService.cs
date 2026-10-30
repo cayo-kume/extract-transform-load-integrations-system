@@ -447,55 +447,6 @@ namespace Application.Totvs.Services
             }
         }
 
-        /// <summary>
-        /// um POST da leitura de valores, com uma nova tentativa: 401 renova o token, 429 espera o Retry-After e 502/503/504 espera 10 s.
-        /// Devolve null se não houve token (a mensagem do login já foi para o log)
-        /// </summary>
-        private async Task<ApiResponse?> SendValueRequest(Domain.Totvs.Entities.Parameters.Company company, string route, string requestBody)
-        {
-            ApiResponse? response = null;
-
-            for (var attempt = 1; attempt <= 2; attempt++)
-            {
-                var token = await _totvsService.GetToken(company);
-
-                if (token is null)
-                    break;
-
-                using var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
-
-                response = await _apiClient.SendAsync(
-                    HttpMethod.Post,
-                    route,
-                    content,
-                    headers: new Dictionary<string, string> { { "Authorization", $"Bearer {token}" } }
-                );
-
-                if (attempt == 1 && response.StatusCode == 401)
-                {
-                    _totvsService.RemoveToken(company);
-                    continue;
-                }
-
-                if (attempt == 1 && response.StatusCode == 429)
-                {
-                    var seconds = response.Headers.TryGetValue("Retry-After", out var retryAfter) && int.TryParse(retryAfter, out var value) ? value : 5;
-                    await Task.Delay(TimeSpan.FromSeconds(Math.Clamp(seconds, 1, 60)));
-                    continue;
-                }
-
-                if (attempt == 1 && response.StatusCode is 502 or 503 or 504)
-                {
-                    await Task.Delay(TimeSpan.FromSeconds(10));
-                    continue;
-                }
-
-                break;
-            }
-
-            return response;
-        }
-
         public async Task<bool?> GetSimilar()
         {
             _logger
@@ -1004,49 +955,6 @@ namespace Application.Totvs.Services
 
                 return saved;
             }
-        }
-
-        /// <summary>
-        /// lê uma página de resposta, com cada item pareado com o seu JSON (datas como a API mandou), ou null se a resposta falhou ou
-        /// veio inválida (a mensagem vai para o log)
-        /// </summary>
-        private (List<(T dto, JObject json)> items, int totalPages, int count)? ParsePage<T>(Domain.Totvs.Entities.Parameters.Company company, string route, ApiResponse? response, string context)
-        {
-            if (response is null || !response.IsSuccess)
-            {
-                if (response is not null)
-                {
-                    var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                    _logger.AddMessage($"Erro da API Totvs em {route} (empresa {company.doc_company}, {context}): {response.StatusCode} {body}");
-                }
-
-                return null;
-            }
-
-            Page<T>? result = null;
-            JArray json = [];
-
-            try
-            {
-                result = JsonConvert.DeserializeObject<Page<T>>(response.Content ?? String.Empty);
-
-                using var reader = new JsonTextReader(new StringReader(response.Content!)) { DateParseHandling = DateParseHandling.None };
-                json = (JObject.Load(reader)["items"] as JArray) ?? [];
-            }
-            catch (JsonException)
-            {
-                // result continua null: tratado abaixo como resposta inválida
-            }
-
-            if (result?.items is null || json.Count != result.items.Count)
-            {
-                var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                _logger.AddMessage($"Resposta inválida da API Totvs em {route} (empresa {company.doc_company}, {context}): {body}");
-
-                return null;
-            }
-
-            return (result.items.Select((x, i) => (x, (JObject)json[i])).ToList(), result.totalPages, result.count);
         }
 
         public async Task<bool?> PostSearchReferences()
@@ -1577,105 +1485,6 @@ namespace Application.Totvs.Services
             }
         }
 
-        /// <summary>
-        /// une numa referência as cores e os produtos de outra página da mesma referência (cor por code, produto por code,
-        /// medida por sku); as outras listas vêm inteiras em toda página e ficam as da primeira
-        /// </summary>
-        private static void MergeColors(JObject target, JObject source)
-        {
-            if (target["colors"] is not JArray targetColors)
-            {
-                targetColors = [];
-                target["colors"] = targetColors;
-            }
-
-            foreach (var color in (source["colors"] as JArray ?? []).OfType<JObject>())
-            {
-                var code = (string?)color["code"];
-                var existing = targetColors.OfType<JObject>().FirstOrDefault(c => (string?)c["code"] == code);
-
-                if (existing is null)
-                {
-                    targetColors.Add(color.DeepClone());
-                    continue;
-                }
-
-                MergeList(existing, color, "products", "code");
-                MergeList(existing, color, "measurementTableOmni", "sku");
-            }
-
-            static void MergeList(JObject target, JObject source, string listName, string keyName)
-            {
-                if (target[listName] is not JArray targetList)
-                {
-                    targetList = [];
-                    target[listName] = targetList;
-                }
-
-                var keys = targetList.OfType<JObject>().Select(x => (string?)x[keyName]).ToHashSet();
-
-                foreach (var item in (source[listName] as JArray ?? []).OfType<JObject>())
-                    if (keys.Add((string?)item[keyName]))
-                        targetList.Add(item.DeepClone());
-            }
-        }
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa e matriz.
-        /// Devolve a quantidade de referências gravadas.
-        /// </summary>
-        private async Task<int> SaveReferences(
-            string doc_company,
-            int baseBranchCode,
-            DateTime batchTime,
-            IEnumerable<Domain.Totvs.Dtos.Reads.Products.Reference> references,
-            IReadOnlyDictionary<int, string> referencesJson,
-            Dictionary<int, Domain.Totvs.Entities.Reads.Products.Sku>? skusCache)
-        {
-            var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.Products.Sku>();
-
-            // as páginas da mesma referência já foram unidas por quem chamou; o GroupBy só protege a PK
-            foreach (var reference in references.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.referenceId) != 0).GroupBy(x => x.referenceId).Select(g => g.Last()))
-            {
-                var validations = _referenceValidator.Validate(reference);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"referência {reference.referenceId} (matriz {baseBranchCode}): {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.Products.Sku(doc_company, batchTime, baseBranchCode, reference));
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            // o mesmo produto em duas referências do lote violaria a PK de TotvsSkusColorsProducts (não aconteceu na amostra real)
-            var repeatedProducts = _listSomenteNovos.SelectMany(x => x.colors).SelectMany(x => x.products).GroupBy(x => x.code).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
-
-            if (repeatedProducts.Count > 0)
-                _logger.AddMessage($"Matriz {baseBranchCode}: produto(s) em mais de uma referência do lote, gravado(s) só na última: {String.Join(", ", repeatedProducts)}");
-
-            foreach (var product in repeatedProducts)
-                foreach (var color in _listSomenteNovos.SelectMany(x => x.colors).Where(c => c.products.Any(p => p.code == product)).SkipLast(1))
-                    color.products.RemoveAll(p => p.code == product);
-
-            await _totvsProductsRepository.BulkInsertIntoTotvsSkus(_listSomenteNovos, _logger.GetExecutionGuid());
-
-            foreach (var record in _listSomenteNovos)
-            {
-                if (referencesJson.TryGetValue(record.referenceId, out var json))
-                    _logger.AddRecord($"{baseBranchCode}|{record.referenceId}", json);
-
-                if (skusCache is not null)
-                    skusCache[record.referenceId] = record;
-            }
-
-            return _listSomenteNovos.Count;
-        }
-
         public async Task<Domain.Totvs.Dtos.Writes.Result> GetProducts(string user_name, string doc_company, string code, int? branchCode)
         {
             _logger
@@ -1876,6 +1685,213 @@ namespace Application.Totvs.Services
                 "Confira os pedidos preferenciais do item de lote antes de repetir.",
                 branches: (body.preferentialSalesOrder ?? []).Select(x => x.branchCode!.Value).Prepend(body.branchCode!.Value));
 
+        // dados fiscais e indicadores por empresa (§5.6): valores absolutos, sem trava. A loja do caminho precisa ser da empresa
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PutProducts(string user_name, string doc_company, int code, int branchCode, Domain.Totvs.Dtos.Writes.Products.Data.ProductBranchUpdate body) =>
+            await WriteProducts(user_name, doc_company, EnumJob.TotvsPutProducts, HttpMethod.Put, $"product/v2/products/{code}/{branchCode}", $"{code}|{branchCode}", body,
+                "Confira os dados do produto na loja antes de repetir.", branches: [branchCode]);
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PutBranchInfo(string user_name, string doc_company, int branchCode, Domain.Totvs.Dtos.Writes.Products.Data.UpsertProductBranchInfo body) =>
+            await WriteProducts(user_name, doc_company, EnumJob.TotvsPutBranchInfo, HttpMethod.Put, $"product/v2/branch-info/{branchCode}",
+                $"{branchCode}|{ProductsKey(body.filter!.productCodeList?.Select(x => x.ToString()) ?? body.filter.barCodeList!)}", body, "Confira os dados dos produtos na loja antes de repetir.",
+                branches: [branchCode]);
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PutData(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Data.UpdateProductData body) =>
+            await WriteProducts(user_name, doc_company, EnumJob.TotvsPutData, HttpMethod.Put, "product/v2/data",
+                ProductsKey(body.filter!.productCodeList?.Select(x => x.ToString()) ?? body.filter.barCodeList!), body, "Confira os dados fiscais dos produtos antes de repetir.");
+
+        // ------------------------------------------------------------------------------------------------------
+
+        /// <summary>
+        /// um POST da leitura de valores, com uma nova tentativa: 401 renova o token, 429 espera o Retry-After e 502/503/504 espera 10 s.
+        /// Devolve null se não houve token (a mensagem do login já foi para o log)
+        /// </summary>
+        private async Task<ApiResponse?> SendValueRequest(Domain.Totvs.Entities.Parameters.Company company, string route, string requestBody)
+        {
+            ApiResponse? response = null;
+
+            for (var attempt = 1; attempt <= 2; attempt++)
+            {
+                var token = await _totvsService.GetToken(company);
+
+                if (token is null)
+                    break;
+
+                using var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
+
+                response = await _apiClient.SendAsync(
+                    HttpMethod.Post,
+                    route,
+                    content,
+                    headers: new Dictionary<string, string> { { "Authorization", $"Bearer {token}" } }
+                );
+
+                if (attempt == 1 && response.StatusCode == 401)
+                {
+                    _totvsService.RemoveToken(company);
+                    continue;
+                }
+
+                if (attempt == 1 && response.StatusCode == 429)
+                {
+                    var seconds = response.Headers.TryGetValue("Retry-After", out var retryAfter) && int.TryParse(retryAfter, out var value) ? value : 5;
+                    await Task.Delay(TimeSpan.FromSeconds(Math.Clamp(seconds, 1, 60)));
+                    continue;
+                }
+
+                if (attempt == 1 && response.StatusCode is 502 or 503 or 504)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(10));
+                    continue;
+                }
+
+                break;
+            }
+
+            return response;
+        }
+
+        /// <summary>
+        /// lê uma página de resposta, com cada item pareado com o seu JSON (datas como a API mandou), ou null se a resposta falhou ou
+        /// veio inválida (a mensagem vai para o log)
+        /// </summary>
+        private (List<(T dto, JObject json)> items, int totalPages, int count)? ParsePage<T>(Domain.Totvs.Entities.Parameters.Company company, string route, ApiResponse? response, string context)
+        {
+            if (response is null || !response.IsSuccess)
+            {
+                if (response is not null)
+                {
+                    var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
+                    _logger.AddMessage($"Erro da API Totvs em {route} (empresa {company.doc_company}, {context}): {response.StatusCode} {body}");
+                }
+
+                return null;
+            }
+
+            Page<T>? result = null;
+            JArray json = [];
+
+            try
+            {
+                result = JsonConvert.DeserializeObject<Page<T>>(response.Content ?? String.Empty);
+
+                using var reader = new JsonTextReader(new StringReader(response.Content!)) { DateParseHandling = DateParseHandling.None };
+                json = (JObject.Load(reader)["items"] as JArray) ?? [];
+            }
+            catch (JsonException)
+            {
+                // result continua null: tratado abaixo como resposta inválida
+            }
+
+            if (result?.items is null || json.Count != result.items.Count)
+            {
+                var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
+                _logger.AddMessage($"Resposta inválida da API Totvs em {route} (empresa {company.doc_company}, {context}): {body}");
+
+                return null;
+            }
+
+            return (result.items.Select((x, i) => (x, (JObject)json[i])).ToList(), result.totalPages, result.count);
+        }
+
+        /// <summary>
+        /// une numa referência as cores e os produtos de outra página da mesma referência (cor por code, produto por code,
+        /// medida por sku); as outras listas vêm inteiras em toda página e ficam as da primeira
+        /// </summary>
+        private static void MergeColors(JObject target, JObject source)
+        {
+            if (target["colors"] is not JArray targetColors)
+            {
+                targetColors = [];
+                target["colors"] = targetColors;
+            }
+
+            foreach (var color in (source["colors"] as JArray ?? []).OfType<JObject>())
+            {
+                var code = (string?)color["code"];
+                var existing = targetColors.OfType<JObject>().FirstOrDefault(c => (string?)c["code"] == code);
+
+                if (existing is null)
+                {
+                    targetColors.Add(color.DeepClone());
+                    continue;
+                }
+
+                MergeList(existing, color, "products", "code");
+                MergeList(existing, color, "measurementTableOmni", "sku");
+            }
+
+            static void MergeList(JObject target, JObject source, string listName, string keyName)
+            {
+                if (target[listName] is not JArray targetList)
+                {
+                    targetList = [];
+                    target[listName] = targetList;
+                }
+
+                var keys = targetList.OfType<JObject>().Select(x => (string?)x[keyName]).ToHashSet();
+
+                foreach (var item in (source[listName] as JArray ?? []).OfType<JObject>())
+                    if (keys.Add((string?)item[keyName]))
+                        targetList.Add(item.DeepClone());
+            }
+        }
+
+        /// <summary>
+        /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa e matriz.
+        /// Devolve a quantidade de referências gravadas.
+        /// </summary>
+        private async Task<int> SaveReferences(
+            string doc_company,
+            int baseBranchCode,
+            DateTime batchTime,
+            IEnumerable<Domain.Totvs.Dtos.Reads.Products.Reference> references,
+            IReadOnlyDictionary<int, string> referencesJson,
+            Dictionary<int, Domain.Totvs.Entities.Reads.Products.Sku>? skusCache)
+        {
+            var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.Products.Sku>();
+
+            // as páginas da mesma referência já foram unidas por quem chamou; o GroupBy só protege a PK
+            foreach (var reference in references.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.referenceId) != 0).GroupBy(x => x.referenceId).Select(g => g.Last()))
+            {
+                var validations = _referenceValidator.Validate(reference);
+
+                if (validations.Errors.Count > 0)
+                {
+                    var message = String.Empty;
+                    validations.Errors.ForEach(s => message += $"referência {reference.referenceId} (matriz {baseBranchCode}): {s.ErrorMessage}\n");
+                    _logger.AddMessage(message);
+                }
+
+                _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.Products.Sku(doc_company, batchTime, baseBranchCode, reference));
+            }
+
+            if (_listSomenteNovos.Count == 0)
+                return 0;
+
+            // o mesmo produto em duas referências do lote violaria a PK de TotvsSkusColorsProducts (não aconteceu na amostra real)
+            var repeatedProducts = _listSomenteNovos.SelectMany(x => x.colors).SelectMany(x => x.products).GroupBy(x => x.code).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
+
+            if (repeatedProducts.Count > 0)
+                _logger.AddMessage($"Matriz {baseBranchCode}: produto(s) em mais de uma referência do lote, gravado(s) só na última: {String.Join(", ", repeatedProducts)}");
+
+            foreach (var product in repeatedProducts)
+                foreach (var color in _listSomenteNovos.SelectMany(x => x.colors).Where(c => c.products.Any(p => p.code == product)).SkipLast(1))
+                    color.products.RemoveAll(p => p.code == product);
+
+            await _totvsProductsRepository.BulkInsertIntoTotvsSkus(_listSomenteNovos, _logger.GetExecutionGuid());
+
+            foreach (var record in _listSomenteNovos)
+            {
+                if (referencesJson.TryGetValue(record.referenceId, out var json))
+                    _logger.AddRecord($"{baseBranchCode}|{record.referenceId}", json);
+
+                if (skusCache is not null)
+                    skusCache[record.referenceId] = record;
+            }
+
+            return _listSomenteNovos.Count;
+        }
+
         // escritas da API Product (docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.5, §5.6 e §5.8) pela base comum: liga/desliga, empresa, lojas da
         // empresa e a chamada. Os registros chegam ao banco pelos jobs de catálogo e de referências
         private async Task<Domain.Totvs.Dtos.Writes.Result> WriteProducts(string user_name, string doc_company, EnumJob job, HttpMethod method, string route, string key, object body,
@@ -1920,19 +1936,5 @@ namespace Application.Totvs.Services
 
             return key.Length > 400 ? key[..400] : key;
         }
-
-        // dados fiscais e indicadores por empresa (§5.6): valores absolutos, sem trava. A loja do caminho precisa ser da empresa
-        public async Task<Domain.Totvs.Dtos.Writes.Result> PutProducts(string user_name, string doc_company, int code, int branchCode, Domain.Totvs.Dtos.Writes.Products.Data.ProductBranchUpdate body) =>
-            await WriteProducts(user_name, doc_company, EnumJob.TotvsPutProducts, HttpMethod.Put, $"product/v2/products/{code}/{branchCode}", $"{code}|{branchCode}", body,
-                "Confira os dados do produto na loja antes de repetir.", branches: [branchCode]);
-
-        public async Task<Domain.Totvs.Dtos.Writes.Result> PutBranchInfo(string user_name, string doc_company, int branchCode, Domain.Totvs.Dtos.Writes.Products.Data.UpsertProductBranchInfo body) =>
-            await WriteProducts(user_name, doc_company, EnumJob.TotvsPutBranchInfo, HttpMethod.Put, $"product/v2/branch-info/{branchCode}",
-                $"{branchCode}|{ProductsKey(body.filter!.productCodeList?.Select(x => x.ToString()) ?? body.filter.barCodeList!)}", body, "Confira os dados dos produtos na loja antes de repetir.",
-                branches: [branchCode]);
-
-        public async Task<Domain.Totvs.Dtos.Writes.Result> PutData(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Data.UpdateProductData body) =>
-            await WriteProducts(user_name, doc_company, EnumJob.TotvsPutData, HttpMethod.Put, "product/v2/data",
-                ProductsKey(body.filter!.productCodeList?.Select(x => x.ToString()) ?? body.filter.barCodeList!), body, "Confira os dados fiscais dos produtos antes de repetir.");
     }
 }

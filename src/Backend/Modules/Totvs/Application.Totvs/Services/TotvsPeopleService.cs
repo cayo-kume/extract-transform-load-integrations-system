@@ -1042,96 +1042,6 @@ namespace Application.Totvs.Services
             }
         }
 
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
-        /// Devolve a quantidade de pessoas físicas gravadas.
-        /// </summary>
-        private async Task<int> SaveCustomers(
-            string doc_company,
-            DateTime batchTime,
-            IEnumerable<Domain.Totvs.Dtos.Reads.People.Customers.Customer> people,
-            IReadOnlyDictionary<int, string> peopleJson,
-            Dictionary<int, Domain.Totvs.Entities.Reads.People.Customers.Customer>? peopleCache)
-        {
-            var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.People.Customers.Customer>();
-
-            // a mesma pessoa pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
-            foreach (var person in people.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.code) != 0).GroupBy(x => x.code).Select(g => g.Last()))
-            {
-                var validations = _customerValidator.Validate(person);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"pessoa física {person.code}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.People.Customers.Customer(doc_company, batchTime, person));
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _totvsPeopleRepository.BulkInsertIntoTotvsPeople(_listSomenteNovos, _logger.GetExecutionGuid());
-
-            foreach (var record in _listSomenteNovos)
-            {
-                if (peopleJson.TryGetValue(record.code, out var json))
-                    _logger.AddRecord(record.code.ToString(), json);
-
-                if (peopleCache is not null)
-                    peopleCache[record.code] = record;
-            }
-
-            return _listSomenteNovos.Count;
-        }
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
-        /// Devolve a quantidade de pessoas jurídicas gravadas.
-        /// </summary>
-        private async Task<int> SaveLegalEntities(
-            string doc_company,
-            DateTime batchTime,
-            IEnumerable<Domain.Totvs.Dtos.Reads.People.LegalEntities.LegalEntity> people,
-            IReadOnlyDictionary<int, string> peopleJson,
-            Dictionary<int, Domain.Totvs.Entities.Reads.People.LegalEntities.LegalEntity>? peopleCache)
-        {
-            var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.People.LegalEntities.LegalEntity>();
-
-            // a mesma pessoa pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
-            foreach (var person in people.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.code) != 0).GroupBy(x => x.code).Select(g => g.Last()))
-            {
-                var validations = _legalEntityValidator.Validate(person);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"pessoa jurídica {person.code}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.People.LegalEntities.LegalEntity(doc_company, batchTime, person));
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _totvsPeopleRepository.BulkInsertIntoTotvsLegalEntities(_listSomenteNovos, _logger.GetExecutionGuid());
-
-            foreach (var record in _listSomenteNovos)
-            {
-                if (peopleJson.TryGetValue(record.code, out var json))
-                    _logger.AddRecord(record.code.ToString(), json);
-
-                if (peopleCache is not null)
-                    peopleCache[record.code] = record;
-            }
-
-            return _listSomenteNovos.Count;
-        }
-
         public async Task<Domain.Totvs.Dtos.Writes.Result> GetBranches(string user_name, string doc_company, string branchId)
         {
             _logger
@@ -1321,6 +1231,98 @@ namespace Application.Totvs.Services
                 _logger.SetLogEndDate();
                 await _logger.CommitAllChanges();
             }
+        }
+
+        // ------------------------------------------------------------------------------------------------------
+
+        /// <summary>
+        /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
+        /// Devolve a quantidade de pessoas físicas gravadas.
+        /// </summary>
+        private async Task<int> SaveCustomers(
+            string doc_company,
+            DateTime batchTime,
+            IEnumerable<Domain.Totvs.Dtos.Reads.People.Customers.Customer> people,
+            IReadOnlyDictionary<int, string> peopleJson,
+            Dictionary<int, Domain.Totvs.Entities.Reads.People.Customers.Customer>? peopleCache)
+        {
+            var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.People.Customers.Customer>();
+
+            // a mesma pessoa pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
+            foreach (var person in people.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.code) != 0).GroupBy(x => x.code).Select(g => g.Last()))
+            {
+                var validations = _customerValidator.Validate(person);
+
+                if (validations.Errors.Count > 0)
+                {
+                    var message = String.Empty;
+                    validations.Errors.ForEach(s => message += $"pessoa física {person.code}: {s.ErrorMessage}\n");
+                    _logger.AddMessage(message);
+                }
+
+                _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.People.Customers.Customer(doc_company, batchTime, person));
+            }
+
+            if (_listSomenteNovos.Count == 0)
+                return 0;
+
+            await _totvsPeopleRepository.BulkInsertIntoTotvsPeople(_listSomenteNovos, _logger.GetExecutionGuid());
+
+            foreach (var record in _listSomenteNovos)
+            {
+                if (peopleJson.TryGetValue(record.code, out var json))
+                    _logger.AddRecord(record.code.ToString(), json);
+
+                if (peopleCache is not null)
+                    peopleCache[record.code] = record;
+            }
+
+            return _listSomenteNovos.Count;
+        }
+
+        /// <summary>
+        /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
+        /// Devolve a quantidade de pessoas jurídicas gravadas.
+        /// </summary>
+        private async Task<int> SaveLegalEntities(
+            string doc_company,
+            DateTime batchTime,
+            IEnumerable<Domain.Totvs.Dtos.Reads.People.LegalEntities.LegalEntity> people,
+            IReadOnlyDictionary<int, string> peopleJson,
+            Dictionary<int, Domain.Totvs.Entities.Reads.People.LegalEntities.LegalEntity>? peopleCache)
+        {
+            var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.People.LegalEntities.LegalEntity>();
+
+            // a mesma pessoa pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
+            foreach (var person in people.Where(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.code) != 0).GroupBy(x => x.code).Select(g => g.Last()))
+            {
+                var validations = _legalEntityValidator.Validate(person);
+
+                if (validations.Errors.Count > 0)
+                {
+                    var message = String.Empty;
+                    validations.Errors.ForEach(s => message += $"pessoa jurídica {person.code}: {s.ErrorMessage}\n");
+                    _logger.AddMessage(message);
+                }
+
+                _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.People.LegalEntities.LegalEntity(doc_company, batchTime, person));
+            }
+
+            if (_listSomenteNovos.Count == 0)
+                return 0;
+
+            await _totvsPeopleRepository.BulkInsertIntoTotvsLegalEntities(_listSomenteNovos, _logger.GetExecutionGuid());
+
+            foreach (var record in _listSomenteNovos)
+            {
+                if (peopleJson.TryGetValue(record.code, out var json))
+                    _logger.AddRecord(record.code.ToString(), json);
+
+                if (peopleCache is not null)
+                    peopleCache[record.code] = record;
+            }
+
+            return _listSomenteNovos.Count;
         }
 
         // cliente PF e PJ (docs/PLANO-TOTVS-METODOS-FALTANTES.md §3.4.1): a mesma rota cria ou altera pelo documento, que é a chave em TotvsRequests;

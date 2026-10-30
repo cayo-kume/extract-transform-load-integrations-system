@@ -493,69 +493,6 @@ namespace Application.Totvs.Services
         /// </summary>
         private sealed class ReferencedInvoicesException : Exception { }
 
-        /// <summary>
-        /// chave da nota: loja + sequência + data (5.2.1)
-        /// </summary>
-        private static (int branchCode, int invoiceSequence, DateTime invoiceDate) Key(Domain.Totvs.Dtos.Reads.Invoices.Invoice x) =>
-            (ConverterValidatorsExtensions.ConvertToInt32Validation(x.branchCode), ConverterValidatorsExtensions.ConvertToInt32Validation(x.invoiceSequence), ConverterValidatorsExtensions.ConvertToDateTimeValidation(x.invoiceDate));
-
-        /// <summary>
-        /// sem loja, sequência ou data a nota não tem chave (a data vazia vira 01/01/1990 no conversor)
-        /// </summary>
-        private static bool IsValidKey((int branchCode, int invoiceSequence, DateTime invoiceDate) key) =>
-            key.branchCode != 0 && key.invoiceSequence != 0 && key.invoiceDate != new DateTime(1990, 1, 1);
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
-        /// Devolve a quantidade de notas gravadas.
-        /// </summary>
-        private async Task<int> SaveInvoices(
-            string doc_company,
-            DateTime batchTime,
-            IEnumerable<Domain.Totvs.Dtos.Reads.Invoices.Invoice> invoices,
-            IReadOnlyDictionary<(int, int, DateTime), string> invoicesJson,
-            Dictionary<(int branchCode, int invoiceSequence, DateTime invoiceDate), Domain.Totvs.Entities.Reads.Invoices.Invoice>? invoicesCache)
-        {
-            var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.Invoices.Invoice>();
-
-            // a mesma nota pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
-            foreach (var invoice in invoices.Where(x => IsValidKey(Key(x))).GroupBy(Key).Select(g => g.Last()))
-            {
-                var validations = _invoiceValidator.Validate(invoice);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"nota {invoice.branchCode}/{invoice.invoiceSequence} de {invoice.invoiceDate}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                // vínculo com pedido sem loja ou número não tem chave e é descartado pela entidade
-                var semChave = (invoice.salesOrder ?? []).Count(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.branchCode) == 0 || ConverterValidatorsExtensions.ConvertToInt32Validation(x.orderCode) == 0);
-
-                if (semChave > 0)
-                    _logger.AddMessage($"nota {invoice.branchCode}/{invoice.invoiceSequence} de {invoice.invoiceDate}: {semChave} pedido(s) de venda sem loja ou número descartado(s).");
-
-                _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.Invoices.Invoice(doc_company, batchTime, invoice));
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _totvsInvoicesRepository.BulkInsertIntoTotvsInvoices(_listSomenteNovos, _logger.GetExecutionGuid());
-
-            foreach (var record in _listSomenteNovos)
-            {
-                if (invoicesJson.TryGetValue((record.branchCode, record.invoiceSequence, record.invoiceDate), out var json))
-                    _logger.AddRecord($"{record.branchCode}|{record.invoiceSequence}|{record.invoiceDate:yyyy-MM-dd}", json);
-
-                if (invoicesCache is not null)
-                    invoicesCache[(record.branchCode, record.invoiceSequence, record.invoiceDate)] = record;
-            }
-
-            return _listSomenteNovos.Count;
-        }
-
         public async Task<bool?> GetInvoicesDisable()
         {
             _logger
@@ -769,103 +706,6 @@ namespace Application.Totvs.Services
             }
         }
 
-        /// <summary>
-        /// lê todas as páginas de um GET da API Fiscal (inutilizações e centros de custo). Devolve cada item com o seu JSON, ou null se
-        /// alguma página falhou (a mensagem vai para o log)
-        /// </summary>
-        private async Task<List<(T dto, JObject json)>?> GetFiscalPages<T>(Domain.Totvs.Entities.Parameters.Company company, string route, Func<int, Dictionary<string, string>> query)
-        {
-            var items = new List<(T dto, JObject json)>();
-            var page = 1;
-            var totalPages = 1;
-            var routeName = route.Split('?')[0];
-
-            while (page <= totalPages)
-            {
-                // uma nova tentativa: 401 renova o token, 429 espera o Retry-After e 502/503/504 espera 10 s
-                ApiResponse? response = null;
-
-                for (var attempt = 1; attempt <= 2; attempt++)
-                {
-                    var token = await _totvsService.GetToken(company);
-
-                    if (token is null)
-                        break;   // a mensagem do login já foi para o log
-
-                    response = await _apiClient.SendAsync(
-                        HttpMethod.Get,
-                        route,
-                        headers: new Dictionary<string, string> { { "Authorization", $"Bearer {token}" } },
-                        queryParams: query(page)
-                    );
-
-                    if (attempt == 1 && response.StatusCode == 401)
-                    {
-                        _totvsService.RemoveToken(company);
-                        continue;
-                    }
-
-                    if (attempt == 1 && response.StatusCode == 429)
-                    {
-                        var seconds = response.Headers.TryGetValue("Retry-After", out var retryAfter) && int.TryParse(retryAfter, out var value) ? value : 5;
-                        await Task.Delay(TimeSpan.FromSeconds(Math.Clamp(seconds, 1, 60)));
-                        continue;
-                    }
-
-                    if (attempt == 1 && response.StatusCode is 502 or 503 or 504)
-                    {
-                        await Task.Delay(TimeSpan.FromSeconds(10));
-                        continue;
-                    }
-
-                    break;
-                }
-
-                if (response is null || !response.IsSuccess)
-                {
-                    if (response is not null)
-                    {
-                        var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                        _logger.AddMessage($"Erro da API Totvs em {routeName} (empresa {company.doc_company}, página {page}): {response.StatusCode} {body}");
-                    }
-
-                    return null;
-                }
-
-                Page<T>? result = null;
-                JArray json = [];
-
-                try
-                {
-                    result = JsonConvert.DeserializeObject<Page<T>>(response.Content ?? String.Empty);
-
-                    // DateParseHandling.None: o JSON gravado e o hash ficam com as datas como a API mandou
-                    using var reader = new JsonTextReader(new StringReader(response.Content!)) { DateParseHandling = DateParseHandling.None };
-                    json = (JObject.Load(reader)["items"] as JArray) ?? [];
-                }
-                catch (JsonException)
-                {
-                    // result continua null: tratado abaixo como resposta inválida
-                }
-
-                if (result?.items is null || json.Count != result.items.Count)
-                {
-                    var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                    _logger.AddMessage($"Resposta inválida da API Totvs em {routeName} (empresa {company.doc_company}, página {page}): {body}");
-
-                    return null;
-                }
-
-                for (var i = 0; i < json.Count; i++)
-                    items.Add((result.items[i], (JObject)json[i]));
-
-                totalPages = result.totalPages;
-                page++;
-            }
-
-            return items;
-        }
-
         public async Task<Domain.Totvs.Dtos.Writes.Result> GetXmlContents(string user_name, string doc_company, string accessKey)
         {
             _logger
@@ -1065,6 +905,335 @@ namespace Application.Totvs.Services
             }
         }
 
+        // status das leituras sem persistência (§8.1)
+        private static class StatusCodes
+        {
+            public const int OK = 200;
+            public const int NotFound = 404;
+            public const int UnprocessableEntity = 422;
+            public const int BadGateway = 502;
+        }
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> GetSearchInvoicesItemDetail(string user_name, string doc_company, int? branchCode, int? invoiceSequence, DateTime? invoiceDate, string? accessKey)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsGetSearchInvoicesItemDetail);
+
+            // as duas formas da chave da nota, uma ou outra (a Totvs recusa as duas juntas: 400 CannotBeInformed, testado)
+            var key = accessKey ?? $"{branchCode}|{invoiceSequence}|{invoiceDate:yyyy-MM-dd}";
+            var query = accessKey is not null
+                ? $"AccessKey={accessKey}"
+                : $"BranchCode={branchCode}&InvoiceDate={invoiceDate:yyyy-MM-dd}&InvoiceSequence={invoiceSequence}";
+
+            try
+            {
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return CompanyNotFound(doc_company, key);
+
+                // os itens já são gravados pelo invoices/search; esta rota só devolve o que é dela (transações e notas referenciadas por
+                // produto, inTransactionAgroup) e não grava: regravar as tabelas por aqui apagaria cest e additionalItemInformation (§8.7)
+                return await ReadFiscalJson(company, EnumJob.TotvsGetSearchInvoicesItemDetail, user_name, key, HttpMethod.Get, $"fiscal/v2/invoices/item-detail-search?{query}&Expand=barcodes", null, false);
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> GetInvoicesPendingConditionalProducts(string user_name, string doc_company, int branchCode, int? personCode, string? personCpfCnpj, bool onlyPendingItem)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsGetInvoicesPendingConditionalProducts);
+
+            var key = personCode is not null ? $"{branchCode}|{personCode}" : $"{branchCode}|{personCpfCnpj}";
+
+            try
+            {
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return CompanyNotFound(doc_company, key);
+
+                // a loja precisa ser da empresa (422 sem chamar a API, §8.8)
+                if (!(await _totvsService.GetBranchCodes(company)).Contains(branchCode))
+                    return BranchNotFound(doc_company, key, [branchCode]);
+
+                // PersonCode ou PersonCpfCnpj, um dos dois (a Totvs recusa nenhum e os dois: 400 FieldsHaveNoValue / FieldsHaveValue, testado)
+                var person = personCode is not null ? $"PersonCode={personCode}" : $"PersonCpfCnpj={personCpfCnpj}";
+
+                // o saldo do momento muda a cada venda ou devolução e a rota não tem filtro de alteração: não há o que gravar (§8.8)
+                return await ReadFiscalJson(company, EnumJob.TotvsGetInvoicesPendingConditionalProducts, user_name, key, HttpMethod.Get,
+                    $"fiscal/v2/invoices/pending-conditional-products?BranchCode={branchCode}&{person}&OnlyPendingItem={(onlyPendingItem ? "true" : "false")}", null, true);
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostSearchInvoiceProducts(string user_name, string doc_company, Domain.Totvs.Dtos.Reads.Invoices.InvoiceProductSearch body)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsPostSearchInvoiceProducts);
+
+            // chave em TotvsRequests: as lojas e o primeiro filtro restritivo informado (§8.9)
+            var filter = body.filter!;
+            var restrictive = filter.invoiceCodeList?.Count > 0 ? $"invoiceCodeList={String.Join(",", filter.invoiceCodeList)}"
+                : filter.ProductCodeList?.Count > 0 ? $"ProductCodeList={String.Join(",", filter.ProductCodeList)}"
+                : $"acessKeyList={String.Join(",", filter.acessKeyList ?? [])}";
+            var key = $"{String.Join(",", filter.branchCodeList ?? [])}|{restrictive}";
+            key = key.Length > 200 ? key[..200] : key;
+
+            try
+            {
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return CompanyNotFound(doc_company, key);
+
+                var branchCodes = await _totvsService.GetBranchCodes(company);
+                var outside = (filter.branchCodeList ?? []).Where(x => !branchCodes.Contains(x)).ToList();
+
+                if (outside.Count > 0)
+                    return BranchNotFound(doc_company, key, outside);
+
+                // o corpo vai como veio (nomes do swagger, enums pelo nome); nulos omitidos
+                var requestBody = JsonConvert.SerializeObject(body, new JsonSerializerSettings
+                {
+                    NullValueHandling = NullValueHandling.Ignore,
+                    DateFormatString = "yyyy-MM-ddTHH:mm:ss"
+                });
+
+                // a página volta como veio: quem chama pagina (§8.9)
+                return await ReadFiscalJson(company, EnumJob.TotvsPostSearchInvoiceProducts, user_name, key, HttpMethod.Post, "fiscal/v2/invoice-products/search", requestBody, false);
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        // grupo das escritas da API Fiscal na configuração (Totvs:Writes:Invoices:Enabled, T4)
+        private const string WritesGroup = "Invoices";
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostInvoicesManifestations(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Fiscal.Manifestation body)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsPostInvoicesManifestations);
+
+            var key = String.Join("|", body.items!.Select(x => x.accessKey));
+
+            try
+            {
+                if (!_totvsService.IsWriteEnabled(WritesGroup))
+                    return _totvsService.WriteDisabled(WritesGroup, key);
+
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return _totvsService.CompanyNotFound(doc_company, key);
+
+                var outside = new List<string>();
+
+                foreach (var cnpj in body.items!.Select(x => x.branchCnpj!).Distinct())
+                    if (await _totvsService.GetBranchCodeByCnpj(company, cnpj) is null)
+                        outside.Add(cnpj);
+
+                if (outside.Count > 0)
+                    return _totvsService.BranchNotFound(doc_company, key, outside);
+
+                // o XML da nota não vai para totvs.TotvsRequests: no lugar dele, o tamanho (F1, §8.1)
+                var logged = JObject.FromObject(body, JsonSerializer.Create(new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
+
+                foreach (var item in logged["items"]!.OfType<JObject>())
+                    if (item["invoiceXml"] is JToken xml)
+                    {
+                        item["invoiceXmlLength"] = xml.ToString().Length;
+                        item.Remove("invoiceXml");
+                    }
+
+                // inclusão ou alteração no painel: repetir dá no mesmo, sem trava. O efeito fiscal é a confirmar (F1)
+                return await _totvsService.Write(company, EnumJob.TotvsPostInvoicesManifestations, user_name, key, HttpMethod.Post, "fiscal/v2/invoices/manifestations", body,
+                    "Confira o painel de manifestação (FISFP153) antes de repetir.", loggedBody: logged);
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        // ------------------------------------------------------------------------------------------------------
+
+        /// <summary>
+        /// chave da nota: loja + sequência + data (5.2.1)
+        /// </summary>
+        private static (int branchCode, int invoiceSequence, DateTime invoiceDate) Key(Domain.Totvs.Dtos.Reads.Invoices.Invoice x) =>
+            (ConverterValidatorsExtensions.ConvertToInt32Validation(x.branchCode), ConverterValidatorsExtensions.ConvertToInt32Validation(x.invoiceSequence), ConverterValidatorsExtensions.ConvertToDateTimeValidation(x.invoiceDate));
+
+        /// <summary>
+        /// sem loja, sequência ou data a nota não tem chave (a data vazia vira 01/01/1990 no conversor)
+        /// </summary>
+        private static bool IsValidKey((int branchCode, int invoiceSequence, DateTime invoiceDate) key) =>
+            key.branchCode != 0 && key.invoiceSequence != 0 && key.invoiceDate != new DateTime(1990, 1, 1);
+
+        /// <summary>
+        /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
+        /// Devolve a quantidade de notas gravadas.
+        /// </summary>
+        private async Task<int> SaveInvoices(
+            string doc_company,
+            DateTime batchTime,
+            IEnumerable<Domain.Totvs.Dtos.Reads.Invoices.Invoice> invoices,
+            IReadOnlyDictionary<(int, int, DateTime), string> invoicesJson,
+            Dictionary<(int branchCode, int invoiceSequence, DateTime invoiceDate), Domain.Totvs.Entities.Reads.Invoices.Invoice>? invoicesCache)
+        {
+            var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.Invoices.Invoice>();
+
+            // a mesma nota pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
+            foreach (var invoice in invoices.Where(x => IsValidKey(Key(x))).GroupBy(Key).Select(g => g.Last()))
+            {
+                var validations = _invoiceValidator.Validate(invoice);
+
+                if (validations.Errors.Count > 0)
+                {
+                    var message = String.Empty;
+                    validations.Errors.ForEach(s => message += $"nota {invoice.branchCode}/{invoice.invoiceSequence} de {invoice.invoiceDate}: {s.ErrorMessage}\n");
+                    _logger.AddMessage(message);
+                }
+
+                // vínculo com pedido sem loja ou número não tem chave e é descartado pela entidade
+                var semChave = (invoice.salesOrder ?? []).Count(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.branchCode) == 0 || ConverterValidatorsExtensions.ConvertToInt32Validation(x.orderCode) == 0);
+
+                if (semChave > 0)
+                    _logger.AddMessage($"nota {invoice.branchCode}/{invoice.invoiceSequence} de {invoice.invoiceDate}: {semChave} pedido(s) de venda sem loja ou número descartado(s).");
+
+                _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.Invoices.Invoice(doc_company, batchTime, invoice));
+            }
+
+            if (_listSomenteNovos.Count == 0)
+                return 0;
+
+            await _totvsInvoicesRepository.BulkInsertIntoTotvsInvoices(_listSomenteNovos, _logger.GetExecutionGuid());
+
+            foreach (var record in _listSomenteNovos)
+            {
+                if (invoicesJson.TryGetValue((record.branchCode, record.invoiceSequence, record.invoiceDate), out var json))
+                    _logger.AddRecord($"{record.branchCode}|{record.invoiceSequence}|{record.invoiceDate:yyyy-MM-dd}", json);
+
+                if (invoicesCache is not null)
+                    invoicesCache[(record.branchCode, record.invoiceSequence, record.invoiceDate)] = record;
+            }
+
+            return _listSomenteNovos.Count;
+        }
+
+        /// <summary>
+        /// lê todas as páginas de um GET da API Fiscal (inutilizações e centros de custo). Devolve cada item com o seu JSON, ou null se
+        /// alguma página falhou (a mensagem vai para o log)
+        /// </summary>
+        private async Task<List<(T dto, JObject json)>?> GetFiscalPages<T>(Domain.Totvs.Entities.Parameters.Company company, string route, Func<int, Dictionary<string, string>> query)
+        {
+            var items = new List<(T dto, JObject json)>();
+            var page = 1;
+            var totalPages = 1;
+            var routeName = route.Split('?')[0];
+
+            while (page <= totalPages)
+            {
+                // uma nova tentativa: 401 renova o token, 429 espera o Retry-After e 502/503/504 espera 10 s
+                ApiResponse? response = null;
+
+                for (var attempt = 1; attempt <= 2; attempt++)
+                {
+                    var token = await _totvsService.GetToken(company);
+
+                    if (token is null)
+                        break;   // a mensagem do login já foi para o log
+
+                    response = await _apiClient.SendAsync(
+                        HttpMethod.Get,
+                        route,
+                        headers: new Dictionary<string, string> { { "Authorization", $"Bearer {token}" } },
+                        queryParams: query(page)
+                    );
+
+                    if (attempt == 1 && response.StatusCode == 401)
+                    {
+                        _totvsService.RemoveToken(company);
+                        continue;
+                    }
+
+                    if (attempt == 1 && response.StatusCode == 429)
+                    {
+                        var seconds = response.Headers.TryGetValue("Retry-After", out var retryAfter) && int.TryParse(retryAfter, out var value) ? value : 5;
+                        await Task.Delay(TimeSpan.FromSeconds(Math.Clamp(seconds, 1, 60)));
+                        continue;
+                    }
+
+                    if (attempt == 1 && response.StatusCode is 502 or 503 or 504)
+                    {
+                        await Task.Delay(TimeSpan.FromSeconds(10));
+                        continue;
+                    }
+
+                    break;
+                }
+
+                if (response is null || !response.IsSuccess)
+                {
+                    if (response is not null)
+                    {
+                        var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
+                        _logger.AddMessage($"Erro da API Totvs em {routeName} (empresa {company.doc_company}, página {page}): {response.StatusCode} {body}");
+                    }
+
+                    return null;
+                }
+
+                Page<T>? result = null;
+                JArray json = [];
+
+                try
+                {
+                    result = JsonConvert.DeserializeObject<Page<T>>(response.Content ?? String.Empty);
+
+                    // DateParseHandling.None: o JSON gravado e o hash ficam com as datas como a API mandou
+                    using var reader = new JsonTextReader(new StringReader(response.Content!)) { DateParseHandling = DateParseHandling.None };
+                    json = (JObject.Load(reader)["items"] as JArray) ?? [];
+                }
+                catch (JsonException)
+                {
+                    // result continua null: tratado abaixo como resposta inválida
+                }
+
+                if (result?.items is null || json.Count != result.items.Count)
+                {
+                    var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
+                    _logger.AddMessage($"Resposta inválida da API Totvs em {routeName} (empresa {company.doc_company}, página {page}): {body}");
+
+                    return null;
+                }
+
+                for (var i = 0; i < json.Count; i++)
+                    items.Add((result.items[i], (JObject)json[i]));
+
+                totalPages = result.totalPages;
+                page++;
+            }
+
+            return items;
+        }
+
         /// <summary>
         /// lê o XML da nota pelo GET fiscal/v2/xml-contents/{accessKey} e registra a chamada em TotvsRequests com um resumo (situação e
         /// tamanho de cada XML), nunca o conteúdo. Devolve o JSON da Totvs ou o Result do erro
@@ -1250,122 +1419,6 @@ namespace Application.Totvs.Services
 
         private static string? Truncate(string? content) => content?.Length > 800 ? content[..800] : content;
 
-        // status das leituras sem persistência (§8.1)
-        private static class StatusCodes
-        {
-            public const int OK = 200;
-            public const int NotFound = 404;
-            public const int UnprocessableEntity = 422;
-            public const int BadGateway = 502;
-        }
-
-        public async Task<Domain.Totvs.Dtos.Writes.Result> GetSearchInvoicesItemDetail(string user_name, string doc_company, int? branchCode, int? invoiceSequence, DateTime? invoiceDate, string? accessKey)
-        {
-            _logger
-                .Clear()
-                .AddLog(EnumJob.TotvsGetSearchInvoicesItemDetail);
-
-            // as duas formas da chave da nota, uma ou outra (a Totvs recusa as duas juntas: 400 CannotBeInformed, testado)
-            var key = accessKey ?? $"{branchCode}|{invoiceSequence}|{invoiceDate:yyyy-MM-dd}";
-            var query = accessKey is not null
-                ? $"AccessKey={accessKey}"
-                : $"BranchCode={branchCode}&InvoiceDate={invoiceDate:yyyy-MM-dd}&InvoiceSequence={invoiceSequence}";
-
-            try
-            {
-                var company = await _totvsService.GetCompany(doc_company);
-
-                if (company is null)
-                    return CompanyNotFound(doc_company, key);
-
-                // os itens já são gravados pelo invoices/search; esta rota só devolve o que é dela (transações e notas referenciadas por
-                // produto, inTransactionAgroup) e não grava: regravar as tabelas por aqui apagaria cest e additionalItemInformation (§8.7)
-                return await ReadFiscalJson(company, EnumJob.TotvsGetSearchInvoicesItemDetail, user_name, key, HttpMethod.Get, $"fiscal/v2/invoices/item-detail-search?{query}&Expand=barcodes", null, false);
-            }
-            finally
-            {
-                _logger.SetLogEndDate();
-                await _logger.CommitAllChanges();
-            }
-        }
-
-        public async Task<Domain.Totvs.Dtos.Writes.Result> GetInvoicesPendingConditionalProducts(string user_name, string doc_company, int branchCode, int? personCode, string? personCpfCnpj, bool onlyPendingItem)
-        {
-            _logger
-                .Clear()
-                .AddLog(EnumJob.TotvsGetInvoicesPendingConditionalProducts);
-
-            var key = personCode is not null ? $"{branchCode}|{personCode}" : $"{branchCode}|{personCpfCnpj}";
-
-            try
-            {
-                var company = await _totvsService.GetCompany(doc_company);
-
-                if (company is null)
-                    return CompanyNotFound(doc_company, key);
-
-                // a loja precisa ser da empresa (422 sem chamar a API, §8.8)
-                if (!(await _totvsService.GetBranchCodes(company)).Contains(branchCode))
-                    return BranchNotFound(doc_company, key, [branchCode]);
-
-                // PersonCode ou PersonCpfCnpj, um dos dois (a Totvs recusa nenhum e os dois: 400 FieldsHaveNoValue / FieldsHaveValue, testado)
-                var person = personCode is not null ? $"PersonCode={personCode}" : $"PersonCpfCnpj={personCpfCnpj}";
-
-                // o saldo do momento muda a cada venda ou devolução e a rota não tem filtro de alteração: não há o que gravar (§8.8)
-                return await ReadFiscalJson(company, EnumJob.TotvsGetInvoicesPendingConditionalProducts, user_name, key, HttpMethod.Get,
-                    $"fiscal/v2/invoices/pending-conditional-products?BranchCode={branchCode}&{person}&OnlyPendingItem={(onlyPendingItem ? "true" : "false")}", null, true);
-            }
-            finally
-            {
-                _logger.SetLogEndDate();
-                await _logger.CommitAllChanges();
-            }
-        }
-
-        public async Task<Domain.Totvs.Dtos.Writes.Result> PostSearchInvoiceProducts(string user_name, string doc_company, Domain.Totvs.Dtos.Reads.Invoices.InvoiceProductSearch body)
-        {
-            _logger
-                .Clear()
-                .AddLog(EnumJob.TotvsPostSearchInvoiceProducts);
-
-            // chave em TotvsRequests: as lojas e o primeiro filtro restritivo informado (§8.9)
-            var filter = body.filter!;
-            var restrictive = filter.invoiceCodeList?.Count > 0 ? $"invoiceCodeList={String.Join(",", filter.invoiceCodeList)}"
-                : filter.ProductCodeList?.Count > 0 ? $"ProductCodeList={String.Join(",", filter.ProductCodeList)}"
-                : $"acessKeyList={String.Join(",", filter.acessKeyList ?? [])}";
-            var key = $"{String.Join(",", filter.branchCodeList ?? [])}|{restrictive}";
-            key = key.Length > 200 ? key[..200] : key;
-
-            try
-            {
-                var company = await _totvsService.GetCompany(doc_company);
-
-                if (company is null)
-                    return CompanyNotFound(doc_company, key);
-
-                var branchCodes = await _totvsService.GetBranchCodes(company);
-                var outside = (filter.branchCodeList ?? []).Where(x => !branchCodes.Contains(x)).ToList();
-
-                if (outside.Count > 0)
-                    return BranchNotFound(doc_company, key, outside);
-
-                // o corpo vai como veio (nomes do swagger, enums pelo nome); nulos omitidos
-                var requestBody = JsonConvert.SerializeObject(body, new JsonSerializerSettings
-                {
-                    NullValueHandling = NullValueHandling.Ignore,
-                    DateFormatString = "yyyy-MM-ddTHH:mm:ss"
-                });
-
-                // a página volta como veio: quem chama pagina (§8.9)
-                return await ReadFiscalJson(company, EnumJob.TotvsPostSearchInvoiceProducts, user_name, key, HttpMethod.Post, "fiscal/v2/invoice-products/search", requestBody, false);
-            }
-            finally
-            {
-                _logger.SetLogEndDate();
-                await _logger.CommitAllChanges();
-            }
-        }
-
         /// <summary>
         /// uma leitura sem persistência que devolve o JSON da Totvs (T11): chama com a nova tentativa, registra em TotvsRequests o corpo
         /// enviado e o recebido inteiros, e devolve o Result com o JSON em data, ou o do erro (o 400 KeyNotFound vira 404). Com emptyIs404,
@@ -1417,57 +1470,6 @@ namespace Application.Totvs.Services
             _logger.AddMessage(message);
 
             return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, statusCode = 0, apiCalled = false, message = message };
-        }
-
-        // grupo das escritas da API Fiscal na configuração (Totvs:Writes:Invoices:Enabled, T4)
-        private const string WritesGroup = "Invoices";
-
-        public async Task<Domain.Totvs.Dtos.Writes.Result> PostInvoicesManifestations(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Fiscal.Manifestation body)
-        {
-            _logger
-                .Clear()
-                .AddLog(EnumJob.TotvsPostInvoicesManifestations);
-
-            var key = String.Join("|", body.items!.Select(x => x.accessKey));
-
-            try
-            {
-                if (!_totvsService.IsWriteEnabled(WritesGroup))
-                    return _totvsService.WriteDisabled(WritesGroup, key);
-
-                var company = await _totvsService.GetCompany(doc_company);
-
-                if (company is null)
-                    return _totvsService.CompanyNotFound(doc_company, key);
-
-                var outside = new List<string>();
-
-                foreach (var cnpj in body.items!.Select(x => x.branchCnpj!).Distinct())
-                    if (await _totvsService.GetBranchCodeByCnpj(company, cnpj) is null)
-                        outside.Add(cnpj);
-
-                if (outside.Count > 0)
-                    return _totvsService.BranchNotFound(doc_company, key, outside);
-
-                // o XML da nota não vai para totvs.TotvsRequests: no lugar dele, o tamanho (F1, §8.1)
-                var logged = JObject.FromObject(body, JsonSerializer.Create(new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
-
-                foreach (var item in logged["items"]!.OfType<JObject>())
-                    if (item["invoiceXml"] is JToken xml)
-                    {
-                        item["invoiceXmlLength"] = xml.ToString().Length;
-                        item.Remove("invoiceXml");
-                    }
-
-                // inclusão ou alteração no painel: repetir dá no mesmo, sem trava. O efeito fiscal é a confirmar (F1)
-                return await _totvsService.Write(company, EnumJob.TotvsPostInvoicesManifestations, user_name, key, HttpMethod.Post, "fiscal/v2/invoices/manifestations", body,
-                    "Confira o painel de manifestação (FISFP153) antes de repetir.", loggedBody: logged);
-            }
-            finally
-            {
-                _logger.SetLogEndDate();
-                await _logger.CommitAllChanges();
-            }
         }
     }
 }

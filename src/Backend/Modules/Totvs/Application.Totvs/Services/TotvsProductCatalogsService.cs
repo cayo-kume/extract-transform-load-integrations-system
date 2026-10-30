@@ -1366,6 +1366,102 @@ namespace Application.Totvs.Services
             }
         }
 
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostColors(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Colors.UpsertColor body)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsPostColors);
+
+            var key = body.code!;
+
+            try
+            {
+                if (!_totvsService.IsWriteEnabled(WritesGroup))
+                    return _totvsService.WriteDisabled(WritesGroup, key);
+
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return _totvsService.CompanyNotFound(doc_company, key);
+
+                // passo 3 da §1.2: as lojas dos dados adicionais precisam ser da empresa
+                var branches = await _totvsService.GetBranchCodes(company);
+                var outside = (body.colorInfoAdditionals ?? []).Select(x => x.branchCode!.Value).Where(x => !branches.Contains(x)).ToList();
+
+                if (outside.Count > 0)
+                    return _totvsService.BranchNotFound(doc_company, key, outside.Select(x => x.ToString()));
+
+                // inclusão e alteração na mesma rota, com valores absolutos: repetir não muda nada, sem trava
+                return await _totvsService.Write(company, EnumJob.TotvsPostColors, user_name, key, HttpMethod.Post, "product/v2/colors", body,
+                    "Confira a cor na Totvs antes de repetir.");
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostGrids(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Grids.InsertGrid body)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsPostGrids);
+
+            var key = body.gridCode?.ToString() ?? body.name!;
+
+            try
+            {
+                if (!_totvsService.IsWriteEnabled(WritesGroup))
+                    return _totvsService.WriteDisabled(WritesGroup, key);
+
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return _totvsService.CompanyNotFound(doc_company, key);
+
+                // só inclusão e sem rota para desfazer: repetir sem gridCode criaria outra grade, daí a trava (T5)
+                return await _totvsService.Write(company, EnumJob.TotvsPostGrids, user_name, key, HttpMethod.Post, "product/v2/grids", body,
+                    "Confira as grades na Totvs antes de repetir.", repeatLock: true);
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostClassifications(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Classifications.UpsertTypeClassification body)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsPostClassifications);
+
+            var key = body.typeCode!.Value.ToString();
+
+            try
+            {
+                if (!_totvsService.IsWriteEnabled(WritesGroup))
+                    return _totvsService.WriteDisabled(WritesGroup, key);
+
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return _totvsService.CompanyNotFound(doc_company, key);
+
+                // inclusão e alteração pelo typeCode e pelos code: reenviar não muda nada, sem trava. O tipo 6000 já foi recusado no validador (PR10)
+                return await _totvsService.Write(company, EnumJob.TotvsPostClassifications, user_name, key, HttpMethod.Post, "product/v2/classifications", body,
+                    "Confira o tipo de classificação na Totvs antes de repetir.");
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        // ------------------------------------------------------------------------------------------------------
+
         /// <summary>
         /// lê todas as páginas de uma rota de catálogo (query no GET, corpo no POST). Devolve cada item com o seu JSON, ou null se
         /// alguma página falhou (a mensagem vai para o log). A chamada é a do método: este helper só pagina e repete a tentativa
@@ -1471,100 +1567,6 @@ namespace Application.Totvs.Services
             }
 
             return items;
-        }
-
-        public async Task<Domain.Totvs.Dtos.Writes.Result> PostColors(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Colors.UpsertColor body)
-        {
-            _logger
-                .Clear()
-                .AddLog(EnumJob.TotvsPostColors);
-
-            var key = body.code!;
-
-            try
-            {
-                if (!_totvsService.IsWriteEnabled(WritesGroup))
-                    return _totvsService.WriteDisabled(WritesGroup, key);
-
-                var company = await _totvsService.GetCompany(doc_company);
-
-                if (company is null)
-                    return _totvsService.CompanyNotFound(doc_company, key);
-
-                // passo 3 da §1.2: as lojas dos dados adicionais precisam ser da empresa
-                var branches = await _totvsService.GetBranchCodes(company);
-                var outside = (body.colorInfoAdditionals ?? []).Select(x => x.branchCode!.Value).Where(x => !branches.Contains(x)).ToList();
-
-                if (outside.Count > 0)
-                    return _totvsService.BranchNotFound(doc_company, key, outside.Select(x => x.ToString()));
-
-                // inclusão e alteração na mesma rota, com valores absolutos: repetir não muda nada, sem trava
-                return await _totvsService.Write(company, EnumJob.TotvsPostColors, user_name, key, HttpMethod.Post, "product/v2/colors", body,
-                    "Confira a cor na Totvs antes de repetir.");
-            }
-            finally
-            {
-                _logger.SetLogEndDate();
-                await _logger.CommitAllChanges();
-            }
-        }
-
-        public async Task<Domain.Totvs.Dtos.Writes.Result> PostGrids(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Grids.InsertGrid body)
-        {
-            _logger
-                .Clear()
-                .AddLog(EnumJob.TotvsPostGrids);
-
-            var key = body.gridCode?.ToString() ?? body.name!;
-
-            try
-            {
-                if (!_totvsService.IsWriteEnabled(WritesGroup))
-                    return _totvsService.WriteDisabled(WritesGroup, key);
-
-                var company = await _totvsService.GetCompany(doc_company);
-
-                if (company is null)
-                    return _totvsService.CompanyNotFound(doc_company, key);
-
-                // só inclusão e sem rota para desfazer: repetir sem gridCode criaria outra grade, daí a trava (T5)
-                return await _totvsService.Write(company, EnumJob.TotvsPostGrids, user_name, key, HttpMethod.Post, "product/v2/grids", body,
-                    "Confira as grades na Totvs antes de repetir.", repeatLock: true);
-            }
-            finally
-            {
-                _logger.SetLogEndDate();
-                await _logger.CommitAllChanges();
-            }
-        }
-
-        public async Task<Domain.Totvs.Dtos.Writes.Result> PostClassifications(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Classifications.UpsertTypeClassification body)
-        {
-            _logger
-                .Clear()
-                .AddLog(EnumJob.TotvsPostClassifications);
-
-            var key = body.typeCode!.Value.ToString();
-
-            try
-            {
-                if (!_totvsService.IsWriteEnabled(WritesGroup))
-                    return _totvsService.WriteDisabled(WritesGroup, key);
-
-                var company = await _totvsService.GetCompany(doc_company);
-
-                if (company is null)
-                    return _totvsService.CompanyNotFound(doc_company, key);
-
-                // inclusão e alteração pelo typeCode e pelos code: reenviar não muda nada, sem trava. O tipo 6000 já foi recusado no validador (PR10)
-                return await _totvsService.Write(company, EnumJob.TotvsPostClassifications, user_name, key, HttpMethod.Post, "product/v2/classifications", body,
-                    "Confira o tipo de classificação na Totvs antes de repetir.");
-            }
-            finally
-            {
-                _logger.SetLogEndDate();
-                await _logger.CommitAllChanges();
-            }
         }
     }
 }

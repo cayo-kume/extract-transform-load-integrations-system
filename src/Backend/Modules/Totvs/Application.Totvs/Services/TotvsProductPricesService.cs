@@ -1050,6 +1050,24 @@ namespace Application.Totvs.Services
             }
         }
 
+        // grupo das escritas desta API na configuração (Totvs:Writes:Products:Enabled, T4) e as chaves da PR7 no mesmo grupo
+        private const string WritesGroup = "Products";
+        private const decimal DefaultMaxVariationPercent = 20m;
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostCreateValues(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Values.ProductValues body, bool confirmVariation) =>
+            await WriteValues(user_name, doc_company, EnumJob.TotvsPostCreateValues, "product/v2/values/create", body, confirmVariation, update: false);
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostUpdateValues(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Values.ProductValues body, bool confirmVariation) =>
+            await WriteValues(user_name, doc_company, EnumJob.TotvsPostUpdateValues, "product/v2/values/update", body, confirmVariation, update: true);
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostUpdatePromotionValues(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Values.PromotionItems body) =>
+            await WritePromotion(user_name, doc_company, EnumJob.TotvsPostUpdatePromotionValues, "product/v2/promotion-values/update", body, update: true);
+
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostPromotionItems(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Values.PromotionItems body) =>
+            await WritePromotion(user_name, doc_company, EnumJob.TotvsPostPromotionItems, "product/v2/promotion-items", body, update: false);
+
+        // ------------------------------------------------------------------------------------------------------
+
         /// <summary>
         /// um POST da leitura de valores, com uma nova tentativa: 401 renova o token, 429 espera o Retry-After e 502/503/504 espera 10 s.
         /// Devolve null se não houve token (a mensagem do login já foi para o log)
@@ -1143,22 +1161,6 @@ namespace Application.Totvs.Services
 
             return (result.items.Select((x, i) => (x, (JObject)json[i])).ToList(), result.totalPages);
         }
-
-        // grupo das escritas desta API na configuração (Totvs:Writes:Products:Enabled, T4) e as chaves da PR7 no mesmo grupo
-        private const string WritesGroup = "Products";
-        private const decimal DefaultMaxVariationPercent = 20m;
-
-        public async Task<Domain.Totvs.Dtos.Writes.Result> PostCreateValues(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Values.ProductValues body, bool confirmVariation) =>
-            await WriteValues(user_name, doc_company, EnumJob.TotvsPostCreateValues, "product/v2/values/create", body, confirmVariation, update: false);
-
-        public async Task<Domain.Totvs.Dtos.Writes.Result> PostUpdateValues(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Values.ProductValues body, bool confirmVariation) =>
-            await WriteValues(user_name, doc_company, EnumJob.TotvsPostUpdateValues, "product/v2/values/update", body, confirmVariation, update: true);
-
-        public async Task<Domain.Totvs.Dtos.Writes.Result> PostUpdatePromotionValues(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Values.PromotionItems body) =>
-            await WritePromotion(user_name, doc_company, EnumJob.TotvsPostUpdatePromotionValues, "product/v2/promotion-values/update", body, update: true);
-
-        public async Task<Domain.Totvs.Dtos.Writes.Result> PostPromotionItems(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.Products.Values.PromotionItems body) =>
-            await WritePromotion(user_name, doc_company, EnumJob.TotvsPostPromotionItems, "product/v2/promotion-items", body, update: false);
 
         // preço e custo (§5.7, PR7): só os códigos (tipo + código, ex.: P1, C2) e as lojas permitidos em Totvs:Writes:Products:AllowedValueCodes e
         // AllowedValueBranches (vazio recusa tudo) e, sem ?confirmVariation=true, variação até MaxValueVariationPercent contra o valor gravado em

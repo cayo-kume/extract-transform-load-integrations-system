@@ -624,6 +624,37 @@ namespace Application.Totvs.Services
                 (ConverterValidatorsExtensions.ConvertToInt32Validation(branchCode), ConverterValidatorsExtensions.ConvertToDateTimeValidation(movementDate).Date, ConverterValidatorsExtensions.ConvertToInt32Validation(sequence));
         }
 
+        public async Task<Domain.Totvs.Dtos.Writes.Result> PostCustomerRepresentatives(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.People.Representatives.CustomerRepresentative body)
+        {
+            _logger
+                .Clear()
+                .AddLog(EnumJob.TotvsPostCustomerRepresentatives);
+
+            var key = $"{(object?)body.representativeCode ?? body.representativeCpfCnpj}|{body.customerCodeList?.Count ?? body.customerCpfCnpjList?.Count}";
+
+            try
+            {
+                if (!_totvsService.IsWriteEnabled(WritesGroup))
+                    return _totvsService.WriteDisabled(WritesGroup, key);
+
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return _totvsService.CompanyNotFound(doc_company, key);
+
+                // relacionar de novo quem já está na carteira não muda nada: sem trava
+                return await _totvsService.Write(company, EnumJob.TotvsPostCustomerRepresentatives, user_name, key, HttpMethod.Post,
+                    "person/v2/customer-representatives", body, "Confira a carteira do representante antes de repetir.");
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        // ------------------------------------------------------------------------------------------------------
+
         /// <summary>
         /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
         /// Devolve a quantidade de representantes gravados.
@@ -667,35 +698,6 @@ namespace Application.Totvs.Services
             }
 
             return _listSomenteNovos.Count;
-        }
-
-        public async Task<Domain.Totvs.Dtos.Writes.Result> PostCustomerRepresentatives(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.People.Representatives.CustomerRepresentative body)
-        {
-            _logger
-                .Clear()
-                .AddLog(EnumJob.TotvsPostCustomerRepresentatives);
-
-            var key = $"{(object?)body.representativeCode ?? body.representativeCpfCnpj}|{body.customerCodeList?.Count ?? body.customerCpfCnpjList?.Count}";
-
-            try
-            {
-                if (!_totvsService.IsWriteEnabled(WritesGroup))
-                    return _totvsService.WriteDisabled(WritesGroup, key);
-
-                var company = await _totvsService.GetCompany(doc_company);
-
-                if (company is null)
-                    return _totvsService.CompanyNotFound(doc_company, key);
-
-                // relacionar de novo quem já está na carteira não muda nada: sem trava
-                return await _totvsService.Write(company, EnumJob.TotvsPostCustomerRepresentatives, user_name, key, HttpMethod.Post,
-                    "person/v2/customer-representatives", body, "Confira a carteira do representante antes de repetir.");
-            }
-            finally
-            {
-                _logger.SetLogEndDate();
-                await _logger.CommitAllChanges();
-            }
         }
     }
 }

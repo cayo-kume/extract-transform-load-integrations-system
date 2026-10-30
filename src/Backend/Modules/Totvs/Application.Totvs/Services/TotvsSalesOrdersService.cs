@@ -417,57 +417,6 @@ namespace Application.Totvs.Services
             }
         }
 
-        /// <summary>
-        /// chave do pedido: o número é único por loja (branchCode), não na holding
-        /// </summary>
-        private static (int branchCode, int orderCode) Key(Domain.Totvs.Dtos.Reads.SalesOrders.SaleOrder x) =>
-            (ConverterValidatorsExtensions.ConvertToInt32Validation(x.branchCode), ConverterValidatorsExtensions.ConvertToInt32Validation(x.orderCode));
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
-        /// Devolve a quantidade de pedidos de venda gravados.
-        /// </summary>
-        private async Task<int> SaveSalesOrders(
-            string doc_company,
-            DateTime batchTime,
-            IEnumerable<Domain.Totvs.Dtos.Reads.SalesOrders.SaleOrder> orders,
-            IReadOnlyDictionary<(int, int), string> ordersJson,
-            Dictionary<(int branchCode, int orderCode), Domain.Totvs.Entities.Reads.SalesOrders.SaleOrder>? ordersCache)
-        {
-            var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.SalesOrders.SaleOrder>();
-
-            // o mesmo pedido pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
-            foreach (var order in orders.Where(x => Key(x).branchCode != 0 && Key(x).orderCode != 0).GroupBy(Key).Select(g => g.Last()))
-            {
-                var validations = _orderValidator.Validate(order);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"pedido de venda {order.branchCode}/{order.orderCode}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.SalesOrders.SaleOrder(doc_company, batchTime, order));
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _totvsSalesOrdersRepository.BulkInsertIntoTotvsSaleOrders(_listSomenteNovos, _logger.GetExecutionGuid());
-
-            foreach (var record in _listSomenteNovos)
-            {
-                if (ordersJson.TryGetValue((record.branchCode, record.orderCode), out var json))
-                    _logger.AddRecord($"{record.branchCode}|{record.orderCode}", json);
-
-                if (ordersCache is not null)
-                    ordersCache[(record.branchCode, record.orderCode)] = record;
-            }
-
-            return _listSomenteNovos.Count;
-        }
-
         public async Task<bool?> GetDiscountType()
         {
             _logger
@@ -914,105 +863,6 @@ namespace Application.Totvs.Services
             }
         }
 
-        /// <summary>
-        /// lê todas as páginas de um GET das leituras de catálogo e de sugestão. Devolve cada item com o seu JSON, ou null se alguma
-        /// página falhou (a mensagem vai para o log). 404 (declarado por discount-type, batch-items e billing-suggestions) é lista vazia
-        /// </summary>
-        private async Task<List<(T dto, JObject json)>?> GetCatalogPages<T>(Domain.Totvs.Entities.Parameters.Company company, string route, Func<int, Dictionary<string, string>> query)
-        {
-            var items = new List<(T dto, JObject json)>();
-            var page = 1;
-            var totalPages = 1;
-
-            while (page <= totalPages)
-            {
-                // uma nova tentativa: 401 renova o token, 429 espera o Retry-After e 502/503/504 espera 10 s
-                ApiResponse? response = null;
-
-                for (var attempt = 1; attempt <= 2; attempt++)
-                {
-                    var token = await _totvsService.GetToken(company);
-
-                    if (token is null)
-                        break;   // a mensagem do login já foi para o log
-
-                    response = await _apiClient.SendAsync(
-                        HttpMethod.Get,
-                        route,
-                        headers: new Dictionary<string, string> { { "Authorization", $"Bearer {token}" } },
-                        queryParams: query(page)
-                    );
-
-                    if (attempt == 1 && response.StatusCode == 401)
-                    {
-                        _totvsService.RemoveToken(company);
-                        continue;
-                    }
-
-                    if (attempt == 1 && response.StatusCode == 429)
-                    {
-                        var seconds = response.Headers.TryGetValue("Retry-After", out var retryAfter) && int.TryParse(retryAfter, out var value) ? value : 5;
-                        await Task.Delay(TimeSpan.FromSeconds(Math.Clamp(seconds, 1, 60)));
-                        continue;
-                    }
-
-                    if (attempt == 1 && response.StatusCode is 502 or 503 or 504)
-                    {
-                        await Task.Delay(TimeSpan.FromSeconds(10));
-                        continue;
-                    }
-
-                    break;
-                }
-
-                if (response is not null && response.StatusCode == 404)
-                    return items;
-
-                if (response is null || !response.IsSuccess)
-                {
-                    if (response is not null)
-                    {
-                        var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                        _logger.AddMessage($"Erro da API Totvs em {route} (empresa {company.doc_company}, página {page}): {response.StatusCode} {body}");
-                    }
-
-                    return null;
-                }
-
-                Page<T>? result = null;
-                JArray json = [];
-
-                try
-                {
-                    result = JsonConvert.DeserializeObject<Page<T>>(response.Content ?? String.Empty);
-
-                    // DateParseHandling.None: o JSON gravado fica com as datas como a API mandou
-                    using var reader = new JsonTextReader(new StringReader(response.Content!)) { DateParseHandling = DateParseHandling.None };
-                    json = (JObject.Load(reader)["items"] as JArray) ?? [];
-                }
-                catch (JsonException)
-                {
-                    // result continua null: tratado abaixo como resposta inválida
-                }
-
-                if (result?.items is null || json.Count != result.items.Count)
-                {
-                    var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                    _logger.AddMessage($"Resposta inválida da API Totvs em {route} (empresa {company.doc_company}, página {page}): {body}");
-
-                    return null;
-                }
-
-                for (var i = 0; i < json.Count; i++)
-                    items.Add((result.items[i], (JObject)json[i]));
-
-                totalPages = result.totalPages;
-                page++;
-            }
-
-            return items;
-        }
-
         public async Task<Domain.Totvs.Dtos.Writes.Result> GetInvoices(string user_name, string doc_company, int branchCode, int orderCode, List<string>? invoiceStatus)
         {
             _logger
@@ -1217,19 +1067,6 @@ namespace Application.Totvs.Services
             }
         }
 
-        // chave das escritas do pedido em TotvsRequests: loja|pedido ou o orderId
-        private static string OrderKeyValue(Domain.Totvs.Dtos.Writes.SalesOrders.OrderKey body) =>
-            String.IsNullOrEmpty(body.orderId) ? $"{body.branchCode}|{body.orderCode}" : body.orderId;
-
-        // passo 3 da §1.2: com loja + número, a loja precisa ser da empresa; com orderId não há loja a conferir (a Totvs acha o pedido)
-        private async Task<Domain.Totvs.Dtos.Writes.Result?> OrderBranchNotFound(Domain.Totvs.Entities.Parameters.Company company, string doc_company, string key, Domain.Totvs.Dtos.Writes.SalesOrders.OrderKey body)
-        {
-            if (body.branchCode is not int branchCode || (await _totvsService.GetBranchCodes(company)).Contains(branchCode))
-                return null;
-
-            return _totvsService.BranchNotFound(doc_company, key, [branchCode.ToString()]);
-        }
-
         // situação valor absoluto: repetir não muda nada, sem trava. BillingReleased libera o pedido para faturar
         public async Task<Domain.Totvs.Dtos.Writes.Result> PostOrdersChangeStatus(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderStatusChange body) =>
             await WriteOrder(user_name, doc_company, EnumJob.TotvsPostSalesOrderOrdersChangeStatus, HttpMethod.Post, "sales-order/v2/orders/change-status", body.branchCode,
@@ -1304,47 +1141,6 @@ namespace Application.Totvs.Services
         public async Task<Domain.Totvs.Dtos.Writes.Result> PostSuggestBatchItemsNuance(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderBatchItemsNuance body) =>
             await WriteOrder(user_name, doc_company, EnumJob.TotvsPostSalesOrderSuggestBatchItemsNuance, HttpMethod.Post, "sales-order/v2/suggest-batch-items-nuance", body.branchCode,
                 OrderKeyValue(body), body, "Confira os itens de lote do pedido antes de repetir.", repeatLock: true);
-
-        // escritas do pedido de venda da onda 4 (docs/PLANO-TOTVS-METODOS-FALTANTES.md §7.4) pela base comum: liga/desliga, empresa, loja do pedido
-        // (quando vem por loja + número), a conferência local, se houver (SO7, só com o pedido no banco), e a chamada
-        private async Task<Domain.Totvs.Dtos.Writes.Result> WriteOrder(string user_name, string doc_company, EnumJob job, HttpMethod method, string route, int? branchCode, string key, object? body,
-            string checkHint, bool repeatLock = false, Func<Task<string?>>? check = null, string? note = null)
-        {
-            _logger
-                .Clear()
-                .AddLog(job);
-
-            if (note is not null)
-                _logger.AddMessage(note);
-
-            try
-            {
-                if (!_totvsService.IsWriteEnabled(WritesGroup))
-                    return _totvsService.WriteDisabled(WritesGroup, key);
-
-                var company = await _totvsService.GetCompany(doc_company);
-
-                if (company is null)
-                    return _totvsService.CompanyNotFound(doc_company, key);
-
-                if (branchCode is int branch && !(await _totvsService.GetBranchCodes(company)).Contains(branch))
-                    return _totvsService.BranchNotFound(doc_company, key, [branch.ToString()]);
-
-                if (check is not null && await check() is { } refused)
-                {
-                    _logger.AddMessage(refused);
-
-                    return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, message = refused };
-                }
-
-                return await _totvsService.Write(company, job, user_name, key, method, route, body, checkHint, repeatLock);
-            }
-            finally
-            {
-                _logger.SetLogEndDate();
-                await _logger.CommitAllChanges();
-            }
-        }
 
         // preço novo dos itens: valor absoluto, sem trava; sem conferência local de preço (o corpo fica em TotvsRequests para auditoria)
         public async Task<Domain.Totvs.Dtos.Writes.Result> PostPriceItems(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.SalesOrders.OrderItemsPrice body) =>
@@ -1441,6 +1237,212 @@ namespace Application.Totvs.Services
 
                 return await _totvsService.Write(company, EnumJob.TotvsPostSalesOrderB2COrders, user_name, key, HttpMethod.Post, "sales-order/v2/b2c-orders", body,
                     "Confira o pedido pelo orderId antes de repetir (uma nova chamada já confere).", repeatLock: true);
+            }
+            finally
+            {
+                _logger.SetLogEndDate();
+                await _logger.CommitAllChanges();
+            }
+        }
+
+        // ------------------------------------------------------------------------------------------------------
+
+        /// <summary>
+        /// chave do pedido: o número é único por loja (branchCode), não na holding
+        /// </summary>
+        private static (int branchCode, int orderCode) Key(Domain.Totvs.Dtos.Reads.SalesOrders.SaleOrder x) =>
+            (ConverterValidatorsExtensions.ConvertToInt32Validation(x.branchCode), ConverterValidatorsExtensions.ConvertToInt32Validation(x.orderCode));
+
+        /// <summary>
+        /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
+        /// Devolve a quantidade de pedidos de venda gravados.
+        /// </summary>
+        private async Task<int> SaveSalesOrders(
+            string doc_company,
+            DateTime batchTime,
+            IEnumerable<Domain.Totvs.Dtos.Reads.SalesOrders.SaleOrder> orders,
+            IReadOnlyDictionary<(int, int), string> ordersJson,
+            Dictionary<(int branchCode, int orderCode), Domain.Totvs.Entities.Reads.SalesOrders.SaleOrder>? ordersCache)
+        {
+            var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.SalesOrders.SaleOrder>();
+
+            // o mesmo pedido pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
+            foreach (var order in orders.Where(x => Key(x).branchCode != 0 && Key(x).orderCode != 0).GroupBy(Key).Select(g => g.Last()))
+            {
+                var validations = _orderValidator.Validate(order);
+
+                if (validations.Errors.Count > 0)
+                {
+                    var message = String.Empty;
+                    validations.Errors.ForEach(s => message += $"pedido de venda {order.branchCode}/{order.orderCode}: {s.ErrorMessage}\n");
+                    _logger.AddMessage(message);
+                }
+
+                _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.SalesOrders.SaleOrder(doc_company, batchTime, order));
+            }
+
+            if (_listSomenteNovos.Count == 0)
+                return 0;
+
+            await _totvsSalesOrdersRepository.BulkInsertIntoTotvsSaleOrders(_listSomenteNovos, _logger.GetExecutionGuid());
+
+            foreach (var record in _listSomenteNovos)
+            {
+                if (ordersJson.TryGetValue((record.branchCode, record.orderCode), out var json))
+                    _logger.AddRecord($"{record.branchCode}|{record.orderCode}", json);
+
+                if (ordersCache is not null)
+                    ordersCache[(record.branchCode, record.orderCode)] = record;
+            }
+
+            return _listSomenteNovos.Count;
+        }
+
+        /// <summary>
+        /// lê todas as páginas de um GET das leituras de catálogo e de sugestão. Devolve cada item com o seu JSON, ou null se alguma
+        /// página falhou (a mensagem vai para o log). 404 (declarado por discount-type, batch-items e billing-suggestions) é lista vazia
+        /// </summary>
+        private async Task<List<(T dto, JObject json)>?> GetCatalogPages<T>(Domain.Totvs.Entities.Parameters.Company company, string route, Func<int, Dictionary<string, string>> query)
+        {
+            var items = new List<(T dto, JObject json)>();
+            var page = 1;
+            var totalPages = 1;
+
+            while (page <= totalPages)
+            {
+                // uma nova tentativa: 401 renova o token, 429 espera o Retry-After e 502/503/504 espera 10 s
+                ApiResponse? response = null;
+
+                for (var attempt = 1; attempt <= 2; attempt++)
+                {
+                    var token = await _totvsService.GetToken(company);
+
+                    if (token is null)
+                        break;   // a mensagem do login já foi para o log
+
+                    response = await _apiClient.SendAsync(
+                        HttpMethod.Get,
+                        route,
+                        headers: new Dictionary<string, string> { { "Authorization", $"Bearer {token}" } },
+                        queryParams: query(page)
+                    );
+
+                    if (attempt == 1 && response.StatusCode == 401)
+                    {
+                        _totvsService.RemoveToken(company);
+                        continue;
+                    }
+
+                    if (attempt == 1 && response.StatusCode == 429)
+                    {
+                        var seconds = response.Headers.TryGetValue("Retry-After", out var retryAfter) && int.TryParse(retryAfter, out var value) ? value : 5;
+                        await Task.Delay(TimeSpan.FromSeconds(Math.Clamp(seconds, 1, 60)));
+                        continue;
+                    }
+
+                    if (attempt == 1 && response.StatusCode is 502 or 503 or 504)
+                    {
+                        await Task.Delay(TimeSpan.FromSeconds(10));
+                        continue;
+                    }
+
+                    break;
+                }
+
+                if (response is not null && response.StatusCode == 404)
+                    return items;
+
+                if (response is null || !response.IsSuccess)
+                {
+                    if (response is not null)
+                    {
+                        var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
+                        _logger.AddMessage($"Erro da API Totvs em {route} (empresa {company.doc_company}, página {page}): {response.StatusCode} {body}");
+                    }
+
+                    return null;
+                }
+
+                Page<T>? result = null;
+                JArray json = [];
+
+                try
+                {
+                    result = JsonConvert.DeserializeObject<Page<T>>(response.Content ?? String.Empty);
+
+                    // DateParseHandling.None: o JSON gravado fica com as datas como a API mandou
+                    using var reader = new JsonTextReader(new StringReader(response.Content!)) { DateParseHandling = DateParseHandling.None };
+                    json = (JObject.Load(reader)["items"] as JArray) ?? [];
+                }
+                catch (JsonException)
+                {
+                    // result continua null: tratado abaixo como resposta inválida
+                }
+
+                if (result?.items is null || json.Count != result.items.Count)
+                {
+                    var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
+                    _logger.AddMessage($"Resposta inválida da API Totvs em {route} (empresa {company.doc_company}, página {page}): {body}");
+
+                    return null;
+                }
+
+                for (var i = 0; i < json.Count; i++)
+                    items.Add((result.items[i], (JObject)json[i]));
+
+                totalPages = result.totalPages;
+                page++;
+            }
+
+            return items;
+        }
+
+        // chave das escritas do pedido em TotvsRequests: loja|pedido ou o orderId
+        private static string OrderKeyValue(Domain.Totvs.Dtos.Writes.SalesOrders.OrderKey body) =>
+            String.IsNullOrEmpty(body.orderId) ? $"{body.branchCode}|{body.orderCode}" : body.orderId;
+
+        // passo 3 da §1.2: com loja + número, a loja precisa ser da empresa; com orderId não há loja a conferir (a Totvs acha o pedido)
+        private async Task<Domain.Totvs.Dtos.Writes.Result?> OrderBranchNotFound(Domain.Totvs.Entities.Parameters.Company company, string doc_company, string key, Domain.Totvs.Dtos.Writes.SalesOrders.OrderKey body)
+        {
+            if (body.branchCode is not int branchCode || (await _totvsService.GetBranchCodes(company)).Contains(branchCode))
+                return null;
+
+            return _totvsService.BranchNotFound(doc_company, key, [branchCode.ToString()]);
+        }
+
+        // escritas do pedido de venda da onda 4 (docs/PLANO-TOTVS-METODOS-FALTANTES.md §7.4) pela base comum: liga/desliga, empresa, loja do pedido
+        // (quando vem por loja + número), a conferência local, se houver (SO7, só com o pedido no banco), e a chamada
+        private async Task<Domain.Totvs.Dtos.Writes.Result> WriteOrder(string user_name, string doc_company, EnumJob job, HttpMethod method, string route, int? branchCode, string key, object? body,
+            string checkHint, bool repeatLock = false, Func<Task<string?>>? check = null, string? note = null)
+        {
+            _logger
+                .Clear()
+                .AddLog(job);
+
+            if (note is not null)
+                _logger.AddMessage(note);
+
+            try
+            {
+                if (!_totvsService.IsWriteEnabled(WritesGroup))
+                    return _totvsService.WriteDisabled(WritesGroup, key);
+
+                var company = await _totvsService.GetCompany(doc_company);
+
+                if (company is null)
+                    return _totvsService.CompanyNotFound(doc_company, key);
+
+                if (branchCode is int branch && !(await _totvsService.GetBranchCodes(company)).Contains(branch))
+                    return _totvsService.BranchNotFound(doc_company, key, [branch.ToString()]);
+
+                if (check is not null && await check() is { } refused)
+                {
+                    _logger.AddMessage(refused);
+
+                    return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, message = refused };
+                }
+
+                return await _totvsService.Write(company, job, user_name, key, method, route, body, checkHint, repeatLock);
             }
             finally
             {

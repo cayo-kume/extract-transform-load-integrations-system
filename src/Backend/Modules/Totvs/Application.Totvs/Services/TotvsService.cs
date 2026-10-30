@@ -424,6 +424,8 @@ namespace Application.Totvs.Services
             return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, statusCode = 0, apiCalled = false, message = message };
         }
 
+        // ------------------------------------------------------------------------------------------------------
+
         // as mensagens da Totvs (lista de DomainNotificationMessage), como no TotvsAccountsPayableService
         private static string TotvsMessage(ApiResponse response)
         {

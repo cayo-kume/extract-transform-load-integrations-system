@@ -72,6 +72,15 @@ desse pai. Métodos usados por mais de um pai continuam como métodos da classe.
   pai direto (ex.: `PricesBody` e `ReadPrices` dentro de `SyncPrices`, dentro de `PostSearchPrices`).
 * Classes utilitárias que só estão na pasta `Services` (ex.: `TotvsMasking`) ficam de fora.
 
+### 2.2 Ordem dos membros na service
+
+No mesmo arquivo e na mesma classe: campos, constantes e construtor no topo, depois os métodos **públicos** e, no
+fim da classe, os métodos **privados** (cada um com o seu comentário), separados dos públicos por esta linha:
+
+```csharp
+        // ------------------------------------------------------------------------------------------------------
+```
+
 ---
 
 ## 3. Scripts de banco (DbUp, SQL Server)

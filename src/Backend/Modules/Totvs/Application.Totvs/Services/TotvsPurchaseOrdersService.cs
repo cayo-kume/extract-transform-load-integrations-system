@@ -48,8 +48,6 @@ namespace Application.Totvs.Services
             ["5"] = "bloqueado", ["6"] = "cancelado", ["7"] = "distribuído", ["8"] = "pré-pedido"
         };
 
-        private static string StatusName(string status) => StatusNames.TryGetValue(status, out var name) ? $"{name} ({status})" : status;
-
         public TotvsPurchaseOrdersService(
             [FromKeyedServices("TotvsAPI")] IApiClient apiClient,
             ILoggerService logger,
@@ -250,57 +248,6 @@ namespace Application.Totvs.Services
                 _logger.SetLogEndDate();
                 await _logger.CommitAllChanges();
             }
-        }
-
-        /// <summary>
-        /// chave do pedido: o número é único por loja (branchCode), não na holding
-        /// </summary>
-        private static (int branchCode, int orderCode) Key(Domain.Totvs.Dtos.Reads.PurchaseOrders.PurchaseOrder x) =>
-            (ConverterValidatorsExtensions.ConvertToInt32Validation(x.branchCode), ConverterValidatorsExtensions.ConvertToInt32Validation(x.orderCode));
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
-        /// Devolve a quantidade de pedidos de compra gravados.
-        /// </summary>
-        private async Task<int> SavePurchaseOrders(
-            string doc_company,
-            DateTime batchTime,
-            IEnumerable<Domain.Totvs.Dtos.Reads.PurchaseOrders.PurchaseOrder> orders,
-            IReadOnlyDictionary<(int, int), string> ordersJson,
-            Dictionary<(int branchCode, int orderCode), Domain.Totvs.Entities.Reads.PurchaseOrders.PurchaseOrder>? ordersCache)
-        {
-            var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.PurchaseOrders.PurchaseOrder>();
-
-            // o mesmo pedido pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
-            foreach (var order in orders.Where(x => Key(x).branchCode != 0 && Key(x).orderCode != 0).GroupBy(Key).Select(g => g.Last()))
-            {
-                var validations = _orderValidator.Validate(order);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"pedido de compra {order.branchCode}/{order.orderCode}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.PurchaseOrders.PurchaseOrder(doc_company, batchTime, order));
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _totvsPurchaseOrdersRepository.BulkInsertIntoTotvsPurchaseOrders(_listSomenteNovos, _logger.GetExecutionGuid());
-
-            foreach (var record in _listSomenteNovos)
-            {
-                if (ordersJson.TryGetValue((record.branchCode, record.orderCode), out var json))
-                    _logger.AddRecord($"{record.branchCode}|{record.orderCode}", json);
-
-                if (ordersCache is not null)
-                    ordersCache[(record.branchCode, record.orderCode)] = record;
-            }
-
-            return _listSomenteNovos.Count;
         }
 
         /// <summary>
@@ -702,6 +649,61 @@ namespace Application.Totvs.Services
                 _logger.SetLogEndDate();
                 await _logger.CommitAllChanges();
             }
+        }
+
+        // ------------------------------------------------------------------------------------------------------
+
+        private static string StatusName(string status) => StatusNames.TryGetValue(status, out var name) ? $"{name} ({status})" : status;
+
+        /// <summary>
+        /// chave do pedido: o número é único por loja (branchCode), não na holding
+        /// </summary>
+        private static (int branchCode, int orderCode) Key(Domain.Totvs.Dtos.Reads.PurchaseOrders.PurchaseOrder x) =>
+            (ConverterValidatorsExtensions.ConvertToInt32Validation(x.branchCode), ConverterValidatorsExtensions.ConvertToInt32Validation(x.orderCode));
+
+        /// <summary>
+        /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
+        /// Devolve a quantidade de pedidos de compra gravados.
+        /// </summary>
+        private async Task<int> SavePurchaseOrders(
+            string doc_company,
+            DateTime batchTime,
+            IEnumerable<Domain.Totvs.Dtos.Reads.PurchaseOrders.PurchaseOrder> orders,
+            IReadOnlyDictionary<(int, int), string> ordersJson,
+            Dictionary<(int branchCode, int orderCode), Domain.Totvs.Entities.Reads.PurchaseOrders.PurchaseOrder>? ordersCache)
+        {
+            var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.PurchaseOrders.PurchaseOrder>();
+
+            // o mesmo pedido pode vir em duas páginas se mudar de posição durante a leitura: fica a última versão
+            foreach (var order in orders.Where(x => Key(x).branchCode != 0 && Key(x).orderCode != 0).GroupBy(Key).Select(g => g.Last()))
+            {
+                var validations = _orderValidator.Validate(order);
+
+                if (validations.Errors.Count > 0)
+                {
+                    var message = String.Empty;
+                    validations.Errors.ForEach(s => message += $"pedido de compra {order.branchCode}/{order.orderCode}: {s.ErrorMessage}\n");
+                    _logger.AddMessage(message);
+                }
+
+                _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.PurchaseOrders.PurchaseOrder(doc_company, batchTime, order));
+            }
+
+            if (_listSomenteNovos.Count == 0)
+                return 0;
+
+            await _totvsPurchaseOrdersRepository.BulkInsertIntoTotvsPurchaseOrders(_listSomenteNovos, _logger.GetExecutionGuid());
+
+            foreach (var record in _listSomenteNovos)
+            {
+                if (ordersJson.TryGetValue((record.branchCode, record.orderCode), out var json))
+                    _logger.AddRecord($"{record.branchCode}|{record.orderCode}", json);
+
+                if (ordersCache is not null)
+                    ordersCache[(record.branchCode, record.orderCode)] = record;
+            }
+
+            return _listSomenteNovos.Count;
         }
     }
 }
