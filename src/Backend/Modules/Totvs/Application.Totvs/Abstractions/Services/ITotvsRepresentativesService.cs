@@ -1,7 +1,7 @@
 ﻿namespace Application.Totvs.Abstractions.Services
 {
     /// <summary>
-    /// representantes e recepções de venda da API Person (fase PE-2, docs/PLANO-TOTVS-METODOS-FALTANTES.md §3.1)
+    /// representantes e recepções de venda da API Person (fase PE-2, src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §3.1)
     /// </summary>
     public interface ITotvsRepresentativesService
     {

@@ -276,7 +276,7 @@ consulta por ids: o catálogo inteiro vem a cada vez (5.6).
 
 ### 5.6 `GetServices`
 O catálogo é pequeno e vem inteiro numa resposta, sem data de alteração, então o padrão é o **cache de hash** do
-[PADRAO-CACHE-INTEGRACOES.md](PADRAO-CACHE-INTEGRACOES.md) (§3.3), como o `GetStatus` do AfterSale: se a resposta for
+[PADRAO-CACHE-INTEGRACOES.md](../../../../../../docs/PADRAO-CACHE-INTEGRACOES.md) (§3.3), como o `GetStatus` do AfterSale: se a resposta for
 igual à da última execução, nada é gravado.
 ```csharp
 private const string ServicesHashKey = "Movidesk:ServicesHash";

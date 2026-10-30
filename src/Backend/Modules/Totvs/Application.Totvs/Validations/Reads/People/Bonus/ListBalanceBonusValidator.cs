@@ -4,7 +4,7 @@ using FluentValidation;
 namespace Application.Totvs.Validations.Reads.People.Bonus
 {
     /// <summary>
-    /// valida a consulta de saldo de bônus antes de chamar a Totvs (docs/PLANO-TOTVS-METODOS-FALTANTES.md §3.3); as lojas da empresa são
+    /// valida a consulta de saldo de bônus antes de chamar a Totvs (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §3.3); as lojas da empresa são
     /// conferidas no service
     /// </summary>
     public class ListBalanceBonusValidator : AbstractValidator<ListBalanceBonus>

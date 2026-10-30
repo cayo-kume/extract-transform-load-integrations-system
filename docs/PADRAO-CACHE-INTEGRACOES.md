@@ -2,7 +2,7 @@
 
 Este documento define o **padrão de uso de cache** adotado nas integrações do sistema.
 A implementação de referência é o método `GetReverses` de
-[`AfterSaleReversesService.cs`](../src/modules/General/AfterSale/Application.AfterSale/Services/AfterSaleReversesService.cs).
+[`AfterSaleReversesService.cs`](../src/Backend/Modules/General/AfterSale/Application.AfterSale/Services/AfterSaleReversesService.cs).
 
 Toda nova integração que precise de cache deve seguir este modelo.
 
@@ -136,7 +136,7 @@ if (!cachedHash.Equals(hash))
 `string`**, enquanto as Entities do banco têm tipos fortes (`Int64`, `DateTime`, `decimal`...).
 Ao comparar o item da API (`x`, DTO) com o registro do cache (`y`, Entity), é preciso **converter**
 os campos do DTO usando os helpers de
-[`ConverterValidatorsExtensions`](../src/shared/Domain.Shared/Extensions/ConverterValidatorsExtensions.cs):
+[`ConverterValidatorsExtensions`](../src/Backend/Shared/Domain.Shared/Extensions/ConverterValidatorsExtensions.cs):
 
 | Helper | De | Para | Fallback se inválido |
 |--------|----|------|----------------------|
@@ -192,7 +192,7 @@ Notas:
 
 ## 6. Referências
 
-- Implementação de referência: [`AfterSaleReversesService.GetReverses`](../src/modules/General/AfterSale/Application.AfterSale/Services/AfterSaleReversesService.cs)
-- Conversores: [`ConverterValidatorsExtensions`](../src/shared/Domain.Shared/Extensions/ConverterValidatorsExtensions.cs)
-- Entity de referência: [`Entities/.../SearchReverses/Reverse.cs`](../src/modules/General/AfterSale/Domain.AfterSale/Entities/Reverses/SearchReverses/Reverse.cs)
-- DTO de referência: [`Dtos/.../SearchReverses/Reverse.cs`](../src/modules/General/AfterSale/Domain.AfterSale/Dtos/Reverses/SearchReverses/Reverse.cs)
+- Implementação de referência: [`AfterSaleReversesService.GetReverses`](../src/Backend/Modules/General/AfterSale/Application.AfterSale/Services/AfterSaleReversesService.cs)
+- Conversores: [`ConverterValidatorsExtensions`](../src/Backend/Shared/Domain.Shared/Extensions/ConverterValidatorsExtensions.cs)
+- Entity de referência: [`Entities/.../SearchReverses/Reverse.cs`](../src/Backend/Modules/General/AfterSale/Domain.AfterSale/Entities/Reads/Reverses/SearchReverses/Reverse.cs)
+- DTO de referência: [`Dtos/.../SearchReverses/Reverse.cs`](../src/Backend/Modules/General/AfterSale/Domain.AfterSale/Dtos/Reads/Reverses/SearchReverses/Reverse.cs)

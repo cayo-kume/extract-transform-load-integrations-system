@@ -1,4 +1,4 @@
-/****** Schema do módulo (docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md 5.0) ******/
+/****** Schema do módulo (src/Backend/Modules/LinxCommerce/docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md 5.0) ******/
 --o schema legado linx_commerce (lido pelo Oto e pela Stone) não é tocado
 
 if not exists (select 1 from sys.schemas where name = 'linxcommerce')

@@ -24,7 +24,7 @@ namespace Application.LinxCommerce.Services
         private const string ProductsKey = "LinxCommerce:Products";
         private const string SkusKey = "LinxCommerce:Skus";
 
-        // carga inicial (banco vazio): tudo (docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md §10.2, pendência 3)
+        // carga inicial (banco vazio): tudo (src/Backend/Modules/LinxCommerce/docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md §10.2, pendência 3)
         private static readonly DateTime CatalogInitialLoad = new(2000, 1, 1);
 
         public LinxCommerceCatalogService(

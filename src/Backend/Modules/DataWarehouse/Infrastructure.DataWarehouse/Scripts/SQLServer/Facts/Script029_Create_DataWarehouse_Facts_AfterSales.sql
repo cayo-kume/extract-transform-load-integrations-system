@@ -1,4 +1,4 @@
-/****** Fatos do atendimento e do pós-venda: FactTicket e FactRefund (docs/datawarehouse, 7.6 e seção 2, fase 2) ******/
+/****** Fatos do atendimento e do pós-venda: FactTicket e FactRefund (src/Backend/Modules/DataWarehouse/docs, 7.6 e seção 2, fase 2) ******/
 --grãos diferentes, por isso dois fatos: um ticket do Movidesk e um reembolso do AfterSale. Recarga completa a cada execução
 --(pergunta 8), como os fatos da fase 1. O cliente vem pelo doc_hash: o documento está em dw_personal_data.ServiceCustomerIdentified
 --e o hash é calculado aqui, com o pepper recebido como parâmetro (8.3); customer_sk é o cliente da Totvs com o mesmo hash.

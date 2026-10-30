@@ -1,7 +1,7 @@
 ﻿namespace Application.Totvs.Abstractions.Services
 {
     /// <summary>
-    /// bônus da API Person (docs/PLANO-TOTVS-METODOS-FALTANTES.md §3.3 e §3.4.5, PE9): a consulta de saldo; as escritas (vencimento e
+    /// bônus da API Person (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §3.3 e §3.4.5, PE9): a consulta de saldo; as escritas (vencimento e
     /// consumo) entram na fase PE-7
     /// </summary>
     public interface ITotvsBonusService

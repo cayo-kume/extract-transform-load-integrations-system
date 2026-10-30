@@ -1,4 +1,4 @@
-/****** Produtos e SKUs: procedures de sincronização (docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md 5.3) ******/
+/****** Produtos e SKUs: procedures de sincronização (src/Backend/Modules/LinxCommerce/docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md 5.3) ******/
 --Os pais nunca são apagados por este fluxo; as filhas que saíram de um pai que veio no lote são apagadas.
 --A condição depende do pai e das filhas do mesmo lote terem o mesmo integrated_or_updated_at, e do merge do pai rodar antes.
 declare @delete_by_product nvarchar(max) = 'exists (select 1 from [linxcommerce].LinxCommerceProducts p where p.doc_company = target.doc_company and p.ProductID = target.ProductID and p.integrated_or_updated_at > target.integrated_or_updated_at)';

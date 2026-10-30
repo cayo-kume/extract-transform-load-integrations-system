@@ -6,7 +6,7 @@ vez** (§9).
 
 Objetivo: listar tudo o que precisa mudar em `src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service`
 (e nos pontos do host que o referenciam) para que o módulo siga o mesmo padrão dos módulos **Movidesk** e
-**AfterSale**, como foi feito no Totvs (`docs/PROPOSTA-PADRONIZACAO-TOTVS.md`), e para que ele passe a cobrir
+**AfterSale**, como foi feito no Totvs (`src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md`), e para que ele passe a cobrir
 **todos os métodos de leitura** dos dois documentos da Linx. O projeto **Inbound** fica fora do escopo, e a
 integração do **Oto** não é tocada nesta refatoração.
 
@@ -19,7 +19,7 @@ já migrado (`TotvsService`, `TotvsPeopleService.GetBranchesList`) e o padrão d
 vende mais por Linx. Mesmo assim, as integrações são **recorrentes**, iguais às do Totvs e do Movidesk, para que o
 módulo funcione sem mudança em outro cliente que use o Microvix. A primeira execução de cada método, com
 `timestamp = 0`, já traz o histórico inteiro da loja; as seguintes leem só o que mudou (§4.2). Assim a carga do
-histórico que o DW pede continua atendida (`docs/datawarehouse/01-visao-e-premissas.md` §1.2, item 7, e
+histórico que o DW pede continua atendida (`src/Backend/Modules/DataWarehouse/docs/01-visao-e-premissas.md` §1.2, item 7, e
 `10-perguntas-em-aberto.md`, pergunta 13), e nada no módulo é específico da Newbloomers (§5.1).
 
 Fontes conferidas em 26/10/2026:
@@ -237,7 +237,7 @@ Domain.LinxMicrovix.Outbound/
   a chave natural (§5.2).
 * **Datas e números anuláveis.** As entidades já declaram `DateTime?`, `Int32?`, `decimal?`, mas atribuem com
   `ConvertToDateTimeValidation`/`ConvertToInt32Validation`, que devolvem `1990-01-01` e `0` para nulo. O padrão é o
-  da `docs/PROPOSTA-DATAS-NULAS-AFTERSALE.md`: `NullableConverters.ToNullableDateTime`, `ToNullableInt32`,
+  da `src/Backend/Modules/General/AfterSale/docs/PROPOSTA-DATAS-NULAS-AFTERSALE.md`: `NullableConverters.ToNullableDateTime`, `ToNullableInt32`,
   `ToNullableDecimal`, `ToNullableBoolean` (e um `ToNullableInt64`, que o Shared ainda não tem). Chaves continuam
   não anuláveis. `LinxCfopFiscal` é a única entidade com tipos não anuláveis; `lastupdateon` não é anulável em
   `LinxUsuarios` e `LinxVendedores`.
@@ -1018,7 +1018,7 @@ Totvs (§4.1, §5.5):
 | 11 | **Controller `partial` por service** (§6.4) |
 | 12 | **Nome do método = nome do comando da API**, sem `Get` (`LinxClientesEnderecosEntrega()`); tabela, job e rota com o mesmo nome (§2.3) |
 | 13 | **Intervalos da tabela da §7**, ajustáveis em `auditing.Jobs` |
-| 14 | **Docs do DW alinhados com a decisão 1**: o histórico continua vindo na primeira execução, e o módulo segue recorrente (`docs/datawarehouse/01-visao-e-premissas.md` §1.2, item 7, e `10-perguntas-em-aberto.md`, pergunta 13) |
+| 14 | **Docs do DW alinhados com a decisão 1**: o histórico continua vindo na primeira execução, e o módulo segue recorrente (`src/Backend/Modules/DataWarehouse/docs/01-visao-e-premissas.md` §1.2, item 7, e `10-perguntas-em-aberto.md`, pergunta 13) |
 | 15 | **Chaves de teste**: as de produção da Newbloomers (ERP e B2C), ativas em 26/10/2026; só no script de valores fora do git (§5.1, §9) |
 | 16 | **`<IdPortal>` não é enviado**: sem efeito nas chamadas reais; o filtro de portal do `LinxGrupoLojas` é o parâmetro `portal` (§4.2) |
 | 17 | **Agrupamento dos 52 métodos novos** da v274/V64 aprovado como está na §2.2 (`PosSales`, `PurchaseOrders`, `B2CProductImages`, `B2CProductFields` e os demais) |

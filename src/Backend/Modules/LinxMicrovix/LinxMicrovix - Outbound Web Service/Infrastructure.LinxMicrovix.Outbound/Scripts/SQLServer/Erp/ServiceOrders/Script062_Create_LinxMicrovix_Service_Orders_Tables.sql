@@ -1,4 +1,4 @@
-/****** Ordens de serviço (LinxMicrovixServiceOrdersService): tabelas untreated e linxmicrovix (docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 5.2) ******/
+/****** Ordens de serviço (LinxMicrovixServiceOrdersService): tabelas untreated e linxmicrovix (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 5.2) ******/
 --colunas com o nome da resposta real da API (27/10/2026) e tamanhos da v274; respostas planas: uma tabela por método, sem filhas
 
 /*LinxOrdensServico: as ordens de serviço Chave a confirmar com uma resposta real com dados.*/

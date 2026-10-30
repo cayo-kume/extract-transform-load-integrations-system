@@ -1,4 +1,4 @@
-/****** Representantes: tabelas untreated e totvs (docs/PLANO-TOTVS-METODOS-FALTANTES.md §3.1.1, fase PE-2) ******/
+/****** Representantes: tabelas untreated e totvs (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §3.1.1, fase PE-2) ******/
 --chave: doc_company + code (o representante é uma pessoa do PESFM010). As filhas comuns com a PF têm as mesmas colunas das
 --TotvsPeople* (Script013), com personCode = código do representante. Sem tamanho no swagger: nomes com 100.
 
@@ -314,7 +314,7 @@ alter table [totvs].TotvsRepresentativesParameters add constraint [FK_TotvsRepre
 
 go
 
-/****** Recepção de venda: tabelas untreated e totvs (docs/PLANO-TOTVS-METODOS-FALTANTES.md §3.1.2, fase PE-2) ******/
+/****** Recepção de venda: tabelas untreated e totvs (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §3.1.2, fase PE-2) ******/
 --chave: doc_company + branchCode + movementDate + sequence. A resposta não tem data de alteração: json_hash (SHA-256 do JSON
 --recebido) diz se a recepção mudou (T9). Sem tamanho no swagger para nomes, tipo e observação.
 

@@ -9,7 +9,7 @@ using DbUp.ScriptProviders;
 using Microsoft.Data.SqlClient;
 
 // A connection string é obrigatória e vem só do argumento: sem padrão no código e sem imprimir a string,
-// para a senha não aparecer em log (docs/datawarehouse, seção 16, passo 1)
+// para a senha não aparecer em log (src/Backend/Modules/DataWarehouse/docs, seção 16, passo 1)
 if (Args.Count == 0 || String.IsNullOrWhiteSpace(Args[0]))
 {
     Console.ForegroundColor = ConsoleColor.Red;

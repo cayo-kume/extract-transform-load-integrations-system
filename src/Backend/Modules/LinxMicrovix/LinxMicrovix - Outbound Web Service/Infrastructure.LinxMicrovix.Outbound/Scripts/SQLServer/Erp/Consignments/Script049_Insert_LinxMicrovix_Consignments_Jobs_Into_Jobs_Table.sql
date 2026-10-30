@@ -11,7 +11,7 @@ VALUES
 (8141, 8641, 'sp_LinxRemessasRetornoTipos_Sync', 'Procedure de sincronização entre as tabelas LinxRemessasRetornoTipos raw e trusted', 3, 1),
 
 /*Integrações*/
-/*Range 8000 - 8249 (ERP; ids reservados em docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
+/*Range 8000 - 8249 (ERP; ids reservados em src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
 (80, 8135, 'LinxMovimentoRemessas', 'Integração de dados da tabela LinxMovimentoRemessas, a cada 3 minutos', 3, 2),
 (80, 8136, 'LinxMovimentoRemessasItens', 'Integração de dados da tabela LinxMovimentoRemessasItens, a cada 3 minutos', 3, 2),
 (80, 8137, 'LinxMovimentoRemessasAcertos', 'Integração de dados da tabela LinxMovimentoRemessasAcertos, a cada 3 minutos', 3, 2),

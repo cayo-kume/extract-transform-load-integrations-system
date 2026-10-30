@@ -12,7 +12,7 @@ VALUES
 (8023, 8523, 'sp_LinxRegistroProfissional_Sync', 'Procedure de sincronização entre as tabelas LinxRegistroProfissional raw e trusted', 120, 1),
 
 /*Integrações*/
-/*Range 8000 - 8249 (ERP; ids reservados em docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
+/*Range 8000 - 8249 (ERP; ids reservados em src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
 (80, 8016, 'LinxVendedores', 'Integração de dados da tabela LinxVendedores, a cada 2 horas', 120, 2),
 (80, 8017, 'LinxVendedoresFerias', 'Integração de dados da tabela LinxVendedoresFerias, a cada 2 horas', 120, 2),
 (80, 8018, 'LinxMetasVendedores', 'Integração de dados da tabela LinxMetasVendedores, a cada 2 horas', 120, 2),

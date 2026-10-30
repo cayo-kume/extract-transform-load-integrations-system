@@ -1,4 +1,4 @@
-/****** Histórico do legado Linx Microvix (docs/datawarehouse, 7.5 e 10.2) ******/
+/****** Histórico do legado Linx Microvix (src/Backend/Modules/DataWarehouse/docs, 7.5 e 10.2) ******/
 --snapshot único ('once') de lojas e produtos, chamado pela carga do legado. Cada um vira uma versão só nos membros Linx de
 --DimStore e DimProduct; uma reexecução da carga que encontre mudança abre versão nova, como nas outras origens.
 declare @table sysname;

@@ -78,7 +78,7 @@ namespace Application.LinxMicrovix.Outbound.Services
 
         public async Task<long> GetLastTimestamp(Company company, EnumJob method, string? cnpj_emp)
         {
-            // a tabela tem o nome do método da API, que é o nome do job (docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 2.3)
+            // a tabela tem o nome do método da API, que é o nome do job (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 2.3)
             if (method == EnumJob.None || !Enum.IsDefined(method))
                 throw new ArgumentOutOfRangeException(nameof(method), method, "Método do Microvix sem job no EnumJob.");
 

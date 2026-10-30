@@ -4,7 +4,7 @@ namespace Domain.Totvs.Entities.Reads.Invoices
 {
     /// <summary>
     /// centro de custo, tabela totvs.TotvsCostCenters, com as classificações. A resposta não tem data de alteração: json_hash
-    /// (SHA-256 do JSON do centro) diz se ele mudou (F5 e T9 do docs/PLANO-TOTVS-METODOS-FALTANTES.md)
+    /// (SHA-256 do JSON do centro) diz se ele mudou (F5 e T9 do src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md)
     /// </summary>
     public class CostCenter
     {

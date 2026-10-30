@@ -1,4 +1,4 @@
-/****** Contas a pagar: tabelas untreated e totvs (docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.2.7) ******/
+/****** Contas a pagar: tabelas untreated e totvs (src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.2.7) ******/
 --tamanhos do swagger da API Accounts Payable. Duplicata: uma linha por parcela (o mesmo duplicateCode volta uma vez por
 --parcela). Comissão: uma linha por comissionado do fechamento (a rota não tem filtro de alteração nem maxChangeFilterDate).
 

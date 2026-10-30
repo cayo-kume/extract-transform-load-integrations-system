@@ -1,4 +1,4 @@
-/****** Landing das origens Totvs da fase 1 (docs/datawarehouse, seção 2 e 5.1) ******/
+/****** Landing das origens Totvs da fase 1 (src/Backend/Modules/DataWarehouse/docs, seção 2 e 5.1) ******/
 --catálogo e geração: uma landing e uma procedure de carga por tabela; nas filhas que o merge da Totvs apaga
 --(@delete_by_invoice, @delete_by_order, @delete_by_product, @delete_by_reference, gridCode), também a detecção de exclusão.
 --dado pessoal identificador fica fora (5.2, regra 6): em pessoas e empresas, só as colunas listadas em included_columns;

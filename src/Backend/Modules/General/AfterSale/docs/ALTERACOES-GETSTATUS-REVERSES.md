@@ -58,7 +58,7 @@ Resultado final da classe:
 
 ## 2. Service — `Application.AfterSale/Services/AfterSaleReversesService.cs`
 
-Arquivo: [AfterSaleReversesService.cs](../src/Backend/Modules/General/AfterSale/Application.AfterSale/Services/AfterSaleReversesService.cs)
+Arquivo: [AfterSaleReversesService.cs](../Application.AfterSale/Services/AfterSaleReversesService.cs)
 
 **Substituir as linhas 487–590** (do `/// <summary>` do `GetStatus` até o `}` que fecha o método,
 imediatamente antes do `/// <summary>` de `GetTransportations`) por:
@@ -180,7 +180,7 @@ imediatamente antes do `/// <summary>` de `GetTransportations`) por:
 
 ## 3. Repository — `Infrastructure.AfterSale/Repositorys/AfterSaleReversesRepository.cs`
 
-Arquivo: [AfterSaleReversesRepository.cs](../src/Backend/Modules/General/AfterSale/Infrastructure.AfterSale/Repositorys/AfterSaleReversesRepository.cs)
+Arquivo: [AfterSaleReversesRepository.cs](../Infrastructure.AfterSale/Repositorys/AfterSaleReversesRepository.cs)
 
 **Linhas 157 e 159** — descomentar o parâmetro (hoje a assinatura não bate com a interface
 `IAfterSaleReversesRepository.GetStatus(string doc_company)`, linha 18, e não compila):
@@ -205,7 +205,7 @@ Depois:
 
 ## 4. Query — `Application.AfterSale/Handlers/Commands/AfterSaleCommandHandler.cs`
 
-Arquivo: [AfterSaleCommandHandler.cs](../src/Backend/Modules/General/AfterSale/Application.AfterSale/Handlers/Commands/AfterSaleCommandHandler.cs)
+Arquivo: [AfterSaleCommandHandler.cs](../Application.AfterSale/Handlers/Commands/AfterSaleCommandHandler.cs)
 
 **Linhas 83–84** — trocar a query sem filtro pela filtrada. Atenção: a versão comentada tem um
 `--` antes do `WHERE`, o que comentaria o filtro dentro do SQL; remova-o.

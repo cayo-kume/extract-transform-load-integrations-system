@@ -7,7 +7,7 @@ VALUES
 (7002, 7514, 'sp_LinxCommerceCustomersGroups_Sync', 'Procedure de sincronização entre as tabelas LinxCommerceCustomersGroups raw e trusted', 60, 1),
 
 /*Integrações*/
-/*Range 7000 - 7499 (ids reservados em docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md §7)*/
+/*Range 7000 - 7499 (ids reservados em src/Backend/Modules/LinxCommerce/docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md §7)*/
 (70, 7002, 'LinxCommerceSearchCustomer', 'Integração dos clientes alterados (LinxCommerceCustomers e filhas), a cada hora', 60, 2),
 
 /*Integrações sob demanda - executadas pelo LinxCommerceController, não são recorrentes (IntervalTimeInMinutes = 0)*/

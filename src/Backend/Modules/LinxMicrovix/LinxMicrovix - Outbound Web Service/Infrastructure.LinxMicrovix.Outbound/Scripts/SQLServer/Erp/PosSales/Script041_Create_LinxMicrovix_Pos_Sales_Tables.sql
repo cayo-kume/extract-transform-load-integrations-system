@@ -1,4 +1,4 @@
-/****** Vendas POS temporárias (LinxMicrovixPosSalesService): tabelas untreated e linxmicrovix (docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 5.2) ******/
+/****** Vendas POS temporárias (LinxMicrovixPosSalesService): tabelas untreated e linxmicrovix (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 5.2) ******/
 --colunas com o nome da resposta real da API (27/10/2026) e tamanhos da v274; respostas planas: uma tabela por método, sem filhas
 
 /*LinxVendasPosTmp: os registros da tabela vendas_pos_tmp*/

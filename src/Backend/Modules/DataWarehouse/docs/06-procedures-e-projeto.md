@@ -25,7 +25,7 @@ src/Backend/Modules/DataWarehouse/
 | `Parameters/` | `Script003_Create_DataWarehouse_Check_Results.sql` | `dw_control.CheckResult` (9.2) | 0 |
 | `Parameters/` | `Script004_Create_DataWarehouse_Landing_Sources.sql` | `dw_control.LandingSource`: catálogo das origens (9.5) Já com `is_enabled` (origem ligada ou desligada; antes `Script007`) e com `once` em `history_frequency` (antes `Script008`). | 1 |
 | `Parameters/` | `Script005_Create_DataWarehouse_Reference_Tables.sql` | Tabelas de `dw_reference`: `Holidays`, `BrandSeries` (série do pedido pela raiz do CNPJ), `ChannelRules`, `StoreErpMap`, `ProductErpMap` e `ValueCodes`. Os dados entram no 070 | 1 |
-| `Parameters/` | `Script006_Insert_DataWarehouse_Reference.sql` | Seeds: `dw_reference.Holidays` (2010 a 2035, Páscoa calculada), `BrandSeries` (série por raiz do CNPJ), `ChannelRules` (canal e tipo do pedido, de `docs/regras-prefixo-pedidos.md`), `StoreErpMap` e `ProductErpMap` (exceções, 7.5) e `ValueCodes` com os 8 custos e 6 preços da PRDFL003 (8.7; o `stockCode` entra depois da primeira carga) | 1 |
+| `Parameters/` | `Script006_Insert_DataWarehouse_Reference.sql` | Seeds: `dw_reference.Holidays` (2010 a 2035, Páscoa calculada), `BrandSeries` (série por raiz do CNPJ), `ChannelRules` (canal e tipo do pedido, de `src/Backend/Modules/DataWarehouse/docs/regras-prefixo-pedidos.md`), `StoreErpMap` e `ProductErpMap` (exceções, 7.5) e `ValueCodes` com os 8 custos e 6 preços da PRDFL003 (8.7; o `stockCode` entra depois da primeira carga) | 1 |
 | `Parameters/` | `Script007_Insert_DataWarehouse_Jobs_Into_Jobs_Table.sql` | App 90 e jobs 9000 (`DataWarehouseHourly`), 9001 (`DataWarehouseDaily`) e 9002 (`DataWarehouseShortCycle`) em `auditing` (9.4) Inclui os jobs 9003 (`DataWarehouseMonthlyStock`, fase 2) e 9004 (`DataWarehouseLinxLegacy`, fase 3), antes em `Script071` e `Script072`. | 1 |
 | `Landing/` | `Script008_Create_DataWarehouse_Landing_Generator.sql` | `dw_landing.sp_Create_Landing`: gera landing, carga e detecção de exclusão a partir do catálogo (9.5) | 1 |
 | `Landing/` | `Script009_Create_DataWarehouse_Landing_Totvs.sql` | Catálogo e landing das 23 origens Totvs da fase 1, inclusive `TotvsInvoicesItemsProducts`, `TotvsInvoicesSalesOrders`, `TotvsCosts` e `TotvsPrices` | 1 |
@@ -124,7 +124,7 @@ CREATE TABLE dw_control.CheckResult (
 - `datawarehouse.vw_Check_ItemProducts` compara, por item da nota, a soma de `dw_landing.TotvsInvoicesItemsProducts` com o valor do item em `dw_landing.TotvsInvoicesItems`; devolve os itens em que o rateio não fecha (7.2).
 - `datawarehouse.vw_Check_ErpOverlap` devolve os pares CNPJ e dia com venda faturada nos dois ERPs (7.5).
 - `datawarehouse.vw_Check_ProductMatch` devolve, por marca, a proporção de produtos Linx sem `matched_product_sk` (7.5, pergunta 34).
-- `datawarehouse.vw_Check_OrderTypeUnknown` devolve os pedidos cujo tipo não casou com nenhuma regra de `dw_reference.ChannelRules`; é a inconsistência 8 de `docs/regras-prefixo-pedidos.md` (`CASE` sem `ELSE`), que no DW vira alerta em vez de número sem prefixo.
+- `datawarehouse.vw_Check_OrderTypeUnknown` devolve os pedidos cujo tipo não casou com nenhuma regra de `dw_reference.ChannelRules`; é a inconsistência 8 de `src/Backend/Modules/DataWarehouse/docs/regras-prefixo-pedidos.md` (`CASE` sem `ELSE`), que no DW vira alerta em vez de número sem prefixo.
 
 ### 9.4 Registro de execuções
 

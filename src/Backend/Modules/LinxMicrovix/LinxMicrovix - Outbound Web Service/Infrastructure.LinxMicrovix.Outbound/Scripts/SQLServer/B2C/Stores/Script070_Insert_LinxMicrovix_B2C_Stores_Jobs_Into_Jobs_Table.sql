@@ -13,7 +13,7 @@ VALUES
 (8258, 8699, 'sp_B2CConsultaTipoEncomenda_Sync', 'Procedure de sincronização entre as tabelas B2CConsultaTipoEncomenda raw e trusted', 120, 1),
 
 /*Integrações*/
-/*Range 8250 - 8499 (B2C; ids reservados em docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
+/*Range 8250 - 8499 (B2C; ids reservados em src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
 (80, 8250, 'B2CConsultaEmpresas', 'Integração de dados da tabela B2CConsultaEmpresas, a cada 2 horas', 120, 2),
 (80, 8251, 'B2CConsultaCNPJsChave', 'Integração de dados da tabela B2CConsultaCNPJsChave, a cada 2 horas', 120, 2),
 (80, 8252, 'B2CConsultaVendedores', 'Integração de dados da tabela B2CConsultaVendedores, a cada 2 horas', 120, 2),

@@ -1,7 +1,7 @@
 ﻿namespace Domain.Totvs.Entities.Writes.Requests
 {
     /// <summary>
-    /// chamada anterior em totvs.TotvsRequests lida pela trava de repetição das escritas (T5 do docs/PLANO-TOTVS-METODOS-FALTANTES.md)
+    /// chamada anterior em totvs.TotvsRequests lida pela trava de repetição das escritas (T5 do src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md)
     /// </summary>
     public class RequestCheck
     {

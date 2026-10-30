@@ -1,7 +1,7 @@
 ﻿namespace Application.Totvs.Abstractions.Services
 {
     /// <summary>
-    /// preços e custos dos produtos (docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.9, PR12) e itens das tabelas de preço e das promoções
+    /// preços e custos dos produtos (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.9, PR12) e itens das tabelas de preço e das promoções
     /// (§5.2); as escritas de valor (§5.7) entram aqui nas próximas fases
     /// </summary>
     public interface ITotvsProductPricesService

@@ -1,4 +1,4 @@
-/****** Schemas do DW (docs/datawarehouse, 4.1 e 8.1) ******/
+/****** Schemas do DW (src/Backend/Modules/DataWarehouse/docs, 4.1 e 8.1) ******/
 --schemas em snake_case; tabelas, views e procedures em PascalCase inglês (1.2, item 8).
 --o migrator do DW roda por último (1.1), mas a conferência deixa o script independente da ordem.
 if not exists (select 1 from sys.schemas where name = 'dw_landing')

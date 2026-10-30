@@ -24,7 +24,7 @@ Módulo do sistema de integrações (ETL) responsável por **ler** os dados do L
 
 O módulo **não escreve** no Linx Commerce. As duas escritas do código antigo (rastreio do pedido e carteira de vendedores) não foram
 migradas: a da carteira apagava a carteira de todos os vendedores a cada execução
-([`docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md`](../../../../docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md), §4.6).
+([`src/Backend/Modules/LinxCommerce/docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md`](docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md), §4.6).
 
 | Item | Valor |
 |---|---|

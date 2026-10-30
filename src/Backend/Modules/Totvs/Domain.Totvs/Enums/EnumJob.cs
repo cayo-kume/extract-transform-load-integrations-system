@@ -3,7 +3,7 @@
     /// <summary>
     /// Qualquer alteração neste arquivo deve refletir no script de jobs do service correspondente
     /// (um por service, Script0NN_Insert_Totvs_*_Jobs_Into_Jobs_Table.sql). Faixas: integrações 13000 - 13499,
-    /// procedures 13500 - 13999 (ids reservados em docs/PROPOSTA-PADRONIZACAO-TOTVS.md §7)
+    /// procedures 13500 - 13999 (ids reservados em src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md §7)
     /// </summary>
     public enum EnumJob
     {
@@ -103,7 +103,7 @@
         TotvsPostSearchInvoiceProducts = 13257,   //Script025_Insert_Totvs_Invoices_Jobs_Into_Jobs_Table.sql
         TotvsPostInvoicesManifestations = 13258,   //Script025_Insert_Totvs_Invoices_Jobs_Into_Jobs_Table.sql
 
-        // escritas (TotvsController, com X-User-Name; não recorrentes): docs/PLANO-TOTVS-METODOS-FALTANTES.md §9.4
+        // escritas (TotvsController, com X-User-Name; não recorrentes): src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §9.4
         TotvsPostDuplicates = 13018,   //Script022_Insert_Totvs_Accounts_Payable_Jobs_Into_Jobs_Table.sql
         TotvsPostGroupDuplicates = 13019,   //Script022_Insert_Totvs_Accounts_Payable_Jobs_Into_Jobs_Table.sql
         TotvsPostDuplicatesInstallmentsStage = 13020,   //Script022_Insert_Totvs_Accounts_Payable_Jobs_Into_Jobs_Table.sql

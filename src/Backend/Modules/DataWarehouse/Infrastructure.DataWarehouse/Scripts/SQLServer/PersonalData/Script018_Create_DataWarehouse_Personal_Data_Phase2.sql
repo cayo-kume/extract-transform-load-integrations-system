@@ -1,4 +1,4 @@
-/****** Dado pessoal da fase 2: documento do cliente do atendimento e do pós-venda (docs/datawarehouse, 5.2 regra 6, 8.3 e 12) ******/
+/****** Dado pessoal da fase 2: documento do cliente do atendimento e do pós-venda (src/Backend/Modules/DataWarehouse/docs, 5.2 regra 6, 8.3 e 12) ******/
 --Movidesk e AfterSale trazem o CPF/CNPJ do cliente. Ele não entra na landing (Script014): fica só aqui, carregado direto das
 --tabelas de origem, e os fatos levam só o doc_hash, que liga o ticket e o reembolso ao cliente da Totvs em DimCustomer.
 create table [dw_personal_data].ServiceCustomerIdentified (

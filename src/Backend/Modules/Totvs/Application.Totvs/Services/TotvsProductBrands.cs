@@ -2,7 +2,7 @@
 {
     /// <summary>
     /// marcas dos produtos: a empresa base de cada uma (option.branchInfoCode das referências aceita uma empresa só) e o código da marca
-    /// na classificação 6000 (SETOR). Sem esse filtro as chamadas trazem o catálogo inteiro (docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.2.4).
+    /// na classificação 6000 (SETOR). Sem esse filtro as chamadas trazem o catálogo inteiro (src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.2.4).
     /// Códigos da classificação conferidos na API: 2 = MISHA, 4 = OPEN ERA (1 = GERAL, itens de consumo, fica de fora). Uma marca nova
     /// entra aqui. Usado pelas referências e pelas leituras de preço, custo e saldo
     /// </summary>

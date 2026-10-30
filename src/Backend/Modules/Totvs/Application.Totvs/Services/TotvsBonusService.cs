@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 namespace Application.Totvs.Services
 {
     /// <summary>
-    /// bônus da API Person (fase PE-4, docs/PLANO-TOTVS-METODOS-FALTANTES.md §3.3, PE9): separado do TotvsPeopleService para isolar o
+    /// bônus da API Person (fase PE-4, src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §3.3, PE9): separado do TotvsPeopleService para isolar o
     /// efeito financeiro das escritas da PE-7. A leitura usa a base T11 do ITotvsService
     /// </summary>
     public class TotvsBonusService : ITotvsBonusService

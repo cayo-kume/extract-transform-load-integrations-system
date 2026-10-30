@@ -1,7 +1,7 @@
 namespace Domain.DataWarehouse.Entities.Control
 {
     /// <summary>
-    /// ponto de parada de uma carga, tabela dw_control.Watermark (docs/datawarehouse, 8.1). Uma linha por fonte e entidade:
+    /// ponto de parada de uma carga, tabela dw_control.Watermark (src/Backend/Modules/DataWarehouse/docs, 8.1). Uma linha por fonte e entidade:
     /// as origens lidas pela landing, os snapshots (source = dw_history) e a varredura de cada módulo de saída (4.2)
     /// </summary>
     public class Watermark

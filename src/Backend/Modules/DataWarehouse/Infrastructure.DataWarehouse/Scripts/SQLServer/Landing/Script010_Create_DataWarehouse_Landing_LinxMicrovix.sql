@@ -1,4 +1,4 @@
-/****** Landing do legado Linx Microvix (docs/datawarehouse, 7.5 e 10.2) ******/
+/****** Landing do legado Linx Microvix (src/Backend/Modules/DataWarehouse/docs, 7.5 e 10.2) ******/
 --carga única: as origens nascem desligadas (is_enabled = 0), fora dos ciclos horário e diário. Quem as lê é a carga do legado
 --(RunLinxLegacy, 10.2), que pode ser reexecutada para absorver correções; o watermark fica gravado.
 --dado pessoal identificador fica fora (5.2, regra 6):

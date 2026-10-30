@@ -172,7 +172,7 @@ SELECT o.source_erp,
   FROM dw_intermediate.vw_OrderItem AS o
   JOIN datawarehouse.DimStore    AS s ON s.sk = o.store_sk
   JOIN datawarehouse.DimCustomer AS c ON c.sk = o.customer_sk
- WHERE o.order_type IN ('VD', 'LJ', 'VF', 'RC') OR o.order_type IS NULL;   -- os tipos que o WMS recebe (docs/regras-prefixo-pedidos.md, §2)
+ WHERE o.order_type IN ('VD', 'LJ', 'VF', 'RC') OR o.order_type IS NULL;   -- os tipos que o WMS recebe (src/Backend/Modules/DataWarehouse/docs/regras-prefixo-pedidos.md, §2)
 ```
 
 - Uma view por consumidor e entidade (4.2). O módulo lê `WHERE updated_at > @watermark - 3 dias`, grava o que enviou e avança o próprio watermark em `dw_control.Watermark` (`source = 'wms'`, `entity = 'WmsOrders'`).

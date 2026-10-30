@@ -24,7 +24,7 @@ namespace Application.LinxCommerce.Services
 
         private const string OrdersKey = "LinxCommerce:Orders";
 
-        // carga inicial (banco vazio), como as notas e os pedidos do Totvs (docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md §10.2, pendência 3)
+        // carga inicial (banco vazio), como as notas e os pedidos do Totvs (src/Backend/Modules/LinxCommerce/docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md §10.2, pendência 3)
         private static readonly DateTime OrdersInitialLoad = new(2025, 1, 1);
 
         public LinxCommerceOrdersService(
@@ -232,7 +232,7 @@ namespace Application.LinxCommerce.Services
 
         /// <summary>
         /// o fluxo das duas rotas sob demanda de pedido. "Não existe" é o 404 ou a resposta 2xx sem o pedido pedido (sem resposta
-        /// real, a forma como o Linx Commerce responde um id inexistente está a conferir, docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md §9)
+        /// real, a forma como o Linx Commerce responde um id inexistente está a conferir, src/Backend/Modules/LinxCommerce/docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md §9)
         /// </summary>
         private async Task<bool?> GetOrderOnDemand(EnumJob job, string user_name, string doc_company, string route, string body, string key, Func<Domain.LinxCommerce.Dtos.Reads.Orders.Order, bool> isRequested)
         {

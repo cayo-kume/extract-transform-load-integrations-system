@@ -1,4 +1,4 @@
-/****** Catálogo das origens do DW (docs/datawarehouse, 5.1 e 5.2) ******/
+/****** Catálogo das origens do DW (src/Backend/Modules/DataWarehouse/docs, 5.1 e 5.2) ******/
 --uma linha por tabela confiável que o DW lê. Os geradores dw_landing.sp_Create_Landing e dw_history.sp_Create_History
 --criam a landing, o histórico e as procedures a partir daqui; cada fase insere as suas linhas no próprio script.
 create table [dw_control].LandingSource (

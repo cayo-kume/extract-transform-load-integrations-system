@@ -8,7 +8,7 @@ VALUES
 (8082, 8582, 'sp_LinxConfiguracoesTributariasEmpresas_Sync', 'Procedure de sincronização entre as tabelas LinxConfiguracoesTributariasEmpresas raw e trusted', 1440, 1),
 
 /*Integrações*/
-/*Range 8000 - 8249 (ERP; ids reservados em docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
+/*Range 8000 - 8249 (ERP; ids reservados em src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
 (80, 8079, 'LinxConfiguracoesTributarias', 'Integração de dados da tabela LinxConfiguracoesTributarias, uma vez por dia', 1440, 2),
 (80, 8080, 'LinxConfiguracoesTributariasDetalhes', 'Integração de dados da tabela LinxConfiguracoesTributariasDetalhes, uma vez por dia', 1440, 2),
 (80, 8081, 'LinxConfiguracoesTributariasDetalhesSimplificado', 'Integração de dados da tabela LinxConfiguracoesTributariasDetalhesSimplificado, uma vez por dia', 1440, 2),

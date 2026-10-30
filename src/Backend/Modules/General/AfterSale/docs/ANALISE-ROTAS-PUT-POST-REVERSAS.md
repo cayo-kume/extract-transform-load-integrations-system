@@ -224,7 +224,7 @@ Para não enviar campos nulos (a API pode interpretar `null` como "limpar"), ser
 
 ### 3.3 `ApiClient`
 
-[ApiClient.cs](../src/Backend/Shared/Infrastructure.Shared/Api/ApiClient.cs):
+[ApiClient.cs](../../../../Shared/Infrastructure.Shared/Api/ApiClient.cs):
 
 | Lacuna | Impacto | Proposta |
 |---|---|---|

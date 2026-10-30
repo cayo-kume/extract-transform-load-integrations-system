@@ -2,8 +2,8 @@
 
 Documento para revisão. **Fases 1, 2 e 4 e as leituras sob demanda da fase 3 implementadas em 29/10/2026** (§9); as escritas
 continuam fora. O que está marcado como **(proposto)** segue
-o que já foi decidido no Totvs (`docs/PROPOSTA-PADRONIZACAO-TOTVS.md`) e no LinxMicrovix
-(`docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md`) e foi implementado com as recomendações da §10.2, que continuam
+o que já foi decidido no Totvs (`src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md`) e no LinxMicrovix
+(`src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md`) e foi implementado com as recomendações da §10.2, que continuam
 pendentes de confirmação por quem usa o módulo. Nada foi conferido com a API real: não há credenciais (§9, "Não
 verificado").
 
@@ -178,7 +178,7 @@ Domain.LinxCommerce/
   do pai; com `doc_company` na chave, a filha recebe os dois.
 * **Datas e números anuláveis.** As entidades usam `DateTimeOffset?`, `Int32?`, `decimal?`, mas várias chaves são
   `Int32` não anulável (`CustomerID`, `SalesRepresentativeID`, `OrderStatusID`) e o pedido tem `Guid? OrderID` como
-  chave. Padrão da `docs/PROPOSTA-DATAS-NULAS-AFTERSALE.md`: dados anuláveis, chaves não anuláveis, e o registro sem
+  chave. Padrão da `src/Backend/Modules/General/AfterSale/docs/PROPOSTA-DATAS-NULAS-AFTERSALE.md`: dados anuláveis, chaves não anuláveis, e o registro sem
   chave é rejeitado na validação com mensagem.
 * **`DateTimeOffset` gravado como `datetime`?** (a conferir). O Linx Commerce devolve as datas com fuso; o código de
   hoje grava `DateTimeOffset` direto no `SqlBulkCopy`, sem script para dizer o tipo da coluna. Proposto:
@@ -334,7 +334,7 @@ atualizado depois da gravação. O de hoje erra:
 
 As duas escritas de hoje **não entram** nas fases 1 e 2 (proposto). Entram só depois de decididas (§10.2,
 pendência 1) e de testadas num ambiente de homologação, como as escritas do Totvs
-(`docs/PLANO-TOTVS-METODOS-FALTANTES.md`): log em `linxcommerce.LinxCommerceRequests` com o `status_code`, trava de
+(`src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md`): log em `linxcommerce.LinxCommerceRequests` com o `status_code`, trava de
 repetição e corpo sem dados sensíveis.
 
 | Escrita | O que faz hoje | Problemas |

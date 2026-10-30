@@ -6,7 +6,7 @@ VALUES
 (13007, 13501, 'sp_TotvsBranchesAddresses_Sync', 'Procedure de sincronização entre as tabelas TotvsBranchesAddresses raw e trusted', 120, 1),
 
 /*Integrações*/
-/*Range 13000 - 13499 (ids reservados em docs/PROPOSTA-PADRONIZACAO-TOTVS.md §7)*/
+/*Range 13000 - 13499 (ids reservados em src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md §7)*/
 (130, 13007, 'TotvsGetBranchesList', 'Integração das empresas da holding (TotvsBranches e TotvsBranchesAddresses), a cada 2 horas', 120, 2),
 
 /*Procedures de Sincronizações*/
@@ -42,31 +42,31 @@ VALUES
 (13001, 13555, 'sp_TotvsLegalEntitiesPaymentMethods_Sync', 'Procedure de sincronização entre as tabelas TotvsLegalEntitiesPaymentMethods raw e trusted', 3, 1),
 
 /*Integrações*/
-/*Range 13000 - 13499 (ids reservados em docs/PROPOSTA-PADRONIZACAO-TOTVS.md §7)*/
+/*Range 13000 - 13499 (ids reservados em src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md §7)*/
 (130, 13001, 'TotvsPostSearchLegalEntity', 'Integração das pessoas jurídicas (TotvsLegalEntities e filhas), a cada 3 minutos', 3, 2),
 (130, 13002, 'TotvsPostSearchCustomers', 'Integração das pessoas físicas (TotvsPeople e filhas), a cada 3 minutos', 3, 2),
 
 /*Integrações sob demanda - executadas pelo TotvsController, não são recorrentes (IntervalTimeInMinutes = 0)*/
-/*Range 13000 - 13499 (ids reservados em docs/PROPOSTA-PADRONIZACAO-TOTVS.md §7; sob demanda a partir de 13010)*/
+/*Range 13000 - 13499 (ids reservados em src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md §7; sob demanda a partir de 13010)*/
 (130, 13010, 'TotvsGetCustomerByCode', 'Integração de uma pessoa física por código (GET Customers/{docCompany}/{code})', 0, 2),
 (130, 13011, 'TotvsGetLegalEntityByCode', 'Integração de uma pessoa jurídica por código (GET LegalEntities/{docCompany}/{code})', 0, 2),
 
 /*Leituras sob demanda da onda 2 - executadas pelo TotvsController, não são recorrentes (IntervalTimeInMinutes = 0). Só o
   GetPurchaseOrderByKey grava (como o GetSalesOrderByKey); as outras devolvem o JSON e registram a chamada em totvs.TotvsRequests
-  (docs/PLANO-TOTVS-METODOS-FALTANTES.md §8.1, T11)*/
+  (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §8.1, T11)*/
 /*Range 13000 - 13499 (Person: 13030 - 13069; Product: 13100 - 13105; Purchase Order: 13185; Sales Order: 13190 - 13249)*/
 (130, 13036, 'TotvsGetBranches', 'Dados de uma loja pelo código ou CNPJ (GET Branches/{docCompany}/{branchId})', 0, 2),
 (130, 13037, 'TotvsGetPersonStatistics', 'Estatísticas de compra e crédito de um cliente (GET PersonStatistics/{docCompany})', 0, 2),
 
 /*Escritas da API Person - executadas pelo TotvsController, não são recorrentes (IntervalTimeInMinutes = 0); só rodam com
-  Totvs:Writes:People:Enabled = true (docs/PLANO-TOTVS-METODOS-FALTANTES.md §3.4.4, fase PE-5)*/
+  Totvs:Writes:People:Enabled = true (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §3.4.4, fase PE-5)*/
 /*Range 13000 - 13499 (Person: 13030 - 13069)*/
 (130, 13044, 'TotvsPostMessages', 'Inclusão de mensagens de uma pessoa (POST Messages/{docCompany})', 0, 2),
 (130, 13045, 'TotvsPutChangeMessages', 'Alteração de uma mensagem da pessoa (PUT Messages/{docCompany}/Change)', 0, 2),
 (130, 13046, 'TotvsDeleteMessages', 'Exclusão de uma mensagem da pessoa (DELETE Messages/{docCompany}/{personCode}/{sequence})', 0, 2),
 
 /*Escritas de cadastro da API Person - executadas pelo TotvsController, não são recorrentes (IntervalTimeInMinutes = 0); só rodam com
-  Totvs:Writes:People:Enabled = true (docs/PLANO-TOTVS-METODOS-FALTANTES.md §3.4.1 a §3.4.3, fase PE-6)*/
+  Totvs:Writes:People:Enabled = true (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §3.4.1 a §3.4.3, fase PE-6)*/
 /*Range 13000 - 13499 (Person: 13030 - 13069)*/
 (130, 13040, 'TotvsPostIndividualCustomers', 'Inclusão ou alteração de cliente pessoa física (POST IndividualCustomers/{docCompany})', 0, 2),
 (130, 13041, 'TotvsPostLegalCustomers', 'Inclusão ou alteração de cliente pessoa jurídica (POST LegalCustomers/{docCompany})', 0, 2),

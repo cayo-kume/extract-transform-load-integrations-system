@@ -1,4 +1,4 @@
-/****** Histórico das origens da fase 2 (docs/datawarehouse, seção 6 e 7.4) ******/
+/****** Histórico das origens da fase 2 (src/Backend/Modules/DataWarehouse/docs, seção 6 e 7.4) ******/
 --só os saldos têm histórico: SCD2 com snapshot diário no fim do dia (pergunta 10). Tickets e reembolsos entram nos fatos
 --pelo estado atual; o próprio Movidesk e o AfterSale guardam o histórico de status nas tabelas *StatusHistories.
 declare @table sysname;

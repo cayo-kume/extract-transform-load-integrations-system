@@ -11,7 +11,7 @@ VALUES
 (8308, 8749, 'sp_B2CConsultaProdutosTabelasPrecos_Sync', 'Procedure de sincronização entre as tabelas B2CConsultaProdutosTabelasPrecos raw e trusted', 120, 1),
 
 /*Integrações*/
-/*Range 8250 - 8499 (B2C; ids reservados em docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
+/*Range 8250 - 8499 (B2C; ids reservados em src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
 (80, 8302, 'B2CConsultaProdutosCustos', 'Integração de dados da tabela B2CConsultaProdutosCustos, a cada 2 horas', 120, 2),
 (80, 8303, 'B2CConsultaProdutosDepositos', 'Integração de dados da tabela B2CConsultaProdutosDepositos, a cada 2 horas', 120, 2),
 (80, 8304, 'B2CConsultaProdutosDetalhes', 'Integração de dados da tabela B2CConsultaProdutosDetalhes, a cada 2 horas', 120, 2),

@@ -14,7 +14,7 @@ using Newtonsoft.Json.Linq;
 namespace Application.Totvs.Services
 {
     /// <summary>
-    /// catálogos da API Person (fase PE-1, docs/PLANO-TOTVS-METODOS-FALTANTES.md §3.2): classificações e tipos de e-mail, de
+    /// catálogos da API Person (fase PE-1, src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §3.2): classificações e tipos de e-mail, de
     /// telefone e de contato. Cada método faz as próprias chamadas à API; o comum vem do ITotvsService. Com maxChangeFilterDate
     /// na resposta, a janela sai do banco, como nas filiais (T9)
     /// </summary>

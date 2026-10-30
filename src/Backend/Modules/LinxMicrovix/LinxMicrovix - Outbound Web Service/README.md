@@ -43,7 +43,7 @@ O módulo **não escreve** no Microvix.
 
 ### Comportamentos da API que a integração trata
 A documentação não descreve tudo; o que segue foi conferido com chamadas reais (detalhes em
-[`docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md`](../../../../../docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md), §4.2 e §9):
+[`src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md`](src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md), §4.2 e §9):
 
 * **Os erros chegam com HTTP 200**, com `ResponseSuccess = False` e a mensagem em `<Message>`.
 * **Erro de parâmetro também vem com `ResponseSuccess = True`**: `<C />` vazio e a mensagem numa linha (visto no

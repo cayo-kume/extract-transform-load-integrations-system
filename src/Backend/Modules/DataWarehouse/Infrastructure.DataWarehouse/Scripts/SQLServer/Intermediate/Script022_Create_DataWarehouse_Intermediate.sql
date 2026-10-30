@@ -1,9 +1,9 @@
-/****** Camada intermediária da fase 1 (docs/datawarehouse, 4.1, 7.2, 7.3 e 10.3) ******/
+/****** Camada intermediária da fase 1 (src/Backend/Modules/DataWarehouse/docs, 4.1, 7.2, 7.3 e 10.3) ******/
 --views sobre a landing, no formato unificado (source_erp + source_key) e com as regras de negócio aplicadas. São views,
 --e não tabelas, porque a carga dos fatos é recarga completa (pergunta 8): nada precisa ser guardado no meio.
 --as linhas que a origem apagou (missing_since) ficam fora.
 
-/****** dw_intermediate.vw_OrderParts: canal, tipo e partes do número do pedido (docs/regras-prefixo-pedidos.md) ******/
+/****** dw_intermediate.vw_OrderParts: canal, tipo e partes do número do pedido (src/Backend/Modules/DataWarehouse/docs/regras-prefixo-pedidos.md) ******/
 --lida pelos fatos (ciclo horário) e direto pelas views da logística (ciclo curto, 10.3). Vale a primeira regra de
 --dw_reference.ChannelRules que casa; sem regra, canal e tipo ficam nulos (vw_Check_OrderTypeUnknown).
 --a série é a da filial emitente (raiz do CNPJ); na reposição de lojas o WMS de produção usa a do cliente (§2.1).

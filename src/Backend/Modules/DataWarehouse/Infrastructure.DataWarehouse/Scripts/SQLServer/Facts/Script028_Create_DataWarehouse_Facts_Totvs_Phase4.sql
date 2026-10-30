@@ -1,4 +1,4 @@
-/****** Fatos da fase 4 (docs/datawarehouse, 7.6) ******/
+/****** Fatos da fase 4 (src/Backend/Modules/DataWarehouse/docs, 7.6) ******/
 --compras, contas a pagar, comissões, recepção de loja e as chamadas às APIs dos SaaS. A chave de cada fato é a PK da origem.
 --Recarga completa (pergunta 8), menos FactApiRequest: o log das chamadas só cresce, então a carga é incremental pelo
 --loaded_at da landing (watermark source = datawarehouse, entity = FactApiRequest) e nada é apagado.

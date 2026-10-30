@@ -1,4 +1,4 @@
-/****** Fatos do legado Linx Microvix (docs/datawarehouse, 7.5 e 10.2) ******/
+/****** Fatos do legado Linx Microvix (src/Backend/Modules/DataWarehouse/docs, 7.5 e 10.2) ******/
 --o código de produto do Microvix é bigint: as degeneradas dos fatos passam de int para bigint.
 
 /****** dw_intermediate.sp_LinxLegacy_Load ******/

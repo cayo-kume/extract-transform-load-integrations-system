@@ -1,4 +1,4 @@
-/****** dw_intermediate do legado Linx Microvix (docs/datawarehouse, 7.3, 7.5 e pergunta 34) ******/
+/****** dw_intermediate do legado Linx Microvix (src/Backend/Modules/DataWarehouse/docs, 7.3, 7.5 e pergunta 34) ******/
 --três views, sem tabela: o de/para de produto, a linha de venda e a linha de pedido do e-commerce, no formato dos fatos da
 --fase 1. Quando o mesmo código de produto ou de cliente aparece em mais de um portal do Microvix, vale o de menor portal.
 

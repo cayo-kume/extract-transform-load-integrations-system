@@ -56,7 +56,7 @@ Cada schema tem uma função. A tabela diz o que ele guarda, o que não deve gua
 
 ### 4.2 Consumidores do DW: os módulos de saída
 
-Oto, Pagarme, Dootax, Mobsim e os módulos de logística (Jadlog, TotalExpress, Stone e FlashCourier) enviam pedidos, clientes e produtos aos SaaS contratados. Hoje cada um varre o banco de um jeito (`docs/regras-prefixo-pedidos.md`, §2 e §4, mostra a varredura de pedidos do WMS e do Oto, cada uma com a própria regra). A refatoração faz todos lerem do DW, pelo schema `dw_outbound`:
+Oto, Pagarme, Dootax, Mobsim e os módulos de logística (Jadlog, TotalExpress, Stone e FlashCourier) enviam pedidos, clientes e produtos aos SaaS contratados. Hoje cada um varre o banco de um jeito (`src/Backend/Modules/DataWarehouse/docs/regras-prefixo-pedidos.md`, §2 e §4, mostra a varredura de pedidos do WMS e do Oto, cada uma com a própria regra). A refatoração faz todos lerem do DW, pelo schema `dw_outbound`:
 
 - **Uma view por consumidor e entidade**, em PascalCase inglês: `dw_outbound.OtoOrders`, `OtoCustomers`, `WmsOrders`, `WmsReceipts`, `LogisticsShipments`, `PagarmePayments`, `MarketplaceProducts`. Cada view projeta `dw_intermediate` (pedidos e notas no formato unificado, já com canal, tipo e partes do número) e `datawarehouse` (dimensões), e devolve só as colunas que o SaaS recebe.
 - **Varredura incremental por watermark:** toda view expõe `updated_at` (o maior `integrated_or_updated_at` das linhas de origem que a compõem) e o módulo guarda o próprio watermark em `dw_control.Watermark`, com `source = <módulo>` e `entity = <view>`, como o DW faz com as origens, lendo e gravando por `dw_control.sp_Watermark_Get` e `sp_Watermark_Set`. A regra de 3 dias de sobreposição (5.2, regra 1) vale para eles também.

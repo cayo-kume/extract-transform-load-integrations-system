@@ -2,7 +2,7 @@
 
 Guia para adaptar o código C# do módulo Movidesk às tabelas de
 [MOVIDESK-MODELAGEM-TICKETS.md](MOVIDESK-MODELAGEM-TICKETS.md) (seção 8). Segue o padrão do AfterSale
-(`AfterSaleReversesService.GetReverses`) e o [padrão de cache](PADRAO-CACHE-INTEGRACOES.md).
+(`AfterSaleReversesService.GetReverses`) e o [padrão de cache](../../../../../../docs/PADRAO-CACHE-INTEGRACOES.md).
 
 > **Implementado em 19/10/2026.** O módulo e o host `Hangfire` compilam com 0 erros, e o host sobe com o endpoint
 > `GET MovideskJobs/Movidesk/Tickets` no Swagger. O `GetTickets` ainda **não foi executado** contra a API nem o banco.

@@ -14,7 +14,7 @@ VALUES
 (8043, 8543, 'sp_LinxSubClasses_Sync', 'Procedure de sincronização entre as tabelas LinxSubClasses raw e trusted', 1440, 1),
 
 /*Integrações*/
-/*Range 8000 - 8249 (ERP; ids reservados em docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
+/*Range 8000 - 8249 (ERP; ids reservados em src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
 (80, 8034, 'LinxSetores', 'Integração de dados da tabela LinxSetores, uma vez por dia', 1440, 2),
 (80, 8035, 'LinxLinhas', 'Integração de dados da tabela LinxLinhas, uma vez por dia', 1440, 2),
 (80, 8036, 'LinxMarcas', 'Integração de dados da tabela LinxMarcas, uma vez por dia', 1440, 2),

@@ -9,7 +9,7 @@ using System.Diagnostics;
 namespace Application.DataWarehouse.Services
 {
     /// <summary>
-    /// job do DW: chama as procedures na ordem da seção 10.1 do guia (docs/datawarehouse/07-operacao.md) e grava o resultado
+    /// job do DW: chama as procedures na ordem da seção 10.1 do guia (src/Backend/Modules/DataWarehouse/docs/07-operacao.md) e grava o resultado
     /// das checagens em dw_control.CheckResult. As procedures fazem o trabalho; aqui ficam só a ordem, o log e a trava
     /// </summary>
     public class DataWarehouseService : IDataWarehouseService

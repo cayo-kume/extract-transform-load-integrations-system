@@ -3524,7 +3524,7 @@ onda 5, a rodada em homologação e a liberação de cada grupo de escrita pelo 
 * **`Responsed Jsons`:** um exemplo para cada uma das 107 rotas novas, **montado pelo swagger oficial** (estrutura, tipos e enums com valores
   fictícios), já que as chamadas reais das fases não gravaram as respostas: `json-sent-to-api-end-point.json` (corpo), `parameters-sent-to-...`
   (query dos `GET` e `DELETE`) e `json-returned-by-...` (resposta). Os pares "um ou outro" aparecem com os dois lados; o README avisa.
-* **`docs/PROPOSTA-PADRONIZACAO-TOTVS.md`:** escrita no escopo (§2.4 deste plano): o escopo ampliado na abertura, a linha "Escritas" no
+* **`src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md`:** escrita no escopo (§2.4 deste plano): o escopo ampliado na abertura, a linha "Escritas" no
   inventário (§1), o `status_code`, a trava e a máscara no log (§5.5), as respostas das escritas no controller (§6.4) e as faixas dos jobs
   novos (§7).
 * **README:** a seção dos exemplos e as pendências, que ainda diziam "só a troca de estágio da parcela está implementada".

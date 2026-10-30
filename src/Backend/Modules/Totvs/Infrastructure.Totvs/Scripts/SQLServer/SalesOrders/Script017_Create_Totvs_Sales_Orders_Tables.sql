@@ -1,4 +1,4 @@
-/****** Pedidos de venda: tabelas untreated e totvs (docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.2.1 e 5.2.6) ******/
+/****** Pedidos de venda: tabelas untreated e totvs (src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.2.1 e 5.2.6) ******/
 --tamanhos do swagger da API Sales Order; objetos 1:1 como colunas do pai com o nome do objeto como prefixo (5.2.8).
 
 create table [untreated].TotvsSaleOrders (
@@ -545,7 +545,7 @@ alter table [totvs].TotvsSaleOrdersCounts add constraint [FK_TotvsSaleOrdersCoun
 
 go
 
-/****** Catálogos e sugestões de faturamento da API Sales Order: tabelas untreated e totvs (docs/PLANO-TOTVS-METODOS-FALTANTES.md §7.1 e §7.2, fase SO-1) ******/
+/****** Catálogos e sugestões de faturamento da API Sales Order: tabelas untreated e totvs (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §7.1 e §7.2, fase SO-1) ******/
 --tamanhos do swagger da API Sales Order; os sem tamanho seguem as outras tabelas. Lidos pela janela de alteração (T9)
 
 create table [untreated].TotvsSaleDiscountTypes (

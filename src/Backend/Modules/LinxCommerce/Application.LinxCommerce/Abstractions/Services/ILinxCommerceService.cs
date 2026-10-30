@@ -5,7 +5,7 @@ using Domain.LinxCommerce.Enums;
 namespace Application.LinxCommerce.Abstractions.Services
 {
     /// <summary>
-    /// o que é comum aos services do módulo (docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md 4.1): horário do lote, clientes, a busca
+    /// o que é comum aos services do módulo (src/Backend/Modules/LinxCommerce/docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md 4.1): horário do lote, clientes, a busca
     /// paginada e o Get de um registro, com a autenticação Basic do cliente
     /// </summary>
     public interface ILinxCommerceService
@@ -41,7 +41,7 @@ namespace Application.LinxCommerce.Abstractions.Services
 
         /// <summary>
         /// chamada sob demanda (POST v1/{route}): devolve o status, o DTO e o JSON sem os campos sensíveis, e registra a chamada em
-        /// linxcommerce.LinxCommerceRequests, inclusive quando ela falha (docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md 5.5)
+        /// linxcommerce.LinxCommerceRequests, inclusive quando ela falha (src/Backend/Modules/LinxCommerce/docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md 5.5)
         /// </summary>
         public Task<OnDemandResponse<T>> ReadOnDemand<T>(Company company, EnumJob job, string user_name, string route, object body, string key) where T : class;
     }

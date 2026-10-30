@@ -185,7 +185,7 @@ Seguem o padrão de [`docs/PADRAO-CACHE-INTEGRACOES.md`](../../../../../docs/PAD
 6. converte para entidades, faz o bulk insert nas tabelas `untreated` e chama as procedures de merge `movidesk.sp_<Tabela>_Sync`, do pai para os filhos;
 7. grava cada registro integrado (com o JSON recebido) em `auditing.Records`.
 
-**Tickets** com todas as listas expandidas numa chamada levam ~100 s por página e chegam a dar 504. Por isso o `GetTickets` trabalha em duas fases ([detalhes](../../../../../docs/IMPLEMENTACAO-MOVIDESK-GETTICKETS-EXPAND-EM-GRUPOS.md)):
+**Tickets** com todas as listas expandidas numa chamada levam ~100 s por página e chegam a dar 504. Por isso o `GetTickets` trabalha em duas fases ([detalhes](docs/IMPLEMENTACAO-MOVIDESK-GETTICKETS-EXPAND-EM-GRUPOS.md)):
 
 * **Fase 1:** lista só `id` e `lastUpdate` da janela (1.000 por chamada) e usa o cache para separar os tickets novos ou alterados.
 * **Fase 2:** busca os alterados em blocos de até 100, por faixa de ids, com o `$expand` dividido em **5 chamadas** por bloco (campos, ações, clientes e itens, históricos, campos adicionais).
@@ -222,7 +222,7 @@ Como a API indica "não encontrado":
 
 ### Fluxo da escrita (tickets, pessoas e serviços)
 
-Detalhes e decisões em [`docs/IMPLEMENTACAO-MOVIDESK-TICKETS-ESCRITA.md`](../../../../../docs/IMPLEMENTACAO-MOVIDESK-TICKETS-ESCRITA.md), [`docs/IMPLEMENTACAO-MOVIDESK-PESSOAS-ESCRITA.md`](../../../../../docs/IMPLEMENTACAO-MOVIDESK-PESSOAS-ESCRITA.md) e [`docs/IMPLEMENTACAO-MOVIDESK-SERVICES-ESCRITA.md`](../../../../../docs/IMPLEMENTACAO-MOVIDESK-SERVICES-ESCRITA.md). Cada service tem o seu fluxo comum (`SendTicket`, `SendPerson` e `SendService`), e os três devolvem o mesmo `Dtos/Writes/Result`.
+Detalhes e decisões em [`src/Backend/Modules/General/Movidesk/docs/IMPLEMENTACAO-MOVIDESK-TICKETS-ESCRITA.md`](docs/IMPLEMENTACAO-MOVIDESK-TICKETS-ESCRITA.md), [`src/Backend/Modules/General/Movidesk/docs/IMPLEMENTACAO-MOVIDESK-PESSOAS-ESCRITA.md`](docs/IMPLEMENTACAO-MOVIDESK-PESSOAS-ESCRITA.md) e [`src/Backend/Modules/General/Movidesk/docs/IMPLEMENTACAO-MOVIDESK-SERVICES-ESCRITA.md`](docs/IMPLEMENTACAO-MOVIDESK-SERVICES-ESCRITA.md). Cada service tem o seu fluxo comum (`SendTicket`, `SendPerson` e `SendService`), e os três devolvem o mesmo `Dtos/Writes/Result`.
 
 1. o controller valida o corpo (FluentValidation, `Validations/Writes/Tickets`, `Validations/Writes/People` e `Validations/Writes/Services`) e devolve **400** sem chamar a API, porque 3 erros seguidos bloqueiam a API por 60 s;
 2. o service abre um log com o job da rota, busca a empresa pelo CNPJ e chama a API pelo `IApiClient.SendAsync`, que devolve o status HTTP (PATCH, relacionamentos e DELETE respondem 200 sem corpo);

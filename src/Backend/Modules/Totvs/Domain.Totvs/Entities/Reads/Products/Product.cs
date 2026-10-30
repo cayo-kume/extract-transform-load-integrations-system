@@ -109,7 +109,7 @@ namespace Domain.Totvs.Entities.Reads.Products
             isBlocked = NullableConverters.ToNullableBoolean(dto.isBlocked);
             balanceValidationType = ConverterValidatorsExtensions.StringLengthValidation(dto.balanceValidationType, 60);
 
-            // repetidos violariam a PK de cada filha (chaves conferidas no teste real, docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.2.4)
+            // repetidos violariam a PK de cada filha (chaves conferidas no teste real, src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.2.4)
             barCodes.AddRange((dto.barCodes ?? []).Select(x => new Barcode(doc_company, integrated_or_updated_at, branchInfoCode, code, x)).GroupBy(x => x.code).Select(g => g.Last()));
             classifications.AddRange((dto.classifications ?? []).Select(x => new Classification(doc_company, integrated_or_updated_at, branchInfoCode, code, x)).GroupBy(x => x.typeCode).Select(g => g.Last()));
             additionalFields.AddRange((dto.additionalFields ?? []).Select(x => new AdditionalField(doc_company, integrated_or_updated_at, branchInfoCode, code, x)).GroupBy(x => x.code).Select(g => g.Last()));

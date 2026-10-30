@@ -1,4 +1,4 @@
-/****** Produtos: procedures de sincronização (docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.3) ******/
+/****** Produtos: procedures de sincronização (src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.3) ******/
 --As referências nunca são apagadas por este fluxo; filhas, cores e produtos que saíram de uma referência que veio no lote
 --são apagados, e as filhas que saíram de um produto que veio no lote também. A condição depende do mesmo
 --integrated_or_updated_at no lote inteiro e da ordem dos merges (a do TotvsProductsRepository).
@@ -32,7 +32,7 @@ exec dbo.sp_Create_Merge_Procedure @schema_name = 'totvs', @table_name = 'TotvsP
 
 go
 
-/****** Saldos: procedures de sincronização (docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.9) ******/
+/****** Saldos: procedures de sincronização (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.9) ******/
 --Nenhum saldo é apagado por este fluxo; o local que saiu do produto regravado é apagado.
 
 exec dbo.sp_Create_Merge_Procedure @schema_name = 'totvs', @table_name = 'TotvsBalances', @execute = 1;
@@ -40,7 +40,7 @@ exec dbo.sp_Create_Merge_Procedure @schema_name = 'totvs', @table_name = 'TotvsB
 
 go
 
-/****** Similares e lotes: procedures de sincronização (docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.2) ******/
+/****** Similares e lotes: procedures de sincronização (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.2) ******/
 --Produtos e lotes nunca são apagados por este fluxo; o similar, o item e o campo adicional que saíram do registro regravado são apagados.
 
 exec dbo.sp_Create_Merge_Procedure @schema_name = 'totvs', @table_name = 'TotvsProductsSimilar', @execute = 1;

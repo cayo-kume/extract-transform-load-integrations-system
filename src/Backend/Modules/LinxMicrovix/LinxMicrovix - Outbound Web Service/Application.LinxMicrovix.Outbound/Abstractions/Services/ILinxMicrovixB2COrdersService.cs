@@ -1,7 +1,7 @@
 namespace Application.LinxMicrovix.Outbound.Abstractions.Services
 {
     /// <summary>
-    /// leituras do WS B2C: Pedidos e notas do B2C. Os nomes dos métodos são os da API (docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §2.3)
+    /// leituras do WS B2C: Pedidos e notas do B2C. Os nomes dos métodos são os da API (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §2.3)
     /// </summary>
     public interface ILinxMicrovixB2COrdersService
     {

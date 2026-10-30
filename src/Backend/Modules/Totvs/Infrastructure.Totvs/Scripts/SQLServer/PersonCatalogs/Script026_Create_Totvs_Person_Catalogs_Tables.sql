@@ -1,4 +1,4 @@
-/****** Catálogos da API Person: tabelas untreated e totvs (docs/PLANO-TOTVS-METODOS-FALTANTES.md §3.2, fase PE-1) ******/
+/****** Catálogos da API Person: tabelas untreated e totvs (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §3.2, fase PE-1) ******/
 --tamanhos do swagger da API Person. Catálogos pequenos: lidos pela janela de alteração (T9), como as filiais; nada é apagado
 
 create table [untreated].TotvsPersonClassifications (

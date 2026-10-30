@@ -1,4 +1,4 @@
-/****** Serviços: tabelas untreated e movidesk (docs/IMPLEMENTACAO-MOVIDESK-SERVICES.md) ******/
+/****** Serviços: tabelas untreated e movidesk (src/Backend/Modules/General/Movidesk/docs/IMPLEMENTACAO-MOVIDESK-SERVICES.md) ******/
 
 create table [untreated].MovideskServices (
 	integrated_or_updated_at datetime,

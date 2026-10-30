@@ -1,4 +1,4 @@
-/****** Pessoas: tabelas untreated e movidesk (docs/MOVIDESK-MODELAGEM-PESSOAS.md) ******/
+/****** Pessoas: tabelas untreated e movidesk (src/Backend/Modules/General/Movidesk/docs/MOVIDESK-MODELAGEM-PESSOAS.md) ******/
 
 create table [untreated].MovideskPeople (
 	integrated_or_updated_at datetime,

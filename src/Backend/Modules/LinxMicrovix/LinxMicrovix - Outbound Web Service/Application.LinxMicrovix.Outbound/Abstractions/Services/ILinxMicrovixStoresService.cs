@@ -2,7 +2,7 @@ namespace Application.LinxMicrovix.Outbound.Abstractions.Services
 {
     /// <summary>
     /// leituras de lojas, usuários e catálogo do Web Service de Saída Padrão (ERP). Os nomes dos métodos são os da API
-    /// (docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §2.3)
+    /// (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §2.3)
     /// </summary>
     public interface ILinxMicrovixStoresService
     {

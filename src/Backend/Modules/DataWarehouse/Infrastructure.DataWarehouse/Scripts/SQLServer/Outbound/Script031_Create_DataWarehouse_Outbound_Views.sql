@@ -1,9 +1,9 @@
-/****** Views de saída da fase 1 (docs/datawarehouse, 4.2, 8.6 e 10.3) ******/
+/****** Views de saída da fase 1 (src/Backend/Modules/DataWarehouse/docs, 4.2, 8.6 e 10.3) ******/
 --o que os módulos de saída enviam aos SaaS. Cada view expõe updated_at: o módulo lê updated_at > watermark - 3 dias e
 --grava o próprio watermark por dw_control.sp_Watermark_Set (source = módulo, entity = view).
 --o número do pedido é montado aqui, no formato de cada consumidor, a partir das partes de vw_OrderParts.
 
-/****** dw_outbound.WmsOrders: pedidos para o WMS (formato MI-VD12345T; docs/regras-prefixo-pedidos.md, §2.1) ******/
+/****** dw_outbound.WmsOrders: pedidos para o WMS (formato MI-VD12345T; src/Backend/Modules/DataWarehouse/docs/regras-prefixo-pedidos.md, §2.1) ******/
 --código = customerOrderCode quando existe, senão orderCode, sempre com o sufixo T; e-commerce (ST) sai sem o tipo.
 --os tipos que o WMS recebe: e-commerce, venda direta, reposição de lojas e venda fácil.
 create or alter view [dw_outbound].WmsOrders

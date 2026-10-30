@@ -37,7 +37,7 @@ tabelas (jobs 5517–5524 e `Script005`). **Nada a inserir em banco.**
 
 ### 1.1 Interface
 
-[`Application.AfterSale/Abstractions/Handlers/Commands/IAfterSaleCommandHandler.cs`](../src/Backend/Modules/General/AfterSale/Application.AfterSale/Abstractions/Handlers/Commands/IAfterSaleCommandHandler.cs),
+[`Application.AfterSale/Abstractions/Handlers/Commands/IAfterSaleCommandHandler.cs`](../Application.AfterSale/Abstractions/Handlers/Commands/IAfterSaleCommandHandler.cs),
 após a linha 12 (`CreateGetSummarizedRefundsByIdsQuery`):
 
 ```csharp
@@ -47,7 +47,7 @@ após a linha 12 (`CreateGetSummarizedRefundsByIdsQuery`):
 
 ### 1.2 Implementação
 
-[`Application.AfterSale/Handlers/Commands/AfterSaleCommandHandler.cs`](../src/Backend/Modules/General/AfterSale/Application.AfterSale/Handlers/Commands/AfterSaleCommandHandler.cs),
+[`Application.AfterSale/Handlers/Commands/AfterSaleCommandHandler.cs`](../Application.AfterSale/Handlers/Commands/AfterSaleCommandHandler.cs),
 logo depois do `CreateGetSummarizedRefundsByIdsQuery` (começa na linha 82):
 
 ```csharp
@@ -89,7 +89,7 @@ logo depois do `CreateGetSummarizedRefundsByIdsQuery` (começa na linha 82):
 
 ### 2.1 Interface
 
-[`Domain.AfterSale/Abstractions/Repositorys/IAfterSaleRefundsRepository.cs`](../src/Backend/Modules/General/AfterSale/Domain.AfterSale/Abstractions/Repositorys/IAfterSaleRefundsRepository.cs),
+[`Domain.AfterSale/Abstractions/Repositorys/IAfterSaleRefundsRepository.cs`](../Domain.AfterSale/Abstractions/Repositorys/IAfterSaleRefundsRepository.cs),
 antes da linha 21 (`BulkInsertIntoAfterSaleRefunds`):
 
 ```csharp
@@ -99,7 +99,7 @@ antes da linha 21 (`BulkInsertIntoAfterSaleRefunds`):
 
 ### 2.2 Implementação
 
-[`Infrastructure.AfterSale/Repositorys/AfterSaleRefundsRepository.cs`](../src/Backend/Modules/General/AfterSale/Infrastructure.AfterSale/Repositorys/AfterSaleRefundsRepository.cs),
+[`Infrastructure.AfterSale/Repositorys/AfterSaleRefundsRepository.cs`](../Infrastructure.AfterSale/Repositorys/AfterSaleRefundsRepository.cs),
 antes do `BulkInsertIntoAfterSaleRefunds` (linha 18). Mesmo molde de
 `GetSummarizedReversesIdsForGetReverse` e `GetReversesByIds` do repositório de reversas:
 
@@ -147,7 +147,7 @@ antes do `BulkInsertIntoAfterSaleRefunds` (linha 18). Mesmo molde de
 
 ## Passo 3 — Interface do service
 
-[`Application.AfterSale/Abstractions/Services/IAfterSaleRefundsService.cs`](../src/Backend/Modules/General/AfterSale/Application.AfterSale/Abstractions/Services/IAfterSaleRefundsService.cs),
+[`Application.AfterSale/Abstractions/Services/IAfterSaleRefundsService.cs`](../Application.AfterSale/Abstractions/Services/IAfterSaleRefundsService.cs),
 após a linha 13 (`GetRefunds`):
 
 ```csharp
@@ -160,7 +160,7 @@ O `GetRefundById` (linha 14) continua como está.
 
 ## Passo 4 — Service
 
-[`Application.AfterSale/Services/AfterSaleRefundsService.cs`](../src/Backend/Modules/General/AfterSale/Application.AfterSale/Services/AfterSaleRefundsService.cs)
+[`Application.AfterSale/Services/AfterSaleRefundsService.cs`](../Application.AfterSale/Services/AfterSaleRefundsService.cs)
 
 ### 4.1 Chave de cache
 
@@ -344,7 +344,7 @@ de `BulkInsertIntoAfterSaleRefunds([refund], ...)`:
 
 ## Passo 5 — Endpoint
 
-[`Hosts/Hangfire/Controllers/General/AfterSaleController.cs`](../src/Backend/Hosts/Hangfire/Controllers/General/AfterSaleController.cs),
+[`Hosts/Hangfire/Controllers/General/AfterSaleController.cs`](../../../../Hosts/Hangfire/Controllers/General/AfterSaleController.cs),
 logo depois da ação `Refunds` (`[HttpGet("Refunds")]`, linha 113), no mesmo formato do
 `GET Reverse`:
 

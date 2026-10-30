@@ -14,7 +14,7 @@ VALUES
 (8318, 8759, 'sp_B2CConsultaNFeSituacao_Sync', 'Procedure de sincronização entre as tabelas B2CConsultaNFeSituacao raw e trusted', 3, 1),
 
 /*Integrações*/
-/*Range 8250 - 8499 (B2C; ids reservados em docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
+/*Range 8250 - 8499 (B2C; ids reservados em src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
 (80, 8309, 'B2CConsultaPedidos', 'Integração de dados da tabela B2CConsultaPedidos, a cada 3 minutos', 3, 2),
 (80, 8310, 'B2CConsultaPedidosItens', 'Integração de dados da tabela B2CConsultaPedidosItens, a cada 3 minutos', 3, 2),
 (80, 8311, 'B2CConsultaPedidosPlanos', 'Integração de dados da tabela B2CConsultaPedidosPlanos, a cada 3 minutos', 3, 2),

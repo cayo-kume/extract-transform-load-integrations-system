@@ -1,4 +1,4 @@
-/****** Schema do módulo (docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.0) ******/
+/****** Schema do módulo (src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.0) ******/
 
 if not exists (select 1 from sys.schemas where name = 'totvs')
     exec('create schema totvs');

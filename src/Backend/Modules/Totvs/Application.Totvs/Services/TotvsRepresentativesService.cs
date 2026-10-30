@@ -15,7 +15,7 @@ using System.Text;
 namespace Application.Totvs.Services
 {
     /// <summary>
-    /// representantes e recepções de venda da API Person (fase PE-2, docs/PLANO-TOTVS-METODOS-FALTANTES.md §3.1). Cada método
+    /// representantes e recepções de venda da API Person (fase PE-2, src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §3.1). Cada método
     /// faz as próprias chamadas à API; o comum (horário do lote, parâmetros, lojas, token e log sob demanda) vem do ITotvsService
     /// </summary>
     public class TotvsRepresentativesService : ITotvsRepresentativesService

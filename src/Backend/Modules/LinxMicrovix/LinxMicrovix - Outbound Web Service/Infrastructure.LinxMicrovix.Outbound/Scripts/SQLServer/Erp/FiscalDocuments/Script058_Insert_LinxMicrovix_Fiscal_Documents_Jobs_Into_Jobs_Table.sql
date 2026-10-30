@@ -16,7 +16,7 @@ VALUES
 (8094, 8594, 'sp_LinxSeries_Sync', 'Procedure de sincronização entre as tabelas LinxSeries raw e trusted', 3, 1),
 
 /*Integrações*/
-/*Range 8000 - 8249 (ERP; ids reservados em docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
+/*Range 8000 - 8249 (ERP; ids reservados em src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
 (80, 8083, 'LinxXMLDocumentos', 'Integração de dados da tabela LinxXMLDocumentos, a cada 3 minutos', 3, 2),
 (80, 8084, 'LinxNFeEvento', 'Integração de dados da tabela LinxNFeEvento, a cada 3 minutos', 3, 2),
 (80, 8085, 'LinxNfse', 'Integração de dados da tabela LinxNfse, a cada 3 minutos', 3, 2),

@@ -507,7 +507,7 @@ namespace Application.Totvs.Services
         }
 
         /// <summary>
-        /// troca o estágio de uma parcela (docs/PLANO-TOTVS-METODOS-FALTANTES.md §1.2 e §2.3). A Totvs valida a transição: a
+        /// troca o estágio de uma parcela (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §1.2 e §2.3). A Totvs valida a transição: a
         /// busca de duplicatas não devolve o estágio, então não há como conferir antes pelo banco (D4)
         /// </summary>
         public async Task<Domain.Totvs.Dtos.Writes.Result> PostDuplicatesInstallmentsStage(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.AccountsPayable.ChangeInstallmentStage body)
@@ -665,7 +665,7 @@ namespace Application.Totvs.Services
         }
 
         /// <summary>
-        /// inclui uma duplicata a pagar (docs/PLANO-TOTVS-METODOS-FALTANTES.md §2.1) pela base comum das escritas. Não idempotente: o mesmo
+        /// inclui uma duplicata a pagar (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §2.1) pela base comum das escritas. Não idempotente: o mesmo
         /// corpo em 10 minutos volta 409 (T5). A duplicata chega ao banco pelo próximo PostSearchDuplicates (D3)
         /// </summary>
         public async Task<Domain.Totvs.Dtos.Writes.Result> PostDuplicates(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.AccountsPayable.Duplicate body)
@@ -700,7 +700,7 @@ namespace Application.Totvs.Services
         }
 
         /// <summary>
-        /// agrupa parcelas numa duplicata nova (docs/PLANO-TOTVS-METODOS-FALTANTES.md §2.2) pela base comum das escritas. A loja do corpo e as
+        /// agrupa parcelas numa duplicata nova (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §2.2) pela base comum das escritas. A loja do corpo e as
         /// das parcelas agrupadas precisam ser da empresa; o mesmo corpo em 10 minutos volta 409 (T5). A resposta traz a chave gerada
         /// </summary>
         public async Task<Domain.Totvs.Dtos.Writes.Result> PostGroupDuplicates(string user_name, string doc_company, Domain.Totvs.Dtos.Writes.AccountsPayable.GroupDuplicate body)

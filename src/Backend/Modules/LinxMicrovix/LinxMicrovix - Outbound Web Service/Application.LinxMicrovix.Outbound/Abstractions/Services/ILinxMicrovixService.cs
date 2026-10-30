@@ -5,7 +5,7 @@ namespace Application.LinxMicrovix.Outbound.Abstractions.Services
 {
     /// <summary>
     /// métodos em comum usados pelos services do módulo; o envelope XML, a chamada à API, a repetição pelo timestamp e a
-    /// leitura da resposta ficam no próprio método de cada service (docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §4.1)
+    /// leitura da resposta ficam no próprio método de cada service (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §4.1)
     /// </summary>
     public interface ILinxMicrovixService
     {

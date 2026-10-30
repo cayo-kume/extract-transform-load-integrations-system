@@ -20,7 +20,7 @@ dá para distinguir "sem data" de uma data real.
 | Coluna | `datetime` sem `not null` |
 | Comparação de cache | `NullableConverters.ToNullableDateTime(x.changedDate) <= y.changedDate` |
 
-`NullableConverters.ToNullableDateTime` ([NullableConverters.cs](../src/Backend/Shared/Domain.Shared/Extensions/NullableConverters.cs)) já existe no `Domain.Shared`:
+`NullableConverters.ToNullableDateTime` ([NullableConverters.cs](../../../../Shared/Domain.Shared/Extensions/NullableConverters.cs)) já existe no `Domain.Shared`:
 
 ```csharp
 public static DateTime? ToNullableDateTime(string? value) =>

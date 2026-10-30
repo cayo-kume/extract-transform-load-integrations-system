@@ -1,4 +1,4 @@
-/****** Histórico das origens Totvs da fase 1 (docs/datawarehouse, seção 6 e 16, passo 2) ******/
+/****** Histórico das origens Totvs da fase 1 (src/Backend/Modules/DataWarehouse/docs, seção 6 e 16, passo 2) ******/
 --um histórico SCD2 e um snapshot por origem com history_frequency no catálogo: notas e pedidos a cada hora; lojas, pessoas,
 --empresas, referências, produtos, custos e preços uma vez por dia (pergunta 9, 7.4). A frequência é de quem chama o
 --snapshot (o job, 10.1); a procedure é a mesma.

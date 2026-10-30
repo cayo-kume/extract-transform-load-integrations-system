@@ -1,4 +1,4 @@
-/****** datamart.DailySales (docs/datawarehouse, 4.1 e 7.3) ******/
+/****** datamart.DailySales (src/Backend/Modules/DataWarehouse/docs, 4.1 e 7.3) ******/
 --venda por dia, loja e canal: faturado pela data da nota (FactSalesItem) e captado pela data do pedido (FactOrderItem).
 --só os tipos que são venda (is_sale): reposição de lojas e recebimento ficam fora (7.2). As ferramentas de BI só somam
 --estas colunas; nenhuma recalcula a regra (7.3).

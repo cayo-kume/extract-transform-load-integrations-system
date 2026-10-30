@@ -202,7 +202,7 @@ namespace Domain.AfterSale.Dtos.Writes.Refunds.ChangeTotalAmount.Request
 
 ### Passo 4 — Interface do service
 
-[`Application.AfterSale/Abstractions/Services/IAfterSaleRefundsService.cs`](../src/Backend/Modules/General/AfterSale/Application.AfterSale/Abstractions/Services/IAfterSaleRefundsService.cs),
+[`Application.AfterSale/Abstractions/Services/IAfterSaleRefundsService.cs`](../Application.AfterSale/Abstractions/Services/IAfterSaleRefundsService.cs),
 linhas 15–18 → substituir por:
 
 ```csharp
@@ -214,7 +214,7 @@ linhas 15–18 → substituir por:
 
 ### Passo 5 — Service
 
-[`Application.AfterSale/Services/AfterSaleRefundsService.cs`](../src/Backend/Modules/General/AfterSale/Application.AfterSale/Services/AfterSaleRefundsService.cs)
+[`Application.AfterSale/Services/AfterSaleRefundsService.cs`](../Application.AfterSale/Services/AfterSaleRefundsService.cs)
 — substituir os quatro stubs (linhas 619–651, do `/// <summary> cancel reverse` até o fim do
 `PostApproveRefundById`) por:
 
@@ -429,7 +429,7 @@ Diferenças em relação ao `SendReverseAction` (de resto, linha a linha igual):
 
 ### Passo 6 — Endpoints
 
-[`Hosts/Hangfire/Controllers/General/AfterSaleController.cs`](../src/Backend/Hosts/Hangfire/Controllers/General/AfterSaleController.cs)
+[`Hosts/Hangfire/Controllers/General/AfterSaleController.cs`](../../../../Hosts/Hangfire/Controllers/General/AfterSaleController.cs)
 — antes do `ToActionResult` (linha 243):
 
 ```csharp

@@ -1,4 +1,4 @@
-/****** Filiais: procedures de sincronização (docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.3) ******/
+/****** Filiais: procedures de sincronização (src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.3) ******/
 --As filiais nunca são apagadas por este fluxo; os endereços removidos de uma filial que veio no lote são apagados.
 --A condição depende da filial e dos endereços do mesmo lote terem o mesmo integrated_or_updated_at, e do merge de TotvsBranches rodar antes.
 declare @delete_by_branch nvarchar(max) = 'exists (select 1 from [totvs].TotvsBranches p where p.doc_company = target.doc_company and p.code = target.branchCode and p.integrated_or_updated_at > target.integrated_or_updated_at)';
@@ -8,7 +8,7 @@ exec dbo.sp_Create_Merge_Procedure @schema_name = 'totvs', @table_name = 'TotvsB
 
 go
 
-/****** Pessoas físicas e jurídicas: procedures de sincronização (docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.3) ******/
+/****** Pessoas físicas e jurídicas: procedures de sincronização (src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.3) ******/
 --As pessoas nunca são apagadas por este fluxo; as filhas que saíram de uma pessoa que veio no lote são apagadas.
 --A condição depende da pessoa e das filhas do mesmo lote terem o mesmo integrated_or_updated_at, e do merge da pessoa rodar antes.
 declare @delete_by_customer nvarchar(max) = 'exists (select 1 from [totvs].TotvsPeople p where p.doc_company = target.doc_company and p.code = target.personCode and p.integrated_or_updated_at > target.integrated_or_updated_at)';

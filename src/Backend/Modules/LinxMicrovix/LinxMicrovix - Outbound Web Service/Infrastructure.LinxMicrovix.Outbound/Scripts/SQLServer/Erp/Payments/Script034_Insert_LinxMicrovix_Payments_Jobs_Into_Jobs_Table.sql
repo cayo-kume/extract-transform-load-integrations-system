@@ -13,7 +13,7 @@ VALUES
 (8118, 8618, 'sp_LinxFechamentoCaixa_Sync', 'Procedure de sincronização entre as tabelas LinxFechamentoCaixa raw e trusted', 3, 1),
 
 /*Integrações*/
-/*Range 8000 - 8249 (ERP; ids reservados em docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
+/*Range 8000 - 8249 (ERP; ids reservados em src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
 (80, 8110, 'LinxMovimentoCartoes', 'Integração de dados da tabela LinxMovimentoCartoes, a cada 3 minutos', 3, 2),
 (80, 8111, 'LinxMovimentoPlanos', 'Integração de dados da tabela LinxMovimentoPlanos, a cada 3 minutos', 3, 2),
 (80, 8112, 'LinxPlanos', 'Integração de dados da tabela LinxPlanos, a cada 3 minutos', 3, 2),

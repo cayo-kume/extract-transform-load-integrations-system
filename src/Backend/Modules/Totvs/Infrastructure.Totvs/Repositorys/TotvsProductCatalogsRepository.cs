@@ -8,7 +8,7 @@ using System.Data;
 namespace Infrastructure.Totvs.Repositorys
 {
     /// <summary>
-    /// catálogos da API Product (fase PR-1, docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.1)
+    /// catálogos da API Product (fase PR-1, src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.1)
     /// </summary>
     public class TotvsProductCatalogsRepository : ITotvsProductCatalogsRepository
     {

@@ -20,7 +20,7 @@ VALUES
 (8078, 8578, 'sp_LinxNfeIbgeMunicipio_Sync', 'Procedure de sincronização entre as tabelas LinxNfeIbgeMunicipio raw e trusted', 1440, 1),
 
 /*Integrações*/
-/*Range 8000 - 8249 (ERP; ids reservados em docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
+/*Range 8000 - 8249 (ERP; ids reservados em src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
 (80, 8063, 'LinxNaturezaOperacao', 'Integração de dados da tabela LinxNaturezaOperacao, uma vez por dia', 1440, 2),
 (80, 8064, 'LinxCfopFiscal', 'Integração de dados da tabela LinxCfopFiscal, uma vez por dia', 1440, 2),
 (80, 8065, 'LinxCstIcmsFiscal', 'Integração de dados da tabela LinxCstIcmsFiscal, uma vez por dia', 1440, 2),

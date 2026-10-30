@@ -191,7 +191,7 @@ Arquivo: [Reverse.cs](../src/Backend/Modules/General/AfterSale/Domain.AfterSale/
 
 ## 2. Interface de queries — `Application.AfterSale/Abstractions/Handlers/Commands/IAfterSaleCommandHandler.cs`
 
-Arquivo: [IAfterSaleCommandHandler.cs](../src/Backend/Modules/General/AfterSale/Application.AfterSale/Abstractions/Handlers/Commands/IAfterSaleCommandHandler.cs)
+Arquivo: [IAfterSaleCommandHandler.cs](../Application.AfterSale/Abstractions/Handlers/Commands/IAfterSaleCommandHandler.cs)
 
 **Linhas 8, 9 e 11** — trocar:
 
@@ -215,7 +215,7 @@ por:
 
 ## 3. Queries — `Application.AfterSale/Handlers/Commands/AfterSaleCommandHandler.cs`
 
-Arquivo: [AfterSaleCommandHandler.cs](../src/Backend/Modules/General/AfterSale/Application.AfterSale/Handlers/Commands/AfterSaleCommandHandler.cs)
+Arquivo: [AfterSaleCommandHandler.cs](../Application.AfterSale/Handlers/Commands/AfterSaleCommandHandler.cs)
 
 ### 3.1 `CreateGetCourierAttributesByReverseIdQuery` — linhas 91 e 103
 
@@ -313,7 +313,7 @@ Linha 38:
 
 ## 4. Interface do repositório — `Domain.AfterSale/Abstractions/Repositorys/IAfterSaleReversesRepository.cs`
 
-Arquivo: [IAfterSaleReversesRepository.cs](../src/Backend/Modules/General/AfterSale/Domain.AfterSale/Abstractions/Repositorys/IAfterSaleReversesRepository.cs)
+Arquivo: [IAfterSaleReversesRepository.cs](../Domain.AfterSale/Abstractions/Repositorys/IAfterSaleReversesRepository.cs)
 
 **Linhas 24–25** — trocar:
 
@@ -357,7 +357,7 @@ por:
 
 ## 5. Repositório — `Infrastructure.AfterSale/Repositorys/AfterSaleReversesRepository.cs`
 
-Arquivo: [AfterSaleReversesRepository.cs](../src/Backend/Modules/General/AfterSale/Infrastructure.AfterSale/Repositorys/AfterSaleReversesRepository.cs)
+Arquivo: [AfterSaleReversesRepository.cs](../Infrastructure.AfterSale/Repositorys/AfterSaleReversesRepository.cs)
 
 ### 5.1 `GetCourierAttributesByReverseId` — linhas 201, 212 e 221
 
@@ -440,7 +440,7 @@ Passa a devolver `DOC_COMPANY` + `ID`, igual a `GetSummarizedReversesIdsForGetRe
 
 ## 6. Service — `Application.AfterSale/Services/AfterSaleReversesService.cs`
 
-Arquivo: [AfterSaleReversesService.cs](../src/Backend/Modules/General/AfterSale/Application.AfterSale/Services/AfterSaleReversesService.cs)
+Arquivo: [AfterSaleReversesService.cs](../Application.AfterSale/Services/AfterSaleReversesService.cs)
 
 Substitua **de baixo para cima**: primeiro 6.1 (`GetCourierAttributes`), depois 6.2
 (`GetReverse`) e por último 6.3 (`GetReverses`).

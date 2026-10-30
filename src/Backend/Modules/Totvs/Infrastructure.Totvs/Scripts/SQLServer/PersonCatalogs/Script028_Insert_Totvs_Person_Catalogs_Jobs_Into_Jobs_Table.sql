@@ -8,7 +8,7 @@ VALUES
 (13035, 13588, 'sp_TotvsContactTypes_Sync', 'Procedure de sincronização entre as tabelas TotvsContactTypes raw e trusted', 120, 1),
 
 /*Integrações*/
-/*Range 13000 - 13499 (Person: 13030 - 13069, docs/PLANO-TOTVS-METODOS-FALTANTES.md)*/
+/*Range 13000 - 13499 (Person: 13030 - 13069, src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md)*/
 (130, 13032, 'TotvsPersonGetClassifications', 'Integração do catálogo de classificações da API Person (TotvsPersonClassifications), a cada 2 horas', 120, 2),
 (130, 13033, 'TotvsGetEmailTypes', 'Integração do catálogo de tipos de e-mail da API Person (TotvsEmailTypes), a cada 2 horas', 120, 2),
 (130, 13034, 'TotvsGetPhoneTypes', 'Integração do catálogo de tipos de telefone da API Person (TotvsPhoneTypes), a cada 2 horas', 120, 2),

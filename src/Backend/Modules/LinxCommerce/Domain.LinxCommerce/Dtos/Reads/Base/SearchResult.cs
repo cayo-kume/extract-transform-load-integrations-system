@@ -2,7 +2,7 @@
 {
     /// <summary>
     /// envelope das buscas do Linx Commerce (Search*): a página e a lista. Só o SearchOrders do código antigo lia o Page;
-    /// nas outras buscas o mesmo envelope está a conferir (docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md 4.2, item 4)
+    /// nas outras buscas o mesmo envelope está a conferir (src/Backend/Modules/LinxCommerce/docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md 4.2, item 4)
     /// </summary>
     public class SearchResult<T>
     {

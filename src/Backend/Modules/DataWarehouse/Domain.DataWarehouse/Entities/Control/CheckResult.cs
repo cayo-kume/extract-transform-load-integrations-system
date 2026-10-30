@@ -1,7 +1,7 @@
 namespace Domain.DataWarehouse.Entities.Control
 {
     /// <summary>
-    /// resultado de uma checagem de qualidade, tabela dw_control.CheckResult (docs/datawarehouse, 9.2). Fica fora da
+    /// resultado de uma checagem de qualidade, tabela dw_control.CheckResult (src/Backend/Modules/DataWarehouse/docs, 9.2). Fica fora da
     /// limpeza de 15 dias do auditing (3.9)
     /// </summary>
     public class CheckResult

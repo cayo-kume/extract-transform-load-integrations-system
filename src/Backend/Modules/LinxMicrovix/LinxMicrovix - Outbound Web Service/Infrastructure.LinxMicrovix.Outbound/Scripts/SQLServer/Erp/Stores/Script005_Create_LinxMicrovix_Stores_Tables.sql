@@ -1,4 +1,4 @@
-/****** Lojas (LinxMicrovixStoresService): tabelas untreated e linxmicrovix (docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 5.2) ******/
+/****** Lojas (LinxMicrovixStoresService): tabelas untreated e linxmicrovix (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 5.2) ******/
 --colunas com o nome da resposta real da API (26/10/2026) e tamanhos da v274; respostas planas: uma tabela por método, sem filhas
 
 /*LinxGrupoLojas: lojas do grupo; sem timestamp: o grupo é relido inteiro a cada execução. Chave portal + empresa (uma loja vem sem CNPJ, testado)*/

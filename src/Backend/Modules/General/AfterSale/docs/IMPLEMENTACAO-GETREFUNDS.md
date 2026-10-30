@@ -4,7 +4,7 @@ Guia para aplicação **manual**. Nada foi alterado no código.
 
 Fonte: especificação OpenAPI 1.0.8 (`api.swaggerhub.com/apis/send42/public-api/1.0.8`) e a resposta
 real salva em
-[`Responsed Jsons/Refund/SearchRefunds/json-returned-by-api-end-point.json`](../src/Backend/Modules/General/AfterSale/Responsed%20Jsons/Refund/SearchRefunds/json-returned-by-api-end-point.json).
+[`Responsed Jsons/Refund/SearchRefunds/json-returned-by-api-end-point.json`](../Responsed%20Jsons/Refund/SearchRefunds/json-returned-by-api-end-point.json).
 
 O desenho é o mesmo do `AfterSaleReversesService.GetReverses`, que lê a lista resumida de
 reversas e grava em `aftersale.AfterSaleSummarizedReverses`. Aqui a lista resumida de reembolsos vai
@@ -68,7 +68,7 @@ Aplique de baixo para cima dentro de cada arquivo.
 
 ### Passo 1 — DTO `Root`: campos de erro
 
-Arquivo: [`Domain.AfterSale/Dtos/Reads/Refunds/SearchRefunds/Root.cs`](../src/Backend/Modules/General/AfterSale/Domain.AfterSale/Dtos/Reads/Refunds/SearchRefunds/Root.cs)
+Arquivo: [`Domain.AfterSale/Dtos/Reads/Refunds/SearchRefunds/Root.cs`](../Domain.AfterSale/Dtos/Reads/Refunds/SearchRefunds/Root.cs)
 
 Após a linha 20 (`public bool success { get; init; }`), adicionar — igual ao `Root` de
 `SearchReverses`:
@@ -85,7 +85,7 @@ Sem isso, quando a API devolve `success = false`, não há como gravar o motivo 
 
 ### Passo 2 — Entidade `Refund`: `doc_company` e os dois campos que faltam
 
-Arquivo: [`Domain.AfterSale/Entities/Reads/Refunds/SearchRefunds/Refund.cs`](../src/Backend/Modules/General/AfterSale/Domain.AfterSale/Entities/Reads/Refunds/SearchRefunds/Refund.cs)
+Arquivo: [`Domain.AfterSale/Entities/Reads/Refunds/SearchRefunds/Refund.cs`](../Domain.AfterSale/Entities/Reads/Refunds/SearchRefunds/Refund.cs)
 
 **Após a linha 81** (última atribuição, `refunded_shipping_type = ...`):
 
@@ -157,14 +157,14 @@ Mesma regra das reversas: o mesmo id pode existir nos dois CNPJs, então o CNPJ 
 
 ### Passo 4 — Query
 
-**Interface** [`Application.AfterSale/Abstractions/Handlers/Commands/IAfterSaleCommandHandler.cs`](../src/Backend/Modules/General/AfterSale/Application.AfterSale/Abstractions/Handlers/Commands/IAfterSaleCommandHandler.cs),
+**Interface** [`Application.AfterSale/Abstractions/Handlers/Commands/IAfterSaleCommandHandler.cs`](../Application.AfterSale/Abstractions/Handlers/Commands/IAfterSaleCommandHandler.cs),
 após a linha 11:
 
 ```csharp
         string CreateGetSummarizedRefundsByIdsQuery(string doc_company, List<string> refundsIds);
 ```
 
-**Implementação** [`Application.AfterSale/Handlers/Commands/AfterSaleCommandHandler.cs`](../src/Backend/Modules/General/AfterSale/Application.AfterSale/Handlers/Commands/AfterSaleCommandHandler.cs),
+**Implementação** [`Application.AfterSale/Handlers/Commands/AfterSaleCommandHandler.cs`](../Application.AfterSale/Handlers/Commands/AfterSaleCommandHandler.cs),
 logo após o `CreateGetSummarizedReversesByIdsQuery` (que termina na linha 80):
 
 ```csharp
@@ -186,7 +186,7 @@ logo após o `CreateGetSummarizedReversesByIdsQuery` (que termina na linha 80):
 
 ### Passo 5 — Repositório de reembolsos
 
-**Interface** [`Domain.AfterSale/Abstractions/Repositorys/IAfterSaleRefundsRepository.cs`](../src/Backend/Modules/General/AfterSale/Domain.AfterSale/Abstractions/Repositorys/IAfterSaleRefundsRepository.cs).
+**Interface** [`Domain.AfterSale/Abstractions/Repositorys/IAfterSaleRefundsRepository.cs`](../Domain.AfterSale/Abstractions/Repositorys/IAfterSaleRefundsRepository.cs).
 Hoje ela só tem stubs (`InsertIntoAfterSaleRefunds...`) sem parâmetro e sem uso. Após a linha 13,
 adicionar:
 
@@ -199,7 +199,7 @@ adicionar:
 > O `InsertIntoAfterSaleRefunds()` (linha 13) fica sem uso com isso. Pode ser removido daqui e da
 > implementação, ou mantido para o `GetRefundById` futuro.
 
-**Implementação** [`Infrastructure.AfterSale/Repositorys/AfterSaleRefundsRepository.cs`](../src/Backend/Modules/General/AfterSale/Infrastructure.AfterSale/Repositorys/AfterSaleRefundsRepository.cs).
+**Implementação** [`Infrastructure.AfterSale/Repositorys/AfterSaleRefundsRepository.cs`](../Infrastructure.AfterSale/Repositorys/AfterSaleRefundsRepository.cs).
 Os três métodos são cópias dos equivalentes de `AfterSaleReversesRepository`
 (`GetSummarizedReversesByIds`, `BulkInsertIntoAfterSaleSummarizedReverses` e
 `BulkInsertIntoAfterSaleErrors`), trocando entidade, query e tabela:
@@ -270,7 +270,7 @@ Os três métodos são cópias dos equivalentes de `AfterSaleReversesRepository`
 
 ### Passo 6 — Service
 
-Arquivo: [`Application.AfterSale/Services/AfterSaleRefundsService.cs`](../src/Backend/Modules/General/AfterSale/Application.AfterSale/Services/AfterSaleRefundsService.cs)
+Arquivo: [`Application.AfterSale/Services/AfterSaleRefundsService.cs`](../Application.AfterSale/Services/AfterSaleRefundsService.cs)
 
 **6.1 Usings** (topo do arquivo):
 
@@ -508,7 +508,7 @@ Diferenças em relação ao `GetReverses` (de resto, linha a linha igual):
 
 ### Passo 7 — Endpoint
 
-Arquivo: [`Hosts/Hangfire/Controllers/General/AfterSaleController.cs`](../src/Backend/Hosts/Hangfire/Controllers/General/AfterSaleController.cs)
+Arquivo: [`Hosts/Hangfire/Controllers/General/AfterSaleController.cs`](../../../../Hosts/Hangfire/Controllers/General/AfterSaleController.cs)
 
 Após a ação `CourierAttributes` (termina na linha 90), adicionar:
 

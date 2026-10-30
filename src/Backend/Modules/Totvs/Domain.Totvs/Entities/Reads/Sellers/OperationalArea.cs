@@ -5,7 +5,7 @@ namespace Domain.Totvs.Entities.Reads.Sellers
     /// <summary>
     /// região de atuação (GET seller/v2/operational-area), tabela totvs.TotvsOperationalAreas, com os estados, CEPs e cidades
     /// das outras três rotas. Sem filtro de data a API não preenche o maxChangeFilterDate: json_hash (SHA-256 da região agrupada
-    /// com as filhas) diz se ela mudou (T9 do docs/PLANO-TOTVS-METODOS-FALTANTES.md)
+    /// com as filhas) diz se ela mudou (T9 do src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md)
     /// </summary>
     public class OperationalArea
     {

@@ -1,4 +1,4 @@
-/****** Valores das tabelas de referência (docs/datawarehouse, 7.1, 8.7 e docs/regras-prefixo-pedidos.md) ******/
+/****** Valores das tabelas de referência (src/Backend/Modules/DataWarehouse/docs, 7.1, 8.7 e src/Backend/Modules/DataWarehouse/docs/regras-prefixo-pedidos.md) ******/
 
 --marcas pela raiz do CNPJ (regras-prefixo-pedidos.md, §1.1). Margaux (MX-) não tem raiz de CNPJ na regra de produção
 insert into [dw_reference].BrandSeries (cnpj_root, brand, order_series)

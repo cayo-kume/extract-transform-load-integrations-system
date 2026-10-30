@@ -1,4 +1,4 @@
-/****** Fatos da fase 1 (docs/datawarehouse, 7.2 e 8.4) ******/
+/****** Fatos da fase 1 (src/Backend/Modules/DataWarehouse/docs, 7.2 e 8.4) ******/
 --PK (source_erp, source_key): o grão da origem, sem que as colunas de um ERP precisem existir no outro.
 --carga por recarga completa (pergunta 8): MERGE da view inteira e exclusão das linhas que saíram dela (filha apagada
 --na origem). Chave que não casa com a dimensão grava o membro desconhecido (32 zeros).

@@ -1,4 +1,4 @@
-/****** Vendedores: tabelas untreated e totvs (docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.2.3) ******/
+/****** Vendedores: tabelas untreated e totvs (src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.2.3) ******/
 --o swagger da API Seller não traz tamanhos: valem os do código antigo
 
 create table [untreated].TotvsSellers (
@@ -79,7 +79,7 @@ alter table [totvs].TotvsSellersCustomers add constraint [FK_TotvsSellersCustome
 
 go
 
-/****** Regiões de atuação: tabelas untreated e totvs (docs/PLANO-TOTVS-METODOS-FALTANTES.md §4.1, fase SE-1) ******/
+/****** Regiões de atuação: tabelas untreated e totvs (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §4.1, fase SE-1) ******/
 --chave: doc_company + operationalAreaCode; as filhas (estados, CEPs e cidades) levam o código da região. Sem tamanho no swagger
 --para os textos. Sem maxChangeFilterDate: a leitura é inteira, e json_hash diz se a região mudou (T9).
 

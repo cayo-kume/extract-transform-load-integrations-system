@@ -7,7 +7,7 @@ VALUES
 (8154, 8654, 'sp_LinxPedidosCompraNumeroFornecedor_Sync', 'Procedure de sincronização entre as tabelas LinxPedidosCompraNumeroFornecedor raw e trusted', 3, 1),
 
 /*Integrações*/
-/*Range 8000 - 8249 (ERP; ids reservados em docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
+/*Range 8000 - 8249 (ERP; ids reservados em src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
 (80, 8152, 'LinxPedidosCompra', 'Integração de dados da tabela LinxPedidosCompra, a cada 3 minutos', 3, 2),
 (80, 8153, 'LinxPedidosCompraStatus', 'Integração de dados da tabela LinxPedidosCompraStatus, a cada 3 minutos', 3, 2),
 (80, 8154, 'LinxPedidosCompraNumeroFornecedor', 'Integração de dados da tabela LinxPedidosCompraNumeroFornecedor, a cada 3 minutos', 3, 2);

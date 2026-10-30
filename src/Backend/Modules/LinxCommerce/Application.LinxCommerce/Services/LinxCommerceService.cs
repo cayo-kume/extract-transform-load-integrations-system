@@ -19,7 +19,7 @@ namespace Application.LinxCommerce.Services
     /// métodos em comum usados pelos services do módulo. O ILoggerService é Scoped: dentro de uma requisição
     /// é a mesma instância do service que chamou, então as mensagens entram na execução aberta por ele.
     /// Nenhuma resposta real da API foi conferida (sem credenciais): paginação, envelope e erros seguem o código antigo
-    /// (docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md 4.2)
+    /// (src/Backend/Modules/LinxCommerce/docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md 4.2)
     /// </summary>
     public partial class LinxCommerceService : ILinxCommerceService
     {

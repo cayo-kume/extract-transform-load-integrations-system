@@ -8,7 +8,7 @@ using System.Data;
 namespace Infrastructure.Totvs.Repositorys
 {
     /// <summary>
-    /// preços e custos dos produtos, por loja (fase PR-2, docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.9)
+    /// preços e custos dos produtos, por loja (fase PR-2, src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.9)
     /// </summary>
     public class TotvsProductPricesRepository : ITotvsProductPricesRepository
     {

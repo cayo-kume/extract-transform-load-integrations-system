@@ -4,7 +4,7 @@ namespace Domain.Totvs.Entities.Reads.Products.Batches
 {
     /// <summary>
     /// lote de um produto numa loja, tabela totvs.TotvsBatches, com os itens e os campos adicionais. A resposta não tem data de
-    /// alteração: json_hash (SHA-256 do JSON do lote) diz se ele mudou (T9 do docs/PLANO-TOTVS-METODOS-FALTANTES.md)
+    /// alteração: json_hash (SHA-256 do JSON do lote) diz se ele mudou (T9 do src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md)
     /// </summary>
     public class Batch
     {

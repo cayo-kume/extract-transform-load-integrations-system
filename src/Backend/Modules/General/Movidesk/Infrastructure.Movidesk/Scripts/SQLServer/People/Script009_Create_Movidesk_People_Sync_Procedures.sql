@@ -1,4 +1,4 @@
---Filhas e netas apagam as linhas que não vieram no lote da pessoa (docs/MOVIDESK-MODELAGEM-PESSOAS.md seção 5).
+--Filhas e netas apagam as linhas que não vieram no lote da pessoa (src/Backend/Modules/General/Movidesk/docs/MOVIDESK-MODELAGEM-PESSOAS.md seção 5).
 --A condição depende da pessoa e das filhas do mesmo lote terem o mesmo integrated_or_updated_at, e do merge de MovideskPeople rodar antes.
 declare @delete_by_person nvarchar(max) = 'exists (select 1 from [movidesk].MovideskPeople p where p.doc_company = target.doc_company and p.id = target.personId and p.integrated_or_updated_at > target.integrated_or_updated_at)';
 

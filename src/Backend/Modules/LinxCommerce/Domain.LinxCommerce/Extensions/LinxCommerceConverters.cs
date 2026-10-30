@@ -8,7 +8,7 @@ namespace Domain.LinxCommerce.Extensions
     /// <summary>
     /// conversores do módulo que o Shared não tem. As datas do Linx Commerce vêm com fuso (ISO 8601) ou no formato do WCF
     /// (/Date(1700000000000-0300)/); as duas formas são aceitas, porque nenhuma resposta real foi conferida
-    /// (docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md 3.2)
+    /// (src/Backend/Modules/LinxCommerce/docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md 3.2)
     /// </summary>
     public static partial class LinxCommerceConverters
     {

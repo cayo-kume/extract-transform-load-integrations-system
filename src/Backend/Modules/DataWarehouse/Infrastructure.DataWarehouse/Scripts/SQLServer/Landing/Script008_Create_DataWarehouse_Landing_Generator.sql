@@ -1,4 +1,4 @@
-/****** dw_landing.sp_Create_Landing: gera a landing de uma origem do catálogo (docs/datawarehouse, 4.1, 5.2 e seção 6) ******/
+/****** dw_landing.sp_Create_Landing: gera a landing de uma origem do catálogo (src/Backend/Modules/DataWarehouse/docs, 4.1, 5.2 e seção 6) ******/
 --para a origem @source_schema.@source_table de dw_control.LandingSource, cria (se ainda não existir):
 --  dw_landing.<tabela>: as colunas da origem que o catálogo deixa (mesmos nomes e tipos, PK da origem), mais
 --      source_updated_at (data da alteração na origem), row_hash (SHA-256 das colunas de negócio),

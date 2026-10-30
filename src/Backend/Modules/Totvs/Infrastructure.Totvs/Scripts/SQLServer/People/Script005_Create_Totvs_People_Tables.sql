@@ -1,4 +1,4 @@
-/****** Filiais: tabelas untreated e totvs (docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.2.2) ******/
+/****** Filiais: tabelas untreated e totvs (src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.2.2) ******/
 --tamanhos do swagger da API Person (BranchListModel e ViewAddressModel)
 
 create table [untreated].TotvsBranches (
@@ -87,7 +87,7 @@ alter table [totvs].TotvsBranchesAddresses add constraint [FK_TotvsBranchesAddre
 
 go
 
-/****** Pessoas físicas e jurídicas: tabelas untreated e totvs (docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.2.5) ******/
+/****** Pessoas físicas e jurídicas: tabelas untreated e totvs (src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.2.5) ******/
 --tamanhos do swagger da API Person; objetos 1:1 (shippingCompany, preferences, individualAdditionals) como colunas do pai
 --com o nome do objeto como prefixo (5.2.8). As filhas usam a mesma estrutura nas duas pessoas.
 

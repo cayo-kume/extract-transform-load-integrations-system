@@ -289,7 +289,7 @@ namespace Domain.Totvs.Entities.Reads.People.Customers
             individualAdditionalsSocialName = ConverterValidatorsExtensions.StringLengthValidation(dto.individualAdditionals?.socialName, 70);
             individualAdditionalsHomeTown = NullableConverters.ToNullableInt32(dto.individualAdditionals?.homeTown);
 
-            // repetidos violariam a PK de cada filha (chaves conferidas numa amostra real, docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.2.5)
+            // repetidos violariam a PK de cada filha (chaves conferidas numa amostra real, src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.2.5)
             addresses.AddRange((dto.addresses ?? []).Select((x, i) => new Persons.Address(doc_company, integrated_or_updated_at, code, i + 1, x)).GroupBy(x => (x.addressTypeCode, x.sequenceCode)).Select(g => g.Last()));
             phones.AddRange((dto.phones ?? []).Select((x, i) => new Persons.Phone(doc_company, integrated_or_updated_at, code, i + 1, x)).GroupBy(x => x.sequence).Select(g => g.Last()));
             emails.AddRange((dto.emails ?? []).Select((x, i) => new Persons.Email(doc_company, integrated_or_updated_at, code, i + 1, x)).GroupBy(x => x.sequence).Select(g => g.Last()));

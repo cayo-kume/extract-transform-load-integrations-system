@@ -1,4 +1,4 @@
-/****** Schema do módulo (docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 5.0) ******/
+/****** Schema do módulo (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 5.0) ******/
 
 if not exists (select 1 from sys.schemas where name = 'linxmicrovix')
     exec('create schema linxmicrovix');

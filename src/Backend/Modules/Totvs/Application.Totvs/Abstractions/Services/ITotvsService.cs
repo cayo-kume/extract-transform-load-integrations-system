@@ -39,7 +39,7 @@ namespace Application.Totvs.Abstractions.Services
         public Task<int?> GetBranchCodeByCnpj(Company company, string cnpj);
 
         /// <summary>
-        /// escritas ligadas por configuração (T4 do docs/PLANO-TOTVS-METODOS-FALTANTES.md): Totvs:Writes:&lt;grupo&gt;:Enabled,
+        /// escritas ligadas por configuração (T4 do src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md): Totvs:Writes:&lt;grupo&gt;:Enabled,
         /// desligada quando a chave não existe
         /// </summary>
         public bool IsWriteEnabled(string group);
@@ -65,7 +65,7 @@ namespace Application.Totvs.Abstractions.Services
         /// então o filtro enviado vai em request_body)
         /// </summary>
         /// <summary>
-        /// leitura sob demanda sem persistência (T11, docs/PLANO-TOTVS-METODOS-FALTANTES.md §8.1): chama a Totvs com uma nova tentativa
+        /// leitura sob demanda sem persistência (T11, src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §8.1): chama a Totvs com uma nova tentativa
         /// (401, 429, 502/503/504), registra em totvs.TotvsRequests o corpo enviado e o recebido e devolve o JSON em Result.data. O 404 e o
         /// 400 com KeyNotFound, NotFound ou PathParamNotFound viram 404; com emptyListProperty, essa lista vazia também
         /// </summary>
@@ -82,7 +82,7 @@ namespace Application.Totvs.Abstractions.Services
         public Domain.Totvs.Dtos.Writes.Result BranchNotFound(string doc_company, string key, IEnumerable<string> branches);
 
         /// <summary>
-        /// escrita na Totvs (docs/PLANO-TOTVS-METODOS-FALTANTES.md §1.2): serializa o corpo sem os nulos, chama a rota com uma nova tentativa
+        /// escrita na Totvs (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §1.2): serializa o corpo sem os nulos, chama a rota com uma nova tentativa
         /// só em 401 e 429 (nunca em 5xx: a escrita pode ter sido feita), registra em totvs.TotvsRequests o corpo enviado, o recebido e o status
         /// e devolve o Result. Com repeatLock, recusa com 409 (sem chamar a API) a mesma rota + chave + corpo dos últimos 10 minutos que a Totvs
         /// aceitou ou que ficou sem resposta certa (T5). checkHint completa a mensagem quando não dá para saber se a Totvs gravou. Com loggedBody, é ele

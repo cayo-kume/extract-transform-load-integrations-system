@@ -1,7 +1,7 @@
 namespace Domain.DataWarehouse.Entities.Control
 {
     /// <summary>
-    /// origem do DW, tabela dw_control.LandingSource (docs/datawarehouse, 9.5): o job chama as procedures geradas para cada uma
+    /// origem do DW, tabela dw_control.LandingSource (src/Backend/Modules/DataWarehouse/docs, 9.5): o job chama as procedures geradas para cada uma
     /// </summary>
     public class LandingSource
     {

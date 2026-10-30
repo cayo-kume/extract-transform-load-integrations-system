@@ -8,9 +8,9 @@ namespace Hangfire.Controllers.Totvs
 {
     /// <summary>
     /// rotas que disparam as leituras da Totvs. Cada rota entra junto com o seu service, um por vez
-    /// (docs/PROPOSTA-PADRONIZACAO-TOTVS.md §6.4 e §9), com o verbo da documentação oficial: POST nas buscas, GET em Branches.
+    /// (src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md §6.4 e §9), com o verbo da documentação oficial: POST nas buscas, GET em Branches.
     /// As rotas sob demanda (fase 3) são GET por chave, com o cabeçalho X-User-Name, e ficam registradas em totvs.TotvsRequests.
-    /// As escritas (docs/PLANO-TOTVS-METODOS-FALTANTES.md) validam o corpo aqui, antes de chamar a Totvs, e só rodam com
+    /// As escritas (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md) validam o corpo aqui, antes de chamar a Totvs, e só rodam com
     /// Totvs:Writes:&lt;grupo&gt;:Enabled = true
     /// </summary>
     [ApiController]
@@ -2135,7 +2135,7 @@ namespace Hangfire.Controllers.Totvs
         }
 
         /// <summary>
-        /// resposta das leituras sem persistência (docs/PLANO-TOTVS-METODOS-FALTANTES.md §8.1, T11): 200 com o JSON ou o arquivo; 404 quando
+        /// resposta das leituras sem persistência (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §8.1, T11): 200 com o JSON ou o arquivo; 404 quando
         /// a Totvs não acha; 429 com Retry-After; 502 para 5xx, falta de resposta ou JSON inválido; 422 nos demais (empresa não cadastrada,
         /// 400 da Totvs)
         /// </summary>
@@ -2151,7 +2151,7 @@ namespace Hangfire.Controllers.Totvs
         }
 
         /// <summary>
-        /// resposta das escritas (docs/PLANO-TOTVS-METODOS-FALTANTES.md §1.2): 200 aceita; 429 com Retry-After; 409 na repetição recusada
+        /// resposta das escritas (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §1.2): 200 aceita; 429 com Retry-After; 409 na repetição recusada
         /// (T5); 502 quando a Totvs foi chamada e não respondeu ou respondeu 5xx (a escrita pode ter sido feita); 422 nos demais (empresa
         /// ou loja não cadastrada, escrita desligada, recusa da Totvs)
         /// </summary>

@@ -14,7 +14,7 @@ VALUES
 (8275, 8716, 'sp_B2CConsultaProdutosPalavrasChavePesquisa_Sync', 'Procedure de sincronização entre as tabelas B2CConsultaProdutosPalavrasChavePesquisa raw e trusted', 120, 1),
 
 /*Integrações*/
-/*Range 8250 - 8499 (B2C; ids reservados em docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
+/*Range 8250 - 8499 (B2C; ids reservados em src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
 (80, 8266, 'B2CConsultaProdutos', 'Integração de dados da tabela B2CConsultaProdutos, a cada 2 horas', 120, 2),
 (80, 8267, 'B2CConsultaProdutosAssociados', 'Integração de dados da tabela B2CConsultaProdutosAssociados, a cada 2 horas', 120, 2),
 (80, 8268, 'B2CConsultaProdutosCampanhas', 'Integração de dados da tabela B2CConsultaProdutosCampanhas, a cada 2 horas', 120, 2),

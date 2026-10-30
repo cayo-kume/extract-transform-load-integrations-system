@@ -26,11 +26,11 @@ VALUES
 (13000, 13526, 'sp_TotvsProductsConservationInstructionsItems_Sync', 'Procedure de sincronização entre as tabelas TotvsProductsConservationInstructionsItems raw e trusted', 120, 1),
 
 /*Integrações*/
-/*Range 13000 - 13499 (ids reservados em docs/PROPOSTA-PADRONIZACAO-TOTVS.md §7)*/
+/*Range 13000 - 13499 (ids reservados em src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md §7)*/
 (130, 13000, 'TotvsPostSearchReferences', 'Integração das referências e produtos das marcas (TotvsSkus e filhas), uma chamada por matriz, a cada 2 horas', 120, 2),
 
 /*Integrações sob demanda - executadas pelo TotvsController, não são recorrentes (IntervalTimeInMinutes = 0)*/
-/*Range 13000 - 13499 (ids reservados em docs/PROPOSTA-PADRONIZACAO-TOTVS.md §7; sob demanda a partir de 13010)*/
+/*Range 13000 - 13499 (ids reservados em src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md §7; sob demanda a partir de 13010)*/
 (130, 13014, 'TotvsGetProductByCode', 'Integração da referência de um produto por código (GET Products/{docCompany}/{code})', 0, 2),
 
 /*Procedures de Sincronizações*/
@@ -51,14 +51,14 @@ VALUES
 (13095, 13641, 'sp_TotvsBatchesItemsAdditionalFields_Sync', 'Procedure de sincronização entre as tabelas TotvsBatchesItemsAdditionalFields raw e trusted', 120, 1),
 
 /*Integrações*/
-/*Range 13000 - 13499 (Product: 13080 - 13099, docs/PLANO-TOTVS-METODOS-FALTANTES.md); 13096 reservado (omni-changed-balances, PR2)*/
+/*Range 13000 - 13499 (Product: 13080 - 13099, src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md); 13096 reservado (omni-changed-balances, PR2)*/
 (130, 13094, 'TotvsGetSimilar', 'Integração dos produtos similares (TotvsProductsSimilar e itens), a cada 2 horas', 120, 2),
 (130, 13095, 'TotvsPostSearchBatch', 'Integração dos lotes de todas as lojas (TotvsBatches, itens e campos adicionais), a cada 2 horas', 120, 2),
 (130, 13097, 'TotvsPostSearchProductCodes', 'Conferência diária dos produtos de cada marca com as referências gravadas; recupera as referências dos que faltam', 1440, 2),
 
 /*Leituras sob demanda da onda 2 - executadas pelo TotvsController, não são recorrentes (IntervalTimeInMinutes = 0). Só o
   GetPurchaseOrderByKey grava (como o GetSalesOrderByKey); as outras devolvem o JSON e registram a chamada em totvs.TotvsRequests
-  (docs/PLANO-TOTVS-METODOS-FALTANTES.md §8.1, T11)*/
+  (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §8.1, T11)*/
 /*Range 13000 - 13499 (Person: 13030 - 13069; Product: 13100 - 13105; Purchase Order: 13185; Sales Order: 13190 - 13249)*/
 (130, 13100, 'TotvsGetProducts', 'Produto por código, pack, barras, RFID ou item de lote (GET Products/{docCompany}/Codes/{code})', 0, 2),
 (130, 13101, 'TotvsGetKardexMovement', 'Kardex de um produto numa loja (GET Products/{docCompany}/Kardex)', 0, 2),
@@ -68,7 +68,7 @@ VALUES
 (130, 13105, 'TotvsGetCompositionGroupProduct', 'Composição por grupo (GET Products/{docCompany}/CompositionGroupProduct)', 0, 2),
 
 /*Escritas de cadastro da API Product - executadas pelo TotvsController, não são recorrentes (IntervalTimeInMinutes = 0); só rodam com
-  Totvs:Writes:Products:Enabled = true (docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.5, §5.6 e §5.8, fase PR-5)*/
+  Totvs:Writes:Products:Enabled = true (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.5, §5.6 e §5.8, fase PR-5)*/
 /*Range 13000 - 13499 (Product: 13100 - 13179)*/
 (130, 13120, 'TotvsPostBarcodes', 'Inclusão de códigos de barras de produtos (POST Products/{docCompany}/BarCodes)', 0, 2),
 (130, 13121, 'TotvsPostUpdateBarcodes', 'Alteração de códigos de barras de produtos (POST Products/{docCompany}/BarCodes/Update)', 0, 2),
@@ -81,7 +81,7 @@ VALUES
 
 /*Escritas de dados fiscais, preço, custo e promoção da API Product (efeito comercial e fiscal) - executadas pelo TotvsController, não são
   recorrentes (IntervalTimeInMinutes = 0); só rodam com Totvs:Writes:Products:Enabled = true e, nas de valor, com os códigos e lojas permitidos
-  (docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.6 e §5.7, fase PR-6)*/
+  (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.6 e §5.7, fase PR-6)*/
 /*Range 13000 - 13499 (Product: 13100 - 13179)*/
 (130, 13128, 'TotvsPutProducts', 'Dados fiscais e indicadores de um produto numa empresa (PUT Products/{docCompany}/{code}/{branchCode})', 0, 2),
 (130, 13129, 'TotvsPutBranchInfo', 'Indicadores dos produtos numa empresa (PUT Products/{docCompany}/BranchInfo/{branchCode})', 0, 2),

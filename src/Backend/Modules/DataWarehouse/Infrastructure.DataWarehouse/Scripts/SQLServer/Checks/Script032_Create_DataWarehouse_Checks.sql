@@ -1,4 +1,4 @@
-/****** Checagens da fase 1 (docs/datawarehouse, 9.2, 9.3 e seção 11) ******/
+/****** Checagens da fase 1 (src/Backend/Modules/DataWarehouse/docs, 9.2, 9.3 e seção 11) ******/
 --cada view devolve só as linhas com erro. O job conta as linhas, grava em dw_control.CheckResult e para se a checagem
 --bloqueia. O nome da view diz o que ela confere; o limite de cada uma está na seção 11.
 
@@ -11,7 +11,7 @@ select source_erp, source_key, count(*) as rows_found
 having count(*) > 1;
 GO
 
-/****** Checagens da fase 4 (docs/datawarehouse, 9.2 e seção 11) ******/
+/****** Checagens da fase 4 (src/Backend/Modules/DataWarehouse/docs, 9.2 e seção 11) ******/
 /****** datawarehouse.vw_Check_UnknownMembers: mais de 5% de membro desconhecido ******/
 --a das fases anteriores mais os fatos de compras, contas a pagar e recepção de loja. O cliente da recepção fica fora: quem
 --entra na loja e não compra nem sempre tem cadastro.
@@ -71,7 +71,7 @@ select i.doc_company, i.branchCode, i.invoiceSequence, i.invoiceDate, i.[sequenc
    and abs(isnull(i.netValue, 0) - isnull(p.products_net_value, 0)) > 0.01;
 GO
 
-/****** pedido sem tipo ou sem série reconhecidos (inconsistência 8 de docs/regras-prefixo-pedidos.md; alerta) ******/
+/****** pedido sem tipo ou sem série reconhecidos (inconsistência 8 de src/Backend/Modules/DataWarehouse/docs/regras-prefixo-pedidos.md; alerta) ******/
 create or alter view [datawarehouse].vw_Check_OrderTypeUnknown
 as
 select doc_company, branch_code, order_code, representative_name, operation_name, integration_code, order_series

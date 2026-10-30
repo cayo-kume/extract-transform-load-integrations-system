@@ -14,7 +14,7 @@ VALUES
 (8151, 8651, 'sp_LinxB2CStatus_Sync', 'Procedure de sincronização entre as tabelas LinxB2CStatus raw e trusted', 3, 1),
 
 /*Integrações*/
-/*Range 8000 - 8249 (ERP; ids reservados em docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
+/*Range 8000 - 8249 (ERP; ids reservados em src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
 (80, 8142, 'LinxPedidosVenda', 'Integração de dados da tabela LinxPedidosVenda, a cada 3 minutos', 3, 2),
 (80, 8143, 'LinxPlanosPedidoVenda', 'Integração de dados da tabela LinxPlanosPedidoVenda, a cada 3 minutos', 3, 2),
 (80, 8144, 'LinxPedidosVendaChecklistEntregaLocal', 'Integração de dados da tabela LinxPedidosVendaChecklistEntregaLocal, a cada 3 minutos', 3, 2),

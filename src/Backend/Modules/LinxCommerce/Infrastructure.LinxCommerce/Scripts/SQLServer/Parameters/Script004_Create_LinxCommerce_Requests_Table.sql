@@ -1,4 +1,4 @@
-/****** Log das chamadas sob demanda (docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md 5.5 e 9, fase 3) ******/
+/****** Log das chamadas sob demanda (src/Backend/Modules/LinxCommerce/docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md 5.5 e 9, fase 3) ******/
 --log das chamadas sob demanda feitas pelo LinxCommerceController na API do Linx Commerce (GET por chave, com X-User-Name).
 --tabela somente de inserção: gravada direto no schema linxcommerce, sem untreated nem procedure de merge (igual ao TotvsRequests).
 create table [linxcommerce].LinxCommerceRequests (

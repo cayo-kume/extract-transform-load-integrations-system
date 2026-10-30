@@ -14,7 +14,7 @@ VALUES
 (8062, 8562, 'sp_LinxMotivoDesconto_Sync', 'Procedure de sincronização entre as tabelas LinxMotivoDesconto raw e trusted', 120, 1),
 
 /*Integrações*/
-/*Range 8000 - 8249 (ERP; ids reservados em docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
+/*Range 8000 - 8249 (ERP; ids reservados em src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
 (80, 8053, 'LinxProdutosTabelas', 'Integração de dados da tabela LinxProdutosTabelas, a cada 2 horas', 120, 2),
 (80, 8054, 'LinxProdutosTabelasPrecos', 'Integração de dados da tabela LinxProdutosTabelasPrecos, a cada 2 horas', 120, 2),
 (80, 8055, 'LinxProdutosPromocoes', 'Integração de dados da tabela LinxProdutosPromocoes, a cada 2 horas', 120, 2),

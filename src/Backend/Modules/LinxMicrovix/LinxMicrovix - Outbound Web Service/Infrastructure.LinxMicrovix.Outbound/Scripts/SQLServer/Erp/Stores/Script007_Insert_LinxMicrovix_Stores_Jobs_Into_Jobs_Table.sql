@@ -10,7 +10,7 @@ VALUES
 (8005, 8505, 'sp_LinxEntrantes_Sync', 'Procedure de sincronização entre as tabelas LinxEntrantes raw e trusted', 120, 1),
 
 /*Integrações*/
-/*Range 8000 - 8249 (ERP; ids reservados em docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
+/*Range 8000 - 8249 (ERP; ids reservados em src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
 (80, 8000, 'LinxGrupoLojas', 'Integração das lojas do grupo (LinxGrupoLojas), a cada 2 horas', 120, 2),
 (80, 8001, 'LinxLojas', 'Integração do cadastro das lojas (LinxLojas), a cada 2 horas', 120, 2),
 (80, 8002, 'LinxLojasParametros', 'Integração dos parâmetros do portal por loja (LinxLojasParametros), a cada 2 horas', 120, 2),

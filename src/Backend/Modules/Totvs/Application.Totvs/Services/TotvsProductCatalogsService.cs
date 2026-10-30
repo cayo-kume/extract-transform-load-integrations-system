@@ -15,7 +15,7 @@ using System.Text;
 namespace Application.Totvs.Services
 {
     /// <summary>
-    /// catálogos da API Product (fase PR-1, docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.1, PR12): tipos e classificações de produto,
+    /// catálogos da API Product (fase PR-1, src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.1, PR12): tipos e classificações de produto,
     /// categorias, grades, unidades de medida, cores, tipos de campo adicional, agrupadores, itens de instrução, composições e
     /// cabeçalhos e escalas de tabela de preço. Cada método faz as próprias chamadas à API; o comum vem do ITotvsService. Com
     /// maxChangeFilterDate na resposta a janela sai do banco, como nas filiais; as cores, sem ele, são lidas inteiras com hash (T9)

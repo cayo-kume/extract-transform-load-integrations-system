@@ -1,4 +1,4 @@
-/****** Tabelas de referência (docs/datawarehouse, 4.1, 7.1, 7.5 e 8.7) ******/
+/****** Tabelas de referência (src/Backend/Modules/DataWarehouse/docs, 4.1, 7.1, 7.5 e 8.7) ******/
 --mantidas por script: os valores entram no Script070 e as mudanças em scripts novos. As tabelas ficam na camada base
 --porque as views da fase 1 (vw_OrderParts) as referenciam, e o SQL Server valida a view na criação.
 
@@ -9,7 +9,7 @@ create table [dw_reference].Holidays (
 constraint [pk_Holidays] primary key (holiday_date asc)
 );
 
---marca pela raiz do CNPJ da filial: série do número do pedido (docs/regras-prefixo-pedidos.md, §1.1) e DimBrand
+--marca pela raiz do CNPJ da filial: série do número do pedido (src/Backend/Modules/DataWarehouse/docs/regras-prefixo-pedidos.md, §1.1) e DimBrand
 create table [dw_reference].BrandSeries (
 	cnpj_root     char(8)        not null,
 	brand         nvarchar(60)   not null,
@@ -17,7 +17,7 @@ create table [dw_reference].BrandSeries (
 constraint [pk_BrandSeries] primary key (cnpj_root asc)
 );
 
---canal e tipo do pedido (docs/regras-prefixo-pedidos.md; pergunta 15). Vale a primeira regra que casa, pela prioridade:
+--canal e tipo do pedido (src/Backend/Modules/DataWarehouse/docs/regras-prefixo-pedidos.md; pergunta 15). Vale a primeira regra que casa, pela prioridade:
 --match_column é a coluna do pedido ou da nota comparada com like match_pattern (integrationCode: não nulo casa com '%').
 --is_sale = 0 para os tipos que não são venda (LJ reposição de lojas, RC recebimento): saem de captado e faturado (7.2)
 create table [dw_reference].ChannelRules (

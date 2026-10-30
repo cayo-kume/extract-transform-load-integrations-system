@@ -1,4 +1,4 @@
-/****** Pedidos de compra: tabelas untreated e totvs (docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.2.6) ******/
+/****** Pedidos de compra: tabelas untreated e totvs (src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.2.6) ******/
 --o swagger da API Purchase Order não traz tamanhos: os do código antigo, conferidos numa amostra real; objetos 1:1 como colunas do pai com o nome do objeto como prefixo (5.2.8).
 
 create table [untreated].TotvsPurchaseOrders (

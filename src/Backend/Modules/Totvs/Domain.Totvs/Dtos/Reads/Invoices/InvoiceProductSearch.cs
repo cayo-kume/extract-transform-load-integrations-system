@@ -2,7 +2,7 @@
 {
     /// <summary>
     /// consulta de produtos das notas (POST fiscal/v2/invoice-products/search, InvoiceProductSearchQuery), recebida pela rota e enviada à
-    /// Totvs como veio (docs/PLANO-TOTVS-METODOS-FALTANTES.md §8.9). Os enums vão pelo nome do swagger: o número dá 400 InvalidValue (testado)
+    /// Totvs como veio (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §8.9). Os enums vão pelo nome do swagger: o número dá 400 InvalidValue (testado)
     /// </summary>
     public class InvoiceProductSearch
     {

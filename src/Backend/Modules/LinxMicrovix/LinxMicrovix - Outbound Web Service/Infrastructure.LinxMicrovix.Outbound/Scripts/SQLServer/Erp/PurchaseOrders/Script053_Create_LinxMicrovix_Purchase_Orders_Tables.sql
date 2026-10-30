@@ -1,4 +1,4 @@
-/****** Pedidos de compra (LinxMicrovixPurchaseOrdersService): tabelas untreated e linxmicrovix (docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 5.2) ******/
+/****** Pedidos de compra (LinxMicrovixPurchaseOrdersService): tabelas untreated e linxmicrovix (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 5.2) ******/
 --colunas com o nome da resposta real da API (27/10/2026) e tamanhos da v274; respostas planas: uma tabela por método, sem filhas
 
 /*LinxPedidosCompra: informações de pedidos de compra de acordo com a loja pesquisada*/

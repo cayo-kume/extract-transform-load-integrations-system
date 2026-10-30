@@ -11,7 +11,7 @@ VALUES
 (7004, 7521, 'sp_LinxCommerceSkusParentRelations_Sync', 'Procedure de sincronização entre as tabelas LinxCommerceSkusParentRelations raw e trusted', 60, 1),
 
 /*Integrações*/
-/*Range 7000 - 7499 (ids reservados em docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md §7)*/
+/*Range 7000 - 7499 (ids reservados em src/Backend/Modules/LinxCommerce/docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md §7)*/
 (70, 7003, 'LinxCommerceSearchProduct', 'Integração dos produtos alterados (LinxCommerceProducts e filhas), a cada hora', 60, 2),
 (70, 7004, 'LinxCommerceSearchSKU', 'Integração dos SKUs alterados (LinxCommerceSkus e filhas), a cada hora', 60, 2),
 

@@ -50,7 +50,7 @@ registra todos e expõe as rotas. Este documento dá o panorama; os detalhes de 
 ```
 extract-transform-load-integrations-system/
 ├── etl-integrations-system.slnx          solução
-├── docs/                                 propostas, padrões e o guia do DW (docs/datawarehouse)
+├── docs/                                 documentos comuns a todos os módulos: padrões, migrator e revisão
 ├── src/
 │   ├── Backend/
 │   │   ├── Hosts/
@@ -77,6 +77,7 @@ Cada módulo segue o mesmo desenho:
 ├── Domain.<Módulo>/          DTOs (Dtos/Reads e Dtos/Writes), entidades, enums (EnumJob) e interfaces dos repositórios
 ├── Application.<Módulo>/     services (regras de leitura e escrita), command handlers (SQL) e validadores
 ├── Infrastructure.<Módulo>/  repositórios, injeção de dependência e Scripts/SQLServer (DbUp)
+├── docs/                     propostas, planos, implementações e modelagens do módulo
 └── README.md                 documentação do módulo
 ```
 
@@ -93,7 +94,7 @@ Registrados no host (`src/Backend/Hosts/Hangfire/Extensions/ServicesExtensions.c
 | **LinxCommerce** | Linx Commerce (e-commerce: pedidos, clientes, catálogo) | 70 | `linxcommerce` | `LinxCommerceJobs/LinxCommerce` | 12 | [README](src/Backend/Modules/LinxCommerce/README.md) |
 | **Movidesk** | Movidesk (help desk: tickets, pessoas, serviços) | 30 | `movidesk` | `MovideskJobs/Movidesk` | 16 | [README](src/Backend/Modules/General/Movidesk/README.md) |
 | **AfterSale** | Troque Fácil (pós-venda: reversas e reembolsos) | 50 | `aftersale` | `AfterSaleJobs/AfterSale` | 24 | [README](src/Backend/Modules/General/AfterSale/README.md) |
-| **DataWarehouse** | DW do NEWBLOOMERS (lê as tabelas dos módulos) | 90 | `dw_*`, `datawarehouse`, `datamart` | `DataWarehouseJobs/DataWarehouse` | 5 | [guia do DW](docs/datawarehouse/00-ordem-de-leitura.md) |
+| **DataWarehouse** | DW do NEWBLOOMERS (lê as tabelas dos módulos) | 90 | `dw_*`, `datawarehouse`, `datamart` | `DataWarehouseJobs/DataWarehouse` | 5 | [guia do DW](src/Backend/Modules/DataWarehouse/docs/00-ordem-de-leitura.md) |
 | **Shared** | Base comum: auditoria, `IApiClient`, `ISharedRepository` | — | `auditing`, `untreated`, `dbo` | — | — | — |
 
 ---
@@ -289,7 +290,7 @@ disparadas pelas rotas do `DataWarehouseController`:
 | `RunLinxLegacy` | 9004 | Carga única do legado Linx Microvix |
 
 O guia completo (premissas, arquitetura, modelo, DDL, procedures, operação, acesso e riscos) está em
-[docs/datawarehouse](docs/datawarehouse/00-ordem-de-leitura.md).
+[src/Backend/Modules/DataWarehouse/docs](src/Backend/Modules/DataWarehouse/docs/00-ordem-de-leitura.md), junto das regras de prefixo dos pedidos e do funcionamento do DW.
 
 ---
 
@@ -326,9 +327,9 @@ O cache segue [docs/PADRAO-CACHE-INTEGRACOES.md](docs/PADRAO-CACHE-INTEGRACOES.m
 | Documento | Conteúdo |
 |---|---|
 | README de cada módulo | Conceitos da API, services e métodos, fluxos, endpoints, scripts, jobs, configuração e pendências |
-| [docs/datawarehouse](docs/datawarehouse/00-ordem-de-leitura.md) | Guia do data warehouse |
+| [src/Backend/Modules/DataWarehouse/docs](src/Backend/Modules/DataWarehouse/docs/00-ordem-de-leitura.md) | Guia do data warehouse |
 | [docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md](docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md) | Padrão de código e scripts |
 | [docs/PADRAO-CACHE-INTEGRACOES.md](docs/PADRAO-CACHE-INTEGRACOES.md) | Padrão de cache |
 | [docs/MIGRATOR-CSX.md](docs/MIGRATOR-CSX.md) | Como rodar o `migrator.csx` |
 | [docs/REVISAO-PADRAO-CODIGO-E-SCRIPTS.md](docs/REVISAO-PADRAO-CODIGO-E-SCRIPTS.md) | Revisão dos módulos contra o padrão (todos os módulos do host e o Shared já seguem) |
-| `docs/PROPOSTA-*`, `docs/IMPLEMENTACAO-*`, `docs/PLANO-*` | Histórico das propostas e implementações de cada módulo |
+| `docs/` de cada módulo | Propostas, planos, implementações e modelagens do módulo (ex.: `src/Backend/Modules/Totvs/docs`); os do Shared ficam em `src/Backend/Shared/docs` |

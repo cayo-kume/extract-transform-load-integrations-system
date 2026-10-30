@@ -2,7 +2,7 @@
 {
     /// <summary>
     /// resultado das rotas de escrita e das leituras sem persistência, devolvido pelos services ao controller
-    /// (docs/PLANO-TOTVS-METODOS-FALTANTES.md §1.1 e §8.1, T11)
+    /// (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §1.1 e §8.1, T11)
     /// </summary>
     public class Result
     {

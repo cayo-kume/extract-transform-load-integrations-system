@@ -76,7 +76,7 @@ Aplique de baixo para cima dentro de cada arquivo.
 ### Passo 1 — DTOs
 
 Mesmo padrão do DTO de status de reversas
-([`Dtos/Reads/Reverses/Status/Status.cs`](../src/Backend/Modules/General/AfterSale/Domain.AfterSale/Dtos/Reads/Reverses/Status/Status.cs)).
+([`Dtos/Reads/Reverses/Status/Status.cs`](../Domain.AfterSale/Dtos/Reads/Reverses/Status/Status.cs)).
 
 **1.1** Em cada um dos 4 arquivos de item, adicionar no topo `using Newtonsoft.Json;` e, como
 última propriedade da classe:
@@ -89,12 +89,12 @@ Mesmo padrão do DTO de status de reversas
 
 | Arquivo | Após a linha |
 |---|---|
-| [`Status/Status.cs`](../src/Backend/Modules/General/AfterSale/Domain.AfterSale/Dtos/Reads/Refunds/Status/Status.cs) | 11 (`description`) |
-| [`Actions/Action.cs`](../src/Backend/Modules/General/AfterSale/Domain.AfterSale/Dtos/Reads/Refunds/Actions/Action.cs) | 11 (`description`) |
-| [`Banks/Bank.cs`](../src/Backend/Modules/General/AfterSale/Domain.AfterSale/Dtos/Reads/Refunds/Banks/Bank.cs) | 11 (`description`) |
-| [`Types/Type.cs`](../src/Backend/Modules/General/AfterSale/Domain.AfterSale/Dtos/Reads/Refunds/Types/Type.cs) | 10 (`description`) |
+| [`Status/Status.cs`](../Domain.AfterSale/Dtos/Reads/Refunds/Status/Status.cs) | 11 (`description`) |
+| [`Actions/Action.cs`](../Domain.AfterSale/Dtos/Reads/Refunds/Actions/Action.cs) | 11 (`description`) |
+| [`Banks/Bank.cs`](../Domain.AfterSale/Dtos/Reads/Refunds/Banks/Bank.cs) | 11 (`description`) |
+| [`Types/Type.cs`](../Domain.AfterSale/Dtos/Reads/Refunds/Types/Type.cs) | 10 (`description`) |
 
-**1.2** [`Actions/Root.cs`](../src/Backend/Modules/General/AfterSale/Domain.AfterSale/Dtos/Reads/Refunds/Actions/Root.cs),
+**1.2** [`Actions/Root.cs`](../Domain.AfterSale/Dtos/Reads/Refunds/Actions/Root.cs),
 linha 7: `public class Rootobject` → `public class Root` (é o único `Root` com outro nome; nada usa
 `Rootobject` hoje).
 
@@ -103,7 +103,7 @@ linha 7: `public class Rootobject` → `public class Root` (é o único `Root` c
 Mesmo padrão da entidade de status de reversas: `doc_company` como **segundo** parâmetro do
 construtor (`Status(statusDto, doc_company)`).
 
-**2.1** [`Entities/Reads/Refunds/Status/Status.cs`](../src/Backend/Modules/General/AfterSale/Domain.AfterSale/Entities/Reads/Refunds/Status/Status.cs)
+**2.1** [`Entities/Reads/Refunds/Status/Status.cs`](../Domain.AfterSale/Entities/Reads/Refunds/Status/Status.cs)
 — conteúdo da classe:
 
 ```csharp
@@ -131,11 +131,11 @@ construtor (`Status(statusDto, doc_company)`).
     }
 ```
 
-**2.2** [`Entities/Reads/Refunds/Actions/Action.cs`](../src/Backend/Modules/General/AfterSale/Domain.AfterSale/Entities/Reads/Refunds/Actions/Action.cs)
+**2.2** [`Entities/Reads/Refunds/Actions/Action.cs`](../Domain.AfterSale/Entities/Reads/Refunds/Actions/Action.cs)
 — igual ao 2.1, trocando `Status`→`Action`, `statusDto`→`actionDto` e o tipo do DTO para
 `Dtos.Reads.Refunds.Actions.Action`. O `using System.Xml.Linq;` (linha 5) não é usado e pode sair.
 
-**2.3** [`Entities/Reads/Refunds/Banks/Bank.cs`](../src/Backend/Modules/General/AfterSale/Domain.AfterSale/Entities/Reads/Refunds/Banks/Bank.cs)
+**2.3** [`Entities/Reads/Refunds/Banks/Bank.cs`](../Domain.AfterSale/Entities/Reads/Refunds/Banks/Bank.cs)
 — igual ao 2.1, trocando `Status`→`Bank`, `statusDto`→`bankDto`, DTO `Dtos.Reads.Refunds.Banks.Bank`
 e **`name` cortado em 250** (não 50):
 
@@ -146,7 +146,7 @@ e **`name` cortado em 250** (não 50):
 > Hoje a entidade corta `name` em 50, mas a coluna `AfterSaleBanksRefunds.name` e o
 > `BankValidation` usam 250. Nomes de banco longos estavam sendo truncados sem necessidade.
 
-**2.4** [`Entities/Reads/Refunds/Types/Type.cs`](../src/Backend/Modules/General/AfterSale/Domain.AfterSale/Entities/Reads/Refunds/Types/Type.cs)
+**2.4** [`Entities/Reads/Refunds/Types/Type.cs`](../Domain.AfterSale/Entities/Reads/Refunds/Types/Type.cs)
 — sem `id`, com `name` como chave:
 
 ```csharp
@@ -232,7 +232,7 @@ constraint [PK_AfterSaleBanksRefunds] primary key (
 
 ### Passo 4 — Queries
 
-**Interface** [`IAfterSaleCommandHandler.cs`](../src/Backend/Modules/General/AfterSale/Application.AfterSale/Abstractions/Handlers/Commands/IAfterSaleCommandHandler.cs),
+**Interface** [`IAfterSaleCommandHandler.cs`](../Application.AfterSale/Abstractions/Handlers/Commands/IAfterSaleCommandHandler.cs),
 após a linha 12 (`CreateGetSummarizedRefundsByIdsQuery`):
 
 ```csharp
@@ -242,7 +242,7 @@ após a linha 12 (`CreateGetSummarizedRefundsByIdsQuery`):
         string CreateGetTypesRefundsQuery(string doc_company);
 ```
 
-**Implementação** [`AfterSaleCommandHandler.cs`](../src/Backend/Modules/General/AfterSale/Application.AfterSale/Handlers/Commands/AfterSaleCommandHandler.cs),
+**Implementação** [`AfterSaleCommandHandler.cs`](../Application.AfterSale/Handlers/Commands/AfterSaleCommandHandler.cs),
 após o `CreateGetSummarizedRefundsByIdsQuery` (termina na linha 95):
 
 ```csharp
@@ -269,7 +269,7 @@ após o `CreateGetSummarizedRefundsByIdsQuery` (termina na linha 95):
 
 ### Passo 5 — Repositório de reembolsos
 
-**Interface** [`IAfterSaleRefundsRepository.cs`](../src/Backend/Modules/General/AfterSale/Domain.AfterSale/Abstractions/Repositorys/IAfterSaleRefundsRepository.cs)
+**Interface** [`IAfterSaleRefundsRepository.cs`](../Domain.AfterSale/Abstractions/Repositorys/IAfterSaleRefundsRepository.cs)
 — **substituir as linhas 9–12** (os stubs `InsertIntoAfterSaleRefunds{Status,Actions,Banks,Types}`,
 sem parâmetro e sem uso) por:
 
@@ -287,7 +287,7 @@ sem parâmetro e sem uso) por:
         public Task<bool> BulkInsertIntoAfterSaleTypesRefunds(List<Entities.Reads.Refunds.Types.Type> data, Guid? parentExecutionGUID);
 ```
 
-**Implementação** [`AfterSaleRefundsRepository.cs`](../src/Backend/Modules/General/AfterSale/Infrastructure.AfterSale/Repositorys/AfterSaleRefundsRepository.cs)
+**Implementação** [`AfterSaleRefundsRepository.cs`](../Infrastructure.AfterSale/Repositorys/AfterSaleRefundsRepository.cs)
 — **remover os 4 stubs** correspondentes (linhas 23–41: `InsertIntoAfterSaleRefundsActions`,
 `...Banks`, `...Status`, `...Types`) e adicionar, no mesmo molde de `GetStatus` /
 `BulkInsertIntoAfterSaleStatusReverses` do repositório de reversas:
@@ -327,7 +327,7 @@ Repetir os dois métodos para as outras três, trocando:
 
 ### Passo 6 — Service
 
-Arquivo: [`AfterSaleRefundsService.cs`](../src/Backend/Modules/General/AfterSale/Application.AfterSale/Services/AfterSaleRefundsService.cs)
+Arquivo: [`AfterSaleRefundsService.cs`](../Application.AfterSale/Services/AfterSaleRefundsService.cs)
 
 **6.1 Campos, chaves e construtor** — substituir o bloco das linhas 18–39 (dos campos até o fim do
 construtor) por:
@@ -593,7 +593,7 @@ chave** (não há `id`):
 
 ### Passo 7 — Endpoints
 
-Arquivo: [`AfterSaleController.cs`](../src/Backend/Hosts/Hangfire/Controllers/General/AfterSaleController.cs)
+Arquivo: [`AfterSaleController.cs`](../../../../Hosts/Hangfire/Controllers/General/AfterSaleController.cs)
 
 Após a ação `Refunds` (termina na linha 99):
 

@@ -1,4 +1,4 @@
-/****** datawarehouse.FactMonthlyStock: posição de estoque no fim de cada mês (docs/datawarehouse, 7.4 e 8.5) ******/
+/****** datawarehouse.FactMonthlyStock: posição de estoque no fim de cada mês (src/Backend/Modules/DataWarehouse/docs, 7.4 e 8.5) ******/
 --uma linha por data, loja, produto e depósito (stockCode). O depósito vendável é o que resta da pergunta 33: quando for
 --marcado em dw_reference.ValueCodes (value_type 'S'), os agregados filtram por ele; o fato guarda todos.
 create table [datawarehouse].FactMonthlyStock (

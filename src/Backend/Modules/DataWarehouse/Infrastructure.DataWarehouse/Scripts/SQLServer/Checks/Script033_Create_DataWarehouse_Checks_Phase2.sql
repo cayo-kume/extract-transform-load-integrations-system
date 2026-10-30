@@ -1,4 +1,4 @@
-/****** Checagens da fase 2 (docs/datawarehouse, 9.2 e seção 11) ******/
+/****** Checagens da fase 2 (src/Backend/Modules/DataWarehouse/docs, 9.2 e seção 11) ******/
 --uma checagem nova (estoque) e duas da fase 1 refeitas para cobrir as origens e o fato novos. Nenhuma bloqueia.
 
 /****** datawarehouse.vw_Check_StockNegativeOrNoCost: posição de estoque negativa ou sem custo ******/

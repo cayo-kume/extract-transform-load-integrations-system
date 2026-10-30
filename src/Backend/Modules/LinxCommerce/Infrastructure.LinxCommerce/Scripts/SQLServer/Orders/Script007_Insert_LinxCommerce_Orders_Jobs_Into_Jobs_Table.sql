@@ -16,7 +16,7 @@ VALUES
 (7001, 7511, 'sp_LinxCommerceOrderStatus_Sync', 'Procedure de sincronização entre as tabelas LinxCommerceOrderStatus raw e trusted', 1440, 1),
 
 /*Integrações*/
-/*Range 7000 - 7499 (ids reservados em docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md §7)*/
+/*Range 7000 - 7499 (ids reservados em src/Backend/Modules/LinxCommerce/docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md §7)*/
 (70, 7000, 'LinxCommerceSearchOrders', 'Integração dos pedidos alterados (LinxCommerceOrders e filhas), a cada 3 minutos', 3, 2),
 (70, 7001, 'LinxCommerceSearchOrderStatus', 'Integração dos status de pedido (LinxCommerceOrderStatus), uma vez por dia', 1440, 2),
 

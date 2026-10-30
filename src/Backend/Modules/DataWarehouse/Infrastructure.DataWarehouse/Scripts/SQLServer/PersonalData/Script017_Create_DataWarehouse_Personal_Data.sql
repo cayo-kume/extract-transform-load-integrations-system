@@ -1,4 +1,4 @@
-/****** Dado pessoal em claro (docs/datawarehouse, 5.2 regra 6, 8.3 e seção 12) ******/
+/****** Dado pessoal em claro (src/Backend/Modules/DataWarehouse/docs, 5.2 regra 6, 8.3 e seção 12) ******/
 --só a identificação atual, sem versões, lida direto das tabelas de origem (nunca da landing, que não tem essas colunas).
 --só o grupo dw_pii lê este schema; as únicas saídas são dw_outbound.OtoCustomers e dw_outbound.LogisticsShipments (4.2).
 

@@ -4,7 +4,7 @@ namespace Domain.LinxMicrovix.Outbound.Enums
     /// Qualquer alteração neste arquivo deve refletir no script de jobs do service correspondente
     /// (um por service, Script0NN_Insert_LinxMicrovix_*_Jobs_Into_Jobs_Table.sql). O nome de cada job é o nome do método da
     /// API, que também é o nome da tabela. Faixas (app 80): integrações ERP 8000 - 8249, integrações B2C 8250 - 8499,
-    /// procedures 8500 - 8999 (ids reservados em docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)
+    /// procedures 8500 - 8999 (ids reservados em src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)
     /// </summary>
     public enum EnumJob
     {

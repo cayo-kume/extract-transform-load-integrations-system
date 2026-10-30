@@ -14,7 +14,7 @@ VALUES
 (8015, 8515, 'sp_LinxRamosAtividade_Sync', 'Procedure de sincronização entre as tabelas LinxRamosAtividade raw e trusted', 120, 1),
 
 /*Integrações*/
-/*Range 8000 - 8249 (ERP; ids reservados em docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
+/*Range 8000 - 8249 (ERP; ids reservados em src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
 (80, 8006, 'LinxClientesFornec', 'Integração de dados da tabela LinxClientesFornec, a cada 2 horas', 120, 2),
 (80, 8007, 'LinxClientesFornecCamposAdicionais', 'Integração de dados da tabela LinxClientesFornecCamposAdicionais, a cada 2 horas', 120, 2),
 (80, 8008, 'LinxClientesFornecClasses', 'Integração de dados da tabela LinxClientesFornecClasses, a cada 2 horas', 120, 2),

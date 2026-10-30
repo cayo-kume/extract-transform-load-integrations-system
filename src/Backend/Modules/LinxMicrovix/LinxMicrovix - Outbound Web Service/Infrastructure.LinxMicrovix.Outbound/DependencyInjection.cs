@@ -27,7 +27,7 @@ namespace Infrastructure.LinxMicrovix.Outbound.DependencyInjection
                 client.Timeout = new TimeSpan(0, 20, 0);
             });
 
-            // os 29 services de leitura, na ordem da fase 2 (docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §9)
+            // os 29 services de leitura, na ordem da fase 2 (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §9)
             services.AddScoped<ILinxMicrovixService, LinxMicrovixService>();
             services.AddScoped<ILinxMicrovixRepository, LinxMicrovixRepository>();
 

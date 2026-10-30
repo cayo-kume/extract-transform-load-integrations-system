@@ -515,7 +515,7 @@ alter table [movidesk].MovideskTicketsAssets add constraint [FK_MovideskTicketsA
 alter table [movidesk].MovideskTicketsActions add constraint [FK_MovideskTicketsActions] foreign key (doc_company, ticketId) references [movidesk].MovideskTickets (doc_company, id);
 
 
-/****** Chaves estrangeiras: netas -> nível do meio (on delete cascade, ver docs/MOVIDESK-MODELAGEM-TICKETS.md 4.8) ******/
+/****** Chaves estrangeiras: netas -> nível do meio (on delete cascade, ver src/Backend/Modules/General/Movidesk/docs/MOVIDESK-MODELAGEM-TICKETS.md 4.8) ******/
 
 alter table [movidesk].MovideskTicketsCustomFieldValuesItems add constraint [FK_MovideskTicketsCustomFieldValuesItems] foreign key (doc_company, ticketId, customFieldId, customFieldRuleId, line) references [movidesk].MovideskTicketsCustomFieldValues (doc_company, ticketId, customFieldId, customFieldRuleId, line) on delete cascade;
 

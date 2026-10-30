@@ -16,7 +16,7 @@ VALUES
 (8106, 8606, 'sp_LinxRespostaVenda_Sync', 'Procedure de sincronização entre as tabelas LinxRespostaVenda raw e trusted', 3, 1),
 
 /*Integrações*/
-/*Range 8000 - 8249 (ERP; ids reservados em docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
+/*Range 8000 - 8249 (ERP; ids reservados em src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
 (80, 8095, 'LinxMovimento', 'Integração de dados da tabela LinxMovimento, a cada 3 minutos', 3, 2),
 (80, 8096, 'LinxMovimentoPrincipal', 'Integração de dados da tabela LinxMovimentoPrincipal, a cada 3 minutos', 3, 2),
 (80, 8097, 'LinxMovimentoExtensao', 'Integração de dados da tabela LinxMovimentoExtensao, a cada 3 minutos', 3, 2),

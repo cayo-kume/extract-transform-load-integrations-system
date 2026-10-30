@@ -15,7 +15,7 @@ VALUES
 (8165, 8665, 'sp_LinxPagamentoParcialDav_Sync', 'Procedure de sincronização entre as tabelas LinxPagamentoParcialDav raw e trusted', 3, 1),
 
 /*Integrações*/
-/*Range 8000 - 8249 (ERP; ids reservados em docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
+/*Range 8000 - 8249 (ERP; ids reservados em src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
 (80, 8155, 'LinxOrdensServico', 'Integração de dados da tabela LinxOrdensServico, a cada 3 minutos', 3, 2),
 (80, 8156, 'LinxOrdensServicoProdutos', 'Integração de dados da tabela LinxOrdensServicoProdutos, a cada 3 minutos', 3, 2),
 (80, 8157, 'LinxServicos', 'Integração de dados da tabela LinxServicos, a cada 3 minutos', 3, 2),

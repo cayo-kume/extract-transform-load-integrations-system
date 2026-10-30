@@ -1,4 +1,4 @@
-/****** dw_intermediate da fase 2: estoque, tickets e reembolsos (docs/datawarehouse, 7.4, 8.5 e seção 2) ******/
+/****** dw_intermediate da fase 2: estoque, tickets e reembolsos (src/Backend/Modules/DataWarehouse/docs, 7.4, 8.5 e seção 2) ******/
 --como na fase 1, são views e funções sem tabela: os fatos leem daqui. Nenhuma lê dw_personal_data: o vínculo com o cliente
 --(doc_hash) é feito na procedure do fato, que recebe o pepper.
 

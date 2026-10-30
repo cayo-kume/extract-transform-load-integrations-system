@@ -1892,7 +1892,7 @@ namespace Application.Totvs.Services
             return _listSomenteNovos.Count;
         }
 
-        // escritas da API Product (docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.5, §5.6 e §5.8) pela base comum: liga/desliga, empresa, lojas da
+        // escritas da API Product (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.5, §5.6 e §5.8) pela base comum: liga/desliga, empresa, lojas da
         // empresa e a chamada. Os registros chegam ao banco pelos jobs de catálogo e de referências
         private async Task<Domain.Totvs.Dtos.Writes.Result> WriteProducts(string user_name, string doc_company, EnumJob job, HttpMethod method, string route, string key, object body,
             string checkHint, bool repeatLock = false, IEnumerable<int>? branches = null)

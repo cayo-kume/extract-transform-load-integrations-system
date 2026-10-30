@@ -27,7 +27,7 @@ VALUES
 (13091, 13628, 'sp_TotvsPriceTableScalesItems_Sync', 'Procedure de sincronização entre as tabelas TotvsPriceTableScalesItems raw e trusted', 120, 1),
 
 /*Integrações*/
-/*Range 13000 - 13499 (Product: 13080 - 13099, docs/PLANO-TOTVS-METODOS-FALTANTES.md)*/
+/*Range 13000 - 13499 (Product: 13080 - 13099, src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md)*/
 (130, 13080, 'TotvsGetClassificationType', 'Integração do catálogo de tipos de classificação de produto da API Product (TotvsClassificationTypes), a cada 2 horas', 120, 2),
 (130, 13081, 'TotvsProductGetClassifications', 'Integração do catálogo de classificações de produto da API Product (TotvsProductClassifications), a cada 2 horas', 120, 2),
 (130, 13082, 'TotvsGetCategory', 'Integração do catálogo de categorias de produto da API Product (TotvsCategories), a cada 2 horas', 120, 2),
@@ -42,12 +42,12 @@ VALUES
 (130, 13091, 'TotvsGetPriceTableScales', 'Integração do catálogo de escalas de tabela de preço da API Product (TotvsPriceTableScales e filhas), a cada 2 horas', 120, 2),
 
 /*Escritas da API Product - executadas pelo TotvsController, não são recorrentes (IntervalTimeInMinutes = 0); só rodam com
-  Totvs:Writes:Products:Enabled = true (docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.5, fase PR-4)*/
+  Totvs:Writes:Products:Enabled = true (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.5, fase PR-4)*/
 /*Range 13000 - 13499 (Product: 13100 - 13179)*/
 (130, 13124, 'TotvsPostColors', 'Inclusão ou alteração de uma cor (POST Products/{docCompany}/Colors)', 0, 2),
 (130, 13126, 'TotvsPostGrids', 'Inclusão de uma grade de tamanhos (POST Products/{docCompany}/Grids)', 0, 2),
 
 /*Escritas de cadastro da API Product - executadas pelo TotvsController, não são recorrentes (IntervalTimeInMinutes = 0); só rodam com
-  Totvs:Writes:Products:Enabled = true (docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.5, §5.6 e §5.8, fase PR-5)*/
+  Totvs:Writes:Products:Enabled = true (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.5, §5.6 e §5.8, fase PR-5)*/
 /*Range 13000 - 13499 (Product: 13100 - 13179)*/
 (130, 13125, 'TotvsPostClassifications', 'Inclusão ou alteração de tipo de classificação de produto (POST Products/{docCompany}/Classifications)', 0, 2);

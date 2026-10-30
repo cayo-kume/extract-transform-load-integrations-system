@@ -3,7 +3,7 @@
     /// <summary>
     /// Qualquer alteração neste arquivo deve refletir no script de jobs do service correspondente
     /// (um por service, Script0NN_Insert_LinxCommerce_*_Jobs_Into_Jobs_Table.sql). Faixas: integrações 7000 - 7499,
-    /// procedures 7500 - 7999 (ids reservados em docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md §7)
+    /// procedures 7500 - 7999 (ids reservados em src/Backend/Modules/LinxCommerce/docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md §7)
     /// </summary>
     public enum EnumJob
     {

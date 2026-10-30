@@ -4,7 +4,7 @@ using FluentValidation;
 namespace Application.Totvs.Validations.Reads.Invoices
 {
     /// <summary>
-    /// valida a consulta de produtos das notas antes de chamar a Totvs (docs/PLANO-TOTVS-METODOS-FALTANTES.md §8.9, F10): lojas
+    /// valida a consulta de produtos das notas antes de chamar a Totvs (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §8.9, F10): lojas
     /// informadas, pelo menos um filtro restritivo (a Totvs exige produto, nota ou chave de acesso: 400 EnterAtLeastOne, testado), emissão
     /// com início e fim e até 31 dias, chaves com 44 dígitos e enums pelo nome do swagger. As lojas da empresa são conferidas no service
     /// </summary>

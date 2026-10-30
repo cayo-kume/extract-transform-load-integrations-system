@@ -19,7 +19,7 @@ Módulo do sistema de integrações (ETL) responsável por **ler** os dados da A
 * de forma **recorrente**, pelos jobs do Hangfire, com leitura incremental por data de alteração;
 * **sob demanda**, a partir de um sistema externo, buscando um único registro por chave e registrando quem pediu cada chamada.
 
-O módulo começou a **escrever** na Totvs (plano em [`docs/PLANO-TOTVS-METODOS-FALTANTES.md`](../../../../docs/PLANO-TOTVS-METODOS-FALTANTES.md)): por enquanto, só a troca de estágio de uma parcela a pagar. Toda escrita é validada antes de chamar a API, fica registrada em `totvs.TotvsRequests` e só roda com a chave de configuração do seu grupo ligada.
+O módulo começou a **escrever** na Totvs (plano em [`src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md`](docs/PLANO-TOTVS-METODOS-FALTANTES.md)): por enquanto, só a troca de estágio de uma parcela a pagar. Toda escrita é validada antes de chamar a API, fica registrada em `totvs.TotvsRequests` e só roda com a chave de configuração do seu grupo ligada.
 
 | Item | Valor |
 |---|---|
@@ -32,7 +32,7 @@ O módulo começou a **escrever** na Totvs (plano em [`docs/PLANO-TOTVS-METODOS-
 | Host | `src/Backend/Hosts/Hangfire` (controller `TotvsController`) |
 
 ### Comportamentos da API que a integração trata
-A documentação não descreve tudo; o que segue foi conferido com chamadas reais (detalhes em [`docs/PROPOSTA-PADRONIZACAO-TOTVS.md`](../../../../docs/PROPOSTA-PADRONIZACAO-TOTVS.md), §5.2):
+A documentação não descreve tudo; o que segue foi conferido com chamadas reais (detalhes em [`src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md`](docs/PROPOSTA-PADRONIZACAO-TOTVS.md), §5.2):
 
 * **Datas no horário local, sem fuso.** Um `Z` no filtro é ignorado; os filtros vão no formato `yyyy-MM-ddTHH:mm:ss`.
 * **`maxChangeFilterDate` só vem quando o filtro `change` é enviado.** As leituras por chave também mandam um `change`, para a data vir preenchida e o job não regravar o registro.
@@ -733,7 +733,7 @@ corpo de verdade leva só um, como o validador da rota exige.
 
 ## Pendências
 
-O plano de métodos faltantes (`docs/PLANO-TOTVS-METODOS-FALTANTES.md`) está implementado em todas as ondas; o que falta está no fim da §10 de
+O plano de métodos faltantes (`src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md`) está implementado em todas as ondas; o que falta está no fim da §10 de
 cada fase ("Não verificado"). Em resumo:
 
 * **Execução em banco e pelo host (plano, §10.44):** os scripts 001 a 079 rodaram num SQL Server local (DbUp, com a base compartilhada), as

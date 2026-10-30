@@ -4,7 +4,7 @@ namespace Domain.Totvs.Entities.Reads.Products.Similars
 {
     /// <summary>
     /// produto com os seus similares, tabela totvs.TotvsProductsSimilar. Sem data de alteração útil na resposta (lastChageDate vem
-    /// 0001-01-01): json_hash (SHA-256 do JSON do produto) diz se ele mudou (T9 do docs/PLANO-TOTVS-METODOS-FALTANTES.md), e
+    /// 0001-01-01): json_hash (SHA-256 do JSON do produto) diz se ele mudou (T9 do src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md), e
     /// changeWindowEnd (o fim da janela que o trouxe) é de onde a próxima leitura começa. A lista de
     /// produtos da mesma grade (similarGroupProductList) não é gravada: sai de TotvsSkusColorsProducts pela referência (§5.2)
     /// </summary>

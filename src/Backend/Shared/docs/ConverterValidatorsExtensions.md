@@ -1,6 +1,6 @@
 # ConverterValidatorsExtensions — Explicação Linha a Linha
 
-Arquivo: [ConverterValidatorsExtensions.cs](../src/Backend/Shared/Domain.Shared/Extensions/ConverterValidatorsExtensions.cs)
+Arquivo: [ConverterValidatorsExtensions.cs](../Domain.Shared/Extensions/ConverterValidatorsExtensions.cs)
 
 ## Visão Geral
 

@@ -18,13 +18,13 @@ VALUES
 (13093, 13636, 'sp_TotvsPromotions_Sync', 'Procedure de sincronização entre as tabelas TotvsPromotions raw e trusted', 120, 1),
 
 /*Integrações*/
-/*Range 13000 - 13499 (Product: 13080 - 13099, docs/PLANO-TOTVS-METODOS-FALTANTES.md)*/
+/*Range 13000 - 13499 (Product: 13080 - 13099, src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md)*/
 (130, 13092, 'TotvsPostSearchPriceTables', 'Integração dos itens das tabelas de preço vigentes, por produto, loja e escala (TotvsPriceTablesItems e preços), a cada 2 horas', 120, 2),
 (130, 13093, 'TotvsGetPromotion', 'Integração dos itens de promoção de todas as lojas (TotvsPromotions), a cada 2 horas', 120, 2),
 
 /*Escritas de dados fiscais, preço, custo e promoção da API Product (efeito comercial e fiscal) - executadas pelo TotvsController, não são
   recorrentes (IntervalTimeInMinutes = 0); só rodam com Totvs:Writes:Products:Enabled = true e, nas de valor, com os códigos e lojas permitidos
-  (docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.6 e §5.7, fase PR-6)*/
+  (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.6 e §5.7, fase PR-6)*/
 /*Range 13000 - 13499 (Product: 13100 - 13179)*/
 (130, 13131, 'TotvsPostCreateValues', 'Inclusão de preço ou custo (POST Products/{docCompany}/Values/Create)', 0, 2),
 (130, 13132, 'TotvsPostUpdateValues', 'Alteração de preço ou custo (POST Products/{docCompany}/Values/Update)', 0, 2),

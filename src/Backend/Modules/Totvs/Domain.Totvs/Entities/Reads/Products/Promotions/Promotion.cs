@@ -5,7 +5,7 @@ namespace Domain.Totvs.Entities.Reads.Products.Promotions
     /// <summary>
     /// item de promoção (promoção x produto) de uma loja, tabela totvs.TotvsPromotions. O filtro de data da rota dá erro na Totvs
     /// (ORA-00920, testado): a loja é lida inteira e json_hash (SHA-256 do JSON do item) diz se ele mudou (T9 do
-    /// docs/PLANO-TOTVS-METODOS-FALTANTES.md), o que pega também a troca de valor e de situação (PR15)
+    /// src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md), o que pega também a troca de valor e de situação (PR15)
     /// </summary>
     public class Promotion
     {

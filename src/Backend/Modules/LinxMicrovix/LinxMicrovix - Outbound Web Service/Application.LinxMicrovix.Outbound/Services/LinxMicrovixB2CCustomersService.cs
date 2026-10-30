@@ -15,7 +15,7 @@ namespace Application.LinxMicrovix.Outbound.Services
 {
     /// <summary>
     /// Clientes do B2C do WS B2C. Cada método faz as próprias chamadas à API (envelope XML, chamada, repetição pelo
-    /// timestamp e leitura da resposta), como no Totvs (docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §4.1 e §4.2)
+    /// timestamp e leitura da resposta), como no Totvs (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §4.1 e §4.2)
     /// </summary>
     public class LinxMicrovixB2CCustomersService : ILinxMicrovixB2CCustomersService
     {

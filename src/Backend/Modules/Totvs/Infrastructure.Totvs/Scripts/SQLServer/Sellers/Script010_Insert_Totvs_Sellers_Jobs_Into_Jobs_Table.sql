@@ -7,7 +7,7 @@ VALUES
 (13006, 13504, 'sp_TotvsSellersCustomers_Sync', 'Procedure de sincronização entre as tabelas TotvsSellersCustomers raw e trusted', 120, 1),
 
 /*Integrações*/
-/*Range 13000 - 13499 (ids reservados em docs/PROPOSTA-PADRONIZACAO-TOTVS.md §7)*/
+/*Range 13000 - 13499 (ids reservados em src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md §7)*/
 (130, 13006, 'TotvsPostSearchSellers', 'Integração dos vendedores de todas as lojas (TotvsSellers e filhas), a cada 2 horas', 120, 2),
 
 /*Procedures de Sincronizações*/
@@ -18,5 +18,5 @@ VALUES
 (13070, 13605, 'sp_TotvsOperationalAreasCities_Sync', 'Procedure de sincronização entre as tabelas TotvsOperationalAreasCities raw e trusted', 120, 1),
 
 /*Integrações*/
-/*Range 13000 - 13499 (Seller: 13070 - 13079, docs/PLANO-TOTVS-METODOS-FALTANTES.md)*/
+/*Range 13000 - 13499 (Seller: 13070 - 13079, src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md)*/
 (130, 13070, 'TotvsGetOperationalArea', 'Integração das regiões de atuação, com estados, CEPs e cidades (TotvsOperationalAreas e filhas), a cada 2 horas', 120, 2);

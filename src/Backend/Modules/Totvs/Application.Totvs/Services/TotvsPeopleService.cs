@@ -1325,7 +1325,7 @@ namespace Application.Totvs.Services
             return _listSomenteNovos.Count;
         }
 
-        // cliente PF e PJ (docs/PLANO-TOTVS-METODOS-FALTANTES.md §3.4.1): a mesma rota cria ou altera pelo documento, que é a chave em TotvsRequests;
+        // cliente PF e PJ (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §3.4.1): a mesma rota cria ou altera pelo documento, que é a chave em TotvsRequests;
         // a resposta traz o customerCode. Reenviar o mesmo corpo não muda nada, então não há trava. A loja de cadastro e as dos limites precisam
         // ser da empresa. O cliente chega ao banco pelo próximo job de PF/PJ (PE11)
         private async Task<Domain.Totvs.Dtos.Writes.Result> WriteCustomer(string user_name, string doc_company, EnumJob job, string route, string key, int branchInsertCode, IEnumerable<int>? limitBranches, object body)

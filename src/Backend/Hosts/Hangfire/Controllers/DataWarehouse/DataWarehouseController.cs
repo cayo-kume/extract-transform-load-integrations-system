@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Hangfire.Controllers.DataWarehouse
 {
     /// <summary>
-    /// rotas que disparam as cargas do DW (docs/datawarehouse, seção 10). Até os agendadores existirem, são o disparo manual
+    /// rotas que disparam as cargas do DW (src/Backend/Modules/DataWarehouse/docs, seção 10). Até os agendadores existirem, são o disparo manual
     /// e o ponto que o agendador vai chamar: horária (vendas e pedidos), diária (com os snapshots de cadastros, custos e preços)
     /// e o ciclo curto de 3 minutos da logística
     /// </summary>

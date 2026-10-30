@@ -17,7 +17,7 @@ VALUES
 (8134, 8634, 'sp_LinxDevolucaoRemanejoFabricaTipo_Sync', 'Procedure de sincronização entre as tabelas LinxDevolucaoRemanejoFabricaTipo raw e trusted', 3, 1),
 
 /*Integrações*/
-/*Range 8000 - 8249 (ERP; ids reservados em docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
+/*Range 8000 - 8249 (ERP; ids reservados em src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
 (80, 8122, 'LinxMovimentoTrocas', 'Integração de dados da tabela LinxMovimentoTrocas, a cada 3 minutos', 3, 2),
 (80, 8123, 'LinxMovimentoTrocafone', 'Integração de dados da tabela LinxMovimentoTrocafone, a cada 3 minutos', 3, 2),
 (80, 8124, 'LinxMovimentoDevolucoesItens', 'Integração de dados da tabela LinxMovimentoDevolucoesItens, a cada 3 minutos', 3, 2),

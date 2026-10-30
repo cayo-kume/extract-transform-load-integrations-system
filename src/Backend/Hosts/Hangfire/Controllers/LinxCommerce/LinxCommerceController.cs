@@ -6,7 +6,7 @@ namespace Hangfire.Controllers.LinxCommerce
     /// <summary>
     /// rotas que disparam as leituras do Linx Commerce. A classe é partial: cada service tem um arquivo próprio
     /// (LinxCommerceController.Orders.cs...), com uma rota POST por leitura recorrente e o nome do método como rota
-    /// (docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md §6.4 e §9). As rotas sob demanda (fase 3) são GET por chave, com o cabeçalho
+    /// (src/Backend/Modules/LinxCommerce/docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md §6.4 e §9). As rotas sob demanda (fase 3) são GET por chave, com o cabeçalho
     /// X-User-Name, e ficam registradas em linxcommerce.LinxCommerceRequests. Só leituras: as escritas do código antigo não
     /// foram migradas (4.6)
     /// </summary>

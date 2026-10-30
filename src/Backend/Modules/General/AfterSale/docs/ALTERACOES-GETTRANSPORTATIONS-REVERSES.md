@@ -49,7 +49,7 @@ por:
 
 ## 2. Service — `Application.AfterSale/Services/AfterSaleReversesService.cs`
 
-Arquivo: [AfterSaleReversesService.cs](../src/Backend/Modules/General/AfterSale/Application.AfterSale/Services/AfterSaleReversesService.cs)
+Arquivo: [AfterSaleReversesService.cs](../Application.AfterSale/Services/AfterSaleReversesService.cs)
 
 **Substituir as linhas 583–683** (do `/// <summary>` do `GetTransportations` até o `}` que fecha o
 método, imediatamente antes do `/// <summary>` de `PutReciveProductsById`) por:
@@ -165,7 +165,7 @@ método, imediatamente antes do `/// <summary>` de `PutReciveProductsById`) por:
 
 ## 3. Interface — `Domain.AfterSale/Abstractions/Repositorys/IAfterSaleReversesRepository.cs`
 
-Arquivo: [IAfterSaleReversesRepository.cs](../src/Backend/Modules/General/AfterSale/Domain.AfterSale/Abstractions/Repositorys/IAfterSaleReversesRepository.cs)
+Arquivo: [IAfterSaleReversesRepository.cs](../Domain.AfterSale/Abstractions/Repositorys/IAfterSaleReversesRepository.cs)
 
 A implementação (`AfterSaleReversesRepository.cs`, linha 179) e o service já usam
 `GetTransportations(string doc_company)`, mas a interface não tem o parâmetro — hoje não compila.
@@ -188,7 +188,7 @@ por:
 
 ## 4. Query — `Application.AfterSale/Handlers/Commands/AfterSaleCommandHandler.cs`
 
-Arquivo: [AfterSaleCommandHandler.cs](../src/Backend/Modules/General/AfterSale/Application.AfterSale/Handlers/Commands/AfterSaleCommandHandler.cs)
+Arquivo: [AfterSaleCommandHandler.cs](../Application.AfterSale/Handlers/Commands/AfterSaleCommandHandler.cs)
 
 **Linhas 89–90** — trocar a query sem filtro pela filtrada. Assim como no `GetStatus`, a versão
 comentada tem um `--` antes do `WHERE`; remova-o. Inclua também `DOC_COMPANY` no `SELECT` para a

@@ -1,4 +1,4 @@
-/****** dw_history.sp_Create_History: gera o histórico SCD2 de uma landing (docs/datawarehouse, 3.3 e seção 6) ******/
+/****** dw_history.sp_Create_History: gera o histórico SCD2 de uma landing (src/Backend/Modules/DataWarehouse/docs, 3.3 e seção 6) ******/
 --para dw_landing.@table_name, cria (se ainda não existir):
 --  dw_history.<tabela>: PK da origem + valid_from, valid_to, is_current, row_hash e as colunas de negócio da landing
 --      (as mesmas que entram no hash). Um índice único filtrado garante uma só versão vigente por chave;

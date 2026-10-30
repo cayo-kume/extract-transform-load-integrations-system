@@ -15,7 +15,7 @@ VALUES
 (13030, 13599, 'sp_TotvsRepresentativesParameters_Sync', 'Procedure de sincronização entre as tabelas TotvsRepresentativesParameters raw e trusted', 120, 1),
 
 /*Integrações*/
-/*Range 13000 - 13499 (Person: 13030 - 13069, docs/PLANO-TOTVS-METODOS-FALTANTES.md)*/
+/*Range 13000 - 13499 (Person: 13030 - 13069, src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md)*/
 (130, 13030, 'TotvsPostSearchRepresentatives', 'Integração dos representantes (TotvsRepresentatives e filhas), a cada 2 horas', 120, 2),
 
 /*Sob demanda - executada pelo TotvsController, não é recorrente (IntervalTimeInMinutes = 0)*/
@@ -27,10 +27,10 @@ VALUES
 (13031, 13601, 'sp_TotvsReceptionSalesDocumentTypes_Sync', 'Procedure de sincronização entre as tabelas TotvsReceptionSalesDocumentTypes raw e trusted', 3, 1),
 
 /*Integrações*/
-/*Range 13000 - 13499 (Person: 13030 - 13069, docs/PLANO-TOTVS-METODOS-FALTANTES.md)*/
+/*Range 13000 - 13499 (Person: 13030 - 13069, src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md)*/
 (130, 13031, 'TotvsGetSearchReceptionSale', 'Integração das recepções de venda (TotvsReceptionSales e formas de pagamento), a cada 3 minutos', 3, 2),
 
 /*Escritas de cadastro da API Person - executadas pelo TotvsController, não são recorrentes (IntervalTimeInMinutes = 0); só rodam com
-  Totvs:Writes:People:Enabled = true (docs/PLANO-TOTVS-METODOS-FALTANTES.md §3.4.1 a §3.4.3, fase PE-6)*/
+  Totvs:Writes:People:Enabled = true (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §3.4.1 a §3.4.3, fase PE-6)*/
 /*Range 13000 - 13499 (Person: 13030 - 13069)*/
 (130, 13042, 'TotvsPostCustomerRepresentatives', 'Vínculo de clientes a um representante (POST CustomerRepresentatives/{docCompany})', 0, 2);

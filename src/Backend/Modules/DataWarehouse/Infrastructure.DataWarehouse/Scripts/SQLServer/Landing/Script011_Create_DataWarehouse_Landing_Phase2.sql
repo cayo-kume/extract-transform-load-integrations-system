@@ -1,4 +1,4 @@
-/****** Landing das origens da fase 2 (docs/datawarehouse, seção 2, 5.1 e 7.4) ******/
+/****** Landing das origens da fase 2 (src/Backend/Modules/DataWarehouse/docs, seção 2, 5.1 e 7.4) ******/
 --saldos da Totvs, tickets do Movidesk e reembolsos e reversas do AfterSale. Mesmo catálogo e mesmo gerador da fase 1 (9.5).
 --dado pessoal identificador fica fora (5.2, regra 6):
 --  - MovideskTickets: assunto e cópia (texto livre e e-mails do cliente);

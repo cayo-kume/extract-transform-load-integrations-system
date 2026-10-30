@@ -1,4 +1,4 @@
-/****** Dado pessoal do legado Linx Microvix (docs/datawarehouse, 5.2 regra 6, 7.5 e 8.3) ******/
+/****** Dado pessoal do legado Linx Microvix (src/Backend/Modules/DataWarehouse/docs, 5.2 regra 6, 7.5 e 8.3) ******/
 /****** dw_personal_data.sp_LinxCustomer_Load ******/
 --MERGE dos clientes de linxmicrovix.LinxClientesFornec em dw_personal_data.DimCustomerIdentified, com source_erp =
 --linxmicrovix, alterados desde o watermark menos 3 dias. Fornecedores e transportadores (tipo_cadastro F e T) ficam fora.

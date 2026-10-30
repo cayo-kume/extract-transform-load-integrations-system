@@ -3,7 +3,7 @@
 namespace Domain.Totvs.Entities.Reads.Products.Catalogs
 {
     /// <summary>
-    /// cor do cadastro mestre (POST product/v2/colors/search, ColorDataResponseModel), tabela totvs.TotvsColors e filhas. Sem maxChangeFilterDate na resposta: json_hash (SHA-256 do JSON da cor) diz se ela mudou (T9 do docs/PLANO-TOTVS-METODOS-FALTANTES.md)
+    /// cor do cadastro mestre (POST product/v2/colors/search, ColorDataResponseModel), tabela totvs.TotvsColors e filhas. Sem maxChangeFilterDate na resposta: json_hash (SHA-256 do JSON da cor) diz se ela mudou (T9 do src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md)
     /// </summary>
     public class Color
     {

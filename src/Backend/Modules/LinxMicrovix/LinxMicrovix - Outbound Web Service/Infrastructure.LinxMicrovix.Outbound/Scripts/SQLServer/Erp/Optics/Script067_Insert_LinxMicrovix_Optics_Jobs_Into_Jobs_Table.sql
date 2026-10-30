@@ -14,7 +14,7 @@ VALUES
 (8175, 8675, 'sp_LinxComponenteFormulaDav_Sync', 'Procedure de sincronização entre as tabelas LinxComponenteFormulaDav raw e trusted', 120, 1),
 
 /*Integrações*/
-/*Range 8000 - 8249 (ERP; ids reservados em docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
+/*Range 8000 - 8249 (ERP; ids reservados em src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
 (80, 8166, 'LinxProdutosOpticosTipo', 'Integração de dados da tabela LinxProdutosOpticosTipo, a cada 2 horas', 120, 2),
 (80, 8167, 'LinxProdutosOpticosTipoAro', 'Integração de dados da tabela LinxProdutosOpticosTipoAro, a cada 2 horas', 120, 2),
 (80, 8168, 'LinxProdutosOpticosFormatoAro', 'Integração de dados da tabela LinxProdutosOpticosFormatoAro, a cada 2 horas', 120, 2),

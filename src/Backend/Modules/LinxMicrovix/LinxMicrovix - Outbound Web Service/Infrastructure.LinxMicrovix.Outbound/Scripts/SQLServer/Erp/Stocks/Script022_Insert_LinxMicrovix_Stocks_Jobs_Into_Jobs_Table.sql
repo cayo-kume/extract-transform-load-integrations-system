@@ -13,7 +13,7 @@ VALUES
 (8052, 8552, 'sp_LinxBalancosSecoes_Sync', 'Procedure de sincronização entre as tabelas LinxBalancosSecoes raw e trusted', 120, 1),
 
 /*Integrações*/
-/*Range 8000 - 8249 (ERP; ids reservados em docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
+/*Range 8000 - 8249 (ERP; ids reservados em src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
 (80, 8044, 'LinxProdutosDetalhes', 'Integração de dados da tabela LinxProdutosDetalhes, a cada 2 horas', 120, 2),
 (80, 8045, 'LinxProdutosDetalhesSimplificado', 'Integração de dados da tabela LinxProdutosDetalhesSimplificado, a cada 2 horas', 120, 2),
 (80, 8046, 'LinxProdutosDetalhesDepositos', 'Integração de dados da tabela LinxProdutosDetalhesDepositos, a cada 2 horas', 120, 2),

@@ -17,7 +17,7 @@ namespace Application.Totvs.Handlers.Commands
 
         public string CreateGetBranchCodesQuery(string doc_company)
         {
-            // lojas da holding usadas no branchCodeList das buscas (docs/PROPOSTA-PADRONIZACAO-TOTVS.md 4.2)
+            // lojas da holding usadas no branchCodeList das buscas (src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md 4.2)
             return @$"SELECT CODE
                      FROM TOTVS.TOTVSBRANCHES
                      WHERE DOC_COMPANY = '{doc_company}'

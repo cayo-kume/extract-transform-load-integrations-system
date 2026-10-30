@@ -4,7 +4,7 @@ namespace Domain.Totvs.Entities.Reads.Products
 {
     /// <summary>
     /// referência (POST product/v2/references/search), tabela totvs.TotvsSkus. branchInfoCode é a empresa base da
-    /// chamada (matriz da marca): os campos por empresa vêm dela, então entra na chave (docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.2.4)
+    /// chamada (matriz da marca): os campos por empresa vêm dela, então entra na chave (src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.2.4)
     /// </summary>
     public class Sku
     {

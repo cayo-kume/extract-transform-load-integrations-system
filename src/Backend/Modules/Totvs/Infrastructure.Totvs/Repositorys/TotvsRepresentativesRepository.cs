@@ -9,7 +9,7 @@ using System.Data;
 namespace Infrastructure.Totvs.Repositorys
 {
     /// <summary>
-    /// representantes e recepções de venda (fase PE-2, docs/PLANO-TOTVS-METODOS-FALTANTES.md §3.1)
+    /// representantes e recepções de venda (fase PE-2, src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §3.1)
     /// </summary>
     public class TotvsRepresentativesRepository : ITotvsRepresentativesRepository
     {

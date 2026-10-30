@@ -15,11 +15,11 @@ VALUES
 (13005, 13569, 'sp_TotvsSaleOrdersCounts_Sync', 'Procedure de sincronização entre as tabelas TotvsSaleOrdersCounts raw e trusted', 3, 1),
 
 /*Integrações*/
-/*Range 13000 - 13499 (ids reservados em docs/PROPOSTA-PADRONIZACAO-TOTVS.md §7)*/
+/*Range 13000 - 13499 (ids reservados em src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md §7)*/
 (130, 13005, 'TotvsPostSearchSalesOrders', 'Integração dos pedidos de venda de todas as lojas (TotvsSaleOrders e filhas), a cada 3 minutos', 3, 2),
 
 /*Integrações sob demanda - executadas pelo TotvsController, não são recorrentes (IntervalTimeInMinutes = 0)*/
-/*Range 13000 - 13499 (ids reservados em docs/PROPOSTA-PADRONIZACAO-TOTVS.md §7; sob demanda a partir de 13010)*/
+/*Range 13000 - 13499 (ids reservados em src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md §7; sob demanda a partir de 13010)*/
 (130, 13012, 'TotvsGetSalesOrderByKey', 'Integração de um pedido de venda por loja e número (GET SalesOrders/{docCompany}/{branchCode}/{orderCode})', 0, 2),
 
 /*Procedures de Sincronizações*/
@@ -32,7 +32,7 @@ VALUES
 (13194, 13647, 'sp_TotvsBillingSuggestionsOrdersItems_Sync', 'Procedure de sincronização entre as tabelas TotvsBillingSuggestionsOrdersItems raw e trusted', 3, 1),
 
 /*Integrações*/
-/*Range 13000 - 13499 (Sales Order: 13190 - 13249, docs/PLANO-TOTVS-METODOS-FALTANTES.md); 13193 reservado (changed-batch-items, fase SO-2)*/
+/*Range 13000 - 13499 (Sales Order: 13190 - 13249, src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md); 13193 reservado (changed-batch-items, fase SO-2)*/
 (130, 13190, 'TotvsGetSalesOrderDiscountType', 'Integração do catálogo de tipos de desconto da API Sales Order (TotvsSaleDiscountTypes), a cada 2 horas', 120, 2),
 (130, 13191, 'TotvsGetSalesOrderClassifications', 'Integração do catálogo de classificações de pedido de venda da API Sales Order (TotvsSaleClassifications), a cada 2 horas', 120, 2),
 (130, 13192, 'TotvsGetSalesOrderBatchItems', 'Integração do catálogo de lotes de pedidos de venda da API Sales Order (TotvsSaleOrderBatches), a cada 2 horas', 120, 2),
@@ -40,14 +40,14 @@ VALUES
 
 /*Leituras sob demanda da onda 2 - executadas pelo TotvsController, não são recorrentes (IntervalTimeInMinutes = 0). Só o
   GetPurchaseOrderByKey grava (como o GetSalesOrderByKey); as outras devolvem o JSON e registram a chamada em totvs.TotvsRequests
-  (docs/PLANO-TOTVS-METODOS-FALTANTES.md §8.1, T11)*/
+  (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §8.1, T11)*/
 /*Range 13000 - 13499 (Person: 13030 - 13069; Product: 13100 - 13105; Purchase Order: 13185; Sales Order: 13190 - 13249)*/
 (130, 13193, 'TotvsGetSalesOrderChangedBatchItems', 'Itens de lote ligados a um pedido de venda (GET SalesOrders/.../ChangedBatchItems)', 0, 2),
 (130, 13195, 'TotvsGetSalesOrderInvoices', 'Notas de um pedido de venda (GET SalesOrders/.../Invoices)', 0, 2),
 (130, 13196, 'TotvsGetSalesOrderPendingItems', 'Itens pendentes de um pedido de venda (GET SalesOrders/.../PendingItems)', 0, 2),
 
 /*Escritas da API Sales Order - executadas pelo TotvsController, não são recorrentes (IntervalTimeInMinutes = 0); só rodam com
-  Totvs:Writes:SalesOrders:Enabled = true (docs/PLANO-TOTVS-METODOS-FALTANTES.md §7.4, fase SO-3)*/
+  Totvs:Writes:SalesOrders:Enabled = true (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §7.4, fase SO-3)*/
 /*Range 13000 - 13499 (Sales Order: 13190 - 13249)*/
 (130, 13201, 'TotvsPostSalesOrderAdditionalOrder', 'Dados adicionais de um pedido de venda (POST SalesOrders/{docCompany}/Additional)', 0, 2),
 (130, 13202, 'TotvsPostSalesOrderShippingOrder', 'Transporte e frete de um pedido de venda (POST SalesOrders/{docCompany}/Shipping)', 0, 2),
@@ -55,7 +55,7 @@ VALUES
 (130, 13207, 'TotvsPostSalesOrderAdditionalItems', 'Dados adicionais dos itens de um pedido de venda (POST SalesOrders/{docCompany}/Items/Additional)', 0, 2),
 
 /*Escritas de documento da API Sales Order - executadas pelo TotvsController, não são recorrentes (IntervalTimeInMinutes = 0); só rodam com
-  Totvs:Writes:SalesOrders:Enabled = true (docs/PLANO-TOTVS-METODOS-FALTANTES.md §7.4, fase SO-4)*/
+  Totvs:Writes:SalesOrders:Enabled = true (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §7.4, fase SO-4)*/
 /*Range 13000 - 13499 (Sales Order: 13190 - 13249)*/
 (130, 13199, 'TotvsPostSalesOrderOrdersChangeStatus', 'Situação de um pedido de venda (POST SalesOrders/{docCompany}/Status)', 0, 2),
 (130, 13200, 'TotvsPostSalesOrderHeader', 'Capa de um pedido de venda (POST SalesOrders/{docCompany}/Header)', 0, 2),
@@ -68,7 +68,7 @@ VALUES
 (130, 13214, 'TotvsPostSalesOrderSuggestBatchItemsNuance', 'Sugestão de itens de lote pelo nuance (POST SalesOrders/{docCompany}/BatchItems/SuggestNuance)', 0, 2),
 
 /*Escritas da API Sales Order com efeito financeiro (pedido B2C, cancelamentos, preço dos itens, transação PDV) - executadas pelo TotvsController,
-  não são recorrentes (IntervalTimeInMinutes = 0); só rodam com Totvs:Writes:SalesOrders:Enabled = true (docs/PLANO-TOTVS-METODOS-FALTANTES.md §7.4,
+  não são recorrentes (IntervalTimeInMinutes = 0); só rodam com Totvs:Writes:SalesOrders:Enabled = true (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §7.4,
   fase SO-5)*/
 /*Range 13000 - 13499 (Sales Order: 13190 - 13249)*/
 (130, 13197, 'TotvsPostSalesOrderB2COrders', 'Inclusão de pedido de venda B2C (POST SalesOrders/{docCompany}/B2C)', 0, 2),

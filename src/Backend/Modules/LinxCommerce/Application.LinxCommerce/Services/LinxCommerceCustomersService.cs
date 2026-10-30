@@ -16,7 +16,7 @@ namespace Application.LinxCommerce.Services
         private readonly ILinxCommerceCustomersRepository _linxCommerceCustomersRepository;
         private readonly IValidator<Domain.LinxCommerce.Dtos.Reads.Customers.Customer> _customerValidator;
 
-        // carga inicial (banco vazio): tudo (docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md §10.2, pendência 3)
+        // carga inicial (banco vazio): tudo (src/Backend/Modules/LinxCommerce/docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md §10.2, pendência 3)
         private static readonly DateTime CustomersInitialLoad = new(2000, 1, 1);
 
         public LinxCommerceCustomersService(

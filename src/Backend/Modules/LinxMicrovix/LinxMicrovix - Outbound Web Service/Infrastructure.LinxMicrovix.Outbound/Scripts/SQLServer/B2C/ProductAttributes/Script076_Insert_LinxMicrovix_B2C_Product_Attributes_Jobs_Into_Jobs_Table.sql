@@ -18,7 +18,7 @@ VALUES
 (8301, 8742, 'sp_B2CConsultaLegendasCadastrosAuxiliares_Sync', 'Procedure de sincronização entre as tabelas B2CConsultaLegendasCadastrosAuxiliares raw e trusted', 1440, 1),
 
 /*Integrações*/
-/*Range 8250 - 8499 (B2C; ids reservados em docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
+/*Range 8250 - 8499 (B2C; ids reservados em src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
 (80, 8288, 'B2CConsultaClassificacao', 'Integração de dados da tabela B2CConsultaClassificacao, uma vez por dia', 1440, 2),
 (80, 8289, 'B2CConsultaColecoes', 'Integração de dados da tabela B2CConsultaColecoes, uma vez por dia', 1440, 2),
 (80, 8290, 'B2CConsultaEspessuras', 'Integração de dados da tabela B2CConsultaEspessuras, uma vez por dia', 1440, 2),

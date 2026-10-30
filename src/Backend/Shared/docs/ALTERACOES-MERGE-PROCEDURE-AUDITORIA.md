@@ -7,7 +7,7 @@ Guia para aplicação **manual**. As linhas indicadas referem-se ao estado atual
 
 ## 1. O que mudou na auditoria (commit `8bc9c9f`, 10/10)
 
-Em [Script001_Create_Schemas_Procedures_And_Tables.sql](../src/Backend/Shared/Infrastructure.Shared/Scripts/SQLServer/Script001_Create_Schemas_Procedures_And_Tables.sql):
+Em [Script001_Create_Schemas_Procedures_And_Tables.sql](../Infrastructure.Shared/Scripts/SQLServer/Script001_Create_Schemas_Procedures_And_Tables.sql):
 
 | Tabela | Antes | Depois |
 |---|---|---|
@@ -23,7 +23,7 @@ de `IdJob` + `IdType`** que existam em `Logs`.
 
 A procedure gerada por `sp_Create_Merge_Procedure` (Script003) não grava na auditoria
 diretamente: ela chama as procedures de log do
-[Script002_Create_Auditing_Procedures.sql](../src/Backend/Shared/Infrastructure.Shared/Scripts/SQLServer/Script002_Create_Auditing_Procedures.sql).
+[Script002_Create_Auditing_Procedures.sql](../Infrastructure.Shared/Scripts/SQLServer/Script002_Create_Auditing_Procedures.sql).
 Nenhuma das duas foi atualizada, então a cadeia toda falha:
 
 | Onde | Problema | Efeito |
@@ -40,7 +40,7 @@ Nenhuma das duas foi atualizada, então a cadeia toda falha:
 
 ## 3. Procedures de log — `Script002_Create_Auditing_Procedures.sql`
 
-Arquivo: [Script002_Create_Auditing_Procedures.sql](../src/Backend/Shared/Infrastructure.Shared/Scripts/SQLServer/Script002_Create_Auditing_Procedures.sql)
+Arquivo: [Script002_Create_Auditing_Procedures.sql](../Infrastructure.Shared/Scripts/SQLServer/Script002_Create_Auditing_Procedures.sql)
 
 Regra usada nas quatro: **quem inicia o log informa o `IdType`; quem grava mensagens descobre
 `IdJob` e `IdType` pelo `Execution`**, consultando `auditing.Logs`. Assim as assinaturas de
@@ -192,7 +192,7 @@ E a linha 68: `CREATE PROCEDURE [auditing].[sp_Log_End] (` → `CREATE OR ALTER 
 
 ## 4. Gerador — `Script003_Create_Merge_Procedure.sql`
 
-Arquivo: [Script003_Create_Merge_Procedure.sql](../src/Backend/Shared/Infrastructure.Shared/Scripts/SQLServer/Script003_Create_Merge_Procedure.sql)
+Arquivo: [Script003_Create_Merge_Procedure.sql](../Infrastructure.Shared/Scripts/SQLServer/Script003_Create_Merge_Procedure.sql)
 
 O arquivo usa `set quoted_identifier off` (linha 4): os textos entre aspas duplas são o código
 que vai para dentro da procedure gerada.
@@ -368,7 +368,7 @@ colunas:
   não o envia. Todo log de integração .NET falha no `not null`.
 - **Mensagens informativas sem `IdJob`/`IdType`:** o construtor
   `Message(Enum job, Enum jobType, string message, Guid guidExecution)`
-  ([Message.cs](../src/Backend/Shared/Domain.Shared/Entities/Auditing/Message.cs)) recebe `job` e
+  ([Message.cs](../Domain.Shared/Entities/Auditing/Message.cs)) recebe `job` e
   `jobType` mas **não os atribui** (só o construtor de erro faz `IdJob = job; IdType = jobType;`).
   Quase todas as mensagens do logger usam esse construtor.
 - **Ordem de gravação:** `LoggerRepository.LogInsert` grava o `Log` e depois faz o bulk insert de

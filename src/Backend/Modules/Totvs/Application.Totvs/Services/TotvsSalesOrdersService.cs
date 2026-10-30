@@ -1410,7 +1410,7 @@ namespace Application.Totvs.Services
             return _totvsService.BranchNotFound(doc_company, key, [branchCode.ToString()]);
         }
 
-        // escritas do pedido de venda da onda 4 (docs/PLANO-TOTVS-METODOS-FALTANTES.md §7.4) pela base comum: liga/desliga, empresa, loja do pedido
+        // escritas do pedido de venda da onda 4 (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §7.4) pela base comum: liga/desliga, empresa, loja do pedido
         // (quando vem por loja + número), a conferência local, se houver (SO7, só com o pedido no banco), e a chamada
         private async Task<Domain.Totvs.Dtos.Writes.Result> WriteOrder(string user_name, string doc_company, EnumJob job, HttpMethod method, string route, int? branchCode, string key, object? body,
             string checkHint, bool repeatLock = false, Func<Task<string?>>? check = null, string? note = null)

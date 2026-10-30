@@ -1,4 +1,4 @@
-/****** Dimensões da fase 4: representante, área operacional e promoção (docs/datawarehouse, 7.6) ******/
+/****** Dimensões da fase 4: representante, área operacional e promoção (src/Backend/Modules/DataWarehouse/docs, 7.6) ******/
 --SCD1, refeitas da landing a cada execução, com membro desconhecido (sk de 32 zeros). DimSupplier passa a ter também os
 --fornecedores dos pedidos de compra e das duplicatas, que nem sempre estão em TotvsProductsSuppliers.
 

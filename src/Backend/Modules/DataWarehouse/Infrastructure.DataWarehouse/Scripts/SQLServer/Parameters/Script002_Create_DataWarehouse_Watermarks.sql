@@ -1,4 +1,4 @@
-/****** Watermarks (docs/datawarehouse, 8.1 e 4.2) ******/
+/****** Watermarks (src/Backend/Modules/DataWarehouse/docs, 8.1 e 4.2) ******/
 --uma linha por fonte e entidade: as origens lidas pela landing (source = módulo, entity = tabela de origem),
 --os snapshots (source = dw_history, entity = tabela) e a varredura de cada módulo de saída (source = módulo, entity = view de dw_outbound).
 --horário de Brasília sem fuso, como o integrated_or_updated_at das integrações.

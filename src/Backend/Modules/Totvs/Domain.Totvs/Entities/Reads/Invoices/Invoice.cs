@@ -4,7 +4,7 @@ namespace Domain.Totvs.Entities.Reads.Invoices
 {
     /// <summary>
     /// nota fiscal (POST fiscal/v2/invoices/search), tabela totvs.TotvsInvoices. Chave: doc_company + branchCode + invoiceSequence + invoiceDate (conferida no
-    /// swagger: é como a própria API identifica uma nota, docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.2.1)
+    /// swagger: é como a própria API identifica uma nota, src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.2.1)
     /// </summary>
     public class Invoice
     {

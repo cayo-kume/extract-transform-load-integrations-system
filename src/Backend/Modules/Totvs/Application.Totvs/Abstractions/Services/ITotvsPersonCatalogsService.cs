@@ -1,7 +1,7 @@
 ﻿namespace Application.Totvs.Abstractions.Services
 {
     /// <summary>
-    /// catálogos da API Person: classificações, tipos de e-mail, de telefone e de contato (docs/PLANO-TOTVS-METODOS-FALTANTES.md §3.2)
+    /// catálogos da API Person: classificações, tipos de e-mail, de telefone e de contato (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §3.2)
     /// </summary>
     public interface ITotvsPersonCatalogsService
     {

@@ -1,4 +1,4 @@
-/****** Log das chamadas sob demanda (docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.5 e 9, fase 3) ******/
+/****** Log das chamadas sob demanda (src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.5 e 9, fase 3) ******/
 --log das chamadas sob demanda feitas pelo TotvsController na API da Totvs (GET por chave, com X-User-Name).
 --tabela somente de inserção: gravada direto no schema totvs, sem untreated nem procedure de merge (igual ao MovideskRequests).
 create table [totvs].TotvsRequests (

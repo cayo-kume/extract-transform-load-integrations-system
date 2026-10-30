@@ -19,7 +19,7 @@ VALUES
 (8190, 8690, 'sp_LinxExtratoBancarioConciliacoes_Sync', 'Procedure de sincronização entre as tabelas LinxExtratoBancarioConciliacoes raw e trusted', 120, 1),
 
 /*Integrações*/
-/*Range 8000 - 8249 (ERP; ids reservados em docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
+/*Range 8000 - 8249 (ERP; ids reservados em src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
 (80, 8176, 'LinxFaturas', 'Integração de dados da tabela LinxFaturas, a cada 2 horas', 120, 2),
 (80, 8177, 'LinxFaturasOrigem', 'Integração de dados da tabela LinxFaturasOrigem, a cada 2 horas', 120, 2),
 (80, 8178, 'LinxPortadores', 'Integração de dados da tabela LinxPortadores, a cada 2 horas', 120, 2),

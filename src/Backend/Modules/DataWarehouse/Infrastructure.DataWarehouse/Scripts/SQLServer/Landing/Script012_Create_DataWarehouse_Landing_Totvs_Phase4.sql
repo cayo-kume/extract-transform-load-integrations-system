@@ -1,4 +1,4 @@
-/****** Landing das origens da fase 4 (docs/datawarehouse, 7.6) ******/
+/****** Landing das origens da fase 4 (src/Backend/Modules/DataWarehouse/docs, 7.6) ******/
 --compras, contas a pagar, recepção de loja, representantes, áreas operacionais, promoções e as cinco tabelas de log das
 --chamadas às APIs (*Requests). Mesmo catálogo e mesmo gerador das fases anteriores (9.5), ligadas no job agendado.
 --dado pessoal identificador fica fora (5.2, regra 6):

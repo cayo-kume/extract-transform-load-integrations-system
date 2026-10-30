@@ -1,9 +1,9 @@
-/****** Dimensões da fase 1 (docs/datawarehouse, 7.1 e 8.3) ******/
+/****** Dimensões da fase 1 (src/Backend/Modules/DataWarehouse/docs, 7.1 e 8.3) ******/
 --chave substituta: MD5 da chave natural (7.1), com valid_from nas SCD2. Membro desconhecido em todas: sk com 32 zeros,
 --chave natural 0 e descrição NOT INFORMED; os fatos gravam esse sk quando a chave não casa.
 --as SCD2 (DimStore, DimProduct) são reconstruídas do dw_history a cada carga: a sk é determinística, então os fatos não quebram.
 --a primeira versão de cada chave vale desde 1900-01-01, para que vendas anteriores ao primeiro snapshot achem a dimensão.
-/****** Membros Linx nas dimensões (docs/datawarehouse, 7.1, 7.5 e pergunta 34) ******/
+/****** Membros Linx nas dimensões (src/Backend/Modules/DataWarehouse/docs, 7.1, 7.5 e pergunta 34) ******/
 --as procedures de dimensão da fase 1 passam a carregar também o legado Linx Microvix, lido de dw_landing e dw_history. Como
 --elas rodam a cada hora, os membros Linx são refeitos junto com os da Totvs, e o de/para de produto (matched_product_sk)
 --aponta sempre para a versão vigente do produto Totvs. Enquanto a carga do legado não rodar, as tabelas Linx estão vazias e

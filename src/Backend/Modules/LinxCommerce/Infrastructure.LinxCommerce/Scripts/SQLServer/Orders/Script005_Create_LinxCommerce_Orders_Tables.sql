@@ -1,4 +1,4 @@
-/****** Pedidos e status de pedido: tabelas untreated e linxcommerce (docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md 5.2) ******/
+/****** Pedidos e status de pedido: tabelas untreated e linxcommerce (src/Backend/Modules/LinxCommerce/docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md 5.2) ******/
 --colunas e tamanhos tirados do código antigo, sem resposta real da API: a conferir antes de ligar o job (§9).
 --datas da API em datetimeoffset (o Linx Commerce manda o fuso); integrated_or_updated_at é o horário do lote, em Brasília
 

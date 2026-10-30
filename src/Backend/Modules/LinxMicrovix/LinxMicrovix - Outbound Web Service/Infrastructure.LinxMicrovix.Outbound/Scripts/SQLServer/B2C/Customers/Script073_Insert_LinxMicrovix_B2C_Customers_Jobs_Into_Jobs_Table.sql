@@ -11,7 +11,7 @@ VALUES
 (8265, 8706, 'sp_B2CConsultaClientesSaldoLinx_Sync', 'Procedure de sincronização entre as tabelas B2CConsultaClientesSaldoLinx raw e trusted', 120, 1),
 
 /*Integrações*/
-/*Range 8250 - 8499 (B2C; ids reservados em docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
+/*Range 8250 - 8499 (B2C; ids reservados em src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
 (80, 8259, 'B2CConsultaClientes', 'Integração de dados da tabela B2CConsultaClientes, a cada 2 horas', 120, 2),
 (80, 8260, 'B2CConsultaClientesContatos', 'Integração de dados da tabela B2CConsultaClientesContatos, a cada 2 horas', 120, 2),
 (80, 8261, 'B2CConsultaClientesContatosParentesco', 'Integração de dados da tabela B2CConsultaClientesContatosParentesco, a cada 2 horas', 120, 2),

@@ -1,4 +1,4 @@
-/****** Checagens do legado Linx (docs/datawarehouse, 7.5, 9.3 e seção 11) ******/
+/****** Checagens do legado Linx (src/Backend/Modules/DataWarehouse/docs, 7.5, 9.3 e seção 11) ******/
 
 /****** datawarehouse.vw_Check_ErpOverlap: CNPJ e dia com venda faturada nos dois ERPs ******/
 --o mesmo dia de uma loja não pode somar Linx e Totvs (7.5). Bloqueia. A correção é um período em dw_reference.StoreErpMap

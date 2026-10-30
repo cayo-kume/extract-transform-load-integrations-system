@@ -1,7 +1,7 @@
 ﻿namespace Application.Totvs.Abstractions.Services
 {
     /// <summary>
-    /// catálogos da API Product (docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.1, PR12)
+    /// catálogos da API Product (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.1, PR12)
     /// </summary>
     public interface ITotvsProductCatalogsService
     {

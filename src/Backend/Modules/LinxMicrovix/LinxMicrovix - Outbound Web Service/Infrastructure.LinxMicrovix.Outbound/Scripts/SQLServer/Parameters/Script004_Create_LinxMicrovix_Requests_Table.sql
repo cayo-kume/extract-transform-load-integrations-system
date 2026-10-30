@@ -1,4 +1,4 @@
-/****** Log das chamadas sob demanda (docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §9, fase 3) ******/
+/****** Log das chamadas sob demanda (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §9, fase 3) ******/
 --log das chamadas sob demanda feitas pelo LinxMicrovixController na API do Microvix (GET por chave, com X-User-Name).
 --tabela somente de inserção: gravada direto no schema linxmicrovix, sem untreated nem procedure de merge (igual ao TotvsRequests).
 create table [linxmicrovix].LinxMicrovixRequests (

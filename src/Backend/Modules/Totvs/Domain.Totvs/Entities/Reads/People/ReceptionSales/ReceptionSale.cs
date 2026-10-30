@@ -4,7 +4,7 @@ namespace Domain.Totvs.Entities.Reads.People.ReceptionSales
 {
     /// <summary>
     /// recepção de venda (GET person/v2/reception-sale/search), tabela totvs.TotvsReceptionSales. A resposta não tem data de
-    /// alteração: json_hash (SHA-256 do JSON recebido) é o que diz se a recepção mudou (T9 do docs/PLANO-TOTVS-METODOS-FALTANTES.md)
+    /// alteração: json_hash (SHA-256 do JSON recebido) é o que diz se a recepção mudou (T9 do src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md)
     /// </summary>
     public class ReceptionSale
     {

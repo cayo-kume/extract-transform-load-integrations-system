@@ -27,7 +27,7 @@ namespace Infrastructure.Totvs.DependencyInjection
                 client.Timeout = new TimeSpan(0, 20, 0);
             });
 
-            // os services de leitura entram aqui um por vez, à medida que forem reescritos (docs/PROPOSTA-PADRONIZACAO-TOTVS.md §9)
+            // os services de leitura entram aqui um por vez, à medida que forem reescritos (src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md §9)
             services.AddScoped<ITotvsService, TotvsService>();
             services.AddScoped<ITotvsRepository, TotvsRepository>();
 

@@ -8,7 +8,7 @@ VALUES
 (8279, 8720, 'sp_B2CConsultaImagensHD_Sync', 'Procedure de sincronização entre as tabelas B2CConsultaImagensHD raw e trusted', 120, 1),
 
 /*Integrações*/
-/*Range 8250 - 8499 (B2C; ids reservados em docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
+/*Range 8250 - 8499 (B2C; ids reservados em src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
 (80, 8276, 'B2CConsultaProdutosImagens', 'Integração de dados da tabela B2CConsultaProdutosImagens, a cada 2 horas', 120, 2),
 (80, 8277, 'B2CConsultaProdutosImagensURL', 'Integração de dados da tabela B2CConsultaProdutosImagensURL, a cada 2 horas', 120, 2),
 (80, 8278, 'B2CConsultaImagens', 'Integração de dados da tabela B2CConsultaImagens, a cada 2 horas', 120, 2),

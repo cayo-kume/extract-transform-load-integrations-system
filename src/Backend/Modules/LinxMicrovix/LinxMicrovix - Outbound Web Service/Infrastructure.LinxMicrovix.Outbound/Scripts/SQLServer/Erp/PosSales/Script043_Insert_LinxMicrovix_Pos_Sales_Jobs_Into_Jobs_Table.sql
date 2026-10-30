@@ -7,7 +7,7 @@ VALUES
 (8109, 8609, 'sp_LinxVendasPosAgrupamentoTmp_Sync', 'Procedure de sincronização entre as tabelas LinxVendasPosAgrupamentoTmp raw e trusted', 3, 1),
 
 /*Integrações*/
-/*Range 8000 - 8249 (ERP; ids reservados em docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
+/*Range 8000 - 8249 (ERP; ids reservados em src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §7)*/
 (80, 8107, 'LinxVendasPosTmp', 'Integração de dados da tabela LinxVendasPosTmp, a cada 3 minutos', 3, 2),
 (80, 8108, 'LinxVendasPosProdutosTmp', 'Integração de dados da tabela LinxVendasPosProdutosTmp, a cada 3 minutos', 3, 2),
 (80, 8109, 'LinxVendasPosAgrupamentoTmp', 'Integração de dados da tabela LinxVendasPosAgrupamentoTmp, a cada 3 minutos', 3, 2);

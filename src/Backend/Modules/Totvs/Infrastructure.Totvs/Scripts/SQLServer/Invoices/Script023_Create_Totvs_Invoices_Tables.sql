@@ -1,4 +1,4 @@
-/****** Notas fiscais: tabelas untreated e totvs (docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.2.1) ******/
+/****** Notas fiscais: tabelas untreated e totvs (src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.2.1) ******/
 --chave da nota: doc_company + branchCode + invoiceSequence + invoiceDate; todas as filhas levam a chave inteira. Objetos 1:1
 --(eletronic, ecf, sat, shippingCompany, person, productionOrder, rateDifferential, cardInformation, digitalWalletInformation)
 --como colunas do pai com o nome do objeto como prefixo (5.2.8). Tamanhos do swagger onde ele informa; senão, os de uma amostra real.
@@ -654,7 +654,7 @@ alter table [totvs].TotvsInvoicesReferencedTaxes add constraint [FK_TotvsInvoice
 
 go
 
-/****** Inutilizações e centros de custo da API Fiscal: tabelas untreated e totvs (docs/PLANO-TOTVS-METODOS-FALTANTES.md §8.2 e §8.3, fase FI-1) ******/
+/****** Inutilizações e centros de custo da API Fiscal: tabelas untreated e totvs (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §8.2 e §8.3, fase FI-1) ******/
 --inutilizações pela janela de alteração (T9); centros de custo, sem data na resposta, lidos inteiros e comparados pelo json_hash (F5)
 
 create table [untreated].TotvsInvoicesDisable (

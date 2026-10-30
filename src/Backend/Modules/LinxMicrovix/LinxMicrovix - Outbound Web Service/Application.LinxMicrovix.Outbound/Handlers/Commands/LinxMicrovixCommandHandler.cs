@@ -21,7 +21,7 @@ namespace Application.LinxMicrovix.Outbound.Handlers.Commands
 
         public string CreateGetStoresQuery(string doc_company, EnumApi api)
         {
-            // lojas consultadas pelos outros métodos (docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 4.2, item 3).
+            // lojas consultadas pelos outros métodos (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 4.2, item 3).
             // Loja sem CNPJ fica de fora: cnpjEmp é obrigatório nas chamadas. Os nomes das colunas são os da resposta da API
             // (CNPJ no LinxGrupoLojas, cnpjEmp no B2CConsultaEmpresas). doc_company vem de LinxMicrovixParameters; com aspas
             // porque a coluna é nvarchar (CNPJ pode começar com zero)
