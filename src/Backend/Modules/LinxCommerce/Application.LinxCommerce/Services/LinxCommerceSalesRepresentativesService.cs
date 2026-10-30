@@ -163,6 +163,8 @@ namespace Application.LinxCommerce.Services
             }
         }
 
+        // ------------------------------------------------------------------------------------------------------
+
         /// <summary>
         /// valida, monta as entidades (com o mesmo horário de lote) e grava. Devolve a quantidade de vendedores gravados.
         /// </summary>

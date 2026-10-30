@@ -79,7 +79,22 @@ namespace Application.LinxCommerce.Services
                         continue;
 
                     // cache de estado: OrderID -> ModifiedDate gravada, por empresa; fica só o novo ou com alteração mais recente
-                    var ordersCache = await GetOrdersCache(company.doc_company!, changed.Select(x => x.id).ToList());
+                    // os ids que ainda não estão no cache são lidos do banco, em lotes, e entram nele: um pedido que não estava
+                    // na primeira execução também é encontrado
+                    var ids = changed.Select(x => x.id).ToList();
+                    var ordersCache = _cache.GetOrCreate($"{OrdersKey}:{company.doc_company!}", entry =>
+                    {
+                        entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(2);
+                        entry.SlidingExpiration = TimeSpan.FromMinutes(30);
+
+                        return new Dictionary<Guid, DateTimeOffset?>();
+                    })!;
+
+                    var missing = ids.Where(x => !ordersCache.ContainsKey(x)).ToList();
+
+                    if (missing.Count > 0)
+                        foreach (var stored in (await _linxCommerceOrdersRepository.GetOrdersByIds(company.doc_company!, missing)).Where(x => x is not null))
+                            ordersCache[stored!.OrderID] = stored.ModifiedDate;
 
                     changed.RemoveAll(x => x.modified.HasValue && ordersCache.TryGetValue(x.id, out var stored) && stored.HasValue && x.modified <= stored);
 
@@ -213,6 +228,8 @@ namespace Application.LinxCommerce.Services
             await GetOrderOnDemand(EnumJob.LinxCommerceGetOrderByNumber, user_name, doc_company, "Sales/API.svc/web/GetOrderByNumber", orderNumber, $"pedido número {orderNumber}",
                 order => order.OrderNumber == orderNumber && ConverterValidatorsExtensions.ConvertToGuidValidation(order.OrderID) != Guid.Empty);
 
+        // ------------------------------------------------------------------------------------------------------
+
         /// <summary>
         /// o fluxo das duas rotas sob demanda de pedido. "Não existe" é o 404 ou a resposta 2xx sem o pedido pedido (sem resposta
         /// real, a forma como o Linx Commerce responde um id inexistente está a conferir, docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md §9)
@@ -263,29 +280,6 @@ namespace Application.LinxCommerce.Services
                 _logger.SetLogEndDate();
                 await _logger.CommitAllChanges();
             }
-        }
-
-        /// <summary>
-        /// cache de estado da empresa (OrderID -> ModifiedDate gravada). Os ids que ainda não estão nele são lidos do banco, em
-        /// lotes, e entram no cache: um pedido que não estava na primeira execução também é encontrado
-        /// </summary>
-        private async Task<Dictionary<Guid, DateTimeOffset?>> GetOrdersCache(string doc_company, List<Guid> ids)
-        {
-            var ordersCache = _cache.GetOrCreate($"{OrdersKey}:{doc_company}", entry =>
-            {
-                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(2);
-                entry.SlidingExpiration = TimeSpan.FromMinutes(30);
-
-                return new Dictionary<Guid, DateTimeOffset?>();
-            })!;
-
-            var missing = ids.Where(x => !ordersCache.ContainsKey(x)).ToList();
-
-            if (missing.Count > 0)
-                foreach (var stored in (await _linxCommerceOrdersRepository.GetOrdersByIds(doc_company, missing)).Where(x => x is not null))
-                    ordersCache[stored!.OrderID] = stored.ModifiedDate;
-
-            return ordersCache;
         }
 
         /// <summary>

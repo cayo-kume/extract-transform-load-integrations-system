@@ -327,6 +327,8 @@ namespace Application.LinxCommerce.Services
             }
         }
 
+        // ------------------------------------------------------------------------------------------------------
+
         /// <summary>
         /// valida, monta as entidades (com o mesmo horário de lote), grava e atualiza o cache da empresa.
         /// Devolve a quantidade de produtos gravados.

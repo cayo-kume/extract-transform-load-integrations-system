@@ -221,25 +221,28 @@ namespace Application.LinxCommerce.Services
             SaveRequest(job, user_name, route, company.doc_company!, key, requestBody, json ?? Truncate(response.Content), dto is not null, response.StatusCode);
 
             return new OnDemandResponse<T> { StatusCode = response.StatusCode, Dto = dto, Json = json };
+
+            void SaveRequest(EnumJob job, string user_name, string route, string doc_company, string key, string requestBody, string? responseBody, bool isSuccess, int? statusCode) =>
+                _linxCommerceRepository.InsertIntoLinxCommerceRequests(
+                    new Domain.LinxCommerce.Entities.Requests.Request(
+                        execution: _logger.GetExecutionGuid() ?? Guid.Empty,
+                        job: job,
+                        user_name: user_name,
+                        http_method: "POST",
+                        // a rota, sem o endereço do cliente nem o cabeçalho de autenticação
+                        route: $"v1/{route}",
+                        doc_company: doc_company,
+                        field_key_value: key,
+                        request_body: requestBody,
+                        response_body: responseBody,
+                        is_success: isSuccess,
+                        status_code: statusCode
+                    )
+                );
+
         }
 
-        private void SaveRequest(EnumJob job, string user_name, string route, string doc_company, string key, string requestBody, string? responseBody, bool isSuccess, int? statusCode) =>
-            _linxCommerceRepository.InsertIntoLinxCommerceRequests(
-                new Domain.LinxCommerce.Entities.Requests.Request(
-                    execution: _logger.GetExecutionGuid() ?? Guid.Empty,
-                    job: job,
-                    user_name: user_name,
-                    http_method: "POST",
-                    // a rota, sem o endereço do cliente nem o cabeçalho de autenticação
-                    route: $"v1/{route}",
-                    doc_company: doc_company,
-                    field_key_value: key,
-                    request_body: requestBody,
-                    response_body: responseBody,
-                    is_success: isSuccess,
-                    status_code: statusCode
-                )
-            );
+        // ------------------------------------------------------------------------------------------------------
 
         /// <summary>
         /// POST v1/{route} das leituras recorrentes: erro HTTP ou exceção viram mensagem no log e devolvem null
