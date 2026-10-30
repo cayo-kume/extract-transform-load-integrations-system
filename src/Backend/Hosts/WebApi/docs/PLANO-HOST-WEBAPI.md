@@ -641,3 +641,8 @@ Os controllers vazios desses módulos ficam como estão até lá.
 
 `README.md` do host: como rodar como só API ou com o Hangfire (`Hangfire:Enabled`), configuração, rotas por módulo,
 como a agenda funciona e como ligar ou desligar um job em `auditing.Jobs`.
+
+**Feito em 30/10/2026:** [README.md](../README.md), com os dois modos, como rodar, a estrutura do projeto, a configuração
+(seção `Hangfire` inteira), as rotas por módulo com o link do README de cada um, a agenda (colunas, conversão em cron,
+`SchedulerRefresh` e os `UPDATE` para ligar e desligar jobs), a concorrência, o dashboard e a manutenção, e o que fazer
+num job ou módulo novo. O README da raiz aponta para ele. Os links relativos foram conferidos.

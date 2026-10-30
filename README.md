@@ -5,8 +5,9 @@ O sistema de integrações da **Newbloomers**: lê os dados dos ERPs e SaaS usad
 Linx Commerce, Movidesk e AfterSale), grava tudo num banco SQL Server com histórico de auditoria, oferece leituras e
 escritas sob demanda para outros sistemas e alimenta um **data warehouse** com dimensões, fatos e agregados.
 
-Cada integração é um pacote independente (`Domain`, `Application` e `Infrastructure`), e um único host web (`WebApi`)
-registra todos e expõe as rotas. Este documento dá o panorama; os detalhes de cada módulo estão no README dele.
+Cada integração é um pacote independente (`Domain`, `Application` e `Infrastructure`), e um único host web (`WebApi`,
+[README](src/Backend/Hosts/WebApi/README.md)) registra todos e expõe as rotas. Este documento dá o panorama;
+os detalhes de cada módulo estão no README dele.
 
 ---
 
