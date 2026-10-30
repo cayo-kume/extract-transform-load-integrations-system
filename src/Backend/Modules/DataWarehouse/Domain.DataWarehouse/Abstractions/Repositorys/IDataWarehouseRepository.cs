@@ -10,6 +10,11 @@ namespace Domain.DataWarehouse.Abstractions.Repositorys
         public Task<IEnumerable<LandingSource>> GetLandingSources();
 
         /// <summary>
+        /// todas as origens de um schema do catálogo, ligadas ou não: a carga do legado lê as do Linx, que ficam fora do job agendado
+        /// </summary>
+        public Task<IEnumerable<LandingSource>> GetLandingSourcesBySchema(string sourceSchema);
+
+        /// <summary>
         /// executa uma procedure do DW que devolve @rows (as geradas e as de dimensão, fato e agregado) e devolve as linhas
         /// </summary>
         public Task<int> ExecuteProcedure(string procedureName, IDictionary<string, object?>? parameters = null);

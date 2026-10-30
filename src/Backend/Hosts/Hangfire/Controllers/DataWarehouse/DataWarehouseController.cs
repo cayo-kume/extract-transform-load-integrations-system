@@ -41,6 +41,13 @@ namespace Hangfire.Controllers.DataWarehouse
             RunResponse(await _dataWarehouseService.RunMonthlyStock(positionDate));
 
         /// <summary>
+        /// carga única do legado Linx Microvix (10.2); pode ser reexecutada
+        /// </summary>
+        [HttpPost("RunLinxLegacy")]
+        public async Task<ActionResult> RunLinxLegacy() =>
+            RunResponse(await _dataWarehouseService.RunLinxLegacy());
+
+        /// <summary>
         /// true concluída (200), false com erro ou checagem bloqueante (500, detalhe no log da execução), null já havia uma carga
         /// rodando (409)
         /// </summary>

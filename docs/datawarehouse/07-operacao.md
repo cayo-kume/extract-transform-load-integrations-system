@@ -25,7 +25,7 @@ Vendas e pedidos passam por essa sequência a cada hora; cadastros, saldos, cust
 
 ### 10.2 Carga única do legado Linx
 
-Fora da sequência acima, executada uma vez na fase 3 (7.5): landing do Linx (passo 2, sem janela: a origem já tem o histórico inteiro), snapshot único (passo 4), membros Linx das dimensões e o de/para de produto (`dw_intermediate.sp_ProductMatch_Load`, passo 6) e `dw_intermediate.sp_LinxLegacy_Load`, que grava as linhas Linx em `FactSalesItem` e `FactOrderItem`. O watermark fica gravado; se a origem receber correções, a mesma sequência pode ser reexecutada.
+Fora da sequência acima, executada uma vez na fase 3 (7.5) pela entrada `RunLinxLegacy` (job 9004): landing de todas as origens Linx do catálogo (passo 2, sem janela: a origem já tem o histórico inteiro), snapshot único de lojas e produtos (passo 4), clientes Linx em `dw_personal_data` (`sp_LinxCustomer_Load`, passo 5), as dimensões, que refazem Totvs e Linx juntas e aplicam o de/para de produto (`dw_intermediate.vw_ProductMatch`, passo 6), `dw_intermediate.sp_LinxLegacy_Load`, que grava as linhas Linx em `FactSalesItem` e `FactOrderItem`, `DailySales` e as checagens. O watermark fica gravado; se a origem receber correções, a mesma entrada pode ser reexecutada. Antes da primeira execução em produção, cadastrar em `dw_reference.StoreErpMap` o período Linx das lojas que migraram para a Totvs; o que faltar aparece em `vw_Check_ErpOverlap`, que bloqueia.
 
 ### 10.3 Ciclo curto de 3 minutos (logística)
 
@@ -56,8 +56,8 @@ A logística precisa do que os jobs da Totvs acabaram de trazer (pergunta 35, de
 | Frescor da landing | Watermark comparado à hora atual | Antes da carga | Alerta se atrasar mais de 2 h |
 | Exclusões de filhas | View de checagem sobre `missing_since` (5.2, regra 3) | Diário | Alerta acima de 0,5% das chaves ativas |
 | Total mensal por loja vs fechamento de referência | `datamart.vw_Check_InvoicedReconciliation` (9.3) | Diário | Diferença acima de R$ 1,00 por loja e mês |
-| Sobreposição de ERPs no mesmo CNPJ e dia | `vw_Check_ErpOverlap` (9.3) | Na carga do legado e diário | Bloqueia |
-| Produtos Linx sem de/para | `vw_Check_ProductMatch` (9.3) | Na carga do legado | Alerta; meta definida depois da primeira execução (pergunta 34) |
+| Sobreposição de ERPs no mesmo CNPJ e dia | `vw_Check_ErpOverlap` (9.3) | Toda carga | Bloqueia |
+| Produtos Linx sem de/para | `vw_Check_ProductMatch` (9.3) | Toda carga (só muda na carga do legado) | Alerta; meta definida depois da primeira execução (pergunta 34) |
 | Posição de estoque negativa ou sem custo | `vw_Check_StockNegativeOrNoCost`, sobre a última posição de `FactMonthlyStock`, por loja | Mensal | Alerta |
 | Consumidor atrasado | `dw_control.Watermark` de cada módulo de saída comparado ao `updated_at` da view | Diário; a cada hora para a logística | Alerta se o watermark do consumidor ficar mais de 1 dia atrás (4.2); logística, mais de 30 minutos (10.3) |
 

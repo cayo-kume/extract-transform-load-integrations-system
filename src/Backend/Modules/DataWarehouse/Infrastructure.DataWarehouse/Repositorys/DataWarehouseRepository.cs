@@ -30,6 +30,16 @@ namespace Infrastructure.DataWarehouse.Repositorys
             return sources.Where(x => x is not null).Select(x => x!);
         }
 
+        public async Task<IEnumerable<LandingSource>> GetLandingSourcesBySchema(string sourceSchema)
+        {
+            const string sql = "select source_schema, source_table, detect_missing, history_frequency from [dw_control].LandingSource where source_schema = @sourceSchema order by source_table";
+
+            // o GetRecords do Shared não recebe parâmetros
+            using var conn = _coreRepository.GetIDbConnection();
+
+            return await conn.QueryAsync<LandingSource>(sql, new { sourceSchema });
+        }
+
         public async Task<int> ExecuteProcedure(string procedureName, IDictionary<string, object?>? parameters = null)
         {
             if (!ObjectName.IsMatch(procedureName))

@@ -32,6 +32,8 @@ namespace Application.DataWarehouse.Services
         private static readonly (string View, bool Blocking)[] Checks =
         [
             ("[datawarehouse].vw_Check_FactSalesItemGrain", true),
+            ("[datawarehouse].vw_Check_ErpOverlap", true),
+            ("[datawarehouse].vw_Check_ProductMatch", false),
             ("[datawarehouse].vw_Check_UnknownMembers", false),
             ("[datawarehouse].vw_Check_ItemProducts", false),
             ("[datawarehouse].vw_Check_OrderTypeUnknown", false),
@@ -75,6 +77,58 @@ namespace Application.DataWarehouse.Services
             catch (Exception ex)
             {
                 _logger.AddMessage($"Posição de estoque interrompida: {ex.Message}", String.Empty, ex.Message, ex.StackTrace ?? String.Empty);
+
+                return false;
+            }
+            finally
+            {
+                await CommitLogAndRelease();
+            }
+        }
+
+        public async Task<bool?> RunLinxLegacy()
+        {
+            if (!await RunLock.WaitAsync(0))
+                return null;
+
+            _logger
+                .Clear()
+                .AddLog(EnumJob.DataWarehouseLinxLegacy);
+
+            try
+            {
+                var sources = (await _dataWarehouseRepository.GetLandingSourcesBySchema("linxmicrovix")).ToList();
+
+                // passos 2 e 4 da 10.1, só para o Linx: landing e o snapshot único
+                foreach (var source in sources)
+                    await Step($"[dw_landing].[sp_{source.source_table}_Load]");
+
+                foreach (var source in sources.Where(x => x.history_frequency == "once"))
+                    await Step($"[dw_history].[sp_{source.source_table}_Snapshot]");
+
+                // passo 5: clientes Linx
+                await Step("[dw_personal_data].sp_LinxCustomer_Load");
+
+                // passo 6: as dimensões refazem Totvs e Linx juntos; depois as linhas Linx dos fatos e o agregado
+                await Step("[datawarehouse].sp_DimStore_Load");
+                await Step("[datawarehouse].sp_DimProduct_Load");
+                await PepperStep("[datawarehouse].sp_DimCustomer_Load");
+                await Step("[datawarehouse].sp_DimSeller_Load");
+                await Step("[datawarehouse].sp_DimOperation_Load");
+                await Step("[datawarehouse].sp_DimBrand_Load");
+                await Step("[dw_intermediate].sp_LinxLegacy_Load");
+                await Step("[datamart].sp_DailySales_Refresh");
+
+                // passo 7
+                var blocked = await RunChecks();
+
+                _logger.AddMessage(blocked ? "Concluída com checagem bloqueante: veja dw_control.CheckResult." : "Concluída com sucesso!");
+
+                return !blocked;
+            }
+            catch (Exception ex)
+            {
+                _logger.AddMessage($"Carga do legado interrompida: {ex.Message}", String.Empty, ex.Message, ex.StackTrace ?? String.Empty);
 
                 return false;
             }

@@ -23,5 +23,11 @@ namespace Application.DataWarehouse.Abstractions.Services
         /// diário já faz isso no dia 1, e esta entrada serve para refazer um mês
         /// </summary>
         public Task<bool?> RunMonthlyStock(DateOnly? positionDate);
+
+        /// <summary>
+        /// carga única do legado Linx Microvix (10.2): landing e snapshot do Linx, clientes Linx, dimensões e as linhas Linx de
+        /// FactSalesItem e FactOrderItem. Fica fora do job agendado; reexecutar absorve correções na origem
+        /// </summary>
+        public Task<bool?> RunLinxLegacy();
     }
 }
