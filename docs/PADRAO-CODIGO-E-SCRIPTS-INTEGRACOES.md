@@ -85,7 +85,8 @@ fim da classe, os métodos **privados** (cada um com o seu comentário), separad
 
 Os validadores ficam em `Application.<Módulo>/Validations` na **mesma estrutura de pastas dos DTOs** que validam
 (`Domain.<Módulo>/Dtos`): os de leitura em `Validations/Reads`, os de escrita em `Validations/Writes`, e dentro de
-cada um as mesmas subpastas dos DTOs. O namespace acompanha a pasta.
+cada um as mesmas subpastas dos DTOs. O namespace acompanha a pasta. Um helper comum a todos os validadores (ex.:
+`MicrovixValidatorsExtension`) fica na raiz de `Validations`.
 
 ```
 Domain.Totvs/Dtos/                      Application.Totvs/Validations/
@@ -130,6 +131,7 @@ Application.Totvs/
 * Cada handler é registrado na DI (`AddScoped`) ao lado do service e do repositório dele, e o repositório recebe só o
   seu handler (`_totvsPeopleCommandHandler`).
 * Um service sem repositório (ex.: `TotvsBonusService`, só escritas) não tem handler.
+* Um repositório que não usa nenhuma query não recebe handler no construtor (ex.: `AfterSaleMeRepository`).
 * Um método privado que servia a queries de services diferentes (ex.: `CreateGetOrdersByKeysQuery`, de pedidos de
   compra e de venda) vai para dentro de cada método que o usa, com os parâmetros fixos (ex.: o nome da tabela), pela
   regra da seção 2.1.
