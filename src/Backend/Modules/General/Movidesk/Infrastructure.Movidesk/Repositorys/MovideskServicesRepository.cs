@@ -1,4 +1,3 @@
-using Application.Movidesk.Abstractions.Handlers.Commands;
 using Domain.Movidesk.Abstractions.Repositorys;
 using Domain.Movidesk.Entities.Reads.Services;
 using Domain.Shared.Abstractions.Repositorys;
@@ -9,11 +8,10 @@ namespace Infrastructure.Movidesk.Repositorys
 {
     public class MovideskServicesRepository : IMovideskServicesRepository
     {
-        private readonly IMovideskCommandHandler _movideskCommandHandler;
         private readonly ISharedRepository _coreRepository;
 
-        public MovideskServicesRepository(IMovideskCommandHandler movideskCommandHandler, ISharedRepository coreRepository) =>
-            (_movideskCommandHandler, _coreRepository) = (movideskCommandHandler, coreRepository);
+        public MovideskServicesRepository(ISharedRepository coreRepository) =>
+            _coreRepository = coreRepository;
 
         public async Task<bool> BulkInsertIntoMovideskServices(List<Service> data, Guid? parentExecutionGUID)
         {

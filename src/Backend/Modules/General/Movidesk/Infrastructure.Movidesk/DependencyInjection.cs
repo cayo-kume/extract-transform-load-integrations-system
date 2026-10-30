@@ -2,7 +2,7 @@
 using Application.Movidesk.Abstractions.Services;
 using Application.Movidesk.Handlers.Commands;
 using Application.Movidesk.Services;
-using Application.Movidesk.Validations.Ticket;
+using Application.Movidesk.Validations.Reads.Tickets;
 using Application.Movidesk.Validations.Writes.Tickets;
 using Domain.Movidesk.Abstractions.Repositorys;
 using Domain.Shared.Abstractions.Api;
@@ -29,9 +29,11 @@ namespace Infrastructure.Movidesk.DependencyInjection
 
             services.AddScoped<IMovideskTicketsService, MovideskTicketsService>();
             services.AddScoped<IMovideskTicketsRepository, MovideskTicketsRepository>();
+            services.AddScoped<IMovideskTicketsCommandHandler, MovideskTicketsCommandHandler>();
 
             services.AddScoped<IMovideskPeopleService, MovideskPeopleService>();
             services.AddScoped<IMovideskPeopleRepository, MovideskPeopleRepository>();
+            services.AddScoped<IMovideskPeopleCommandHandler, MovideskPeopleCommandHandler>();
 
             services.AddScoped<IMovideskServicesService, MovideskServicesService>();
             services.AddScoped<IMovideskServicesRepository, MovideskServicesRepository>();

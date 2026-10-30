@@ -9,15 +9,15 @@ namespace Infrastructure.Movidesk.Repositorys
 {
     public class MovideskTicketsRepository : IMovideskTicketsRepository
     {
-        private readonly IMovideskCommandHandler _movideskCommandHandler;
+        private readonly IMovideskTicketsCommandHandler _movideskTicketsCommandHandler;
         private readonly ISharedRepository _coreRepository;
 
-        public MovideskTicketsRepository(IMovideskCommandHandler movideskCommandHandler, ISharedRepository coreRepository) =>
-            (_movideskCommandHandler, _coreRepository) = (movideskCommandHandler, coreRepository);
+        public MovideskTicketsRepository(IMovideskTicketsCommandHandler movideskTicketsCommandHandler, ISharedRepository coreRepository) =>
+            (_movideskTicketsCommandHandler, _coreRepository) = (movideskTicketsCommandHandler, coreRepository);
 
         public async Task<DateTime?> GetTicketsLastUpdate(string doc_company)
         {
-            string sql = _movideskCommandHandler.CreateGetTicketsLastUpdateQuery(doc_company);
+            string sql = _movideskTicketsCommandHandler.CreateGetTicketsLastUpdateQuery(doc_company);
 
             return await _coreRepository.GetRecord<DateTime?>(sql);
         }
@@ -27,7 +27,7 @@ namespace Infrastructure.Movidesk.Repositorys
             if (ids.Count == 0)
                 return [];
 
-            string sql = _movideskCommandHandler.CreateGetTicketsByIdsQuery(doc_company, ids);
+            string sql = _movideskTicketsCommandHandler.CreateGetTicketsByIdsQuery(doc_company, ids);
 
             return await _coreRepository.GetRecords<Ticket>(sql);
         }
@@ -39,7 +39,7 @@ namespace Infrastructure.Movidesk.Repositorys
             // lotes de 1000 ids, para o IN não crescer sem limite num GetTickets com muitos tickets
             foreach (var chunk in ticketIds.Distinct().Chunk(1000))
             {
-                string sql = _movideskCommandHandler.CreateGetActionsHtmlDescriptionsQuery(doc_company, chunk.ToList());
+                string sql = _movideskTicketsCommandHandler.CreateGetActionsHtmlDescriptionsQuery(doc_company, chunk.ToList());
 
                 result.AddRange(await _coreRepository.GetRecords<Domain.Movidesk.Entities.Reads.Tickets.Action>(sql));
             }

@@ -1,7 +1,7 @@
 using Domain.Shared.Extensions;
 using FluentValidation;
 
-namespace Application.Movidesk.Validations.Ticket
+namespace Application.Movidesk.Validations.Reads.Tickets
 {
     /// <summary>
     /// só registra mensagens no log; os tamanhos são os das colunas do Script002_Create_Movidesk_Tickets_Tables

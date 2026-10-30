@@ -124,11 +124,11 @@ Domain.Movidesk/
 ```
 Application.Movidesk/
 ├── Abstractions/
-│   ├── Handlers/Commands/      (IMovideskCommandHandler)
+│   ├── Handlers/Commands/      (IMovideskCommandHandler e um por service: Tickets e People)
 │   └── Services/               (IMovideskService, IMovideskTicketsService, IMovideskPeopleService, IMovideskServicesService)
-├── Handlers/Commands/          (MovideskCommandHandler: monta as queries SQL)
+├── Handlers/Commands/          (monta as queries SQL: MovideskTickets/PeopleCommandHandler, usados pelo repositório de cada service, e o MovideskCommandHandler com as comuns)
 ├── Services/                   (MovideskService, MovideskTicketsService, MovideskPeopleService, MovideskServicesService)
-└── Validations/                (FluentValidation por DTO: People/*, Services/*, Ticket/*)
+└── Validations/                (FluentValidation por DTO, nas mesmas pastas dos DTOs: Reads/People, Reads/Services, Reads/Tickets e Writes/*)
 ```
 
 ### Services e métodos
@@ -257,7 +257,7 @@ Infrastructure.Movidesk/
 
 * `IApiClient` com a chave `"MovideskAPI"` e o `HttpClient` nomeado `"MovideskAPI"` (base `Movidesk:BaseUrl`, timeout de 20 minutos);
 * os quatro services e os quatro repositórios (`Scoped`);
-* `IMovideskCommandHandler`;
+* os command handlers: `IMovideskTicketsCommandHandler`, `IMovideskPeopleCommandHandler` e o comum `IMovideskCommandHandler`;
 * todos os validadores do assembly (`AddValidatorsFromAssemblyContaining<TicketValidator>()`).
 
 O host chama o método em `Hosts/Hangfire/Extensions/ServicesExtensions.cs`.

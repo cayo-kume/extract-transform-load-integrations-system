@@ -1,9 +1,10 @@
 ﻿using Domain.Shared.Extensions;
+using Domain.Movidesk.Dtos.Reads.People;
 using FluentValidation;
 
-namespace Application.Movidesk.Validations.Ticket
+namespace Application.Movidesk.Validations.Reads.People
 {
-    public class CustomFieldValueValidator : AbstractValidator<Domain.Movidesk.Dtos.Reads.Tickets.CustomFieldValue>
+    public class CustomFieldValueValidator : AbstractValidator<CustomFieldValue>
     {
         public CustomFieldValueValidator()
         {
@@ -18,8 +19,6 @@ namespace Application.Movidesk.Validations.Ticket
             RuleFor(x => x.line)
                 .MustBeValidInt32()
                 .When(x => !string.IsNullOrEmpty(x.line));
-
-            // value é nvarchar(max): sem limite de tamanho
 
             RuleForEach(x => x.items)
                 .SetValidator(new CustomFieldValueItemValidator());

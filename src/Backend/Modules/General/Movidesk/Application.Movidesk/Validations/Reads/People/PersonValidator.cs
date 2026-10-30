@@ -1,7 +1,7 @@
 ﻿using Domain.Shared.Extensions;
 using FluentValidation;
 
-namespace Application.Movidesk.Validations.People
+namespace Application.Movidesk.Validations.Reads.People
 {
     public class PersonValidator : AbstractValidator<Domain.Movidesk.Dtos.Reads.People.Person>
     {

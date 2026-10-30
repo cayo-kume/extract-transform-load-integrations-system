@@ -1,6 +1,6 @@
 ﻿using FluentValidation;
 
-namespace Application.Movidesk.Validations.Ticket
+namespace Application.Movidesk.Validations.Reads.Tickets
 {
     /// <summary>
     /// pessoa resumida que vem dentro do ticket (owner, createdBy, clients, organization...)

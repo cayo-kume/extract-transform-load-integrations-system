@@ -1,7 +1,7 @@
 using Domain.Shared.Extensions;
 using FluentValidation;
 
-namespace Application.Movidesk.Validations.Services
+namespace Application.Movidesk.Validations.Reads.Services
 {
     /// <summary>
     /// só registra mensagens no log; os tamanhos são os das colunas do Script009_Create_Movidesk_Services_Tables

@@ -1,7 +1,7 @@
 ﻿using Domain.Shared.Extensions;
 using FluentValidation;
 
-namespace Application.Movidesk.Validations.Ticket
+namespace Application.Movidesk.Validations.Reads.Tickets
 {
     public class AttachmentValidator : AbstractValidator<Domain.Movidesk.Dtos.Reads.Tickets.Attachment>
     {

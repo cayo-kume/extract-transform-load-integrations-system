@@ -335,6 +335,8 @@ namespace Application.Movidesk.Services
                 body: null,
                 readResponse: _ => (id, null));
 
+        // ------------------------------------------------------------------------------------------------------
+
         /// <summary>
         /// fluxo comum das rotas de escrita de pessoas (mesmo desenho do SendTicket): empresa, chamada à API, registro em
         /// movidesk.MovideskRequests (com o corpo enviado) e, depois do sucesso, gravação da pessoa devolvida pelo POST

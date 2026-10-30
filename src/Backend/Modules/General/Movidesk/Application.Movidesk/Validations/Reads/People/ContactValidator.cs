@@ -2,7 +2,7 @@
 using Domain.Movidesk.Dtos.Reads.People;
 using FluentValidation;
 
-namespace Application.Movidesk.Validations.People
+namespace Application.Movidesk.Validations.Reads.People
 {
     public class ContactValidator : AbstractValidator<Contact>
     {

@@ -520,6 +520,8 @@ namespace Application.Movidesk.Services
                 readResponse: _ => (id, null));
         }
 
+        // ------------------------------------------------------------------------------------------------------
+
         /// <summary>
         /// fluxo comum das rotas de escrita de tickets: empresa, chamada à API, registro em movidesk.MovideskRequests
         /// (com o corpo enviado) e, quando readResponse devolve o ticket inteiro, gravação com o SaveTickets

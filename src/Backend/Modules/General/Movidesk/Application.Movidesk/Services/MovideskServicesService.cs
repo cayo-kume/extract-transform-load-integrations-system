@@ -264,6 +264,8 @@ namespace Application.Movidesk.Services
                 body: null,
                 readResponse: _ => (id, null));
 
+        // ------------------------------------------------------------------------------------------------------
+
         /// <summary>
         /// fluxo comum das rotas de escrita de serviços (mesmo desenho do SendTicket e do SendPerson): empresa, chamada à API,
         /// registro em movidesk.MovideskRequests (com o corpo enviado) e, depois do sucesso, hash do catálogo fora do cache,

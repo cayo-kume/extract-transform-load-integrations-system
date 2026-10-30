@@ -9,15 +9,15 @@ namespace Infrastructure.Movidesk.Repositorys
 {
     public class MovideskPeopleRepository : IMovideskPeopleRepository
     {
-        private readonly IMovideskCommandHandler _movideskCommandHandler;
+        private readonly IMovideskPeopleCommandHandler _movideskPeopleCommandHandler;
         private readonly ISharedRepository _coreRepository;
 
-        public MovideskPeopleRepository(IMovideskCommandHandler movideskCommandHandler, ISharedRepository coreRepository) =>
-            (_movideskCommandHandler, _coreRepository) = (movideskCommandHandler, coreRepository);
+        public MovideskPeopleRepository(IMovideskPeopleCommandHandler movideskPeopleCommandHandler, ISharedRepository coreRepository) =>
+            (_movideskPeopleCommandHandler, _coreRepository) = (movideskPeopleCommandHandler, coreRepository);
 
         public async Task<DateTime?> GetPeopleLastChange(string doc_company)
         {
-            string sql = _movideskCommandHandler.CreateGetPeopleLastChangeQuery(doc_company);
+            string sql = _movideskPeopleCommandHandler.CreateGetPeopleLastChangeQuery(doc_company);
 
             return await _coreRepository.GetRecord<DateTime?>(sql);
         }
@@ -29,7 +29,7 @@ namespace Infrastructure.Movidesk.Repositorys
             // lotes de 1000 ids, como no GetActionsHtmlDescriptions dos tickets
             foreach (var chunk in ids.Distinct().Chunk(1000))
             {
-                string sql = _movideskCommandHandler.CreateGetPeopleByIdsQuery(doc_company, chunk.ToList());
+                string sql = _movideskPeopleCommandHandler.CreateGetPeopleByIdsQuery(doc_company, chunk.ToList());
 
                 result.AddRange(await _coreRepository.GetRecords<Person>(sql));
             }
@@ -38,7 +38,7 @@ namespace Infrastructure.Movidesk.Repositorys
         }
 
         public Task<bool> DeletePerson(string doc_company, string id) =>
-            _coreRepository.ExecuteCommand(_movideskCommandHandler.CreateDeletePersonQuery(), new { doc_company, id });
+            _coreRepository.ExecuteCommand(_movideskPeopleCommandHandler.CreateDeletePersonQuery(), new { doc_company, id });
 
         public async Task<bool> BulkInsertIntoMovideskPeople(List<Person> data, Guid? parentExecutionGUID)
         {
