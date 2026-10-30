@@ -81,6 +81,24 @@ fim da classe, os métodos **privados** (cada um com o seu comentário), separad
         // ------------------------------------------------------------------------------------------------------
 ```
 
+### 2.3 Pasta `Validations` espelha os DTOs
+
+Os validadores ficam em `Application.<Módulo>/Validations` na **mesma estrutura de pastas dos DTOs** que validam
+(`Domain.<Módulo>/Dtos`): os de leitura em `Validations/Reads`, os de escrita em `Validations/Writes`, e dentro de
+cada um as mesmas subpastas dos DTOs. O namespace acompanha a pasta.
+
+```
+Domain.Totvs/Dtos/                      Application.Totvs/Validations/
+├── Reads/                              ├── Reads/
+│   ├── Products/Catalogs/...           │   ├── Products/Catalogs/...    (Application.Totvs.Validations.Reads.Products.Catalogs)
+│   └── ...                             │   └── ...
+└── Writes/                             └── Writes/
+    └── ...                                 └── ...                      (Application.Totvs.Validations.Writes.*)
+```
+
+Os validadores são registrados pelo assembly (`AddValidatorsFromAssemblyContaining<...>()`) e as services recebem
+`IValidator<Dto>` pelo tipo do DTO: mover um validador de pasta muda só o namespace e os `using` que o citam.
+
 ---
 
 ## 3. Scripts de banco (DbUp, SQL Server)
