@@ -8,4 +8,7 @@ VALUES
 
 /*Integrações*/
 /*Range 7000 - 7499 (ids reservados em docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md §7)*/
-(70, 7005, 'LinxCommerceSearchSalesRepresentative', 'Integração dos vendedores (LinxCommerceSalesRepresentatives e filhas), só leitura, uma vez por dia', 1440, 2);
+(70, 7005, 'LinxCommerceSearchSalesRepresentative', 'Integração dos vendedores (LinxCommerceSalesRepresentatives e filhas), só leitura, uma vez por dia', 1440, 2),
+
+/*Integrações sob demanda - executadas pelo LinxCommerceController, não são recorrentes (IntervalTimeInMinutes = 0)*/
+(70, 7015, 'LinxCommerceGetSalesRepresentative', 'Integração de um vendedor pelo SalesRepresentativeID (GET SalesRepresentatives/{docCompany}/{salesRepresentativeId})', 0, 2);

@@ -15,6 +15,7 @@ create table [linxcommerce].LinxCommerceRequests (
 	response_body nvarchar(max) null,    --sem os campos sensíveis (senha, hash, cartão e PIX)
 	is_success bit not null,             --resposta 2xx com JSON válido
 	status_code int null,                --status do Linx Commerce; 0 quando a chamada lançou exceção
+	integrated_or_updated_at datetime null, --horário da gravação, em Brasília, igual ao das tabelas de dados (lido pelo DW)
 constraint [PK_LinxCommerceRequests] primary key (
 	id asc
 ));

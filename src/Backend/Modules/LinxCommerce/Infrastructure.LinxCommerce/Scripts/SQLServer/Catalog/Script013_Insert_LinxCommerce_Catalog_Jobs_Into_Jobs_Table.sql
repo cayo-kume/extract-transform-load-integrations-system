@@ -13,4 +13,8 @@ VALUES
 /*Integrações*/
 /*Range 7000 - 7499 (ids reservados em docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md §7)*/
 (70, 7003, 'LinxCommerceSearchProduct', 'Integração dos produtos alterados (LinxCommerceProducts e filhas), a cada hora', 60, 2),
-(70, 7004, 'LinxCommerceSearchSKU', 'Integração dos SKUs alterados (LinxCommerceSkus e filhas), a cada hora', 60, 2);
+(70, 7004, 'LinxCommerceSearchSKU', 'Integração dos SKUs alterados (LinxCommerceSkus e filhas), a cada hora', 60, 2),
+
+/*Integrações sob demanda - executadas pelo LinxCommerceController, não são recorrentes (IntervalTimeInMinutes = 0)*/
+(70, 7013, 'LinxCommerceGetProduct', 'Integração de um produto pelo ProductID (GET Products/{docCompany}/{productId})', 0, 2),
+(70, 7014, 'LinxCommerceGetSKU', 'Integração de um SKU pelo ProductID (GET Skus/{docCompany}/{productId})', 0, 2);

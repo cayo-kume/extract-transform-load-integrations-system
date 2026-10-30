@@ -220,7 +220,7 @@ Infrastructure.LinxCommerce/
 ├── DependencyInjection.cs      (AddScopedLinxCommerceServices)
 ├── Repositorys/                (LinxCommerceRepository e um por assunto)
 └── Scripts/
-    ├── SQLServer/              (scripts DbUp + migrator.csx)
+    ├── SQLServer/              (migrator.csx, Parameters/ com os scripts gerais e uma pasta por service)
     ├── MySQL/                  (migrator.csx)
     └── PostgreSQL/             (migrator.csx)
 ```
@@ -238,20 +238,20 @@ O host chama o método em `Hosts/Hangfire/Extensions/ServicesExtensions.cs`.
 
 ### Scripts de banco (SQL Server)
 
-O DbUp executa cada script uma única vez, em ordem alfabética. Alterar um script que já rodou não muda um banco existente: para isso é
-preciso um script novo. Cada assunto traz um trio de scripts (tabelas, procedures e jobs).
+O DbUp executa cada script uma única vez, na ordem do número do arquivo. Alterar um script que já rodou não muda um banco existente:
+para isso é preciso um script novo. Os scripts gerais ficam em `Parameters/` e cada service tem a sua pasta, com o trio tabelas,
+procedures e jobs (os recorrentes e os sob demanda do service); o `migrator.csx` lê as subpastas.
 
-| Script | Conteúdo |
-|---|---|
-| `Script001_Create_LinxCommerce_Schema_And_Parameters_Table` | Schema `linxcommerce` e `LinxCommerceParameters` |
-| `Script002_Insert_LinxCommerce_Values_Into_Apps_Table` | App `70 - LinxCommerce` |
-| `Script003_..._Parameters_Table.sql.example` | Modelo do insert das credenciais; o `.sql` real fica fora do git (`.gitignore`) |
-| `Script004`–`006` | Pedidos (11 tabelas) e status de pedido: tabelas, procedures e jobs |
-| `Script007`–`009` | Clientes (3 tabelas) |
-| `Script010`–`012` | Produtos (4 tabelas) e SKUs (3 tabelas) |
-| `Script013`–`015` | Vendedores (3 tabelas) |
-| `Script016_Create_LinxCommerce_Requests_Table` | `LinxCommerceRequests`, o log das chamadas sob demanda (só inserção, sem `untreated` nem merge) |
-| `Script017_Insert_LinxCommerce_On_Demand_Jobs_Into_Jobs_Table` | Jobs sob demanda (7010–7015) |
+| Pasta | Script | Conteúdo |
+|---|---|---|
+| `Parameters/` | `Script001_Create_LinxCommerce_Schema_And_Parameters_Table` | Schema `linxcommerce` e `LinxCommerceParameters` |
+| `Parameters/` | `Script002_Insert_LinxCommerce_Values_Into_Apps_Table` | App `70 - LinxCommerce` |
+| `Parameters/` | `Script003_..._Parameters_Table.sql.example` | Modelo do insert das credenciais; o `.sql` real fica fora do git (`.gitignore`) |
+| `Parameters/` | `Script004_Create_LinxCommerce_Requests_Table` | `LinxCommerceRequests`, o log das chamadas sob demanda (só inserção, sem `untreated` nem merge), já com `integrated_or_updated_at` |
+| `Orders/` | `Script005`–`007` | Pedidos (11 tabelas) e status de pedido: tabelas, procedures e jobs, com os sob demanda de pedido (7010 e 7011) |
+| `Customers/` | `Script008`–`010` | Clientes (3 tabelas), com o sob demanda de cliente (7012) |
+| `Catalog/` | `Script011`–`013` | Produtos (4 tabelas) e SKUs (3 tabelas), com os sob demanda de produto e SKU (7013 e 7014) |
+| `SalesRepresentatives/` | `Script014`–`016` | Vendedores (3 tabelas), com o sob demanda de vendedor (7015) |
 
 Tabelas, com a chave (além de `doc_company`):
 
@@ -345,7 +345,7 @@ linha em `LinxCommerceParameters`, cada job só registra "Nenhum cliente" e term
 | `appsettings.json` do host | `ConnectionStrings` | Conexão com o SQL Server (dados e auditoria) |
 | Banco | `linxcommerce.LinxCommerceParameters` | CNPJ (`doc_company`), endereço do ambiente (`base_url`) e credenciais (`user_name`, `api_key`) de cada cliente |
 
-O módulo não tem chave no `appsettings`: o endereço da API é de cada cliente. As credenciais vão para o banco pelo `Script003` (copiado
+O módulo não tem chave no `appsettings`: o endereço da API é de cada cliente. As credenciais vão para o banco pelo `Parameters/Script003` (copiado
 do `.example`, fora do git) e nunca são gravadas em logs nem em `LinxCommerceRequests`.
 
 ---

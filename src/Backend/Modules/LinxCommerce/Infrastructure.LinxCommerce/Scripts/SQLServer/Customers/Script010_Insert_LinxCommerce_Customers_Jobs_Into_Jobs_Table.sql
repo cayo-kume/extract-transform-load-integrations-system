@@ -8,4 +8,7 @@ VALUES
 
 /*Integrações*/
 /*Range 7000 - 7499 (ids reservados em docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md §7)*/
-(70, 7002, 'LinxCommerceSearchCustomer', 'Integração dos clientes alterados (LinxCommerceCustomers e filhas), a cada hora', 60, 2);
+(70, 7002, 'LinxCommerceSearchCustomer', 'Integração dos clientes alterados (LinxCommerceCustomers e filhas), a cada hora', 60, 2),
+
+/*Integrações sob demanda - executadas pelo LinxCommerceController, não são recorrentes (IntervalTimeInMinutes = 0)*/
+(70, 7012, 'LinxCommerceGetCustomer', 'Integração de um cliente pelo CustomerID (GET Customers/{docCompany}/{customerId})', 0, 2);
