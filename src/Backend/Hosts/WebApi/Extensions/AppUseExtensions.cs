@@ -4,7 +4,7 @@ namespace WebApi.Extensions
 {
     public static class AppUseExtensions
     {
-        public static IApplicationBuilder UseApplication(this IApplicationBuilder app, string? serverName)
+        public static IApplicationBuilder UseApplication(this IApplicationBuilder app)
         {
             app.UseMiddleware<APIExceptionHandlingMiddleware>();
             app.UseSwagger(c => { c.OpenApiVersion = Microsoft.OpenApi.OpenApiSpecVersion.OpenApi2_0; });

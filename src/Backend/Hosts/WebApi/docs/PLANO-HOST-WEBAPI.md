@@ -67,6 +67,18 @@ Conferência: build do `WebApi.csproj`, Swagger abrindo em `http://localhost:525
 3. `Program.cs`: a leitura de `ConfigureServer:ServerName`, que não existe no `appsettings.json`.
 4. `WebApi.http`: trocar o modelo padrão (`/todos`) por exemplos das rotas reais.
 
+**Feito em 30/10/2026.** O que foi conferido:
+
+* Saíram `ConfigurationHelperExtensions`, `GeneralIntegrationsRecurringJobsExtensions` (e a pasta `RecurringJobs/`, que
+  volta no passo 4 com os mapas por módulo), `Controllers/Procedures/` e `Controllers/N8N/`. Nenhum outro arquivo usava
+  a configuração estática.
+* `Program.cs` não lê mais `ConfigureServer:ServerName`, e `UseApplication` perdeu o parâmetro `serverName`, que não
+  era usado. O `AddHangfireService` (não chamado) ainda lê `ConfigureServer`; ele é reescrito no passo 3.
+* `WebApi.http` com uma leitura recorrente e uma sob demanda por módulo (Totvs, Movidesk, AfterSale, Linx Commerce,
+  Linx Microvix e DW), todas conferidas contra o `swagger.json`. Só leituras; as escritas ficam no Swagger.
+* Build sem erros: 1422 avisos, os 1431 do passo 1 menos os 9 dos dois arquivos excluídos, nenhum novo.
+* Host no ar: Swagger com os mesmos 457 caminhos do passo 1 (os controllers excluídos não tinham rotas ativas).
+
 ## Passo 3 — Hangfire opcional
 
 O mesmo projeto sobe de dois jeitos, escolhidos por um booleano no `appsettings.json`:
