@@ -2,7 +2,6 @@
 #r "nuget: dbup-sqlserver" 
 
 using System;
-using System.IO;
 using System.Linq;
 using DbUp;
 using DbUp.ScriptProviders;
@@ -17,15 +16,10 @@ EnsureDatabase.For.SqlDatabase(connectionString);
 
 // 2. Configura o DbUp
 // os scripts ficam em subpastas (Parameters, com os gerais, e uma por service); o DbUp nomeia cada um pelo caminho
-// (ex.: People.Script005_...sql), então a ordem de execução é a do número do arquivo, não a da pasta.
-// A pasta Homologacao fica de fora: o Script003 de homologação roda à mão, no lugar do de produção
+// (ex.: People.Script005_...sql), então a ordem de execução é a do número do arquivo, não a da pasta
 var upgrader = DeployChanges.To
     .SqlDatabase(connectionString)
-    .WithScriptsFromFileSystem(".", new FileSystemScriptOptions
-    {
-        IncludeSubDirectories = true,
-        Filter = path => !Path.GetRelativePath(".", path).StartsWith("Homologacao", StringComparison.OrdinalIgnoreCase)
-    })
+    .WithScriptsFromFileSystem(".", new FileSystemScriptOptions { IncludeSubDirectories = true })
     .WithScriptSorter(scripts => scripts.OrderBy(s => s.Name.Split('.')[^2], StringComparer.Ordinal))
     .LogToConsole()
     .Build();

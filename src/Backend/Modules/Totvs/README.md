@@ -338,7 +338,7 @@ Infrastructure.Totvs/
 ├── DependencyInjection.cs      (AddScopedTotvsServices)
 ├── Repositorys/                (TotvsRepository e um por recurso)
 └── Scripts/
-    ├── SQLServer/              (migrator.csx, Parameters/ com os scripts gerais, uma pasta por service e Homologacao/, fora do migrator)
+    ├── SQLServer/              (migrator.csx, Parameters/ com os scripts gerais e uma pasta por service)
     ├── MySQL/                  (migrator.csx)
     └── PostgreSQL/             (migrator.csx)
 ```
@@ -355,13 +355,13 @@ O host chama o método em `Hosts/Hangfire/Extensions/ServicesExtensions.cs`.
 
 ### Scripts de banco (SQL Server)
 
-O DbUp executa cada script uma única vez. Alterar um script que já rodou não muda um banco existente: para isso é preciso um script novo. Os scripts gerais do módulo ficam em `Parameters/` e cada service tem a sua pasta, com um trio de scripts: tabelas, procedures e jobs (os recorrentes, os sob demanda e as escritas do service). O `migrator.csx` lê as subpastas, menos `Homologacao/`, e executa na ordem do número do arquivo, não na da pasta.
+O DbUp executa cada script uma única vez. Alterar um script que já rodou não muda um banco existente: para isso é preciso um script novo. Os scripts gerais do módulo ficam em `Parameters/` e cada service tem a sua pasta, com um trio de scripts: tabelas, procedures e jobs (os recorrentes, os sob demanda e as escritas do service). O `migrator.csx` lê as subpastas e executa na ordem do número do arquivo, não na da pasta.
 
 | Pasta | Script | Conteúdo |
 |---|---|---|
 | `Parameters/` | `Script001` | Schema `totvs` e `totvs.TotvsParameters` |
 | `Parameters/` | `Script002` | App `130 - Totvs` em `auditing.Apps` |
-| `Parameters/` | `Script003` | A holding em `TotvsParameters`, com as credenciais de produção, como o AfterSale e o Movidesk. As de homologação ficam em `Homologacao/Script003_..._Homologacao.sql`, numa subpasta que o DbUp do deploy não lê: rodar à mão só no banco de homologação ou local, no lugar do `Script003` |
+| `Parameters/` | `Script003` | A holding em `TotvsParameters`, com as credenciais de produção, como o AfterSale e o Movidesk. As de homologação ficam no mesmo arquivo, **comentadas**: no banco de homologação ou local, rodar à mão no lugar do insert de produção (duas linhas da mesma empresa fariam o host usar a credencial errada) |
 | `Parameters/` | `Script004` | `totvs.TotvsRequests` (log das chamadas sob demanda e das escritas, com `status_code` e `integrated_or_updated_at`) |
 | `People/` | `Script005`–`007` | Filiais e pessoas físicas e jurídicas (leituras, escritas e sob demanda) |
 | `Sellers/` | `Script008`–`010` | Vendedores e regiões de atuação |
