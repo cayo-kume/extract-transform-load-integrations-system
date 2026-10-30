@@ -189,7 +189,42 @@ namespace Application.LinxMicrovix.Outbound.Services
                         if (failed || rows.Count == 0)
                             continue;
 
-                        totalInseridos += await SaveB2CConsultaProdutosImagens(company.doc_company!, _linxMicrovixService.GetBatchTime(), rows);
+                        // valida, monta as entidades (com o mesmo horário de lote) e grava. Chave: portal + id_imagem_produto; fica a linha de maior timestamp
+                        var batchTime = _linxMicrovixService.GetBatchTime();
+
+                        var _listSomenteNovos = new List<Domain.LinxMicrovix.Outbound.Entities.Reads.B2C.ProductImages.B2CConsultaProdutosImagens>();
+                        var records = new Dictionary<string, string>();
+
+                        foreach (var (dto, xml) in rows.GroupBy(x => (x.dto.portal, x.dto.id_imagem_produto)).Select(g => g.OrderBy(x => MicrovixConverters.ToInt64(x.dto.timestamp)).Last()))
+                        {
+                            var validations = _b2CConsultaProdutosImagensValidator.Validate(dto);
+
+                            if (validations.Errors.Count > 0)
+                            {
+                                var message = String.Empty;
+                                validations.Errors.ForEach(s => message += $"B2CConsultaProdutosImagens {dto.portal} {dto.id_imagem_produto}: {s.ErrorMessage}\n");
+                                _logger.AddMessage(message);
+                            }
+
+                            // sem nenhuma parte da chave o registro não é gravado; parte vazia vira o valor padrão (0, texto vazio ou 1900-01-01)
+                            if (String.IsNullOrEmpty(dto.portal) && String.IsNullOrEmpty(dto.id_imagem_produto))
+                                continue;
+
+                            var entity = new Domain.LinxMicrovix.Outbound.Entities.Reads.B2C.ProductImages.B2CConsultaProdutosImagens(company.doc_company!, batchTime, dto);
+
+                            _listSomenteNovos.Add(entity);
+                            records[$"{entity.portal}|{entity.id_imagem_produto}"] = xml;
+                        }
+
+                        if (_listSomenteNovos.Count == 0)
+                            continue;
+
+                        await _linxMicrovixB2CProductImagesRepository.BulkInsertIntoB2CConsultaProdutosImagens(_listSomenteNovos, _logger.GetExecutionGuid());
+
+                        foreach (var record in records)
+                            _logger.AddRecord(record.Key, record.Value);
+
+                        totalInseridos += _listSomenteNovos.Count;
                     }
                 }
 
@@ -349,7 +384,42 @@ namespace Application.LinxMicrovix.Outbound.Services
                         if (failed || rows.Count == 0)
                             continue;
 
-                        totalInseridos += await SaveB2CConsultaProdutosImagensURL(company.doc_company!, cnpj_emp, _linxMicrovixService.GetBatchTime(), rows);
+                        // valida, monta as entidades (com o mesmo horário de lote) e grava. Chave: cnpj_emp + codigoproduto + url_imagem_blob; fica a linha de maior timestamp
+                        var batchTime = _linxMicrovixService.GetBatchTime();
+
+                        var _listSomenteNovos = new List<Domain.LinxMicrovix.Outbound.Entities.Reads.B2C.ProductImages.B2CConsultaProdutosImagensURL>();
+                        var records = new Dictionary<string, string>();
+
+                        foreach (var (dto, xml) in rows.GroupBy(x => (x.dto.codigoproduto, x.dto.url_imagem_blob)).Select(g => g.OrderBy(x => MicrovixConverters.ToInt64(x.dto.timestamp)).Last()))
+                        {
+                            var validations = _b2CConsultaProdutosImagensURLValidator.Validate(dto);
+
+                            if (validations.Errors.Count > 0)
+                            {
+                                var message = String.Empty;
+                                validations.Errors.ForEach(s => message += $"B2CConsultaProdutosImagensURL {dto.codigoproduto} {dto.url_imagem_blob} (loja {cnpj_emp}): {s.ErrorMessage}\n");
+                                _logger.AddMessage(message);
+                            }
+
+                            // sem nenhuma parte da chave o registro não é gravado; parte vazia vira o valor padrão (0, texto vazio ou 1900-01-01)
+                            if (String.IsNullOrEmpty(dto.codigoproduto) && String.IsNullOrEmpty(dto.url_imagem_blob))
+                                continue;
+
+                            var entity = new Domain.LinxMicrovix.Outbound.Entities.Reads.B2C.ProductImages.B2CConsultaProdutosImagensURL(company.doc_company!, cnpj_emp, batchTime, dto);
+
+                            _listSomenteNovos.Add(entity);
+                            records[$"{entity.cnpj_emp}|{entity.codigoproduto}|{entity.url_imagem_blob}"] = xml;
+                        }
+
+                        if (_listSomenteNovos.Count == 0)
+                            continue;
+
+                        await _linxMicrovixB2CProductImagesRepository.BulkInsertIntoB2CConsultaProdutosImagensURL(_listSomenteNovos, _logger.GetExecutionGuid());
+
+                        foreach (var record in records)
+                            _logger.AddRecord(record.Key, record.Value);
+
+                        totalInseridos += _listSomenteNovos.Count;
                     }
                 }
 
@@ -510,7 +580,42 @@ namespace Application.LinxMicrovix.Outbound.Services
                         if (failed || rows.Count == 0)
                             continue;
 
-                        totalInseridos += await SaveB2CConsultaImagens(company.doc_company!, cnpj_emp, _linxMicrovixService.GetBatchTime(), rows);
+                        // valida, monta as entidades (com o mesmo horário de lote) e grava. Chave: cnpj_emp + id_imagem; fica a linha de maior timestamp
+                        var batchTime = _linxMicrovixService.GetBatchTime();
+
+                        var _listSomenteNovos = new List<Domain.LinxMicrovix.Outbound.Entities.Reads.B2C.ProductImages.B2CConsultaImagens>();
+                        var records = new Dictionary<string, string>();
+
+                        foreach (var (dto, xml) in rows.GroupBy(x => x.dto.id_imagem).Select(g => g.OrderBy(x => MicrovixConverters.ToInt64(x.dto.timestamp)).Last()))
+                        {
+                            var validations = _b2CConsultaImagensValidator.Validate(dto);
+
+                            if (validations.Errors.Count > 0)
+                            {
+                                var message = String.Empty;
+                                validations.Errors.ForEach(s => message += $"B2CConsultaImagens {dto.id_imagem} (loja {cnpj_emp}): {s.ErrorMessage}\n");
+                                _logger.AddMessage(message);
+                            }
+
+                            // sem nenhuma parte da chave o registro não é gravado; parte vazia vira o valor padrão (0, texto vazio ou 1900-01-01)
+                            if (String.IsNullOrEmpty(dto.id_imagem))
+                                continue;
+
+                            var entity = new Domain.LinxMicrovix.Outbound.Entities.Reads.B2C.ProductImages.B2CConsultaImagens(company.doc_company!, cnpj_emp, batchTime, dto);
+
+                            _listSomenteNovos.Add(entity);
+                            records[$"{entity.cnpj_emp}|{entity.id_imagem}"] = xml;
+                        }
+
+                        if (_listSomenteNovos.Count == 0)
+                            continue;
+
+                        await _linxMicrovixB2CProductImagesRepository.BulkInsertIntoB2CConsultaImagens(_listSomenteNovos, _logger.GetExecutionGuid());
+
+                        foreach (var record in records)
+                            _logger.AddRecord(record.Key, record.Value);
+
+                        totalInseridos += _listSomenteNovos.Count;
                     }
                 }
 
@@ -677,7 +782,42 @@ namespace Application.LinxMicrovix.Outbound.Services
                             if (failed || rows.Count == 0)
                                 continue;
 
-                            totalInseridos += await SaveB2CConsultaImagensHD(company.doc_company!, cnpj_emp, _linxMicrovixService.GetBatchTime(), rows);
+                            // valida, monta as entidades (com o mesmo horário de lote) e grava. Chave: cnpj_emp + codigoproduto + identificador_imagem; fica a linha de maior timestamp
+                            var batchTime = _linxMicrovixService.GetBatchTime();
+
+                            var _listSomenteNovos = new List<Domain.LinxMicrovix.Outbound.Entities.Reads.B2C.ProductImages.B2CConsultaImagensHD>();
+                            var records = new Dictionary<string, string>();
+
+                            foreach (var (dto, xml) in rows.GroupBy(x => (x.dto.codigoproduto, x.dto.identificador_imagem)).Select(g => g.OrderBy(x => MicrovixConverters.ToInt64(x.dto.timestamp)).Last()))
+                            {
+                                var validations = _b2CConsultaImagensHDValidator.Validate(dto);
+
+                                if (validations.Errors.Count > 0)
+                                {
+                                    var message = String.Empty;
+                                    validations.Errors.ForEach(s => message += $"B2CConsultaImagensHD {dto.codigoproduto} {dto.identificador_imagem} (loja {cnpj_emp}): {s.ErrorMessage}\n");
+                                    _logger.AddMessage(message);
+                                }
+
+                                // sem nenhuma parte da chave o registro não é gravado; parte vazia vira o valor padrão (0, texto vazio ou 1900-01-01)
+                                if (String.IsNullOrEmpty(dto.codigoproduto) && String.IsNullOrEmpty(dto.identificador_imagem))
+                                    continue;
+
+                                var entity = new Domain.LinxMicrovix.Outbound.Entities.Reads.B2C.ProductImages.B2CConsultaImagensHD(company.doc_company!, cnpj_emp, batchTime, dto);
+
+                                _listSomenteNovos.Add(entity);
+                                records[$"{entity.cnpj_emp}|{entity.codigoproduto}|{entity.identificador_imagem}"] = xml;
+                            }
+
+                            if (_listSomenteNovos.Count == 0)
+                                continue;
+
+                            await _linxMicrovixB2CProductImagesRepository.BulkInsertIntoB2CConsultaImagensHD(_listSomenteNovos, _logger.GetExecutionGuid());
+
+                            foreach (var record in records)
+                                _logger.AddRecord(record.Key, record.Value);
+
+                            totalInseridos += _listSomenteNovos.Count;
                         }
                     }
                 }
@@ -693,166 +833,6 @@ namespace Application.LinxMicrovix.Outbound.Services
                 _logger.SetLogEndDate();
                 await _logger.CommitAllChanges();
             }
-        }
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote) e grava. Chave: portal + id_imagem_produto; fica a linha de maior timestamp
-        /// </summary>
-        private async Task<int> SaveB2CConsultaProdutosImagens(string doc_company, DateTime batchTime, List<(Domain.LinxMicrovix.Outbound.Dtos.Reads.B2C.ProductImages.B2CConsultaProdutosImagens dto, string xml)> rows)
-        {
-            var _listSomenteNovos = new List<Domain.LinxMicrovix.Outbound.Entities.Reads.B2C.ProductImages.B2CConsultaProdutosImagens>();
-            var records = new Dictionary<string, string>();
-
-            foreach (var (dto, xml) in rows.GroupBy(x => (x.dto.portal, x.dto.id_imagem_produto)).Select(g => g.OrderBy(x => MicrovixConverters.ToInt64(x.dto.timestamp)).Last()))
-            {
-                var validations = _b2CConsultaProdutosImagensValidator.Validate(dto);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"B2CConsultaProdutosImagens {dto.portal} {dto.id_imagem_produto}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                // sem nenhuma parte da chave o registro não é gravado; parte vazia vira o valor padrão (0, texto vazio ou 1900-01-01)
-                if (String.IsNullOrEmpty(dto.portal) && String.IsNullOrEmpty(dto.id_imagem_produto))
-                    continue;
-
-                var entity = new Domain.LinxMicrovix.Outbound.Entities.Reads.B2C.ProductImages.B2CConsultaProdutosImagens(doc_company, batchTime, dto);
-
-                _listSomenteNovos.Add(entity);
-                records[$"{entity.portal}|{entity.id_imagem_produto}"] = xml;
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _linxMicrovixB2CProductImagesRepository.BulkInsertIntoB2CConsultaProdutosImagens(_listSomenteNovos, _logger.GetExecutionGuid());
-
-            foreach (var record in records)
-                _logger.AddRecord(record.Key, record.Value);
-
-            return _listSomenteNovos.Count;
-        }
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote) e grava. Chave: cnpj_emp + codigoproduto + url_imagem_blob; fica a linha de maior timestamp
-        /// </summary>
-        private async Task<int> SaveB2CConsultaProdutosImagensURL(string doc_company, string cnpj_emp, DateTime batchTime, List<(Domain.LinxMicrovix.Outbound.Dtos.Reads.B2C.ProductImages.B2CConsultaProdutosImagensURL dto, string xml)> rows)
-        {
-            var _listSomenteNovos = new List<Domain.LinxMicrovix.Outbound.Entities.Reads.B2C.ProductImages.B2CConsultaProdutosImagensURL>();
-            var records = new Dictionary<string, string>();
-
-            foreach (var (dto, xml) in rows.GroupBy(x => (x.dto.codigoproduto, x.dto.url_imagem_blob)).Select(g => g.OrderBy(x => MicrovixConverters.ToInt64(x.dto.timestamp)).Last()))
-            {
-                var validations = _b2CConsultaProdutosImagensURLValidator.Validate(dto);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"B2CConsultaProdutosImagensURL {dto.codigoproduto} {dto.url_imagem_blob} (loja {cnpj_emp}): {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                // sem nenhuma parte da chave o registro não é gravado; parte vazia vira o valor padrão (0, texto vazio ou 1900-01-01)
-                if (String.IsNullOrEmpty(dto.codigoproduto) && String.IsNullOrEmpty(dto.url_imagem_blob))
-                    continue;
-
-                var entity = new Domain.LinxMicrovix.Outbound.Entities.Reads.B2C.ProductImages.B2CConsultaProdutosImagensURL(doc_company, cnpj_emp, batchTime, dto);
-
-                _listSomenteNovos.Add(entity);
-                records[$"{entity.cnpj_emp}|{entity.codigoproduto}|{entity.url_imagem_blob}"] = xml;
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _linxMicrovixB2CProductImagesRepository.BulkInsertIntoB2CConsultaProdutosImagensURL(_listSomenteNovos, _logger.GetExecutionGuid());
-
-            foreach (var record in records)
-                _logger.AddRecord(record.Key, record.Value);
-
-            return _listSomenteNovos.Count;
-        }
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote) e grava. Chave: cnpj_emp + id_imagem; fica a linha de maior timestamp
-        /// </summary>
-        private async Task<int> SaveB2CConsultaImagens(string doc_company, string cnpj_emp, DateTime batchTime, List<(Domain.LinxMicrovix.Outbound.Dtos.Reads.B2C.ProductImages.B2CConsultaImagens dto, string xml)> rows)
-        {
-            var _listSomenteNovos = new List<Domain.LinxMicrovix.Outbound.Entities.Reads.B2C.ProductImages.B2CConsultaImagens>();
-            var records = new Dictionary<string, string>();
-
-            foreach (var (dto, xml) in rows.GroupBy(x => x.dto.id_imagem).Select(g => g.OrderBy(x => MicrovixConverters.ToInt64(x.dto.timestamp)).Last()))
-            {
-                var validations = _b2CConsultaImagensValidator.Validate(dto);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"B2CConsultaImagens {dto.id_imagem} (loja {cnpj_emp}): {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                // sem nenhuma parte da chave o registro não é gravado; parte vazia vira o valor padrão (0, texto vazio ou 1900-01-01)
-                if (String.IsNullOrEmpty(dto.id_imagem))
-                    continue;
-
-                var entity = new Domain.LinxMicrovix.Outbound.Entities.Reads.B2C.ProductImages.B2CConsultaImagens(doc_company, cnpj_emp, batchTime, dto);
-
-                _listSomenteNovos.Add(entity);
-                records[$"{entity.cnpj_emp}|{entity.id_imagem}"] = xml;
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _linxMicrovixB2CProductImagesRepository.BulkInsertIntoB2CConsultaImagens(_listSomenteNovos, _logger.GetExecutionGuid());
-
-            foreach (var record in records)
-                _logger.AddRecord(record.Key, record.Value);
-
-            return _listSomenteNovos.Count;
-        }
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote) e grava. Chave: cnpj_emp + codigoproduto + identificador_imagem; fica a linha de maior timestamp
-        /// </summary>
-        private async Task<int> SaveB2CConsultaImagensHD(string doc_company, string cnpj_emp, DateTime batchTime, List<(Domain.LinxMicrovix.Outbound.Dtos.Reads.B2C.ProductImages.B2CConsultaImagensHD dto, string xml)> rows)
-        {
-            var _listSomenteNovos = new List<Domain.LinxMicrovix.Outbound.Entities.Reads.B2C.ProductImages.B2CConsultaImagensHD>();
-            var records = new Dictionary<string, string>();
-
-            foreach (var (dto, xml) in rows.GroupBy(x => (x.dto.codigoproduto, x.dto.identificador_imagem)).Select(g => g.OrderBy(x => MicrovixConverters.ToInt64(x.dto.timestamp)).Last()))
-            {
-                var validations = _b2CConsultaImagensHDValidator.Validate(dto);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"B2CConsultaImagensHD {dto.codigoproduto} {dto.identificador_imagem} (loja {cnpj_emp}): {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                // sem nenhuma parte da chave o registro não é gravado; parte vazia vira o valor padrão (0, texto vazio ou 1900-01-01)
-                if (String.IsNullOrEmpty(dto.codigoproduto) && String.IsNullOrEmpty(dto.identificador_imagem))
-                    continue;
-
-                var entity = new Domain.LinxMicrovix.Outbound.Entities.Reads.B2C.ProductImages.B2CConsultaImagensHD(doc_company, cnpj_emp, batchTime, dto);
-
-                _listSomenteNovos.Add(entity);
-                records[$"{entity.cnpj_emp}|{entity.codigoproduto}|{entity.identificador_imagem}"] = xml;
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _linxMicrovixB2CProductImagesRepository.BulkInsertIntoB2CConsultaImagensHD(_listSomenteNovos, _logger.GetExecutionGuid());
-
-            foreach (var record in records)
-                _logger.AddRecord(record.Key, record.Value);
-
-            return _listSomenteNovos.Count;
         }
     }
 }

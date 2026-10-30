@@ -161,7 +161,41 @@ namespace Application.LinxMicrovix.Outbound.Services
                     if (rows.Count == 0)
                         continue;
 
-                    totalInseridos += await SaveLinxGrupoLojas(company.doc_company!, _linxMicrovixService.GetBatchTime(), rows);
+                    // valida, monta as entidades (com o mesmo horário de lote) e grava. Chave: portal + empresa; sem ela o registro sai
+                    var batchTime = _linxMicrovixService.GetBatchTime();
+
+                    var _listSomenteNovos = new List<Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.Stores.LinxGrupoLojas>();
+                    var records = new Dictionary<string, string>();
+
+                    foreach (var (dto, xml) in rows.GroupBy(x => (x.dto.portal, x.dto.empresa)).Select(g => g.Last()))
+                    {
+                        var validations = _linxGrupoLojasValidator.Validate(dto);
+
+                        if (validations.Errors.Count > 0)
+                        {
+                            var message = String.Empty;
+                            validations.Errors.ForEach(s => message += $"loja {dto.portal}/{dto.empresa} ({dto.CNPJ}): {s.ErrorMessage}\n");
+                            _logger.AddMessage(message);
+                        }
+
+                        var entity = new Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.Stores.LinxGrupoLojas(company.doc_company!, batchTime, dto);
+
+                        if (entity.portal == 0 || entity.empresa == 0)
+                            continue;
+
+                        _listSomenteNovos.Add(entity);
+                        records[$"{entity.portal}|{entity.empresa}"] = xml;
+                    }
+
+                    if (_listSomenteNovos.Count == 0)
+                        continue;
+
+                    await _linxMicrovixStoresRepository.BulkInsertIntoLinxGrupoLojas(_listSomenteNovos, _logger.GetExecutionGuid());
+
+                    foreach (var record in records)
+                        _logger.AddRecord(record.Key, record.Value);
+
+                    totalInseridos += _listSomenteNovos.Count;
                 }
 
                 _logger.AddMessage(
@@ -346,7 +380,29 @@ namespace Application.LinxMicrovix.Outbound.Services
                         if (failed || rows.Count == 0)
                             continue;
 
-                        totalInseridos += await SaveLinxLojas(company.doc_company!, cnpj_emp, _linxMicrovixService.GetBatchTime(), rows);
+                        // valida, monta as entidades e grava. Chave: cnpj_emp, a loja consultada (fica a linha de maior timestamp)
+                        var batchTime = _linxMicrovixService.GetBatchTime();
+
+                        var (dto, xml) = rows.OrderBy(x => MicrovixConverters.ToInt64(x.dto.timestamp)).Last();
+                        var validations = _linxLojasValidator.Validate(dto);
+
+                        if (validations.Errors.Count > 0)
+                        {
+                            var message = String.Empty;
+                            validations.Errors.ForEach(s => message += $"loja {cnpj_emp}: {s.ErrorMessage}\n");
+                            _logger.AddMessage(message);
+                        }
+
+                        var _listSomenteNovos = new List<Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.Stores.LinxLojas>
+                        {
+                            new Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.Stores.LinxLojas(company.doc_company!, cnpj_emp, batchTime, dto)
+                        };
+
+                        await _linxMicrovixStoresRepository.BulkInsertIntoLinxLojas(_listSomenteNovos, _logger.GetExecutionGuid());
+
+                        _logger.AddRecord(cnpj_emp, xml);
+
+                        totalInseridos += _listSomenteNovos.Count;
                     }
                 }
 
@@ -504,7 +560,29 @@ namespace Application.LinxMicrovix.Outbound.Services
                         if (failed || rows.Count == 0)
                             continue;
 
-                        totalInseridos += await SaveLinxLojasParametros(company.doc_company!, cnpj_emp, _linxMicrovixService.GetBatchTime(), rows);
+                        // valida, monta as entidades e grava. A resposta não traz o CNPJ: chave cnpj_emp, a loja consultada
+                        var batchTime = _linxMicrovixService.GetBatchTime();
+
+                        var (dto, xml) = rows.OrderBy(x => MicrovixConverters.ToInt64(x.dto.timestamp)).Last();
+                        var validations = _linxLojasParametrosValidator.Validate(dto);
+
+                        if (validations.Errors.Count > 0)
+                        {
+                            var message = String.Empty;
+                            validations.Errors.ForEach(s => message += $"parâmetros da loja {cnpj_emp}: {s.ErrorMessage}\n");
+                            _logger.AddMessage(message);
+                        }
+
+                        var _listSomenteNovos = new List<Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.Stores.LinxLojasParametros>
+                        {
+                            new Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.Stores.LinxLojasParametros(company.doc_company!, cnpj_emp, batchTime, dto)
+                        };
+
+                        await _linxMicrovixStoresRepository.BulkInsertIntoLinxLojasParametros(_listSomenteNovos, _logger.GetExecutionGuid());
+
+                        _logger.AddRecord(cnpj_emp, xml);
+
+                        totalInseridos += _listSomenteNovos.Count;
                     }
                 }
 
@@ -661,7 +739,41 @@ namespace Application.LinxMicrovix.Outbound.Services
                     if (failed || rows.Count == 0)
                         continue;
 
-                    totalInseridos += await SaveLinxUsuarios(company.doc_company!, _linxMicrovixService.GetBatchTime(), rows);
+                    // valida, monta as entidades e grava. Chave: portal + usuario_id (fica a linha de maior timestamp)
+                    var batchTime = _linxMicrovixService.GetBatchTime();
+
+                    var _listSomenteNovos = new List<Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.Stores.LinxUsuarios>();
+                    var records = new Dictionary<string, string>();
+
+                    foreach (var (dto, xml) in rows.GroupBy(x => (x.dto.portal, x.dto.usuario_id)).Select(g => g.OrderBy(x => MicrovixConverters.ToInt64(x.dto.timestamp)).Last()))
+                    {
+                        var validations = _linxUsuariosValidator.Validate(dto);
+
+                        if (validations.Errors.Count > 0)
+                        {
+                            var message = String.Empty;
+                            validations.Errors.ForEach(s => message += $"usuário {dto.usuario_id}: {s.ErrorMessage}\n");
+                            _logger.AddMessage(message);
+                        }
+
+                        var entity = new Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.Stores.LinxUsuarios(company.doc_company!, batchTime, dto);
+
+                        if (entity.portal == 0 || entity.usuario_id == 0)
+                            continue;
+
+                        _listSomenteNovos.Add(entity);
+                        records[$"{entity.portal}|{entity.usuario_id}"] = xml;
+                    }
+
+                    if (_listSomenteNovos.Count == 0)
+                        continue;
+
+                    await _linxMicrovixStoresRepository.BulkInsertIntoLinxUsuarios(_listSomenteNovos, _logger.GetExecutionGuid());
+
+                    foreach (var record in records)
+                        _logger.AddRecord(record.Key, record.Value);
+
+                    totalInseridos += _listSomenteNovos.Count;
                 }
 
                 _logger.AddMessage(
@@ -757,7 +869,43 @@ namespace Application.LinxMicrovix.Outbound.Services
                     if (rows.Count == 0)
                         continue;
 
-                    totalInseridos += await SaveLinxMetodos(company.doc_company!, _linxMicrovixService.GetBatchTime(), rows);
+                    // valida, monta as entidades e grava. Chave: metodo
+                    var batchTime = _linxMicrovixService.GetBatchTime();
+
+                    var _listSomenteNovos = new List<Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.Stores.LinxMetodos>();
+                    var records = new Dictionary<string, string>();
+
+                    foreach (var (dto, xml) in rows)
+                    {
+                        var validations = _linxMetodosValidator.Validate(dto);
+
+                        if (validations.Errors.Count > 0)
+                        {
+                            var message = String.Empty;
+                            validations.Errors.ForEach(s => message += $"método {dto.retorno}: {s.ErrorMessage}\n");
+                            _logger.AddMessage(message);
+                        }
+
+                        var entity = new Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.Stores.LinxMetodos(company.doc_company!, batchTime, dto);
+
+                        if (String.IsNullOrEmpty(entity.metodo))
+                            continue;
+
+                        // o mesmo método duas vezes no catálogo violaria a PK: fica o último
+                        _listSomenteNovos.RemoveAll(x => x.metodo == entity.metodo);
+                        _listSomenteNovos.Add(entity);
+                        records[entity.metodo] = xml;
+                    }
+
+                    if (_listSomenteNovos.Count == 0)
+                        continue;
+
+                    await _linxMicrovixStoresRepository.BulkInsertIntoLinxMetodos(_listSomenteNovos, _logger.GetExecutionGuid());
+
+                    foreach (var record in records)
+                        _logger.AddRecord(record.Key, record.Value);
+
+                    totalInseridos += _listSomenteNovos.Count;
                 }
 
                 _logger.AddMessage(
@@ -906,7 +1054,41 @@ namespace Application.LinxMicrovix.Outbound.Services
                     if (failed || rows.Count == 0)
                         continue;
 
-                    totalInseridos += await SaveLinxEntrantes(company.doc_company!, _linxMicrovixService.GetBatchTime(), rows);
+                    // valida, monta as entidades e grava. Chave: portal + id_entrantes (fica a linha de maior timestamp)
+                    var batchTime = _linxMicrovixService.GetBatchTime();
+
+                    var _listSomenteNovos = new List<Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.Stores.LinxEntrantes>();
+                    var records = new Dictionary<string, string>();
+
+                    foreach (var (dto, xml) in rows.GroupBy(x => (x.dto.portal, x.dto.id_entrantes)).Select(g => g.OrderBy(x => MicrovixConverters.ToInt64(x.dto.timestamp)).Last()))
+                    {
+                        var validations = _linxEntrantesValidator.Validate(dto);
+
+                        if (validations.Errors.Count > 0)
+                        {
+                            var message = String.Empty;
+                            validations.Errors.ForEach(s => message += $"entrantes {dto.id_entrantes}: {s.ErrorMessage}\n");
+                            _logger.AddMessage(message);
+                        }
+
+                        var entity = new Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.Stores.LinxEntrantes(company.doc_company!, batchTime, dto);
+
+                        if (entity.portal == 0 || entity.id_entrantes == 0)
+                            continue;
+
+                        _listSomenteNovos.Add(entity);
+                        records[$"{entity.portal}|{entity.id_entrantes}"] = xml;
+                    }
+
+                    if (_listSomenteNovos.Count == 0)
+                        continue;
+
+                    await _linxMicrovixStoresRepository.BulkInsertIntoLinxEntrantes(_listSomenteNovos, _logger.GetExecutionGuid());
+
+                    foreach (var record in records)
+                        _logger.AddRecord(record.Key, record.Value);
+
+                    totalInseridos += _listSomenteNovos.Count;
                 }
 
                 _logger.AddMessage(
@@ -920,218 +1102,6 @@ namespace Application.LinxMicrovix.Outbound.Services
                 _logger.SetLogEndDate();
                 await _logger.CommitAllChanges();
             }
-        }
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote) e grava. Chave: portal + empresa; sem ela o registro sai
-        /// </summary>
-        private async Task<int> SaveLinxGrupoLojas(string doc_company, DateTime batchTime, List<(Domain.LinxMicrovix.Outbound.Dtos.Reads.Erp.Stores.LinxGrupoLojas dto, string xml)> rows)
-        {
-            var _listSomenteNovos = new List<Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.Stores.LinxGrupoLojas>();
-            var records = new Dictionary<string, string>();
-
-            foreach (var (dto, xml) in rows.GroupBy(x => (x.dto.portal, x.dto.empresa)).Select(g => g.Last()))
-            {
-                var validations = _linxGrupoLojasValidator.Validate(dto);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"loja {dto.portal}/{dto.empresa} ({dto.CNPJ}): {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                var entity = new Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.Stores.LinxGrupoLojas(doc_company, batchTime, dto);
-
-                if (entity.portal == 0 || entity.empresa == 0)
-                    continue;
-
-                _listSomenteNovos.Add(entity);
-                records[$"{entity.portal}|{entity.empresa}"] = xml;
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _linxMicrovixStoresRepository.BulkInsertIntoLinxGrupoLojas(_listSomenteNovos, _logger.GetExecutionGuid());
-
-            foreach (var record in records)
-                _logger.AddRecord(record.Key, record.Value);
-
-            return _listSomenteNovos.Count;
-        }
-
-        /// <summary>
-        /// valida, monta as entidades e grava. Chave: cnpj_emp, a loja consultada (fica a linha de maior timestamp)
-        /// </summary>
-        private async Task<int> SaveLinxLojas(string doc_company, string cnpj_emp, DateTime batchTime, List<(Domain.LinxMicrovix.Outbound.Dtos.Reads.Erp.Stores.LinxLojas dto, string xml)> rows)
-        {
-            var (dto, xml) = rows.OrderBy(x => MicrovixConverters.ToInt64(x.dto.timestamp)).Last();
-            var validations = _linxLojasValidator.Validate(dto);
-
-            if (validations.Errors.Count > 0)
-            {
-                var message = String.Empty;
-                validations.Errors.ForEach(s => message += $"loja {cnpj_emp}: {s.ErrorMessage}\n");
-                _logger.AddMessage(message);
-            }
-
-            var _listSomenteNovos = new List<Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.Stores.LinxLojas>
-            {
-                new Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.Stores.LinxLojas(doc_company, cnpj_emp, batchTime, dto)
-            };
-
-            await _linxMicrovixStoresRepository.BulkInsertIntoLinxLojas(_listSomenteNovos, _logger.GetExecutionGuid());
-
-            _logger.AddRecord(cnpj_emp, xml);
-
-            return _listSomenteNovos.Count;
-        }
-
-        /// <summary>
-        /// valida, monta as entidades e grava. A resposta não traz o CNPJ: chave cnpj_emp, a loja consultada
-        /// </summary>
-        private async Task<int> SaveLinxLojasParametros(string doc_company, string cnpj_emp, DateTime batchTime, List<(Domain.LinxMicrovix.Outbound.Dtos.Reads.Erp.Stores.LinxLojasParametros dto, string xml)> rows)
-        {
-            var (dto, xml) = rows.OrderBy(x => MicrovixConverters.ToInt64(x.dto.timestamp)).Last();
-            var validations = _linxLojasParametrosValidator.Validate(dto);
-
-            if (validations.Errors.Count > 0)
-            {
-                var message = String.Empty;
-                validations.Errors.ForEach(s => message += $"parâmetros da loja {cnpj_emp}: {s.ErrorMessage}\n");
-                _logger.AddMessage(message);
-            }
-
-            var _listSomenteNovos = new List<Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.Stores.LinxLojasParametros>
-            {
-                new Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.Stores.LinxLojasParametros(doc_company, cnpj_emp, batchTime, dto)
-            };
-
-            await _linxMicrovixStoresRepository.BulkInsertIntoLinxLojasParametros(_listSomenteNovos, _logger.GetExecutionGuid());
-
-            _logger.AddRecord(cnpj_emp, xml);
-
-            return _listSomenteNovos.Count;
-        }
-
-        /// <summary>
-        /// valida, monta as entidades e grava. Chave: portal + usuario_id (fica a linha de maior timestamp)
-        /// </summary>
-        private async Task<int> SaveLinxUsuarios(string doc_company, DateTime batchTime, List<(Domain.LinxMicrovix.Outbound.Dtos.Reads.Erp.Stores.LinxUsuarios dto, string xml)> rows)
-        {
-            var _listSomenteNovos = new List<Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.Stores.LinxUsuarios>();
-            var records = new Dictionary<string, string>();
-
-            foreach (var (dto, xml) in rows.GroupBy(x => (x.dto.portal, x.dto.usuario_id)).Select(g => g.OrderBy(x => MicrovixConverters.ToInt64(x.dto.timestamp)).Last()))
-            {
-                var validations = _linxUsuariosValidator.Validate(dto);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"usuário {dto.usuario_id}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                var entity = new Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.Stores.LinxUsuarios(doc_company, batchTime, dto);
-
-                if (entity.portal == 0 || entity.usuario_id == 0)
-                    continue;
-
-                _listSomenteNovos.Add(entity);
-                records[$"{entity.portal}|{entity.usuario_id}"] = xml;
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _linxMicrovixStoresRepository.BulkInsertIntoLinxUsuarios(_listSomenteNovos, _logger.GetExecutionGuid());
-
-            foreach (var record in records)
-                _logger.AddRecord(record.Key, record.Value);
-
-            return _listSomenteNovos.Count;
-        }
-
-        /// <summary>
-        /// valida, monta as entidades e grava. Chave: metodo
-        /// </summary>
-        private async Task<int> SaveLinxMetodos(string doc_company, DateTime batchTime, List<(Domain.LinxMicrovix.Outbound.Dtos.Reads.Erp.Stores.LinxMetodos dto, string xml)> rows)
-        {
-            var _listSomenteNovos = new List<Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.Stores.LinxMetodos>();
-            var records = new Dictionary<string, string>();
-
-            foreach (var (dto, xml) in rows)
-            {
-                var validations = _linxMetodosValidator.Validate(dto);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"método {dto.retorno}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                var entity = new Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.Stores.LinxMetodos(doc_company, batchTime, dto);
-
-                if (String.IsNullOrEmpty(entity.metodo))
-                    continue;
-
-                // o mesmo método duas vezes no catálogo violaria a PK: fica o último
-                _listSomenteNovos.RemoveAll(x => x.metodo == entity.metodo);
-                _listSomenteNovos.Add(entity);
-                records[entity.metodo] = xml;
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _linxMicrovixStoresRepository.BulkInsertIntoLinxMetodos(_listSomenteNovos, _logger.GetExecutionGuid());
-
-            foreach (var record in records)
-                _logger.AddRecord(record.Key, record.Value);
-
-            return _listSomenteNovos.Count;
-        }
-
-        /// <summary>
-        /// valida, monta as entidades e grava. Chave: portal + id_entrantes (fica a linha de maior timestamp)
-        /// </summary>
-        private async Task<int> SaveLinxEntrantes(string doc_company, DateTime batchTime, List<(Domain.LinxMicrovix.Outbound.Dtos.Reads.Erp.Stores.LinxEntrantes dto, string xml)> rows)
-        {
-            var _listSomenteNovos = new List<Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.Stores.LinxEntrantes>();
-            var records = new Dictionary<string, string>();
-
-            foreach (var (dto, xml) in rows.GroupBy(x => (x.dto.portal, x.dto.id_entrantes)).Select(g => g.OrderBy(x => MicrovixConverters.ToInt64(x.dto.timestamp)).Last()))
-            {
-                var validations = _linxEntrantesValidator.Validate(dto);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"entrantes {dto.id_entrantes}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                var entity = new Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.Stores.LinxEntrantes(doc_company, batchTime, dto);
-
-                if (entity.portal == 0 || entity.id_entrantes == 0)
-                    continue;
-
-                _listSomenteNovos.Add(entity);
-                records[$"{entity.portal}|{entity.id_entrantes}"] = xml;
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _linxMicrovixStoresRepository.BulkInsertIntoLinxEntrantes(_listSomenteNovos, _logger.GetExecutionGuid());
-
-            foreach (var record in records)
-                _logger.AddRecord(record.Key, record.Value);
-
-            return _listSomenteNovos.Count;
         }
     }
 }

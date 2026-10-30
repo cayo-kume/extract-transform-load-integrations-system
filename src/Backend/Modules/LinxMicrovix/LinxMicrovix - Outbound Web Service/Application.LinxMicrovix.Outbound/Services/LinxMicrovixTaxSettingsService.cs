@@ -196,7 +196,42 @@ namespace Application.LinxMicrovix.Outbound.Services
                         if (failed || rows.Count == 0)
                             continue;
 
-                        totalInseridos += await SaveLinxConfiguracoesTributarias(company.doc_company!, cnpj_emp, _linxMicrovixService.GetBatchTime(), rows);
+                        // valida, monta as entidades (com o mesmo horário de lote) e grava. Chave: cnpj_emp + id_config_tributaria; fica a linha de maior timestamp
+                        var batchTime = _linxMicrovixService.GetBatchTime();
+
+                        var _listSomenteNovos = new List<Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.TaxSettings.LinxConfiguracoesTributarias>();
+                        var records = new Dictionary<string, string>();
+
+                        foreach (var (dto, xml) in rows.GroupBy(x => x.dto.id_config_tributaria).Select(g => g.OrderBy(x => MicrovixConverters.ToInt64(x.dto.timestamp)).Last()))
+                        {
+                            var validations = _linxConfiguracoesTributariasValidator.Validate(dto);
+
+                            if (validations.Errors.Count > 0)
+                            {
+                                var message = String.Empty;
+                                validations.Errors.ForEach(s => message += $"LinxConfiguracoesTributarias {dto.id_config_tributaria} (loja {cnpj_emp}): {s.ErrorMessage}\n");
+                                _logger.AddMessage(message);
+                            }
+
+                            // sem nenhuma parte da chave o registro não é gravado; parte vazia vira o valor padrão (0, texto vazio ou 1900-01-01)
+                            if (String.IsNullOrEmpty(dto.id_config_tributaria))
+                                continue;
+
+                            var entity = new Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.TaxSettings.LinxConfiguracoesTributarias(company.doc_company!, cnpj_emp, batchTime, dto);
+
+                            _listSomenteNovos.Add(entity);
+                            records[$"{entity.cnpj_emp}|{entity.id_config_tributaria}"] = xml;
+                        }
+
+                        if (_listSomenteNovos.Count == 0)
+                            continue;
+
+                        await _linxMicrovixTaxSettingsRepository.BulkInsertIntoLinxConfiguracoesTributarias(_listSomenteNovos, _logger.GetExecutionGuid());
+
+                        foreach (var record in records)
+                            _logger.AddRecord(record.Key, record.Value);
+
+                        totalInseridos += _listSomenteNovos.Count;
                     }
                 }
 
@@ -464,7 +499,42 @@ namespace Application.LinxMicrovix.Outbound.Services
                             if (failed || rows.Count == 0)
                                 continue;
 
-                            totalInseridos += await SaveLinxConfiguracoesTributariasDetalhes(company.doc_company!, cnpj_emp, _linxMicrovixService.GetBatchTime(), rows);
+                            // valida, monta as entidades (com o mesmo horário de lote) e grava. Chave: cnpj_emp + id_config_tributaria + cod_natureza_operacao + id_classe_fiscal; fica a linha de maior timestamp
+                            var batchTime = _linxMicrovixService.GetBatchTime();
+
+                            var _listSomenteNovos = new List<Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.TaxSettings.LinxConfiguracoesTributariasDetalhes>();
+                            var records = new Dictionary<string, string>();
+
+                            foreach (var (dto, xml) in rows.GroupBy(x => (x.dto.id_config_tributaria, x.dto.cod_natureza_operacao, x.dto.id_classe_fiscal)).Select(g => g.OrderBy(x => MicrovixConverters.ToInt64(x.dto.timestamp)).Last()))
+                            {
+                                var validations = _linxConfiguracoesTributariasDetalhesValidator.Validate(dto);
+
+                                if (validations.Errors.Count > 0)
+                                {
+                                    var message = String.Empty;
+                                    validations.Errors.ForEach(s => message += $"LinxConfiguracoesTributariasDetalhes {dto.id_config_tributaria} {dto.cod_natureza_operacao} {dto.id_classe_fiscal} (loja {cnpj_emp}): {s.ErrorMessage}\n");
+                                    _logger.AddMessage(message);
+                                }
+
+                                // sem nenhuma parte da chave o registro não é gravado; parte vazia vira o valor padrão (0, texto vazio ou 1900-01-01)
+                                if (String.IsNullOrEmpty(dto.id_config_tributaria) && String.IsNullOrEmpty(dto.cod_natureza_operacao) && String.IsNullOrEmpty(dto.id_classe_fiscal))
+                                    continue;
+
+                                var entity = new Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.TaxSettings.LinxConfiguracoesTributariasDetalhes(company.doc_company!, cnpj_emp, batchTime, dto);
+
+                                _listSomenteNovos.Add(entity);
+                                records[$"{entity.cnpj_emp}|{entity.id_config_tributaria}|{entity.cod_natureza_operacao}|{entity.id_classe_fiscal}"] = xml;
+                            }
+
+                            if (_listSomenteNovos.Count == 0)
+                                continue;
+
+                            await _linxMicrovixTaxSettingsRepository.BulkInsertIntoLinxConfiguracoesTributariasDetalhes(_listSomenteNovos, _logger.GetExecutionGuid());
+
+                            foreach (var record in records)
+                                _logger.AddRecord(record.Key, record.Value);
+
+                            totalInseridos += _listSomenteNovos.Count;
                         }
                     }
                 }
@@ -636,7 +706,42 @@ namespace Application.LinxMicrovix.Outbound.Services
                         if (failed || rows.Count == 0)
                             continue;
 
-                        totalInseridos += await SaveLinxConfiguracoesTributariasDetalhesSimplificado(company.doc_company!, _linxMicrovixService.GetBatchTime(), rows);
+                        // valida, monta as entidades (com o mesmo horário de lote) e grava. Chave: portal + id_config_tributaria_detalhe; fica a linha de maior timestamp
+                        var batchTime = _linxMicrovixService.GetBatchTime();
+
+                        var _listSomenteNovos = new List<Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.TaxSettings.LinxConfiguracoesTributariasDetalhesSimplificado>();
+                        var records = new Dictionary<string, string>();
+
+                        foreach (var (dto, xml) in rows.GroupBy(x => (x.dto.portal, x.dto.id_config_tributaria_detalhe)).Select(g => g.OrderBy(x => MicrovixConverters.ToInt64(x.dto.timestamp)).Last()))
+                        {
+                            var validations = _linxConfiguracoesTributariasDetalhesSimplificadoValidator.Validate(dto);
+
+                            if (validations.Errors.Count > 0)
+                            {
+                                var message = String.Empty;
+                                validations.Errors.ForEach(s => message += $"LinxConfiguracoesTributariasDetalhesSimplificado {dto.portal} {dto.id_config_tributaria_detalhe}: {s.ErrorMessage}\n");
+                                _logger.AddMessage(message);
+                            }
+
+                            // sem nenhuma parte da chave o registro não é gravado; parte vazia vira o valor padrão (0, texto vazio ou 1900-01-01)
+                            if (String.IsNullOrEmpty(dto.portal) && String.IsNullOrEmpty(dto.id_config_tributaria_detalhe))
+                                continue;
+
+                            var entity = new Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.TaxSettings.LinxConfiguracoesTributariasDetalhesSimplificado(company.doc_company!, batchTime, dto);
+
+                            _listSomenteNovos.Add(entity);
+                            records[$"{entity.portal}|{entity.id_config_tributaria_detalhe}"] = xml;
+                        }
+
+                        if (_listSomenteNovos.Count == 0)
+                            continue;
+
+                        await _linxMicrovixTaxSettingsRepository.BulkInsertIntoLinxConfiguracoesTributariasDetalhesSimplificado(_listSomenteNovos, _logger.GetExecutionGuid());
+
+                        foreach (var record in records)
+                            _logger.AddRecord(record.Key, record.Value);
+
+                        totalInseridos += _listSomenteNovos.Count;
                     }
                 }
 
@@ -795,7 +900,42 @@ namespace Application.LinxMicrovix.Outbound.Services
                         if (failed || rows.Count == 0)
                             continue;
 
-                        totalInseridos += await SaveLinxConfiguracoesTributariasEmpresas(company.doc_company!, cnpj_emp, _linxMicrovixService.GetBatchTime(), rows);
+                        // valida, monta as entidades (com o mesmo horário de lote) e grava. Chave: cnpj_emp + id_config_tributaria + empresa; fica a linha de maior timestamp
+                        var batchTime = _linxMicrovixService.GetBatchTime();
+
+                        var _listSomenteNovos = new List<Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.TaxSettings.LinxConfiguracoesTributariasEmpresas>();
+                        var records = new Dictionary<string, string>();
+
+                        foreach (var (dto, xml) in rows.GroupBy(x => (x.dto.id_config_tributaria, x.dto.empresa)).Select(g => g.OrderBy(x => MicrovixConverters.ToInt64(x.dto.timestamp)).Last()))
+                        {
+                            var validations = _linxConfiguracoesTributariasEmpresasValidator.Validate(dto);
+
+                            if (validations.Errors.Count > 0)
+                            {
+                                var message = String.Empty;
+                                validations.Errors.ForEach(s => message += $"LinxConfiguracoesTributariasEmpresas {dto.id_config_tributaria} {dto.empresa} (loja {cnpj_emp}): {s.ErrorMessage}\n");
+                                _logger.AddMessage(message);
+                            }
+
+                            // sem nenhuma parte da chave o registro não é gravado; parte vazia vira o valor padrão (0, texto vazio ou 1900-01-01)
+                            if (String.IsNullOrEmpty(dto.id_config_tributaria) && String.IsNullOrEmpty(dto.empresa))
+                                continue;
+
+                            var entity = new Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.TaxSettings.LinxConfiguracoesTributariasEmpresas(company.doc_company!, cnpj_emp, batchTime, dto);
+
+                            _listSomenteNovos.Add(entity);
+                            records[$"{entity.cnpj_emp}|{entity.id_config_tributaria}|{entity.empresa}"] = xml;
+                        }
+
+                        if (_listSomenteNovos.Count == 0)
+                            continue;
+
+                        await _linxMicrovixTaxSettingsRepository.BulkInsertIntoLinxConfiguracoesTributariasEmpresas(_listSomenteNovos, _logger.GetExecutionGuid());
+
+                        foreach (var record in records)
+                            _logger.AddRecord(record.Key, record.Value);
+
+                        totalInseridos += _listSomenteNovos.Count;
                     }
                 }
 
@@ -810,166 +950,6 @@ namespace Application.LinxMicrovix.Outbound.Services
                 _logger.SetLogEndDate();
                 await _logger.CommitAllChanges();
             }
-        }
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote) e grava. Chave: cnpj_emp + id_config_tributaria; fica a linha de maior timestamp
-        /// </summary>
-        private async Task<int> SaveLinxConfiguracoesTributarias(string doc_company, string cnpj_emp, DateTime batchTime, List<(Domain.LinxMicrovix.Outbound.Dtos.Reads.Erp.TaxSettings.LinxConfiguracoesTributarias dto, string xml)> rows)
-        {
-            var _listSomenteNovos = new List<Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.TaxSettings.LinxConfiguracoesTributarias>();
-            var records = new Dictionary<string, string>();
-
-            foreach (var (dto, xml) in rows.GroupBy(x => x.dto.id_config_tributaria).Select(g => g.OrderBy(x => MicrovixConverters.ToInt64(x.dto.timestamp)).Last()))
-            {
-                var validations = _linxConfiguracoesTributariasValidator.Validate(dto);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"LinxConfiguracoesTributarias {dto.id_config_tributaria} (loja {cnpj_emp}): {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                // sem nenhuma parte da chave o registro não é gravado; parte vazia vira o valor padrão (0, texto vazio ou 1900-01-01)
-                if (String.IsNullOrEmpty(dto.id_config_tributaria))
-                    continue;
-
-                var entity = new Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.TaxSettings.LinxConfiguracoesTributarias(doc_company, cnpj_emp, batchTime, dto);
-
-                _listSomenteNovos.Add(entity);
-                records[$"{entity.cnpj_emp}|{entity.id_config_tributaria}"] = xml;
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _linxMicrovixTaxSettingsRepository.BulkInsertIntoLinxConfiguracoesTributarias(_listSomenteNovos, _logger.GetExecutionGuid());
-
-            foreach (var record in records)
-                _logger.AddRecord(record.Key, record.Value);
-
-            return _listSomenteNovos.Count;
-        }
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote) e grava. Chave: cnpj_emp + id_config_tributaria + cod_natureza_operacao + id_classe_fiscal; fica a linha de maior timestamp
-        /// </summary>
-        private async Task<int> SaveLinxConfiguracoesTributariasDetalhes(string doc_company, string cnpj_emp, DateTime batchTime, List<(Domain.LinxMicrovix.Outbound.Dtos.Reads.Erp.TaxSettings.LinxConfiguracoesTributariasDetalhes dto, string xml)> rows)
-        {
-            var _listSomenteNovos = new List<Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.TaxSettings.LinxConfiguracoesTributariasDetalhes>();
-            var records = new Dictionary<string, string>();
-
-            foreach (var (dto, xml) in rows.GroupBy(x => (x.dto.id_config_tributaria, x.dto.cod_natureza_operacao, x.dto.id_classe_fiscal)).Select(g => g.OrderBy(x => MicrovixConverters.ToInt64(x.dto.timestamp)).Last()))
-            {
-                var validations = _linxConfiguracoesTributariasDetalhesValidator.Validate(dto);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"LinxConfiguracoesTributariasDetalhes {dto.id_config_tributaria} {dto.cod_natureza_operacao} {dto.id_classe_fiscal} (loja {cnpj_emp}): {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                // sem nenhuma parte da chave o registro não é gravado; parte vazia vira o valor padrão (0, texto vazio ou 1900-01-01)
-                if (String.IsNullOrEmpty(dto.id_config_tributaria) && String.IsNullOrEmpty(dto.cod_natureza_operacao) && String.IsNullOrEmpty(dto.id_classe_fiscal))
-                    continue;
-
-                var entity = new Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.TaxSettings.LinxConfiguracoesTributariasDetalhes(doc_company, cnpj_emp, batchTime, dto);
-
-                _listSomenteNovos.Add(entity);
-                records[$"{entity.cnpj_emp}|{entity.id_config_tributaria}|{entity.cod_natureza_operacao}|{entity.id_classe_fiscal}"] = xml;
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _linxMicrovixTaxSettingsRepository.BulkInsertIntoLinxConfiguracoesTributariasDetalhes(_listSomenteNovos, _logger.GetExecutionGuid());
-
-            foreach (var record in records)
-                _logger.AddRecord(record.Key, record.Value);
-
-            return _listSomenteNovos.Count;
-        }
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote) e grava. Chave: portal + id_config_tributaria_detalhe; fica a linha de maior timestamp
-        /// </summary>
-        private async Task<int> SaveLinxConfiguracoesTributariasDetalhesSimplificado(string doc_company, DateTime batchTime, List<(Domain.LinxMicrovix.Outbound.Dtos.Reads.Erp.TaxSettings.LinxConfiguracoesTributariasDetalhesSimplificado dto, string xml)> rows)
-        {
-            var _listSomenteNovos = new List<Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.TaxSettings.LinxConfiguracoesTributariasDetalhesSimplificado>();
-            var records = new Dictionary<string, string>();
-
-            foreach (var (dto, xml) in rows.GroupBy(x => (x.dto.portal, x.dto.id_config_tributaria_detalhe)).Select(g => g.OrderBy(x => MicrovixConverters.ToInt64(x.dto.timestamp)).Last()))
-            {
-                var validations = _linxConfiguracoesTributariasDetalhesSimplificadoValidator.Validate(dto);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"LinxConfiguracoesTributariasDetalhesSimplificado {dto.portal} {dto.id_config_tributaria_detalhe}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                // sem nenhuma parte da chave o registro não é gravado; parte vazia vira o valor padrão (0, texto vazio ou 1900-01-01)
-                if (String.IsNullOrEmpty(dto.portal) && String.IsNullOrEmpty(dto.id_config_tributaria_detalhe))
-                    continue;
-
-                var entity = new Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.TaxSettings.LinxConfiguracoesTributariasDetalhesSimplificado(doc_company, batchTime, dto);
-
-                _listSomenteNovos.Add(entity);
-                records[$"{entity.portal}|{entity.id_config_tributaria_detalhe}"] = xml;
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _linxMicrovixTaxSettingsRepository.BulkInsertIntoLinxConfiguracoesTributariasDetalhesSimplificado(_listSomenteNovos, _logger.GetExecutionGuid());
-
-            foreach (var record in records)
-                _logger.AddRecord(record.Key, record.Value);
-
-            return _listSomenteNovos.Count;
-        }
-
-        /// <summary>
-        /// valida, monta as entidades (com o mesmo horário de lote) e grava. Chave: cnpj_emp + id_config_tributaria + empresa; fica a linha de maior timestamp
-        /// </summary>
-        private async Task<int> SaveLinxConfiguracoesTributariasEmpresas(string doc_company, string cnpj_emp, DateTime batchTime, List<(Domain.LinxMicrovix.Outbound.Dtos.Reads.Erp.TaxSettings.LinxConfiguracoesTributariasEmpresas dto, string xml)> rows)
-        {
-            var _listSomenteNovos = new List<Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.TaxSettings.LinxConfiguracoesTributariasEmpresas>();
-            var records = new Dictionary<string, string>();
-
-            foreach (var (dto, xml) in rows.GroupBy(x => (x.dto.id_config_tributaria, x.dto.empresa)).Select(g => g.OrderBy(x => MicrovixConverters.ToInt64(x.dto.timestamp)).Last()))
-            {
-                var validations = _linxConfiguracoesTributariasEmpresasValidator.Validate(dto);
-
-                if (validations.Errors.Count > 0)
-                {
-                    var message = String.Empty;
-                    validations.Errors.ForEach(s => message += $"LinxConfiguracoesTributariasEmpresas {dto.id_config_tributaria} {dto.empresa} (loja {cnpj_emp}): {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
-                }
-
-                // sem nenhuma parte da chave o registro não é gravado; parte vazia vira o valor padrão (0, texto vazio ou 1900-01-01)
-                if (String.IsNullOrEmpty(dto.id_config_tributaria) && String.IsNullOrEmpty(dto.empresa))
-                    continue;
-
-                var entity = new Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.TaxSettings.LinxConfiguracoesTributariasEmpresas(doc_company, cnpj_emp, batchTime, dto);
-
-                _listSomenteNovos.Add(entity);
-                records[$"{entity.cnpj_emp}|{entity.id_config_tributaria}|{entity.empresa}"] = xml;
-            }
-
-            if (_listSomenteNovos.Count == 0)
-                return 0;
-
-            await _linxMicrovixTaxSettingsRepository.BulkInsertIntoLinxConfiguracoesTributariasEmpresas(_listSomenteNovos, _logger.GetExecutionGuid());
-
-            foreach (var record in records)
-                _logger.AddRecord(record.Key, record.Value);
-
-            return _listSomenteNovos.Count;
         }
     }
 }
