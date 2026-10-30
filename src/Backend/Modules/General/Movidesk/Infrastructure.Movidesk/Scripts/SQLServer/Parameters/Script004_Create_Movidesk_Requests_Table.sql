@@ -13,6 +13,7 @@ create table [movidesk].MovideskRequests (
 	request_body nvarchar(max) null,     --corpo enviado; nulo nas chamadas GET
 	response_body nvarchar(max) null,
 	is_success bit not null,
+	integrated_or_updated_at datetime null, --horário da gravação, em Brasília, igual ao das tabelas de dados (lido pelo DW)
 constraint [PK_MovideskRequests] primary key (
 	id asc
 ));

@@ -106,7 +106,7 @@ Domain.Movidesk/
 * Toda entidade tem `doc_company` (CNPJ) e `integrated_or_updated_at`. Um registro e todas as suas filhas recebem **o mesmo horário de lote** (`MovideskService.GetBatchTime()`), que é a base da exclusão das filhas no merge (ver [Scripts](#scripts-de-banco-sql-server)).
 * Listas filhas usam `[SkipProperty]` para não virarem coluna no bulk insert.
 * Nomes: **Person** no singular e **People** no plural (`MovideskPeople`, `GetPeople`, `GetPersonById`).
-* `EnumJob` deve ficar em sincronia com o `Script005_Insert_Movidesk_Values_Into_Jobs_Table.sql`.
+* `EnumJob` deve ficar em sincronia com os scripts de jobs de cada pasta (`Script0NN_Insert_Movidesk_*_Jobs_Into_Jobs_Table.sql`).
 
 ### Repositórios (interfaces)
 
@@ -264,22 +264,19 @@ O host chama o método em `Hosts/Hangfire/Extensions/ServicesExtensions.cs`.
 
 ### Scripts de banco (SQL Server)
 
-O DbUp (`Scripts/SQLServer/migrator.csx`) executa cada script uma única vez, em ordem alfabética. Alterar um script que já rodou não muda um banco existente: para isso é preciso um script novo.
+O DbUp (`Scripts/SQLServer/migrator.csx`) executa cada script uma única vez, na ordem do número do arquivo. Alterar um script que já rodou não muda um banco existente: para isso é preciso um script novo. Os scripts gerais ficam em `Parameters/` e cada service tem a sua pasta, com o trio tabelas, procedures e jobs.
 
-| Script | Conteúdo |
-|---|---|
-| `Script001_Create_Movidesk_Parameters_Table.sql` | Schemas `movidesk` e `untreated` (só se não existirem) e `movidesk.MovideskParameters` (CNPJ + token por empresa) |
-| `Script002_Create_Movidesk_Tickets_Tables.sql` | `MovideskTickets`, as tabelas filhas e netas (tags, clientes, relacionamentos, históricos, campos adicionais, itens de configuração, ações e seus tags/apontamentos/despesas/anexos), mais os domínios `MovideskTicketsOrigins` e `MovideskTicketsTypes` |
-| `Script003_Create_Movidesk_Sync_Procedures.sql` | Procedures de merge dos tickets |
-| `Script004_Insert_Movidesk_Values_Into_Apps_Table.sql` | App `30 - Movidesk` em `auditing.Apps` |
-| `Script005_Insert_Movidesk_Values_Into_Jobs_Table.sql` | Jobs em `auditing.Jobs` (ver [Auditoria](#auditoria-jobs)) |
-| `Script006_Create_Movidesk_Requests_Table.sql` | `movidesk.MovideskRequests` (log das chamadas sob demanda) |
-| `Script007_Create_Movidesk_People_Tables.sql` | `MovideskPeople`, as filhas e netas (endereços, contatos, e-mails, equipes, relacionamentos e seus serviços, campos adicionais, itens de configuração), mais os domínios `MovideskPersonTypes` e `MovideskProfileTypes` |
-| `Script008_Create_Movidesk_People_Sync_Procedures.sql` | Procedures de merge das pessoas |
-| `Script009_Create_Movidesk_Services_Tables.sql` | `MovideskServices`, `MovideskServicesCategories` e os domínios `MovideskServiceTicketTypes` e `MovideskServiceAudiences` |
-| `Script010_Create_Movidesk_Services_Sync_Procedures.sql` | Procedures de merge dos serviços |
-| `Script011_Insert_Values_Into_Movidesk_Parameters_Table.sql` | Empresa e token em `MovideskParameters` |
-| `Script012_Rename_Movidesk_On_Demand_Jobs.sql` | Renomeia os jobs sob demanda 3002, 3003 e 3005 para `MovideskGetTicketById`, `MovideskGetPersonById` e `MovideskGetServiceById` |
+| Pasta | Script | Conteúdo |
+|---|---|---|
+| `Parameters/` | `Script001_Create_Movidesk_Parameters_Table.sql` | Schemas `movidesk` e `untreated` (só se não existirem) e `movidesk.MovideskParameters` (CNPJ + token por empresa) |
+| `Parameters/` | `Script002_Insert_Movidesk_Values_Into_Apps_Table.sql` | App `30 - Movidesk` em `auditing.Apps` |
+| `Parameters/` | `Script003_Insert_Values_Into_Movidesk_Parameters_Table.sql` | Empresa e token em `MovideskParameters` |
+| `Parameters/` | `Script004_Create_Movidesk_Requests_Table.sql` | `movidesk.MovideskRequests` (log das chamadas sob demanda), já com `integrated_or_updated_at` |
+| `Tickets/` | `Script005`–`007` | `MovideskTickets`, as tabelas filhas e netas (tags, clientes, relacionamentos, históricos, campos adicionais, itens de configuração, ações e seus tags/apontamentos/despesas/anexos), mais os domínios `MovideskTicketsOrigins` e `MovideskTicketsTypes`; procedures de merge e jobs dos tickets |
+| `People/` | `Script008`–`010` | `MovideskPeople`, as filhas e netas (endereços, contatos, e-mails, equipes, relacionamentos e seus serviços, campos adicionais, itens de configuração), mais os domínios `MovideskPersonTypes` e `MovideskProfileTypes`; procedures de merge e jobs das pessoas |
+| `Services/` | `Script011`–`013` | `MovideskServices`, `MovideskServicesCategories` e os domínios `MovideskServiceTicketTypes` e `MovideskServiceAudiences`; procedures de merge e jobs dos serviços |
+
+Os jobs sob demanda já nascem com os títulos do `EnumJob` (`MovideskGetTicketById`, `MovideskGetPersonById` e `MovideskGetServiceById`).
 
 **Regras gerais das tabelas e dos merges:**
 * Toda tabela de dados existe em dois schemas: `untreated` (recebe o bulk insert, sem chave) e `movidesk` (tabela final, com PK). As exceções são `movidesk.MovideskRequests`, que só recebe inserts, e as tabelas de domínio, preenchidas pelos próprios scripts.
@@ -354,7 +351,7 @@ Mesmas exigências das leituras sob demanda (`X-User-Name` e `{docCompany}`), co
 
 ## Auditoria (jobs)
 
-Os jobs ficam em `auditing.Jobs` (`Script005`), com os mesmos ids em `EnumJob`.
+Os jobs ficam em `auditing.Jobs` (scripts de jobs de `Tickets/`, `People/` e `Services/`), com os mesmos ids em `EnumJob`.
 
 | Faixa | Tipo (`IdType`) | Conteúdo |
 |---|---|---|

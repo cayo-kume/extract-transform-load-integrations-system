@@ -5,7 +5,7 @@ namespace Domain.Movidesk.Entities.Writes.Requests
     /// </summary>
     public class Request
     {
-        // data tables standard: write time in Brasília, the column the DW reads the log by (Script013)
+        // data tables standard: write time in Brasília, the column the DW reads the log by (Script004)
         public DateTime integrated_or_updated_at { get; private set; }
         public DateTime request_date { get; private set; }
         public Guid execution { get; private set; }

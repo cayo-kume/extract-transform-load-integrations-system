@@ -4,7 +4,7 @@ using FluentValidation;
 namespace Application.Movidesk.Validations.Reads.Tickets
 {
     /// <summary>
-    /// só registra mensagens no log; os tamanhos são os das colunas do Script002_Create_Movidesk_Tickets_Tables
+    /// só registra mensagens no log; os tamanhos são os das colunas do Script005_Create_Movidesk_Tickets_Tables
     /// </summary>
     public class TicketValidator : AbstractValidator<Domain.Movidesk.Dtos.Reads.Tickets.Ticket>
     {

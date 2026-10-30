@@ -4,7 +4,7 @@ using FluentValidation;
 namespace Application.Movidesk.Validations.Reads.Services
 {
     /// <summary>
-    /// só registra mensagens no log; os tamanhos são os das colunas do Script009_Create_Movidesk_Services_Tables
+    /// só registra mensagens no log; os tamanhos são os das colunas do Script011_Create_Movidesk_Services_Tables
     /// </summary>
     public class ServiceValidator : AbstractValidator<Domain.Movidesk.Dtos.Reads.Services.Service>
     {

@@ -5,7 +5,7 @@ using System.Text;
 namespace Domain.Movidesk.Enums
 {
     /// <summary>
-    /// Qualquer alteração neste arquivo deve refletir nos códigos do arquivo Script005_Insert_Movidesk_Values_Into_Jobs_Table.sql (nomes sob demanda renomeados no Script012)
+    /// Qualquer alteração neste arquivo deve refletir nos scripts de jobs de cada pasta (Script0NN_Insert_Movidesk_*_Jobs_Into_Jobs_Table.sql)
     /// </summary>
     public enum EnumJob
     {
