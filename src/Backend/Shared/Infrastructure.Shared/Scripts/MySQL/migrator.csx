@@ -1,11 +1,11 @@
 // Importa o pacote Nuget na hora da execução (sem precisar de .csproj)
-#r "nuget: dbup-sqlserver" 
+#r "nuget: dbup-mysql" 
 
 using System;
 using DbUp;
 
 // Pega a string de conexão dos argumentos ou usa uma default para teste local
-var connectionString = Args.Count > 0 ? Args[0] : "Server=localhost;Database=Company;User Id=sa;Password=root@1234;TrustServerCertificate=True;";
+var connectionString = Args.Count > 0 ? Args[0] : "Server=localhost;Port=3306;Database=Company;User Id=root;Password=root@1234;";
 
 Console.WriteLine($"Conectando em: {connectionString}");
 

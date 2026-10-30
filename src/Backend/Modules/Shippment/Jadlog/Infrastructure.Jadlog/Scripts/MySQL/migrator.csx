@@ -5,7 +5,7 @@ using System;
 using DbUp;
 
 // Pega a string de conexão dos argumentos ou usa uma default para teste local
-var connectionString = Args.Count > 0 ? Args[0] : "Server=localhost;Database=Company;User Id=sa;Password=root@1234;TrustServerCertificate=True;";
+var connectionString = Args.Count > 0 ? Args[0] : "Server=localhost;Port=3306;Database=Company;User Id=root;Password=root@1234;";
 
 Console.WriteLine($"Conectando em: {connectionString}");
 

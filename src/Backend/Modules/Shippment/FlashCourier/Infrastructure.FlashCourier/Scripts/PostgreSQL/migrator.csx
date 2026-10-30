@@ -5,16 +5,16 @@ using System;
 using DbUp;
 
 // Pega a string de conexão dos argumentos ou usa uma default para teste local
-var connectionString = Args.Count > 0 ? Args[0] : "Server=localhost;Database=Company;User Id=sa;Password=root@1234;TrustServerCertificate=True;";
+var connectionString = Args.Count > 0 ? Args[0] : "User ID=postgres;Password=root@1234;Host=localhost;Port=5432;Database=Company;Pooling=true;";
 
 Console.WriteLine($"Conectando em: {connectionString}");
 
 // 1. Garante que o banco existe
-EnsureDatabase.For.MySqlDatabase(connectionString);
+EnsureDatabase.For.PostgresqlDatabase(connectionString);
 
 // 2. Configura o DbUp
 var upgrader = DeployChanges.To
-    .MySqlDatabase(connectionString)
+    .PostgresqlDatabase(connectionString)
     .WithScriptsFromFileSystem(".") 
     .LogToConsole()
     .Build();

@@ -183,11 +183,12 @@ dotnet script migrator.csx -- "Server=...;Database=...;User Id=...;Password=...;
 ## Migrators de MySQL e PostgreSQL
 
 As pastas `Scripts/MySQL` e `Scripts/PostgreSQL` existem em todos os módulos, mas **não têm scripts** e não são usadas: o
-sistema roda só em SQL Server. Os migrators delas também têm erros de cópia que impedem a execução:
+sistema roda só em SQL Server. Os migrators delas estão prontos para o banco de cada pasta:
 
-* em todos os módulos, o `PostgreSQL/migrator.csx` carrega o `dbup-postgresql`, mas chama `EnsureDatabase.For.MySqlDatabase` e
-  `.MySqlDatabase(...)` (o certo seria `PostgresqlDatabase`);
-* no Shared, o `MySQL/migrator.csx` carrega o `dbup-sqlserver`, mas chama os métodos de MySQL (o certo seria `dbup-mysql`).
+| Pasta | Pacote | Métodos | Connection string padrão (teste local) |
+|---|---|---|---|
+| `MySQL/` | `dbup-mysql` | `EnsureDatabase.For.MySqlDatabase` e `.MySqlDatabase(...)` | `Server=localhost;Port=3306;Database=Company;User Id=root;Password=...;` |
+| `PostgreSQL/` | `dbup-postgresql` | `EnsureDatabase.For.PostgresqlDatabase` e `.PostgresqlDatabase(...)` | `User ID=postgres;Password=...;Host=localhost;Port=5432;Database=Company;Pooling=true;` |
 
-O `Shared/Scripts/PostgreSQL/migrator.csx` é o único correto. Se algum dia o sistema for para MySQL ou PostgreSQL, além de
-corrigir esses migrators será preciso escrever os scripts para o banco de destino.
+Eles leem só a pasta atual, sem subpastas. Se o sistema for para MySQL ou PostgreSQL, será preciso escrever os scripts para o
+banco de destino e acrescentar `IncludeSubDirectories` e o sorter, como no migrator de SQL Server.
