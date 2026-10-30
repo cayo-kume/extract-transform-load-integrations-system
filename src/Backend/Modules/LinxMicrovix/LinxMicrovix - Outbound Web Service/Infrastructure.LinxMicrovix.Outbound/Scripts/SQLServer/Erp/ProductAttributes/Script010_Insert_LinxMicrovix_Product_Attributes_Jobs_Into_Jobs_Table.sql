@@ -24,4 +24,7 @@ VALUES
 (80, 8040, 'LinxEspessuras', 'Integração de dados da tabela LinxEspessuras, uma vez por dia', 1440, 2),
 (80, 8041, 'LinxUnidades', 'Integração de dados da tabela LinxUnidades, uma vez por dia', 1440, 2),
 (80, 8042, 'LinxClassificacoes', 'Integração de dados da tabela LinxClassificacoes, uma vez por dia', 1440, 2),
-(80, 8043, 'LinxSubClasses', 'Integração de dados da tabela LinxSubClasses, uma vez por dia', 1440, 2);
+(80, 8043, 'LinxSubClasses', 'Integração de dados da tabela LinxSubClasses, uma vez por dia', 1440, 2),
+
+/*Integrações sob demanda - executadas pelo LinxMicrovixController, não são recorrentes (IntervalTimeInMinutes = 0)*/
+(80, 8207, 'LinxSetoresByIdSetor', 'Integração de LinxSetores por idSetor (GET LinxSetores/{docCompany}/{idSetor})', 0, 2);

@@ -22,4 +22,9 @@ VALUES
 (80, 8049, 'LinxListagemBalanco', 'Integração de dados da tabela LinxListagemBalanco, a cada 2 horas', 120, 2),
 (80, 8050, 'LinxBalancos', 'Integração de dados da tabela LinxBalancos, a cada 2 horas', 120, 2),
 (80, 8051, 'LinxBalancosArquivos', 'Integração de dados da tabela LinxBalancosArquivos, a cada 2 horas', 120, 2),
-(80, 8052, 'LinxBalancosSecoes', 'Integração de dados da tabela LinxBalancosSecoes, a cada 2 horas', 120, 2);
+(80, 8052, 'LinxBalancosSecoes', 'Integração de dados da tabela LinxBalancosSecoes, a cada 2 horas', 120, 2),
+
+/*Integrações sob demanda - executadas pelo LinxMicrovixController, não são recorrentes (IntervalTimeInMinutes = 0)*/
+(80, 8201, 'LinxProdutosDepositosByCodDeposito', 'Integração de LinxProdutosDepositos por codDeposito (GET LinxProdutosDepositos/{docCompany}/{codDeposito})', 0, 2),
+(80, 8202, 'LinxProdutosInventarioByCodProduto', 'Integração de LinxProdutosInventario por codProduto (GET LinxProdutosInventario/{docCompany}/{cnpjEmp}/{codProduto})', 0, 2),
+(80, 8203, 'LinxProdutosDetalhesByCodProduto', 'Integração de LinxProdutosDetalhes por codProduto (GET LinxProdutosDetalhes/{docCompany}/{cnpjEmp}/{codProduto})', 0, 2);

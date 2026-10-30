@@ -22,4 +22,9 @@ VALUES
 (80, 8115, 'LinxMovimentoGiftCard', 'Integração de dados da tabela LinxMovimentoGiftCard, a cada 3 minutos', 3, 2),
 (80, 8116, 'LinxValesComprasEnviadosAPI', 'Integração de dados da tabela LinxValesComprasEnviadosAPI, a cada 3 minutos', 3, 2),
 (80, 8117, 'LinxSangriaSuprimentos', 'Integração de dados da tabela LinxSangriaSuprimentos, a cada 3 minutos', 3, 2),
-(80, 8118, 'LinxFechamentoCaixa', 'Integração de dados da tabela LinxFechamentoCaixa, a cada 3 minutos', 3, 2);
+(80, 8118, 'LinxFechamentoCaixa', 'Integração de dados da tabela LinxFechamentoCaixa, a cada 3 minutos', 3, 2),
+
+/*Integrações sob demanda - executadas pelo LinxMicrovixController, não são recorrentes (IntervalTimeInMinutes = 0)*/
+(80, 8193, 'LinxMovimentoCartoesByIdentificador', 'Integração de LinxMovimentoCartoes por identificador (GET LinxMovimentoCartoes/{docCompany}/{cnpjEmp}/{identificador})', 0, 2),
+(80, 8194, 'LinxMovimentoPlanosByIdentificador', 'Integração de LinxMovimentoPlanos por identificador (GET LinxMovimentoPlanos/{docCompany}/{cnpjEmp}/{identificador})', 0, 2),
+(80, 8196, 'LinxPlanosByPlano', 'Integração de LinxPlanos por plano (GET LinxPlanos/{docCompany}/{plano})', 0, 2);

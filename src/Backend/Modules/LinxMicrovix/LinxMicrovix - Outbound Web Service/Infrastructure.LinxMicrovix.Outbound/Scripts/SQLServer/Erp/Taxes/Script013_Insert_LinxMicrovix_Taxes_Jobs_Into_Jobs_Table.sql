@@ -36,4 +36,7 @@ VALUES
 (80, 8075, 'LinxSpedTipoItem', 'Integração de dados da tabela LinxSpedTipoItem, uma vez por dia', 1440, 2),
 (80, 8076, 'LinxSpedTipoBaseCredito', 'Integração de dados da tabela LinxSpedTipoBaseCredito, uma vez por dia', 1440, 2),
 (80, 8077, 'LinxRotinaOrigem', 'Integração de dados da tabela LinxRotinaOrigem, uma vez por dia', 1440, 2),
-(80, 8078, 'LinxNfeIbgeMunicipio', 'Integração de dados da tabela LinxNfeIbgeMunicipio, uma vez por dia', 1440, 2);
+(80, 8078, 'LinxNfeIbgeMunicipio', 'Integração de dados da tabela LinxNfeIbgeMunicipio, uma vez por dia', 1440, 2),
+
+/*Integrações sob demanda - executadas pelo LinxMicrovixController, não são recorrentes (IntervalTimeInMinutes = 0)*/
+(80, 8197, 'LinxNaturezaOperacaoByCodNaturezaOperacao', 'Integração de LinxNaturezaOperacao por codNaturezaOperacao (GET LinxNaturezaOperacao/{docCompany}/{codNaturezaOperacao})', 0, 2);

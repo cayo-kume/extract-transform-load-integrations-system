@@ -20,4 +20,7 @@ VALUES
 (80, 8020, 'LinxComissoesVendedores', 'Integração de dados da tabela LinxComissoesVendedores, a cada 2 horas', 120, 2),
 (80, 8021, 'LinxListaDaVez', 'Integração de dados da tabela LinxListaDaVez, a cada 2 horas', 120, 2),
 (80, 8022, 'LinxFuncionariosFuncoes', 'Integração de dados da tabela LinxFuncionariosFuncoes, a cada 2 horas', 120, 2),
-(80, 8023, 'LinxRegistroProfissional', 'Integração de dados da tabela LinxRegistroProfissional, a cada 2 horas', 120, 2);
+(80, 8023, 'LinxRegistroProfissional', 'Integração de dados da tabela LinxRegistroProfissional, a cada 2 horas', 120, 2),
+
+/*Integrações sob demanda - executadas pelo LinxMicrovixController, não são recorrentes (IntervalTimeInMinutes = 0)*/
+(80, 8209, 'LinxVendedoresByCodVendedor', 'Integração de LinxVendedores por codVendedor (GET LinxVendedores/{docCompany}/{cnpjEmp}/{codVendedor})', 0, 2);

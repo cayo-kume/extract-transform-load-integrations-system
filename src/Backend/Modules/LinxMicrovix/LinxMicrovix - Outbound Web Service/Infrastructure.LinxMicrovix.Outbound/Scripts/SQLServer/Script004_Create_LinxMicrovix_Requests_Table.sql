@@ -14,6 +14,7 @@ create table [linxmicrovix].LinxMicrovixRequests (
 	request_body nvarchar(max) null,     --XML enviado, com a chave do portal trocada por (oculta)
 	response_body nvarchar(max) null,
 	is_success bit not null,
+	integrated_or_updated_at datetime null, --horário da gravação, em Brasília, igual ao das tabelas de dados (lido pelo DW)
 constraint [PK_LinxMicrovixRequests] primary key (
 	id asc
 ));

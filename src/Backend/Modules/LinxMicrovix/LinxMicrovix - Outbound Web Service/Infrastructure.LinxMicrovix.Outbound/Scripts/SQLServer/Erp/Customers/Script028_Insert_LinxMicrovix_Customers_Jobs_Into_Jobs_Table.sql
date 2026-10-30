@@ -24,4 +24,7 @@ VALUES
 (80, 8012, 'LinxClientesFornecVendedores', 'Integração de dados da tabela LinxClientesFornecVendedores, a cada 2 horas', 120, 2),
 (80, 8013, 'LinxClientesEnderecosEntrega', 'Integração de dados da tabela LinxClientesEnderecosEntrega, a cada 2 horas', 120, 2),
 (80, 8014, 'LinxClientesRede', 'Integração de dados da tabela LinxClientesRede, a cada 2 horas', 120, 2),
-(80, 8015, 'LinxRamosAtividade', 'Integração de dados da tabela LinxRamosAtividade, a cada 2 horas', 120, 2);
+(80, 8015, 'LinxRamosAtividade', 'Integração de dados da tabela LinxRamosAtividade, a cada 2 horas', 120, 2),
+
+/*Integrações sob demanda - executadas pelo LinxMicrovixController, não são recorrentes (IntervalTimeInMinutes = 0)*/
+(80, 8191, 'LinxClientesFornecByDocCliente', 'Integração de LinxClientesFornec por docCliente (GET LinxClientesFornec/{docCompany}/{docCliente})', 0, 2);

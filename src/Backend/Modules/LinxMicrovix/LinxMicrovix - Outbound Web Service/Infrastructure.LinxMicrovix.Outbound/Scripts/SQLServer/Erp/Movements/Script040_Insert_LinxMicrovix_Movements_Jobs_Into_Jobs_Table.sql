@@ -28,4 +28,7 @@ VALUES
 (80, 8103, 'LinxSerialVenda', 'Integração de dados da tabela LinxSerialVenda, a cada 3 minutos', 3, 2),
 (80, 8104, 'LinxMovimentoVendaConjugada', 'Integração de dados da tabela LinxMovimentoVendaConjugada, a cada 3 minutos', 3, 2),
 (80, 8105, 'LinxPerguntaVenda', 'Integração de dados da tabela LinxPerguntaVenda, a cada 3 minutos', 3, 2),
-(80, 8106, 'LinxRespostaVenda', 'Integração de dados da tabela LinxRespostaVenda, a cada 3 minutos', 3, 2);
+(80, 8106, 'LinxRespostaVenda', 'Integração de dados da tabela LinxRespostaVenda, a cada 3 minutos', 3, 2),
+
+/*Integrações sob demanda - executadas pelo LinxMicrovixController, não são recorrentes (IntervalTimeInMinutes = 0)*/
+(80, 8192, 'LinxMovimentoByDocumento', 'Integração de LinxMovimento por documento (GET LinxMovimento/{docCompany}/{cnpjEmp}/{documento})', 0, 2);

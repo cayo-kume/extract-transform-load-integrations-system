@@ -6,7 +6,7 @@ namespace Domain.LinxMicrovix.Outbound.Entities.Writes.Requests
     /// </summary>
     public class Request
     {
-        // padrão das tabelas de dados: horário da gravação, em Brasília, pelo qual o DW lê o log (Script093)
+        // padrão das tabelas de dados: horário da gravação, em Brasília, pelo qual o DW lê o log (Script004)
         public DateTime integrated_or_updated_at { get; private set; }
         public DateTime request_date { get; private set; }
         public Guid execution { get; private set; }

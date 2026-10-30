@@ -653,7 +653,7 @@ Infrastructure.LinxMicrovix.Outbound/
 ├── DependencyInjection.cs      (AddScopedLinxMicrovixServices)
 ├── Repositorys/                (LinxMicrovixRepository e um por service)
 └── Scripts/
-    ├── SQLServer/              (scripts DbUp + migrator.csx)
+    ├── SQLServer/              (migrator.csx, scripts gerais e uma pasta por service em Erp/ e B2C/)
     ├── MySQL/                  (migrator.csx)
     └── PostgreSQL/             (migrator.csx)
 ```
@@ -670,45 +670,46 @@ O host chama o método em `Hosts/Hangfire/Extensions/ServicesExtensions.cs`.
 
 ### Scripts de banco (SQL Server)
 
-O DbUp executa cada script uma única vez, em ordem alfabética. Alterar um script que já rodou não muda um banco
-existente: para isso é preciso um script novo. Cada service traz um trio de scripts (tabelas, procedures e jobs).
+O DbUp executa cada script uma única vez. Alterar um script que já rodou não muda um banco existente: para isso é
+preciso um script novo. Cada service tem a sua pasta (`Erp/<Service>` ou `B2C/<Service>`) com um trio de scripts:
+tabelas, procedures e jobs (os recorrentes e os sob demanda do service). O `migrator.csx` lê as subpastas e executa
+na ordem do número do arquivo, não na da pasta.
 
-| Script | Conteúdo |
-|---|---|
-| `Script001` | Schema `linxmicrovix` e `linxmicrovix.LinxMicrovixParameters` |
-| `Script002` | App `80 - LinxMicrovix` em `auditing.Apps` (um app para o ERP e o B2C) |
-| `Script003` | Os clientes em `LinxMicrovixParameters`, com as chaves. **Fica fora do git** (`.gitignore`); o modelo é o `Script003_...sql.example` |
-| `Script004`–`006` | Stores |
-| `Script007`–`009` | B2C Stores |
-| `Script010`–`012` | Product Attributes |
-| `Script013`–`015` | Taxes |
-| `Script016`–`018` | Tax Settings |
-| `Script019`–`021` | Products |
-| `Script022`–`024` | Stocks |
-| `Script025`–`027` | Prices |
-| `Script028`–`030` | Customers |
-| `Script031`–`033` | Sellers |
-| `Script034`–`036` | Payments |
-| `Script037`–`039` | Loyalty |
-| `Script040`–`042` | Movements |
-| `Script043`–`045` | Pos Sales |
-| `Script046`–`048` | Returns |
-| `Script049`–`051` | Consignments |
-| `Script052`–`054` | Orders |
-| `Script055`–`057` | Purchase Orders |
-| `Script058`–`060` | Fiscal Documents |
-| `Script061`–`063` | Financial |
-| `Script064`–`066` | Service Orders |
-| `Script067`–`069` | Optics |
-| `Script070`–`072` | B2C Customers |
-| `Script073`–`075` | B2C Product Attributes |
-| `Script076`–`078` | B2C Products |
-| `Script079`–`081` | B2C Product Images |
-| `Script082`–`084` | B2C Product Fields |
-| `Script085`–`087` | B2C Stocks And Prices |
-| `Script088`–`090` | B2C Orders |
-| `Script091` | `linxmicrovix.LinxMicrovixRequests` (log das chamadas sob demanda) |
-| `Script092` | Jobs das leituras sob demanda |
+| Pasta | Script | Conteúdo |
+|---|---|---|
+| raiz | `Script001` | Schema `linxmicrovix` e `linxmicrovix.LinxMicrovixParameters` |
+| raiz | `Script002` | App `80 - LinxMicrovix` em `auditing.Apps` (um app para o ERP e o B2C) |
+| raiz | `Script003` | Os clientes em `LinxMicrovixParameters`, com as chaves. **Fica fora do git** (`.gitignore`); o modelo é o `Script003_...sql.example` |
+| raiz | `Script004` | `linxmicrovix.LinxMicrovixRequests` (log das chamadas sob demanda) |
+| `Erp/Stores/` | `Script005`–`007` | Stores |
+| `Erp/ProductAttributes/` | `Script008`–`010` | Product Attributes |
+| `Erp/Taxes/` | `Script011`–`013` | Taxes |
+| `Erp/TaxSettings/` | `Script014`–`016` | Tax Settings |
+| `Erp/Products/` | `Script017`–`019` | Products |
+| `Erp/Stocks/` | `Script020`–`022` | Stocks |
+| `Erp/Prices/` | `Script023`–`025` | Prices |
+| `Erp/Customers/` | `Script026`–`028` | Customers |
+| `Erp/Sellers/` | `Script029`–`031` | Sellers |
+| `Erp/Payments/` | `Script032`–`034` | Payments |
+| `Erp/Loyalty/` | `Script035`–`037` | Loyalty |
+| `Erp/Movements/` | `Script038`–`040` | Movements |
+| `Erp/PosSales/` | `Script041`–`043` | Pos Sales |
+| `Erp/Returns/` | `Script044`–`046` | Returns |
+| `Erp/Consignments/` | `Script047`–`049` | Consignments |
+| `Erp/Orders/` | `Script050`–`052` | Orders |
+| `Erp/PurchaseOrders/` | `Script053`–`055` | Purchase Orders |
+| `Erp/FiscalDocuments/` | `Script056`–`058` | Fiscal Documents |
+| `Erp/Financial/` | `Script059`–`061` | Financial |
+| `Erp/ServiceOrders/` | `Script062`–`064` | Service Orders |
+| `Erp/Optics/` | `Script065`–`067` | Optics |
+| `B2C/Stores/` | `Script068`–`070` | B2C Stores |
+| `B2C/Customers/` | `Script071`–`073` | B2C Customers |
+| `B2C/ProductAttributes/` | `Script074`–`076` | B2C Product Attributes |
+| `B2C/Products/` | `Script077`–`079` | B2C Products |
+| `B2C/ProductImages/` | `Script080`–`082` | B2C Product Images |
+| `B2C/ProductFields/` | `Script083`–`085` | B2C Product Fields |
+| `B2C/StocksAndPrices/` | `Script086`–`088` | B2C Stocks And Prices |
+| `B2C/Orders/` | `Script089`–`091` | B2C Orders |
 
 **Regras gerais das tabelas e dos merges:**
 * Toda tabela de dados existe em dois schemas: `untreated` (recebe o bulk insert, sem chave) e `linxmicrovix` (tabela

@@ -28,4 +28,7 @@ VALUES
 (80, 8091, 'LinxECF', 'Integração de dados da tabela LinxECF, a cada 3 minutos', 3, 2),
 (80, 8092, 'LinxECFFormasPagamento', 'Integração de dados da tabela LinxECFFormasPagamento, a cada 3 minutos', 3, 2),
 (80, 8093, 'LinxNfceEstacao', 'Integração de dados da tabela LinxNfceEstacao, a cada 3 minutos', 3, 2),
-(80, 8094, 'LinxSeries', 'Integração de dados da tabela LinxSeries, a cada 3 minutos', 3, 2);
+(80, 8094, 'LinxSeries', 'Integração de dados da tabela LinxSeries, a cada 3 minutos', 3, 2),
+
+/*Integrações sob demanda - executadas pelo LinxMicrovixController, não são recorrentes (IntervalTimeInMinutes = 0)*/
+(80, 8208, 'LinxXMLDocumentosByDocumento', 'Integração de LinxXMLDocumentos por documento (GET LinxXMLDocumentos/{docCompany}/{cnpjEmp}/{documento})', 0, 2);

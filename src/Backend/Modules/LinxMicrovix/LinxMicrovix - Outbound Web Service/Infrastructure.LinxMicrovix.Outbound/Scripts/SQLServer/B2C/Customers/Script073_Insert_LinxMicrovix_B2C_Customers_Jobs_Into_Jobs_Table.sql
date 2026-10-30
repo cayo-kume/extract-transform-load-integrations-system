@@ -18,4 +18,7 @@ VALUES
 (80, 8262, 'B2CConsultaClientesEnderecosEntrega', 'Integração de dados da tabela B2CConsultaClientesEnderecosEntrega, a cada 2 horas', 120, 2),
 (80, 8263, 'B2CConsultaClientesEstadoCivil', 'Integração de dados da tabela B2CConsultaClientesEstadoCivil, a cada 2 horas', 120, 2),
 (80, 8264, 'B2CConsultaClientesSaldo', 'Integração de dados da tabela B2CConsultaClientesSaldo, a cada 2 horas', 120, 2),
-(80, 8265, 'B2CConsultaClientesSaldoLinx', 'Integração de dados da tabela B2CConsultaClientesSaldoLinx, a cada 2 horas', 120, 2);
+(80, 8265, 'B2CConsultaClientesSaldoLinx', 'Integração de dados da tabela B2CConsultaClientesSaldoLinx, a cada 2 horas', 120, 2),
+
+/*Integrações sob demanda - executadas pelo LinxMicrovixController, não são recorrentes (IntervalTimeInMinutes = 0)*/
+(80, 8319, 'B2CConsultaClientesByDocCliente', 'Integração de B2CConsultaClientes por docCliente (GET B2CConsultaClientes/{docCompany}/{docCliente})', 0, 2);

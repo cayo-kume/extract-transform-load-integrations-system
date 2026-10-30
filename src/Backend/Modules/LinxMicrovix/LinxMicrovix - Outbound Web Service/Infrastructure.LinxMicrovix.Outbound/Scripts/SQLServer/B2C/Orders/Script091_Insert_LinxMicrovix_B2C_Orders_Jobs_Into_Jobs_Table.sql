@@ -24,4 +24,10 @@ VALUES
 (80, 8315, 'B2CConsultaStatus', 'Integração de dados da tabela B2CConsultaStatus, a cada 3 minutos', 3, 2),
 (80, 8316, 'B2CConsultaCodigoRastreio', 'Integração de dados da tabela B2CConsultaCodigoRastreio, a cada 3 minutos', 3, 2),
 (80, 8317, 'B2CConsultaNFe', 'Integração de dados da tabela B2CConsultaNFe, a cada 3 minutos', 3, 2),
-(80, 8318, 'B2CConsultaNFeSituacao', 'Integração de dados da tabela B2CConsultaNFeSituacao, a cada 3 minutos', 3, 2);
+(80, 8318, 'B2CConsultaNFeSituacao', 'Integração de dados da tabela B2CConsultaNFeSituacao, a cada 3 minutos', 3, 2),
+
+/*Integrações sob demanda - executadas pelo LinxMicrovixController, não são recorrentes (IntervalTimeInMinutes = 0)*/
+(80, 8320, 'B2CConsultaNFeByIdPedido', 'Integração de B2CConsultaNFe por idPedido (GET B2CConsultaNFe/{docCompany}/{cnpjEmp}/{idPedido})', 0, 2),
+(80, 8321, 'B2CConsultaPedidosByIdPedido', 'Integração de B2CConsultaPedidos por idPedido (GET B2CConsultaPedidos/{docCompany}/{idPedido})', 0, 2),
+(80, 8322, 'B2CConsultaPedidosItensByIdPedido', 'Integração de B2CConsultaPedidosItens por idPedido (GET B2CConsultaPedidosItens/{docCompany}/{idPedido})', 0, 2),
+(80, 8323, 'B2CConsultaPedidosStatusByIdPedido', 'Integração de B2CConsultaPedidosStatus por idPedido (GET B2CConsultaPedidosStatus/{docCompany}/{idPedido})', 0, 2);

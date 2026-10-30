@@ -30,4 +30,7 @@ VALUES
 (80, 8131, 'LinxDevolucaoRemanejoFabrica', 'Integração de dados da tabela LinxDevolucaoRemanejoFabrica, a cada 3 minutos', 3, 2),
 (80, 8132, 'LinxDevolucaoRemanejoFabricaItem', 'Integração de dados da tabela LinxDevolucaoRemanejoFabricaItem, a cada 3 minutos', 3, 2),
 (80, 8133, 'LinxDevolucaoRemanejoFabricaStatus', 'Integração de dados da tabela LinxDevolucaoRemanejoFabricaStatus, a cada 3 minutos', 3, 2),
-(80, 8134, 'LinxDevolucaoRemanejoFabricaTipo', 'Integração de dados da tabela LinxDevolucaoRemanejoFabricaTipo, a cada 3 minutos', 3, 2);
+(80, 8134, 'LinxDevolucaoRemanejoFabricaTipo', 'Integração de dados da tabela LinxDevolucaoRemanejoFabricaTipo, a cada 3 minutos', 3, 2),
+
+/*Integrações sob demanda - executadas pelo LinxMicrovixController, não são recorrentes (IntervalTimeInMinutes = 0)*/
+(80, 8195, 'LinxMovimentoTrocasByDocOrigem', 'Integração de LinxMovimentoTrocas por docOrigem (GET LinxMovimentoTrocas/{docCompany}/{cnpjEmp}/{docOrigem})', 0, 2);

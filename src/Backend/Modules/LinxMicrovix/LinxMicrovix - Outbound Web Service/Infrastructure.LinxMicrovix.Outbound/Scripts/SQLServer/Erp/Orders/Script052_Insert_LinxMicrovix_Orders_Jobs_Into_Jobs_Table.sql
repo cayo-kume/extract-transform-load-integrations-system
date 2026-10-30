@@ -24,4 +24,7 @@ VALUES
 (80, 8148, 'LinxB2CPedidos', 'Integração de dados da tabela LinxB2CPedidos, a cada 3 minutos', 3, 2),
 (80, 8149, 'LinxB2CPedidosItens', 'Integração de dados da tabela LinxB2CPedidosItens, a cada 3 minutos', 3, 2),
 (80, 8150, 'LinxB2CPedidosStatus', 'Integração de dados da tabela LinxB2CPedidosStatus, a cada 3 minutos', 3, 2),
-(80, 8151, 'LinxB2CStatus', 'Integração de dados da tabela LinxB2CStatus, a cada 3 minutos', 3, 2);
+(80, 8151, 'LinxB2CStatus', 'Integração de dados da tabela LinxB2CStatus, a cada 3 minutos', 3, 2),
+
+/*Integrações sob demanda - executadas pelo LinxMicrovixController, não são recorrentes (IntervalTimeInMinutes = 0)*/
+(80, 8206, 'LinxPedidosVendaByCodPedido', 'Integração de LinxPedidosVenda por codPedido (GET LinxPedidosVenda/{docCompany}/{cnpjEmp}/{codPedido})', 0, 2);

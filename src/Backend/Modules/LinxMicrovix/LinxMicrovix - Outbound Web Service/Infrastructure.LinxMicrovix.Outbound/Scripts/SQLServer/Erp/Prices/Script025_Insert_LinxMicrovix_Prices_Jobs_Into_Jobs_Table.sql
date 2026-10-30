@@ -24,4 +24,8 @@ VALUES
 (80, 8059, 'LinxMovimentoAcoesPromocionais', 'Integração de dados da tabela LinxMovimentoAcoesPromocionais, a cada 2 horas', 120, 2),
 (80, 8060, 'LinxCupomDesconto', 'Integração de dados da tabela LinxCupomDesconto, a cada 2 horas', 120, 2),
 (80, 8061, 'LinxCupomDescontoVendas', 'Integração de dados da tabela LinxCupomDescontoVendas, a cada 2 horas', 120, 2),
-(80, 8062, 'LinxMotivoDesconto', 'Integração de dados da tabela LinxMotivoDesconto, a cada 2 horas', 120, 2);
+(80, 8062, 'LinxMotivoDesconto', 'Integração de dados da tabela LinxMotivoDesconto, a cada 2 horas', 120, 2),
+
+/*Integrações sob demanda - executadas pelo LinxMicrovixController, não são recorrentes (IntervalTimeInMinutes = 0)*/
+(80, 8199, 'LinxProdutosTabelasByIdTabela', 'Integração de LinxProdutosTabelas por idTabela (GET LinxProdutosTabelas/{docCompany}/{cnpjEmp}/{idTabela})', 0, 2),
+(80, 8200, 'LinxProdutosTabelasPrecosByIdTabelaAndCodProduto', 'Integração de LinxProdutosTabelasPrecos por idTabela e codProduto (GET LinxProdutosTabelasPrecos/{docCompany}/{cnpjEmp}/{idTabela}/{codProduto})', 0, 2);
