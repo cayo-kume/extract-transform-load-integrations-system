@@ -2613,6 +2613,8 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        // ------------------------------------------------------------------------------------------------------
+
         /// <summary>
         /// valida, monta as entidades (com o mesmo horário de lote) e grava. Chave: portal + cod_produto; fica a linha de maior timestamp
         /// </summary>
