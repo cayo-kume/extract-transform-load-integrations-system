@@ -3,7 +3,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using DbUp;
+using DbUp.ScriptProviders;
 using Microsoft.Data.SqlClient;
 
 // A connection string é obrigatória e vem só do argumento: sem padrão no código e sem imprimir a string,
@@ -63,10 +65,13 @@ Console.WriteLine($"Conectando em: servidor {builder.DataSource}, banco {builder
 EnsureDatabase.For.SqlDatabase(connectionString);
 
 // 2. Configura o DbUp. Tempo limite por comando de 10 min (o padrão é 30 s): logo depois da criação de centenas de
-// tabelas pelos outros módulos, a primeira geração de procedure pode passar de 30 s
+// tabelas pelos outros módulos, a primeira geração de procedure pode passar de 30 s.
+// Os scripts ficam em subpastas por camada (Parameters, Landing, History...); o DbUp nomeia cada um pelo caminho
+// (ex.: Landing.Script008_...sql), então a ordem de execução é a do número do arquivo, não a da pasta
 var upgrader = DeployChanges.To
     .SqlDatabase(connectionString)
-    .WithScriptsFromFileSystem(".")
+    .WithScriptsFromFileSystem(".", new FileSystemScriptOptions { IncludeSubDirectories = true })
+    .WithScriptSorter(scripts => scripts.OrderBy(s => s.Name.Split('.')[^2], StringComparer.Ordinal))
     .WithExecutionTimeout(TimeSpan.FromMinutes(10))
     .LogToConsole()
     .Build();

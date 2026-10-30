@@ -203,6 +203,13 @@ Quando o módulo tem uma só API, as pastas das services ficam direto em `SQLSer
 scripts de jobs de escrita e de leitura sob demanda que estavam soltos vão para o script de jobs da service que usa
 cada job (`EnumJob` referenciado na service).
 
+Um módulo que não é integração por service (ex.: o DataWarehouse, com uma service só) organiza as pastas **por
+camada**, na ordem de execução (`Parameters/`, `Landing/`, `History/`, `PersonalData/`, `Dimensions/`,
+`Intermediate/`, `Facts/`, `Datamart/`, `Outbound/`, `Checks/`), com um só script de jobs em `Parameters/`. A ordem
+segue as dependências: view e função inline precisam que os objetos lidos já existam (por isso `Dimensions/` vem antes
+de `Intermediate/`, onde `fn_StockPosition` lê `DimStore` e `DimProduct`); procedure pode citar tabela criada depois.
+Um objeto refeito numa fase seguinte (`create or alter` de novo) fica só no script de criação, já na versão final.
+
 ### 3.5 Ao mover ou renomear scripts
 
 * Um script que está no `.gitignore` (ex.: o `Script003` com as chaves) precisa ter o **caminho atualizado** no

@@ -11,7 +11,10 @@ select source_erp, source_key, count(*) as rows_found
 having count(*) > 1;
 GO
 
-/****** proporção de membro desconhecido por dimensão nos fatos (alerta acima de 5%) ******/
+/****** Checagens da fase 4 (docs/datawarehouse, 9.2 e seção 11) ******/
+/****** datawarehouse.vw_Check_UnknownMembers: mais de 5% de membro desconhecido ******/
+--a das fases anteriores mais os fatos de compras, contas a pagar e recepção de loja. O cliente da recepção fica fora: quem
+--entra na loja e não compra nem sempre tem cadastro.
 create or alter view [datawarehouse].vw_Check_UnknownMembers
 as
 select fact_name, dimension, total_rows, unknown_rows, cast(100.0 * unknown_rows / total_rows as decimal(9,2)) as unknown_percent
@@ -25,6 +28,27 @@ select fact_name, dimension, total_rows, unknown_rows, cast(100.0 * unknown_rows
 	select 'FactOrderItem', d.dimension, count(*), sum(iif(d.sk = replicate('0', 32), 1, 0))
 	  from [datawarehouse].FactOrderItem f
 	 cross apply (values ('store', f.store_sk), ('product', f.product_sk), ('customer', f.customer_sk), ('channel', f.channel_sk)) d(dimension, sk)
+	 group by d.dimension
+	union all
+	select 'FactMonthlyStock', d.dimension, count(*), sum(iif(d.sk = replicate('0', 32), 1, 0))
+	  from [datawarehouse].FactMonthlyStock f
+	 cross apply (values ('store', f.store_sk), ('product', f.product_sk)) d(dimension, sk)
+	 where f.position_date = (select max(position_date) from [datawarehouse].FactMonthlyStock)
+	 group by d.dimension
+	union all
+	select 'FactPurchaseOrderItem', d.dimension, count(*), sum(iif(d.sk = replicate('0', 32), 1, 0))
+	  from [datawarehouse].FactPurchaseOrderItem f
+	 cross apply (values ('store', f.store_sk), ('product', f.product_sk), ('supplier', f.supplier_sk)) d(dimension, sk)
+	 group by d.dimension
+	union all
+	select 'FactAccountsPayable', d.dimension, count(*), sum(iif(d.sk = replicate('0', 32), 1, 0))
+	  from [datawarehouse].FactAccountsPayable f
+	 cross apply (values ('store', f.store_sk), ('supplier', f.supplier_sk)) d(dimension, sk)
+	 group by d.dimension
+	union all
+	select 'FactStoreReception', d.dimension, count(*), sum(iif(d.sk = replicate('0', 32), 1, 0))
+	  from [datawarehouse].FactStoreReception f
+	 cross apply (values ('store', f.store_sk), ('seller', f.seller_sk)) d(dimension, sk)
 	 group by d.dimension
   ) x
  where 100.0 * unknown_rows / total_rows > 5;
@@ -56,7 +80,8 @@ select doc_company, branch_code, order_code, representative_name, operation_name
     or order_series is null;
 GO
 
-/****** filhas apagadas na origem (5.2, regra 3; alerta acima de 0,5% das chaves ativas) ******/
+/****** datawarehouse.vw_Check_MissingChildren: filhas apagadas na origem acima de 0,5% ******/
+--a da fase 1 mais as filhas do Movidesk com detecção de exclusão (Script014).
 create or alter view [datawarehouse].vw_Check_MissingChildren
 as
 select table_name, total_rows, missing_rows, cast(100.0 * missing_rows / total_rows as decimal(9,2)) as missing_percent
@@ -70,30 +95,50 @@ select table_name, total_rows, missing_rows, cast(100.0 * missing_rows / total_r
 	union all select 'TotvsProductsSuppliers', count(*), sum(iif(missing_since is null, 0, 1)) from [dw_landing].TotvsProductsSuppliers
 	union all select 'TotvsSkusReferenceCategories', count(*), sum(iif(missing_since is null, 0, 1)) from [dw_landing].TotvsSkusReferenceCategories
 	union all select 'TotvsGridsSizes', count(*), sum(iif(missing_since is null, 0, 1)) from [dw_landing].TotvsGridsSizes
+	union all select 'MovideskTicketsActions', count(*), sum(iif(missing_since is null, 0, 1)) from [dw_landing].MovideskTicketsActions
+	union all select 'MovideskTicketsClients', count(*), sum(iif(missing_since is null, 0, 1)) from [dw_landing].MovideskTicketsClients
   ) x
  where total_rows > 0
    and 100.0 * missing_rows / total_rows > 0.5;
 GO
 
-/****** total faturado mensal por loja: datamart × soma direta da landing pela mesma regra (9.3; diferença acima de R$ 1,00) ******/
+/****** datamart.vw_Check_InvoicedReconciliation: com o legado Linx ******/
+--a da fase 1 comparava DailySales só com a Totvs; agora as linhas Linx entram dos dois lados. A loja é identificada por
+--origem, empresa e código, porque o código de uma loja só do Linx pode repetir o de uma loja da Totvs.
 create or alter view [datamart].vw_Check_InvoicedReconciliation
 as
 with mart as (
-	select s.doc_company, s.branch_code, datefromparts(year(d.sale_date), month(d.sale_date), 1) as [month], sum(d.invoiced_amount) as amount
+	select s.source_erp, s.doc_company, s.branch_code, datefromparts(year(d.sale_date), month(d.sale_date), 1) as [month], sum(d.invoiced_amount) as amount
 	  from [datamart].DailySales d
 	  join [datawarehouse].DimStore s on s.sk = d.store_sk
-	 group by s.doc_company, s.branch_code, datefromparts(year(d.sale_date), month(d.sale_date), 1)
+	 group by s.source_erp, s.doc_company, s.branch_code, datefromparts(year(d.sale_date), month(d.sale_date), 1)
 ),
 landing as (
-	select v.doc_company, v.branch_code, datefromparts(year(v.invoice_date), month(v.invoice_date), 1) as [month], sum(v.sign * v.net_amount) as amount
-	  from [dw_intermediate].vw_SalesItem v
-	 where v.is_invoiced = 1
-	   and v.is_sale = 1
-	 group by v.doc_company, v.branch_code, datefromparts(year(v.invoice_date), month(v.invoice_date), 1)
+	select source_erp, doc_company, branch_code, [month], sum(amount) as amount
+	  from (
+		select 'totvs' as source_erp, v.doc_company, v.branch_code, datefromparts(year(v.invoice_date), month(v.invoice_date), 1) as [month],
+		       v.sign * v.net_amount as amount
+		  from [dw_intermediate].vw_SalesItem v
+		 where v.is_invoiced = 1
+		   and v.is_sale = 1
+		union all
+		select st.source_erp, st.doc_company, st.branch_code, datefromparts(year(v.invoice_date), month(v.invoice_date), 1),
+		       v.sign * v.net_amount
+		  from [dw_intermediate].vw_LinxSalesItem v
+		 outer apply (select top 1 d.source_erp, d.doc_company, d.branch_code
+		                from [datawarehouse].DimStore d
+		               where d.cnpj = v.cnpj_emp
+		                 and d.valid_from <= v.invoice_datetime and (d.valid_to is null or d.valid_to > v.invoice_datetime)
+		               order by iif(d.source_erp = 'totvs', 0, 1), d.valid_from desc) st
+		 where v.is_invoiced = 1
+		   and v.is_sale = 1
+	  ) x
+	 group by source_erp, doc_company, branch_code, [month]
 )
 select coalesce(m.doc_company, l.doc_company) as doc_company, coalesce(m.branch_code, l.branch_code) as branch_code,
        coalesce(m.[month], l.[month]) as [month], m.amount as datamart_amount, l.amount as landing_amount
   from mart m
   full join landing l
-    on l.doc_company = m.doc_company and l.branch_code = m.branch_code and l.[month] = m.[month]
+    on l.source_erp = m.source_erp and l.doc_company = m.doc_company and l.branch_code = m.branch_code and l.[month] = m.[month]
  where abs(isnull(m.amount, 0) - isnull(l.amount, 0)) > 1.00;
+GO

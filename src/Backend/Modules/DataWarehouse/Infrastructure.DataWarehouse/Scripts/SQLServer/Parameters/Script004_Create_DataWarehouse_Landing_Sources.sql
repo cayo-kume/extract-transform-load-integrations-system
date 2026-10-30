@@ -10,9 +10,11 @@ create table [dw_control].LandingSource (
 	detect_missing         bit            not null constraint df_LandingSource_detect_missing default (0),   --filha que o merge da origem apaga (5.2, regra 3)
 	history_frequency      varchar(10)    null,       --hourly, daily; nulo = sem histórico
 	phase                  tinyint        not null,   --fase do plano em que a origem entrou (seção 2)
+	is_enabled             bit            not null constraint df_LandingSource_is_enabled default (1),   --origem ligada; a de saldos nasce desligada até a carga inicial na Totvs terminar (9.5)
 constraint [pk_LandingSource] primary key (
 	source_schema asc,
 	source_table asc
 ),
-constraint [ck_LandingSource_history_frequency] check (history_frequency in ('hourly', 'daily'))
+--history_frequency once: snapshot único, chamado pela carga do legado Linx (RunLinxLegacy; 7.5 e 10.2)
+constraint [ck_LandingSource_history_frequency] check (history_frequency in ('hourly', 'daily', 'once'))
 );

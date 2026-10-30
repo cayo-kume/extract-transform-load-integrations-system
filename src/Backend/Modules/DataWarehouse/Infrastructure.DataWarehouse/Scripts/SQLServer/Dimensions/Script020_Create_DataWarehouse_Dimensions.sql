@@ -1,18 +1,182 @@
+/****** Dimensões da fase 1 (docs/datawarehouse, 7.1 e 8.3) ******/
+--chave substituta: MD5 da chave natural (7.1), com valid_from nas SCD2. Membro desconhecido em todas: sk com 32 zeros,
+--chave natural 0 e descrição NOT INFORMED; os fatos gravam esse sk quando a chave não casa.
+--as SCD2 (DimStore, DimProduct) são reconstruídas do dw_history a cada carga: a sk é determinística, então os fatos não quebram.
+--a primeira versão de cada chave vale desde 1900-01-01, para que vendas anteriores ao primeiro snapshot achem a dimensão.
 /****** Membros Linx nas dimensões (docs/datawarehouse, 7.1, 7.5 e pergunta 34) ******/
 --as procedures de dimensão da fase 1 passam a carregar também o legado Linx Microvix, lido de dw_landing e dw_history. Como
 --elas rodam a cada hora, os membros Linx são refeitos junto com os da Totvs, e o de/para de produto (matched_product_sk)
 --aponta sempre para a versão vigente do produto Totvs. Enquanto a carga do legado não rodar, as tabelas Linx estão vazias e
 --nada muda. Os códigos Linx entram com source_erp = linxmicrovix na chave, porque colidem com os da Totvs (7.1).
 
-/****** DimStore: origem da loja ******/
---a loja Linx com CNPJ na Totvs é a mesma linha da Totvs (7.5); só a loja que nunca teve CNPJ na Totvs vira membro próprio.
-alter table [datawarehouse].DimStore add
-	source_erp varchar(20) not null constraint df_DimStore_source_erp default ('totvs');
+create table [datawarehouse].DimDate (
+	[date]            date           not null,
+	date_key          int            not null,   --yyyymmdd
+	[year]            smallint       not null,
+	[quarter]         tinyint        not null,
+	[month]           tinyint        not null,
+	month_name        nvarchar(20)   not null,
+	[day]             tinyint        not null,
+	iso_week          tinyint        not null,
+	weekday           tinyint        not null,   --1 segunda ... 7 domingo
+	weekday_name      nvarchar(20)   not null,
+	is_weekend        bit            not null,
+	is_holiday        bit            not null,
+	holiday_name      nvarchar(100)  null,
+	is_business_day   bit            not null,
+constraint [pk_DimDate] primary key ([date] asc)
+);
+
+create table [datawarehouse].DimStore (
+	sk                char(32)       not null,
+	doc_company       nvarchar(14)   not null,
+	branch_code       int            not null,
+	cnpj              nvarchar(14)   null,
+	name              nvarchar(60)   null,
+	fantasy_name      nvarchar(60)   null,
+	group_name        nvarchar(100)  null,
+	brand             nvarchar(60)   null,
+	order_series      varchar(5)     null,
+	valid_from        datetime2(3)   not null,
+	valid_to          datetime2(3)   null,
+	is_current        bit            not null,
+	source_erp        varchar(20)    not null constraint df_DimStore_source_erp default ('totvs'),   --totvs; linxmicrovix só na loja que nunca teve CNPJ na Totvs (7.5)
+constraint [pk_DimStore] primary key (sk asc)
+);
+
+create table [datawarehouse].DimProduct (
+	sk                  char(32)       not null,
+	doc_company         nvarchar(14)   not null,
+	source_erp          varchar(20)    not null,
+	product_code        nvarchar(50)   not null,
+	branch_info_code    int            null,
+	sku                 nvarchar(60)   null,
+	product_name        nvarchar(250)  null,
+	reference_id        int            null,
+	reference_code      nvarchar(60)   null,
+	reference_name      nvarchar(250)  null,
+	color_code          nvarchar(60)   null,
+	color_name          nvarchar(60)   null,
+	size                nvarchar(60)   null,
+	category_name       nvarchar(250)  null,
+	category_type       nvarchar(20)   null,
+	brand               nvarchar(60)   null,
+	ncm                 nvarchar(60)   null,
+	is_active           bit            null,
+	is_blocked          bit            null,
+	matched_product_sk  char(32)       null,   --produto Totvs equivalente ao produto Linx (pergunta 34, fase 3)
+	valid_from          datetime2(3)   not null,
+	valid_to            datetime2(3)   null,
+	is_current          bit            not null,
+constraint [pk_DimProduct] primary key (sk asc)
+);
+
+create table [datawarehouse].DimCustomer (
+	sk                char(32)       not null,
+	doc_company       nvarchar(14)   not null,
+	source_erp        varchar(20)    not null,
+	customer_code     nvarchar(50)   not null,
+	doc_hash          char(64)       null,      --SHA-256(pepper + CPF/CNPJ); igual nos ERPs para o mesmo documento
+	doc_masked        varchar(20)    null,      --***.***.***-12 / **.***.***/****-12
+	person_type       char(1)        null,      --F / J
+	gender            nvarchar(20)   null,
+	state             nvarchar(3)    null,
+	age_range         varchar(20)    null,
+	customer_status   nvarchar(20)   null,
+	updated_at        datetime2(3)   not null,
+constraint [pk_DimCustomer] primary key (sk asc)
+);
+
+create table [datawarehouse].DimSeller (
+	sk                char(32)       not null,
+	doc_company       nvarchar(14)   not null,
+	source_erp        varchar(20)    not null,
+	seller_code       nvarchar(50)   not null,
+	name              nvarchar(250)  null,
+constraint [pk_DimSeller] primary key (sk asc)
+);
+
+create table [datawarehouse].DimSupplier (
+	sk                char(32)       not null,
+	doc_company       nvarchar(14)   not null,
+	supplier_code     int            not null,
+	name              nvarchar(250)  null,
+constraint [pk_DimSupplier] primary key (sk asc)
+);
+
+create table [datawarehouse].DimPaymentMethod (
+	sk                   char(32)       not null,
+	doc_company          nvarchar(14)   not null,
+	source_erp           varchar(20)    not null,
+	document_type_code   int            not null,
+	document_type        nvarchar(30)   null,
+constraint [pk_DimPaymentMethod] primary key (sk asc)
+);
+
+create table [datawarehouse].DimOperation (
+	sk                char(32)       not null,
+	doc_company       nvarchar(14)   not null,
+	source_erp        varchar(20)    not null,
+	operation_code    nvarchar(20)   not null,   --texto: a natureza de operação do Linx é texto; a sk é o MD5 do código como texto
+	name              nvarchar(100)  null,
+	operation_type    nvarchar(20)   null,
+constraint [pk_DimOperation] primary key (sk asc)
+);
+
+create table [datawarehouse].DimChannel (
+	sk                char(32)       not null,
+	channel           varchar(30)    not null,
+	order_type        varchar(5)     null,
+	is_sale           bit            not null,
+constraint [pk_DimChannel] primary key (sk asc)
+);
+
+create table [datawarehouse].DimBrand (
+	sk                char(32)       not null,
+	brand             nvarchar(60)   not null,
+	order_series      varchar(5)     null,
+constraint [pk_DimBrand] primary key (sk asc)
+);
 GO
 
-/****** DimOperation: código como texto ******/
---a natureza de operação do Linx é texto (cod_natureza_operacao). A sk é o MD5 do código como texto, então a da Totvs não muda.
-alter table [datawarehouse].DimOperation alter column operation_code nvarchar(20) not null;
+/****** datawarehouse.sp_DimDate_Load ******/
+create or alter procedure [datawarehouse].sp_DimDate_Load
+	@from date = '20100101',
+	@to   date = '20351231',
+	@rows int = null output
+as
+begin
+	set nocount on;
+	set xact_abort on;
+
+	begin transaction;
+
+	delete from [datawarehouse].DimDate where [date] between @from and @to;
+
+	with days as (
+		select top (datediff(day, @from, @to) + 1) dateadd(day, row_number() over (order by (select null)) - 1, @from) as [date]
+		  from sys.all_objects a cross join sys.all_objects b
+	)
+	insert into [datawarehouse].DimDate ([date], date_key, [year], [quarter], [month], month_name, [day], iso_week, weekday, weekday_name, is_weekend, is_holiday, holiday_name, is_business_day)
+	select d.[date],
+	       year(d.[date]) * 10000 + month(d.[date]) * 100 + day(d.[date]),
+	       year(d.[date]), datepart(quarter, d.[date]), month(d.[date]),
+	       choose(month(d.[date]), N'janeiro', N'fevereiro', N'março', N'abril', N'maio', N'junho', N'julho', N'agosto', N'setembro', N'outubro', N'novembro', N'dezembro'),
+	       day(d.[date]), datepart(iso_week, d.[date]),
+	       w.weekday,
+	       choose(w.weekday, N'segunda-feira', N'terça-feira', N'quarta-feira', N'quinta-feira', N'sexta-feira', N'sábado', N'domingo'),
+	       iif(w.weekday >= 6, 1, 0),
+	       iif(h.holiday_date is null, 0, 1),
+	       h.name,
+	       iif(w.weekday >= 6 or h.holiday_date is not null, 0, 1)
+	  from days d
+	  cross apply (select (datediff(day, '19000101', d.[date]) % 7) + 1 as weekday) w   --1900-01-01 foi segunda-feira
+	  left join [dw_reference].Holidays h on h.holiday_date = d.[date];
+
+	set @rows = @@rowcount;
+
+	commit transaction;
+end;
 GO
 
 /****** datawarehouse.sp_DimStore_Load (SCD2: Totvs e lojas só do Linx) ******/
@@ -209,6 +373,7 @@ begin
 end;
 GO
 
+/****** Dimensões SCD1 reconstruídas da landing: vendedor, fornecedor, forma de pagamento, operação, canal e marca ******/
 /****** datawarehouse.sp_DimSeller_Load (Totvs e Linx) ******/
 --o vendedor Linx é da loja: seller_code = cnpj_emp-cod_vendedor.
 create or alter procedure [datawarehouse].sp_DimSeller_Load
@@ -233,6 +398,66 @@ begin
 	select convert(char(32), hashbytes('MD5', concat_ws('|', v.doc_company, 'linxmicrovix', concat(v.cnpj_emp, '-', v.cod_vendedor))), 2),
 	       v.doc_company, 'linxmicrovix', concat(v.cnpj_emp, '-', v.cod_vendedor), v.nome_vendedor
 	  from [dw_landing].LinxVendedores v;
+
+	set @rows = @@rowcount;
+
+	commit transaction;
+end;
+GO
+
+/****** datawarehouse.sp_DimSupplier_Load (com os fornecedores de compras e duplicatas) ******/
+--o nome vem de TotvsProductsSuppliers e, na falta, do pedido de compra; a duplicata só traz o código.
+create or alter procedure [datawarehouse].sp_DimSupplier_Load
+	@rows int = null output
+as
+begin
+	set nocount on;
+	set xact_abort on;
+
+	begin transaction;
+
+	delete from [datawarehouse].DimSupplier;
+
+	insert into [datawarehouse].DimSupplier (sk, doc_company, supplier_code, name)
+	values (replicate('0', 32), N'0', 0, N'NOT INFORMED');
+
+	insert into [datawarehouse].DimSupplier (sk, doc_company, supplier_code, name)
+	select convert(char(32), hashbytes('MD5', concat_ws('|', s.doc_company, s.supplier_code)), 2), s.doc_company, s.supplier_code,
+	       coalesce(max(iif(s.priority = 1, s.[name], null)), max(s.[name]))
+	  from (
+		select doc_company, [code] as supplier_code, [name], 1 as priority from [dw_landing].TotvsProductsSuppliers where missing_since is null
+		union all
+		select doc_company, supplierCode, supplierName, 2 from [dw_landing].TotvsPurchaseOrders where supplierCode is not null
+		union all
+		select doc_company, supplierCode, null, 3 from [dw_landing].TotvsDuplicates where supplierCode is not null
+	  ) s
+	 group by s.doc_company, s.supplier_code;
+
+	set @rows = @@rowcount;
+
+	commit transaction;
+end;
+GO
+
+create or alter procedure [datawarehouse].sp_DimPaymentMethod_Load
+	@rows int = null output
+as
+begin
+	set nocount on;
+	set xact_abort on;
+
+	begin transaction;
+
+	delete from [datawarehouse].DimPaymentMethod where source_erp in ('totvs', '0');
+
+	insert into [datawarehouse].DimPaymentMethod (sk, doc_company, source_erp, document_type_code, document_type)
+	values (replicate('0', 32), N'0', '0', 0, N'NOT INFORMED');
+
+	insert into [datawarehouse].DimPaymentMethod (sk, doc_company, source_erp, document_type_code, document_type)
+	select convert(char(32), hashbytes('MD5', concat_ws('|', p.doc_company, 'totvs', p.documentTypeCode)), 2), p.doc_company, 'totvs', p.documentTypeCode, max(p.documentType)
+	  from [dw_landing].TotvsInvoicesPayments p
+	 where p.documentTypeCode is not null
+	 group by p.doc_company, p.documentTypeCode;
 
 	set @rows = @@rowcount;
 
@@ -269,6 +494,36 @@ begin
 		  from [dw_landing].LinxMovimento where nullif(trim(cod_natureza_operacao), '') is not null
 	  ) o
 	 group by o.doc_company, o.source_erp, o.operation_code;
+
+	set @rows = @@rowcount;
+
+	commit transaction;
+end;
+GO
+
+create or alter procedure [datawarehouse].sp_DimChannel_Load
+	@rows int = null output
+as
+begin
+	set nocount on;
+	set xact_abort on;
+
+	begin transaction;
+
+	delete from [datawarehouse].DimChannel;
+
+	insert into [datawarehouse].DimChannel (sk, channel, order_type, is_sale)
+	values (replicate('0', 32), 'NOT INFORMED', null, 1);
+
+	--as combinações das regras e a venda de loja sem regra (nota sem pedido e sem PDV)
+	insert into [datawarehouse].DimChannel (sk, channel, order_type, is_sale)
+	select convert(char(32), hashbytes('MD5', concat_ws('|', c.channel, isnull(c.order_type, '-'))), 2), c.channel, c.order_type, max(cast(c.is_sale as int))
+	  from (
+		select channel, order_type, is_sale from [dw_reference].ChannelRules
+		union all
+		select 'store', null, 1
+	  ) c
+	 group by c.channel, c.order_type;
 
 	set @rows = @@rowcount;
 

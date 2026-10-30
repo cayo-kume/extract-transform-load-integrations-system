@@ -20,7 +20,7 @@ create table [datawarehouse].FactSalesItem (
 	invoice_sequence         int               null,
 	invoice_datetime         datetime          null,
 	item_sequence            int               null,
-	product_code             int               null,
+	product_code             bigint            null,   --bigint: os códigos do legado Linx passam de int (7.5)
 	source_order             varchar(50)       null,
 	--degeneradas do Linx (nulas na Totvs; fase 3)
 	store_tax_id             nvarchar(14)      null,
@@ -60,7 +60,7 @@ create table [datawarehouse].FactOrderItem (
 	--degeneradas e partes do número do pedido (4.2)
 	branch_code              int               null,
 	order_code               int               null,
-	product_code             int               null,
+	product_code             bigint            null,   --bigint: os códigos do legado Linx passam de int (7.5)
 	customer_order_code      nvarchar(100)     null,
 	order_series             varchar(5)        null,
 	order_type               varchar(5)        null,

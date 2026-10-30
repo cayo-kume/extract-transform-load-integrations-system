@@ -1,8 +1,5 @@
 /****** Fatos do legado Linx Microvix (docs/datawarehouse, 7.5 e 10.2) ******/
 --o código de produto do Microvix é bigint: as degeneradas dos fatos passam de int para bigint.
-alter table [datawarehouse].FactSalesItem alter column product_code bigint null;
-alter table [datawarehouse].FactOrderItem alter column product_code bigint null;
-GO
 
 /****** dw_intermediate.sp_LinxLegacy_Load ******/
 --grava as linhas Linx em FactSalesItem (de dw_intermediate.vw_LinxSalesItem) e FactOrderItem (de vw_LinxOrderItem), com

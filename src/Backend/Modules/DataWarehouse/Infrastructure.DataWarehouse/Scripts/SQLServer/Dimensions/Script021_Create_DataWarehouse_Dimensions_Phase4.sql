@@ -122,37 +122,3 @@ begin
 	commit transaction;
 end;
 GO
-
-/****** datawarehouse.sp_DimSupplier_Load (com os fornecedores de compras e duplicatas) ******/
---o nome vem de TotvsProductsSuppliers e, na falta, do pedido de compra; a duplicata só traz o código.
-create or alter procedure [datawarehouse].sp_DimSupplier_Load
-	@rows int = null output
-as
-begin
-	set nocount on;
-	set xact_abort on;
-
-	begin transaction;
-
-	delete from [datawarehouse].DimSupplier;
-
-	insert into [datawarehouse].DimSupplier (sk, doc_company, supplier_code, name)
-	values (replicate('0', 32), N'0', 0, N'NOT INFORMED');
-
-	insert into [datawarehouse].DimSupplier (sk, doc_company, supplier_code, name)
-	select convert(char(32), hashbytes('MD5', concat_ws('|', s.doc_company, s.supplier_code)), 2), s.doc_company, s.supplier_code,
-	       coalesce(max(iif(s.priority = 1, s.[name], null)), max(s.[name]))
-	  from (
-		select doc_company, [code] as supplier_code, [name], 1 as priority from [dw_landing].TotvsProductsSuppliers where missing_since is null
-		union all
-		select doc_company, supplierCode, supplierName, 2 from [dw_landing].TotvsPurchaseOrders where supplierCode is not null
-		union all
-		select doc_company, supplierCode, null, 3 from [dw_landing].TotvsDuplicates where supplierCode is not null
-	  ) s
-	 group by s.doc_company, s.supplier_code;
-
-	set @rows = @@rowcount;
-
-	commit transaction;
-end;
-GO
