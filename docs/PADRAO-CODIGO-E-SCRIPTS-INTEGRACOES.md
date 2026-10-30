@@ -105,7 +105,31 @@ As queries SQL ficam num **command handler por service** (`<Módulo><Service>Com
 `I<Módulo><Service>CommandHandler`), usado só pelo repositório daquele service. As queries comuns do módulo
 (empresas, lojas, trava de repetição etc.) ficam no `<Módulo>CommandHandler`, usado pelo repositório comum.
 
-* Cada handler é registrado na DI (`AddScoped`) ao lado do service e do repositório dele.
+A divisão segue o repositório que chama cada query: a query vai para o handler do service dono daquele repositório.
+
+```
+Application.Totvs/
+├── Abstractions/Handlers/Commands/
+│   ├── ITotvsCommandHandler.cs                 (comuns: TotvsRepository)
+│   ├── ITotvsPeopleCommandHandler.cs           (TotvsPeopleRepository)
+│   ├── ITotvsProductsCommandHandler.cs         (TotvsProductsRepository)
+│   └── ...                                     (um por service com repositório)
+└── Handlers/Commands/
+    ├── TotvsCommandHandler.cs
+    ├── TotvsPeopleCommandHandler.cs
+    ├── TotvsProductsCommandHandler.cs
+    └── ...
+```
+
+```csharp
+            services.AddScoped<ITotvsPeopleService, TotvsPeopleService>();
+            services.AddScoped<ITotvsPeopleRepository, TotvsPeopleRepository>();
+            services.AddScoped<ITotvsPeopleCommandHandler, TotvsPeopleCommandHandler>();
+```
+
+* Cada handler é registrado na DI (`AddScoped`) ao lado do service e do repositório dele, e o repositório recebe só o
+  seu handler (`_totvsPeopleCommandHandler`).
+* Um service sem repositório (ex.: `TotvsBonusService`, só escritas) não tem handler.
 * Um método privado que servia a queries de services diferentes (ex.: `CreateGetOrdersByKeysQuery`, de pedidos de
   compra e de venda) vai para dentro de cada método que o usa, com os parâmetros fixos (ex.: o nome da tabela), pela
   regra da seção 2.1.
