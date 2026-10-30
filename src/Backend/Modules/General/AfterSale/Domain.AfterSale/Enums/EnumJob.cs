@@ -1,7 +1,7 @@
 ﻿namespace Domain.AfterSale.Enums
 {
     /// <summary>
-    /// Qualquer alteração neste arquivo deve refletir nos códigos do arquivo Script007_Insert_Into_Jobs_Table.sql
+    /// Qualquer alteração neste arquivo deve refletir nos scripts de jobs de cada pasta (Script0NN_Insert_AfterSale_*_Jobs_Into_Jobs_Table.sql)
     /// </summary>
     public enum EnumJob
     {

@@ -13,6 +13,7 @@ create table [aftersale].AfterSaleRequests (
 	request_body nvarchar(max) null,     --json enviado, ou o XML inteiro na rota de invoice por arquivo
 	response_body nvarchar(max) null,
 	is_success bit not null,
+	integrated_or_updated_at datetime null, --horário da gravação, em Brasília, igual ao das tabelas de dados (lido pelo DW)
 constraint [PK_AfterSaleRequests] primary key (
 	id asc
 ));

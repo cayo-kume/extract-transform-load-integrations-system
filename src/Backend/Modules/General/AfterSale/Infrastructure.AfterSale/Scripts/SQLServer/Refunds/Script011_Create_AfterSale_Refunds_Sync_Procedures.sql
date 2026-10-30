@@ -1,0 +1,13 @@
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'aftersale', @table_name = 'AfterSaleRefunds', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'aftersale', @table_name = 'AfterSaleRefundsCouldChangeStatusFor', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'aftersale', @table_name = 'AfterSaleRefundsOrdersPaymentsMethods', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'aftersale', @table_name = 'AfterSaleRefundsStatusHistories', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'aftersale', @table_name = 'AfterSaleRefundsTotalAmountHistories', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'aftersale', @table_name = 'AfterSaleRefundsProducts', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'aftersale', @table_name = 'AfterSaleRefundsProductsImages', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'aftersale', @table_name = 'AfterSaleRefundsProductsImagesUrls', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'aftersale', @table_name = 'AfterSaleSummarizedRefunds', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'aftersale', @table_name = 'AfterSaleStatusRefunds', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'aftersale', @table_name = 'AfterSaleActionsRefunds', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'aftersale', @table_name = 'AfterSaleBanksRefunds', @execute = 1;
+exec dbo.sp_Create_Merge_Procedure @schema_name = 'aftersale', @table_name = 'AfterSaleTypesRefunds', @execute = 1;

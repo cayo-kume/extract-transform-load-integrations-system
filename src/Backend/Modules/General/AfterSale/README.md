@@ -112,7 +112,7 @@ Domain.AfterSale/
   Guia: [`docs/PROPOSTA-DATAS-NULAS-AFTERSALE.md`](../../../../../docs/PROPOSTA-DATAS-NULAS-AFTERSALE.md).
 * As entidades de reversas e de reembolsos usadas pelos métodos implementados têm `doc_company` (CNPJ da empresa), que faz parte da chave primária da tabela. Ainda **sem** `doc_company`: `Me` (dados do e-commerce) e `Reverses/History`, cujo método está pendente (ver [Pendências](#pendências-conhecidas)).
 * Listas filhas usam `[SkipProperty]` para não virarem coluna no bulk insert. O bulk insert mapeia as colunas **pelo nome** da propriedade.
-* `EnumJob` deve ficar em sincronia com o `Script007_Insert_AfterSale_Values_Into_Jobs_Table.sql`.
+* `EnumJob` deve ficar em sincronia com os scripts de jobs de cada pasta (`Script0NN_Insert_AfterSale_*_Jobs_Into_Jobs_Table.sql`).
 
 ### Repositórios (interfaces)
 
@@ -259,19 +259,19 @@ O host chama o método em `Hosts/Hangfire/Extensions/ServicesExtensions.cs`.
 
 ### Scripts de banco (SQL Server)
 
-Executados uma única vez cada, em ordem, pelo DbUp (`Scripts/SQLServer/migrator.csx`). Alterar um script já executado não muda um banco existente: para isso é preciso um script novo.
+Executados uma única vez cada pelo DbUp (`Scripts/SQLServer/migrator.csx`), na ordem do número do arquivo. Alterar um script já executado não muda um banco existente: para isso é preciso um script novo. Os scripts gerais ficam em `Parameters/` e cada service tem a sua pasta, com o trio tabelas, procedures e jobs.
 
-| Script | Conteúdo |
-|---|---|
-| `Script001_Create_Schema_And_Parameters_Table.sql` | Schemas `aftersale` e `untreated` (só se não existirem), `AfterSaleParameters` (CNPJ + token por empresa) e `AfterSaleErrors` |
-| `Script002_Create_Me_Tables.sql` | `AfterSaleEcommerces`, `...MessagesPages`, `...MessagesMails`, `...Reasons`, `...SubReasons`, `...StringValues` |
-| `Script003_Create_Refunds_Tables.sql` | `AfterSaleRefunds` e filhas (`CouldChangeStatusFor`, `OrdersPaymentsMethods`, `StatusHistories`, `TotalAmountHistories`, `Products`, `ProductsImages`, `ProductsImagesUrls`), `AfterSaleSummarizedRefunds`, `AfterSaleStatusRefunds`, `AfterSaleActionsRefunds`, `AfterSaleBanksRefunds`, `AfterSaleTypesRefunds` |
-| `Script004_Create_Reverses_Tables.sql` | `AfterSaleSummarizedReverses`, `AfterSaleReverses` e 10 filhas, `AfterSaleStatusReverses`, `AfterSaleTransportationsReverses`, `AfterSaleHistoriesReverses`, `AfterSaleCourierAttributes`, `AfterSaleCourierAttributesFields`, com PKs e FKs compostas por `doc_company` |
-| `Script005_Create_AfterSale_Sync_Procedures.sql` | Gera as procedures de merge `aftersale.sp_<Tabela>_Sync` (via `dbo.sp_Create_Merge_Procedure`) |
-| `Script006_Insert_AfterSale_Values_Into_Apps_Table.sql` | App `50 - AfterSale` em `auditing.Apps` |
-| `Script007_Insert_AfterSale_Values_Into_Jobs_Table.sql` | Jobs em `auditing.Jobs` (ver [Auditoria](#auditoria-jobs)) |
-| `Script008_Insert_Values_Into_AfterSale_Parameters_Table.sql` | Empresas e tokens em `AfterSaleParameters` |
-| `Script009_Create_AfterSale_Requests_Table.sql` | `aftersale.AfterSaleRequests` (log das chamadas de escrita) |
+| Pasta | Script | Conteúdo |
+|---|---|---|
+| `Parameters/` | `Script001_Create_AfterSale_Schema_And_Parameters_Table.sql` | Schemas `aftersale` e `untreated` (só se não existirem), `AfterSaleParameters` (CNPJ + token por empresa) e `AfterSaleErrors` |
+| `Parameters/` | `Script002_Create_AfterSale_Errors_Sync_Procedures.sql` | Procedure de merge de `AfterSaleErrors` (comum a reembolsos e reversas) |
+| `Parameters/` | `Script003_Insert_AfterSale_Values_Into_Apps_Table.sql` | App `50 - AfterSale` em `auditing.Apps` |
+| `Parameters/` | `Script004_Insert_AfterSale_Errors_Jobs_Into_Jobs_Table.sql` | Job da procedure de `AfterSaleErrors` (5536) |
+| `Parameters/` | `Script005_Insert_Values_Into_AfterSale_Parameters_Table.sql` | Empresas e tokens em `AfterSaleParameters` |
+| `Parameters/` | `Script006_Create_AfterSale_Requests_Table.sql` | `aftersale.AfterSaleRequests` (log das chamadas de escrita), já com `integrated_or_updated_at` |
+| `Me/` | `Script007`–`009` | `AfterSaleEcommerces`, `...MessagesPages`, `...MessagesMails`, `...Reasons`, `...SubReasons`, `...StringValues`; procedures de merge e jobs do e-commerce |
+| `Refunds/` | `Script010`–`012` | `AfterSaleRefunds` e filhas (`CouldChangeStatusFor`, `OrdersPaymentsMethods`, `StatusHistories`, `TotalAmountHistories`, `Products`, `ProductsImages`, `ProductsImagesUrls`), `AfterSaleSummarizedRefunds`, `AfterSaleStatusRefunds`, `AfterSaleActionsRefunds`, `AfterSaleBanksRefunds`, `AfterSaleTypesRefunds`; procedures de merge e jobs dos reembolsos |
+| `Reverses/` | `Script013`–`015` | `AfterSaleSummarizedReverses`, `AfterSaleReverses` e 10 filhas, `AfterSaleStatusReverses`, `AfterSaleTransportationsReverses`, `AfterSaleHistoriesReverses`, `AfterSaleCourierAttributes`, `AfterSaleCourierAttributesFields`, com PKs e FKs compostas por `doc_company`; procedures de merge e jobs das reversas |
 
 Toda tabela de dados existe em dois schemas: `untreated` (recebe o bulk insert, sem chave) e
 `aftersale` (tabela final, com PK). A procedure de merge leva os dados de uma para a outra. A
@@ -331,7 +331,7 @@ Resposta: **200** quando a AfterSale devolve `success = true`, **422** quando n�
 
 ## Auditoria (jobs)
 
-Os jobs ficam em `auditing.Jobs` (`Script007`), com `IdParent = 50` (app AfterSale), e os mesmos
+Os jobs ficam em `auditing.Jobs` (scripts de jobs de `Parameters/`, `Me/`, `Refunds/` e `Reverses/`), com `IdParent = 50` (app AfterSale), e os mesmos
 ids em `EnumJob`.
 
 | Faixa | Tipo (`IdType`) | Conteúdo |
