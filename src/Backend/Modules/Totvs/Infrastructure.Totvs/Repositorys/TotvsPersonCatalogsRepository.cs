@@ -10,22 +10,22 @@ namespace Infrastructure.Totvs.Repositorys
     /// </summary>
     public class TotvsPersonCatalogsRepository : ITotvsPersonCatalogsRepository
     {
-        private readonly ITotvsCommandHandler _totvsCommandHandler;
+        private readonly ITotvsPersonCatalogsCommandHandler _totvsPersonCatalogsCommandHandler;
         private readonly ISharedRepository _coreRepository;
 
-        public TotvsPersonCatalogsRepository(ITotvsCommandHandler totvsCommandHandler, ISharedRepository coreRepository) =>
-            (_totvsCommandHandler, _coreRepository) = (totvsCommandHandler, coreRepository);
+        public TotvsPersonCatalogsRepository(ITotvsPersonCatalogsCommandHandler totvsPersonCatalogsCommandHandler, ISharedRepository coreRepository) =>
+            (_totvsPersonCatalogsCommandHandler, _coreRepository) = (totvsPersonCatalogsCommandHandler, coreRepository);
 
         public async Task<DateTime?> GetPersonClassificationsLastChange(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetPersonClassificationsLastChangeQuery(doc_company);
+            string sql = _totvsPersonCatalogsCommandHandler.CreateGetPersonClassificationsLastChangeQuery(doc_company);
 
             return await _coreRepository.GetRecord<DateTime?>(sql);
         }
 
         public async Task<IEnumerable<PersonClassification?>> GetPersonClassifications(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetPersonClassificationsQuery(doc_company);
+            string sql = _totvsPersonCatalogsCommandHandler.CreateGetPersonClassificationsQuery(doc_company);
 
             return await _coreRepository.GetRecords<PersonClassification>(sql);
         }
@@ -44,14 +44,14 @@ namespace Infrastructure.Totvs.Repositorys
 
         public async Task<DateTime?> GetEmailTypesLastChange(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetEmailTypesLastChangeQuery(doc_company);
+            string sql = _totvsPersonCatalogsCommandHandler.CreateGetEmailTypesLastChangeQuery(doc_company);
 
             return await _coreRepository.GetRecord<DateTime?>(sql);
         }
 
         public async Task<IEnumerable<EmailType?>> GetEmailTypes(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetEmailTypesQuery(doc_company);
+            string sql = _totvsPersonCatalogsCommandHandler.CreateGetEmailTypesQuery(doc_company);
 
             return await _coreRepository.GetRecords<EmailType>(sql);
         }
@@ -70,14 +70,14 @@ namespace Infrastructure.Totvs.Repositorys
 
         public async Task<DateTime?> GetPhoneTypesLastChange(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetPhoneTypesLastChangeQuery(doc_company);
+            string sql = _totvsPersonCatalogsCommandHandler.CreateGetPhoneTypesLastChangeQuery(doc_company);
 
             return await _coreRepository.GetRecord<DateTime?>(sql);
         }
 
         public async Task<IEnumerable<PhoneType?>> GetPhoneTypes(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetPhoneTypesQuery(doc_company);
+            string sql = _totvsPersonCatalogsCommandHandler.CreateGetPhoneTypesQuery(doc_company);
 
             return await _coreRepository.GetRecords<PhoneType>(sql);
         }
@@ -96,14 +96,14 @@ namespace Infrastructure.Totvs.Repositorys
 
         public async Task<DateTime?> GetContactTypesLastChange(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetContactTypesLastChangeQuery(doc_company);
+            string sql = _totvsPersonCatalogsCommandHandler.CreateGetContactTypesLastChangeQuery(doc_company);
 
             return await _coreRepository.GetRecord<DateTime?>(sql);
         }
 
         public async Task<IEnumerable<ContactType?>> GetContactTypes(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetContactTypesQuery(doc_company);
+            string sql = _totvsPersonCatalogsCommandHandler.CreateGetContactTypesQuery(doc_company);
 
             return await _coreRepository.GetRecords<ContactType>(sql);
         }

@@ -12,15 +12,15 @@ namespace Infrastructure.Totvs.Repositorys
 {
     public class TotvsPeopleRepository : ITotvsPeopleRepository
     {
-        private readonly ITotvsCommandHandler _totvsCommandHandler;
+        private readonly ITotvsPeopleCommandHandler _totvsPeopleCommandHandler;
         private readonly ISharedRepository _coreRepository;
 
-        public TotvsPeopleRepository(ITotvsCommandHandler totvsCommandHandler, ISharedRepository coreRepository) =>
-            (_totvsCommandHandler, _coreRepository) = (totvsCommandHandler, coreRepository);
+        public TotvsPeopleRepository(ITotvsPeopleCommandHandler totvsPeopleCommandHandler, ISharedRepository coreRepository) =>
+            (_totvsPeopleCommandHandler, _coreRepository) = (totvsPeopleCommandHandler, coreRepository);
 
         public async Task<DateTime?> GetBranchesLastChange(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetBranchesLastChangeQuery(doc_company);
+            string sql = _totvsPeopleCommandHandler.CreateGetBranchesLastChangeQuery(doc_company);
 
             return await _coreRepository.GetRecord<DateTime?>(sql);
         }
@@ -32,7 +32,7 @@ namespace Infrastructure.Totvs.Repositorys
             // lotes de 1000 códigos, como no GetPeopleByIds do Movidesk
             foreach (var chunk in codes.Distinct().Chunk(1000))
             {
-                string sql = _totvsCommandHandler.CreateGetBranchesByCodesQuery(doc_company, chunk.ToList());
+                string sql = _totvsPeopleCommandHandler.CreateGetBranchesByCodesQuery(doc_company, chunk.ToList());
 
                 result.AddRange(await _coreRepository.GetRecords<Branch>(sql));
             }
@@ -65,7 +65,7 @@ namespace Infrastructure.Totvs.Repositorys
 
         public async Task<DateTime?> GetCustomersLastChange(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetCustomersLastChangeQuery(doc_company);
+            string sql = _totvsPeopleCommandHandler.CreateGetCustomersLastChangeQuery(doc_company);
 
             return await _coreRepository.GetRecord<DateTime?>(sql);
         }
@@ -77,7 +77,7 @@ namespace Infrastructure.Totvs.Repositorys
             // lotes de 1000 códigos, como no GetPeopleByIds do Movidesk
             foreach (var chunk in codes.Distinct().Chunk(1000))
             {
-                string sql = _totvsCommandHandler.CreateGetCustomersByCodesQuery(doc_company, chunk.ToList());
+                string sql = _totvsPeopleCommandHandler.CreateGetCustomersByCodesQuery(doc_company, chunk.ToList());
 
                 result.AddRange(await _coreRepository.GetRecords<Customer>(sql));
             }
@@ -112,7 +112,7 @@ namespace Infrastructure.Totvs.Repositorys
 
         public async Task<DateTime?> GetLegalEntitiesLastChange(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetLegalEntitiesLastChangeQuery(doc_company);
+            string sql = _totvsPeopleCommandHandler.CreateGetLegalEntitiesLastChangeQuery(doc_company);
 
             return await _coreRepository.GetRecord<DateTime?>(sql);
         }
@@ -124,7 +124,7 @@ namespace Infrastructure.Totvs.Repositorys
             // lotes de 1000 códigos, como no GetPeopleByIds do Movidesk
             foreach (var chunk in codes.Distinct().Chunk(1000))
             {
-                string sql = _totvsCommandHandler.CreateGetLegalEntitiesByCodesQuery(doc_company, chunk.ToList());
+                string sql = _totvsPeopleCommandHandler.CreateGetLegalEntitiesByCodesQuery(doc_company, chunk.ToList());
 
                 result.AddRange(await _coreRepository.GetRecords<LegalEntity>(sql));
             }

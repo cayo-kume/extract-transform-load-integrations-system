@@ -9,15 +9,15 @@ namespace Infrastructure.Totvs.Repositorys
 {
     public class TotvsInvoicesRepository : ITotvsInvoicesRepository
     {
-        private readonly ITotvsCommandHandler _totvsCommandHandler;
+        private readonly ITotvsInvoicesCommandHandler _totvsInvoicesCommandHandler;
         private readonly ISharedRepository _coreRepository;
 
-        public TotvsInvoicesRepository(ITotvsCommandHandler totvsCommandHandler, ISharedRepository coreRepository) =>
-            (_totvsCommandHandler, _coreRepository) = (totvsCommandHandler, coreRepository);
+        public TotvsInvoicesRepository(ITotvsInvoicesCommandHandler totvsInvoicesCommandHandler, ISharedRepository coreRepository) =>
+            (_totvsInvoicesCommandHandler, _coreRepository) = (totvsInvoicesCommandHandler, coreRepository);
 
         public async Task<DateTime?> GetInvoicesLastChange(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetInvoicesLastChangeQuery(doc_company);
+            string sql = _totvsInvoicesCommandHandler.CreateGetInvoicesLastChangeQuery(doc_company);
 
             return await _coreRepository.GetRecord<DateTime?>(sql);
         }
@@ -29,7 +29,7 @@ namespace Infrastructure.Totvs.Repositorys
             // lotes de 1000 chaves, como no GetPeopleByIds do Movidesk
             foreach (var chunk in keys.Distinct().Chunk(1000))
             {
-                string sql = _totvsCommandHandler.CreateGetInvoicesByKeysQuery(doc_company, chunk.ToList());
+                string sql = _totvsInvoicesCommandHandler.CreateGetInvoicesByKeysQuery(doc_company, chunk.ToList());
 
                 result.AddRange(await _coreRepository.GetRecords<Invoice>(sql));
             }
@@ -73,14 +73,14 @@ namespace Infrastructure.Totvs.Repositorys
 
         public async Task<DateTime?> GetInvoicesDisableLastChange(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetInvoicesDisableLastChangeQuery(doc_company);
+            string sql = _totvsInvoicesCommandHandler.CreateGetInvoicesDisableLastChangeQuery(doc_company);
 
             return await _coreRepository.GetRecord<DateTime?>(sql);
         }
 
         public async Task<IEnumerable<InvoiceDisable?>> GetInvoicesDisable(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetInvoicesDisableQuery(doc_company);
+            string sql = _totvsInvoicesCommandHandler.CreateGetInvoicesDisableQuery(doc_company);
 
             return await _coreRepository.GetRecords<InvoiceDisable>(sql);
         }
@@ -99,7 +99,7 @@ namespace Infrastructure.Totvs.Repositorys
 
         public async Task<IEnumerable<CostCenter?>> GetCostCentersHashes(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetCostCentersHashesQuery(doc_company);
+            string sql = _totvsInvoicesCommandHandler.CreateGetCostCentersHashesQuery(doc_company);
 
             return await _coreRepository.GetRecords<CostCenter>(sql);
         }

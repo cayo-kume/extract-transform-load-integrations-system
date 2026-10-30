@@ -134,9 +134,9 @@ Domain.Totvs/
 ```
 Application.Totvs/
 ├── Abstractions/
-│   ├── Handlers/Commands/      (ITotvsCommandHandler)
+│   ├── Handlers/Commands/      (ITotvsCommandHandler e um ITotvs<Service>CommandHandler por service)
 │   └── Services/               (ITotvsService e um por recurso)
-├── Handlers/Commands/          (TotvsCommandHandler: monta as queries SQL)
+├── Handlers/Commands/          (monta as queries SQL: um Totvs<Service>CommandHandler por service, usado pelo repositório dele, e o TotvsCommandHandler com as comuns)
 ├── Services/                   (TotvsService, TotvsPeopleService, TotvsSellersService, TotvsProductsService,
 │                                TotvsPurchaseOrdersService, TotvsSalesOrdersService, TotvsAccountsPayableService, TotvsInvoicesService)
 └── Validations/                (FluentValidation por DTO, nas mesmas pastas dos DTOs)
@@ -348,7 +348,7 @@ Infrastructure.Totvs/
 `AddScopedTotvsServices(IServiceCollection, IConfiguration)` registra:
 
 * `IApiClient` com a chave `"TotvsAPI"` e o `HttpClient` nomeado `"TotvsAPI"` (base `Totvs:BaseUrl`, timeout de 20 minutos);
-* os services, os repositórios e o `ITotvsCommandHandler` (`Scoped`);
+* os services, os repositórios e os command handlers, um por service mais o comum `ITotvsCommandHandler` (`Scoped`);
 * todos os validadores do assembly numa chamada só (`AddValidatorsFromAssemblyContaining<SellerValidator>()`).
 
 O host chama o método em `Hosts/Hangfire/Extensions/ServicesExtensions.cs`.

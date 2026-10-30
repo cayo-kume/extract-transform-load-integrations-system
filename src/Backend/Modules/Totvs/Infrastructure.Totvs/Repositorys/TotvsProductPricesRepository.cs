@@ -12,15 +12,15 @@ namespace Infrastructure.Totvs.Repositorys
     /// </summary>
     public class TotvsProductPricesRepository : ITotvsProductPricesRepository
     {
-        private readonly ITotvsCommandHandler _totvsCommandHandler;
+        private readonly ITotvsProductPricesCommandHandler _totvsProductPricesCommandHandler;
         private readonly ISharedRepository _coreRepository;
 
-        public TotvsProductPricesRepository(ITotvsCommandHandler totvsCommandHandler, ISharedRepository coreRepository) =>
-            (_totvsCommandHandler, _coreRepository) = (totvsCommandHandler, coreRepository);
+        public TotvsProductPricesRepository(ITotvsProductPricesCommandHandler totvsProductPricesCommandHandler, ISharedRepository coreRepository) =>
+            (_totvsProductPricesCommandHandler, _coreRepository) = (totvsProductPricesCommandHandler, coreRepository);
 
         public async Task<ValueState?> GetPricesState(string doc_company, int branchCode)
         {
-            string sql = _totvsCommandHandler.CreateGetPricesStateQuery(doc_company, branchCode);
+            string sql = _totvsProductPricesCommandHandler.CreateGetPricesStateQuery(doc_company, branchCode);
 
             return await _coreRepository.GetRecord<ValueState>(sql);
         }
@@ -32,7 +32,7 @@ namespace Infrastructure.Totvs.Repositorys
             // lotes de 1000 códigos, como no GetPeopleByIds do Movidesk
             foreach (var chunk in productCodes.Distinct().Chunk(1000))
             {
-                string sql = _totvsCommandHandler.CreateGetPricesChangesQuery(doc_company, branchCode, chunk.ToList());
+                string sql = _totvsProductPricesCommandHandler.CreateGetPricesChangesQuery(doc_company, branchCode, chunk.ToList());
 
                 result.AddRange(await _coreRepository.GetRecords<ValueChange>(sql));
             }
@@ -65,7 +65,7 @@ namespace Infrastructure.Totvs.Repositorys
 
         public async Task<ValueState?> GetCostsState(string doc_company, int branchCode)
         {
-            string sql = _totvsCommandHandler.CreateGetCostsStateQuery(doc_company, branchCode);
+            string sql = _totvsProductPricesCommandHandler.CreateGetCostsStateQuery(doc_company, branchCode);
 
             return await _coreRepository.GetRecord<ValueState>(sql);
         }
@@ -77,7 +77,7 @@ namespace Infrastructure.Totvs.Repositorys
             // lotes de 1000 códigos, como no GetPeopleByIds do Movidesk
             foreach (var chunk in productCodes.Distinct().Chunk(1000))
             {
-                string sql = _totvsCommandHandler.CreateGetCostsChangesQuery(doc_company, branchCode, chunk.ToList());
+                string sql = _totvsProductPricesCommandHandler.CreateGetCostsChangesQuery(doc_company, branchCode, chunk.ToList());
 
                 result.AddRange(await _coreRepository.GetRecords<ValueChange>(sql));
             }
@@ -107,14 +107,14 @@ namespace Infrastructure.Totvs.Repositorys
 
         public async Task<IEnumerable<int>> GetActivePriceTableCodes(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetActivePriceTableCodesQuery(doc_company);
+            string sql = _totvsProductPricesCommandHandler.CreateGetActivePriceTableCodesQuery(doc_company);
 
             return (await _coreRepository.GetRecords<int>(sql)).Select(x => x);
         }
 
         public async Task<ValueState?> GetPriceTableItemsState(string doc_company, int priceTableCode)
         {
-            string sql = _totvsCommandHandler.CreateGetPriceTableItemsStateQuery(doc_company, priceTableCode);
+            string sql = _totvsProductPricesCommandHandler.CreateGetPriceTableItemsStateQuery(doc_company, priceTableCode);
 
             return await _coreRepository.GetRecord<ValueState>(sql);
         }
@@ -126,7 +126,7 @@ namespace Infrastructure.Totvs.Repositorys
             // lotes de 1000 códigos, como no GetPeopleByIds do Movidesk
             foreach (var chunk in productCodes.Distinct().Chunk(1000))
             {
-                string sql = _totvsCommandHandler.CreateGetPriceTableItemsChangesQuery(doc_company, priceTableCode, chunk.ToList());
+                string sql = _totvsProductPricesCommandHandler.CreateGetPriceTableItemsChangesQuery(doc_company, priceTableCode, chunk.ToList());
 
                 result.AddRange(await _coreRepository.GetRecords<ValueChange>(sql));
             }
@@ -158,7 +158,7 @@ namespace Infrastructure.Totvs.Repositorys
 
         public async Task<IEnumerable<Domain.Totvs.Entities.Reads.Products.Promotions.Promotion?>> GetPromotionsHashes(string doc_company, int branchCode)
         {
-            string sql = _totvsCommandHandler.CreateGetPromotionsHashesQuery(doc_company, branchCode);
+            string sql = _totvsProductPricesCommandHandler.CreateGetPromotionsHashesQuery(doc_company, branchCode);
 
             return await _coreRepository.GetRecords<Domain.Totvs.Entities.Reads.Products.Promotions.Promotion>(sql);
         }
@@ -182,7 +182,7 @@ namespace Infrastructure.Totvs.Repositorys
             // em blocos, para o IN não crescer sem limite
             foreach (var chunk in productCodes.Distinct().Chunk(500))
             {
-                string sql = _totvsCommandHandler.CreateGetCurrentProductValuesQuery(doc_company, chunk.ToList());
+                string sql = _totvsProductPricesCommandHandler.CreateGetCurrentProductValuesQuery(doc_company, chunk.ToList());
                 result.AddRange(await _coreRepository.GetRecords<Domain.Totvs.Entities.Writes.Products.CurrentProductValue>(sql));
             }
 
@@ -191,7 +191,7 @@ namespace Infrastructure.Totvs.Repositorys
 
         public async Task<IEnumerable<Domain.Totvs.Entities.Writes.Products.PromotionItemState?>> GetPromotionItems(string doc_company, int branchCode, int promotionCode)
         {
-            string sql = _totvsCommandHandler.CreateGetPromotionItemsQuery(doc_company, branchCode, promotionCode);
+            string sql = _totvsProductPricesCommandHandler.CreateGetPromotionItemsQuery(doc_company, branchCode, promotionCode);
 
             return await _coreRepository.GetRecords<Domain.Totvs.Entities.Writes.Products.PromotionItemState>(sql);
         }

@@ -9,15 +9,15 @@ namespace Infrastructure.Totvs.Repositorys
 {
     public class TotvsSellersRepository : ITotvsSellersRepository
     {
-        private readonly ITotvsCommandHandler _totvsCommandHandler;
+        private readonly ITotvsSellersCommandHandler _totvsSellersCommandHandler;
         private readonly ISharedRepository _coreRepository;
 
-        public TotvsSellersRepository(ITotvsCommandHandler totvsCommandHandler, ISharedRepository coreRepository) =>
-            (_totvsCommandHandler, _coreRepository) = (totvsCommandHandler, coreRepository);
+        public TotvsSellersRepository(ITotvsSellersCommandHandler totvsSellersCommandHandler, ISharedRepository coreRepository) =>
+            (_totvsSellersCommandHandler, _coreRepository) = (totvsSellersCommandHandler, coreRepository);
 
         public async Task<DateTime?> GetSellersLastChange(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetSellersLastChangeQuery(doc_company);
+            string sql = _totvsSellersCommandHandler.CreateGetSellersLastChangeQuery(doc_company);
 
             return await _coreRepository.GetRecord<DateTime?>(sql);
         }
@@ -29,7 +29,7 @@ namespace Infrastructure.Totvs.Repositorys
             // lotes de 1000 códigos, como no GetPeopleByIds do Movidesk
             foreach (var chunk in codes.Distinct().Chunk(1000))
             {
-                string sql = _totvsCommandHandler.CreateGetSellersByCodesQuery(doc_company, chunk.ToList());
+                string sql = _totvsSellersCommandHandler.CreateGetSellersByCodesQuery(doc_company, chunk.ToList());
 
                 result.AddRange(await _coreRepository.GetRecords<Seller>(sql));
             }
@@ -63,7 +63,7 @@ namespace Infrastructure.Totvs.Repositorys
 
         public async Task<IEnumerable<OperationalArea?>> GetOperationalAreasHashes(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetOperationalAreasHashesQuery(doc_company);
+            string sql = _totvsSellersCommandHandler.CreateGetOperationalAreasHashesQuery(doc_company);
 
             return await _coreRepository.GetRecords<OperationalArea>(sql);
         }

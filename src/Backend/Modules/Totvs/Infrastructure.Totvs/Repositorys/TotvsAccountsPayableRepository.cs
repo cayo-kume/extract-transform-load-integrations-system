@@ -9,15 +9,15 @@ namespace Infrastructure.Totvs.Repositorys
 {
     public class TotvsAccountsPayableRepository : ITotvsAccountsPayableRepository
     {
-        private readonly ITotvsCommandHandler _totvsCommandHandler;
+        private readonly ITotvsAccountsPayableCommandHandler _totvsAccountsPayableCommandHandler;
         private readonly ISharedRepository _coreRepository;
 
-        public TotvsAccountsPayableRepository(ITotvsCommandHandler totvsCommandHandler, ISharedRepository coreRepository) =>
-            (_totvsCommandHandler, _coreRepository) = (totvsCommandHandler, coreRepository);
+        public TotvsAccountsPayableRepository(ITotvsAccountsPayableCommandHandler totvsAccountsPayableCommandHandler, ISharedRepository coreRepository) =>
+            (_totvsAccountsPayableCommandHandler, _coreRepository) = (totvsAccountsPayableCommandHandler, coreRepository);
 
         public async Task<DateTime?> GetDuplicatesLastChange(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetDuplicatesLastChangeQuery(doc_company);
+            string sql = _totvsAccountsPayableCommandHandler.CreateGetDuplicatesLastChangeQuery(doc_company);
 
             return await _coreRepository.GetRecord<DateTime?>(sql);
         }
@@ -29,7 +29,7 @@ namespace Infrastructure.Totvs.Repositorys
             // lotes de 1000 chaves (o máximo de linhas do VALUES)
             foreach (var chunk in keys.Distinct().Chunk(1000))
             {
-                string sql = _totvsCommandHandler.CreateGetDuplicatesByKeysQuery(doc_company, chunk.ToList());
+                string sql = _totvsAccountsPayableCommandHandler.CreateGetDuplicatesByKeysQuery(doc_company, chunk.ToList());
 
                 result.AddRange(await _coreRepository.GetRecords<Duplicate>(sql));
             }

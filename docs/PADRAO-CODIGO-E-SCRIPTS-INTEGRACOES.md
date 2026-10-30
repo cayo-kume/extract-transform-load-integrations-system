@@ -99,6 +99,17 @@ Domain.Totvs/Dtos/                      Application.Totvs/Validations/
 Os validadores são registrados pelo assembly (`AddValidatorsFromAssemblyContaining<...>()`) e as services recebem
 `IValidator<Dto>` pelo tipo do DTO: mover um validador de pasta muda só o namespace e os `using` que o citam.
 
+### 2.4 Um command handler por service
+
+As queries SQL ficam num **command handler por service** (`<Módulo><Service>CommandHandler`, com a interface
+`I<Módulo><Service>CommandHandler`), usado só pelo repositório daquele service. As queries comuns do módulo
+(empresas, lojas, trava de repetição etc.) ficam no `<Módulo>CommandHandler`, usado pelo repositório comum.
+
+* Cada handler é registrado na DI (`AddScoped`) ao lado do service e do repositório dele.
+* Um método privado que servia a queries de services diferentes (ex.: `CreateGetOrdersByKeysQuery`, de pedidos de
+  compra e de venda) vai para dentro de cada método que o usa, com os parâmetros fixos (ex.: o nome da tabela), pela
+  regra da seção 2.1.
+
 ---
 
 ## 3. Scripts de banco (DbUp, SQL Server)

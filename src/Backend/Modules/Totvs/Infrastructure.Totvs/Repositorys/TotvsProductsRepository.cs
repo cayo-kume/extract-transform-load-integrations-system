@@ -10,15 +10,15 @@ namespace Infrastructure.Totvs.Repositorys
 {
     public class TotvsProductsRepository : ITotvsProductsRepository
     {
-        private readonly ITotvsCommandHandler _totvsCommandHandler;
+        private readonly ITotvsProductsCommandHandler _totvsProductsCommandHandler;
         private readonly ISharedRepository _coreRepository;
 
-        public TotvsProductsRepository(ITotvsCommandHandler totvsCommandHandler, ISharedRepository coreRepository) =>
-            (_totvsCommandHandler, _coreRepository) = (totvsCommandHandler, coreRepository);
+        public TotvsProductsRepository(ITotvsProductsCommandHandler totvsProductsCommandHandler, ISharedRepository coreRepository) =>
+            (_totvsProductsCommandHandler, _coreRepository) = (totvsProductsCommandHandler, coreRepository);
 
         public async Task<DateTime?> GetSkusLastChange(string doc_company, int branchInfoCode)
         {
-            string sql = _totvsCommandHandler.CreateGetSkusLastChangeQuery(doc_company, branchInfoCode);
+            string sql = _totvsProductsCommandHandler.CreateGetSkusLastChangeQuery(doc_company, branchInfoCode);
 
             return await _coreRepository.GetRecord<DateTime?>(sql);
         }
@@ -30,7 +30,7 @@ namespace Infrastructure.Totvs.Repositorys
             // lotes de 1000 ids, como no GetPeopleByIds do Movidesk
             foreach (var chunk in referenceIds.Distinct().Chunk(1000))
             {
-                string sql = _totvsCommandHandler.CreateGetSkusByIdsQuery(doc_company, branchInfoCode, chunk.ToList());
+                string sql = _totvsProductsCommandHandler.CreateGetSkusByIdsQuery(doc_company, branchInfoCode, chunk.ToList());
 
                 result.AddRange(await _coreRepository.GetRecords<Sku>(sql));
             }
@@ -89,7 +89,7 @@ namespace Infrastructure.Totvs.Repositorys
 
         public async Task<ValueState?> GetBalancesState(string doc_company, int branchCode)
         {
-            string sql = _totvsCommandHandler.CreateGetBalancesStateQuery(doc_company, branchCode);
+            string sql = _totvsProductsCommandHandler.CreateGetBalancesStateQuery(doc_company, branchCode);
 
             return await _coreRepository.GetRecord<ValueState>(sql);
         }
@@ -101,7 +101,7 @@ namespace Infrastructure.Totvs.Repositorys
             // lotes de 1000 códigos, como no GetPeopleByIds do Movidesk
             foreach (var chunk in productCodes.Distinct().Chunk(1000))
             {
-                string sql = _totvsCommandHandler.CreateGetBalancesChangesQuery(doc_company, branchCode, chunk.ToList());
+                string sql = _totvsProductsCommandHandler.CreateGetBalancesChangesQuery(doc_company, branchCode, chunk.ToList());
 
                 result.AddRange(await _coreRepository.GetRecords<ValueChange>(sql));
             }
@@ -134,21 +134,21 @@ namespace Infrastructure.Totvs.Repositorys
 
         public async Task<IEnumerable<int>> GetSkusProductCodes(string doc_company, int branchInfoCode)
         {
-            string sql = _totvsCommandHandler.CreateGetSkusProductCodesQuery(doc_company, branchInfoCode);
+            string sql = _totvsProductsCommandHandler.CreateGetSkusProductCodesQuery(doc_company, branchInfoCode);
 
             return (await _coreRepository.GetRecords<int>(sql)).Select(x => x);
         }
 
         public async Task<IEnumerable<Domain.Totvs.Entities.Reads.Products.Similars.ProductSimilar?>> GetSimilarHashes(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetSimilarHashesQuery(doc_company);
+            string sql = _totvsProductsCommandHandler.CreateGetSimilarHashesQuery(doc_company);
 
             return await _coreRepository.GetRecords<Domain.Totvs.Entities.Reads.Products.Similars.ProductSimilar>(sql);
         }
 
         public async Task<DateTime?> GetSimilarLastWindowEnd(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetSimilarLastWindowEndQuery(doc_company);
+            string sql = _totvsProductsCommandHandler.CreateGetSimilarLastWindowEndQuery(doc_company);
 
             return await _coreRepository.GetRecord<DateTime?>(sql);
         }
@@ -177,7 +177,7 @@ namespace Infrastructure.Totvs.Repositorys
 
         public async Task<IEnumerable<Domain.Totvs.Entities.Reads.Products.Batches.Batch?>> GetBatchesHashes(string doc_company, int branchCode)
         {
-            string sql = _totvsCommandHandler.CreateGetBatchesHashesQuery(doc_company, branchCode);
+            string sql = _totvsProductsCommandHandler.CreateGetBatchesHashesQuery(doc_company, branchCode);
 
             return await _coreRepository.GetRecords<Domain.Totvs.Entities.Reads.Products.Batches.Batch>(sql);
         }

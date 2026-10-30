@@ -12,22 +12,22 @@ namespace Infrastructure.Totvs.Repositorys
     /// </summary>
     public class TotvsProductCatalogsRepository : ITotvsProductCatalogsRepository
     {
-        private readonly ITotvsCommandHandler _totvsCommandHandler;
+        private readonly ITotvsProductCatalogsCommandHandler _totvsProductCatalogsCommandHandler;
         private readonly ISharedRepository _coreRepository;
 
-        public TotvsProductCatalogsRepository(ITotvsCommandHandler totvsCommandHandler, ISharedRepository coreRepository) =>
-            (_totvsCommandHandler, _coreRepository) = (totvsCommandHandler, coreRepository);
+        public TotvsProductCatalogsRepository(ITotvsProductCatalogsCommandHandler totvsProductCatalogsCommandHandler, ISharedRepository coreRepository) =>
+            (_totvsProductCatalogsCommandHandler, _coreRepository) = (totvsProductCatalogsCommandHandler, coreRepository);
 
         public async Task<DateTime?> GetClassificationTypesLastChange(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetClassificationTypesLastChangeQuery(doc_company);
+            string sql = _totvsProductCatalogsCommandHandler.CreateGetClassificationTypesLastChangeQuery(doc_company);
 
             return await _coreRepository.GetRecord<DateTime?>(sql);
         }
 
         public async Task<IEnumerable<ClassificationType?>> GetClassificationTypes(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetClassificationTypesQuery(doc_company);
+            string sql = _totvsProductCatalogsCommandHandler.CreateGetClassificationTypesQuery(doc_company);
 
             return await _coreRepository.GetRecords<ClassificationType>(sql);
         }
@@ -47,14 +47,14 @@ namespace Infrastructure.Totvs.Repositorys
 
         public async Task<DateTime?> GetProductClassificationsLastChange(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetProductClassificationsLastChangeQuery(doc_company);
+            string sql = _totvsProductCatalogsCommandHandler.CreateGetProductClassificationsLastChangeQuery(doc_company);
 
             return await _coreRepository.GetRecord<DateTime?>(sql);
         }
 
         public async Task<IEnumerable<ProductClassification?>> GetProductClassifications(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetProductClassificationsQuery(doc_company);
+            string sql = _totvsProductCatalogsCommandHandler.CreateGetProductClassificationsQuery(doc_company);
 
             return await _coreRepository.GetRecords<ProductClassification>(sql);
         }
@@ -74,14 +74,14 @@ namespace Infrastructure.Totvs.Repositorys
 
         public async Task<DateTime?> GetCategoriesLastChange(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetCategoriesLastChangeQuery(doc_company);
+            string sql = _totvsProductCatalogsCommandHandler.CreateGetCategoriesLastChangeQuery(doc_company);
 
             return await _coreRepository.GetRecord<DateTime?>(sql);
         }
 
         public async Task<IEnumerable<Category?>> GetCategories(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetCategoriesQuery(doc_company);
+            string sql = _totvsProductCatalogsCommandHandler.CreateGetCategoriesQuery(doc_company);
 
             return await _coreRepository.GetRecords<Category>(sql);
         }
@@ -101,14 +101,14 @@ namespace Infrastructure.Totvs.Repositorys
 
         public async Task<DateTime?> GetGridsLastChange(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetGridsLastChangeQuery(doc_company);
+            string sql = _totvsProductCatalogsCommandHandler.CreateGetGridsLastChangeQuery(doc_company);
 
             return await _coreRepository.GetRecord<DateTime?>(sql);
         }
 
         public async Task<IEnumerable<Grid?>> GetGrids(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetGridsQuery(doc_company);
+            string sql = _totvsProductCatalogsCommandHandler.CreateGetGridsQuery(doc_company);
 
             return await _coreRepository.GetRecords<Grid>(sql);
         }
@@ -139,14 +139,14 @@ namespace Infrastructure.Totvs.Repositorys
 
         public async Task<DateTime?> GetMeasurementUnitsLastChange(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetMeasurementUnitsLastChangeQuery(doc_company);
+            string sql = _totvsProductCatalogsCommandHandler.CreateGetMeasurementUnitsLastChangeQuery(doc_company);
 
             return await _coreRepository.GetRecord<DateTime?>(sql);
         }
 
         public async Task<IEnumerable<MeasurementUnit?>> GetMeasurementUnits(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetMeasurementUnitsQuery(doc_company);
+            string sql = _totvsProductCatalogsCommandHandler.CreateGetMeasurementUnitsQuery(doc_company);
 
             return await _coreRepository.GetRecords<MeasurementUnit>(sql);
         }
@@ -177,7 +177,7 @@ namespace Infrastructure.Totvs.Repositorys
 
         public async Task<IEnumerable<Color?>> GetColorsHashes(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetColorsHashesQuery(doc_company);
+            string sql = _totvsProductCatalogsCommandHandler.CreateGetColorsHashesQuery(doc_company);
 
             return await _coreRepository.GetRecords<Color>(sql);
         }
@@ -208,14 +208,14 @@ namespace Infrastructure.Totvs.Repositorys
 
         public async Task<DateTime?> GetAdditionalFieldsTypesLastChange(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetAdditionalFieldsTypesLastChangeQuery(doc_company);
+            string sql = _totvsProductCatalogsCommandHandler.CreateGetAdditionalFieldsTypesLastChangeQuery(doc_company);
 
             return await _coreRepository.GetRecord<DateTime?>(sql);
         }
 
         public async Task<IEnumerable<AdditionalFieldType?>> GetAdditionalFieldsTypes(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetAdditionalFieldsTypesQuery(doc_company);
+            string sql = _totvsProductCatalogsCommandHandler.CreateGetAdditionalFieldsTypesQuery(doc_company);
 
             return await _coreRepository.GetRecords<AdditionalFieldType>(sql);
         }
@@ -235,14 +235,14 @@ namespace Infrastructure.Totvs.Repositorys
 
         public async Task<DateTime?> GetProductGrouperConfigurationsLastChange(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetProductGrouperConfigurationsLastChangeQuery(doc_company);
+            string sql = _totvsProductCatalogsCommandHandler.CreateGetProductGrouperConfigurationsLastChangeQuery(doc_company);
 
             return await _coreRepository.GetRecord<DateTime?>(sql);
         }
 
         public async Task<IEnumerable<ProductGrouperConfiguration?>> GetProductGrouperConfigurations(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetProductGrouperConfigurationsQuery(doc_company);
+            string sql = _totvsProductCatalogsCommandHandler.CreateGetProductGrouperConfigurationsQuery(doc_company);
 
             return await _coreRepository.GetRecords<ProductGrouperConfiguration>(sql);
         }
@@ -273,14 +273,14 @@ namespace Infrastructure.Totvs.Repositorys
 
         public async Task<DateTime?> GetInstructionItemsLastChange(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetInstructionItemsLastChangeQuery(doc_company);
+            string sql = _totvsProductCatalogsCommandHandler.CreateGetInstructionItemsLastChangeQuery(doc_company);
 
             return await _coreRepository.GetRecord<DateTime?>(sql);
         }
 
         public async Task<IEnumerable<InstructionItem?>> GetInstructionItems(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetInstructionItemsQuery(doc_company);
+            string sql = _totvsProductCatalogsCommandHandler.CreateGetInstructionItemsQuery(doc_company);
 
             return await _coreRepository.GetRecords<InstructionItem>(sql);
         }
@@ -300,14 +300,14 @@ namespace Infrastructure.Totvs.Repositorys
 
         public async Task<DateTime?> GetCompositionsLastChange(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetCompositionsLastChangeQuery(doc_company);
+            string sql = _totvsProductCatalogsCommandHandler.CreateGetCompositionsLastChangeQuery(doc_company);
 
             return await _coreRepository.GetRecord<DateTime?>(sql);
         }
 
         public async Task<IEnumerable<Composition?>> GetCompositions(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetCompositionsQuery(doc_company);
+            string sql = _totvsProductCatalogsCommandHandler.CreateGetCompositionsQuery(doc_company);
 
             return await _coreRepository.GetRecords<Composition>(sql);
         }
@@ -338,14 +338,14 @@ namespace Infrastructure.Totvs.Repositorys
 
         public async Task<DateTime?> GetPriceTablesLastChange(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetPriceTablesLastChangeQuery(doc_company);
+            string sql = _totvsProductCatalogsCommandHandler.CreateGetPriceTablesLastChangeQuery(doc_company);
 
             return await _coreRepository.GetRecord<DateTime?>(sql);
         }
 
         public async Task<IEnumerable<PriceTable?>> GetPriceTables(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetPriceTablesQuery(doc_company);
+            string sql = _totvsProductCatalogsCommandHandler.CreateGetPriceTablesQuery(doc_company);
 
             return await _coreRepository.GetRecords<PriceTable>(sql);
         }
@@ -380,14 +380,14 @@ namespace Infrastructure.Totvs.Repositorys
 
         public async Task<DateTime?> GetPriceTableScalesLastChange(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetPriceTableScalesLastChangeQuery(doc_company);
+            string sql = _totvsProductCatalogsCommandHandler.CreateGetPriceTableScalesLastChangeQuery(doc_company);
 
             return await _coreRepository.GetRecord<DateTime?>(sql);
         }
 
         public async Task<IEnumerable<PriceTableScale?>> GetPriceTableScales(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetPriceTableScalesQuery(doc_company);
+            string sql = _totvsProductCatalogsCommandHandler.CreateGetPriceTableScalesQuery(doc_company);
 
             return await _coreRepository.GetRecords<PriceTableScale>(sql);
         }

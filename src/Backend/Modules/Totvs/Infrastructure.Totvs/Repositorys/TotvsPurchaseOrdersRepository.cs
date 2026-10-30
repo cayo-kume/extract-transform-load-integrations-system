@@ -9,15 +9,15 @@ namespace Infrastructure.Totvs.Repositorys
 {
     public class TotvsPurchaseOrdersRepository : ITotvsPurchaseOrdersRepository
     {
-        private readonly ITotvsCommandHandler _totvsCommandHandler;
+        private readonly ITotvsPurchaseOrdersCommandHandler _totvsPurchaseOrdersCommandHandler;
         private readonly ISharedRepository _coreRepository;
 
-        public TotvsPurchaseOrdersRepository(ITotvsCommandHandler totvsCommandHandler, ISharedRepository coreRepository) =>
-            (_totvsCommandHandler, _coreRepository) = (totvsCommandHandler, coreRepository);
+        public TotvsPurchaseOrdersRepository(ITotvsPurchaseOrdersCommandHandler totvsPurchaseOrdersCommandHandler, ISharedRepository coreRepository) =>
+            (_totvsPurchaseOrdersCommandHandler, _coreRepository) = (totvsPurchaseOrdersCommandHandler, coreRepository);
 
         public async Task<DateTime?> GetPurchaseOrdersLastChange(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetPurchaseOrdersLastChangeQuery(doc_company);
+            string sql = _totvsPurchaseOrdersCommandHandler.CreateGetPurchaseOrdersLastChangeQuery(doc_company);
 
             return await _coreRepository.GetRecord<DateTime?>(sql);
         }
@@ -29,7 +29,7 @@ namespace Infrastructure.Totvs.Repositorys
             // lotes de 1000 chaves, como no GetPeopleByIds do Movidesk
             foreach (var chunk in keys.Distinct().Chunk(1000))
             {
-                string sql = _totvsCommandHandler.CreateGetPurchaseOrdersByKeysQuery(doc_company, chunk.ToList());
+                string sql = _totvsPurchaseOrdersCommandHandler.CreateGetPurchaseOrdersByKeysQuery(doc_company, chunk.ToList());
 
                 result.AddRange(await _coreRepository.GetRecords<PurchaseOrder>(sql));
             }
@@ -63,28 +63,28 @@ namespace Infrastructure.Totvs.Repositorys
 
         public async Task<string?> GetPurchaseOrderStatus(string doc_company, int branchCode, int orderCode)
         {
-            string sql = _totvsCommandHandler.CreateGetPurchaseOrderStatusQuery(doc_company, branchCode, orderCode);
+            string sql = _totvsPurchaseOrdersCommandHandler.CreateGetPurchaseOrderStatusQuery(doc_company, branchCode, orderCode);
 
             return await _coreRepository.GetRecord<string?>(sql);
         }
 
         public async Task<Domain.Totvs.Entities.Writes.PurchaseOrders.PurchaseOrderState?> GetPurchaseOrderState(string doc_company, int branchCode, int orderCode)
         {
-            string sql = _totvsCommandHandler.CreateGetPurchaseOrderStateQuery(doc_company, branchCode, orderCode);
+            string sql = _totvsPurchaseOrdersCommandHandler.CreateGetPurchaseOrderStateQuery(doc_company, branchCode, orderCode);
 
             return (await _coreRepository.GetRecords<Domain.Totvs.Entities.Writes.PurchaseOrders.PurchaseOrderState>(sql)).FirstOrDefault();
         }
 
         public async Task<int?> GetPurchaseOrderBySupplierOrderCode(string doc_company, int branchCode, int? supplierCode, string? supplierCpfCnpj, string supplierOrderCode)
         {
-            string sql = _totvsCommandHandler.CreateGetPurchaseOrderBySupplierOrderCodeQuery(doc_company, branchCode, supplierCode, supplierCpfCnpj, supplierOrderCode);
+            string sql = _totvsPurchaseOrdersCommandHandler.CreateGetPurchaseOrderBySupplierOrderCodeQuery(doc_company, branchCode, supplierCode, supplierCpfCnpj, supplierOrderCode);
 
             return await _coreRepository.GetRecord<int?>(sql);
         }
 
         public async Task<IEnumerable<Domain.Totvs.Entities.Writes.PurchaseOrders.OrderProductQuantity?>> GetPurchaseOrderProducts(string doc_company, int branchCode, int orderCode)
         {
-            string sql = _totvsCommandHandler.CreateGetPurchaseOrderProductsQuery(doc_company, branchCode, orderCode);
+            string sql = _totvsPurchaseOrdersCommandHandler.CreateGetPurchaseOrderProductsQuery(doc_company, branchCode, orderCode);
 
             return await _coreRepository.GetRecords<Domain.Totvs.Entities.Writes.PurchaseOrders.OrderProductQuantity>(sql);
         }

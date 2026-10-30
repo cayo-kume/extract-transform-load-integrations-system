@@ -9,15 +9,15 @@ namespace Infrastructure.Totvs.Repositorys
 {
     public class TotvsSalesOrdersRepository : ITotvsSalesOrdersRepository
     {
-        private readonly ITotvsCommandHandler _totvsCommandHandler;
+        private readonly ITotvsSalesOrdersCommandHandler _totvsSalesOrdersCommandHandler;
         private readonly ISharedRepository _coreRepository;
 
-        public TotvsSalesOrdersRepository(ITotvsCommandHandler totvsCommandHandler, ISharedRepository coreRepository) =>
-            (_totvsCommandHandler, _coreRepository) = (totvsCommandHandler, coreRepository);
+        public TotvsSalesOrdersRepository(ITotvsSalesOrdersCommandHandler totvsSalesOrdersCommandHandler, ISharedRepository coreRepository) =>
+            (_totvsSalesOrdersCommandHandler, _coreRepository) = (totvsSalesOrdersCommandHandler, coreRepository);
 
         public async Task<DateTime?> GetSalesOrdersLastChange(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetSalesOrdersLastChangeQuery(doc_company);
+            string sql = _totvsSalesOrdersCommandHandler.CreateGetSalesOrdersLastChangeQuery(doc_company);
 
             return await _coreRepository.GetRecord<DateTime?>(sql);
         }
@@ -29,7 +29,7 @@ namespace Infrastructure.Totvs.Repositorys
             // lotes de 1000 chaves, como no GetPeopleByIds do Movidesk
             foreach (var chunk in keys.Distinct().Chunk(1000))
             {
-                string sql = _totvsCommandHandler.CreateGetSalesOrdersByKeysQuery(doc_company, chunk.ToList());
+                string sql = _totvsSalesOrdersCommandHandler.CreateGetSalesOrdersByKeysQuery(doc_company, chunk.ToList());
 
                 result.AddRange(await _coreRepository.GetRecords<SaleOrder>(sql));
             }
@@ -71,14 +71,14 @@ namespace Infrastructure.Totvs.Repositorys
 
         public async Task<DateTime?> GetSaleDiscountTypesLastChange(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetSaleDiscountTypesLastChangeQuery(doc_company);
+            string sql = _totvsSalesOrdersCommandHandler.CreateGetSaleDiscountTypesLastChangeQuery(doc_company);
 
             return await _coreRepository.GetRecord<DateTime?>(sql);
         }
 
         public async Task<IEnumerable<Domain.Totvs.Entities.Reads.SalesOrders.Catalogs.SaleDiscountType?>> GetSaleDiscountTypes(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetSaleDiscountTypesQuery(doc_company);
+            string sql = _totvsSalesOrdersCommandHandler.CreateGetSaleDiscountTypesQuery(doc_company);
 
             return await _coreRepository.GetRecords<Domain.Totvs.Entities.Reads.SalesOrders.Catalogs.SaleDiscountType>(sql);
         }
@@ -97,14 +97,14 @@ namespace Infrastructure.Totvs.Repositorys
 
         public async Task<DateTime?> GetSaleClassificationsLastChange(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetSaleClassificationsLastChangeQuery(doc_company);
+            string sql = _totvsSalesOrdersCommandHandler.CreateGetSaleClassificationsLastChangeQuery(doc_company);
 
             return await _coreRepository.GetRecord<DateTime?>(sql);
         }
 
         public async Task<IEnumerable<Domain.Totvs.Entities.Reads.SalesOrders.Catalogs.SaleClassification?>> GetSaleClassifications(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetSaleClassificationsQuery(doc_company);
+            string sql = _totvsSalesOrdersCommandHandler.CreateGetSaleClassificationsQuery(doc_company);
 
             return await _coreRepository.GetRecords<Domain.Totvs.Entities.Reads.SalesOrders.Catalogs.SaleClassification>(sql);
         }
@@ -123,14 +123,14 @@ namespace Infrastructure.Totvs.Repositorys
 
         public async Task<DateTime?> GetSaleOrderBatchesLastChange(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetSaleOrderBatchesLastChangeQuery(doc_company);
+            string sql = _totvsSalesOrdersCommandHandler.CreateGetSaleOrderBatchesLastChangeQuery(doc_company);
 
             return await _coreRepository.GetRecord<DateTime?>(sql);
         }
 
         public async Task<IEnumerable<Domain.Totvs.Entities.Reads.SalesOrders.Catalogs.SaleOrderBatch?>> GetSaleOrderBatches(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetSaleOrderBatchesQuery(doc_company);
+            string sql = _totvsSalesOrdersCommandHandler.CreateGetSaleOrderBatchesQuery(doc_company);
 
             return await _coreRepository.GetRecords<Domain.Totvs.Entities.Reads.SalesOrders.Catalogs.SaleOrderBatch>(sql);
         }
@@ -149,7 +149,7 @@ namespace Infrastructure.Totvs.Repositorys
 
         public async Task<DateTime?> GetBillingSuggestionsLastChange(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetBillingSuggestionsLastChangeQuery(doc_company);
+            string sql = _totvsSalesOrdersCommandHandler.CreateGetBillingSuggestionsLastChangeQuery(doc_company);
 
             return await _coreRepository.GetRecord<DateTime?>(sql);
         }
@@ -161,7 +161,7 @@ namespace Infrastructure.Totvs.Repositorys
             // lotes de 1000 chaves, como nos pedidos
             foreach (var chunk in keys.Distinct().Chunk(1000))
             {
-                string sql = _totvsCommandHandler.CreateGetBillingSuggestionsByKeysQuery(doc_company, chunk.ToList());
+                string sql = _totvsSalesOrdersCommandHandler.CreateGetBillingSuggestionsByKeysQuery(doc_company, chunk.ToList());
 
                 result.AddRange(await _coreRepository.GetRecords<Domain.Totvs.Entities.Reads.SalesOrders.BillingSuggestions.BillingSuggestion>(sql));
             }
@@ -194,14 +194,14 @@ namespace Infrastructure.Totvs.Repositorys
 
         public async Task<string?> GetSaleOrderStatus(string doc_company, int branchCode, int orderCode)
         {
-            string sql = _totvsCommandHandler.CreateGetSaleOrderStatusQuery(doc_company, branchCode, orderCode);
+            string sql = _totvsSalesOrdersCommandHandler.CreateGetSaleOrderStatusQuery(doc_company, branchCode, orderCode);
 
             return await _coreRepository.GetRecord<string?>(sql);
         }
 
         public async Task<IEnumerable<Domain.Totvs.Entities.Writes.SalesOrders.SaleOrderProductQuantity?>> GetSaleOrderProducts(string doc_company, int branchCode, int orderCode)
         {
-            string sql = _totvsCommandHandler.CreateGetSaleOrderProductsQuery(doc_company, branchCode, orderCode);
+            string sql = _totvsSalesOrdersCommandHandler.CreateGetSaleOrderProductsQuery(doc_company, branchCode, orderCode);
 
             return await _coreRepository.GetRecords<Domain.Totvs.Entities.Writes.SalesOrders.SaleOrderProductQuantity>(sql);
         }

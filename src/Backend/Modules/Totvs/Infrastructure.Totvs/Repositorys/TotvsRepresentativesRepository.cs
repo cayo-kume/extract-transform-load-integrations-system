@@ -13,15 +13,15 @@ namespace Infrastructure.Totvs.Repositorys
     /// </summary>
     public class TotvsRepresentativesRepository : ITotvsRepresentativesRepository
     {
-        private readonly ITotvsCommandHandler _totvsCommandHandler;
+        private readonly ITotvsRepresentativesCommandHandler _totvsRepresentativesCommandHandler;
         private readonly ISharedRepository _coreRepository;
 
-        public TotvsRepresentativesRepository(ITotvsCommandHandler totvsCommandHandler, ISharedRepository coreRepository) =>
-            (_totvsCommandHandler, _coreRepository) = (totvsCommandHandler, coreRepository);
+        public TotvsRepresentativesRepository(ITotvsRepresentativesCommandHandler totvsRepresentativesCommandHandler, ISharedRepository coreRepository) =>
+            (_totvsRepresentativesCommandHandler, _coreRepository) = (totvsRepresentativesCommandHandler, coreRepository);
 
         public async Task<DateTime?> GetRepresentativesLastChange(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetRepresentativesLastChangeQuery(doc_company);
+            string sql = _totvsRepresentativesCommandHandler.CreateGetRepresentativesLastChangeQuery(doc_company);
 
             return await _coreRepository.GetRecord<DateTime?>(sql);
         }
@@ -33,7 +33,7 @@ namespace Infrastructure.Totvs.Repositorys
             // lotes de 1000 códigos, como no GetPeopleByIds do Movidesk
             foreach (var chunk in codes.Distinct().Chunk(1000))
             {
-                string sql = _totvsCommandHandler.CreateGetRepresentativesByCodesQuery(doc_company, chunk.ToList());
+                string sql = _totvsRepresentativesCommandHandler.CreateGetRepresentativesByCodesQuery(doc_company, chunk.ToList());
 
                 result.AddRange(await _coreRepository.GetRecords<Representative>(sql));
             }
@@ -76,14 +76,14 @@ namespace Infrastructure.Totvs.Repositorys
 
         public async Task<DateTime?> GetReceptionSalesLastMovementDate(string doc_company)
         {
-            string sql = _totvsCommandHandler.CreateGetReceptionSalesLastMovementDateQuery(doc_company);
+            string sql = _totvsRepresentativesCommandHandler.CreateGetReceptionSalesLastMovementDateQuery(doc_company);
 
             return await _coreRepository.GetRecord<DateTime?>(sql);
         }
 
         public async Task<IEnumerable<ReceptionSale?>> GetReceptionSalesHashes(string doc_company, DateTime startMovementDate, DateTime endMovementDate)
         {
-            string sql = _totvsCommandHandler.CreateGetReceptionSalesHashesQuery(doc_company, startMovementDate, endMovementDate);
+            string sql = _totvsRepresentativesCommandHandler.CreateGetReceptionSalesHashesQuery(doc_company, startMovementDate, endMovementDate);
 
             return await _coreRepository.GetRecords<ReceptionSale>(sql);
         }

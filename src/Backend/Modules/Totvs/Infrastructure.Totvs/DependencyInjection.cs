@@ -33,36 +33,47 @@ namespace Infrastructure.Totvs.DependencyInjection
 
             services.AddScoped<ITotvsPeopleService, TotvsPeopleService>();
             services.AddScoped<ITotvsPeopleRepository, TotvsPeopleRepository>();
+            services.AddScoped<ITotvsPeopleCommandHandler, TotvsPeopleCommandHandler>();
 
             services.AddScoped<ITotvsSellersService, TotvsSellersService>();
             services.AddScoped<ITotvsSellersRepository, TotvsSellersRepository>();
+            services.AddScoped<ITotvsSellersCommandHandler, TotvsSellersCommandHandler>();
 
             services.AddScoped<ITotvsProductsService, TotvsProductsService>();
             services.AddScoped<ITotvsProductsRepository, TotvsProductsRepository>();
+            services.AddScoped<ITotvsProductsCommandHandler, TotvsProductsCommandHandler>();
 
             services.AddScoped<ITotvsPurchaseOrdersService, TotvsPurchaseOrdersService>();
             services.AddScoped<ITotvsPurchaseOrdersRepository, TotvsPurchaseOrdersRepository>();
+            services.AddScoped<ITotvsPurchaseOrdersCommandHandler, TotvsPurchaseOrdersCommandHandler>();
 
             services.AddScoped<ITotvsSalesOrdersService, TotvsSalesOrdersService>();
             services.AddScoped<ITotvsSalesOrdersRepository, TotvsSalesOrdersRepository>();
+            services.AddScoped<ITotvsSalesOrdersCommandHandler, TotvsSalesOrdersCommandHandler>();
 
             services.AddScoped<ITotvsAccountsPayableService, TotvsAccountsPayableService>();
             services.AddScoped<ITotvsAccountsPayableRepository, TotvsAccountsPayableRepository>();
+            services.AddScoped<ITotvsAccountsPayableCommandHandler, TotvsAccountsPayableCommandHandler>();
 
             services.AddScoped<ITotvsInvoicesService, TotvsInvoicesService>();
             services.AddScoped<ITotvsInvoicesRepository, TotvsInvoicesRepository>();
+            services.AddScoped<ITotvsInvoicesCommandHandler, TotvsInvoicesCommandHandler>();
 
             services.AddScoped<ITotvsPersonCatalogsService, TotvsPersonCatalogsService>();
             services.AddScoped<ITotvsPersonCatalogsRepository, TotvsPersonCatalogsRepository>();
+            services.AddScoped<ITotvsPersonCatalogsCommandHandler, TotvsPersonCatalogsCommandHandler>();
 
             services.AddScoped<ITotvsRepresentativesService, TotvsRepresentativesService>();
             services.AddScoped<ITotvsRepresentativesRepository, TotvsRepresentativesRepository>();
+            services.AddScoped<ITotvsRepresentativesCommandHandler, TotvsRepresentativesCommandHandler>();
 
             services.AddScoped<ITotvsProductCatalogsService, TotvsProductCatalogsService>();
             services.AddScoped<ITotvsProductCatalogsRepository, TotvsProductCatalogsRepository>();
+            services.AddScoped<ITotvsProductCatalogsCommandHandler, TotvsProductCatalogsCommandHandler>();
 
             services.AddScoped<ITotvsProductPricesService, TotvsProductPricesService>();
             services.AddScoped<ITotvsProductPricesRepository, TotvsProductPricesRepository>();
+            services.AddScoped<ITotvsProductPricesCommandHandler, TotvsProductPricesCommandHandler>();
 
             services.AddScoped<ITotvsBonusService, TotvsBonusService>();
 
