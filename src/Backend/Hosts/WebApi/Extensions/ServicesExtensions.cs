@@ -13,7 +13,9 @@ using Infrastructure.Movidesk.DependencyInjection;
 //using Infrastructure.TotalExpress.DependencyInjection;
 using Infrastructure.Totvs.DependencyInjection;
 //using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using System.Reflection;
+using WebApi.Scheduling;
 
 namespace WebApi.Extensions
 {
@@ -36,38 +38,54 @@ namespace WebApi.Extensions
             builder.Services.AddScopedTotvsServices(builder.Configuration);
             builder.Services.AddScopedDataWarehouseServices(builder.Configuration);
 
-            //builder.Services.AddHangfireService(builder);
+            // Hangfire opcional (src/Backend/Hosts/WebApi/docs/PLANO-HOST-WEBAPI.md §3): com Hangfire:Enabled = false o host sobe só
+            // como API, sem storage, servidor, dashboard nem agenda, e o banco do Hangfire nem é acessado
+            builder.Services.Configure<HangfireSettings>(builder.Configuration.GetSection(HangfireSettings.SectionName));
+
+            if (builder.Configuration.GetValue<bool>($"{HangfireSettings.SectionName}:Enabled"))
+                builder.Services.AddHangfireService(builder.Configuration);
 
             return builder;
         }
 
-        public static IServiceCollection AddHangfireService(this IServiceCollection services, WebApplicationBuilder builder)
+        public static IServiceCollection AddHangfireService(this IServiceCollection services, IConfiguration configuration)
         {
-            var serverName = builder.Configuration.GetSection("ConfigureServer").GetSection("ServerName").Value;
-            var databaseName = builder.Configuration.GetSection("ConfigureServer").GetSection("GeneralDatabaseName").Value;
-            var connectionstring = builder.Configuration.GetConnectionString("Connection").Replace("[catalog]", databaseName).Replace("[database]", databaseName);
+            var settings = configuration.GetSection(HangfireSettings.SectionName).Get<HangfireSettings>() ?? new();
+
+            // a seção é validada aqui, antes de qualquer acesso ao storage: com um parâmetro faltando, o host não sobe (§3.1)
+            var validation = new HangfireSettingsValidator(configuration).Validate(null, settings);
+
+            if (validation.Failed)
+                throw new OptionsValidationException(HangfireSettings.SectionName, typeof(HangfireSettings), validation.Failures);
+
+            var connectionString = configuration.GetConnectionString(settings.Storage.ConnectionStringName);
 
             services
-                .AddHangfire(configuration => configuration
+                .AddHangfire(hangfire => hangfire
                 .UseFilter(new AutomaticRetryAttribute { Attempts = 0 })
-
-                .SetDataCompatibilityLevel(CompatibilityLevel.Version_170)
+                .UseFilter(new JobExpirationTimeoutFilter(TimeSpan.FromMinutes(settings.Storage.JobExpirationTimeoutInMinutes)))
+                .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
                 .UseSimpleAssemblyNameTypeSerializer()
                 .UseRecommendedSerializerSettings()
-                .UseSqlServerStorage(connectionstring, new SqlServerStorageOptions
+                .UseSqlServerStorage(connectionString, new SqlServerStorageOptions
                 {
-                    CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
-                    SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
-                    QueuePollInterval = TimeSpan.Zero,
+                    SchemaName = settings.Storage.SchemaName,
+                    PrepareSchemaIfNecessary = settings.Storage.PrepareSchemaIfNecessary,
+                    CommandBatchMaxTimeout = TimeSpan.FromMinutes(settings.Storage.CommandBatchMaxTimeoutInMinutes),
+                    SlidingInvisibilityTimeout = TimeSpan.FromMinutes(settings.Storage.SlidingInvisibilityTimeoutInMinutes),
+                    QueuePollInterval = TimeSpan.FromSeconds(settings.Storage.QueuePollIntervalInSeconds),
                     UseRecommendedIsolationLevel = true,
                     DisableGlobalLocks = true
                 }));
 
             services.AddHangfireServer(options =>
             {
-                options.WorkerCount = 50;
-                options.ServerName = serverName;
-                options.Queues = new[] { serverName.ToLower() };
+                // vazio, o Hangfire usa o nome da máquina
+                if (!string.IsNullOrWhiteSpace(settings.Server.ServerName))
+                    options.ServerName = settings.Server.ServerName;
+
+                options.Queues = settings.Server.Queues.Distinct().ToArray();
+                options.WorkerCount = settings.Server.WorkerCount;
             });
 
             return services;

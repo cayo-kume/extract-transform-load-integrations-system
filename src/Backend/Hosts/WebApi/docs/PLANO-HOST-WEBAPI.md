@@ -184,6 +184,36 @@ O dashboard tem autenticação própria, independente do passo 5 (que continua a
 Conferência: com `false`, o host sobe sem tocar nas tabelas do Hangfire e as rotas funcionam; com `true`, o dashboard
 pede usuário e senha, recusa credencial errada e mostra o servidor com o nome, as filas e os workers configurados.
 
+**Feito em 30/10/2026 (3.1 a 3.4).** O código ficou em `Scheduling/` (`HangfireSettings`, `HangfireSettingsValidator`,
+`DashboardBasicAuthorizationFilter`, `JobExpirationTimeoutFilter` e `FailedJobsCleanupJob`), no `AddHangfireService`
+do `ServicesExtensions` e no `UseHangfire` do `AppUseExtensions`. O que foi conferido, com o storage num banco
+temporário do LocalDB (apagado no fim) e credenciais de teste geradas na hora, por variável de ambiente:
+
+* `Enabled = false` (padrão): Swagger 200, `/hangfire` 404 e nenhuma linha do Hangfire no log.
+* `Enabled = true` com a connection string inexistente e sem credenciais: o host não sobe, e a
+  `OptionsValidationException` lista os dois problemas.
+* `Enabled = true` completo: as 11 tabelas do Hangfire criadas no schema `HangFire`; dashboard com 401 e
+  `WWW-Authenticate: Basic` sem credencial, 401 com senha errada e 200 com a certa; servidor com o nome, a fila
+  `default` e 20 workers; `data-pollinterval="30000"` no dashboard; `FailedJobsCleanup` registrado com
+  `15 * * * *` e `America/Sao_Paulo`.
+* Retenção: um job concluído recebeu `ExpireAt` 30 minutos depois de terminar.
+* Limpeza: dois jobs com falha; com a falha de um deles recuada 3 dias, a limpeza passou só esse para `Deleted` (com
+  `ExpireAt` de 30 minutos) e o outro continuou na tela de Failed.
+* Build sem erros: 1420 avisos, os 1422 do passo 2 menos os 2 do `AddHangfireService` antigo, nenhum novo.
+
+Achados durante a implementação:
+
+* `Server:Queues` não tem valor padrão na classe: o binder do .NET soma os itens do `appsettings.json` aos que já estão
+  num array, e a fila saía repetida (`["default","default"]`). O servidor ainda usa `Distinct()` por segurança.
+* A data de falha que a API de monitoramento do SQL Server devolve (`FailedAt`) é a data em que o job entrou em
+  `Failed` (`HangFire.State.CreatedAt`), não o `FailedAt` gravado no JSON do estado.
+* `SetDataCompatibilityLevel` passou de `Version_170` (legado) para `Version_180`: o storage nasce agora, sem dados
+  antigos para ler.
+* Não há `WithJobExpirationTimeout` no Hangfire 1.8.23; a retenção é um filtro (`IApplyStateFilter`) que só tem efeito
+  nos estados finais.
+* O filtro de concorrência do 4.7 ainda não existe: até o passo 4, duas limpezas ao mesmo tempo só fariam a segunda não
+  achar nada para apagar (a troca de estado exige que o job ainda esteja em `Failed`).
+
 ### 3.3 Carga do Hangfire no banco
 
 **Cache não alivia o Hangfire.** O que o Hangfire faz no banco não é leitura repetida, é gravação de estado: cada

@@ -34,7 +34,7 @@ registra todos e expõe as rotas. Este documento dá o panorama; os detalhes de 
 |---|---|
 | Linguagem e runtime | C# / **.NET 10** (`net10.0`) |
 | Host | ASP.NET Core (`WebApplication.CreateSlimBuilder`), controllers e **Swagger** (Swashbuckle) |
-| Agendamento | **Hangfire** 1.8 (SQL Server storage), hoje desligado: os jobs são disparados pelas rotas |
+| Agendamento | **Hangfire** 1.8 (SQL Server storage), opcional e hoje desligado (`Hangfire:Enabled`): os jobs são disparados pelas rotas |
 | Acesso a dados | **Dapper** e bulk insert (`ISharedRepository`), SQL montado nos *command handlers* |
 | Banco | **SQL Server** (dados, auditoria e DW); scripts para MySQL e PostgreSQL existem só como `migrator.csx` |
 | Migrações | **DbUp** executado por `dotnet-script` (`migrator.csx` em cada módulo) |
@@ -316,8 +316,10 @@ O cache segue [docs/PADRAO-CACHE-INTEGRACOES.md](docs/PADRAO-CACHE-INTEGRACOES.m
 * **Módulos fora do host:** Dootax, Mobsim, Oto, Pagarme (General) e FlashCourier, Jadlog, Stone, TotalExpress
   (Shippment) têm código do sistema antigo, mas o registro no host e os controllers estão comentados. O
   `LinxMicrovix - Inbound Web Service` (escritas do B2C) está vazio.
-* **Agendamento:** o Hangfire (servidor, dashboard e jobs recorrentes) está desligado no host `WebApi`; os jobs rodam
-  pelas rotas, chamadas por um agendador externo. Os hosts `Quartz` e `AzureWebJob` não são usados.
+* **Agendamento:** o Hangfire é opcional no host `WebApi` (`Hangfire:Enabled`, desligado por padrão): ligado, sobem o
+  storage, o servidor e o dashboard com usuário e senha; a agenda dos jobs a partir de `auditing.Jobs` ainda não existe
+  (passo 4 de `src/Backend/Hosts/WebApi/docs/PLANO-HOST-WEBAPI.md`). Hoje os jobs rodam pelas rotas, chamadas por um
+  agendador externo. Os hosts `Quartz` e `AzureWebJob` não são usados.
 * **Autenticação:** o `[Authorize]` dos controllers está comentado.
 * **Testes:** a pasta `tests` está vazia.
 
