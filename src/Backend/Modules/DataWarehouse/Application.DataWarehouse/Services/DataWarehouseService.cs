@@ -173,6 +173,8 @@ namespace Application.DataWarehouse.Services
             }
         }
 
+        // ------------------------------------------------------------------------------------------------------
+
         /// <summary>
         /// sequência da 10.1. O passo 1 (ler os watermarks) e o avanço deles ficam dentro das procedures de carga
         /// </summary>

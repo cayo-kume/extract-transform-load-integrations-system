@@ -1,4 +1,6 @@
+using Application.DataWarehouse.Abstractions.Handlers.Commands;
 using Application.DataWarehouse.Abstractions.Services;
+using Application.DataWarehouse.Handlers.Commands;
 using Application.DataWarehouse.Services;
 using Domain.DataWarehouse.Abstractions.Repositorys;
 using Infrastructure.DataWarehouse.Repositorys;
@@ -13,6 +15,7 @@ namespace Infrastructure.DataWarehouse.DependencyInjection
         {
             services.AddScoped<IDataWarehouseService, DataWarehouseService>();
             services.AddScoped<IDataWarehouseRepository, DataWarehouseRepository>();
+            services.AddScoped<IDataWarehouseCommandHandler, DataWarehouseCommandHandler>();
 
             return services;
         }

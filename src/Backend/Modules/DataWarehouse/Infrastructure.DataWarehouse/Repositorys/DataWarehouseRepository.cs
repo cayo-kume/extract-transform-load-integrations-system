@@ -1,3 +1,4 @@
+using Application.DataWarehouse.Abstractions.Handlers.Commands;
 using Dapper;
 using Domain.DataWarehouse.Abstractions.Repositorys;
 using Domain.DataWarehouse.Entities.Control;
@@ -9,6 +10,7 @@ namespace Infrastructure.DataWarehouse.Repositorys
 {
     public class DataWarehouseRepository : IDataWarehouseRepository
     {
+        private readonly IDataWarehouseCommandHandler _dataWarehouseCommandHandler;
         private readonly ISharedRepository _coreRepository;
 
         // as cargas completas (fatos, agregados) podem passar dos 45 min do StoredProcedureTimeoutSeconds do Shared na carga inicial
@@ -17,13 +19,12 @@ namespace Infrastructure.DataWarehouse.Repositorys
         // nome de objeto do DW: [schema].[nome] ou schema.nome, só letras, números e sublinhado (os nomes vêm do catálogo e do service)
         private static readonly Regex ObjectName = new(@"^\[?[A-Za-z_][A-Za-z0-9_]*\]?\.\[?[A-Za-z_][A-Za-z0-9_]*\]?$", RegexOptions.Compiled);
 
-        public DataWarehouseRepository(ISharedRepository coreRepository) =>
-            _coreRepository = coreRepository;
+        public DataWarehouseRepository(IDataWarehouseCommandHandler dataWarehouseCommandHandler, ISharedRepository coreRepository) =>
+            (_dataWarehouseCommandHandler, _coreRepository) = (dataWarehouseCommandHandler, coreRepository);
 
         public async Task<IEnumerable<LandingSource>> GetLandingSources()
         {
-            // só as ligadas: a de saldos nasce desligada até a carga inicial na Totvs terminar (Script007)
-            const string sql = "select source_schema, source_table, detect_missing, history_frequency from [dw_control].LandingSource where is_enabled = 1 order by source_schema, source_table";
+            string sql = _dataWarehouseCommandHandler.CreateGetLandingSourcesQuery();
 
             var sources = await _coreRepository.GetRecords<LandingSource>(sql);
 
@@ -32,7 +33,7 @@ namespace Infrastructure.DataWarehouse.Repositorys
 
         public async Task<IEnumerable<LandingSource>> GetLandingSourcesBySchema(string sourceSchema)
         {
-            const string sql = "select source_schema, source_table, detect_missing, history_frequency from [dw_control].LandingSource where source_schema = @sourceSchema order by source_table";
+            string sql = _dataWarehouseCommandHandler.CreateGetLandingSourcesBySchemaQuery();
 
             // o GetRecords do Shared não recebe parâmetros
             using var conn = _coreRepository.GetIDbConnection();
@@ -64,12 +65,12 @@ namespace Infrastructure.DataWarehouse.Repositorys
             if (!ObjectName.IsMatch(viewName))
                 throw new ArgumentException($"Nome de view inválido: {viewName}", nameof(viewName));
 
-            return await _coreRepository.GetRecord<int>($"select count(*) from {viewName}");
+            return await _coreRepository.GetRecord<int>(_dataWarehouseCommandHandler.CreateCountRowsQuery(viewName));
         }
 
         public async Task<bool> InsertCheckResult(CheckResult checkResult)
         {
-            const string sql = "insert into [dw_control].CheckResult (check_name, executed_at, error_rows, passed) values (@check_name, @executed_at, @error_rows, @passed)";
+            string sql = _dataWarehouseCommandHandler.CreateInsertCheckResultQuery();
 
             return await _coreRepository.ExecuteCommand(sql, checkResult);
         }
