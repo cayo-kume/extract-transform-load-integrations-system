@@ -59,6 +59,19 @@ Ao mover uma gravação para dentro do método pai:
   quando a gravação é o último comando do laço, ou um `if` em volta da gravação nos outros casos;
 * o valor de retorno passa a ser somado direto no acumulador do pai (ex.: `totalInseridos`).
 
+### 2.1 Demais métodos privados
+
+A mesma regra vale para qualquer método privado das services: se só **um** método pai o usa, ele vai para dentro
+desse pai. Métodos usados por mais de um pai continuam como métodos da classe.
+
+* **Uma chamada e um único `return`, no fim:** o código vai direto para o ponto da chamada.
+* **Vários `return` no meio, várias chamadas no mesmo pai, recursão ou uso como referência de método**
+  (ex.: `.GroupBy(DuplicateKey)`): vira **função local** no fim do método pai, `static` quando o original era
+  `static`. Assim nada é duplicado e o fluxo continua o mesmo.
+* Encadeados ficam aninhados: um método usado só por outro que também vai para dentro do pai entra primeiro no seu
+  pai direto (ex.: `PricesBody` e `ReadPrices` dentro de `SyncPrices`, dentro de `PostSearchPrices`).
+* Classes utilitárias que só estão na pasta `Services` (ex.: `TotvsMasking`) ficam de fora.
+
 ---
 
 ## 3. Scripts de banco (DbUp, SQL Server)
