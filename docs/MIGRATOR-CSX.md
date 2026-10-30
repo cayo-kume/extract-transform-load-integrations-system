@@ -1,10 +1,38 @@
 # Script `migrator.csx` — Migrações de Banco de Dados (DbUp)
 
-Localização: `src/Backend/Modules/General/AfterSale/Infrastructure.AfterSale/Scripts/SQLServer/migrator.csx`
+Cada módulo tem um `migrator.csx` em `Infrastructure.<Módulo>/Scripts/SQLServer`: um script C# de linha de comando,
+executado pelo **`dotnet-script`**, que usa a biblioteca **DbUp** para aplicar os scripts `.sql` do módulo no SQL Server. O
+padrão de organização dos scripts está em [PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md](PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md)
+(seção 3).
 
-Este é um script C# de linha de comando (`.csx`, executado via `dotnet-script`) que usa a biblioteca **DbUp** para aplicar migrações de banco de dados a partir dos arquivos `.sql` da pasta.
+## Onde ficam
 
-## O que cada parte faz
+| Módulo | Pasta (a partir de `src/Backend/`) | Estrutura dos scripts |
+|---|---|---|
+| Shared | `Shared/Infrastructure.Shared/Scripts/SQLServer` | Direto na pasta (5 scripts) |
+| Totvs | `Modules/Totvs/Infrastructure.Totvs/Scripts/SQLServer` | `Parameters/` e uma pasta por service |
+| LinxMicrovix | `Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/Infrastructure.LinxMicrovix.Outbound/Scripts/SQLServer` | `Parameters/`, `Erp/<Service>` e `B2C/<Service>` |
+| LinxCommerce | `Modules/LinxCommerce/Infrastructure.LinxCommerce/Scripts/SQLServer` | `Parameters/` e uma pasta por service |
+| Movidesk | `Modules/General/Movidesk/Infrastructure.Movidesk/Scripts/SQLServer` | `Parameters/` e uma pasta por service |
+| AfterSale | `Modules/General/AfterSale/Infrastructure.AfterSale/Scripts/SQLServer` | `Parameters/` e uma pasta por service |
+| DataWarehouse | `Modules/DataWarehouse/Infrastructure.DataWarehouse/Scripts/SQLServer` | Uma pasta por camada (`Parameters/`, `Landing/`, `History/`...) |
+
+Os módulos fora do host (Dootax, Mobsim, Oto, Pagarme, FlashCourier, Jadlog, Stone e TotalExpress) também têm um
+`migrator.csx` em `Scripts/SQLServer`, com os scripts direto na pasta, como no sistema antigo.
+
+As pastas `Scripts/MySQL` e `Scripts/PostgreSQL` de cada módulo têm só um `migrator.csx`, sem nenhum script `.sql`: o
+banco do sistema é o SQL Server. Veja [Migrators de MySQL e PostgreSQL](#migrators-de-mysql-e-postgresql).
+
+## Ordem entre os módulos
+
+Todos os módulos usam o **mesmo banco** e a mesma tabela de controle do DbUp. Rode os migrators nesta ordem:
+
+1. **Shared**: schemas `auditing` e `untreated`, as tabelas e procedures de auditoria e a `dbo.sp_Create_Merge_Procedure`,
+   que os scripts de procedures dos módulos usam para gerar os merges.
+2. **Módulos** (Totvs, LinxMicrovix, LinxCommerce, Movidesk, AfterSale), em qualquer ordem entre eles.
+3. **DataWarehouse**, por último: ele lê as tabelas dos módulos.
+
+## O que o script faz
 
 ### Referência ao pacote NuGet em tempo de execução
 
@@ -12,39 +40,58 @@ Este é um script C# de linha de comando (`.csx`, executado via `dotnet-script`)
 #r "nuget: dbup-sqlserver"
 ```
 
-Baixa e carrega o DbUp na hora da execução, sem precisar de um `.csproj`. É o que permite rodar o arquivo direto com `dotnet script migrator.csx`.
+Baixa e carrega o DbUp na hora da execução, sem `.csproj`. É o que permite rodar o arquivo com `dotnet script migrator.csx`.
 
 ### String de conexão
 
 ```csharp
-var connectionString = Args.Count > 0 ? Args[0] : "Server=localhost;...";
+var connectionString = Args.Count > 0 ? Args[0] : "Server=localhost;Database=Company;...";
 ```
 
-Pega a connection string do **primeiro argumento** passado na linha de comando. Se nenhum for passado, usa uma default apontando para `localhost` / banco `Company` (somente para teste local).
+Usa a connection string do **primeiro argumento**. Nos módulos de integração e no Shared, sem argumento ele usa um padrão
+de teste local (`localhost`, banco `Company`). O **DataWarehouse** é diferente: a connection string é obrigatória e não tem
+padrão no código; sem ela, ou com ela incompleta, o script para e diz o que falta (servidor, banco, usuário e senha ou
+autenticação integrada), e imprime só o servidor e o banco, nunca o usuário ou a senha.
 
 ### Garante que o banco existe
 
 ```csharp
-EnsureDatabase.For.MySqlDatabase(connectionString);
+EnsureDatabase.For.SqlDatabase(connectionString);
 ```
 
-Cria o banco de dados caso ele ainda não exista.
+Cria o banco se ele ainda não existir.
 
-> **Importante:** o DbUp cria o banco **com o nome informado na própria connection string** (parâmetro `Database=` / `Initial Catalog=`). Ou seja, se você passar `Database=NEWBLOOMERS`, é o banco `NEWBLOOMERS` que será criado (se ainda não existir) e é nele que **todos** os scripts `.sql` serão aplicados.
+> **Importante:** o DbUp cria o banco **com o nome informado na própria connection string** (`Database=` ou
+> `Initial Catalog=`). Se você passar `Database=NEWBLOOMERS`, é o banco `NEWBLOOMERS` que será criado (se ainda não existir) e
+> é nele que **todos** os scripts serão aplicados.
 >
-> Por isso **não é necessário** ter um script SQL separado do tipo `CREATE DATABASE ...` — o `EnsureDatabase` já cuida disso. Um script `CREATE DATABASE` seguido de `USE` no mesmo batch, inclusive, causa o erro `911 - Database does not exist`, porque o SQL Server compila o batch inteiro antes de executá-lo e o `USE` não enxerga um banco criado no mesmo batch. A forma correta é apontar a connection string para o banco desejado e deixar o `EnsureDatabase` criá-lo.
+> Por isso **não é necessário** um script `CREATE DATABASE ...`. Um `CREATE DATABASE` seguido de `USE` no mesmo batch, inclusive,
+> causa o erro `911 - Database does not exist`, porque o SQL Server compila o batch inteiro antes de executá-lo e o `USE` não
+> enxerga um banco criado no mesmo batch.
 
 ### Configura o DbUp
 
 ```csharp
 var upgrader = DeployChanges.To
-    .MySqlDatabase(connectionString)
-    .WithScriptsFromFileSystem(".")   // lê todos os .sql da pasta atual
+    .SqlDatabase(connectionString)
+    .WithScriptsFromFileSystem(".", new FileSystemScriptOptions { IncludeSubDirectories = true })
+    .WithScriptSorter(scripts => scripts.OrderBy(s => s.Name.Split('.')[^2], StringComparer.Ordinal))
     .LogToConsole()
     .Build();
 ```
 
-Monta o "upgrader": ele varre a **pasta atual** (`.`) procurando arquivos `.sql` — que aqui são os `Script001_...` até `Script005_...`. O DbUp cria uma tabela de controle (`SchemaVersions`) no banco e executa cada script **apenas uma vez**, em ordem alfabética, registrando os já aplicados. Rodar de novo não reaplica o que já passou.
+* **`WithScriptsFromFileSystem(".", ... IncludeSubDirectories = true)`**: lê todos os `.sql` da pasta atual **e das
+  subpastas**. O DbUp nomeia cada script pelo caminho, com pontos no lugar das barras (ex.:
+  `People.Script005_Create_Totvs_People_Tables.sql`).
+* **`WithScriptSorter(...)`**: ordena pelo **nome do arquivo**, sem a pasta. Sem ele, a ordem seria alfabética pelo nome
+  completo, e `B2C.*` rodaria antes de `Parameters.Script001`. Com ele, a ordem de execução é a do número do arquivo, que é
+  única e sequencial no módulo.
+* O **DataWarehouse** acrescenta `.WithExecutionTimeout(TimeSpan.FromMinutes(10))`: logo depois da criação das tabelas
+  dos outros módulos, a primeira geração de procedure pode passar dos 30 segundos padrão.
+* O **Shared** não tem subpastas e usa só `.WithScriptsFromFileSystem(".")`.
+
+O DbUp cria a tabela de controle `dbo.SchemaVersions` e executa cada script **uma única vez**, gravando o nome (com a
+pasta). Rodar de novo só aplica os scripts que ainda não estão nela.
 
 ### Executa e reporta
 
@@ -52,41 +99,40 @@ Monta o "upgrader": ele varre a **pasta atual** (`.`) procurando arquivos `.sql`
 var result = upgrader.PerformUpgrade();
 ```
 
-Roda os scripts pendentes. Se falhar, imprime o erro em vermelho e sai com código `-1`. Se der certo, imprime `"Sucesso!"` em verde.
+Roda os scripts pendentes. Se um falhar, imprime o erro em vermelho e sai com código `-1` (os seguintes não rodam); se
+der certo, imprime `Sucesso!` em verde.
 
 ## Pré-requisito: instalar o `dotnet-script`
 
-Este arquivo `.csx` **não** roda com o `dotnet` sozinho — ele depende da ferramenta **`dotnet-script`**, que precisa estar instalada. Ela é distribuída como uma _.NET global tool_.
-
-Instale (uma única vez por máquina):
+O `.csx` **não** roda com o `dotnet` sozinho: ele depende da ferramenta **`dotnet-script`**, distribuída como _.NET global
+tool_. Instale uma vez por máquina:
 
 ```powershell
 dotnet tool install -g dotnet-script
 ```
 
-Para atualizar uma instalação existente:
+Para atualizar e para ver a versão instalada:
 
 ```powershell
 dotnet tool update -g dotnet-script
-```
-
-Para verificar se já está instalado / qual a versão:
-
-```powershell
 dotnet script --version
 ```
 
-> **Observação:** ferramentas globais ficam em `%USERPROFILE%\.dotnet\tools`. Se o comando `dotnet script` não for reconhecido após a instalação, garanta que esse caminho está na variável de ambiente `PATH` (ou abra um novo terminal).
+> As ferramentas globais ficam em `%USERPROFILE%\.dotnet\tools`. Se o comando `dotnet script` não for reconhecido depois da
+> instalação, confira se esse caminho está no `PATH` (ou abra um novo terminal).
 
 ## Como rodar
 
-Como o script usa `WithScriptsFromFileSystem(".")`, ele precisa ser executado **de dentro da pasta que contém o `migrator.csx` e os `.sql`**.
+O script lê a **pasta atual** (`.`), então precisa ser executado **de dentro da pasta `Scripts/SQLServer` do módulo**, a
+que contém o `migrator.csx`.
 
-No Windows, o caminho real do repositório é muito profundo e estoura o limite de **260 caracteres (MAX_PATH)** do Windows — o `dotnet-script` falha ao carregar a DLL nativa `Microsoft.Data.SqlClient.SNI.dll` com o erro `0x800700CE` (ver [Solução de Problemas](#solução-de-problemas)). Por isso, a **forma padrão de executar** é mapeando a pasta para uma **unidade virtual curta** com `subst`:
+No Windows, o caminho dos módulos passa do limite de **260 caracteres (MAX_PATH)** e o `dotnet-script` falha ao carregar a
+DLL nativa do SQL Client (ver [Solução de problemas](#solução-de-problemas)). A forma padrão é mapear a pasta para uma
+**unidade virtual curta** com `subst`:
 
 ```powershell
-# 1. Mapeia a pasta profunda para a unidade virtual X: (ajuste o caminho conforme o módulo)
-subst X: "C:\Users\Cayo\source\repos\extract-transform-load-integrations-system\src\Backend\Modules\General\AfterSale\Infrastructure.AfterSale\Scripts\SQLServer"
+# 1. Mapeia a pasta do módulo para a unidade virtual X: (ajuste o caminho conforme o módulo)
+subst X: "C:\Users\<usuário>\source\repos\extract-transform-load-integrations-system\src\Backend\Modules\Totvs\Infrastructure.Totvs\Scripts\SQLServer"
 
 # 2. Entra na unidade virtual
 X:
@@ -94,46 +140,54 @@ X:
 # 3. Executa o migrator passando a connection string
 dotnet script migrator.csx -- "Server=localhost;Database=NEWBLOOMERS;User Id=sa;Password=SUA_SENHA;TrustServerCertificate=True;"
 
-# 4. (Opcional) Remove a unidade virtual ao terminar
+# 4. Remove a unidade virtual ao terminar (opcional)
 subst X: /D
 ```
 
 Vantagens do `subst`:
 
-- Encurta o caminho de cache do `dotnet-script`, contornando o MAX_PATH sem precisar copiar arquivos.
-- Aponta para os **arquivos reais** do repositório — qualquer edição nos `.sql`/`migrator.csx` vale na hora, sem cópia desatualizada.
+- encurta o caminho de cache do `dotnet-script`, contornando o MAX_PATH sem copiar arquivos;
+- aponta para os **arquivos reais** do repositório: qualquer edição nos `.sql` ou no `migrator.csx` vale na hora.
 
-> **Observação:** o `subst` **não é persistente** — a unidade `X:` some ao reiniciar o Windows. Basta rodar o passo 1 de novo quando precisar.
+> O `subst` **não é persistente**: a unidade `X:` some ao reiniciar o Windows. Basta rodar o passo 1 de novo.
 
-> Se o caminho do repositório for curto o suficiente (por exemplo, no módulo `Shared`), dá para rodar direto sem `subst`:
-> ```powershell
-> cd caminho\ate\a\pasta\SQLServer
-> dotnet script migrator.csx -- "Server=...;Database=...;User Id=...;Password=...;TrustServerCertificate=True;"
-> ```
+Se o caminho for curto o bastante (por exemplo, no `Shared`), dá para rodar direto, sem `subst`:
 
-## Scripts SQL aplicados
-
-Os scripts ficam em subpastas (`Parameters/` e uma por service; no DW, uma por camada) e o `migrator.csx` de cada módulo os executa
-na ordem do número do arquivo (`IncludeSubDirectories` e o sorter pelo nome do arquivo). A lista de cada módulo está no README dele;
-o padrão está em `docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md` (seção 3).
-
-## ⚠️ Inconsistência importante
-
-O script está na pasta **`SQLServer`** e importa o pacote **`dbup-sqlserver`**, mas o código chama métodos de **MySQL**:
-
-- `EnsureDatabase.For.MySqlDatabase(...)`
-- `.MySqlDatabase(...)`
-
-Isso parece um **erro de copy-paste**. Para SQL Server o correto seria:
-
-```csharp
-EnsureDatabase.For.SqlDatabase(connectionString);
-
-var upgrader = DeployChanges.To
-    .SqlDatabase(connectionString)
-    .WithScriptsFromFileSystem(".")
-    .LogToConsole()
-    .Build();
+```powershell
+cd <repositório>\src\Backend\Shared\Infrastructure.Shared\Scripts\SQLServer
+dotnet script migrator.csx -- "Server=...;Database=...;User Id=...;Password=...;TrustServerCertificate=True;"
 ```
 
-Do jeito que está, ou o `dbup-sqlserver` não expõe `MySqlDatabase` (falha de compilação), ou depende de outro pacote MySQL não referenciado. Vale corrigir para os métodos `SqlDatabase`.
+### Antes de rodar
+
+* **Credenciais:** confira o `Parameters/Script003` do módulo (empresas e credenciais da API). No LinxMicrovix e no
+  LinxCommerce o `.sql` real fica fora do git: copie o `.sql.example` para o mesmo nome sem `.example` e preencha. Na Totvs, as
+  credenciais de homologação estão comentadas no próprio `Script003`, para rodar à mão no banco de homologação ou local, no
+  lugar das de produção.
+* **Banco que já rodou as migrações:** os scripts são identificados pelo nome (com a pasta) na `SchemaVersions`. Renomear,
+  dividir, renumerar ou mover scripts faz o DbUp vê-los como novos e executá-los de novo, e um `CREATE TABLE` repetido
+  falha. Depois de uma reorganização como a dos scripts em pastas, o banco precisa ser **recriado do zero**.
+
+## Solução de problemas
+
+| Sintoma | Causa | O que fazer |
+|---|---|---|
+| Erro `0x800700CE` ao carregar `Microsoft.Data.SqlClient.SNI.dll` | O caminho do repositório mais o cache do `dotnet-script` passa de 260 caracteres | Rodar a partir de uma unidade `subst` (seção [Como rodar](#como-rodar)) |
+| `dotnet script` não é reconhecido | A ferramenta não está instalada ou `%USERPROFILE%\.dotnet\tools` não está no `PATH` | `dotnet tool install -g dotnet-script` e abrir um novo terminal |
+| `911 - Database does not exist` | Um script com `CREATE DATABASE` seguido de `USE` | Remover o script: o `EnsureDatabase` já cria o banco da connection string |
+| `Could not find stored procedure 'dbo.sp_Create_Merge_Procedure'` | O migrator do módulo rodou antes do Shared | Rodar o migrator do Shared e depois o do módulo de novo |
+| `There is already an object named ...` | O banco já tinha rodado os scripts com outro nome (antes de uma renomeação ou reorganização) | Recriar o banco do zero |
+| Script ignorado ou fora de ordem | O script foi colocado fora de `Scripts/SQLServer` ou o número repete outro do módulo | A numeração é única e sequencial no módulo; o arquivo precisa estar dentro da pasta do migrator ou de uma subpasta dela |
+| DataWarehouse para com "A connection string é obrigatória" ou "está incompleta" | O migrator do DW não tem padrão e confere a connection string | Passar a connection string completa (servidor, banco e autenticação) |
+
+## Migrators de MySQL e PostgreSQL
+
+As pastas `Scripts/MySQL` e `Scripts/PostgreSQL` existem em todos os módulos, mas **não têm scripts** e não são usadas: o
+sistema roda só em SQL Server. Os migrators delas também têm erros de cópia que impedem a execução:
+
+* em todos os módulos, o `PostgreSQL/migrator.csx` carrega o `dbup-postgresql`, mas chama `EnsureDatabase.For.MySqlDatabase` e
+  `.MySqlDatabase(...)` (o certo seria `PostgresqlDatabase`);
+* no Shared, o `MySQL/migrator.csx` carrega o `dbup-sqlserver`, mas chama os métodos de MySQL (o certo seria `dbup-mysql`).
+
+O `Shared/Scripts/PostgreSQL/migrator.csx` é o único correto. Se algum dia o sistema for para MySQL ou PostgreSQL, além de
+corrigir esses migrators será preciso escrever os scripts para o banco de destino.
