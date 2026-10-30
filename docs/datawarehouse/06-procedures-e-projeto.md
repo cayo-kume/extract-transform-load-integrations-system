@@ -8,13 +8,13 @@
 
 ```
 src/Backend/Modules/DataWarehouse/
-├── Application.DataWarehouse/        job que chama as procedures na ordem da 10.1 e grava o resultado das checagens (fase 1)
+├── Application.DataWarehouse/        job que chama as procedures na ordem da 10.1 e grava o resultado das checagens (9.4)
 ├── Domain.DataWarehouse/             contratos e entidades (Entities/Control: Watermark, CheckResult)
 └── Infrastructure.DataWarehouse/
     └── Scripts/SQLServer/            migrator.csx e scripts numerados (tabelas, procedures, views, seeds)
 ```
 
-- Os projetos entram em `etl-integrations-system.slnx`, na pasta `/src/Backend/Modules/DataWarehouse/`, com a convenção `Application.X`, `Domain.X` e `Infrastructure.X` do repositório. `Domain.DataWarehouse` e `Infrastructure.DataWarehouse` existem desde a fase 0; `Application.DataWarehouse` entra na fase 1, com o job.
+- Os projetos entram em `etl-integrations-system.slnx`, na pasta `/src/Backend/Modules/DataWarehouse/`, com a convenção `Application.X`, `Domain.X` e `Infrastructure.X` do repositório. `Domain.DataWarehouse` e `Infrastructure.DataWarehouse` existem desde a fase 0; `Application.DataWarehouse` entrou na fase 1, com o job.
 - O `migrator.csx` do DW exige a connection string como argumento e não tem padrão no código. Sem argumento, com a string inválida ou incompleta, ele para com uma mensagem que diz o que falta (servidor, banco, usuário e senha ou autenticação integrada) e imprime só servidor e banco, nunca usuário ou senha.
 - **Scripts previstos** (o nome do módulo está no nome do arquivo, como nos demais, para não colidir no banco):
 
@@ -23,17 +23,20 @@ src/Backend/Modules/DataWarehouse/
 | `Script001_Create_DataWarehouse_Schemas.sql` | Schemas `dw_landing`, `dw_history`, `dw_staging`, `dw_intermediate`, `datawarehouse`, `datamart`, `dw_reference`, `dw_control`, `dw_personal_data`, `dw_outbound` | 0 |
 | `Script002_Create_DataWarehouse_Watermarks.sql` | `dw_control.Watermark`, `dw_control.sp_Watermark_Get` e `dw_control.sp_Watermark_Set` (usadas pelos consumidores, 12.2) | 0 |
 | `Script003_Create_DataWarehouse_Check_Results.sql` | `dw_control.CheckResult` (9.2) | 0 |
-| `Script010_Create_DataWarehouse_Landing_Totvs.sql` | `dw_landing.Totvs*` das fases 1 e 2 (uma tabela por fonte), inclusive `TotvsInvoicesItemsProducts`, `TotvsInvoicesSalesOrders`, `TotvsBalances`, `TotvsCosts` e `TotvsPrices` | 1 |
-| `Script011_Create_DataWarehouse_Landing_Totvs_Procedures.sql` | Procedures `dw_landing.sp_Totvs*_Load` | 1 |
-| `Script012_Create_DataWarehouse_Landing_LinxMicrovix.sql` | `dw_landing.Linx*` do Microvix e procedures de carga (7.5) | 3 |
-| `Script013_Create_DataWarehouse_Landing_LinxCommerce.sql` | `dw_landing.LinxCommerce*` e procedures de carga; só depois da primeira carga real (1.2, item 17) | 3 |
-| `Script014_Create_DataWarehouse_Landing_Totvs_Phase4.sql` | `dw_landing.Totvs*` de compras, duplicatas, comissões, recepção, representantes e áreas, e as cinco `*Requests` (7.6) | 4 |
-| `Script020_Create_DataWarehouse_History_Totvs.sql` | `dw_history.Totvs*` e procedures `sp_*_Snapshot` de notas, pedidos e cadastros | 1 |
-| `Script021_Create_DataWarehouse_History_Totvs_Values.sql` | `dw_history.TotvsBalances`, `TotvsCosts`, `TotvsPrices` e snapshots diários (7.4) | 2 |
-| `Script022_Create_DataWarehouse_History_Linx.sql` | `dw_history.Linx*`, snapshot único (7.5) | 3 |
-| `Script025_Create_DataWarehouse_Staging_Views.sql` | Views `dw_staging.<Tabela>` de tipagem e renomeação | 1 |
-| `Script026_Create_DataWarehouse_Intermediate.sql` | `dw_intermediate.vw_OrderParts` (view sobre a landing: canal, tipo e partes do número do pedido, com `ChannelRules` inline; lida pelo passo 6 e pelas views da logística, 10.3), `dw_intermediate.SalesItem`, `OrderItem` (formato unificado, com `source_erp`) e procedures de regra; `sp_ProductMatch_Load` e `sp_LinxLegacy_Load` entram na fase 3 | 1 |
-| `Script030_Create_DataWarehouse_PersonalData.sql` | `dw_personal_data.DimCustomerIdentified` e `dw_personal_data.sp_Customer_Load` (8.3) | 1 |
+| `Script004_Create_DataWarehouse_Landing_Sources.sql` | `dw_control.LandingSource`: catálogo das origens (9.5) | 1 |
+| `Script005_Create_DataWarehouse_Reference_Tables.sql` | Tabelas de `dw_reference`: `Holidays`, `BrandSeries` (série do pedido pela raiz do CNPJ), `ChannelRules`, `StoreErpMap`, `ProductErpMap` e `ValueCodes`. Os dados entram no 070 | 1 |
+| `Script006_Insert_DataWarehouse_Jobs_Into_Jobs_Table.sql` | App 90 e jobs 9000 (`DataWarehouseHourly`), 9001 (`DataWarehouseDaily`) e 9002 (`DataWarehouseShortCycle`) em `auditing` (9.4) | 1 |
+| `Script010_Create_DataWarehouse_Landing_Generator.sql` | `dw_landing.sp_Create_Landing`: gera landing, carga e detecção de exclusão a partir do catálogo (9.5) | 1 |
+| `Script011_Create_DataWarehouse_Landing_Totvs.sql` | Catálogo e landing das 23 origens Totvs da fase 1, inclusive `TotvsInvoicesItemsProducts`, `TotvsInvoicesSalesOrders`, `TotvsCosts` e `TotvsPrices` | 1 |
+| `Script012_Create_DataWarehouse_Landing_LinxMicrovix.sql` | Catálogo e landing do Microvix (7.5) | 3 |
+| `Script013_Create_DataWarehouse_Landing_LinxCommerce.sql` | Catálogo e landing do Linx Commerce; só depois da primeira carga real (1.2, item 17) | 3 |
+| `Script014_Create_DataWarehouse_Landing_Totvs_Phase2_4.sql` | Catálogo e landing de `TotvsBalances` (fase 2) e de compras, duplicatas, comissões, recepção, representantes, áreas e as cinco `*Requests` (fase 4) | 2 e 4 |
+| `Script020_Create_DataWarehouse_History_Generator.sql` | `dw_history.sp_Create_History`: gera histórico SCD2 e snapshot incremental (9.5) | 1 |
+| `Script021_Create_DataWarehouse_History_Totvs.sql` | Históricos das 9 origens Totvs com `history_frequency`: notas e pedidos (hora); lojas, pessoas, empresas, referências, produtos, custos e preços (dia) | 1 |
+| `Script022_Create_DataWarehouse_History_Linx.sql` | Históricos do Microvix, snapshot único (7.5); `TotvsBalances` entra num script próprio na fase 2 | 3 |
+| `Script025_Create_DataWarehouse_Staging_Views.sql` | Não criado: a tipagem e a renomeação ficaram nas views de `dw_intermediate`, que já leem a landing e o histórico com os nomes do DW. O schema `dw_staging` existe (001) e fica vazio | — |
+| `Script026_Create_DataWarehouse_Intermediate.sql` | Três views, sem tabela nem procedure: `dw_intermediate.vw_OrderParts` (pedido: canal, tipo, série e partes do número, com `ChannelRules` inline; lida pelo passo 6 e pelas views de saída, 10.3), `vw_SalesItem` (grão item × produto da nota, com rateio de frete e imposto, canal, sinal, preço e custo da data) e `vw_OrderItem` (grão produto do pedido). As procedures de fato leem as views; como a recarga é completa (pergunta 8), uma tabela intermediária só copiaria a view. `sp_ProductMatch_Load` e `sp_LinxLegacy_Load` entram na fase 3 | 1 |
+| `Script030_Create_DataWarehouse_Personal_Data.sql` | `dw_personal_data.DimCustomerIdentified` e `sp_Customer_Load` (8.3; pessoas e empresas com endereço, e-mail e telefone), `OrderShippingAddress` e `sp_OrderShippingAddress_Load` (endereço de entrega do pedido, lido de `totvs.TotvsSaleOrders`, para `LogisticsShipments`) | 1 |
 | `Script031_Create_DataWarehouse_Dimensions.sql` | Dimensões (tabelas e procedures `sp_Dim*_Load`; `sp_DimCustomer_Load` lê `dw_personal_data` e recebe o pepper) | 1 |
 | `Script040_Create_DataWarehouse_Facts_Totvs.sql` | `FactSalesItem` (grão item × produto), `FactOrderItem`, `FactInvoicePayment` | 1 |
 | `Script041_Create_DataWarehouse_Fact_Stock.sql` | `FactMonthlyStock` e `dw_intermediate.vw_StockPosition` (8.5) | 2 |
@@ -41,11 +44,11 @@ src/Backend/Modules/DataWarehouse/
 | `Script043_Create_DataWarehouse_Facts_Totvs_Phase4.sql` | `FactPurchaseOrderItem`, `FactAccountsPayable`, `FactCommission`, `FactStoreReception`, `FactApiRequest`, `DimSalesRepresentative`, `DimRegion`, `DimPromotion` (7.6) | 4 |
 | `Script050_Create_DataWarehouse_Datamart.sql` | Agregados (`datamart.DailySales` e procedures `sp_*_Refresh`) | 1 |
 | `Script055_Create_DataWarehouse_Outbound_Views.sql` | Views `dw_outbound.<Consumidor><Entidade>` (4.2, 8.6), uma por módulo de saída, conforme cada um for migrado; as da logística leem `vw_OrderParts` e `dw_personal_data` (10.3) | 1 em diante |
-| `Script060_Create_DataWarehouse_Checks.sql` | Views de checagem (`datawarehouse.vw_Check_*`) | 1 |
-| `Script070_Insert_DataWarehouse_Reference.sql` | Seeds: `dw_reference.Holidays`, `ChannelRules` (canal, série por raiz do CNPJ e tipo do pedido, de `docs/regras-prefixo-pedidos.md`), `StoreErpMap` e `ProductErpMap` (exceções, 7.5) e `ValueCodes` com os 8 custos e 6 preços da PRDFL003 (8.7; o `stockCode` entra depois da primeira carga) | 1 |
+| `Script060_Create_DataWarehouse_Checks.sql` | Views de checagem: `datawarehouse.vw_Check_FactSalesItemGrain`, `vw_Check_UnknownMembers`, `vw_Check_ItemProducts`, `vw_Check_OrderTypeUnknown`, `vw_Check_MissingChildren` e `datamart.vw_Check_InvoicedReconciliation` (9.2, 9.3) | 1 |
+| `Script070_Insert_DataWarehouse_Reference.sql` | Seeds: `dw_reference.Holidays` (2010 a 2035, Páscoa calculada), `BrandSeries` (série por raiz do CNPJ), `ChannelRules` (canal e tipo do pedido, de `docs/regras-prefixo-pedidos.md`), `StoreErpMap` e `ProductErpMap` (exceções, 7.5) e `ValueCodes` com os 8 custos e 6 preços da PRDFL003 (8.7; o `stockCode` entra depois da primeira carga) | 1 |
 
 - **Numeração por camada:** 001–009 schemas e watermarks; 010–019 `dw_landing`; 020–029 `dw_history`, `dw_staging` e `dw_intermediate`; 030–039 dado pessoal e dimensões; 040–049 fatos; 050–059 `datamart` e `dw_outbound`; 060–069 checagens; 070 em diante, seeds e alterações posteriores, sempre em script novo. Scripts de fases posteriores entram quando a fase começar, com o próximo número livre da camada.
-- **Nomes:** `dw_landing.<Tabela>` e `dw_history.<Tabela>` repetem o nome da origem; procedures `dw_landing.sp_<Tabela>_Load`, `dw_history.sp_<Tabela>_Snapshot`, `dw_personal_data.sp_<Entidade>_Load`, `dw_intermediate.sp_<Entidade>_Load`, `datawarehouse.sp_<Tabela>_Load` e `datamart.sp_<Tabela>_Refresh`; views `dw_staging.<Tabela>`, `dw_outbound.<Consumidor><Entidade>`; checagens `datawarehouse.vw_Check_<Nome>`. Tudo em PascalCase inglês; colunas em `snake_case` inglês (1.2, item 8).
+- **Nomes:** `dw_landing.<Tabela>` e `dw_history.<Tabela>` repetem o nome da origem; procedures `dw_landing.sp_<Tabela>_Load`, `dw_landing.sp_<Tabela>_DetectMissing`, `dw_history.sp_<Tabela>_Snapshot`, `dw_personal_data.sp_<Entidade>_Load`, `dw_intermediate.sp_<Entidade>_Load` (fase 3), `datawarehouse.sp_<Tabela>_Load` e `datamart.sp_<Tabela>_Refresh`; views `dw_intermediate.vw_<Entidade>`, `dw_outbound.<Consumidor><Entidade>`; checagens `datawarehouse.vw_Check_<Nome>`. Tudo em PascalCase inglês; colunas em `snake_case` inglês (1.2, item 8).
 - No Windows, o caminho do `migrator.csx` passa de 260 caracteres. Usar `subst` para rodar, como descrito em `docs/MIGRATOR-CSX.md`.
 
 ### 9.1 Exemplo de procedure de fato (MERGE)
@@ -65,7 +68,7 @@ BEGIN
                CONVERT(CHAR(32), HASHBYTES('MD5', CONCAT_WS('|', v.doc_company, v.branch_code)), 2)                   AS store_sk,
                CONVERT(CHAR(32), HASHBYTES('MD5', CONCAT_WS('|', v.doc_company, v.source_erp, v.product_code)), 2)    AS product_sk
                -- demais chaves e medidas
-          FROM dw_intermediate.SalesItem AS v     -- Totvs e Linx no mesmo formato; recarga completa a cada execução (pergunta 8); otimizar depois de medir
+          FROM dw_intermediate.vw_SalesItem AS v  -- view; Totvs e Linx no mesmo formato; recarga completa a cada execução (pergunta 8); otimizar depois de medir
     ) AS source
        ON target.source_erp = source.source_erp
       AND target.source_key = source.source_key
@@ -83,7 +86,7 @@ Os nomes de coluna são ilustrativos. A chave do MERGE é (`source_erp`, `source
 
 ### 9.2 Checagens (substituem os testes do dbt)
 
-Cada checagem é uma view que devolve as linhas com erro. O job conta as linhas de cada view, grava o resultado em `dw_control.CheckResult` e falha se alguma tiver linhas.
+Cada checagem é uma view que devolve as linhas com erro. O job conta as linhas de cada view e grava o resultado em `dw_control.CheckResult`. Só a de grão (`vw_Check_FactSalesItemGrain`) bloqueia: com ela, a execução termina como falha; as demais ficam registradas e numa mensagem do log, e quem acompanha decide.
 
 ```sql
 CREATE OR ALTER VIEW datawarehouse.vw_Check_FactSalesItemGrain AS
@@ -115,4 +118,28 @@ CREATE TABLE dw_control.CheckResult (
 
 ### 9.4 Registro de execuções
 
-O job grava início e fim com `auditing.sp_Log_Start` e `auditing.sp_Log_End`, e uma mensagem por procedure com `auditing.sp_Log_Message`. O resultado de cada checagem vai para `dw_control.CheckResult`. A retenção de cada um é decidida na seção 3.9.
+O job é `Application.DataWarehouse.Services.DataWarehouseService`, com três entradas: `RunHourly` (job 9000), `RunDaily` (9001: a horária mais a detecção de exclusões, os snapshots diários e `DimDate`) e `RunShortCycle` (9002, 10.3). Ele só chama as procedures na ordem da 10.1; a regra fica nelas. O registro usa o `ILoggerService` do Shared, como os outros módulos: uma linha em `auditing.Logs` por execução (`IdType` 2, integração, o mesmo que o logger grava) e uma mensagem em `auditing.Messages` por procedure, com as linhas afetadas e o tempo. Uma falha interrompe a execução e vira mensagem de erro. O resultado de cada checagem vai para `dw_control.CheckResult`. A retenção de cada um é decidida na seção 3.9.
+
+- **Uma carga por vez:** as três entradas escrevem nas mesmas landings, então o serviço tem uma trava no processo; uma chamada com outra carga em andamento volta sem rodar. A trava é liberada mesmo se a gravação do log falhar. O agendador que for codificado precisa da mesma trava entre processos (no Hangfire, `DisableConcurrentExecution`).
+- **Pepper:** vem da configuração `DataWarehouse:Pepper` (variável de ambiente ou segredo, nunca `appsettings`, git, tabela ou log) e só passa como parâmetro de `sp_DimCustomer_Load` (8.3). Sem ele, `DimCustomer` não é atualizada, o log diz isso e o resto da carga segue.
+- **Disparo:** enquanto os agendadores não existem, o host Hangfire expõe `POST DataWarehouseJobs/DataWarehouse/RunHourly`, `RunDaily` e `RunShortCycle` (200 concluída, 500 falha ou checagem bloqueante, 409 outra carga em andamento). Os intervalos dos jobs ficam em `auditing.Jobs` (60, 1440 e 3 minutos).
+
+### 9.5 Landing e histórico gerados pelo catálogo
+
+A landing e o histórico seguem o padrão do repositório para o merge das integrações (`dbo.sp_Create_Merge_Procedure`): em vez de uma tabela e uma procedure escritas à mão por origem, um catálogo e dois geradores. Cada fase insere as linhas das suas origens em `dw_control.LandingSource` e chama os geradores no próprio script.
+
+| Coluna de `dw_control.LandingSource` | Uso |
+|---|---|
+| `source_schema`, `source_table` | Origem (`totvs.TotvsInvoices`). A landing e o histórico têm o mesmo nome; o schema é o `source` do watermark |
+| `included_columns` | Lista de colunas, quando só algumas podem entrar (pessoas e empresas, 5.2 regra 6). A PK, `integrated_or_updated_at` e a data da origem entram sempre |
+| `excluded_columns` | Colunas de dado pessoal que não entram (nome, documento, endereço e telefone do cliente em notas e pedidos) |
+| `source_updated_column` | Data da alteração na origem (`maxChangeFilterDate`, `lastChangeDate`); sem ela, `integrated_or_updated_at` |
+| `detect_missing` | Filha que o merge da origem apaga: gera a detecção de exclusão (5.2, regra 3) |
+| `history_frequency` | `hourly` ou `daily`: gera o histórico. A frequência é de quem chama o snapshot (10.1) |
+| `phase` | Fase do plano em que a origem entrou |
+
+- **`dw_landing.sp_Create_Landing`** cria `dw_landing.<Tabela>` com as colunas permitidas da origem (mesmos nomes e tipos, mesma PK), mais `source_updated_at`, `row_hash`, `loaded_at` e `missing_since`, e um índice em `loaded_at`. Gera `sp_<Tabela>_Load` (MERGE pelo watermark menos 3 dias; só atualiza, e só grava `loaded_at`, quando o hash muda ou a chave tinha sumido; avança o watermark na mesma transação) e, nas filhas, `sp_<Tabela>_DetectMissing`. O hash é SHA-256 de todas as colunas de negócio, sem a PK e sem as colunas de controle (`integrated_or_updated_at`, `maxChangeFilterDate`, `lastChangeDate`, `lastchange`, `json_hash`): regravar a linha sem mudar o negócio não gera versão.
+- **`dw_history.sp_Create_History`** cria `dw_history.<Tabela>` (PK + `valid_from`, `valid_to`, `is_current`, `row_hash` e as colunas de negócio) com um índice único filtrado que garante uma só versão vigente por chave, e gera `sp_<Tabela>_Snapshot` como na seção 6. Quando a data da origem não avança (`maxChangeFilterDate` repetida), a versão nova começa 1 ms depois da vigente, e a PK não colide (risco R2).
+- **As procedures geradas não se editam:** uma mudança no gerador ou no catálogo entra em script novo, que chama o gerador de novo (`create or alter`). A tabela só é criada se não existir; mudar colunas de uma landing que já existe pede um `ALTER TABLE` em script próprio.
+- A landing guarda todas as colunas permitidas da origem, e não só as que o modelo usa hoje: uma coluna nova no modelo não exige recarregar a origem, e o histórico já a tem desde o início.
+- O índice filtrado do histórico exige `QUOTED_IDENTIFIER ON`, o padrão do .NET e do DbUp; as procedures geradas guardam essa opção. Uma sessão do `sqlcmd` sem `-I` não consegue escrever nessas tabelas fora das procedures.

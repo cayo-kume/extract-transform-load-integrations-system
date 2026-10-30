@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\Shared\Infrastructure.Shared\Infrastructure.Shared.csproj" />
+    <ProjectReference Include="..\Application.DataWarehouse\Application.DataWarehouse.csproj" />
     <ProjectReference Include="..\Domain.DataWarehouse\Domain.DataWarehouse.csproj" />
   </ItemGroup>
 

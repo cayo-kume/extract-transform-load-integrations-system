@@ -8,6 +8,7 @@
   </Folder>
   <Folder Name="/src/Backend/Modules/" />
   <Folder Name="/src/Backend/Modules/DataWarehouse/">
+    <Project Path="src/Backend/Modules/DataWarehouse/Application.DataWarehouse/Application.DataWarehouse.csproj" />
     <Project Path="src/Backend/Modules/DataWarehouse/Domain.DataWarehouse/Domain.DataWarehouse.csproj" />
     <Project Path="src/Backend/Modules/DataWarehouse/Infrastructure.DataWarehouse/Infrastructure.DataWarehouse.csproj" />
   </Folder>

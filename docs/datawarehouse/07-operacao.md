@@ -14,12 +14,12 @@ A ordem importa porque cada passo lê o que o anterior gravou. O job que dispara
 |---|---|---|
 | 1 | Lê os watermarks de cada fonte e entidade | `dw_control.Watermark` |
 | 2 | Atualiza a `dw_landing` por MERGE, das tabelas confiáveis com `integrated_or_updated_at` acima do watermark menos 3 dias (5.2, regra 1), e avança o watermark após o sucesso de cada tabela | `dw_landing.sp_<Tabela>_Load` |
-| 3 | Detecta exclusões de filhas: anti-join entre as chaves da landing e da tabela confiável; chave ausente recebe `missing_since` (5.2, regra 3) | procedure de anti-join por tabela filha |
+| 3 | Detecta exclusões de filhas: anti-join entre as chaves da landing e da tabela confiável; chave ausente recebe `missing_since` (5.2, regra 3) | `dw_landing.sp_<Tabela>_DetectMissing` (no ciclo diário) |
 | 4 | Roda os snapshots SCD2, só sobre as linhas que o passo 2 gravou (seção 6). A cada hora para notas e pedidos; diária, no fim do dia, para cadastros, saldos, custos e preços (3.3, 7.4) | `dw_history.sp_<Tabela>_Snapshot` |
-| 5 | Carrega `dw_personal_data` direto das tabelas de origem (5.2, regra 6) | `dw_personal_data.sp_Customer_Load` |
-| 6 | Carrega dimensões (a de cliente recebe `@pepper`, 8.3), depois `dw_intermediate` (formato unificado, regras, canal, tipo e partes do número do pedido), depois fatos, depois agregados | `datawarehouse.sp_Dim*_Load`, `dw_intermediate.sp_*_Load`, `datawarehouse.sp_Fact*_Load`, `datamart.sp_*_Refresh` |
+| 5 | Carrega `dw_personal_data` direto das tabelas de origem (5.2, regra 6) | `dw_personal_data.sp_Customer_Load`, `dw_personal_data.sp_OrderShippingAddress_Load` |
+| 6 | Carrega dimensões (a de cliente recebe `@pepper`, 8.3; `DimDate` só no ciclo diário), depois fatos, que leem as views de `dw_intermediate` (formato unificado, regras, canal, tipo e partes do número do pedido), depois agregados | `datawarehouse.sp_Dim*_Load`, `dw_intermediate.vw_*`, `datawarehouse.sp_Fact*_Load`, `datamart.sp_*_Refresh` |
 | 7 | Roda as checagens: conta as linhas de cada view e grava o resultado | `datawarehouse.vw_Check_*`, `dw_control.CheckResult` |
-| 8 | Registra início, mensagens e fim da execução | `auditing.sp_Log_Start`, `sp_Log_Message`, `sp_Log_End` (9.4) |
+| 8 | Registra início, mensagens e fim da execução | `auditing.Logs` e `auditing.Messages`, pelo `ILoggerService` do Shared (9.4) |
 
 Vendas e pedidos passam por essa sequência a cada hora; cadastros, saldos, custos e preços, uma vez por dia. A primeira carga usa as janelas da 5.2, regra 5. `FactMonthlyStock` é carregado uma vez por mês, no primeiro dia do mês seguinte (8.5). As views de `dw_outbound` não têm passo: as do ciclo horário refletem o passo 6 assim que ele termina; as da logística refletem o ciclo curto da 10.3. Cada consumidor varre quando quiser (4.2).
 
@@ -34,9 +34,9 @@ A logística precisa do que os jobs da Totvs acabaram de trazer (pergunta 35, de
 | # | Passo | Objetos do banco |
 |---|---|---|
 | 1 | Passo 2 da 10.1 só para `TotvsSaleOrders`, `TotvsSaleOrdersProducts`, `TotvsInvoices`, `TotvsInvoicesItems`, `TotvsInvoicesSalesOrders`, `TotvsPeople` e `TotvsLegalEntities`, com os mesmos watermarks | `dw_landing.sp_<Tabela>_Load` |
-| 2 | Passo 5 da 10.1, pelos endereços de entrega | `dw_personal_data.sp_Customer_Load` |
+| 2 | Passo 5 da 10.1: clientes e endereços de entrega | `dw_personal_data.sp_Customer_Load`, `dw_personal_data.sp_OrderShippingAddress_Load` |
 
-- As views da logística (`dw_outbound.LogisticsShipments`) leem `dw_intermediate.vw_OrderParts`, uma view sobre a landing que aplica `dw_reference.ChannelRules` inline, e `dw_personal_data`; não dependem de `dw_intermediate.OrderItem`, que só é gravada no passo 6 do ciclo horário (8.6).
+- As views da logística (`dw_outbound.LogisticsShipments`) leem `dw_intermediate.vw_OrderParts`, uma view sobre a landing que aplica `dw_reference.ChannelRules` inline, e `dw_personal_data`; não dependem de dimensões nem fatos, que só são carregados no passo 6 do ciclo horário (8.6).
 - O ciclo horário continua igual: quando ele roda, o passo 2 encontra a landing já atualizada pelo ciclo curto e carrega só o que restou. Os snapshots seguem horários; o `loaded_at` da landing garante que todas as linhas do ciclo curto entrem no snapshot seguinte (seção 6).
 - Os dois ciclos não rodam ao mesmo tempo sobre a mesma tabela: o ciclo curto espera o horário terminar o passo 2 (o watermark é a trava: cada carga avança o da própria tabela).
 - Os demais consumidores (Oto, Pagarme, Dootax, Mobsim, WMS) leem o ciclo horário.

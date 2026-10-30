@@ -1,5 +1,6 @@
 ﻿using Hangfire.SqlServer;
 using Infrastructure.AfterSale.DependencyInjection;
+using Infrastructure.DataWarehouse.DependencyInjection;
 using Infrastructure.Shared;
 //using Infrastructure.Dootax;
 //using Infrastructure.Jadlog.DependencyInjection;
@@ -32,6 +33,7 @@ namespace Hangfire.Extensions
             builder.Services.AddScopedMovideskServices(builder.Configuration);
             //builder.Services.AddScopedOttoServices(builder.Configuration);
             builder.Services.AddScopedTotvsServices(builder.Configuration);
+            builder.Services.AddScopedDataWarehouseServices(builder.Configuration);
 
             //builder.Services.AddHangfireService(builder);
 

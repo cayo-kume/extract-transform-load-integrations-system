@@ -103,14 +103,16 @@ CREATE TABLE datawarehouse.FactSalesItem (
     transaction_code         INT            NULL,       -- transacao
     sale_id                  UNIQUEIDENTIFIER NULL,     -- identificador: venda a que a linha pertence (repete nos itens da mesma venda)
     -- medidas
+    is_sale                  BIT            NOT NULL,   -- tipo do pedido é venda (LJ e RC não são, 7.2)
     is_cancelled             BIT            NOT NULL,
+    is_invoiced              BIT            NOT NULL,   -- nota emitida e não cancelada: entra no faturado (7.3)
     is_realized_operation    BIT            NOT NULL,
     quantity                 DECIMAL(18,6)  NOT NULL,
     gross_amount             DECIMAL(18,6)  NOT NULL,
     discount_amount          DECIMAL(18,6)  NOT NULL,
     freight_amount           DECIMAL(18,6)  NOT NULL,   -- rateado do item pelos produtos (Totvs)
     tax_amount               DECIMAL(18,6)  NULL,       -- TotvsInvoicesItemsTaxes rateado; LinxMovimento valor_icms + pis + cofins + ipi
-    invoiced_amount          DECIMAL(18,6)  NOT NULL,
+    invoiced_amount          DECIMAL(18,6)  NOT NULL,   -- líquido com sinal: operationType Input (entrada, devolução) negativo
     list_price               DECIMAL(18,6)  NULL,       -- dw_history.TotvsPrices vigente na data: código 1 VENDA LOJA no canal loja, 4 VENDA ECOMMERCE no e-commerce (8.7); Linx preco_tabela_epoca
     original_price           DECIMAL(18,6)  NULL,       -- código 5 VENDA ORIGINAL vigente na data: preço antes da remarcação
     promotional_price        DECIMAL(18,6)  NULL,       -- código 6 VENDA PROMOCIONAL vigente na data, se houver
@@ -163,7 +165,7 @@ SELECT o.source_erp,
        o.order_date,
        o.status,
        o.updated_at                                                      -- maior integrated_or_updated_at das origens da linha: watermark do consumidor
-  FROM dw_intermediate.OrderItem AS o
+  FROM dw_intermediate.vw_OrderItem AS o
   JOIN datawarehouse.DimStore    AS s ON s.sk = o.store_sk
   JOIN datawarehouse.DimCustomer AS c ON c.sk = o.customer_sk
  WHERE o.order_type IN ('VD', 'LJ', 'VF', 'RC') OR o.order_type IS NULL;   -- os tipos que o WMS recebe (docs/regras-prefixo-pedidos.md, §2)
@@ -171,7 +173,7 @@ SELECT o.source_erp,
 
 - Uma view por consumidor e entidade (4.2). O módulo lê `WHERE updated_at > @watermark - 3 dias`, grava o que enviou e avança o próprio watermark em `dw_control.Watermark` (`source = 'wms'`, `entity = 'WmsOrders'`).
 - `dw_outbound.OtoOrders` monta `MI-VD-1-12345` (com hífens e sem `T`, como o Oto espera) a partir das mesmas partes; `dw_outbound.OtoCustomers` junta `DimCustomerIdentified` e projeta nome, e-mail e telefone.
-- As views da logística (`dw_outbound.LogisticsShipments`, lida por Jadlog, TotalExpress, Stone e FlashCourier) seguem o ciclo curto de 3 minutos (10.3): leem `dw_intermediate.vw_OrderParts` (view sobre `dw_landing.TotvsSaleOrders`, `TotvsInvoices` e `TotvsInvoicesSalesOrders`, com `dw_reference.ChannelRules` aplicada inline) em vez de `dw_intermediate.OrderItem`, e juntam `DimCustomerIdentified` pelo endereço de entrega. É a segunda view com dado pessoal em claro. O exemplo acima, `WmsOrders`, é de um consumidor do ciclo horário.
+- As views da logística (`dw_outbound.LogisticsShipments`, lida por Jadlog, TotalExpress, Stone e FlashCourier) seguem o ciclo curto de 3 minutos (10.3): leem `dw_intermediate.vw_OrderParts` (view sobre `dw_landing.TotvsSaleOrders`, `TotvsInvoices` e `TotvsInvoicesSalesOrders`, com `dw_reference.ChannelRules` aplicada inline), `dw_personal_data.OrderShippingAddress` (endereço de entrega) e `DimCustomerIdentified` (telefone e e-mail). Na fase 1, `WmsOrders` também lê `vw_OrderParts`, para refletir o pedido sem esperar o passo 6; o exemplo acima mostra o formato do número. É a segunda view com dado pessoal em claro. O exemplo acima, `WmsOrders`, é de um consumidor do ciclo horário.
 
 ### 8.7 Códigos de valor
 
