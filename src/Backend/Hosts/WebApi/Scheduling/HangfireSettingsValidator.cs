@@ -48,7 +48,10 @@ namespace WebApi.Scheduling
                     failures.Add($"Hangfire:Server:Queues tem a fila '{queue}': use só minúsculas, dígitos, _ e -.");
 
             Positive(failures, "Hangfire:Server:WorkerCount", settings.Server.WorkerCount);
-            Positive(failures, "Hangfire:Schedule:RefreshIntervalInMinutes", settings.Schedule.RefreshIntervalInMinutes);
+            // o SchedulerRefresh também vira cron (§4.4)
+            if (JobCron.FromInterval(settings.Schedule.RefreshIntervalInMinutes) is null)
+                failures.Add($"Hangfire:Schedule:RefreshIntervalInMinutes ({settings.Schedule.RefreshIntervalInMinutes}) tem que dividir a hora (1 a 30) ou ser horas que dividem o dia.");
+
             Positive(failures, "Hangfire:Concurrency:MaxConsecutiveSkips", settings.Concurrency.MaxConsecutiveSkips);
             Positive(failures, "Hangfire:Maintenance:FailedJobsRetentionInDays", settings.Maintenance.FailedJobsRetentionInDays);
             Positive(failures, "Hangfire:Dashboard:StatsPollingIntervalInSeconds", settings.Dashboard.StatsPollingIntervalInSeconds);

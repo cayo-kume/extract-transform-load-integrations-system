@@ -165,6 +165,13 @@ SQLServer/
   gravam.
 * O script de jobs da service traz **todos os jobs dela**: os recorrentes, as procedures e os **sob demanda**
   (em um bloco `/*Integrações sob demanda ...*/` no mesmo `INSERT`). Não existe um script de jobs sob demanda à parte.
+* O `INSERT` de jobs lista `(IdParent, IdJob, Title, [Description], IntervalTimeInMinutes, RunningDailyAt, Queue, IdType)`
+  (src/Backend/Hosts/WebApi/docs/PLANO-HOST-WEBAPI.md §4.1). `RunningDailyAt` é `NULL`, menos nos jobs de integração
+  diários (`IntervalTimeInMinutes = 1440`), que levam a hora (`'23:00'`); `Queue` é `'default'`. `IsActive` fica de fora
+  e nasce 0: o job só entra na agenda do Hangfire depois de um `UPDATE`.
+* Um job recorrente novo também entra no mapa do host (`src/Backend/Hosts/WebApi/Scheduling/RecurringJobs/<Módulo>RecurringJobs.cs`),
+  com o método sem parâmetros do service que grava o job no log; sem o mapa, o `SchedulerRefresh` avisa e o deixa fora da
+  agenda.
 * Os scripts gerais do módulo (schema, parâmetros, app, tabela de requests) ficam em `Parameters/`.
 
 ### 3.2 Numeração

@@ -1,4 +1,5 @@
-﻿using Hangfire;
+﻿using Application.Shared.Abstractions.Services;
+using Hangfire;
 using Hangfire.SqlServer;
 using Infrastructure.AfterSale.DependencyInjection;
 using Infrastructure.DataWarehouse.DependencyInjection;
@@ -61,9 +62,13 @@ namespace WebApi.Extensions
             var connectionString = configuration.GetConnectionString(settings.Storage.ConnectionStringName);
 
             services
-                .AddHangfire(hangfire => hangfire
+                .AddHangfire((serviceProvider, hangfire) => hangfire
                 .UseFilter(new AutomaticRetryAttribute { Attempts = 0 })
                 .UseFilter(new JobExpirationTimeoutFilter(TimeSpan.FromMinutes(settings.Storage.JobExpirationTimeoutInMinutes)))
+                .UseFilter(new SkipConcurrentExecutionFilter(
+                    serviceProvider.GetRequiredService<IJobLock>(),
+                    serviceProvider.GetRequiredService<ILogger<SkipConcurrentExecutionFilter>>(),
+                    settings.Concurrency.MaxConsecutiveSkips))
                 .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
                 .UseSimpleAssemblyNameTypeSerializer()
                 .UseRecommendedSerializerSettings()

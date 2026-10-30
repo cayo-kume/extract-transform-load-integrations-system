@@ -317,9 +317,10 @@ O cache segue [docs/PADRAO-CACHE-INTEGRACOES.md](docs/PADRAO-CACHE-INTEGRACOES.m
   (Shippment) têm código do sistema antigo, mas o registro no host e os controllers estão comentados. O
   `LinxMicrovix - Inbound Web Service` (escritas do B2C) está vazio.
 * **Agendamento:** o Hangfire é opcional no host `WebApi` (`Hangfire:Enabled`, desligado por padrão): ligado, sobem o
-  storage, o servidor e o dashboard com usuário e senha; a agenda dos jobs a partir de `auditing.Jobs` ainda não existe
-  (passo 4 de `src/Backend/Hosts/WebApi/docs/PLANO-HOST-WEBAPI.md`). Hoje os jobs rodam pelas rotas, chamadas por um
-  agendador externo. Os hosts `Quartz` e `AzureWebJob` não são usados.
+  storage, o servidor, o dashboard com usuário e senha e a agenda montada a partir de `auditing.Jobs` (só os jobs com
+  `IsActive = 1`, que nascem 0), com uma trava que pula a execução quando a anterior do mesmo job ainda está rodando
+  (`src/Backend/Hosts/WebApi/docs/PLANO-HOST-WEBAPI.md`, passos 3 e 4). Hoje o Hangfire está desligado e os jobs rodam
+  pelas rotas, chamadas por um agendador externo. Os hosts `Quartz` e `AzureWebJob` não são usados.
 * **Autenticação:** o `[Authorize]` dos controllers está comentado.
 * **Testes:** a pasta `tests` está vazia.
 

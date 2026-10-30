@@ -47,12 +47,24 @@ namespace WebApi.Extensions
 
             HangfireSettingsValidator.TryFindTimeZone(settings.TimeZone, out var timeZone);
 
-            // limpeza da tela de Failed (§3.4): fora de auditing.Jobs, só some com Hangfire:Enabled = false
-            app.ApplicationServices.GetRequiredService<IRecurringJobManager>().AddOrUpdate<FailedJobsCleanupJob>(
+            var recurringJobManager = app.ApplicationServices.GetRequiredService<IRecurringJobManager>();
+
+            // jobs de manutenção do host, fora de auditing.Jobs: só somem com Hangfire:Enabled = false
+            // limpeza da tela de Failed (§3.4)
+            recurringJobManager.AddOrUpdate<FailedJobsCleanupJob>(
                 FailedJobsCleanupJob.RecurringJobId,
                 job => job.Run(),
                 FailedJobsCleanupJob.Cron,
                 new RecurringJobOptions { TimeZone = timeZone });
+
+            // agenda a partir de auditing.Jobs (§4.4): a cada RefreshIntervalInMinutes e, já na subida, uma vez
+            recurringJobManager.AddOrUpdate<SchedulerRefreshJob>(
+                SchedulerRefreshJob.RecurringJobId,
+                job => job.Run(),
+                JobCron.FromInterval(settings.Schedule.RefreshIntervalInMinutes)!,
+                new RecurringJobOptions { TimeZone = timeZone });
+
+            recurringJobManager.Trigger(SchedulerRefreshJob.RecurringJobId);
 
             return app;
         }

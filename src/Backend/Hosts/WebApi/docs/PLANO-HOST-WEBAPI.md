@@ -241,7 +241,7 @@ dashboard aberto. Medir no protótipo antes de mexer.
    aqui porque a agenda é remontada de `auditing.Jobs` pelo `SchedulerRefresh` (4.4) e porque a trava da opção B (4.7)
    fica no banco das integrações, não no storage. O preço: só um servidor, o histórico do dashboard some a cada
    reinício e uma execução em andamento quando o processo cai não é retomada (volta no próximo disparo). Viável enquanto
-   tudo roda num servidor só (4.8); precisa ser trocado quando vier o segundo.
+   tudo roda num servidor só (4.9); precisa ser trocado quando vier o segundo.
 
 **Onde cache ajuda: nos services.** Se cada execução busca no banco dados que quase não mudam (empresas, tokens,
 parâmetros), o padrão `docs/PADRAO-CACHE-INTEGRACOES.md` (`IMemoryCache`) tira essas consultas do banco das integrações
@@ -326,7 +326,7 @@ Só vale com `Hangfire:Enabled = true`. A agenda vem inteira de `auditing.Jobs`:
 
 ### 4.2 Do registro da tabela ao cron
 
-1. Um mapa por módulo `IdJob → método do service` (em `Extensions/RecurringJobs/<Módulo>RecurringJobs.cs`), porque os
+1. Um mapa por módulo `IdJob → método do service` (em `Scheduling/RecurringJobs/<Módulo>RecurringJobs.cs`), porque os
    títulos dos jobs nem sempre são o nome do método (`MovideskGetTickets` → `GetTickets()`).
 2. Para cada job ativo (`IdType = 2` e `IsActive = 1`) que está no mapa:
 
@@ -406,7 +406,7 @@ grep -rliE --include=*.sql "insert into \[?auditing\]?\.\[?jobs\]?" src/Backend
 
 1. A lista de colunas passa a ser `(IdParent, IdJob, Title, [Description], IntervalTimeInMinutes, RunningDailyAt, Queue, IdType)`.
 2. Toda linha de `VALUES` ganha os dois valores, na mesma posição: `NULL, 'default'` nos não diários e `'23:00', 'default'`
-   nos diários. Todos os jobs ficam na fila `default` (4.8).
+   nos diários. Todos os jobs ficam na fila `default` (4.9).
 3. Os jobs com `IntervalTimeInMinutes = 1440` recebem a `RunningDailyAt` (4.1, item 6).
 4. Nos 8 scripts comentados, a mesma mudança dentro do comentário, para o módulo já nascer certo quando for migrado
    (passo 6).
@@ -559,7 +559,52 @@ seguintes aparecem como `Deleted` com o motivo de pulo, nenhuma roda em paralelo
 banco), o aviso sai depois do limite de pulos, derrubar o processo no meio solta a trava e, com uma carga do DW rodando
 junto, `sys.dm_tran_locks` mostra só as travas `APPLICATION` dos jobs, sem sessão do DW bloqueada por elas.
 
-### 4.8 Decisões
+### 4.8 Execução (feito em 30/10/2026)
+
+O que entrou:
+
+* **Banco:** `IsActive`, `RunningDailyAt` e `Queue` no `CREATE TABLE [auditing].[Jobs]` do Script001 do Shared, com o
+  `DF_Jobs_IsActive` e os `CHECK` `CK_Jobs_RunningDailyAt` e `CK_Jobs_Queue`. Os 61 scripts de insert com a lista nova de
+  colunas (993 linhas de `VALUES`, inclusive as comentadas dos 8 módulos fora do host): 48 diários com `'23:00'`, todos
+  em `'default'`, e o 9003 com 0. O insert de `auditing.Apps` do Script007 do DW, no mesmo arquivo, ficou como estava.
+* **Shared:** `IJobLock` (`Application.Shared`) e `SqlServerJobLock` (`Infrastructure.Shared/Locks`, `sp_getapplock` com
+  `Microsoft.Data.SqlClient`, que já vem pelo `dbup-sqlserver`); `JobSchedule` e `IJobScheduleRepository`/
+  `JobScheduleRepository`, que lê `auditing.Jobs` pela conexão de auditoria (a mesma do `LoggerService`).
+* **Host (`Scheduling/`):** os mapas dos 6 módulos (327 jobs: Totvs 43, Movidesk 3, AfterSale 12, Linx Commerce 6, Linx
+  Microvix 260 e DW 3, o DW com a chave `group:datawarehouse`), o `RecurringJobMap`, o `JobCron`, o `SchedulerRefreshJob`
+  e o `SkipConcurrentExecutionFilter`. Os recurring jobs da agenda se chamam `<IdJob>-<Title>`.
+
+Como os mapas foram feitos: para cada job recorrente dos scripts, o método sem parâmetros do service que grava aquele
+`EnumJob` no log. Os 327 deram exatamente um método cada; todos estão na interface do service e têm rota no host. Todos
+são leituras (os `Post*` da Totvs são buscas).
+
+O que foi conferido, num banco vazio do LocalDB (apagado no fim):
+
+* Migrators de todos os módulos (Shared, Totvs, Linx Microvix, Linx Commerce, Movidesk, AfterSale e DW) sem erro.
+* `auditing.Jobs`: 498 linhas de procedure e 462 de integração, as mesmas contagens dos scripts do commit anterior; 327
+  recorrentes, todos em `default` e inativos; a consulta do 4.6 devolveu só os 48 diários, todos 1440 e 23:00; 9003 com 0.
+  Os três `CHECK` recusaram um diário com 60, uma fila com maiúscula e um insert sem fila.
+* Host com o Hangfire ligado nesse banco: o `SchedulerRefresh` rodou na subida (agenda vazia). Com 8000 (120 min), 8034
+  (diário), 9002 (3 min) e 8001 (intervalo 7) ativos, a releitura registrou `0 */2 * * *`, `0 23 * * *` e
+  `*/3 * * * *`, em `default` e `America/Sao_Paulo`, e deixou o 8001 fora com aviso. Desativados, os três saíram da agenda.
+* Trava: com `group:datawarehouse` presa por outra sessão, o 9002 foi para `Deleted` com
+  `Skipped: previous execution of group:datawarehouse still running`; com a trava solta, rodou (`Succeeded`). Cinco pulos
+  seguidos deram o aviso (`warn`) no log; o contador zerou quando o job rodou. Nenhuma trava `APPLICATION` sobrou no banco.
+* Build sem erros: 1420 avisos, os mesmos do passo 3.
+
+Achados:
+
+* O Hangfire 1.8 já leva a execução cancelada no `OnPerforming` para `Deleted`, com o motivo genérico
+  `Canceled by filter`; o `IElectStateFilter` só troca o motivo pelo do pulo.
+* O contador de pulos seguidos é por processo: com dois servidores, cada um conta os seus.
+* O `dotnet-script` estoura o limite de caminho do Windows no cache dos migrators das pastas mais fundas (Linx Commerce,
+  Movidesk, AfterSale, DW). Rodar com `DOTNET_SCRIPT_CACHE_LOCATION` apontando para uma pasta curta resolve.
+* **Bancos que já rodaram os scripts** (o `Company` local e qualquer outro): o DbUp não reaplica o Script001 do Shared nem
+  os scripts de jobs dos módulos, então esses bancos ficam sem as colunas novas e o host, com o Hangfire ligado, falha ao
+  ler a agenda. Eles precisam de um ajuste à parte: as três colunas (com `Queue` preenchida com `'default'` antes do
+  `NOT NULL`), os dois `CHECK`, `RunningDailyAt = '23:00'` nos 48 diários e o 9003 com 0.
+
+### 4.9 Decisões
 
 Tomadas em 30/10/2026:
 

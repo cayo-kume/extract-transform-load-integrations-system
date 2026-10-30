@@ -51,7 +51,14 @@ CREATE TABLE [auditing].[Jobs](
 	[Title] [nvarchar](80) NULL,
 	[Description] [nvarchar](800) NULL,
 	[IntervalTimeInMinutes] [int] NOT NULL,
-	[IdType] [int] NOT NULL
+	[RunningDailyAt] [time](0) NULL,
+	[Queue] [nvarchar](50) NOT NULL,
+	[IsActive] [bit] NOT NULL CONSTRAINT [DF_Jobs_IsActive] DEFAULT (0),
+	[IdType] [int] NOT NULL,
+	-- RunningDailyAt preenchida: o job roda uma vez por dia nessa hora (src/Backend/Hosts/WebApi/docs/PLANO-HOST-WEBAPI.md §4.1)
+	CONSTRAINT [CK_Jobs_RunningDailyAt] CHECK ([RunningDailyAt] IS NULL OR [IntervalTimeInMinutes] = 1440),
+	-- fila do Hangfire: só minúsculas, dígitos, _ e -
+	CONSTRAINT [CK_Jobs_Queue] CHECK (LEN([Queue]) > 0 AND [Queue] COLLATE Latin1_General_BIN NOT LIKE '%[^a-z0-9_-]%'),
  CONSTRAINT [PK_Jobs] PRIMARY KEY CLUSTERED 
 (
 	[IdJob] ASC,

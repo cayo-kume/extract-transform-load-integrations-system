@@ -6,6 +6,7 @@ using Application.Shared.Services;
 using Domain.Shared.Abstractions.Repositorys;
 using Infrastructure.Shared.Abstractions;
 using Infrastructure.Shared.Connections;
+using Infrastructure.Shared.Locks;
 using Infrastructure.Shared.Repositorys;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Caching.Memory;
@@ -27,6 +28,10 @@ namespace Infrastructure.Shared
             services.AddScoped<IMergeRepository>(sp => sp.GetRequiredService<ISharedRepository>());
             services.AddScoped<IConnectionAccessor>(sp => sp.GetRequiredService<ISharedRepository>());
             services.AddScoped<ILoggerRepository, LoggerRepository>();
+            services.AddScoped<IJobScheduleRepository, JobScheduleRepository>();
+
+            // a trava abre a própria conexão a cada pedido: não guarda estado entre execuções
+            services.AddSingleton<IJobLock, SqlServerJobLock>();
 
             services.AddScoped<ILoggerService, LoggerService>();
 

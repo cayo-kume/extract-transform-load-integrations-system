@@ -82,7 +82,7 @@ flowchart LR
 
 ```mermaid
 flowchart TB
-    CALLER["Disparo manual (Swagger / HTTP)<br/>ou o agendador, quando existir"]
+    CALLER["Disparo manual (Swagger / HTTP)<br/>ou a agenda do Hangfire"]
 
     subgraph HOST["Host WebApi (ASP.NET)"]
         CTRL["DataWarehouseController<br/>POST DataWarehouseJobs/DataWarehouse/*"]
@@ -137,7 +137,7 @@ Pontos importantes do código:
 | `RunMonthlyStock?positionDate=yyyy-MM-dd` | `RunMonthlyStock(date)` | 9003 `DataWarehouseMonthlyStock` | Manual | Refaz a posição de estoque de um fim de mês (sem data: último dia do mês anterior) |
 | `RunLinxLegacy` | `RunLinxLegacy()` | 9004 `DataWarehouseLinxLegacy` | Uma vez (fase 3), reexecutável | Carga única do legado Linx Microvix (10.2) |
 
-> Hoje **não há agendamento recorrente** do DW no Hangfire: as rotas são o disparo manual e o ponto que o agendador vai chamar. Quando ele for codificado, precisa de `DisableConcurrentExecution` (ver seção 9). O `[Authorize]` do controller está comentado e, em `RELEASE`, as rotas ficam fora do Swagger.
+> **Agendamento:** com o Hangfire ligado no host (`Hangfire:Enabled`), o 9000, o 9001 e o 9002 entram na agenda quando ficam ativos em `auditing.Jobs` (`IsActive = 1`; o 9001 roda às 23:00, pela `RunningDailyAt`). Os três dividem a trava `group:datawarehouse` do filtro de concorrência do host, que vale entre processos: um disparo com outra carga do DW rodando é pulado (`src/Backend/Hosts/WebApi/docs/PLANO-HOST-WEBAPI.md` §4.7). O 9003 e o 9004 são manuais. As rotas continuam como disparo manual, fora dessa trava, e o `[Authorize]` do controller está comentado; em `RELEASE`, as rotas ficam fora do Swagger.
 
 ---
 
@@ -370,7 +370,7 @@ stateDiagram-v2
 
 - A trava é um `SemaphoreSlim(1, 1)` **estático**, então vale para o processo inteiro, entre todos os cinco jobs.
 - `WaitAsync(0)` não enfileira: se o ciclo curto cair durante o horário, ele simplesmente devolve 409 e roda na próxima janela de 3 minutos.
-- A trava **não vale entre processos** (duas instâncias do host). Por isso o agendador, quando existir, precisa de `DisableConcurrentExecution` no Hangfire.
+- A trava **não vale entre processos** (duas instâncias do host). Na agenda do Hangfire, quem cobre isso é a trava `group:datawarehouse` do filtro de concorrência do host (`sp_getapplock` no banco), que pula o disparo em vez de esperar.
 
 ---
 

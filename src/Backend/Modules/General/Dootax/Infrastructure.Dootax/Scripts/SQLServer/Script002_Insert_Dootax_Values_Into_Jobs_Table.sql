@@ -1,4 +1,4 @@
---INSERT INTO [auditing].[Jobs] (IdParent, IdJob, Title, [Description], IntervalTimeInMinutes, IdType)
+--INSERT INTO [auditing].[Jobs] (IdParent, IdJob, Title, [Description], IntervalTimeInMinutes, RunningDailyAt, Queue, IdType)
 --VALUES
 /*Procedures de Sincronizações*/
 /*Range 1500 - 1999*/

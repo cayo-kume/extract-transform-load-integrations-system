@@ -6,22 +6,22 @@ insert into [auditing].[Apps] ([IdParent], [Title], [Description])
 values
 (90, 'DataWarehouse', 'Data warehouse do NEWBLOOMERS: landing, histórico, dimensões, fatos e agregados');
 
-insert into [auditing].[Jobs] (IdParent, IdJob, Title, [Description], IntervalTimeInMinutes, IdType)
+insert into [auditing].[Jobs] (IdParent, IdJob, Title, [Description], IntervalTimeInMinutes, RunningDailyAt, Queue, IdType)
 values
-(90, 9000, 'DataWarehouseHourly', 'Carga do DW a cada hora: landing, snapshots de notas e pedidos, dimensões, fatos, agregados e checagens', 60, 2),
-(90, 9001, 'DataWarehouseDaily', 'Carga do DW diária: a horária mais os snapshots de cadastros, custos e preços e a detecção de exclusões', 1440, 2),
-(90, 9002, 'DataWarehouseShortCycle', 'Ciclo curto da logística: landing de pedidos, notas e clientes e o endereço de entrega', 3, 2);
+(90, 9000, 'DataWarehouseHourly', 'Carga do DW a cada hora: landing, snapshots de notas e pedidos, dimensões, fatos, agregados e checagens', 60, NULL, 'default', 2),
+(90, 9001, 'DataWarehouseDaily', 'Carga do DW diária: a horária mais os snapshots de cadastros, custos e preços e a detecção de exclusões', 1440, '23:00', 'default', 2),
+(90, 9002, 'DataWarehouseShortCycle', 'Ciclo curto da logística: landing de pedidos, notas e clientes e o endereço de entrega', 3, NULL, 'default', 2);
 
 /****** Job da fase 2 em auditing (src/Backend/Modules/DataWarehouse/docs, 8.5 e 9.4) ******/
 --a posição de estoque do fim do mês roda dentro do ciclo diário, no dia 1 (job 9001). Este job é a recarga manual de um fim de
 --mês (rota RunMonthlyStock do DataWarehouseController), com log próprio. O mesmo id em Domain.DataWarehouse.Enums.EnumJob.
-insert into [auditing].[Jobs] (IdParent, IdJob, Title, [Description], IntervalTimeInMinutes, IdType)
+insert into [auditing].[Jobs] (IdParent, IdJob, Title, [Description], IntervalTimeInMinutes, RunningDailyAt, Queue, IdType)
 values
-(90, 9003, 'DataWarehouseMonthlyStock', 'Recarga da posição de estoque de um fim de mês (FactMonthlyStock) a partir do histórico de saldos', 43200, 2);
+(90, 9003, 'DataWarehouseMonthlyStock', 'Recarga da posição de estoque de um fim de mês (FactMonthlyStock) a partir do histórico de saldos', 0, NULL, 'default', 2);
 
 /****** Job da fase 3 em auditing (src/Backend/Modules/DataWarehouse/docs, 7.5 e 10.2) ******/
 --a carga única do legado Linx Microvix (rota RunLinxLegacy do DataWarehouseController), sem agenda própria: roda uma vez
 --na fase 3 e de novo só para absorver correções. O mesmo id em Domain.DataWarehouse.Enums.EnumJob.
-insert into [auditing].[Jobs] (IdParent, IdJob, Title, [Description], IntervalTimeInMinutes, IdType)
+insert into [auditing].[Jobs] (IdParent, IdJob, Title, [Description], IntervalTimeInMinutes, RunningDailyAt, Queue, IdType)
 values
-(90, 9004, 'DataWarehouseLinxLegacy', 'Carga única do legado Linx Microvix: landing, snapshot, clientes, dimensões e as linhas Linx dos fatos de venda e pedido', 0, 2);
+(90, 9004, 'DataWarehouseLinxLegacy', 'Carga única do legado Linx Microvix: landing, snapshot, clientes, dimensões e as linhas Linx dos fatos de venda e pedido', 0, NULL, 'default', 2);
