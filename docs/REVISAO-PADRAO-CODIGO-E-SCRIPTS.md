@@ -11,8 +11,8 @@ o que mudou.
 >
 > Decisões:
 > 1. `AfterSaleErrors`, a sua procedure e o job 5536 ficaram em `Parameters/`.
-> 2. `AfterSaleHistoriesReverses` (5010) saiu do `EnumJob`; o job e a procedure continuam no script de jobs de
->    `Reverses/` (a tabela é de reversas).
+> 2. `AfterSaleHistoriesReverses` (5010) saiu do `EnumJob` e, junto com o job da sua procedure (5516), do script de
+>    jobs de `Reverses/`. A tabela, a procedure de merge, os DTOs e a entidade ficam para o método que ainda falta.
 > 3. Os jobs sob demanda do Movidesk já nascem com os títulos `*ById`; o `Script012` saiu.
 
 Resumo:

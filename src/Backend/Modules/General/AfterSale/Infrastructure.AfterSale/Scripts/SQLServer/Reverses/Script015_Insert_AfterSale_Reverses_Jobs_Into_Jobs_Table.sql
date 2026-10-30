@@ -18,7 +18,6 @@ VALUES
 (5009, 5513, 'sp_AfterSaleStatusReverses_Sync', 'Procedure de sicronização entre as tabelas AfterSaleStatusReverses raw e trusted', 3, 1),
 (5004, 5514, 'sp_AfterSaleCourierAttributes_Sync', 'Procedure de sincronização entre as tabelas AfterSaleCourierAttributes raw e trusted', 3, 1),
 (5004, 5515, 'sp_AfterSaleCourierAttributesFields_Sync', 'Procedure de sincronização entre as tabelas AfterSaleCourierAttributesFields raw e trusted', 3, 1),
-(5010, 5516, 'sp_AfterSaleHistoriesReverses_Sync', 'Procedure de sincronização entre as tabelas AfterSaleHistoriesReverses raw e trusted', 3, 1),
 
 /*Integrações*/
 /*Range 5000 - 5499*/
@@ -27,7 +26,6 @@ VALUES
 (50, 5003, 'AfterSaleTransportationsReverses', 'Integração de dados da tabela AfterSaleTransportationsReverses', 3, 2),
 (50, 5004, 'AfterSaleCourierAttributes', 'Integração de dados das tabelas AfterSaleCourierAttributes e AfterSaleCourierAttributesFields', 3, 2),
 (50, 5009, 'AfterSaleStatusReverses', 'Integração de dados da tabela AfterSaleStatusReverses', 3, 2),
-(50, 5010, 'AfterSaleHistoriesReverses', 'Integração de dados da tabela AfterSaleHistoriesReverses', 3, 2),
 
 /*Ações (POST/PUT) - executadas sob demanda pelo AfterSaleController, não são recorrentes (IntervalTimeInMinutes = 0)*/
 /*Reversas*/

@@ -351,8 +351,8 @@ ids em `EnumJob`.
 | 5007 | `AfterSaleReturnedInvoice` | 5018 | `AfterSaleCancelRefund` |
 | 5008 | `AfterSaleReverseInvoice` | 5019 | `AfterSalePayRefund` |
 | 5009 | `AfterSaleStatusReverses` | 5020 | `AfterSaleChangeTotalAmountRefund` |
-| 5010 | `AfterSaleHistoriesReverses` | 5021 | `AfterSaleAdministrativeRecordsReverse` |
-| 5022 | `AfterSaleGetReverseById` | 5023 | `AfterSaleGetRefundById` |
+| 5021 | `AfterSaleAdministrativeRecordsReverse` | 5023 | `AfterSaleGetRefundById` |
+| 5022 | `AfterSaleGetReverseById` | | |
 
 Toda execução grava `auditing.Logs` e, conforme o caso, `auditing.Messages` (mensagens e erros de
 validação) e `auditing.Records` (registros integrados).
@@ -386,7 +386,7 @@ JSONs de referência por rota (`Me`, `Refund/*`, `Reverse/*`), usados para monta
 
 * **Datas legadas `1990-01-01`**: registros gravados antes da mudança para datas anuláveis mantêm `01/01/1990` nas datas que vieram vazias, até serem reintegrados. O script avulso de limpeza está em [`docs/PROPOSTA-DATAS-NULAS-AFTERSALE.md`](../../../../../docs/PROPOSTA-DATAS-NULAS-AFTERSALE.md) e ainda não foi executado. Consumidores fora do módulo que tratam `1990-01-01` como "sem data" precisam passar a usar `is null`.
 * **Detalhes já gravados não são atualizados pelo lote**: `GetReverse` e `GetRefund` só leem quem ainda não tem detalhe. Alterações posteriores chegam apenas por `GetReverseById` / `GetRefundById`.
-* **Histórico de reversas**: DTOs, entidade, tabela `AfterSaleHistoriesReverses` (já com `doc_company`) e o job 5010 em `auditing.Jobs` existem, mas não há método nem endpoint, a entidade ainda não tem `doc_company` e o job saiu do `EnumJob` (nenhuma service o usava).
+* **Histórico de reversas**: DTOs, entidade, tabela `AfterSaleHistoriesReverses` (já com `doc_company`) e a sua procedure de merge existem, mas não há método nem endpoint, e a entidade ainda não tem `doc_company`. O job 5010 e o da procedure (5516) saíram do `EnumJob` e dos scripts de jobs: voltam quando o método for escrito.
 * **`Me`**: as entidades e tabelas do e-commerce ainda não têm `doc_company`, então os dados das duas empresas não são separados por CNPJ.
 * **`AfterSaleErrors` nas tabelas de domínio de reembolsos** (`GetStatus`, `GetActions`, `GetBanks`, `GetTypes`): quando a API devolve `success = false`, nada é gravado. A decisão sobre o que gravar está pendente.
 * **Pausas com `Thread.Sleep`** nas leituras paginadas (`GetReverses`, `GetRefunds`): bloqueiam a thread durante a espera; `await Task.Delay` seria o equivalente não bloqueante.
