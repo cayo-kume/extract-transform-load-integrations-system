@@ -1,5 +1,7 @@
 using Application.Shared.Attributes;
+using Domain.Shared.Abstractions.Repositorys;
 using Microsoft.Extensions.DependencyInjection;
+using System.Data;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -48,6 +50,26 @@ namespace Hosts.Scheduling.RecurringJobs
                 VersionOf(typeof(TService), method),
                 services => compiled(services.GetRequiredService<TService>()));
         }
+
+        /// <summary>
+        /// job que só executa uma procedure no banco (src/Backend/Hosts/WebJob/docs/PLANO-HOST-WEBJOB.md §4.2), pelo repositório do
+        /// Shared. Sem método de service, a versão vem aqui, e não de [JobVersion]. O log da execução é o que a própria procedure
+        /// grava (auditing.sp_Log_*); uma falha vai para o log do host. Ex.: ForProcedure(10001, "[general].[P_Volo_Integracao_Clientes]", "1.0.0")
+        /// </summary>
+        public static RecurringJobDefinition ForProcedure(int idJob, string procedure, string version, string? concurrencyGroup = null) =>
+            new(
+                idJob,
+                concurrencyGroup is null ? ConcurrencyKeyFor(idJob) : $"group:{concurrencyGroup}",
+                $"procedure {procedure}",
+                version,
+                async services =>
+                {
+                    var executed = await services.GetRequiredService<ICommandRepository>()
+                        .ExecuteCommand(procedure, new Dictionary<string, object?>(), CommandType.StoredProcedure);
+
+                    if (!executed)
+                        throw new InvalidOperationException($"A procedure {procedure} não executou.");
+                });
 
         public static string ConcurrencyKeyFor(int idJob) =>
             $"job:{idJob}";

@@ -41,6 +41,7 @@ namespace Hosts.Scheduling.RecurringJobs
                 .Concat(LinxCommerceRecurringJobs.All)
                 .Concat(LinxMicrovixRecurringJobs.All)
                 .Concat(MovideskRecurringJobs.All)
+                .Concat(ProceduresRecurringJobs.All)
                 .Concat(TotvsRecurringJobs.All))
             {
                 // IdJob repetido é erro de mapa: o host não sobe

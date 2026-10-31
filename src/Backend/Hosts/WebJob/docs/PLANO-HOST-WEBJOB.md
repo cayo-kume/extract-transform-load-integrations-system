@@ -226,6 +226,32 @@ ou o Hangfire do WebApi (`Hangfire:Enabled = true`) ou os WebJobs publicados.
    decidido no PLANO-HOST-WEBAPI.md §4.8).
 4. O README dos dois hosts diz isso, com o que desligar de um lado antes de ligar o outro.
 
+**Feito em 30/10/2026 (4.1 e 4.2).**
+
+* **`WebJob.Scheduling.JobScheduleWorker`** (`BackgroundService`): o processo roda o job de `--job <IdJob>` (seção
+  `WebJob`: `TimeZone` `America/Sao_Paulo` e `RecheckIntervalInMinutes` 5). Sem `--job`, ou com um fuso inválido, o
+  processo encerra com código 1; com um job fora dos mapas, avisa e fica parado (um WebJob contínuo que termina é
+  reiniciado pela Azure em laço). A cada ciclo, ele lê a linha em `auditing.Jobs` (`IJobScheduleRepository.GetIntegrationJob`,
+  novo), calcula o próximo horário, espera em pedaços de no máximo `RecheckIntervalInMinutes` e **relê a linha logo antes
+  de rodar**: um job desligado durante a espera não roda nem no horário já calculado. O log registra o estado quando ele
+  muda (ativo, inativo, sem agenda) e o próximo horário.
+* **`JobCron.NextOccurrence`** (Hosts.Scheduling): o próximo horário pelas mesmas regras do cron do Hangfire, no fuso,
+  sem pacote de cron (o Hangfire traz o dele embutido).
+* **Jobs de procedures:** `RecurringJobDefinition.ForProcedure(idJob, procedure, versão)`, executada pelo
+  `ICommandRepository` como `StoredProcedure`, e o `ProceduresRecurringJobs.cs` com as 33 procedures do sistema antigo
+  comentadas (o `P_Volo_Integracao_Pedidos`, que roda uma vez por `EXECUTION`, anotado para virar método próprio), cada
+  uma com o intervalo que tinha lá.
+
+Conferido no banco de teste do Docker (apagado no fim):
+
+* sem `--job`: mensagem crítica e código de saída 1; `--job 99999`: aviso e processo parado; `--job 9001` (diário):
+  "todo dia às 23:00" e a próxima execução às 23:00 do mesmo dia;
+* `--job 9002` com intervalo 1: rodou nos minutos cheios (21:28, 21:29...), uma linha em `auditing.Logs` por execução;
+  desligado na tabela logo depois de uma execução, o horário seguinte não rodou e o log passou a "inativo" (na primeira
+  versão, sem a releitura antes de rodar, ainda saía uma execução a mais; corrigido);
+* `--job 3000` com `movidesk.MovideskParameters` renomeada: a execução falhou, o erro foi para `auditing.Logs` e
+  `auditing.Messages` (cada texto na sua coluna) e o processo seguiu para o horário seguinte.
+
 ## Passo 5 — Concorrência
 
 1. A trava é o `IJobLock` do Shared (`sp_getapplock` no banco das integrações), a mesma do WebApi e com as mesmas chaves

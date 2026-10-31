@@ -25,5 +25,16 @@ namespace Infrastructure.Shared.Repositorys
 
             return await conn.QueryAsync<JobSchedule>(sql);
         }
+
+        public async Task<JobSchedule?> GetIntegrationJob(int idJob)
+        {
+            const string sql = @"SELECT IdJob, Title, IntervalTimeInMinutes, RunningDailyAt, Queue, IsActive
+                                 FROM [auditing].[Jobs]
+                                 WHERE IdType = 2 AND IdJob = @idJob";
+
+            using var conn = _sqlServerConnection.GetIDbAuditingConnection();
+
+            return await conn.QueryFirstOrDefaultAsync<JobSchedule>(sql, new { idJob });
+        }
     }
 }

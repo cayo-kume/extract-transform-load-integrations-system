@@ -8,5 +8,10 @@ namespace Domain.Shared.Abstractions.Repositorys
         /// agenda dos jobs de integração (auditing.Jobs com IdType = 2), ativos ou não
         /// </summary>
         public Task<IEnumerable<JobSchedule>> GetIntegrationJobs();
+
+        /// <summary>
+        /// agenda de um job de integração; null quando ele não está em auditing.Jobs (o WebJob relê a cada ciclo)
+        /// </summary>
+        public Task<JobSchedule?> GetIntegrationJob(int idJob);
     }
 }
