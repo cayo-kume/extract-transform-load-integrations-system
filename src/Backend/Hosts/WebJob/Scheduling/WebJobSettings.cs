@@ -23,5 +23,10 @@ namespace WebJob.Scheduling
         /// horário distante. Uma mudança na tabela vale, no máximo, depois desse tempo
         /// </summary>
         public int RecheckIntervalInMinutes { get; set; } = 5;
+
+        /// <summary>
+        /// pulos seguidos (trava ocupada) até o aviso no log, como no Hangfire do WebApi
+        /// </summary>
+        public int MaxConsecutiveSkips { get; set; } = 5;
     }
 }

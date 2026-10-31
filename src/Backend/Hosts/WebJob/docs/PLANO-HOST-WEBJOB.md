@@ -261,6 +261,17 @@ Conferido no banco de teste do Docker (apagado no fim):
 3. `settings.job` de cada WebJob com `"is_singleton": true`: se o App Service tiver mais de uma instância, o WebJob roda
    numa só.
 
+**Feito em 30/10/2026.** O `JobScheduleWorker` pede a trava do `IJobLock` (Shared) com a chave do mapa
+(`job:<IdJob>` ou `group:datawarehouse`, as mesmas do filtro do Hangfire) antes de cada execução e a solta no fim. Ocupada,
+o horário é pulado sem esperar, com o registro no log e o aviso a cada `WebJob:MaxConsecutiveSkips` (5) pulos seguidos; o
+contador é do processo e zera quando o job roda. O `settings.job` (`"is_singleton": true`) está na raiz do projeto e vai
+para a saída do build, para entrar no zip de cada WebJob (fase 3).
+
+Conferido no banco de teste do Docker (apagado no fim): com `group:datawarehouse` presa por outra sessão, o 9002 (a cada
+minuto, `MaxConsecutiveSkips = 2` só no teste) pulou 21:36 e 21:37, com o aviso no segundo pulo; solta a trava, rodou às
+21:38 e 21:39 (duas linhas em `auditing.Logs`), e nenhuma trava `APPLICATION` sobrou no banco. A chave é a mesma do
+Hangfire, então a trava vale entre um WebJob e o WebApi.
+
 # Fase 3 — Publicação
 
 ## Passo 6 — Publicação na Azure

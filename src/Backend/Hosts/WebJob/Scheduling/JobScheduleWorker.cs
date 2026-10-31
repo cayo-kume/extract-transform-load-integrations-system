@@ -1,3 +1,4 @@
+using Application.Shared.Abstractions.Services;
 using Domain.Shared.Abstractions.Repositorys;
 using Domain.Shared.Entities.Auditing;
 using Hosts.Scheduling;
@@ -17,9 +18,13 @@ namespace WebJob.Scheduling
         private readonly WebJobSettings _settings;
         private readonly ILogger<JobScheduleWorker> _logger;
         private readonly IHostApplicationLifetime _lifetime;
+        private readonly IJobLock _jobLock;
 
-        public JobScheduleWorker(IServiceScopeFactory scopeFactory, IOptions<WebJobSettings> settings, ILogger<JobScheduleWorker> logger, IHostApplicationLifetime lifetime) =>
-            (_scopeFactory, _settings, _logger, _lifetime) = (scopeFactory, settings.Value, logger, lifetime);
+        // pulos seguidos deste processo: zera quando o job consegue rodar
+        private int _consecutiveSkips;
+
+        public JobScheduleWorker(IServiceScopeFactory scopeFactory, IOptions<WebJobSettings> settings, ILogger<JobScheduleWorker> logger, IHostApplicationLifetime lifetime, IJobLock jobLock) =>
+            (_scopeFactory, _settings, _logger, _lifetime, _jobLock) = (scopeFactory, settings.Value, logger, lifetime, jobLock);
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
@@ -112,6 +117,24 @@ namespace WebJob.Scheduling
         private async Task Run(int idJob, RecurringJobDefinition definition, JobSchedule job)
         {
             var name = RecurringJobMap.RecurringJobId(idJob, job.Title, definition.Version!);
+
+            // a mesma trava do WebApi (§5): um job nunca roda junto, nem entre um WebJob e o Hangfire. Ocupada, este horário é
+            // pulado sem esperar; o próximo tenta de novo
+            using var jobLock = _jobLock.TryAcquire(definition.ConcurrencyKey);
+
+            if (jobLock is null)
+            {
+                _consecutiveSkips++;
+
+                if (_consecutiveSkips % Math.Max(1, _settings.MaxConsecutiveSkips) == 0)
+                    _logger.LogWarning("{Name} ({Key}) pulado {Skips} vez(es) seguida(s): a execução anterior ainda está rodando. Se continuar, aumente o intervalo em auditing.Jobs.", name, definition.ConcurrencyKey, _consecutiveSkips);
+                else
+                    _logger.LogInformation("{Name} ({Key}) pulado: a execução anterior ainda está rodando.", name, definition.ConcurrencyKey);
+
+                return;
+            }
+
+            _consecutiveSkips = 0;
             var started = DateTimeOffset.Now;
 
             try

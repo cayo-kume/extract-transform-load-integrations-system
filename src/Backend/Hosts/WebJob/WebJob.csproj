@@ -12,6 +12,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- configuração do WebJob na Azure: com mais de uma instância no App Service, ele roda numa só -->
+    <None Update="settings.job">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Hosts.Scheduling\Hosts.Scheduling.csproj" />
     <ProjectReference Include="..\..\Modules\DataWarehouse\Infrastructure.DataWarehouse\Infrastructure.DataWarehouse.csproj" />
     <ProjectReference Include="..\..\Modules\General\AfterSale\Infrastructure.AfterSale\Infrastructure.AfterSale.csproj" />
