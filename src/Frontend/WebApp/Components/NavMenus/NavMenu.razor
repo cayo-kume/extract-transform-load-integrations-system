@@ -1,9 +1,14 @@
-﻿<MudNavMenu>
+﻿@inject QueryRunnerAccess QueryRunnerAccess
+
+<MudNavMenu>
     <MudImage ObjectFit="ObjectFit.Cover" Height="150" Width="240" Src="/images/logos/logo_150x300.png" />
     <MudNavLink Href="/home" Match="NavLinkMatch.Prefix">Visão Geral</MudNavLink>
     <MudNavLink Href="/integrations" Match="NavLinkMatch.Prefix">Integrações</MudNavLink>
     <MudNavLink Href="/errors" Match="NavLinkMatch.Prefix">Logs de Erros</MudNavLink>
-    <MudNavLink Href="/#" Match="NavLinkMatch.Prefix">Executar Querys</MudNavLink>
+    @if (QueryRunnerAccess.IsAllowed)
+    {
+        <MudNavLink Href="/queries" Match="NavLinkMatch.Prefix">Executar Querys</MudNavLink>
+    }
 </MudNavMenu>
 
 @code {

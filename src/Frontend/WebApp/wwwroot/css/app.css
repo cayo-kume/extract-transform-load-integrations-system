@@ -202,3 +202,29 @@ code {
     font-size: 0.75rem;
     word-break: break-all;
 }
+
+/* Executar Querys: editor de SQL em fonte monoespaçada */
+.sql-editor textarea {
+    font-family: Consolas, 'Courier New', monospace !important;
+    font-size: 0.875rem !important;
+}
+
+/* Valor NULL no resultado, para não se confundir com o texto "NULL" */
+.sql-null {
+    font-style: italic;
+    opacity: 0.5;
+}
+
+/* SQL de uma linha do histórico, cortado com reticências */
+.history-sql {
+    font-size: 0.75rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+
+/* Segundo aviso antes de um comando perigoso (UPDATE/DELETE sem WHERE, DROP e TRUNCATE) */
+.danger-text {
+    color: var(--mud-palette-error);
+}

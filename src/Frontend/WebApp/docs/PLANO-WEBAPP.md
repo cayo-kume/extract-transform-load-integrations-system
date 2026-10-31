@@ -273,18 +273,25 @@ A tela consulta **todos os bancos** do servidor e pode **ler, inserir, alterar e
    "Confirmar" e "Desfazer", com a contagem regressiva de 60 s (transação do passo 12.4, simulada pelo mock).
 5. Mensagem de erro do SQL Server exibida abaixo do editor, sem derrubar a tela.
 6. Limite de linhas exibidas (1.000) e aviso quando o resultado for cortado.
-7. Exportar o resultado para CSV.
-8. Histórico das últimas consultas da sessão, guardado no navegador, com o banco de cada uma, para reabrir uma consulta.
+7. Exportar o resultado para CSV, no formato que o Excel em português abre direto: ponto e vírgula, vírgula decimal e
+   UTF-8 com BOM.
+8. Histórico das 20 últimas consultas, guardado no navegador (`ProtectedLocalStorage`), com o banco de cada uma, para
+   reabrir uma consulta. Sai da tela com uma alteração pendente: ela é desfeita.
 
 ### 7.3 Execução
 
 1. A execução fica atrás de uma interface própria, `IQueryRunner`, separada do `IMonitorRepository`, porque roda SQL
    livre e terá conexão e usuário de banco próprios (passo 10).
-2. Nesta fase, a implementação é `MockQueryRunner`: devolve uma lista falsa de bancos (com os nomes reais do servidor,
-   como o principal e o do DataWarehouse), resultados falsos para `SELECT` (colunas e linhas geradas a partir do texto
-   da consulta), um número de linhas afetadas para escritas e um erro de exemplo quando o SQL contém `erro`, com o mesmo
-   atraso do mock do repositório. Assim a tela é desenvolvida e testada inteira, confirmações incluídas, sem banco.
-3. A implementação real entra no passo 12.
+2. Nesta fase, a implementação é `MockQueryRunner`: devolve uma lista falsa de bancos (`NEWBLOOMERS`, o principal;
+   `AUDITING`, o nome que o Shared monta quando falta `AuditingConnection`; e `Company`, o banco local de teste do DbUp.
+   O DataWarehouse fica em schemas do banco principal), resultados falsos para `SELECT` (colunas tiradas da lista do
+   SELECT, linhas geradas, `TOP n` respeitado), um número de linhas afetadas para escritas e um erro de exemplo quando o
+   SQL contém `erro`, com o mesmo atraso do mock do repositório. `WAITFOR` no SQL atrasa 8 s, para testar o cancelamento,
+   e `EXEC` com `COMMIT` simula a procedure que fecha a transação por conta própria. Assim a tela é desenvolvida e
+   testada inteira, confirmações incluídas, sem banco.
+3. O `SqlInspector` decide o que pede confirmação e o que ganha o segundo aviso, lendo as palavras-chave do SQL sem
+   comentários e sem o texto entre aspas (um `WHERE` só dentro de um comentário não conta).
+4. A implementação real entra no passo 12.
 
 Conferência: com a chave ligada em `Development`, a tela troca de banco, executa consultas no mock, mostra resultado,
 linhas afetadas, confirmação de escrita (e o segundo aviso sem `WHERE`, em `DROP` e em `TRUNCATE`), "Confirmar" e

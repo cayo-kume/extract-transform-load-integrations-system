@@ -1,0 +1,452 @@
+@page "/queries"
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@implements IAsyncDisposable
+@inject QueryRunnerAccess QueryRunnerAccess
+@inject IQueryRunner QueryRunner
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+@inject ProtectedLocalStorage LocalStorage
+
+<PageTitle>Executar Querys</PageTitle>
+
+@if (QueryRunnerAccess.IsAllowed)
+{
+    <MudGrid>
+        <MudItem xs="5" Class="d-flex align-center justify-center pa-1">
+            <h1 class="ma-0 text-center">EXECUTAR QUERYS</h1>
+        </MudItem>
+
+        <MudItem xs="7">
+            <div class="d-flex flex-row align-center gap-2 ml-8 mr-8">
+                <div class="flex-grow-1">
+                    <MudSelect T="string" @bind-Value="_database" Variant="Variant.Outlined" Label="Banco" Margin="Margin.Normal" Disabled="Busy">
+                        @foreach (var database in _databases)
+                        {
+                            <MudSelectItem Value="database">@database</MudSelectItem>
+                        }
+                    </MudSelect>
+                </div>
+                <MudChip T="string" Color="Color.Warning" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.Storage" Size="Size.Large">
+                    @(_database ?? "—")
+                </MudChip>
+            </div>
+        </MudItem>
+
+        <MudItem xs="12" Class="px-4">
+            <MudTextField T="string"
+                          @bind-Value="_sql"
+                          Immediate="true"
+                          Lines="12"
+                          Variant="Variant.Outlined"
+                          Label="SQL (Ctrl+Enter executa)"
+                          Class="sql-editor"
+                          Disabled="Busy"
+                          OnKeyDown="OnEditorKeyDown" />
+
+            <div class="d-flex align-center gap-2 mt-2">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PlayArrow" OnClick="Execute" Disabled="@(Busy || string.IsNullOrWhiteSpace(_sql) || _database is null)">
+                    Executar
+                </MudButton>
+                @if (_running)
+                {
+                    <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Stop" OnClick="Cancel">Cancelar</MudButton>
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Color="Color.Primary" />
+                    <MudText Typo="Typo.body2">Executando em @_database...</MudText>
+                }
+                <MudSpacer />
+                <MudText Typo="Typo.caption">Escritas, DDL e procedures rodam numa transação e pedem confirmação.</MudText>
+            </div>
+        </MudItem>
+
+        @if (_pending is not null)
+        {
+            <MudItem xs="12" Class="px-4">
+                <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.HourglassTop">
+                    <div class="d-flex align-center gap-4 flex-wrap">
+                        <MudText>
+                            <strong>@PendingDescription</strong> em <strong>@_pendingDatabase</strong>, ainda não confirmado.
+                            Sem resposta em <strong>@_remaining s</strong>, a alteração é desfeita.
+                        </MudText>
+                        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Commit" Disabled="_finishing">Confirmar</MudButton>
+                        <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="@(() => Rollback(timedOut: false))" Disabled="_finishing">Desfazer</MudButton>
+                    </div>
+                    <MudProgressLinear Color="Color.Warning" Value="@(_remaining * 100.0 / IQueryRunner.ConfirmationTimeout.TotalSeconds)" Class="mt-2" />
+                </MudAlert>
+            </MudItem>
+        }
+
+        @if (_result is not null)
+        {
+            <MudItem xs="12" Class="px-4">
+                @if (_result.Error is not null)
+                {
+                    <MudAlert Severity="Severity.Error" Variant="Variant.Outlined">
+                        <pre class="code-block ma-0">@_result.Error</pre>
+                    </MudAlert>
+                }
+                else
+                {
+                    <div class="d-flex align-center gap-2 mb-2 flex-wrap">
+                        <MudText Typo="Typo.body2">@Summary</MudText>
+                        @if (_result.TransactionClosedByCommand)
+                        {
+                            <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Outlined">
+                                A procedure já confirmou ou desfez por conta própria: não há o que desfazer.
+                            </MudChip>
+                        }
+                        <MudSpacer />
+                        @if (_result.Kind == QueryKind.Select && _result.Rows.Count > 0)
+                        {
+                            <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Download" OnClick="ExportCsv">Exportar CSV</MudButton>
+                        }
+                    </div>
+
+                    @if (_result.Truncated)
+                    {
+                        <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-2">
+                            O resultado tem @_result.TotalRows.ToString("N0") linhas; a tela mostra só as @IQueryRunner.MaxRows.ToString("N0") primeiras.
+                        </MudAlert>
+                    }
+
+                    @if (_result.Kind == QueryKind.Select)
+                    {
+                        <MudTable Items="@_result.Rows" Dense="true" Hover="true" Bordered="true" Breakpoint="Breakpoint.None" RowsPerPage="50" HorizontalScrollbar="true">
+                            <HeaderContent>
+                                @foreach (var column in _result.Columns)
+                                {
+                                    <MudTh Style="white-space: nowrap">@column</MudTh>
+                                }
+                            </HeaderContent>
+                            <RowTemplate>
+                                @foreach (var value in context)
+                                {
+                                    <MudTd Style="white-space: nowrap">
+                                        @if (value is null)
+                                        {
+                                            <span class="sql-null">NULL</span>
+                                        }
+                                        else
+                                        {
+                                            @Format(value)
+                                        }
+                                    </MudTd>
+                                }
+                            </RowTemplate>
+                            <NoRecordsContent>
+                                <MudText Typo="Typo.body2">Nenhuma linha.</MudText>
+                            </NoRecordsContent>
+                            <PagerContent>
+                                <MudTablePager HideRowsPerPage="true" />
+                            </PagerContent>
+                        </MudTable>
+                    }
+
+                    @if (_result.Messages.Count > 0)
+                    {
+                        <MudText Typo="Typo.caption" Class="mt-2">Mensagens</MudText>
+                        <pre class="code-block">@string.Join(Environment.NewLine, _result.Messages)</pre>
+                    }
+                }
+            </MudItem>
+        }
+
+        <MudItem xs="12" Class="px-4">
+            <MudExpansionPanels Elevation="0">
+                <MudExpansionPanel Text="@($"Histórico da sessão ({_history.Count})")">
+                    @if (_history.Count == 0)
+                    {
+                        <MudText Typo="Typo.body2">Nenhuma consulta ainda.</MudText>
+                    }
+                    @foreach (var item in _history)
+                    {
+                        <div class="d-flex align-center gap-2 my-1">
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@item.Database</MudChip>
+                            <MudText Typo="Typo.caption" Style="white-space: nowrap">@item.ExecutedAt.ToString("dd/MM HH:mm:ss")</MudText>
+                            <code class="history-sql flex-grow-1">@item.Sql</code>
+                            <MudButton Variant="Variant.Text" Size="Size.Small" Color="Color.Primary" OnClick="@(() => Reopen(item))" Disabled="Busy">Reabrir</MudButton>
+                        </div>
+                    }
+                </MudExpansionPanel>
+            </MudExpansionPanels>
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    private static readonly System.Globalization.CultureInfo CsvCulture = new("pt-BR");
+
+    private const string HistoryKey = "queries-history";
+    private const int HistorySize = 20;
+
+    private IReadOnlyList<string> _databases = [];
+    private string? _database;
+    private string? _sql;
+
+    private bool _running;
+    private CancellationTokenSource? _execution;
+    private QueryResult? _result;
+
+    // alteração esperando "Confirmar" ou "Desfazer"
+    private QueryResult? _pending;
+    private string? _pendingDatabase;
+    private int _remaining;
+    private bool _finishing;
+    private CancellationTokenSource? _countdown;
+
+    private List<HistoryItem> _history = [];
+
+    private bool Busy => _running || _pending is not null;
+
+    private string Summary => _result switch
+    {
+        { Kind: QueryKind.Select } r => $"{r.TotalRows:N0} linha(s) em {r.Duration.TotalSeconds:N2} s",
+        { RowsAffected: int affected } r => $"{affected:N0} linha(s) afetada(s) em {r.Duration.TotalSeconds:N2} s",
+        { } r => $"Comando executado em {r.Duration.TotalSeconds:N2} s",
+        _ => ""
+    };
+
+    private string PendingDescription => _pending switch
+    {
+        { RowsAffected: int affected } => $"{affected:N0} linha(s) afetada(s)",
+        _ => "Comando executado"
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!QueryRunnerAccess.IsAllowed)
+        {
+            Navigation.NotFound();
+            return;
+        }
+
+        _databases = await QueryRunner.GetDatabasesAsync();
+        _database = _databases.Contains("NEWBLOOMERS") ? "NEWBLOOMERS" : _databases.FirstOrDefault();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || !QueryRunnerAccess.IsAllowed)
+            return;
+
+        // o histórico fica no navegador; se não der para ler (aba anônima, dados limpos), começa vazio
+        try
+        {
+            var stored = await LocalStorage.GetAsync<List<HistoryItem>>(HistoryKey);
+            if (stored.Success && stored.Value is not null)
+            {
+                _history = stored.Value;
+                StateHasChanged();
+            }
+        }
+        catch (Exception)
+        {
+        }
+    }
+
+    private async Task OnEditorKeyDown(KeyboardEventArgs args)
+    {
+        if (args.CtrlKey && args.Key == "Enter" && !Busy)
+            await Execute();
+    }
+
+    private async Task Execute()
+    {
+        var sql = _sql;
+        var database = _database;
+        if (string.IsNullOrWhiteSpace(sql) || database is null || Busy)
+            return;
+
+        if (SqlInspector.ChangesSomething(sql) && !await Confirm(database, sql))
+            return;
+
+        _running = true;
+        _result = null;
+        _execution = new CancellationTokenSource();
+        StateHasChanged();
+
+        try
+        {
+            _result = await QueryRunner.ExecuteAsync(database, sql, _execution.Token);
+            await AddToHistory(database, sql);
+
+            if (_result.TransactionId is not null)
+                StartCountdown(_result, database);
+        }
+        catch (OperationCanceledException)
+        {
+            Snackbar.Add("Execução cancelada.", Severity.Info);
+        }
+        finally
+        {
+            _running = false;
+            _execution.Dispose();
+            _execution = null;
+        }
+    }
+
+    private void Cancel() => _execution?.Cancel();
+
+    // primeira confirmação para toda alteração; a segunda, em vermelho, para UPDATE/DELETE sem WHERE, DROP e TRUNCATE
+    private async Task<bool> Confirm(string database, string sql)
+    {
+        var encoded = System.Net.WebUtility.HtmlEncode(sql);
+        var first = await DialogService.ShowMessageBoxAsync(
+            "Confirmar execução",
+            (MarkupString)$"<p>O comando altera o banco <strong>{System.Net.WebUtility.HtmlEncode(database)}</strong>:</p><pre class=\"code-block\">{encoded}</pre><p>Ele roda numa transação, e você confirma ou desfaz depois.</p>",
+            yesText: "Executar",
+            cancelText: "Cancelar");
+
+        if (first != true)
+            return false;
+
+        var dangers = SqlInspector.Dangers(sql);
+        if (dangers.Count == 0)
+            return true;
+
+        var items = string.Concat(dangers.Select(x => $"<li>{System.Net.WebUtility.HtmlEncode(x)}</li>"));
+        var second = await DialogService.ShowMessageBoxAsync(
+            "Atenção",
+            (MarkupString)$"<div class=\"danger-text\"><p>Este comando é perigoso em <strong>{System.Net.WebUtility.HtmlEncode(database)}</strong>:</p><ul>{items}</ul><p>Executar mesmo assim?</p></div>",
+            yesText: "Executar mesmo assim",
+            cancelText: "Cancelar");
+
+        return second == true;
+    }
+
+    private void StartCountdown(QueryResult result, string database)
+    {
+        _pending = result;
+        _pendingDatabase = database;
+        _remaining = (int)IQueryRunner.ConfirmationTimeout.TotalSeconds;
+        _countdown = new CancellationTokenSource();
+        _ = Countdown(_countdown.Token);
+    }
+
+    private async Task Countdown(CancellationToken cancellationToken)
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+
+        try
+        {
+            while (await timer.WaitForNextTickAsync(cancellationToken))
+            {
+                await InvokeAsync(async () =>
+                {
+                    if (_pending is null || _finishing)
+                        return;
+
+                    _remaining--;
+                    if (_remaining <= 0)
+                        await Rollback(timedOut: true);
+
+                    StateHasChanged();
+                });
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    private async Task Commit()
+    {
+        if (_pending?.TransactionId is not Guid transactionId)
+            return;
+
+        _finishing = true;
+        await QueryRunner.CommitAsync(transactionId);
+        FinishPending();
+        Snackbar.Add("Alteração confirmada.", Severity.Success);
+    }
+
+    private async Task Rollback(bool timedOut)
+    {
+        if (_pending?.TransactionId is not Guid transactionId)
+            return;
+
+        _finishing = true;
+        await QueryRunner.RollbackAsync(transactionId);
+        FinishPending();
+        Snackbar.Add(timedOut ? "Tempo esgotado: a alteração foi desfeita." : "Alteração desfeita.", timedOut ? Severity.Warning : Severity.Info);
+    }
+
+    private void FinishPending()
+    {
+        _countdown?.Cancel();
+        _countdown = null;
+        _pending = null;
+        _pendingDatabase = null;
+        _finishing = false;
+    }
+
+    private async Task ExportCsv()
+    {
+        if (_result is null)
+            return;
+
+        static string Cell(object? value)
+        {
+            var text = value switch
+            {
+                null => "",
+                DateTime date => date.ToString("yyyy-MM-dd HH:mm:ss"),
+                IFormattable formattable => formattable.ToString(null, CsvCulture),
+                _ => value.ToString() ?? ""
+            };
+
+            return text.IndexOfAny([';', '"', '\n', '\r']) >= 0 ? $"\"{text.Replace("\"", "\"\"")}\"" : text;
+        }
+
+        // ponto e vírgula, vírgula decimal e BOM: o Excel em português abre direto, com números e acentos
+        var lines = new List<string> { string.Join(';', _result.Columns.Select(Cell)) };
+        lines.AddRange(_result.Rows.Select(row => string.Join(';', row.Select(Cell))));
+
+        await JS.InvokeVoidAsync("webApp.download", $"{_database}_{DateTime.Now:yyyyMMdd_HHmmss}.csv", "﻿" + string.Join("\r\n", lines), "text/csv;charset=utf-8");
+    }
+
+    private async Task AddToHistory(string database, string sql)
+    {
+        _history.RemoveAll(x => x.Database == database && x.Sql == sql);
+        _history.Insert(0, new HistoryItem(database, sql, DateTime.Now));
+        if (_history.Count > HistorySize)
+            _history.RemoveRange(HistorySize, _history.Count - HistorySize);
+
+        try
+        {
+            await LocalStorage.SetAsync(HistoryKey, _history);
+        }
+        catch (Exception)
+        {
+        }
+    }
+
+    private void Reopen(HistoryItem item)
+    {
+        if (_databases.Contains(item.Database))
+            _database = item.Database;
+
+        _sql = item.Sql;
+    }
+
+    private static string Format(object value) => value switch
+    {
+        DateTime date => date.ToString("dd/MM/yyyy HH:mm:ss"),
+        decimal number => number.ToString("N2"),
+        bool flag => flag ? "1" : "0",
+        _ => value.ToString() ?? ""
+    };
+
+    public async ValueTask DisposeAsync()
+    {
+        _execution?.Cancel();
+        _countdown?.Cancel();
+
+        // saiu da tela com uma alteração pendente: desfaz, como se o prazo tivesse acabado
+        if (_pending?.TransactionId is Guid transactionId)
+            await QueryRunner.RollbackAsync(transactionId);
+    }
+
+    private sealed record HistoryItem(string Database, string Sql, DateTime ExecutedAt);
+}

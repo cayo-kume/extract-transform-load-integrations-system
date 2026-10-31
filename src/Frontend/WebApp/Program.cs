@@ -15,6 +15,10 @@ builder.Services.AddMudServices();
 // Dados do painel: só o mock até a fase 5 do plano (docs/PLANO-WEBAPP.md), quando entra o MonitorRepository com o banco
 builder.Services.AddSingleton<IMonitorRepository, MockMonitorRepository>();
 
+// Executar Querys: acesso pela chave QueryRunner:Enabled em Development e, até a fase 5, o executor falso
+builder.Services.AddSingleton<QueryRunnerAccess>();
+builder.Services.AddSingleton<IQueryRunner, MockQueryRunner>();
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
