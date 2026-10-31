@@ -25,7 +25,7 @@ histórico que o DW pede continua atendida (`src/Backend/Modules/DataWarehouse/d
 Fontes conferidas em 26/10/2026:
 
 * todo o código do módulo (572 arquivos, ~50 mil linhas), os controllers e as extensões de jobs do Hangfire, os hosts
-  AzureWebJob e Quartz (sem nenhuma referência ao Linx) e o `appsettings.json`;
+  AzureWebJob (hoje WebJob) e Quartz (sem nenhuma referência ao Linx) e o `appsettings.json`;
 * *Especificação Web Service de Saída Padrão Linx Microvix* **v274**, de 01/09/2026: URLs, credenciais, regra de
   `timestamp`, limite de registros por retorno e parâmetros de cada método. Documenta **191 métodos**;
 * *Documentação Integração WS B2C* **V64**, de 17/08/2026: URLs, credenciais e métodos do B2C. Documenta

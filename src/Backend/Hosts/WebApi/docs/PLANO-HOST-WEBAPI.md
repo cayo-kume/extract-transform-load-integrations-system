@@ -461,7 +461,7 @@ detalhada mais adiante porque foi a primeira proposta, não porque ganhou.
 
 | Opção | Como funciona | A favor | Contra |
 |---|---|---|---|
-| **A. Filtro no Hangfire que pula** (`SkipConcurrentExecutionFilter`) | antes de executar, trava distribuída no storage do Hangfire com espera zero; ocupada, a execução vai para `Deleted` | só o host muda; nada nos módulos; o pulo aparece no dashboard | a trava vive no storage do Hangfire: não vale para as rotas dos controllers, nem no modo só API, nem nos hosts Quartz e AzureWebJob; o cancelamento de dentro do filtro precisa ser provado num protótipo |
+| **A. Filtro no Hangfire que pula** (`SkipConcurrentExecutionFilter`) | antes de executar, trava distribuída no storage do Hangfire com espera zero; ocupada, a execução vai para `Deleted` | só o host muda; nada nos módulos; o pulo aparece no dashboard | a trava vive no storage do Hangfire: não vale para as rotas dos controllers, nem no modo só API, nem nos hosts Quartz e WebJob (antes AzureWebJob); o cancelamento de dentro do filtro precisa ser provado num protótipo |
 | **B. Trava da aplicação, no banco das integrações** | um `IJobLock` no Shared, com `sp_getapplock` (espera zero, preso à sessão) no banco dos módulos, chave por job ou grupo. Um executor único do host (`JobRunner`) pega a trava e chama o service; as rotas recorrentes passam pelo mesmo executor | **vale para qualquer disparo**: Hangfire, rota manual (resolve a decisão das rotas: ocupado = 409), modo só API e os outros hosts; sem trava órfã, como na A | código novo no Shared; o pulo, sozinho, aparece como `Succeeded` no dashboard (o executor registra o pulo no `auditing` e, se quiser, a A entra só para marcar o estado) |
 | **C. Job que se reagenda** (atraso fixo) | sem recurring job: ao terminar, com sucesso ou erro, a execução agenda a próxima para daqui a `IntervalTimeInMinutes` (`BackgroundJob.Schedule`) | sobreposição impossível por construção, sem trava; o intervalo passa a ser "3 minutos de descanso", não "a cada 3 minutos" | a corrente pode quebrar (exceção antes do reagendamento, job apagado no dashboard) e precisa de um vigia (o `SchedulerRefresh`); os diários continuam precisando de cron; a página de recurring jobs do dashboard fica vazia; duas correntes do mesmo job nascem fácil se o vigia errar, e aí volta a precisar de trava |
 | **D. Checar `auditing.Logs` antes de rodar** | não roda se houver execução do job com `StartDate` e sem `EndDate` | usa a tabela que já existe | uma execução que cai deixa `EndDate` nulo e bloqueia o job até alguém limpar (precisa de prazo de validade); duas execuções que checam ao mesmo tempo passam as duas (precisa de trava de qualquer forma) |
@@ -473,7 +473,7 @@ detalhada mais adiante porque foi a primeira proposta, não porque ganhou.
 
 * na A, no Hangfire: protege só o que o Hangfire dispara;
 * na B, na aplicação: protege o job, venha o disparo de onde vier. Com três hosts no repositório (Hangfire, Quartz e
-  AzureWebJob) e rotas manuais para cada leitura recorrente, é a que não precisa ser refeita em cada um;
+  WebJob) e rotas manuais para cada leitura recorrente, é a que não precisa ser refeita em cada um;
 * na G, no agendador: nativa, mas só se o Quartz for o agendador.
 
 **Decisão (30/10/2026): combinação de A com B.** A trava é a da B, no banco das integrações e no Shared; quem a usa é
@@ -517,7 +517,7 @@ bloqueada por elas.
    `sp_getapplock` no banco das integrações (`Connection`): espera zero (`@LockTimeout = 0`), presa à sessão
    (`@LockOwner = 'Session'`), numa conexão só dela, aberta durante a execução e fechada no fim. Se o processo cair, a
    conexão fecha e a trava é solta sozinha, sem trava órfã. Por estar no Shared e no nosso banco, ela não depende do
-   storage do Hangfire (vale igual se o storage mudar, 3.3) e pode ser usada pelos hosts Quartz e AzureWebJob.
+   storage do Hangfire (vale igual se o storage mudar, 3.3) e pode ser usada pelos hosts Quartz e WebJob (antes AzureWebJob).
 2. **O filtro (da A).** Um filtro global do Hangfire no host (`SkipConcurrentExecutionFilter`, `IServerFilter` +
    `IElectStateFilter`), registrado uma vez no `AddHangfire` e aplicado a todos os jobs da agenda. Como o filtro global
    é uma instância única, ele obtém o `IJobLock` por uma fábrica (não por injeção scoped).

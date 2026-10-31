@@ -1,4 +1,4 @@
-namespace AzureWebJob;
+namespace WebJob;
 
 public class Worker(ILogger<Worker> logger) : BackgroundService
 {

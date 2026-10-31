@@ -1,7 +1,8 @@
 # Plano do host WebJob (antigo host AzureWebJob)
 
-O host `src/Backend/Hosts/AzureWebJob` é hoje só o modelo `dotnet new worker`: um `BackgroundService` que escreve no log a
-cada segundo, sem módulos, sem configuração e sem o Azure WebJobs SDK. Este plano leva o projeto, passo a passo, a ser
+O host `src/Backend/Hosts/WebJob` (até o passo 1, `src/Backend/Hosts/AzureWebJob`) é hoje só o modelo
+`dotnet new worker`: um `BackgroundService` que escreve no log a cada segundo, sem módulos, sem configuração e sem o
+Azure WebJobs SDK. Este plano leva o projeto, passo a passo, a ser
 o host que roda os jobs como **WebJobs na Azure**, no lugar do WebJob do sistema antigo
 (`newbloomers/newbloomers-recurring-jobs/src/WebJob`). Ele segue o modelo do
 [PLANO-HOST-WEBAPI.md](../../WebApi/docs/PLANO-HOST-WEBAPI.md) e reaproveita o que o host WebApi já construiu: a agenda
@@ -69,6 +70,12 @@ O projeto deixa de se chamar AzureWebJob: o nome segue o do WebApi (o que ele é
 
 Conferência: build do `WebJob.csproj`, o host sobe e escreve no log como antes, e `grep` sem sobras de
 `Hosts/AzureWebJob`, `AzureWebJob.csproj` e `namespace AzureWebJob`.
+
+**Feito em 30/10/2026.** `git mv` da pasta (histórico preservado), `WebJob.csproj`, o `.slnx` (Quartz, WebApi, WebJob), o
+namespace `WebJob` e o perfil `WebJob`; `bin/` e `obj/` antigos apagados; o `UserSecretsId` ficou como estava. Build sem
+erros e sem avisos, e o host sobe e escreve no log como `WebJob.Worker`. Referências atualizadas no `README.md` da raiz
+(o WebJob aparece como em construção), no `PLANO-HOST-WEBAPI.md` (§4.7) e na proposta do Linx Microvix Outbound; a
+tabela "Situação em 30/10/2026" deste plano ficou como estava, por ser o retrato de antes.
 
 ## Passo 2 — Projeto compartilhado e executor de jobs
 

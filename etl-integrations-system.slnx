@@ -2,9 +2,9 @@
   <Folder Name="/src/" />
   <Folder Name="/src/Backend/" />
   <Folder Name="/src/Backend/Hosts/">
-    <Project Path="src/Backend/Hosts/AzureWebJob/AzureWebJob.csproj" />
     <Project Path="src/Backend/Hosts/Quartz/Quartz.csproj" />
     <Project Path="src/Backend/Hosts/WebApi/WebApi.csproj" />
+    <Project Path="src/Backend/Hosts/WebJob/WebJob.csproj" />
   </Folder>
   <Folder Name="/src/Backend/Modules/" />
   <Folder Name="/src/Backend/Modules/DataWarehouse/">
