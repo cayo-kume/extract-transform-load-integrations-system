@@ -12,14 +12,4 @@
     <PackageReference Include="MudBlazor" Version="9.*" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Components\Loadings\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Update="wwwroot\images\logos\aftersale.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
 </Project>

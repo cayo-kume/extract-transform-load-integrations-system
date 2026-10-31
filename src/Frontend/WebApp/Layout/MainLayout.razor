@@ -1,4 +1,6 @@
 @inherits LayoutComponentBase
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@inject ProtectedLocalStorage LocalStorage
 
 <MudThemeProvider Theme="@_theme" IsDarkMode="_isDarkMode" />
 <MudPopoverProvider />
@@ -6,9 +8,16 @@
 <MudSnackbarProvider />
 
 <MudLayout>
-    <MudAppBar>
+    <MudAppBar Elevation="0">
+        <MudTooltip Text="@(_drawerOpen ? "Esconder o menu" : "Mostrar o menu")">
+            <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="DrawerToggle" />
+        </MudTooltip>
+        <MudSpacer />
+        <MudTooltip Text="@(_isDarkMode ? "Tema claro" : "Tema escuro")">
+            <MudIconButton Icon="@DarkLightModeButtonIcon" Color="Color.Inherit" OnClick="DarkModeToggle" />
+        </MudTooltip>
     </MudAppBar>
-    <MudDrawer Open="true" Elevation="8">
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="8" ClipMode="DrawerClipMode.Never">
         <NavMenu/>
     </MudDrawer>
     <MudMainContent>
@@ -33,14 +42,44 @@
         };
     }
 
+    private const string DarkModeKey = "dark-mode";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        // a escolha de tema fica no navegador; se não der para ler (aba anônima, dados limpos), fica o escuro
+        try
+        {
+            var stored = await LocalStorage.GetAsync<bool>(DarkModeKey);
+            if (stored.Success && stored.Value != _isDarkMode)
+            {
+                _isDarkMode = stored.Value;
+                StateHasChanged();
+            }
+        }
+        catch (Exception)
+        {
+        }
+    }
+
     private void DrawerToggle()
     {
         _drawerOpen = !_drawerOpen;
     }
 
-    private void DarkModeToggle()
+    private async Task DarkModeToggle()
     {
         _isDarkMode = !_isDarkMode;
+
+        try
+        {
+            await LocalStorage.SetAsync(DarkModeKey, _isDarkMode);
+        }
+        catch (Exception)
+        {
+        }
     }
 
     private readonly PaletteLight _lightPalette = new()
@@ -84,7 +123,7 @@
 
     public string DarkLightModeButtonIcon => _isDarkMode switch
     {
-        true => Icons.Material.Rounded.AutoMode,
+        true => Icons.Material.Outlined.LightMode,
         false => Icons.Material.Outlined.DarkMode,
     };
 }

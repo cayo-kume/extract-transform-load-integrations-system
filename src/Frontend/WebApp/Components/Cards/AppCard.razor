@@ -49,11 +49,11 @@
             </div>
             <div class="d-flex flex-row gap-18">
                 <MudText Typo="Typo.caption" Class="app-stat app-stat-label">Erros: @Summary.Errors</MudText>
-                <MudText Typo="Typo.caption" Class="app-stat">Warnings: @Summary.Warnings</MudText>
+                <MudText Typo="Typo.caption" Class="app-stat">Avisos: @Summary.Warnings</MudText>
             </div>
         </MudCardContent>
         <MudCardActions Class="pa-2">
-            <MudButton Href="@($"/applications/{Summary.IdParent}/jobs")" Variant="Variant.Text" Color="Color.Primary">All Jobs</MudButton>
+            <MudButton Href="@($"/applications/{Summary.IdParent}/jobs")" Variant="Variant.Text" Color="Color.Primary">Ver jobs</MudButton>
         </MudCardActions>
     </MudCard>
 </div>

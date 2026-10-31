@@ -42,7 +42,7 @@ os detalhes de cada módulo estão no README dele.
 | Validação | **FluentValidation** (um validador por DTO) |
 | HTTP e JSON | `IHttpClientFactory` (`IApiClient` nomeado por módulo), **Newtonsoft.Json**, XML (`System.Xml.Linq`) no Linx Microvix |
 | Cache | `IMemoryCache` ([docs/PADRAO-CACHE-INTEGRACOES.md](docs/PADRAO-CACHE-INTEGRACOES.md)) |
-| Front-end (em construção) | Blazor Web App (interativo no servidor) com **MudBlazor** (`src/Frontend/WebApp`) e .NET MAUI (`src/Mobile/MobileApp`) |
+| Front-end | Blazor Web App (interativo no servidor) com **MudBlazor** (`src/Frontend/WebApp`), com o visual pronto sobre dados mockados ([README](src/Frontend/WebApp/README.md)); .NET MAUI (`src/Mobile/MobileApp`) em construção |
 
 ---
 
@@ -66,7 +66,7 @@ extract-transform-load-integrations-system/
 │   │       ├── General/                  AfterSale, Movidesk (ativos); Dootax, Mobsim, Oto, Pagarme (fora do host)
 │   │       ├── Shippment/                FlashCourier, Jadlog, Stone, TotalExpress (fora do host)
 │   │       └── DataWarehouse/
-│   ├── Frontend/WebApp/                  painel Blazor (aplicações, jobs e integrações)
+│   ├── Frontend/WebApp/                  painel Blazor (aplicações, jobs, integrações, erros e consultas)
 │   └── Mobile/MobileApp/                 app MAUI
 └── tests/                                (vazio)
 ```

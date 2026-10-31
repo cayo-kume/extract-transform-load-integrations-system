@@ -1,0 +1,9 @@
+@* Paginador das tabelas em português: o MudTablePager não usa o MudLocalizer para estes dois textos. *@
+
+<MudTablePager HideRowsPerPage="HideRowsPerPage"
+               RowsPerPageString="Linhas por página:"
+               InfoFormat="{first_item}-{last_item} de {all_items}" />
+
+@code {
+    [Parameter] public bool HideRowsPerPage { get; set; }
+}

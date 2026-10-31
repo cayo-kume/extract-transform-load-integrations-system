@@ -7,15 +7,15 @@
     <!-- ISSO É OBRIGATÓRIO PARA O ROTEAMENTO E ARQUIVOS ESTÁTICOS -->
     <base href="/" /> 
 
-    <!-- Referência ao seu app.css (ajuste o caminho se o seu não estiver dentro da pasta css) -->
-    <link rel="stylesheet" href="css/app.css" />
-    
+    <!-- Os arquivos locais passam por @Assets[...]: o endereço leva a versão do conteúdo, e o navegador não fica com o antigo em cache -->
+    <link rel="stylesheet" href="@Assets["css/app.css"]" />
+
     <!-- Se você usa MudBlazor, as fontes e o CSS dele também precisam estar aqui -->
     <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet" />
-    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+    <link href="@Assets["_content/MudBlazor/MudBlazor.min.css"]" rel="stylesheet" />
 
     <!-- ISSO AQUI É PARA O CSS ISOLADO DOS COMPONENTES FUNCIONAR -->
-    <link rel="stylesheet" href="WebApp.styles.css" />
+    <link rel="stylesheet" href="@Assets["WebApp.styles.css"]" />
 
     <HeadOutlet @rendermode="RenderMode.InteractiveServer" />
 </head>
@@ -23,7 +23,7 @@
     <Routes @rendermode="RenderMode.InteractiveServer" />
 
     <script src="_framework/blazor.web.js"></script>
-    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
-    <script src="js/app.js"></script>
+    <script src="@Assets["_content/MudBlazor/MudBlazor.min.js"]"></script>
+    <script src="@Assets["js/app.js"]"></script>
 </body>
 </html>

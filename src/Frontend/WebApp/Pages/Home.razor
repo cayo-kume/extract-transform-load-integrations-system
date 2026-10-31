@@ -2,7 +2,7 @@
 @implements IAsyncDisposable
 @inject IMonitorRepository MonitorRepository
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Visão geral</PageTitle>
 
 <MudGrid>
     <MudItem xs="5" Class="d-flex align-center justify-center pa-1">
@@ -90,7 +90,7 @@
                     <MudTh>Tipo</MudTh>
                     <MudTh>Aplicação</MudTh>
                     <MudTh>Nome</MudTh>
-                    <MudTh>Inicio (Data/Hora)</MudTh>
+                    <MudTh>Início</MudTh>
                     <MudTh>Duração</MudTh>
                     <MudTh>Registros</MudTh>
                 </HeaderContent>
@@ -99,7 +99,7 @@
                     <MudTd DataLabel="Tipo">@context.JobType</MudTd>
                     <MudTd DataLabel="Aplicação">@context.AppTitle</MudTd>
                     <MudTd DataLabel="Nome" HideSmall=false>@context.JobTitle</MudTd>
-                    <MudTd DataLabel="Inicio (Data/Hora)">@MonitorDisplay.Date(context.StartDate)</MudTd>
+                    <MudTd DataLabel="Início">@MonitorDisplay.Date(context.StartDate)</MudTd>
                     <MudTd DataLabel="Duração">@MonitorDisplay.Duration(context.Duration)</MudTd>
                     <MudTd DataLabel="Registros">@context.Records</MudTd>
                 </RowTemplate>
