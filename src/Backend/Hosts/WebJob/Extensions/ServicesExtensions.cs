@@ -6,6 +6,7 @@ using Infrastructure.LinxMicrovix.Outbound.DependencyInjection;
 using Infrastructure.Movidesk.DependencyInjection;
 using Infrastructure.Shared;
 using Infrastructure.Totvs.DependencyInjection;
+using WebJob.Recovery;
 
 namespace WebJob.Extensions
 {
@@ -27,6 +28,12 @@ namespace WebJob.Extensions
             builder.Services.AddScopedDataWarehouseServices(builder.Configuration);
 
             builder.Services.AddScheduledJobRunner();
+
+            // recuperação dos WebJobs travados (job 14000, PLANO-HOST-WEBJOB.md passo 7): só a seção Recovery e o cliente da Azure;
+            // o cliente só é chamado quando algum heartbeat está off
+            builder.Services.Configure<RecoverySettings>(builder.Configuration.GetSection(RecoverySettings.SectionName));
+            builder.Services.AddHttpClient<IAzureWebJobsClient, AzureWebJobsClient>();
+            builder.Services.AddScoped<IStuckJobsRecovery, StuckJobsRecovery>();
 
             return builder;
         }

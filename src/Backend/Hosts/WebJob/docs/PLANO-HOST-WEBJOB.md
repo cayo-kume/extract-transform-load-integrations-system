@@ -462,6 +462,44 @@ precisar de service principal, ele entra por variável de ambiente (`AZURE_CLIEN
 `AZURE_CLIENT_SECRET`), que o `DefaultAzureCredential` já lê, sem campo de segredo na configuração. A identidade
 gerenciada precisa estar ligada no App Service e ter permissão de listar, parar e iniciar WebJobs nele.
 
+### 7.4 Execução (feito em 30/10/2026, sem a Azure real)
+
+* **Banco (Shared):** o índice `IX_Logs_Heartbeat` em `auditing.Logs (IdJob, IdType, EndDate)` no `CREATE` do Script001
+  (script original); a view `auditing.vw_JobsHeartbeat` (`Script006_Create_Auditing_Views.sql`: por job de integração,
+  a agenda, a última execução terminada e a execução aberta mais antiga, só dados); e o app 140 `Hosts` com o job
+  **14000 `StuckJobsRecovery`** (`Script007_Insert_Hosts_Jobs_Into_Jobs_Table.sql`, a cada 15 minutos, `IsActive = 0`
+  como todo job). `Domain.Shared.Enums.EnumJob` ganhou o `StuckJobsRecovery = 14000`. Num banco que já rodou o Script001,
+  o índice entra à parte.
+* **Shared:** `JobHeartbeat` e `IJobScheduleRepository.GetActiveJobsHeartbeat()`.
+* **WebJob, `Recovery/StuckJobsRecovery.cs`:** `IStuckJobsRecovery.RecoverStuckJobs()` (`[JobVersion("1.0.0")]`), no
+  log de `auditing` do job 14000. Lê o heartbeat; sem job off, registra isso e termina **sem chamar a Azure**; com algum
+  off, lista os WebJobs e reinicia o do job (achado pelo título, em qualquer versão), com cooldown
+  (`RestartCooldownMinutes`, 30), WebJob parado à mão não retomado e estado transitório esperando o próximo ciclo.
+* **`Recovery/AzureWebJobsClient.cs`:** a API REST do Azure Resource Manager (listar, `stop` e `start` dos WebJobs
+  contínuos) com o token do `DefaultAzureCredential` (`Azure.Identity` 1.21.0, já no cache local); sem o pacote
+  `Azure.ResourceManager.AppService` do sistema antigo.
+* **Só neste host:** o 14000 fica no mapa do WebJob (`WebJobRecurringJobs`), não no compartilhado. No Hangfire do
+  WebApi, se ativo, o `SchedulerRefresh` avisa que ele não tem método no host. `RecurringJobMap.Validate` passou a ser
+  público para o WebJob validar o mapa dele, e o `ScheduledJobRunner` ganhou o `Run(definição)`.
+* **Seção `Recovery`:** `DryRun`, `TenantId`, `SubscriptionId`, `ResourceGroup`, `AppServiceName`, `NameFormat` (o mesmo
+  do perfil de publicação), `GraceMinutes` (5), `RestartCooldownMinutes` (30), `Thresholds` (minutos por `IdJob`) e
+  `IgnoredJobs`.
+
+**A regra de off, como ficou (a confirmar):** "1 × o intervalo" ao pé da letra marcaria como off um job que está rodando
+normalmente no momento da checagem (a execução de 3 minutos que começou às 10:06 ainda não terminou às 10:06:30, e a
+última terminada é das 10:03). Por isso o limite é **o intervalo + `GraceMinutes`** (5 minutos, o tempo de uma execução
+normal; o sistema antigo usava 5 minutos de limite); no diário, sem execução terminada desde o último horário que já
+passou de `GraceMinutes`. Um job ativo que **nunca** rodou fica fora da checagem até a primeira execução (um job recém-
+ligado ainda não teve a vez dele). O `Thresholds` por job substitui o limite.
+
+Conferido no banco de teste do Docker (apagado no fim), com `Recovery:DryRun`: com o 3000 parado há 30 minutos, o 9002 e
+o diário 9001 em dia e o 8006 ativo sem execução, a execução do 14000 marcou só o 3000 como off ("há mais de 8
+minuto(s)") e registrou que não reiniciou nada; com `Thresholds:3000 = 60` e `DryRun` desligado, registrou "Nenhum job
+com o heartbeat off" e não chamou a Azure. A view e o índice foram criados pelos migrators.
+
+**Falta (precisa da Azure):** o reinício real, num App Service de teste, com a identidade gerenciada ligada e com
+permissão nos WebJobs.
+
 # Fase 5 — Documentação e o que entra depois
 
 ## Passo 8 — Documentação do host

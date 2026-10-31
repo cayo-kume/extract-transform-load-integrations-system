@@ -45,7 +45,7 @@ namespace WebJob.Scheduling
             }
 
             // os mapas são montados aqui: IdJob repetido ou método sem [JobVersion] derrubam o processo já na subida
-            if (!RecurringJobMap.Definitions.TryGetValue(idJob, out var definition))
+            if (!WebJobRecurringJobs.Definitions.TryGetValue(idJob, out var definition))
             {
                 // na Azure, um WebJob contínuo que termina é reiniciado: o processo fica parado, avisando, em vez de cair em laço
                 _logger.LogError("Job {IdJob} sem método nos mapas de jobs recorrentes (Hosts.Scheduling): o processo não roda nada.", idJob);
@@ -141,7 +141,7 @@ namespace WebJob.Scheduling
             {
                 // um escopo por execução: o service e o ILoggerService do ScheduledJobRunner vêm dele
                 await using var scope = _scopeFactory.CreateAsyncScope();
-                await scope.ServiceProvider.GetRequiredService<ScheduledJobRunner>().Run(idJob);
+                await scope.ServiceProvider.GetRequiredService<ScheduledJobRunner>().Run(definition);
 
                 _logger.LogInformation("{Name}: execução concluída em {Duration:hh\\:mm\\:ss}.", name, DateTimeOffset.Now - started);
             }

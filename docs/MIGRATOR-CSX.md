@@ -9,7 +9,7 @@ padrão de organização dos scripts está em [PADRAO-CODIGO-E-SCRIPTS-INTEGRACO
 
 | Módulo | Pasta (a partir de `src/Backend/`) | Estrutura dos scripts |
 |---|---|---|
-| Shared | `Shared/Infrastructure.Shared/Scripts/SQLServer` | Direto na pasta (5 scripts) |
+| Shared | `Shared/Infrastructure.Shared/Scripts/SQLServer` | Direto na pasta (7 scripts) |
 | Totvs | `Modules/Totvs/Infrastructure.Totvs/Scripts/SQLServer` | `Parameters/` e uma pasta por service |
 | LinxMicrovix | `Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/Infrastructure.LinxMicrovix.Outbound/Scripts/SQLServer` | `Parameters/`, `Erp/<Service>` e `B2C/<Service>` |
 | LinxCommerce | `Modules/LinxCommerce/Infrastructure.LinxCommerce/Scripts/SQLServer` | `Parameters/` e uma pasta por service |

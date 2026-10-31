@@ -20,11 +20,16 @@ namespace Hosts.Scheduling
         public ScheduledJobRunner(IServiceProvider services, ILoggerService jobLog, ILogger<ScheduledJobRunner> logger) =>
             (_services, _jobLog, _logger) = (services, jobLog, logger);
 
-        public async Task Run(int idJob)
-        {
-            if (!RecurringJobMap.Definitions.TryGetValue(idJob, out var definition))
-                throw new InvalidOperationException($"IdJob {idJob} sem método nos mapas de jobs recorrentes.");
+        public Task Run(int idJob) =>
+            RecurringJobMap.Definitions.TryGetValue(idJob, out var definition)
+                ? Run(definition)
+                : throw new InvalidOperationException($"IdJob {idJob} sem método nos mapas de jobs recorrentes.");
 
+        /// <summary>
+        /// a definição já resolvida, para o host que tem jobs só dele além dos mapas compartilhados (o WebJob, com a recuperação)
+        /// </summary>
+        public async Task Run(RecurringJobDefinition definition)
+        {
             try
             {
                 await definition.Invoke(_services);

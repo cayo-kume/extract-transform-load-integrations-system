@@ -36,5 +36,17 @@ namespace Infrastructure.Shared.Repositorys
 
             return await conn.QueryFirstOrDefaultAsync<JobSchedule>(sql, new { idJob });
         }
+
+        public async Task<IEnumerable<JobHeartbeat>> GetActiveJobsHeartbeat()
+        {
+            const string sql = @"SELECT IdParent, IdJob, Title, IntervalTimeInMinutes, RunningDailyAt, Queue, IsActive,
+                                        LastStartDate, LastEndDate, OpenSince
+                                 FROM [auditing].[vw_JobsHeartbeat]
+                                 WHERE IsActive = 1";
+
+            using var conn = _sqlServerConnection.GetIDbAuditingConnection();
+
+            return await conn.QueryAsync<JobHeartbeat>(sql);
+        }
     }
 }

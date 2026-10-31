@@ -84,6 +84,12 @@ CREATE TABLE [auditing].[Logs](
 ) ON [PRIMARY]
 GO
 
+-- heartbeat dos jobs (auditing.vw_JobsHeartbeat, Script006): a última execução de cada job sem varrer todas as execuções
+-- dele (src/Backend/Hosts/WebJob/docs/PLANO-HOST-WEBJOB.md, passo 7)
+CREATE NONCLUSTERED INDEX [IX_Logs_Heartbeat] ON [auditing].[Logs] ([IdJob] ASC, [IdType] ASC, [EndDate] ASC)
+WITH (STATISTICS_NORECOMPUTE = OFF, FILLFACTOR = 90, DATA_COMPRESSION = ROW) ON [PRIMARY]
+GO
+
 CREATE TABLE [auditing].[Messages](
 	[IdExecutionMessage] [bigint] IDENTITY(1,1) NOT NULL,
 	[IdJob] [int] NOT NULL,

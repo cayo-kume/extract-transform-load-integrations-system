@@ -32,17 +32,24 @@ namespace Hosts.Scheduling.RecurringJobs
             return match is { Success: true } && int.TryParse(match.Groups[1].Value, out var idJob) ? idJob : null;
         }
 
-        private static Dictionary<int, RecurringJobDefinition> Build()
-        {
-            var definitions = new Dictionary<int, RecurringJobDefinition>();
-
-            foreach (var definition in AfterSaleRecurringJobs.All
+        private static Dictionary<int, RecurringJobDefinition> Build() =>
+            Validate(AfterSaleRecurringJobs.All
                 .Concat(DataWarehouseRecurringJobs.All)
                 .Concat(LinxCommerceRecurringJobs.All)
                 .Concat(LinxMicrovixRecurringJobs.All)
                 .Concat(MovideskRecurringJobs.All)
                 .Concat(ProceduresRecurringJobs.All)
-                .Concat(TotvsRecurringJobs.All))
+                .Concat(TotvsRecurringJobs.All));
+
+        /// <summary>
+        /// monta o dicionário IdJob → definição e recusa o mapa com IdJob repetido, método sem versão ou job sem título. Público
+        /// para um host que tem jobs só dele (o WebJob, com a recuperação) validar o mapa inteiro do mesmo jeito
+        /// </summary>
+        public static Dictionary<int, RecurringJobDefinition> Validate(IEnumerable<RecurringJobDefinition> all)
+        {
+            var definitions = new Dictionary<int, RecurringJobDefinition>();
+
+            foreach (var definition in all)
             {
                 // IdJob repetido é erro de mapa: o host não sobe
                 if (!definitions.TryAdd(definition.IdJob, definition))
