@@ -93,7 +93,7 @@ namespace WebJob.Recovery
 
         /// <summary>
         /// por que o job está off, ou null quando está em dia ou fica fora da recuperação. Intervalo: sem execução terminada há
-        /// mais que o intervalo + GraceMinutes (ou o limite próprio do job). Diário: sem execução terminada desde o último
+        /// mais que o intervalo + GraceMinutes (0 = 1 × o intervalo; ou o limite próprio do job). Diário: sem execução terminada desde o último
         /// horário que já passou de GraceMinutes (ou do limite próprio)
         /// </summary>
         private string? OffReason(JobHeartbeat job, DateTime now)

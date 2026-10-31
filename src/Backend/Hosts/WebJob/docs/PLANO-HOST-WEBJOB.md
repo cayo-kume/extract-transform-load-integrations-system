@@ -482,15 +482,17 @@ gerenciada precisa estar ligada no App Service e ter permissão de listar, parar
   WebApi, se ativo, o `SchedulerRefresh` avisa que ele não tem método no host. `RecurringJobMap.Validate` passou a ser
   público para o WebJob validar o mapa dele, e o `ScheduledJobRunner` ganhou o `Run(definição)`.
 * **Seção `Recovery`:** `DryRun`, `TenantId`, `SubscriptionId`, `ResourceGroup`, `AppServiceName`, `NameFormat` (o mesmo
-  do perfil de publicação), `GraceMinutes` (5), `RestartCooldownMinutes` (30), `Thresholds` (minutos por `IdJob`) e
+  do perfil de publicação), `GraceMinutes` (0), `RestartCooldownMinutes` (30), `Thresholds` (minutos por `IdJob`) e
   `IgnoredJobs`.
 
-**A regra de off, como ficou (a confirmar):** "1 × o intervalo" ao pé da letra marcaria como off um job que está rodando
-normalmente no momento da checagem (a execução de 3 minutos que começou às 10:06 ainda não terminou às 10:06:30, e a
-última terminada é das 10:03). Por isso o limite é **o intervalo + `GraceMinutes`** (5 minutos, o tempo de uma execução
-normal; o sistema antigo usava 5 minutos de limite); no diário, sem execução terminada desde o último horário que já
-passou de `GraceMinutes`. Um job ativo que **nunca** rodou fica fora da checagem até a primeira execução (um job recém-
-ligado ainda não teve a vez dele). O `Thresholds` por job substitui o limite.
+**A regra de off (decisão de 30/10/2026): 1 × o intervalo.** Off = job ativo sem execução terminada há mais que o
+intervalo; no diário, sem execução terminada desde o último horário de `RunningDailyAt`. O limite é o intervalo +
+`GraceMinutes`, que fica em **0**. Efeito conhecido: um job que está rodando normalmente na hora da checagem (a execução
+de 3 minutos que começou às 10:06 ainda não terminou às 10:06:30, e a última terminada é das 10:03) aparece como off e
+pode ser reiniciado no meio; o cooldown (`RestartCooldownMinutes`) segura um novo reinício do mesmo WebJob, e o
+`Thresholds` por job dá limite próprio a quem demora. `GraceMinutes` continua configurável (o teste abaixo usou 5,
+quando era o padrão). Um job ativo que **nunca** rodou fica fora da checagem até a primeira execução (um job recém-ligado
+ainda não teve a vez dele).
 
 Conferido no banco de teste do Docker (apagado no fim), com `Recovery:DryRun`: com o 3000 parado há 30 minutos, o 9002 e
 o diário 9001 em dia e o 8006 ativo sem execução, a execução do 14000 marcou só o 3000 como off ("há mais de 8

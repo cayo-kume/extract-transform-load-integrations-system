@@ -28,10 +28,11 @@ namespace WebJob.Recovery
         public string NameFormat { get; set; } = "Spaces";
 
         /// <summary>
-        /// tempo de uma execução normal: um job de intervalo fica off sem execução terminada há mais que o intervalo + isto; um
-        /// diário, sem execução terminada desde o último horário + isto
+        /// folga somada ao limite: um job de intervalo fica off sem execução terminada há mais que o intervalo + isto; um diário,
+        /// sem execução terminada desde o último horário + isto. 0 = a regra decidida, "1 × o intervalo" (§7.1); para jobs longos,
+        /// o limite próprio em Thresholds
         /// </summary>
-        public int GraceMinutes { get; set; } = 5;
+        public int GraceMinutes { get; set; }
 
         /// <summary>
         /// depois de reiniciar um WebJob, quanto tempo esperar antes de reiniciá-lo de novo (e o tempo que ele tem para
