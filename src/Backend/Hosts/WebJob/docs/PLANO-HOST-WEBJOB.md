@@ -371,6 +371,37 @@ Uma cópia só dos binários no App Service, com cada WebJob tendo só o `run.cm
 com poucos bytes. Mas atualizar os binários com os WebJobs rodando esbarra em arquivos presos, e todos os jobs mudariam
 de versão juntos sem reinício. Fica o zip completo por WebJob.
 
+### 6.5 Execução (feito em 30/10/2026, sem o primeiro deploy)
+
+* **`Publish/publish-webjob.ps1`** (PowerShell 7) e **`Publish/publish-profiles.psd1`** (perfis `dev`, com o resource group
+  e o App Service do sistema antigo, e `prod`, vazio; `Jobs` vazio nos dois até a decisão de quais jobs vão para cada
+  ambiente). Parâmetros: `-PublishProfile` (alias `-Profile`), `-Jobs`, `-ListJobs`, `-RemoveMissing`, `-DryRun` (build e
+  zips, sem chamar a Azure) e `-ProfilesFile` (outro arquivo de perfis, para pipeline ou teste).
+* **Como publica:** um `dotnet publish` (Release); `WebJob.dll --list-jobs` dá o `IdJob`, o título e a versão de cada job;
+  para cada `IdJob` do perfil, um zip com `App_Data/jobs/continuous/<nome>/` (o build, o `run.cmd` com `--job <IdJob>` e o
+  `settings.job`) publicado com `az webapp deploy --type zip --clean false`, o mesmo comando que o sistema antigo usa em
+  produção. **Mudança em relação ao 6.2:** no lugar do `PUT` na API do Kudu (autenticação não testada), o zip deploy já
+  comprovado; o WebJob é substituído no lugar, sem apagar e recriar. Depois de publicar, o script apaga o WebJob da
+  versão anterior do mesmo job.
+* **Título no mapa:** `RecurringJobDefinition.Title`, tirado do `EnumJob` do módulo (o `Domain.<Módulo>` que o
+  `Application.<Módulo>` referencia); o `RecurringJobMap` recusa um job sem título, como recusa um sem versão. O
+  `ForProcedure` recebe o título. Os 327 títulos do `--list-jobs` são iguais aos `Title` dos scripts de `auditing.Jobs`.
+* **No perfil:** `NameFormat` (`Spaces` = `<Title> - V<versão>`; `Safe` = `<Title>-V<versão com _>`, o formato reserva
+  do 6.3) e `SelfContained` (`$false`: `run.cmd` chama `dotnet WebJob.dll` e o App Service precisa do runtime do
+  .NET 10; `$true`: publica para `win-x64` com o runtime junto e chama `WebJob.exe`).
+
+Conferido em modo simulação (`-DryRun`), com um arquivo de perfis de teste: `-ListJobs` mostrou
+`LinxClientesFornec - V1.0.0`, `MovideskGetTickets - V1.0.0` e `DataWarehouseShortCycle - V1.0.0` (e
+`LinxClientesFornec-V1_0_0` no formato `Safe`); a publicação simulada montou os três zips (15 MB cada, sem
+`ConnectionStrings` no `appsettings.json` e sem os arquivos do script), com `run.cmd`, `settings.job` e a pasta
+`App_Data/jobs/continuous/<nome>`; o WebJob extraído do zip subiu da própria pasta com `--job 8006`; job fora do perfil e
+perfil inexistente param com a mensagem certa.
+
+**Falta (precisa de um App Service de teste e do ok para publicar):** o primeiro deploy real, que confirma se a Azure
+aceita espaço e ponto no nome (senão, `NameFormat = 'Safe'`), se o App Service tem o runtime do .NET 10 (senão,
+`SelfContained = $true`) e a troca de versão apagando o WebJob anterior. Os zips têm cerca de 15 MB por WebJob: com
+centenas de jobs no mesmo App Service, conferir o espaço em disco do plano.
+
 # Fase 4 — Recuperação
 
 ## Passo 7 — Recuperação de jobs travados

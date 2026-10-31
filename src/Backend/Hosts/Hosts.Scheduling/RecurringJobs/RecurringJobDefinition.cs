@@ -34,8 +34,15 @@ namespace Hosts.Scheduling.RecurringJobs
         /// </summary>
         public string? Version { get; }
 
-        private RecurringJobDefinition(int idJob, string concurrencyKey, string target, string? version, Func<IServiceProvider, Task> invoke) =>
-            (IdJob, ConcurrencyKey, Target, Version, _invoke) = (idJob, concurrencyKey, target, version, invoke);
+        /// <summary>
+        /// nome do job no EnumJob do módulo (o mesmo Title de auditing.Jobs), sem consultar o banco: o script de publicação do
+        /// WebJob monta o nome do WebJob com ele (&lt;Title&gt; - V&lt;versão&gt;). Null quando o IdJob não está no EnumJob do módulo
+        /// (o RecurringJobMap recusa o mapa)
+        /// </summary>
+        public string? Title { get; }
+
+        private RecurringJobDefinition(int idJob, string? title, string concurrencyKey, string target, string? version, Func<IServiceProvider, Task> invoke) =>
+            (IdJob, Title, ConcurrencyKey, Target, Version, _invoke) = (idJob, title, concurrencyKey, target, version, invoke);
 
         public static RecurringJobDefinition For<TService>(int idJob, Expression<Func<TService, Task>> call, string? concurrencyGroup = null)
             where TService : notnull
@@ -45,6 +52,7 @@ namespace Hosts.Scheduling.RecurringJobs
 
             return new(
                 idJob,
+                TitleOf(typeof(TService), idJob),
                 concurrencyGroup is null ? ConcurrencyKeyFor(idJob) : $"group:{concurrencyGroup}",
                 $"{typeof(TService).Name}.{method.Name}",
                 VersionOf(typeof(TService), method),
@@ -54,11 +62,13 @@ namespace Hosts.Scheduling.RecurringJobs
         /// <summary>
         /// job que só executa uma procedure no banco (src/Backend/Hosts/WebJob/docs/PLANO-HOST-WEBJOB.md §4.2), pelo repositório do
         /// Shared. Sem método de service, a versão vem aqui, e não de [JobVersion]. O log da execução é o que a própria procedure
-        /// grava (auditing.sp_Log_*); uma falha vai para o log do host. Ex.: ForProcedure(10001, "[general].[P_Volo_Integracao_Clientes]", "1.0.0")
+        /// grava (auditing.sp_Log_*); uma falha vai para o log do host. O título é o Title da linha em auditing.Jobs. Ex.:
+        /// ForProcedure(10001, "P_Volo_Integracao_Clientes", "[general].[P_Volo_Integracao_Clientes]", "1.0.0")
         /// </summary>
-        public static RecurringJobDefinition ForProcedure(int idJob, string procedure, string version, string? concurrencyGroup = null) =>
+        public static RecurringJobDefinition ForProcedure(int idJob, string title, string procedure, string version, string? concurrencyGroup = null) =>
             new(
                 idJob,
+                title,
                 concurrencyGroup is null ? ConcurrencyKeyFor(idJob) : $"group:{concurrencyGroup}",
                 $"procedure {procedure}",
                 version,
@@ -79,6 +89,19 @@ namespace Hosts.Scheduling.RecurringJobs
         /// </summary>
         public Task Invoke(IServiceProvider services) =>
             _invoke(services);
+
+        /// <summary>
+        /// o EnumJob do módulo fica no Domain.&lt;Módulo&gt;, que o Application.&lt;Módulo&gt; do service referencia; as faixas de IdJob não
+        /// se repetem entre módulos
+        /// </summary>
+        private static string? TitleOf(Type serviceInterface, int idJob) =>
+            serviceInterface.Assembly.GetReferencedAssemblies()
+                .Where(a => a.Name?.StartsWith("Domain.", StringComparison.Ordinal) == true)
+                .Select(Assembly.Load)
+                .SelectMany(a => a.GetTypes())
+                .Where(t => t.IsEnum && t.Name == "EnumJob" && Enum.IsDefined(t, idJob))
+                .Select(t => Enum.GetName(t, idJob))
+                .FirstOrDefault();
 
         /// <summary>
         /// a expressão aponta para o método da interface; a versão está no método da classe que a implementa, no mesmo assembly

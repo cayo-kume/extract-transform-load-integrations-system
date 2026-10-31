@@ -56,6 +56,13 @@ namespace Hosts.Scheduling.RecurringJobs
                 throw new InvalidOperationException(
                     $"Métodos de jobs recorrentes sem [JobVersion] na classe do service: {string.Join(", ", withoutVersion)}.");
 
+            // o título (nome do WebJob) vem do EnumJob do módulo; IdJob fora do EnumJob é erro de mapa
+            var withoutTitle = definitions.Values.Where(d => string.IsNullOrWhiteSpace(d.Title)).Select(d => $"{d.IdJob} ({d.Target})").ToList();
+
+            if (withoutTitle.Count > 0)
+                throw new InvalidOperationException(
+                    $"Jobs recorrentes sem título no EnumJob do módulo: {string.Join(", ", withoutTitle)}.");
+
             return definitions;
         }
     }
