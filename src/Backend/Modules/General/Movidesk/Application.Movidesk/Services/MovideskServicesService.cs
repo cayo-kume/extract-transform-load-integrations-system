@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text;
+using Application.Shared.Attributes;
 
 namespace Application.Movidesk.Services
 {
@@ -140,6 +141,7 @@ namespace Application.Movidesk.Services
         /// <summary>
         /// sincroniza o catálogo de serviços (inteiro, numa chamada) de cada empresa; só grava quando a resposta mudou
         /// </summary>
+        [JobVersion("1.0.0")]
         public async Task<bool?> GetServices()
         {
             _logger

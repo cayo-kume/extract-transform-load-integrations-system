@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text;
+using Application.Shared.Attributes;
 
 namespace Application.Totvs.Services
 {
@@ -55,6 +56,7 @@ namespace Application.Totvs.Services
             (_apiClient, _logger, _cache, _totvsService, _totvsAccountsPayableRepository, _duplicateValidator, _commissionPaidValidator) =
             (apiClient, logger, cache, totvsService, totvsAccountsPayableRepository, duplicateValidator, commissionPaidValidator);
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> PostSearchDuplicates()
         {
             _logger
@@ -294,6 +296,7 @@ namespace Application.Totvs.Services
                  ConverterValidatorsExtensions.ConvertToInt64Validation(x.duplicateCode), ConverterValidatorsExtensions.ConvertToInt32Validation(x.installmentCode));
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> PostSearchComissionsPaid()
         {
             _logger

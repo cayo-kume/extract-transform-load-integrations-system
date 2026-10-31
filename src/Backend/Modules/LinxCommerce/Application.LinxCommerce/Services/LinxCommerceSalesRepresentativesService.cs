@@ -4,6 +4,7 @@ using Domain.LinxCommerce.Abstractions.Repositorys;
 using Domain.LinxCommerce.Enums;
 using Domain.Shared.Extensions;
 using FluentValidation;
+using Application.Shared.Attributes;
 
 namespace Application.LinxCommerce.Services
 {
@@ -26,6 +27,7 @@ namespace Application.LinxCommerce.Services
             (_logger, _linxCommerceService, _linxCommerceSalesRepresentativesRepository, _salesRepresentativeValidator) =
             (logger, linxCommerceService, linxCommerceSalesRepresentativesRepository, salesRepresentativeValidator);
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> SearchSalesRepresentative()
         {
             _logger

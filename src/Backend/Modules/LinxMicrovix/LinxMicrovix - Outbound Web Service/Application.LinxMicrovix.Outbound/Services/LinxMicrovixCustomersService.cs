@@ -10,6 +10,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
+using Application.Shared.Attributes;
 
 namespace Application.LinxMicrovix.Outbound.Services
 {
@@ -57,6 +58,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             (_apiClient, _logger, _linxMicrovixService, _linxMicrovixCustomersRepository, _linxClientesFornecValidator, _linxClientesFornecCamposAdicionaisValidator, _linxClientesFornecClassesValidator, _linxClientesFornecContatosValidator, _linxClientesFornecContatosParentescoValidator, _linxClientesFornecCreditoAvulsoValidator, _linxClientesFornecVendedoresValidator, _linxClientesEnderecosEntregaValidator, _linxClientesRedeValidator, _linxRamosAtividadeValidator) =
             (apiClient, logger, linxMicrovixService, linxMicrovixCustomersRepository, linxClientesFornecValidator, linxClientesFornecCamposAdicionaisValidator, linxClientesFornecClassesValidator, linxClientesFornecContatosValidator, linxClientesFornecContatosParentescoValidator, linxClientesFornecCreditoAvulsoValidator, linxClientesFornecVendedoresValidator, linxClientesEnderecosEntregaValidator, linxClientesRedeValidator, linxRamosAtividadeValidator);
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxClientesFornec()
         {
             _logger
@@ -272,6 +274,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxClientesFornecCamposAdicionais()
         {
             _logger
@@ -472,6 +475,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxClientesFornecClasses()
         {
             _logger
@@ -667,6 +671,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxClientesFornecContatos()
         {
             _logger
@@ -875,6 +880,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxClientesFornecContatosParentesco()
         {
             _logger
@@ -1070,6 +1076,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxClientesFornecCreditoAvulso()
         {
             _logger
@@ -1276,6 +1283,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxClientesFornecVendedores()
         {
             _logger
@@ -1470,6 +1478,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxClientesEnderecosEntrega()
         {
             _logger
@@ -1676,6 +1685,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxClientesRede()
         {
             _logger
@@ -1916,6 +1926,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxRamosAtividade()
         {
             _logger

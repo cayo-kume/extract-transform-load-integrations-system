@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Text;
 using System.Xml;
 using System.Xml.Linq;
+using Application.Shared.Attributes;
 
 namespace Application.LinxMicrovix.Outbound.Services
 {
@@ -42,6 +43,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             (_apiClient, _logger, _linxMicrovixService, _linxMicrovixLoyaltyRepository, _linxFidelidadeValidator, _linxMovimentoReshopValidator, _linxMovimentoReshopItensValidator) =
             (apiClient, logger, linxMicrovixService, linxMicrovixLoyaltyRepository, linxFidelidadeValidator, linxMovimentoReshopValidator, linxMovimentoReshopItensValidator);
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxFidelidade()
         {
             _logger
@@ -247,6 +249,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxMovimentoReshop()
         {
             _logger
@@ -448,6 +451,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxMovimentoReshopItens()
         {
             _logger

@@ -11,6 +11,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using Application.Shared.Attributes;
 
 namespace Application.Movidesk.Services
 {
@@ -152,6 +153,7 @@ namespace Application.Movidesk.Services
         /// <summary>
         /// sincroniza as pessoas criadas ou alteradas desde a última execução (agentes e clientes), para cada empresa
         /// </summary>
+        [JobVersion("1.0.0")]
         public async Task<bool?> GetPeople()
         {
             _logger

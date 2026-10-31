@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Text;
 using System.Xml;
 using System.Xml.Linq;
+using Application.Shared.Attributes;
 
 namespace Application.LinxMicrovix.Outbound.Services
 {
@@ -66,6 +67,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             (_apiClient, _logger, _linxMicrovixService, _linxMicrovixFinancialRepository, _linxFaturasValidator, _linxFaturasOrigemValidator, _linxPortadoresValidator, _linxAntecipacoesFinanceirasValidator, _linxAntecipacoesFinanceirasPlanosValidator, _linxDesfazimentosAntecipacoesValidator, _linxDesfazimentosAntecipacoesDocumentoValidator, _linxDesfazimentosAntecipacoesItensValidator, _linxCategoriasFinanceirasValidator, _linxCentroCustoValidator, _linxPlanoContasValidator, _linxLancContabilValidator, _linxHistoricosContabeisValidator, _linxExtratoBancarioLancamentosValidator, _linxExtratoBancarioConciliacoesValidator) =
             (apiClient, logger, linxMicrovixService, linxMicrovixFinancialRepository, linxFaturasValidator, linxFaturasOrigemValidator, linxPortadoresValidator, linxAntecipacoesFinanceirasValidator, linxAntecipacoesFinanceirasPlanosValidator, linxDesfazimentosAntecipacoesValidator, linxDesfazimentosAntecipacoesDocumentoValidator, linxDesfazimentosAntecipacoesItensValidator, linxCategoriasFinanceirasValidator, linxCentroCustoValidator, linxPlanoContasValidator, linxLancContabilValidator, linxHistoricosContabeisValidator, linxExtratoBancarioLancamentosValidator, linxExtratoBancarioConciliacoesValidator);
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxFaturas()
         {
             _logger
@@ -317,6 +319,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxFaturasOrigem()
         {
             _logger
@@ -511,6 +514,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxPortadores()
         {
             _logger
@@ -709,6 +713,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxAntecipacoesFinanceiras()
         {
             _logger
@@ -927,6 +932,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxAntecipacoesFinanceirasPlanos()
         {
             _logger
@@ -1129,6 +1135,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxDesfazimentosAntecipacoes()
         {
             _logger
@@ -1329,6 +1336,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxDesfazimentosAntecipacoesDocumento()
         {
             _logger
@@ -1529,6 +1537,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxDesfazimentosAntecipacoesItens()
         {
             _logger
@@ -1730,6 +1739,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxCategoriasFinanceiras()
         {
             _logger
@@ -1927,6 +1937,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxCentroCusto()
         {
             _logger
@@ -2124,6 +2135,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxPlanoContas()
         {
             _logger
@@ -2327,6 +2339,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxLancContabil()
         {
             _logger
@@ -2546,6 +2559,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxHistoricosContabeis()
         {
             _logger
@@ -2749,6 +2763,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxExtratoBancarioLancamentos()
         {
             _logger
@@ -2949,6 +2964,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxExtratoBancarioConciliacoes()
         {
             _logger

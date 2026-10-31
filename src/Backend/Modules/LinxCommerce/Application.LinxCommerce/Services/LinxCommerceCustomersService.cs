@@ -3,6 +3,7 @@ using Application.Shared.Abstractions.Services;
 using Domain.LinxCommerce.Abstractions.Repositorys;
 using Domain.LinxCommerce.Enums;
 using FluentValidation;
+using Application.Shared.Attributes;
 
 namespace Application.LinxCommerce.Services
 {
@@ -28,6 +29,7 @@ namespace Application.LinxCommerce.Services
             (_logger, _linxCommerceService, _linxCommerceCustomersRepository, _customerValidator) =
             (logger, linxCommerceService, linxCommerceCustomersRepository, customerValidator);
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> SearchCustomer()
         {
             _logger

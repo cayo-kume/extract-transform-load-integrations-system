@@ -142,7 +142,8 @@ fica fora da agenda, com aviso no log.
 **O `SchedulerRefresh`** monta a agenda: roda na subida e a cada `Schedule:RefreshIntervalInMinutes`. Ele lê
 `auditing.Jobs`, inclui na agenda os jobs ativos que têm método no mapa, altera os que mudaram e remove os que ficaram
 inativos, sem intervalo ou saíram do mapa. Um `UPDATE` na tabela vale, no máximo, no ciclo seguinte. Os recurring jobs
-da agenda se chamam `<IdJob>-<Title>` (ex.: `9002-DataWarehouseShortCycle`); o resultado de cada releitura aparece no
+da agenda se chamam `<IdJob>-<Title> - V<versão>` (ex.: `9002-DataWarehouseShortCycle - V1.0.0`), com a versão do
+`[JobVersion]` do método (abaixo); o resultado de cada releitura aparece no
 dashboard e no log (`Agenda: N job(s) na agenda...`), com os avisos.
 
 Ligar e desligar jobs:
@@ -162,6 +163,15 @@ UPDATE [auditing].[Jobs] SET IsActive = 0 WHERE IdType = 2 AND IdJob = 3000;
 ```
 
 Para não esperar o ciclo, o `SchedulerRefresh` pode ser disparado na hora pela página de jobs recorrentes do dashboard.
+
+## Versão dos jobs
+
+Cada método de service chamado por um job recorrente tem `[JobVersion("MAJOR.MINOR.PATCH")]` no método da classe do
+service (não na interface), e a versão vai no nome do recurring job. Para saber o que roda em cada ambiente, basta olhar
+o dashboard. Ao mudar o código de um job, mude a versão no mesmo método: PATCH numa correção, MINOR numa mudança
+compatível, MAJOR quando muda o que o job grava de um jeito que quebra quem lê. Com a versão nova, o `SchedulerRefresh`
+troca o job antigo pelo novo na releitura seguinte. Um método do mapa sem o atributo impede o host de subir com o
+Hangfire ligado.
 
 ## Concorrência
 
@@ -195,7 +205,7 @@ rotas são para uso manual e consciente (o DW continua com a própria trava no p
 
 * **Job recorrente novo num módulo do host:** a linha no script de jobs da service (com `RunningDailyAt` e `Queue`, ver
   [PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md](../../../../docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md) §3.1), a rota no
-  controller e a entrada no mapa do módulo em `Scheduling/RecurringJobs/<Módulo>RecurringJobs.cs`, com o método sem
-  parâmetros do service. Sem o mapa, o `SchedulerRefresh` avisa e deixa o job fora da agenda.
+  controller, a entrada no mapa do módulo em `Scheduling/RecurringJobs/<Módulo>RecurringJobs.cs`, com o método sem
+  parâmetros do service, e `[JobVersion("1.0.0")]` no método da classe do service. Sem o mapa, o `SchedulerRefresh` avisa e deixa o job fora da agenda.
 * **Módulo novo:** referência no `WebApi.csproj`, registro no `ServicesExtensions`, controller, o mapa
   `<Módulo>RecurringJobs.cs` incluído no `RecurringJobMap` e o script de jobs com as colunas novas (plano, passo 6).

@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Text;
 using System.Xml;
 using System.Xml.Linq;
+using Application.Shared.Attributes;
 
 namespace Application.LinxMicrovix.Outbound.Services
 {
@@ -44,6 +45,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             (_apiClient, _logger, _linxMicrovixService, _linxMicrovixB2CProductImagesRepository, _b2CConsultaProdutosImagensValidator, _b2CConsultaProdutosImagensURLValidator, _b2CConsultaImagensValidator, _b2CConsultaImagensHDValidator) =
             (apiClient, logger, linxMicrovixService, linxMicrovixB2CProductImagesRepository, b2CConsultaProdutosImagensValidator, b2CConsultaProdutosImagensURLValidator, b2CConsultaImagensValidator, b2CConsultaImagensHDValidator);
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaProdutosImagens()
         {
             _logger
@@ -241,6 +243,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaProdutosImagensURL()
         {
             _logger
@@ -436,6 +439,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaImagens()
         {
             _logger
@@ -632,6 +636,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaImagensHD()
         {
             _logger

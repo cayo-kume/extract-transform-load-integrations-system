@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text;
+using Application.Shared.Attributes;
 
 namespace Application.Totvs.Services
 {
@@ -65,6 +66,7 @@ namespace Application.Totvs.Services
             (_apiClient, _logger, _cache, _totvsService, _totvsInvoicesRepository, _invoiceValidator, _invoiceDisableValidator, _costCenterValidator) =
             (apiClient, logger, cache, totvsService, totvsInvoicesRepository, invoiceValidator, invoiceDisableValidator, costCenterValidator);
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> PostSearchInvoices()
         {
             _logger
@@ -493,6 +495,7 @@ namespace Application.Totvs.Services
         /// </summary>
         private sealed class ReferencedInvoicesException : Exception { }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> GetInvoicesDisable()
         {
             _logger
@@ -623,6 +626,7 @@ namespace Application.Totvs.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> GetCostCenter()
         {
             _logger

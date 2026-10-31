@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Text;
 using System.Xml;
 using System.Xml.Linq;
+using Application.Shared.Attributes;
 
 namespace Application.LinxMicrovix.Outbound.Services
 {
@@ -50,6 +51,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             (_apiClient, _logger, _linxMicrovixService, _linxMicrovixB2CStocksAndPricesRepository, _b2CConsultaProdutosCustosValidator, _b2CConsultaProdutosDepositosValidator, _b2CConsultaProdutosDetalhesValidator, _b2CConsultaProdutosDetalhesDepositosValidator, _b2CConsultaProdutosPromocaoValidator, _b2CConsultaProdutosTabelasValidator, _b2CConsultaProdutosTabelasPrecosValidator) =
             (apiClient, logger, linxMicrovixService, linxMicrovixB2CStocksAndPricesRepository, b2CConsultaProdutosCustosValidator, b2CConsultaProdutosDepositosValidator, b2CConsultaProdutosDetalhesValidator, b2CConsultaProdutosDetalhesDepositosValidator, b2CConsultaProdutosPromocaoValidator, b2CConsultaProdutosTabelasValidator, b2CConsultaProdutosTabelasPrecosValidator);
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaProdutosCustos()
         {
             _logger
@@ -259,6 +261,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaProdutosDepositos()
         {
             _logger
@@ -458,6 +461,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaProdutosDetalhes()
         {
             _logger
@@ -659,6 +663,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaProdutosDetalhesDepositos()
         {
             _logger
@@ -856,6 +861,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaProdutosPromocao()
         {
             _logger
@@ -1059,6 +1065,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaProdutosTabelas()
         {
             _logger
@@ -1255,6 +1262,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaProdutosTabelasPrecos()
         {
             _logger

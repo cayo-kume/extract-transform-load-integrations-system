@@ -2,6 +2,7 @@
 using Hangfire;
 using Microsoft.Extensions.Options;
 using WebApi.Scheduling;
+using WebApi.Scheduling.RecurringJobs;
 
 namespace WebApi.Extensions
 {
@@ -44,6 +45,10 @@ namespace WebApi.Extensions
                 IsReadOnlyFunc = _ => settings.Dashboard.ReadOnly,
                 StatsPollingInterval = settings.Dashboard.StatsPollingIntervalInSeconds * 1000
             });
+
+            // monta os mapas já na subida: IdJob repetido ou método sem [JobVersion] (§4.10) impedem o host de subir, em vez de
+            // aparecerem só como falha do primeiro job
+            _ = RecurringJobMap.Definitions;
 
             HangfireSettingsValidator.TryFindTimeZone(settings.TimeZone, out var timeZone);
 

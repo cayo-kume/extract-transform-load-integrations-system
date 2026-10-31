@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Text;
 using System.Xml;
 using System.Xml.Linq;
+using Application.Shared.Attributes;
 
 namespace Application.LinxMicrovix.Outbound.Services
 {
@@ -49,6 +50,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             (_apiClient, _logger, _linxMicrovixService, _linxMicrovixStoresRepository, _linxGrupoLojasValidator, _linxLojasValidator, _linxLojasParametrosValidator, _linxUsuariosValidator, _linxMetodosValidator, _linxEntrantesValidator) =
             (apiClient, logger, linxMicrovixService, linxMicrovixStoresRepository, linxGrupoLojasValidator, linxLojasValidator, linxLojasParametrosValidator, linxUsuariosValidator, linxMetodosValidator, linxEntrantesValidator);
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxGrupoLojas()
         {
             _logger
@@ -211,6 +213,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxLojas()
         {
             _logger
@@ -419,6 +422,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxLojasParametros()
         {
             _logger
@@ -599,6 +603,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxUsuarios()
         {
             _logger
@@ -789,6 +794,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxMetodos()
         {
             _logger
@@ -921,6 +927,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxEntrantes()
         {
             _logger

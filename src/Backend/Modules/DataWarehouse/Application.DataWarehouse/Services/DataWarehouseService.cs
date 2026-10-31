@@ -5,6 +5,7 @@ using Domain.DataWarehouse.Entities.Control;
 using Domain.DataWarehouse.Enums;
 using Microsoft.Extensions.Configuration;
 using System.Diagnostics;
+using Application.Shared.Attributes;
 
 namespace Application.DataWarehouse.Services
 {
@@ -48,9 +49,11 @@ namespace Application.DataWarehouse.Services
         public DataWarehouseService(ILoggerService logger, IDataWarehouseRepository dataWarehouseRepository, IConfiguration configuration) =>
             (_logger, _dataWarehouseRepository, _configuration) = (logger, dataWarehouseRepository, configuration);
 
+        [JobVersion("1.0.0")]
         public Task<bool?> RunHourly() =>
             Run(EnumJob.DataWarehouseHourly, daily: false);
 
+        [JobVersion("1.0.0")]
         public Task<bool?> RunDaily() =>
             Run(EnumJob.DataWarehouseDaily, daily: true);
 
@@ -138,6 +141,7 @@ namespace Application.DataWarehouse.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> RunShortCycle()
         {
             if (!await RunLock.WaitAsync(0))

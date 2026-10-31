@@ -10,6 +10,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Application.Shared.Attributes;
 
 namespace Application.Totvs.Services
 {
@@ -52,6 +53,7 @@ namespace Application.Totvs.Services
             (_apiClient, _logger, _cache, _totvsService, _totvsPersonCatalogsRepository, _personClassificationValidator, _emailTypeValidator, _phoneTypeValidator, _contactTypeValidator) =
             (apiClient, logger, cache, totvsService, totvsPersonCatalogsRepository, personClassificationValidator, emailTypeValidator, phoneTypeValidator, contactTypeValidator);
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> GetClassifications()
         {
             _logger
@@ -247,6 +249,7 @@ namespace Application.Totvs.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> GetEmailTypes()
         {
             _logger
@@ -443,6 +446,7 @@ namespace Application.Totvs.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> GetPhoneTypes()
         {
             _logger
@@ -639,6 +643,7 @@ namespace Application.Totvs.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> GetContactTypes()
         {
             _logger

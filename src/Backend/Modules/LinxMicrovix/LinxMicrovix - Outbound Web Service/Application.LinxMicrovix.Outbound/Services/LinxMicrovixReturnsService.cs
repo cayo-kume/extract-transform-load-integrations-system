@@ -10,6 +10,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
+using Application.Shared.Attributes;
 
 namespace Application.LinxMicrovix.Outbound.Services
 {
@@ -63,6 +64,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             (_apiClient, _logger, _linxMicrovixService, _linxMicrovixReturnsRepository, _linxMovimentoTrocasValidator, _linxMovimentoTrocafoneValidator, _linxMovimentoDevolucoesItensValidator, _linxMovimentoOrigemDevolucoesValidator, _linxMotivoDevolucaoValidator, _linxTrocaUnificadaResumoVendasValidator, _linxTrocaUnificadaResumoVendasItensValidator, _linxTrocaUnificadaResumoBaixaValidator, _linxTradeinParceiroValidator, _linxDevolucaoRemanejoFabricaValidator, _linxDevolucaoRemanejoFabricaItemValidator, _linxDevolucaoRemanejoFabricaStatusValidator, _linxDevolucaoRemanejoFabricaTipoValidator) =
             (apiClient, logger, linxMicrovixService, linxMicrovixReturnsRepository, linxMovimentoTrocasValidator, linxMovimentoTrocafoneValidator, linxMovimentoDevolucoesItensValidator, linxMovimentoOrigemDevolucoesValidator, linxMotivoDevolucaoValidator, linxTrocaUnificadaResumoVendasValidator, linxTrocaUnificadaResumoVendasItensValidator, linxTrocaUnificadaResumoBaixaValidator, linxTradeinParceiroValidator, linxDevolucaoRemanejoFabricaValidator, linxDevolucaoRemanejoFabricaItemValidator, linxDevolucaoRemanejoFabricaStatusValidator, linxDevolucaoRemanejoFabricaTipoValidator);
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxMovimentoTrocas()
         {
             _logger
@@ -247,6 +249,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxMovimentoTrocafone()
         {
             _logger
@@ -452,6 +455,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxMovimentoDevolucoesItens()
         {
             _logger
@@ -652,6 +656,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxMovimentoOrigemDevolucoes()
         {
             _logger
@@ -856,6 +861,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxMotivoDevolucao()
         {
             _logger
@@ -1053,6 +1059,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxTrocaUnificadaResumoVendas()
         {
             _logger
@@ -1254,6 +1261,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxTrocaUnificadaResumoVendasItens()
         {
             _logger
@@ -1455,6 +1463,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxTrocaUnificadaResumoBaixa()
         {
             _logger
@@ -1654,6 +1663,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxTradeinParceiro()
         {
             _logger
@@ -1849,6 +1859,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxDevolucaoRemanejoFabrica()
         {
             _logger
@@ -2056,6 +2067,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxDevolucaoRemanejoFabricaItem()
         {
             _logger
@@ -2255,6 +2267,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxDevolucaoRemanejoFabricaStatus()
         {
             _logger
@@ -2451,6 +2464,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxDevolucaoRemanejoFabricaTipo()
         {
             _logger

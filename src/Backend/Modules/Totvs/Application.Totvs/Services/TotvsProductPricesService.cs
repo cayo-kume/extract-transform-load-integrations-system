@@ -12,6 +12,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using Application.Shared.Attributes;
 
 namespace Application.Totvs.Services
 {
@@ -71,6 +72,7 @@ namespace Application.Totvs.Services
             (_apiClient, _logger, _cache, _totvsService, _totvsProductPricesRepository, _productPriceValidator, _productCostValidator, _priceTableProductValidator, _promotionValidator) =
             (apiClient, logger, cache, totvsService, totvsProductPricesRepository, productPriceValidator, productCostValidator, priceTableProductValidator, promotionValidator);
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> PostSearchPrices()
         {
             _logger
@@ -370,6 +372,7 @@ namespace Application.Totvs.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> PostSearchCosts()
         {
             _logger
@@ -663,6 +666,7 @@ namespace Application.Totvs.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> PostSearchPriceTables()
         {
             _logger
@@ -857,6 +861,7 @@ namespace Application.Totvs.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> GetPromotion()
         {
             _logger

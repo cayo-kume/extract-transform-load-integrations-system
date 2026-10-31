@@ -11,6 +11,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Application.Shared.Attributes;
 
 namespace Application.AfterSale.Services
 {
@@ -57,6 +58,7 @@ namespace Application.AfterSale.Services
         /// <summary>
         /// returns all refunds summarized, for each company
         /// </summary>
+        [JobVersion("1.0.0")]
         public async Task<bool?> GetRefunds()
         {
             _logger
@@ -234,6 +236,7 @@ namespace Application.AfterSale.Services
         /// <summary>
         /// returns the possible actions of a refund for each company.
         /// </summary>
+        [JobVersion("1.0.0")]
         public async Task<bool?> GetActions()
         {
             _logger
@@ -329,6 +332,7 @@ namespace Application.AfterSale.Services
         /// <summary>
         /// returns the possible banks of a refund for each company.
         /// </summary>
+        [JobVersion("1.0.0")]
         public async Task<bool?> GetBanks()
         {
             _logger
@@ -424,6 +428,7 @@ namespace Application.AfterSale.Services
         /// <summary>
         /// get the details of the summarized refunds not yet integrated, for each company
         /// </summary>
+        [JobVersion("1.0.0")]
         public async Task<bool?> GetRefund()
         {
             _logger
@@ -679,6 +684,7 @@ namespace Application.AfterSale.Services
         /// <summary>
         /// returns the possible status of a refund for each company.
         /// </summary>
+        [JobVersion("1.0.0")]
         public async Task<bool?> GetStatus()
         {
             _logger
@@ -774,6 +780,7 @@ namespace Application.AfterSale.Services
         /// <summary>
         /// returns the possible types of a refund for each company. the API does not return an id, so the name is the key.
         /// </summary>
+        [JobVersion("1.0.0")]
         public async Task<bool?> GetTypes()
         {
             _logger

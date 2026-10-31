@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text;
+using Application.Shared.Attributes;
 
 namespace Application.Totvs.Services
 {
@@ -59,6 +60,7 @@ namespace Application.Totvs.Services
             (_apiClient, _logger, _cache, _totvsService, _totvsRepresentativesRepository, _representativeValidator, _receptionSaleValidator) =
             (apiClient, logger, cache, totvsService, totvsRepresentativesRepository, representativeValidator, receptionSaleValidator);
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> PostSearchRepresentatives()
         {
             _logger
@@ -420,6 +422,7 @@ namespace Application.Totvs.Services
         /// pela data do movimento (banco vazio: desde 01/01/2025, em fatias de 30 dias; depois, desde 2 dias antes do maior movimento
         /// gravado), e o hash do JSON de cada recepção, gravado em json_hash, diz o que mudou (T9)
         /// </summary>
+        [JobVersion("1.0.0")]
         public async Task<bool?> GetSearchReceptionSale()
         {
             _logger

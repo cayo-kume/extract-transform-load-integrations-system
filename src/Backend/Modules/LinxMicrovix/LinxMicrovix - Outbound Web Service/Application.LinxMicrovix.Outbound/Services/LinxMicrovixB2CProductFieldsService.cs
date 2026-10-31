@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Text;
 using System.Xml;
 using System.Xml.Linq;
+using Application.Shared.Attributes;
 
 namespace Application.LinxMicrovix.Outbound.Services
 {
@@ -52,6 +53,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             (_apiClient, _logger, _linxMicrovixService, _linxMicrovixB2CProductFieldsRepository, _b2CConsultaProdutosCamposAdicionaisDetalhesValidator, _b2CConsultaProdutosCamposAdicionaisNomesValidator, _b2CConsultaProdutosCamposAdicionaisValoresValidator, _b2CConsultaB2CProdutosCamposAdicionaisValidator, _b2CConsultaB2CProdutosCamposAdicionaisDadosValidator, _b2CConsultaB2CProdutosCamposAdicionaisMediaValidator, _b2CConsultaB2CProdutosCamposAdicionaisMediaDadosValidator, _b2CConsultaB2CProdutosCamposAdicionaisOpcoesValidator) =
             (apiClient, logger, linxMicrovixService, linxMicrovixB2CProductFieldsRepository, b2CConsultaProdutosCamposAdicionaisDetalhesValidator, b2CConsultaProdutosCamposAdicionaisNomesValidator, b2CConsultaProdutosCamposAdicionaisValoresValidator, b2CConsultaB2CProdutosCamposAdicionaisValidator, b2CConsultaB2CProdutosCamposAdicionaisDadosValidator, b2CConsultaB2CProdutosCamposAdicionaisMediaValidator, b2CConsultaB2CProdutosCamposAdicionaisMediaDadosValidator, b2CConsultaB2CProdutosCamposAdicionaisOpcoesValidator);
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaProdutosCamposAdicionaisDetalhes()
         {
             _logger
@@ -250,6 +252,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaProdutosCamposAdicionaisNomes()
         {
             _logger
@@ -447,6 +450,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaProdutosCamposAdicionaisValores()
         {
             _logger
@@ -643,6 +647,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaB2CProdutosCamposAdicionais()
         {
             _logger
@@ -844,6 +849,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaB2CProdutosCamposAdicionaisDados()
         {
             _logger
@@ -1041,6 +1047,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaB2CProdutosCamposAdicionaisMedia()
         {
             _logger
@@ -1239,6 +1246,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaB2CProdutosCamposAdicionaisMediaDados()
         {
             _logger
@@ -1434,6 +1442,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaB2CProdutosCamposAdicionaisOpcoes()
         {
             _logger

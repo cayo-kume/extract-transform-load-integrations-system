@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Text;
 using System.Xml;
 using System.Xml.Linq;
+using Application.Shared.Attributes;
 
 namespace Application.LinxMicrovix.Outbound.Services
 {
@@ -50,6 +51,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             (_apiClient, _logger, _linxMicrovixService, _linxMicrovixConsignmentsRepository, _linxMovimentoRemessasValidator, _linxMovimentoRemessasItensValidator, _linxMovimentoRemessasAcertosValidator, _linxMovimentoRemessasAcertosItensValidator, _linxRemessasIdentificadoresValidator, _linxRemessasOperacoesValidator, _linxRemessasRetornoTiposValidator) =
             (apiClient, logger, linxMicrovixService, linxMicrovixConsignmentsRepository, linxMovimentoRemessasValidator, linxMovimentoRemessasItensValidator, linxMovimentoRemessasAcertosValidator, linxMovimentoRemessasAcertosItensValidator, linxRemessasIdentificadoresValidator, linxRemessasOperacoesValidator, linxRemessasRetornoTiposValidator);
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxMovimentoRemessas()
         {
             _logger
@@ -248,6 +250,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxMovimentoRemessasItens()
         {
             _logger
@@ -449,6 +452,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxMovimentoRemessasAcertos()
         {
             _logger
@@ -655,6 +659,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxMovimentoRemessasAcertosItens()
         {
             _logger
@@ -853,6 +858,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxRemessasIdentificadores()
         {
             _logger
@@ -1047,6 +1053,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxRemessasOperacoes()
         {
             _logger
@@ -1242,6 +1249,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxRemessasRetornoTipos()
         {
             _logger

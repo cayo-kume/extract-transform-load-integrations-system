@@ -10,6 +10,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
+using Application.Shared.Attributes;
 
 namespace Application.LinxMicrovix.Outbound.Services
 {
@@ -53,6 +54,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             (_apiClient, _logger, _linxMicrovixService, _linxMicrovixSellersRepository, _linxVendedoresValidator, _linxVendedoresFeriasValidator, _linxMetasVendedoresValidator, _linxMetasVendedoresDiaValidator, _linxComissoesVendedoresValidator, _linxListaDaVezValidator, _linxFuncionariosFuncoesValidator, _linxRegistroProfissionalValidator) =
             (apiClient, logger, linxMicrovixService, linxMicrovixSellersRepository, linxVendedoresValidator, linxVendedoresFeriasValidator, linxMetasVendedoresValidator, linxMetasVendedoresDiaValidator, linxComissoesVendedoresValidator, linxListaDaVezValidator, linxFuncionariosFuncoesValidator, linxRegistroProfissionalValidator);
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxVendedores()
         {
             _logger
@@ -241,6 +243,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxVendedoresFerias()
         {
             _logger
@@ -436,6 +439,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxMetasVendedores()
         {
             _logger
@@ -641,6 +645,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxMetasVendedoresDia()
         {
             _logger
@@ -846,6 +851,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxComissoesVendedores()
         {
             _logger
@@ -1045,6 +1051,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxListaDaVez()
         {
             _logger
@@ -1252,6 +1259,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxFuncionariosFuncoes()
         {
             _logger
@@ -1448,6 +1456,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxRegistroProfissional()
         {
             _logger

@@ -10,6 +10,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
+using Application.Shared.Attributes;
 
 namespace Application.LinxMicrovix.Outbound.Services
 {
@@ -57,6 +58,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             (_apiClient, _logger, _linxMicrovixService, _linxMicrovixOrdersRepository, _linxPedidosVendaValidator, _linxPlanosPedidoVendaValidator, _linxPedidosVendaChecklistEntregaLocalValidator, _linxPedidosVendaChecklistEntregaArmazenamentoValidator, _linxPedidosVendaChecklistEntregaDificuldadeValidator, _linxOrcamentoPosicaoValidator, _linxB2CPedidosValidator, _linxB2CPedidosItensValidator, _linxB2CPedidosStatusValidator, _linxB2CStatusValidator) =
             (apiClient, logger, linxMicrovixService, linxMicrovixOrdersRepository, linxPedidosVendaValidator, linxPlanosPedidoVendaValidator, linxPedidosVendaChecklistEntregaLocalValidator, linxPedidosVendaChecklistEntregaArmazenamentoValidator, linxPedidosVendaChecklistEntregaDificuldadeValidator, linxOrcamentoPosicaoValidator, linxB2CPedidosValidator, linxB2CPedidosItensValidator, linxB2CPedidosStatusValidator, linxB2CStatusValidator);
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxPedidosVenda()
         {
             _logger
@@ -268,6 +270,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxPlanosPedidoVenda()
         {
             _logger
@@ -484,6 +487,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxPedidosVendaChecklistEntregaLocal()
         {
             _logger
@@ -678,6 +682,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxPedidosVendaChecklistEntregaArmazenamento()
         {
             _logger
@@ -872,6 +877,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxPedidosVendaChecklistEntregaDificuldade()
         {
             _logger
@@ -1066,6 +1072,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxOrcamentoPosicao()
         {
             _logger
@@ -1262,6 +1269,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxB2CPedidos()
         {
             _logger
@@ -1484,6 +1492,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxB2CPedidosItens()
         {
             _logger
@@ -1682,6 +1691,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxB2CPedidosStatus()
         {
             _logger
@@ -1880,6 +1890,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxB2CStatus()
         {
             _logger

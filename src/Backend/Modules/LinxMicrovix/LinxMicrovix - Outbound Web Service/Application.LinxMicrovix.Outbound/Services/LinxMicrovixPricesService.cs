@@ -10,6 +10,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
+using Application.Shared.Attributes;
 
 namespace Application.LinxMicrovix.Outbound.Services
 {
@@ -57,6 +58,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             (_apiClient, _logger, _linxMicrovixService, _linxMicrovixPricesRepository, _linxProdutosTabelasValidator, _linxProdutosTabelasPrecosValidator, _linxProdutosPromocoesValidator, _linxAcoesPromocionaisValidator, _linxAcoesPromocionaisCombinacaoProdutosItensValidator, _linxAcoesPromocionaisProdutosCortesiaValidator, _linxMovimentoAcoesPromocionaisValidator, _linxCupomDescontoValidator, _linxCupomDescontoVendasValidator, _linxMotivoDescontoValidator) =
             (apiClient, logger, linxMicrovixService, linxMicrovixPricesRepository, linxProdutosTabelasValidator, linxProdutosTabelasPrecosValidator, linxProdutosPromocoesValidator, linxAcoesPromocionaisValidator, linxAcoesPromocionaisCombinacaoProdutosItensValidator, linxAcoesPromocionaisProdutosCortesiaValidator, linxMovimentoAcoesPromocionaisValidator, linxCupomDescontoValidator, linxCupomDescontoVendasValidator, linxMotivoDescontoValidator);
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxProdutosTabelas()
         {
             _logger
@@ -220,6 +222,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxProdutosTabelasPrecos()
         {
             _logger
@@ -394,6 +397,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxProdutosPromocoes()
         {
             _logger
@@ -615,6 +619,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxAcoesPromocionais()
         {
             _logger
@@ -824,6 +829,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxAcoesPromocionaisCombinacaoProdutosItens()
         {
             _logger
@@ -1020,6 +1026,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxAcoesPromocionaisProdutosCortesia()
         {
             _logger
@@ -1217,6 +1224,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxMovimentoAcoesPromocionais()
         {
             _logger
@@ -1420,6 +1428,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxCupomDesconto()
         {
             _logger
@@ -1628,6 +1637,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxCupomDescontoVendas()
         {
             _logger
@@ -1826,6 +1836,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxMotivoDesconto()
         {
             _logger

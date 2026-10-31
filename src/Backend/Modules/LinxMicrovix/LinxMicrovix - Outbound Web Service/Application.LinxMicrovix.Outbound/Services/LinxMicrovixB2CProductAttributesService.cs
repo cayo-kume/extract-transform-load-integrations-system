@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Text;
 using System.Xml;
 using System.Xml.Linq;
+using Application.Shared.Attributes;
 
 namespace Application.LinxMicrovix.Outbound.Services
 {
@@ -64,6 +65,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             (_apiClient, _logger, _linxMicrovixService, _linxMicrovixB2CProductAttributesRepository, _b2CConsultaClassificacaoValidator, _b2CConsultaColecoesValidator, _b2CConsultaEspessurasValidator, _b2CConsultaGrade1Validator, _b2CConsultaGrade2Validator, _b2CConsultaLinhasValidator, _b2CConsultaMarcasValidator, _b2CConsultaSetoresValidator, _b2CConsultaUnidadeValidator, _b2CConsultaFornecedoresValidator, _b2CConsultaFlagsValidator, _b2CConsultaTagsValidator, _b2CConsultaPalavrasChavePesquisaValidator, _b2CConsultaLegendasCadastrosAuxiliaresValidator) =
             (apiClient, logger, linxMicrovixService, linxMicrovixB2CProductAttributesRepository, b2CConsultaClassificacaoValidator, b2CConsultaColecoesValidator, b2CConsultaEspessurasValidator, b2CConsultaGrade1Validator, b2CConsultaGrade2Validator, b2CConsultaLinhasValidator, b2CConsultaMarcasValidator, b2CConsultaSetoresValidator, b2CConsultaUnidadeValidator, b2CConsultaFornecedoresValidator, b2CConsultaFlagsValidator, b2CConsultaTagsValidator, b2CConsultaPalavrasChavePesquisaValidator, b2CConsultaLegendasCadastrosAuxiliaresValidator);
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaClassificacao()
         {
             _logger
@@ -259,6 +261,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaColecoes()
         {
             _logger
@@ -455,6 +458,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaEspessuras()
         {
             _logger
@@ -650,6 +654,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaGrade1()
         {
             _logger
@@ -845,6 +850,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaGrade2()
         {
             _logger
@@ -1040,6 +1046,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaLinhas()
         {
             _logger
@@ -1236,6 +1243,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaMarcas()
         {
             _logger
@@ -1432,6 +1440,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaSetores()
         {
             _logger
@@ -1627,6 +1636,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaUnidade()
         {
             _logger
@@ -1821,6 +1831,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaFornecedores()
         {
             _logger
@@ -2030,6 +2041,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaFlags()
         {
             _logger
@@ -2224,6 +2236,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaTags()
         {
             _logger
@@ -2418,6 +2431,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaPalavrasChavePesquisa()
         {
             _logger
@@ -2612,6 +2626,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaLegendasCadastrosAuxiliares()
         {
             _logger

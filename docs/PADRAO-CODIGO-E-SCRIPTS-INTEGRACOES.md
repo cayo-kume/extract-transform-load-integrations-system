@@ -172,6 +172,10 @@ SQLServer/
 * Um job recorrente novo também entra no mapa do host (`src/Backend/Hosts/WebApi/Scheduling/RecurringJobs/<Módulo>RecurringJobs.cs`),
   com o método sem parâmetros do service que grava o job no log; sem o mapa, o `SchedulerRefresh` avisa e o deixa fora da
   agenda.
+* O método do service chamado por um job recorrente leva `[JobVersion("MAJOR.MINOR.PATCH")]` (`Application.Shared.Attributes`)
+  no método da classe, começando em `1.0.0`; quem muda o código do método muda a versão (PATCH correção, MINOR mudança
+  compatível, MAJOR mudança no que o job grava). A versão vai no nome do job no agendador
+  (src/Backend/Hosts/WebApi/docs/PLANO-HOST-WEBAPI.md §4.10).
 * Os scripts gerais do módulo (schema, parâmetros, app, tabela de requests) ficam em `Parameters/`.
 
 ### 3.2 Numeração

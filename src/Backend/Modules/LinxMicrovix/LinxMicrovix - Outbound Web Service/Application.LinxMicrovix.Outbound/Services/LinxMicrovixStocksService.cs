@@ -10,6 +10,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
+using Application.Shared.Attributes;
 
 namespace Application.LinxMicrovix.Outbound.Services
 {
@@ -55,6 +56,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             (_apiClient, _logger, _linxMicrovixService, _linxMicrovixStocksRepository, _linxProdutosDetalhesValidator, _linxProdutosDetalhesSimplificadoValidator, _linxProdutosDetalhesDepositosValidator, _linxProdutosDepositosValidator, _linxProdutosInventarioValidator, _linxListagemBalancoValidator, _linxBalancosValidator, _linxBalancosArquivosValidator, _linxBalancosSecoesValidator) =
             (apiClient, logger, linxMicrovixService, linxMicrovixStocksRepository, linxProdutosDetalhesValidator, linxProdutosDetalhesSimplificadoValidator, linxProdutosDetalhesDepositosValidator, linxProdutosDepositosValidator, linxProdutosInventarioValidator, linxListagemBalancoValidator, linxBalancosValidator, linxBalancosArquivosValidator, linxBalancosSecoesValidator);
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxProdutosDetalhes()
         {
             _logger
@@ -234,6 +236,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxProdutosDetalhesSimplificado()
         {
             _logger
@@ -431,6 +434,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxProdutosDetalhesDepositos()
         {
             _logger
@@ -641,6 +645,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxProdutosDepositos()
         {
             _logger
@@ -804,6 +809,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxProdutosInventario()
         {
             _logger
@@ -970,6 +976,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxListagemBalanco()
         {
             _logger
@@ -1169,6 +1176,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxBalancos()
         {
             _logger
@@ -1367,6 +1375,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxBalancosArquivos()
         {
             _logger
@@ -1563,6 +1572,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxBalancosSecoes()
         {
             _logger

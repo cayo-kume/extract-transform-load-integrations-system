@@ -6,6 +6,7 @@ using Domain.LinxCommerce.Extensions;
 using Domain.Shared.Extensions;
 using FluentValidation;
 using Microsoft.Extensions.Caching.Memory;
+using Application.Shared.Attributes;
 
 namespace Application.LinxCommerce.Services
 {
@@ -38,6 +39,7 @@ namespace Application.LinxCommerce.Services
             (_logger, _cache, _linxCommerceService, _linxCommerceCatalogRepository, _productValidator, _skuValidator) =
             (logger, cache, linxCommerceService, linxCommerceCatalogRepository, productValidator, skuValidator);
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> SearchProduct()
         {
             _logger
@@ -134,6 +136,7 @@ namespace Application.LinxCommerce.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> SearchSKU()
         {
             _logger

@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Text;
 using System.Xml;
 using System.Xml.Linq;
+using Application.Shared.Attributes;
 
 namespace Application.LinxMicrovix.Outbound.Services
 {
@@ -58,6 +59,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             (_apiClient, _logger, _linxMicrovixService, _linxMicrovixServiceOrdersRepository, _linxOrdensServicoValidator, _linxOrdensServicoProdutosValidator, _linxServicosValidator, _linxServicosDetalhesValidator, _linxServicoClientesValidator, _linxServicoAgendaComandasValidator, _linxServicoAgendaEventosValidator, _linxOrdemServicoExternaDavValidator, _linxMovimentoOrdemServicoExternaValidator, _linxValeOrdemServicoExternaValidator, _linxPagamentoParcialDavValidator) =
             (apiClient, logger, linxMicrovixService, linxMicrovixServiceOrdersRepository, linxOrdensServicoValidator, linxOrdensServicoProdutosValidator, linxServicosValidator, linxServicosDetalhesValidator, linxServicoClientesValidator, linxServicoAgendaComandasValidator, linxServicoAgendaEventosValidator, linxOrdemServicoExternaDavValidator, linxMovimentoOrdemServicoExternaValidator, linxValeOrdemServicoExternaValidator, linxPagamentoParcialDavValidator);
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxOrdensServico()
         {
             _logger
@@ -263,6 +265,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxOrdensServicoProdutos()
         {
             _logger
@@ -458,6 +461,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxServicos()
         {
             _logger
@@ -671,6 +675,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxServicosDetalhes()
         {
             _logger
@@ -877,6 +882,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxServicoClientes()
         {
             _logger
@@ -1083,6 +1089,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxServicoAgendaComandas()
         {
             _logger
@@ -1285,6 +1292,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxServicoAgendaEventos()
         {
             _logger
@@ -1491,6 +1499,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxOrdemServicoExternaDav()
         {
             _logger
@@ -1686,6 +1695,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxMovimentoOrdemServicoExterna()
         {
             _logger
@@ -1881,6 +1891,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxValeOrdemServicoExterna()
         {
             _logger
@@ -2076,6 +2087,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxPagamentoParcialDav()
         {
             _logger

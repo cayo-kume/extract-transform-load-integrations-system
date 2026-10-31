@@ -13,6 +13,7 @@ using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+using Application.Shared.Attributes;
 
 namespace Application.Movidesk.Services
 {
@@ -179,6 +180,7 @@ namespace Application.Movidesk.Services
         /// Fase 1: lista id e lastUpdate da janela. Fase 2: busca só os alterados, em blocos por faixa de ids,
         /// com o $expand dividido em grupos, e grava bloco a bloco.
         /// </summary>
+        [JobVersion("1.0.0")]
         public async Task<bool?> GetTickets()
         {
             _logger

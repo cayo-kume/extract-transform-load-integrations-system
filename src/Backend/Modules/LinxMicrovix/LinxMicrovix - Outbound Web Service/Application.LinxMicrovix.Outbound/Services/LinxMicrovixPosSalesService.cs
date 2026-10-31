@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Text;
 using System.Xml;
 using System.Xml.Linq;
+using Application.Shared.Attributes;
 
 namespace Application.LinxMicrovix.Outbound.Services
 {
@@ -42,6 +43,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             (_apiClient, _logger, _linxMicrovixService, _linxMicrovixPosSalesRepository, _linxVendasPosTmpValidator, _linxVendasPosProdutosTmpValidator, _linxVendasPosAgrupamentoTmpValidator) =
             (apiClient, logger, linxMicrovixService, linxMicrovixPosSalesRepository, linxVendasPosTmpValidator, linxVendasPosProdutosTmpValidator, linxVendasPosAgrupamentoTmpValidator);
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxVendasPosTmp()
         {
             _logger
@@ -245,6 +247,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxVendasPosProdutosTmp()
         {
             _logger
@@ -475,6 +478,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxVendasPosAgrupamentoTmp()
         {
             _logger

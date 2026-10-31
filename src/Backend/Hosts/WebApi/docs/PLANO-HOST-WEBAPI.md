@@ -620,6 +620,32 @@ Tomadas em 30/10/2026:
    `Concurrency:MaxConsecutiveSkips` 5 e `Dashboard:ReadOnly` `false`.
 8. Um job do próprio Hangfire limpa a tela de `Failed` depois de 2 dias (3.4).
 
+### 4.10 Versão dos jobs (feito em 30/10/2026)
+
+Cada método de service chamado por um job recorrente tem a versão em que está, e o agendador põe a versão no nome do job.
+Assim, o dashboard (ou a Azure, no host WebJob) mostra que versão de cada job roda em cada ambiente, e dá para comparar
+o local com a produção.
+
+1. **Atributo:** `[JobVersion("MAJOR.MINOR.PATCH")]` (`Application.Shared/Attributes/JobVersionAttribute.cs`), no método
+   da **classe** do service, não na interface: quem muda o código muda a versão no mesmo arquivo. O construtor recusa uma
+   versão fora do formato.
+2. **Versão inicial:** os 327 métodos dos mapas (51 arquivos de service) começam em `1.0.0`.
+3. **Leitura:** o mapa aponta para o método da interface; o `RecurringJobDefinition` acha a classe que a implementa no
+   mesmo assembly (`Application.<Módulo>`) e lê o atributo do método dela.
+4. **Nome no Hangfire:** `<IdJob>-<Title> - V<versão>`, ex.: `8006-LinxClientesFornec - V1.0.0`. Uma versão nova muda o
+   nome: na releitura seguinte (ou na subida), o `SchedulerRefresh` inclui o job com o nome novo e remove o antigo. A
+   trava não muda (é por `IdJob`).
+5. **Sem versão, o host não sobe:** com o Hangfire ligado, os mapas são montados já na subida, e um método sem
+   `[JobVersion]` derruba a subida com a lista dos que faltam (o mesmo vale para `IdJob` repetido).
+6. **Quando mudar:** PATCH numa correção que não muda o que o job grava; MINOR numa mudança compatível (um campo novo, uma
+   tabela filha nova); MAJOR quando muda o que o job grava de um jeito que quebra quem lê (chave, tabela, regra de carga).
+
+Conferido num banco vazio do LocalDB (apagado no fim): com 8006 e 9002 ativos, a agenda registrou
+`8006-LinxClientesFornec - V1.0.0` e `9002-DataWarehouseShortCycle - V1.0.0`; com o `RunShortCycle` em `1.0.1` (só no
+teste), a subida seguinte incluiu `9002-DataWarehouseShortCycle - V1.0.1`, removeu o `V1.0.0` e deixou o 8006 sem
+mudança; sem o atributo no `RunShortCycle`, o host não subiu e a mensagem apontou `9002 (IDataWarehouseService.RunShortCycle)`.
+Build sem erros e com os mesmos avisos.
+
 ## Passo 5 — Autenticação (não implementar agora)
 
 Fica fora deste plano por enquanto: o `[Authorize]` continua comentado e o JWT do Azure AD desligado. Quando entrar:

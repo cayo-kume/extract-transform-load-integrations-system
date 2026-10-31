@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text;
+using Application.Shared.Attributes;
 
 namespace Application.Totvs.Services
 {
@@ -54,6 +55,7 @@ namespace Application.Totvs.Services
             (_apiClient, _logger, _cache, _totvsService, _totvsSellersRepository, _sellerValidator, _operationalAreaValidator, _operationalAreaStateValidator, _operationalAreaCepValidator, _operationalAreaCityValidator) =
             (apiClient, logger, cache, totvsService, totvsSellersRepository, sellerValidator, operationalAreaValidator, operationalAreaStateValidator, operationalAreaCepValidator, operationalAreaCityValidator);
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> PostSearchSellers()
         {
             _logger
@@ -268,6 +270,7 @@ namespace Application.Totvs.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> GetOperationalArea()
         {
             _logger

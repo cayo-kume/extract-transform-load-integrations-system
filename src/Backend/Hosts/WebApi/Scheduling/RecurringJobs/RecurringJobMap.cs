@@ -10,12 +10,17 @@ namespace WebApi.Scheduling.RecurringJobs
     {
         public static IReadOnlyDictionary<int, RecurringJobDefinition> Definitions { get; } = Build();
 
-        // os recurring jobs da agenda se chamam <IdJob>-<Title>; os de manutenção do host (SchedulerRefresh, FailedJobsCleanup) não
+        // os recurring jobs da agenda se chamam <IdJob>-<Title> - V<versão>; os de manutenção do host (SchedulerRefresh,
+        // FailedJobsCleanup) não
         [GeneratedRegex(@"^(\d+)-")]
         private static partial Regex RecurringJobIdRegex();
 
-        public static string RecurringJobId(int idJob, string? title) =>
-            $"{idJob}-{title}";
+        /// <summary>
+        /// nome do recurring job, com a versão do método (§4.10): ex.: "8006-LinxClientesFornec - V1.0.0". Uma versão nova muda o
+        /// nome, e o SchedulerRefresh troca o job antigo pelo novo no ciclo seguinte
+        /// </summary>
+        public static string RecurringJobId(int idJob, string? title, string version) =>
+            $"{idJob}-{title} - V{version}";
 
         /// <summary>
         /// IdJob de um recurring job da agenda; null nos jobs de manutenção do host
@@ -42,6 +47,13 @@ namespace WebApi.Scheduling.RecurringJobs
                 if (!definitions.TryAdd(definition.IdJob, definition))
                     throw new InvalidOperationException($"IdJob {definition.IdJob} aparece duas vezes nos mapas de jobs recorrentes.");
             }
+
+            // todo método chamado por um job recorrente tem a versão (§4.10); faltando, o mapa é recusado com a lista inteira
+            var withoutVersion = definitions.Values.Where(d => d.Version is null).Select(d => $"{d.IdJob} ({d.Target})").ToList();
+
+            if (withoutVersion.Count > 0)
+                throw new InvalidOperationException(
+                    $"Métodos de jobs recorrentes sem [JobVersion] na classe do service: {string.Join(", ", withoutVersion)}.");
 
             return definitions;
         }

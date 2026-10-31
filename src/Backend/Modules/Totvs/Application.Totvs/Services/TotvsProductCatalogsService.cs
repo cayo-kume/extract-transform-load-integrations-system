@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text;
+using Application.Shared.Attributes;
 
 namespace Application.Totvs.Services
 {
@@ -90,6 +91,7 @@ namespace Application.Totvs.Services
             (_apiClient, _logger, _cache, _totvsService, _totvsProductCatalogsRepository, _classificationTypeValidator, _productClassificationValidator, _categoryValidator, _gridValidator, _measurementUnitValidator, _colorValidator, _additionalFieldTypeValidator, _productGrouperConfigurationValidator, _instructionItemValidator, _compositionValidator, _priceTableValidator, _priceTableScaleValidator) =
             (apiClient, logger, cache, totvsService, totvsProductCatalogsRepository, classificationTypeValidator, productClassificationValidator, categoryValidator, gridValidator, measurementUnitValidator, colorValidator, additionalFieldTypeValidator, productGrouperConfigurationValidator, instructionItemValidator, compositionValidator, priceTableValidator, priceTableScaleValidator);
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> GetClassificationType()
         {
             _logger
@@ -198,6 +200,7 @@ namespace Application.Totvs.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> GetClassifications()
         {
             _logger
@@ -305,6 +308,7 @@ namespace Application.Totvs.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> GetCategory()
         {
             _logger
@@ -413,6 +417,7 @@ namespace Application.Totvs.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> GetGrid()
         {
             _logger
@@ -521,6 +526,7 @@ namespace Application.Totvs.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> GetMeasurementUnit()
         {
             _logger
@@ -629,6 +635,7 @@ namespace Application.Totvs.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> PostSearchColors()
         {
             _logger
@@ -718,6 +725,7 @@ namespace Application.Totvs.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> GetAdditionalFieldsTypes()
         {
             _logger
@@ -826,6 +834,7 @@ namespace Application.Totvs.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> GetProductGrouperConfiguration()
         {
             _logger
@@ -934,6 +943,7 @@ namespace Application.Totvs.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> GetInstructionItems()
         {
             _logger
@@ -1042,6 +1052,7 @@ namespace Application.Totvs.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> PostCompositions()
         {
             _logger
@@ -1151,6 +1162,7 @@ namespace Application.Totvs.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> GetPriceTablesHeaders()
         {
             _logger
@@ -1259,6 +1271,7 @@ namespace Application.Totvs.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> GetPriceTableScales()
         {
             _logger

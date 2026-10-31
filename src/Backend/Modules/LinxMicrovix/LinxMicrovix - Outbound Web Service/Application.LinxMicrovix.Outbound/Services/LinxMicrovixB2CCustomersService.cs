@@ -10,6 +10,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
+using Application.Shared.Attributes;
 
 namespace Application.LinxMicrovix.Outbound.Services
 {
@@ -51,6 +52,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             (_apiClient, _logger, _linxMicrovixService, _linxMicrovixB2CCustomersRepository, _b2CConsultaClientesValidator, _b2CConsultaClientesContatosValidator, _b2CConsultaClientesContatosParentescoValidator, _b2CConsultaClientesEnderecosEntregaValidator, _b2CConsultaClientesEstadoCivilValidator, _b2CConsultaClientesSaldoValidator, _b2CConsultaClientesSaldoLinxValidator) =
             (apiClient, logger, linxMicrovixService, linxMicrovixB2CCustomersRepository, b2CConsultaClientesValidator, b2CConsultaClientesContatosValidator, b2CConsultaClientesContatosParentescoValidator, b2CConsultaClientesEnderecosEntregaValidator, b2CConsultaClientesEstadoCivilValidator, b2CConsultaClientesSaldoValidator, b2CConsultaClientesSaldoLinxValidator);
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaClientes()
         {
             _logger
@@ -246,6 +248,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaClientesContatos()
         {
             _logger
@@ -448,6 +451,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaClientesContatosParentesco()
         {
             _logger
@@ -643,6 +647,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaClientesEnderecosEntrega()
         {
             _logger
@@ -850,6 +855,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaClientesEstadoCivil()
         {
             _logger
@@ -1045,6 +1051,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaClientesSaldo()
         {
             _logger
@@ -1240,6 +1247,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaClientesSaldoLinx()
         {
             _logger

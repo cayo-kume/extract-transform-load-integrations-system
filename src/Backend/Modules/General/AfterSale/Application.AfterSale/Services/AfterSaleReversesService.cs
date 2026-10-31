@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
+using Application.Shared.Attributes;
 
 namespace Application.AfterSale.Services
 {
@@ -84,6 +85,7 @@ namespace Application.AfterSale.Services
         /// <summary>
         /// returns all reverses summarized, for each company
         /// </summary>
+        [JobVersion("1.0.0")]
         public async Task<bool?> GetReverses()
         {
             _logger
@@ -264,6 +266,7 @@ namespace Application.AfterSale.Services
         /// <summary>
         /// get the details of the summarized reverses not yet integrated, for each company
         /// </summary>
+        [JobVersion("1.0.0")]
         public async Task<bool?> GetReverse()
         {
             _logger
@@ -519,6 +522,7 @@ namespace Application.AfterSale.Services
         /// <summary>
         /// get courier data fields needed to process the reverse, for each company
         /// </summary>
+        [JobVersion("1.0.0")]
         public async Task<bool?> GetCourierAttributes()
         {
             _logger
@@ -635,6 +639,7 @@ namespace Application.AfterSale.Services
         /// <summary>
         ///returns the possible status of a reverse for each company.
         /// </summary>
+        [JobVersion("1.0.0")]
         public async Task<bool?> GetStatus()
         {
             _logger
@@ -730,6 +735,7 @@ namespace Application.AfterSale.Services
         /// <summary>
         /// returns the possible transportations for each company.
         /// </summary>
+        [JobVersion("1.0.0")]
         public async Task<bool?> GetTransportations()
         {
             _logger

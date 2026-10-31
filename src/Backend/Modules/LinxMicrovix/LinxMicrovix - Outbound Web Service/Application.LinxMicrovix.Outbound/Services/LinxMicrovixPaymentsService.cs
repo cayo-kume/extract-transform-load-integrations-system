@@ -10,6 +10,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
+using Application.Shared.Attributes;
 
 namespace Application.LinxMicrovix.Outbound.Services
 {
@@ -55,6 +56,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             (_apiClient, _logger, _linxMicrovixService, _linxMicrovixPaymentsRepository, _linxMovimentoCartoesValidator, _linxMovimentoPlanosValidator, _linxPlanosValidator, _linxPlanosParcelasValidator, _linxPlanosBandeirasValidator, _linxMovimentoGiftCardValidator, _linxValesComprasEnviadosAPIValidator, _linxSangriaSuprimentosValidator, _linxFechamentoCaixaValidator) =
             (apiClient, logger, linxMicrovixService, linxMicrovixPaymentsRepository, linxMovimentoCartoesValidator, linxMovimentoPlanosValidator, linxPlanosValidator, linxPlanosParcelasValidator, linxPlanosBandeirasValidator, linxMovimentoGiftCardValidator, linxValesComprasEnviadosAPIValidator, linxSangriaSuprimentosValidator, linxFechamentoCaixaValidator);
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxMovimentoCartoes()
         {
             _logger
@@ -240,6 +242,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxMovimentoPlanos()
         {
             _logger
@@ -416,6 +419,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxPlanos()
         {
             _logger
@@ -596,6 +600,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxPlanosParcelas()
         {
             _logger
@@ -793,6 +798,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxPlanosBandeiras()
         {
             _logger
@@ -996,6 +1002,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxMovimentoGiftCard()
         {
             _logger
@@ -1209,6 +1216,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxValesComprasEnviadosAPI()
         {
             _logger
@@ -1412,6 +1420,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxSangriaSuprimentos()
         {
             _logger
@@ -1620,6 +1629,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxFechamentoCaixa()
         {
             _logger

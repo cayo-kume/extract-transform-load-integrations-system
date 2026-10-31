@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Text;
 using System.Xml;
 using System.Xml.Linq;
+using Application.Shared.Attributes;
 
 namespace Application.LinxMicrovix.Outbound.Services
 {
@@ -54,6 +55,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             (_apiClient, _logger, _linxMicrovixService, _linxMicrovixB2CStoresRepository, _b2CConsultaEmpresasValidator, _b2CConsultaCNPJsChaveValidator, _b2CConsultaVendedoresValidator, _b2CConsultaTransportadoresValidator, _b2CConsultaFormasPagamentoValidator, _b2CConsultaPlanosValidator, _b2CConsultaPlanosParcelasValidator, _b2CConsultaTiposCobrancaFreteValidator, _b2CConsultaTipoEncomendaValidator) =
             (apiClient, logger, linxMicrovixService, linxMicrovixB2CStoresRepository, b2CConsultaEmpresasValidator, b2CConsultaCNPJsChaveValidator, b2CConsultaVendedoresValidator, b2CConsultaTransportadoresValidator, b2CConsultaFormasPagamentoValidator, b2CConsultaPlanosValidator, b2CConsultaPlanosParcelasValidator, b2CConsultaTiposCobrancaFreteValidator, b2CConsultaTipoEncomendaValidator);
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaEmpresas()
         {
             _logger
@@ -262,6 +264,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaCNPJsChave()
         {
             _logger
@@ -438,6 +441,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaVendedores()
         {
             _logger
@@ -638,6 +642,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaTransportadores()
         {
             _logger
@@ -847,6 +852,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaFormasPagamento()
         {
             _logger
@@ -1042,6 +1048,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaPlanos()
         {
             _logger
@@ -1244,6 +1251,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaPlanosParcelas()
         {
             _logger
@@ -1441,6 +1449,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaTiposCobrancaFrete()
         {
             _logger
@@ -1636,6 +1645,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaTipoEncomenda()
         {
             _logger

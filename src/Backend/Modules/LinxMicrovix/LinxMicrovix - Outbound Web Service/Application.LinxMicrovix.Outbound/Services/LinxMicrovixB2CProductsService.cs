@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Text;
 using System.Xml;
 using System.Xml.Linq;
+using Application.Shared.Attributes;
 
 namespace Application.LinxMicrovix.Outbound.Services
 {
@@ -56,6 +57,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             (_apiClient, _logger, _linxMicrovixService, _linxMicrovixB2CProductsRepository, _b2CConsultaProdutosValidator, _b2CConsultaProdutosAssociadosValidator, _b2CConsultaProdutosCampanhasValidator, _b2CConsultaProdutosCodebarValidator, _b2CConsultaProdutosDimensoesValidator, _b2CConsultaProdutosInformacoesValidator, _b2CConsultaProdutosStatusValidator, _b2CConsultaProdutosFlagsValidator, _b2CConsultaProdutosTagsValidator, _b2CConsultaProdutosPalavrasChavePesquisaValidator) =
             (apiClient, logger, linxMicrovixService, linxMicrovixB2CProductsRepository, b2CConsultaProdutosValidator, b2CConsultaProdutosAssociadosValidator, b2CConsultaProdutosCampanhasValidator, b2CConsultaProdutosCodebarValidator, b2CConsultaProdutosDimensoesValidator, b2CConsultaProdutosInformacoesValidator, b2CConsultaProdutosStatusValidator, b2CConsultaProdutosFlagsValidator, b2CConsultaProdutosTagsValidator, b2CConsultaProdutosPalavrasChavePesquisaValidator);
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaProdutos()
         {
             _logger
@@ -283,6 +285,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaProdutosAssociados()
         {
             _logger
@@ -481,6 +484,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaProdutosCampanhas()
         {
             _logger
@@ -679,6 +683,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaProdutosCodebar()
         {
             _logger
@@ -878,6 +883,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaProdutosDimensoes()
         {
             _logger
@@ -1075,6 +1081,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaProdutosInformacoes()
         {
             _logger
@@ -1271,6 +1278,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaProdutosStatus()
         {
             _logger
@@ -1468,6 +1476,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaProdutosFlags()
         {
             _logger
@@ -1664,6 +1673,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaProdutosTags()
         {
             _logger
@@ -1860,6 +1870,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaProdutosPalavrasChavePesquisa()
         {
             _logger

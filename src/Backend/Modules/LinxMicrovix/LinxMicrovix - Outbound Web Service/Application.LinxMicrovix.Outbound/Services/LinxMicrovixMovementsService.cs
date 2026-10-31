@@ -10,6 +10,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
+using Application.Shared.Attributes;
 
 namespace Application.LinxMicrovix.Outbound.Services
 {
@@ -61,6 +62,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             (_apiClient, _logger, _linxMicrovixService, _linxMicrovixMovementsRepository, _linxMovimentoValidator, _linxMovimentoPrincipalValidator, _linxMovimentoExtensaoValidator, _linxMovimentoCamposAdicionaisValidator, _linxMovimentoObservacoesValidator, _linxMovimentoObservacaoCFValidator, _linxMovimentoIndicacoesValidator, _linxMovimentoSerialValidator, _linxSerialVendaValidator, _linxMovimentoVendaConjugadaValidator, _linxPerguntaVendaValidator, _linxRespostaVendaValidator) =
             (apiClient, logger, linxMicrovixService, linxMicrovixMovementsRepository, linxMovimentoValidator, linxMovimentoPrincipalValidator, linxMovimentoExtensaoValidator, linxMovimentoCamposAdicionaisValidator, linxMovimentoObservacoesValidator, linxMovimentoObservacaoCFValidator, linxMovimentoIndicacoesValidator, linxMovimentoSerialValidator, linxSerialVendaValidator, linxMovimentoVendaConjugadaValidator, linxPerguntaVendaValidator, linxRespostaVendaValidator);
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxMovimento()
         {
             _logger
@@ -340,6 +342,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxMovimentoPrincipal()
         {
             _logger
@@ -545,6 +548,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxMovimentoExtensao()
         {
             _logger
@@ -795,6 +799,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxMovimentoCamposAdicionais()
         {
             _logger
@@ -1083,6 +1088,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxMovimentoObservacoes()
         {
             _logger
@@ -1279,6 +1285,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxMovimentoObservacaoCF()
         {
             _logger
@@ -1474,6 +1481,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxMovimentoIndicacoes()
         {
             _logger
@@ -1668,6 +1676,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxMovimentoSerial()
         {
             _logger
@@ -1869,6 +1878,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxSerialVenda()
         {
             _logger
@@ -2065,6 +2075,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxMovimentoVendaConjugada()
         {
             _logger
@@ -2259,6 +2270,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxPerguntaVenda()
         {
             _logger
@@ -2453,6 +2465,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxRespostaVenda()
         {
             _logger

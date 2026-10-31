@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text;
+using Application.Shared.Attributes;
 
 namespace Application.Totvs.Services
 {
@@ -67,6 +68,7 @@ namespace Application.Totvs.Services
             (_apiClient, _logger, _cache, _totvsService, _totvsPeopleRepository, _branchValidator, _customerValidator, _legalEntityValidator) =
             (apiClient, logger, cache, totvsService, totvsPeopleRepository, branchValidator, customerValidator, legalEntityValidator);
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> GetBranchesList()
         {
             _logger
@@ -264,6 +266,7 @@ namespace Application.Totvs.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> PostSearchCustomers()
         {
             _logger
@@ -476,6 +479,7 @@ namespace Application.Totvs.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> PostSearchLegalEntity()
         {
             _logger

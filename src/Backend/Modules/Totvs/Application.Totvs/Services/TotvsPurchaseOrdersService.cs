@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text;
+using Application.Shared.Attributes;
 
 namespace Application.Totvs.Services
 {
@@ -59,6 +60,7 @@ namespace Application.Totvs.Services
             (_apiClient, _logger, _cache, _totvsService, _totvsPurchaseOrdersRepository, _orderValidator) =
             (apiClient, logger, cache, totvsService, totvsPurchaseOrdersRepository, orderValidator);
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> PostSearchPurchaseOrders()
         {
             _logger

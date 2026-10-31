@@ -10,6 +10,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
+using Application.Shared.Attributes;
 
 namespace Application.LinxMicrovix.Outbound.Services
 {
@@ -69,6 +70,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             (_apiClient, _logger, _linxMicrovixService, _linxMicrovixTaxesRepository, _linxNaturezaOperacaoValidator, _linxCfopFiscalValidator, _linxCstIcmsFiscalValidator, _linxCstIpiFiscalValidator, _linxCstPisFiscalValidator, _linxCstCofinsFiscalValidator, _linxCsosnFiscalValidator, _linxClasseFiscalValidator, _linxCestValidator, _linxNcmValidator, _linxEnquadramentoIpiValidator, _linxMotivosDesoneracaoIcmsValidator, _linxSpedTipoItemValidator, _linxSpedTipoBaseCreditoValidator, _linxRotinaOrigemValidator, _linxNfeIbgeMunicipioValidator) =
             (apiClient, logger, linxMicrovixService, linxMicrovixTaxesRepository, linxNaturezaOperacaoValidator, linxCfopFiscalValidator, linxCstIcmsFiscalValidator, linxCstIpiFiscalValidator, linxCstPisFiscalValidator, linxCstCofinsFiscalValidator, linxCsosnFiscalValidator, linxClasseFiscalValidator, linxCestValidator, linxNcmValidator, linxEnquadramentoIpiValidator, linxMotivosDesoneracaoIcmsValidator, linxSpedTipoItemValidator, linxSpedTipoBaseCreditoValidator, linxRotinaOrigemValidator, linxNfeIbgeMunicipioValidator);
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxNaturezaOperacao()
         {
             _logger
@@ -261,6 +263,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxCfopFiscal()
         {
             _logger
@@ -458,6 +461,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxCstIcmsFiscal()
         {
             _logger
@@ -656,6 +660,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxCstIpiFiscal()
         {
             _logger
@@ -856,6 +861,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxCstPisFiscal()
         {
             _logger
@@ -1055,6 +1061,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxCstCofinsFiscal()
         {
             _logger
@@ -1254,6 +1261,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxCsosnFiscal()
         {
             _logger
@@ -1451,6 +1459,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxClasseFiscal()
         {
             _logger
@@ -1647,6 +1656,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxCest()
         {
             _logger
@@ -1845,6 +1855,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxNcm()
         {
             _logger
@@ -2043,6 +2054,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxEnquadramentoIpi()
         {
             _logger
@@ -2239,6 +2251,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxMotivosDesoneracaoIcms()
         {
             _logger
@@ -2434,6 +2447,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxSpedTipoItem()
         {
             _logger
@@ -2630,6 +2644,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxSpedTipoBaseCredito()
         {
             _logger
@@ -2826,6 +2841,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxRotinaOrigem()
         {
             _logger
@@ -3021,6 +3037,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxNfeIbgeMunicipio()
         {
             _logger

@@ -198,11 +198,8 @@ pacote nenhum; ao contrário do JSON, aceita comentários:
             AppServiceName = 'app-dev-webjobs-2'
             WebJobType     = 'continuous'
 
-            # cada IdJob vira um WebJob com este nome
-            Jobs = @(
-                @{ IdJob = 8000; WebJobName = 'WJ-LinxGrupoLojas' }
-                @{ IdJob = 3000; WebJobName = 'WJ-MovideskTickets' }
-            )
+            # cada IdJob vira um WebJob chamado "<Title> - V<versão>" (5.3)
+            Jobs = @(8000, 3000, 8006)
         }
 
         prod = @{
@@ -214,8 +211,7 @@ pacote nenhum; ao contrário do JSON, aceita comentários:
 
 * Só nomes de recursos, nenhum segredo: a autenticação na Azure é a do `az login` de quem publica (ou a identidade do
   pipeline). Por isso o arquivo pode ficar no git.
-* `Jobs` lista os WebJobs do perfil: cada `IdJob` vira um WebJob com o `WebJobName`. Sem `WebJobName`, o nome é
-  `<IdJob>-<Title>`, como no Hangfire.
+* `Jobs` lista os `IdJob` do perfil: cada um vira um WebJob com o nome do 5.3.
 * O arquivo fica fora do build: o `.csproj` não o copia para a saída, e ele não entra no zip dos WebJobs.
 
 ### 5.2 Script de publicação
@@ -243,7 +239,24 @@ no fim, mostra o resumo (publicados, falhas). Opções:
 O script é em **PowerShell 7** (`pwsh`, roda em Windows e Linux), como o do sistema antigo; o `.psd1` é o formato de
 dados nativo dele.
 
-### 5.3 Alternativa avaliada
+### 5.3 Nome do WebJob com a versão
+
+Cada método de job recorrente tem a versão em `[JobVersion]` (PLANO-HOST-WEBAPI.md §4.10, já feito para o Hangfire), e
+o nome do WebJob leva a versão: **`<Title> - V<versão>`**, ex.: `LinxClientesFornec - V1.0.0`. Assim, a lista de
+WebJobs na Azure mostra que versão de cada job roda em produção, para comparar com a do código local.
+
+1. `Title` é o nome do job no `EnumJob` do módulo (o mesmo de `auditing.Jobs`), e a versão vem do atributo; os dois saem
+   do mapa compartilhado, sem consultar o banco. O script pergunta ao build (`WebJob.exe --list-jobs`, que imprime
+   `IdJob`, `Title` e versão de cada job do mapa) e monta os nomes.
+2. **Versão nova = WebJob novo:** como o nome muda, o script publica o WebJob com o nome novo e, depois de publicado,
+   apaga o WebJob da versão anterior do mesmo job (mesmo `Title`, outra versão). Sem isso, as duas versões rodariam (a
+   trava evita só que rodem juntas).
+3. A recuperação (passo 6) acha o WebJob de cada job pelo mesmo nome, montado do mapa.
+4. **A conferir no primeiro deploy:** o nome do WebJob vira pasta (`App_Data/jobs/continuous/<nome>`) e trecho de URL na
+   API do Kudu, e não está confirmado se a Azure aceita espaço e ponto nele. Se não aceitar, o formato reserva é
+   `LinxClientesFornec-V1_0_0`, montado no mesmo lugar (o script), sem mudar o resto.
+
+### 5.4 Alternativa avaliada
 
 Uma cópia só dos binários no App Service, com cada WebJob tendo só o `run.cmd` apontando para ela, deixaria cada WebJob
 com poucos bytes. Mas atualizar os binários com os WebJobs rodando esbarra em arquivos presos, e todos os jobs mudariam
@@ -333,3 +346,5 @@ Tomadas em 30/10/2026:
    recuperação (limite próprio e jobs ignorados), por causa das execuções longas.
 5. Checagem do heartbeat a cada 15 minutos (6.1).
 6. Autenticação na API da Azure só com o `DefaultAzureCredential`, pela identidade gerenciada do App Service (6.3).
+7. Nome do WebJob com a versão do método: `<Title> - V<versão>` (5.3); a confirmar no primeiro deploy se a Azure aceita
+   espaço e ponto no nome.

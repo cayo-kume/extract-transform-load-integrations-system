@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text;
+using Application.Shared.Attributes;
 
 namespace Application.Totvs.Services
 {
@@ -67,6 +68,7 @@ namespace Application.Totvs.Services
             (_apiClient, _logger, _cache, _totvsService, _totvsSalesOrdersRepository, _orderValidator, _saleDiscountTypeValidator, _saleClassificationValidator, _saleOrderBatchValidator, _billingSuggestionValidator) =
             (apiClient, logger, cache, totvsService, totvsSalesOrdersRepository, orderValidator, saleDiscountTypeValidator, saleClassificationValidator, saleOrderBatchValidator, billingSuggestionValidator);
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> PostSearchSalesOrders()
         {
             _logger
@@ -417,6 +419,7 @@ namespace Application.Totvs.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> GetDiscountType()
         {
             _logger
@@ -522,6 +525,7 @@ namespace Application.Totvs.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> GetClassifications()
         {
             _logger
@@ -626,6 +630,7 @@ namespace Application.Totvs.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> GetBatchItems()
         {
             _logger
@@ -731,6 +736,7 @@ namespace Application.Totvs.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> GetBillingSuggestions()
         {
             _logger

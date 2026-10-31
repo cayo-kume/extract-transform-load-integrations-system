@@ -10,6 +10,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
+using Application.Shared.Attributes;
 
 namespace Application.LinxMicrovix.Outbound.Services
 {
@@ -57,6 +58,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             (_apiClient, _logger, _linxMicrovixService, _linxMicrovixProductsRepository, _linxProdutosValidator, _linxProdutosAssociadosValidator, _linxProdutosCamposAdicionaisValidator, _linxProdutosCodBarValidator, _linxProdutosFornecValidator, _linxProdutosInformacoesValidator, _linxProdutosImagensURLValidator, _linxProdutosLotesValidator, _linxLotesProdutosValidator, _linxProdutosSerialValidator) =
             (apiClient, logger, linxMicrovixService, linxMicrovixProductsRepository, linxProdutosValidator, linxProdutosAssociadosValidator, linxProdutosCamposAdicionaisValidator, linxProdutosCodBarValidator, linxProdutosFornecValidator, linxProdutosInformacoesValidator, linxProdutosImagensURLValidator, linxProdutosLotesValidator, linxLotesProdutosValidator, linxProdutosSerialValidator);
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxProdutos()
         {
             _logger
@@ -274,6 +276,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxProdutosAssociados()
         {
             _logger
@@ -471,6 +474,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxProdutosCamposAdicionais()
         {
             _logger
@@ -638,6 +642,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxProdutosCodBar()
         {
             _logger
@@ -798,6 +803,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxProdutosFornec()
         {
             _logger
@@ -1013,6 +1019,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxProdutosInformacoes()
         {
             _logger
@@ -1208,6 +1215,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxProdutosImagensURL()
         {
             _logger
@@ -1404,6 +1412,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxProdutosLotes()
         {
             _logger
@@ -1601,6 +1610,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxLotesProdutos()
         {
             _logger
@@ -1800,6 +1810,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxProdutosSerial()
         {
             _logger

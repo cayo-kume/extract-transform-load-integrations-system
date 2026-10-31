@@ -10,6 +10,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
+using Application.Shared.Attributes;
 
 namespace Application.LinxMicrovix.Outbound.Services
 {
@@ -57,6 +58,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             (_apiClient, _logger, _linxMicrovixService, _linxMicrovixB2COrdersRepository, _b2CConsultaPedidosValidator, _b2CConsultaPedidosItensValidator, _b2CConsultaPedidosPlanosValidator, _b2CConsultaPedidosStatusValidator, _b2CConsultaPedidosIdentificadorValidator, _b2CConsultaPedidosTiposValidator, _b2CConsultaStatusValidator, _b2CConsultaCodigoRastreioValidator, _b2CConsultaNFeValidator, _b2CConsultaNFeSituacaoValidator) =
             (apiClient, logger, linxMicrovixService, linxMicrovixB2COrdersRepository, b2CConsultaPedidosValidator, b2CConsultaPedidosItensValidator, b2CConsultaPedidosPlanosValidator, b2CConsultaPedidosStatusValidator, b2CConsultaPedidosIdentificadorValidator, b2CConsultaPedidosTiposValidator, b2CConsultaStatusValidator, b2CConsultaCodigoRastreioValidator, b2CConsultaNFeValidator, b2CConsultaNFeSituacaoValidator);
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaPedidos()
         {
             _logger
@@ -254,6 +256,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaPedidosItens()
         {
             _logger
@@ -417,6 +420,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaPedidosPlanos()
         {
             _logger
@@ -618,6 +622,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaPedidosStatus()
         {
             _logger
@@ -786,6 +791,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaPedidosIdentificador()
         {
             _logger
@@ -991,6 +997,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaPedidosTipos()
         {
             _logger
@@ -1186,6 +1193,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaStatus()
         {
             _logger
@@ -1381,6 +1389,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaCodigoRastreio()
         {
             _logger
@@ -1579,6 +1588,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaNFe()
         {
             _logger
@@ -1758,6 +1768,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> B2CConsultaNFeSituacao()
         {
             _logger

@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text;
+using Application.Shared.Attributes;
 
 namespace Application.Totvs.Services
 {
@@ -99,6 +100,7 @@ namespace Application.Totvs.Services
             (_apiClient, _logger, _cache, _totvsService, _totvsProductsRepository, _referenceValidator, _productBalanceValidator, _productSimilarValidator, _batchValidator) =
             (apiClient, logger, cache, totvsService, totvsProductsRepository, referenceValidator, productBalanceValidator, productSimilarValidator, batchValidator);
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> PostSearchBalances()
         {
             _logger
@@ -447,6 +449,7 @@ namespace Application.Totvs.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> GetSimilar()
         {
             _logger
@@ -622,6 +625,7 @@ namespace Application.Totvs.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> PostSearchBatch()
         {
             _logger
@@ -755,6 +759,7 @@ namespace Application.Totvs.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> PostSearchProductCodes()
         {
             _logger
@@ -957,6 +962,7 @@ namespace Application.Totvs.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> PostSearchReferences()
         {
             _logger

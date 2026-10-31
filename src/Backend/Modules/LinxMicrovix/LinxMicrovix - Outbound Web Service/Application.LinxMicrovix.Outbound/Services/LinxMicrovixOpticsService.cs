@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Text;
 using System.Xml;
 using System.Xml.Linq;
+using Application.Shared.Attributes;
 
 namespace Application.LinxMicrovix.Outbound.Services
 {
@@ -56,6 +57,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             (_apiClient, _logger, _linxMicrovixService, _linxMicrovixOpticsRepository, _linxProdutosOpticosTipoValidator, _linxProdutosOpticosTipoAroValidator, _linxProdutosOpticosFormatoAroValidator, _linxDadosOpticosDavValidator, _linxOticoPrismaDescricaoValidator, _linxOticoReceitasValidator, _linxPosicaoOsRamoOpticoValidator, _linxOrdensServicoPosicaoOsRamoOpticoHistoricoValidator, _linxOrcamentoComponenteFormulaValidator, _linxComponenteFormulaDavValidator) =
             (apiClient, logger, linxMicrovixService, linxMicrovixOpticsRepository, linxProdutosOpticosTipoValidator, linxProdutosOpticosTipoAroValidator, linxProdutosOpticosFormatoAroValidator, linxDadosOpticosDavValidator, linxOticoPrismaDescricaoValidator, linxOticoReceitasValidator, linxPosicaoOsRamoOpticoValidator, linxOrdensServicoPosicaoOsRamoOpticoHistoricoValidator, linxOrcamentoComponenteFormulaValidator, linxComponenteFormulaDavValidator);
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxProdutosOpticosTipo()
         {
             _logger
@@ -251,6 +253,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxProdutosOpticosTipoAro()
         {
             _logger
@@ -446,6 +449,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxProdutosOpticosFormatoAro()
         {
             _logger
@@ -642,6 +646,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxDadosOpticosDav()
         {
             _logger
@@ -952,6 +957,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxOticoPrismaDescricao()
         {
             _logger
@@ -1147,6 +1153,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxOticoReceitas()
         {
             _logger
@@ -1425,6 +1432,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxPosicaoOsRamoOptico()
         {
             _logger
@@ -1622,6 +1630,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxOrdensServicoPosicaoOsRamoOpticoHistorico()
         {
             _logger
@@ -1820,6 +1829,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxOrcamentoComponenteFormula()
         {
             _logger
@@ -2023,6 +2033,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxComponenteFormulaDav()
         {
             _logger

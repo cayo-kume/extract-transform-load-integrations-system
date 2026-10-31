@@ -55,7 +55,7 @@ namespace WebApi.Scheduling
                 if (!settings.Server.Queues.Contains(job.Queue))
                     warnings.Add($"{job.IdJob} {job.Title}: fila '{job.Queue}' não está em Hangfire:Server:Queues deste servidor; só roda se outro servidor atender a fila.");
 
-                desired[RecurringJobMap.RecurringJobId(job.IdJob, job.Title)] = (definition, cron, job.Queue);
+                desired[RecurringJobMap.RecurringJobId(job.IdJob, job.Title, definition.Version!)] = (definition, cron, job.Queue);
             }
 
             using var connection = _jobStorage.GetConnection();

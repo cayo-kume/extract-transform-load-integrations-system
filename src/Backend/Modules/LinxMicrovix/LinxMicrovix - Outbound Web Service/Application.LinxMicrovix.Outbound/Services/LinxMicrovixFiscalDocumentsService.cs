@@ -10,6 +10,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
+using Application.Shared.Attributes;
 
 namespace Application.LinxMicrovix.Outbound.Services
 {
@@ -61,6 +62,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             (_apiClient, _logger, _linxMicrovixService, _linxMicrovixFiscalDocumentsRepository, _linxXMLDocumentosValidator, _linxNFeEventoValidator, _linxNfseValidator, _linxEntradaNFeValidator, _linxEntradaNFeProdutosValidator, _linxConhecimentoFretesValidator, _linxFreteTiposValidator, _linxReducoesZValidator, _linxECFValidator, _linxECFFormasPagamentoValidator, _linxNfceEstacaoValidator, _linxSeriesValidator) =
             (apiClient, logger, linxMicrovixService, linxMicrovixFiscalDocumentsRepository, linxXMLDocumentosValidator, linxNFeEventoValidator, linxNfseValidator, linxEntradaNFeValidator, linxEntradaNFeProdutosValidator, linxConhecimentoFretesValidator, linxFreteTiposValidator, linxReducoesZValidator, linxECFValidator, linxECFFormasPagamentoValidator, linxNfceEstacaoValidator, linxSeriesValidator);
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxXMLDocumentos()
         {
             _logger
@@ -241,6 +243,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxNFeEvento()
         {
             _logger
@@ -440,6 +443,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxNfse()
         {
             _logger
@@ -638,6 +642,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxEntradaNFe()
         {
             _logger
@@ -841,6 +846,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxEntradaNFeProdutos()
         {
             _logger
@@ -1042,6 +1048,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxConhecimentoFretes()
         {
             _logger
@@ -1262,6 +1269,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxFreteTipos()
         {
             _logger
@@ -1462,6 +1470,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxReducoesZ()
         {
             _logger
@@ -1680,6 +1689,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxECF()
         {
             _logger
@@ -1885,6 +1895,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxECFFormasPagamento()
         {
             _logger
@@ -2081,6 +2092,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxNfceEstacao()
         {
             _logger
@@ -2278,6 +2290,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
+        [JobVersion("1.0.0")]
         public async Task<bool?> LinxSeries()
         {
             _logger

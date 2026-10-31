@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Application.Shared.Attributes;
 
 namespace Application.AfterSale.Services
 {
@@ -37,6 +38,7 @@ namespace Application.AfterSale.Services
         /// <summary>
         /// return infos about ecommerce, this method fills the tables: [AfterSaleEcommerces], [AfterSaleAddresses] and [AfterSaleReasons]
         /// </summary>
+        [JobVersion("1.0.0")]
         public async Task<bool?> GetMe()
         {
             _logger
