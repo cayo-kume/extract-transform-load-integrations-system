@@ -509,6 +509,10 @@ permissão nos WebJobs.
 `README.md` do host: como rodar no local (`--job <IdJob>`) e na Azure, configuração, como a agenda funciona, como ligar
 ou desligar um job em `auditing.Jobs`, a divisão com o WebApi, os perfis e o script de publicação, e a recuperação.
 
+**Feito em 31/10/2026.** [README.md](../README.md) do host com tudo isso, mais a concorrência, a versão dos jobs e como
+entra um job ou um módulo novo; o README do WebApi ganhou a nota de um host de agenda por vez (4.3, item 4), com o que
+desligar de um lado antes de ligar o outro.
+
 ## Passo 9 — Módulos e jobs que ainda não estão no repositório
 
 Frete Rápido, as escritas recorrentes do Movidesk e as procedures do passo 4.2 entram um a um, conforme forem migrados
