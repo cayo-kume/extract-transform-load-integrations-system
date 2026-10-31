@@ -218,6 +218,9 @@ passo 3.3 têm uma aparência própria.
 
 ## Passo 6 — Configurações das aplicações
 
+> Revisto em 31/10/2026: as credenciais voltaram ao painel, num diálogo próprio, e a agenda mudou de lugar. Ver
+> "Ajustes de layout (31/10/2026)".
+
 O diálogo `ApplicationConfigurations` hoje pede API Key, usuário, senha e connection string. Essas credenciais ficam
 fora do painel: estão nos scripts de parâmetros de cada módulo e não devem ser lidas nem gravadas por uma tela.
 
@@ -334,6 +337,25 @@ do WebApp explicando como rodar com o mock. Com isso, a parte visual está fecha
    (fase 6) e a API do MAUI (fase 7).
 
 ---
+
+# Ajustes de layout (31/10/2026)
+
+Quatro mudanças aprovadas por mockup depois de a fase 4 fechar (a regra agora é essa: mudança de layout começa por um
+mockup para aprovação):
+
+1. **Executar Querys:** barra lateral direita fixa com querys prontas (`Data/ReadyQueries.cs`, lista fixa no código,
+   agrupada por assunto). Clicar cola o SQL no editor e seleciona o banco; executar continua sendo um ato do usuário.
+2. **Visão geral = macro.** A engrenagem do card (`AppCard`) abre o novo `ModuleConfigurations`: credenciais e
+   parâmetros globais do módulo, como no código antigo (`GetModuleSettingsAsync`, com credencial mascarada). Isso
+   **reverte a decisão** de manter credenciais fora do painel. Nesta fase os campos ficam desabilitados e o Salvar
+   também: a gravação entra com o banco (fase 5) e a autenticação (fase 6), que ganham esse escopo — gravar os
+   parâmetros nas tabelas de Parameters dos módulos, restrito por grupo.
+3. **Integrações = micro.** Os jobs ficam aninhados em grupos recolhíveis por aplicação (começam fechados, estado vale
+   enquanto a tela está aberta), com chips de saúde no cabeçalho. A engrenagem do grupo abre a agenda dos jobs
+   (`ApplicationConfigurations`), que antes abria na Visão geral.
+4. **Logs de Erros:** mensagens aninhadas por aplicação (`MessagesTable` dentro de cada grupo, paginada por grupo),
+   com as contagens no cabeçalho. O filtro de aplicação saiu do topo, porque os grupos fazem esse papel; aplicação sem
+   mensagem no período não aparece.
 
 # Fase 5 — Banco de dados (não implementar agora)
 

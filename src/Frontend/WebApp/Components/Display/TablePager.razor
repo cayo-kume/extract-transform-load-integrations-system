@@ -1,9 +1,15 @@
-@* Paginador das tabelas em português: o MudTablePager não usa o MudLocalizer para estes dois textos. *@
+@* Paginador das tabelas em português, com o seletor de linhas por página. *@
 
 <MudTablePager HideRowsPerPage="HideRowsPerPage"
+               PageSizeOptions="PageSizeOptions"
                RowsPerPageString="Linhas por página:"
                InfoFormat="{first_item}-{last_item} de {all_items}" />
 
 @code {
     [Parameter] public bool HideRowsPerPage { get; set; }
+
+    /// <summary>
+    /// Opções do seletor de linhas por página. O padrão de cada tabela é definido no MudTable (RowsPerPage).
+    /// </summary>
+    [Parameter] public int[] PageSizeOptions { get; set; } = [10, 25, 50];
 }

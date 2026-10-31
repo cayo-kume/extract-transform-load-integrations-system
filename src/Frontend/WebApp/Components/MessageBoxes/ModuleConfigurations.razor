@@ -1,0 +1,201 @@
+@inject IMonitorRepository MonitorRepository
+@inject ISnackbar Snackbar
+
+@* Configurações de um módulo para a empresa logada, em abas: imagem (a da empresa), credenciais e parâmetros (só leitura
+   nesta fase) e agenda (ativar e desativar cada job). Ver docs/PLANO-WEBAPP.md, "Ajustes de layout". *@
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">Configurações - @(Title ?? "Geral")</MudText>
+    </TitleContent>
+    <DialogContent>
+        @if (_loading)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-4" />
+        }
+        else
+        {
+            <MudTabs @bind-ActivePanelIndex="_tab" Outlined="true" Position="Position.Top" Rounded="true" ApplyEffectsToContainer="true">
+                <MudTabPanel Text="Imagem">
+                    <div class="pa-2">
+                        <MudText Typo="Typo.caption" Class="mb-2">Imagem desta empresa. Sem imagem própria, o card usa a imagem padrão do módulo.</MudText>
+                        <div class="d-flex align-center gap-4 flex-wrap">
+                            @if (_imageUrl is not null)
+                            {
+                                <img src="@_imageUrl" alt="Imagem da aplicação" class="app-config-image" />
+                            }
+                            else
+                            {
+                                <div class="app-config-image app-config-image-empty">sem imagem própria</div>
+                            }
+                            <label class="upload-label">
+                                <InputFile OnChange="OnImageSelected" accept=".png,.jpg,.jpeg" style="display:none" />
+                                Adicionar / trocar
+                            </label>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" Disabled="_imageUrl is null" OnClick="RemoveImage">Remover</MudButton>
+                        </div>
+                        <MudText Typo="Typo.caption" Class="mt-2">PNG ou JPG, até 300 KB. Nesta fase a imagem fica só no mock.</MudText>
+                    </div>
+                </MudTabPanel>
+
+                <MudTabPanel Text="Credenciais">
+                    <div class="pa-2">
+                        <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3">Somente leitura nesta fase: a gravação entra com o banco (fase 5) e a autenticação (fase 6).</MudAlert>
+                        @foreach (var setting in _settings.Where(x => x.IsSecret))
+                        {
+                            <MudTextField T="string" Value="@setting.Value" Label="@setting.Label" Disabled="true" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Key" />
+                        }
+                        @if (!_settings.Any(x => x.IsSecret))
+                        {
+                            <MudText Typo="Typo.body2">Nenhuma credencial cadastrada para este módulo.</MudText>
+                        }
+                    </div>
+                </MudTabPanel>
+
+                <MudTabPanel Text="Parâmetros">
+                    <div class="pa-2">
+                        <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3">Somente leitura nesta fase.</MudAlert>
+                        @foreach (var setting in _settings.Where(x => !x.IsSecret))
+                        {
+                            <MudTextField T="string" Value="@setting.Value" Label="@setting.Label" Disabled="true" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3" />
+                        }
+                    </div>
+                </MudTabPanel>
+
+                <MudTabPanel Text="Agenda">
+                    <div class="pa-2">
+                        <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3">Ativar ou desativar um job vale para a empresa logada. Nesta fase, só muda o mock; com o banco, grava em auditing.Jobs.IsActive.</MudAlert>
+                        <MudTextField T="string" @bind-Value="_search" Immediate="true" Label="Pesquisar job" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-2" />
+                        <MudTable Items="@FilteredJobs" Dense="true" Hover="true" Breakpoint="Breakpoint.Sm" RowsPerPage="50" Elevation="0">
+                            <HeaderContent>
+                                <MudTh>IdJob</MudTh>
+                                <MudTh>Tipo</MudTh>
+                                <MudTh>Título</MudTh>
+                                <MudTh>Agenda</MudTh>
+                                <MudTh>Ativo</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd DataLabel="IdJob">@context.IdJob</MudTd>
+                                <MudTd DataLabel="Tipo">@context.JobType</MudTd>
+                                <MudTd DataLabel="Título">@context.Title</MudTd>
+                                <MudTd DataLabel="Agenda">@MonitorDisplay.Schedule(context)</MudTd>
+                                <MudTd DataLabel="Ativo"><MudSwitch T="bool" Value="context.IsActive" ValueChanged="@(v => SetJobActive(context, v))" Color="Color.Success" Size="Size.Small" /></MudTd>
+                            </RowTemplate>
+                            <NoRecordsContent>
+                                <MudText Typo="Typo.body2">Nenhum job encontrado.</MudText>
+                            </NoRecordsContent>
+                            <PagerContent>
+                                <TablePager PageSizeOptions="new[] { 10, 25, 50 }" />
+                            </PagerContent>
+                        </MudTable>
+                    </div>
+                </MudTabPanel>
+            </MudTabs>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Close">Fechar</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance? MudDialog { get; set; }
+
+    /// <summary>
+    /// Aplicação (IdParent de auditing.Apps) cujas configurações são exibidas.
+    /// </summary>
+    [Parameter] public int IdApp { get; set; }
+
+    [Parameter] public string? Title { get; set; }
+
+    /// <summary>
+    /// Aba que abre primeiro: 0 Imagem, 1 Credenciais, 2 Parâmetros, 3 Agenda.
+    /// </summary>
+    [Parameter] public int InitialTab { get; set; }
+
+    private IReadOnlyList<ModuleSettingModel> _settings = [];
+    private IReadOnlyList<JobModel> _jobs = [];
+    private string? _imageUrl;
+    private string? _search;
+    private int _tab;
+    private bool _loading = true;
+
+    private IEnumerable<JobModel> FilteredJobs => string.IsNullOrWhiteSpace(_search)
+        ? _jobs
+        : _jobs.Where(x => $"{x.IdJob} {x.Title}".Contains(_search.Trim(), StringComparison.InvariantCultureIgnoreCase));
+
+    protected override async Task OnInitializedAsync()
+    {
+        _tab = InitialTab;
+        _settings = await MonitorRepository.GetModuleSettingsAsync(IdApp);
+        await LoadAll();
+        _loading = false;
+    }
+
+    private async Task LoadAll()
+    {
+        var summaries = await MonitorRepository.GetAppSummariesAsync(Period.Last24Hours);
+        _imageUrl = summaries.FirstOrDefault(x => x.IdParent == IdApp)?.ImageUrl;
+        _jobs = (await MonitorRepository.GetJobsAsync(IdApp, idType: null))
+            .OrderBy(x => x.IdJob)
+            .ThenBy(x => x.IdType)
+            .ToList();
+    }
+
+    private async Task OnImageSelected(InputFileChangeEventArgs e)
+    {
+        const long maxBytes = 300 * 1024;
+        var file = e.File;
+
+        if (file.ContentType is not ("image/png" or "image/jpeg"))
+        {
+            Snackbar.Add("Use uma imagem PNG ou JPG.", Severity.Warning);
+            return;
+        }
+
+        if (file.Size > maxBytes)
+        {
+            Snackbar.Add("A imagem passa de 300 KB.", Severity.Warning);
+            return;
+        }
+
+        using var stream = file.OpenReadStream(maxBytes);
+        using var memory = new MemoryStream();
+        await stream.CopyToAsync(memory);
+
+        await MonitorRepository.SetAppImageAsync(IdApp, file.ContentType, memory.ToArray());
+        await LoadAll();
+        Snackbar.Add("Imagem salva.", Severity.Success);
+    }
+
+    private async Task RemoveImage()
+    {
+        await MonitorRepository.RemoveAppImageAsync(IdApp);
+        await LoadAll();
+        Snackbar.Add("Imagem removida: o card volta para a imagem padrão.", Severity.Info);
+    }
+
+    private async Task SetJobActive(JobModel job, bool isActive)
+    {
+        await MonitorRepository.SetJobActiveAsync(job.IdJob, job.IdType, isActive);
+        await LoadAll();
+    }
+
+    private void Close() => MudDialog?.Close();
+
+    /// <summary>
+    /// Abre o diálogo de um módulo na aba indicada e espera ele fechar.
+    /// </summary>
+    public static async Task ShowAsync(IDialogService dialogService, int idApp, string? title, int initialTab = 0)
+    {
+        var parameters = new DialogParameters<ModuleConfigurations>
+        {
+            { x => x.IdApp, idApp },
+            { x => x.Title, title },
+            { x => x.InitialTab, initialTab }
+        };
+
+        var reference = await dialogService.ShowAsync<ModuleConfigurations>("Configurações", parameters, new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true, CloseButton = true });
+        await reference.Result;
+    }
+}

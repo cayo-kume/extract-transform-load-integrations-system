@@ -8,64 +8,51 @@
         <h1 class="ma-0 text-center">LOGS DE ERROS</h1>
     </MudItem>
 
-    <Filters Value="_filter" ValueChanged="OnFilterChanged" ShowType="false" ShowSearch="false" />
+    @* sem o filtro de aplicação: os grupos abaixo já fazem esse papel *@
+    <Filters Value="_filter" ValueChanged="OnFilterChanged" ShowType="false" ShowApp="false" ShowSearch="false" />
 
-    <MudItem xs="12">
+    <MudItem xs="12" Class="loading-container">
+        <SpaceLoading Overlay="true" Visible="_loading" Label="Carregando as mensagens" />
+
         <div class="d-flex align-center gap-4 pa-4">
             <h3 class="ma-0 text-center">MENSAGENS</h3>
             <MudSpacer />
             <MudCheckBox T="bool" Value="_includeWarnings" ValueChanged="OnIncludeWarningsChanged" Color="Color.Warning" Label="Incluir avisos" />
         </div>
 
-        <div class="pa-4">
-            <MudTable @ref="_table" T="MessageModel" ServerData="LoadMessages" Hover="true" Dense="true" Breakpoint="Breakpoint.Sm" RowsPerPage="25">
-                <HeaderContent>
-                    <MudTh>Nível</MudTh>
-                    <MudTh>Execução</MudTh>
-                    <MudTh>Aplicação</MudTh>
-                    <MudTh>Job</MudTh>
-                    <MudTh>Mensagem</MudTh>
-                    <MudTh></MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd DataLabel="Nível">
-                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@MonitorDisplay.LevelColor(context.Level)" Icon="@MonitorDisplay.LevelIcon(context.Level)">
-                            @MonitorDisplay.LevelLabel(context.Level)
-                        </MudChip>
-                    </MudTd>
-                    <MudTd DataLabel="Execução" Style="white-space: nowrap">@MonitorDisplay.Date(context.ExecutionStartDate)</MudTd>
-                    <MudTd DataLabel="Aplicação">@context.AppTitle</MudTd>
-                    <MudTd DataLabel="Job">@context.IdJob - @context.JobTitle</MudTd>
-                    <MudTd DataLabel="Mensagem">@context.Message</MudTd>
-                    <MudTd>
-                        @if (MessageDetails.HasDetails(context))
+        <!-- Mensagens aninhadas por aplicação; aplicação sem mensagem no período não aparece -->
+        <div class="px-4 pb-4">
+            @foreach (var app in AppsWithMessages)
+            {
+                var expanded = _expandedApps.Contains(app.IdParent);
+
+                @* @key: sem ele, o Blazor reaproveita a MessagesTable de um grupo para outra aplicação quando a lista muda *@
+                <div class="app-group" @key="app.IdParent">
+                    <div class="app-group-head" role="button" tabindex="0" @onclick="@(() => ToggleGroup(app.IdParent))" @onkeydown="@(e => OnGroupKeyDown(e, app.IdParent))">
+                        <MudIcon Icon="@(expanded ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)" Size="Size.Small" />
+                        <MudText Typo="Typo.subtitle2">@app.Title</MudText>
+                        <MudSpacer />
+                        @if (app.Errors > 0)
                         {
-                            <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => Toggle(context.IdExecutionMessage))">
-                                @(_opened.Contains(context.IdExecutionMessage) ? "Ocultar" : "Detalhes")
-                            </MudButton>
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Error" Icon="@Icons.Material.Filled.Error">@app.Errors.ToString("N0") erro(s)</MudChip>
                         }
-                    </MudTd>
-                </RowTemplate>
-                <ChildRowContent>
-                    @if (_opened.Contains(context.IdExecutionMessage))
+                        @if (_includeWarnings && app.Warnings > 0)
+                        {
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Warning" Icon="@Icons.Material.Filled.Warning">@app.Warnings.ToString("N0") aviso(s)</MudChip>
+                        }
+                    </div>
+
+                    @if (expanded)
                     {
-                        <MudTr>
-                            <td colspan="6" class="pa-2">
-                                <MessageDetails Message="context" />
-                            </td>
-                        </MudTr>
+                        <MessagesTable IdApp="app.IdParent" Period="_filter.Period" MinLevel="@(_includeWarnings ? MessageLevel.Warning : MessageLevel.Error)" />
                     }
-                </ChildRowContent>
-                <NoRecordsContent>
-                    <MudText Typo="Typo.body2">Nenhuma mensagem no período.</MudText>
-                </NoRecordsContent>
-                <LoadingContent>
-                    <SpaceLoading Label="Carregando as mensagens" />
-                </LoadingContent>
-                <PagerContent>
-                    <TablePager />
-                </PagerContent>
-            </MudTable>
+                </div>
+            }
+
+            @if (!_loading && !AppsWithMessages.Any())
+            {
+                <MudText Typo="Typo.body2">Nenhuma mensagem no período.</MudText>
+            }
         </div>
     </MudItem>
 </MudGrid>
@@ -73,37 +60,50 @@
 @code {
     private FilterState _filter = new();
     private bool _includeWarnings;
-    private MudTable<MessageModel>? _table;
-    private readonly HashSet<long> _opened = [];
+    private bool _loading = true;
 
-    private async Task<TableData<MessageModel>> LoadMessages(TableState state, CancellationToken cancellationToken)
+    private IReadOnlyList<AppSummaryModel> _apps = [];
+
+    // grupos abertos; começam todos recolhidos, e o estado vale enquanto a tela está aberta
+    private readonly HashSet<int> _expandedApps = [];
+
+    private IEnumerable<AppSummaryModel> AppsWithMessages => _apps
+        .Where(x => x.Errors > 0 || (_includeWarnings && x.Warnings > 0))
+        .OrderBy(x => x.Title);
+
+    protected override async Task OnInitializedAsync()
     {
-        var minLevel = _includeWarnings ? MessageLevel.Warning : MessageLevel.Error;
-        var page = await MonitorRepository.GetMessagesByLevelAsync(_filter.Period, minLevel, _filter.IdApp, state.Page, state.PageSize, cancellationToken);
-        return new TableData<MessageModel> { Items = page.Items, TotalItems = page.TotalCount };
+        await Load();
     }
 
-    private Task OnFilterChanged(FilterState filter)
+    private async Task OnFilterChanged(FilterState filter)
     {
         _filter = filter;
-        return Reload();
+        await Load();
     }
 
-    private Task OnIncludeWarningsChanged(bool value)
+    private void OnIncludeWarningsChanged(bool value) => _includeWarnings = value;
+
+    private async Task Load()
     {
-        _includeWarnings = value;
-        return Reload();
+        _loading = true;
+        _apps = await MonitorRepository.GetAppSummariesAsync(_filter.Period);
+        _loading = false;
     }
 
-    private Task Reload()
+    private async Task ToggleGroup(int idApp)
     {
-        _opened.Clear();
-        return _table?.ReloadServerData() ?? Task.CompletedTask;
+        if (_expandedApps.Remove(idApp))
+            return;
+
+        _expandedApps.Add(idApp);
+
+        // refresca as contagens do cabeçalho sem o overlay: o período é uma janela deslizante, e a tabela recém-aberta
+        // consulta "agora" — o cache de um minuto do repositório segura o custo
+        _apps = await MonitorRepository.GetAppSummariesAsync(_filter.Period);
     }
 
-    private void Toggle(long idExecutionMessage)
-    {
-        if (!_opened.Remove(idExecutionMessage))
-            _opened.Add(idExecutionMessage);
-    }
+    // o cabeçalho é um div clicável; Enter e espaço fazem o mesmo papel para quem navega por teclado
+    private Task OnGroupKeyDown(KeyboardEventArgs args, int idApp) =>
+        args.Key is "Enter" or " " ? ToggleGroup(idApp) : Task.CompletedTask;
 }

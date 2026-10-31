@@ -1,0 +1,18 @@
+@* Filtro de tipo de job: Todos, Integrações ou Procedures. *@
+
+<MudButtonGroup Variant="Variant.Outlined" Size="Size.Small">
+    <MudButton Variant="@(Value is null ? Variant.Filled : Variant.Outlined)" Color="Color.Primary" OnClick="@(() => Select(null))">Todos</MudButton>
+    <MudButton Variant="@(Value == 2 ? Variant.Filled : Variant.Outlined)" Color="Color.Primary" OnClick="@(() => Select(2))">Integrações</MudButton>
+    <MudButton Variant="@(Value == 1 ? Variant.Filled : Variant.Outlined)" Color="Color.Primary" OnClick="@(() => Select(1))">Procedures</MudButton>
+</MudButtonGroup>
+
+@code {
+    /// <summary>
+    /// null = todos; 2 = integrações; 1 = procedures (auditing.Types).
+    /// </summary>
+    [Parameter] public int? Value { get; set; }
+
+    [Parameter] public EventCallback<int?> ValueChanged { get; set; }
+
+    private Task Select(int? value) => ValueChanged.InvokeAsync(value);
+}

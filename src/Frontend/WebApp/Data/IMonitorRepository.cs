@@ -38,5 +38,31 @@ namespace WebApp.Data
         Task<PagedResult<MessageModel>> GetMessagesByLevelAsync(Period period, MessageLevel minLevel, int? idApp, int page, int pageSize, CancellationToken cancellationToken = default);
 
         Task<IReadOnlyList<TypeModel>> GetTypesAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Credenciais e parâmetros globais do módulo, para o diálogo de configurações da Visão geral. Somente leitura
+        /// na fase 1; credencial vem mascarada.
+        /// </summary>
+        Task<IReadOnlyList<ModuleSettingModel>> GetModuleSettingsAsync(int idApp, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Liga ou desliga um job. Na implementação real, é um UPDATE em auditing.Jobs.IsActive na linha da empresa.
+        /// </summary>
+        Task SetJobActiveAsync(int idJob, int idType, bool isActive, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Liga ou desliga todos os jobs de um módulo (o chip "Ativa" do card).
+        /// </summary>
+        Task SetModuleActiveAsync(int idApp, bool isActive, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Imagem própria da aplicação para a empresa logada. A imagem padrão do módulo é a que não tem registro aqui.
+        /// </summary>
+        Task SetAppImageAsync(int idApp, string contentType, byte[] data, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Remove a imagem própria; o card volta para a imagem padrão do módulo.
+        /// </summary>
+        Task RemoveAppImageAsync(int idApp, CancellationToken cancellationToken = default);
     }
 }

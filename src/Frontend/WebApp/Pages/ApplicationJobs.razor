@@ -10,10 +10,15 @@
         <h1 class="ma-0 text-center">JOBS</h1>
     </MudItem>
 
-    <Filters Value="_filter" ValueChanged="OnFilterChanged" />
+    <Filters Value="_filter" ValueChanged="OnFilterChanged" ShowType="false" />
 
     <MudItem xs="12" Class="loading-container">
         <SpaceLoading Overlay="true" Visible="_loading" Label="Carregando os jobs" />
+
+        <div class="d-flex align-center gap-2 px-4 pt-2">
+            <MudSpacer />
+            <TypeSegment Value="_type" ValueChanged="OnTypeChanged" />
+        </div>
 
         @foreach (var app in FilteredApps)
         {
@@ -24,17 +29,17 @@
                 <MudText Typo="Typo.body2">@app.Description</MudText>
                 <MudSpacer />
                 <MudText Typo="Typo.caption">@appJobs.Count job(s)</MudText>
-                <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Default" OnClick="@(() => ApplicationConfigurations.ShowAsync(DialogService, app.IdParent, app.Title))" />
+                <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Default" OnClick="@(() => OpenSettings(app))" />
             </div>
 
             <div class="pa-4">
-                <MudTable Items="@appJobs" Hover="true" Dense="true" Breakpoint="Breakpoint.Sm" RowsPerPage="10">
+                <MudTable Items="@appJobs" Hover="true" Dense="true" Breakpoint="Breakpoint.Sm" RowsPerPage="50" Elevation="0">
                     <HeaderContent>
                         <MudTh>IdJob</MudTh>
                         <MudTh>Tipo</MudTh>
                         <MudTh>Título</MudTh>
-                        <MudTh>Descrição</MudTh>
                         <MudTh>Agenda</MudTh>
+                        <MudTh>Ativo</MudTh>
                         <MudTh>Saúde</MudTh>
                         <MudTh>Última execução</MudTh>
                         <MudTh></MudTh>
@@ -42,9 +47,15 @@
                     <RowTemplate>
                         <MudTd DataLabel="IdJob">@context.IdJob</MudTd>
                         <MudTd DataLabel="Tipo">@context.JobType</MudTd>
-                        <MudTd DataLabel="Título">@context.Title</MudTd>
-                        <MudTd DataLabel="Descrição">@context.Description</MudTd>
+                        <MudTd DataLabel="Título">
+                            <MudTooltip Text="@context.Description">@context.Title</MudTooltip>
+                        </MudTd>
                         <MudTd DataLabel="Agenda">@MonitorDisplay.Schedule(context)</MudTd>
+                        <MudTd DataLabel="Ativo">
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@(context.IsActive ? Color.Success : Color.Default)" OnClick="@(() => ToggleJob(context))">
+                                @(context.IsActive ? "sim" : "não")
+                            </MudChip>
+                        </MudTd>
                         <MudTd DataLabel="Saúde"><HealthChip Health="context.Health" IsActive="context.IsActive" HasWarnings="@(context.LastExecution?.Warnings > 0)" /></MudTd>
                         <MudTd DataLabel="Última execução">@MonitorDisplay.Date(context.LastExecution?.StartDate)</MudTd>
                         <MudTd>
@@ -57,14 +68,14 @@
                         @if (_opened.Contains((context.IdJob, context.IdType)))
                         {
                             <MudTr>
-                                <td colspan="8">
+                                <td colspan="9">
                                     <JobExecutions Job="context" Period="_filter.Period" />
                                 </td>
                             </MudTr>
                         }
                     </ChildRowContent>
                     <PagerContent>
-                        <TablePager />
+                        <TablePager PageSizeOptions="new[] { 10, 25, 50 }" />
                     </PagerContent>
                 </MudTable>
             </div>
@@ -84,6 +95,7 @@
     [Parameter] public int? IdApp { get; set; }
 
     private FilterState _filter = new();
+    private int? _type;
     private bool _loading = true;
 
     private IReadOnlyList<AppSummaryModel> _apps = [];
@@ -99,19 +111,41 @@
     protected override async Task OnParametersSetAsync()
     {
         _filter = _filter with { IdApp = IdApp };
+        await Load();
+    }
+
+    private async Task Load()
+    {
         _loading = true;
         _apps = await MonitorRepository.GetAppSummariesAsync(_filter.Period);
         _jobs = await MonitorRepository.GetJobsAsync(idApp: null, idType: null);
         _loading = false;
     }
 
+    // jobs da aplicação na ordem do IdJob (decisão de 31/10/2026), com o filtro de tipo e de busca
     private List<JobModel> JobsOf(int idApp) => _jobs
         .Where(x => x.IdApp == idApp)
-        .Where(x => _filter.IdType is null || x.IdType == _filter.IdType)
+        .Where(x => _type is null || x.IdType == _type)
         .Where(x => _filter.Matches(x.IdJob.ToString(), x.Title, x.Description))
+        .OrderBy(x => x.IdJob)
+        .ThenBy(x => x.IdType)
         .ToList();
 
     private void OnFilterChanged(FilterState filter) => _filter = filter;
+
+    private void OnTypeChanged(int? type) => _type = type;
+
+    private async Task ToggleJob(JobModel job)
+    {
+        await MonitorRepository.SetJobActiveAsync(job.IdJob, job.IdType, !job.IsActive);
+        await Load();
+    }
+
+    private async Task OpenSettings(AppSummaryModel app)
+    {
+        await ModuleConfigurations.ShowAsync(DialogService, app.IdParent, app.Title, initialTab: 3);
+        await Load();
+    }
 
     private void Toggle(JobModel job)
     {

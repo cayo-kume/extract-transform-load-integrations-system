@@ -26,7 +26,7 @@
             <div class="d-flex flex-row flex-wrap align-center gap-4 pa-4">
                 @foreach (var summarizedApp in _apps.Skip(i).Take(4))
                 {
-                    <AppCard Summary="summarizedApp" />
+                    <AppCard Summary="summarizedApp" OnChanged="ReloadAsync" />
                 }
             </div>
         }
@@ -141,6 +141,13 @@
         _filter = filter;
         _loading = true;
         await Load();
+    }
+
+    // mudanças feitas pelos cards (ativar o módulo, trocar a imagem) refletem nos números e no heartbeat
+    private async Task ReloadAsync()
+    {
+        await Load();
+        StateHasChanged();
     }
 
     private async Task Load()

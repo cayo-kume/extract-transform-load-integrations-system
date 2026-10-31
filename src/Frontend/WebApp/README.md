@@ -31,9 +31,9 @@ usam o ambiente `Development`.
 | `/home` | visão geral: cards das aplicações, métricas consolidadas e painel de saúde, atualizados a cada minuto |
 | `/applications` | cards das aplicações, com logo |
 | `/applications/jobs` e `/applications/{IdApp}/jobs` | jobs por aplicação, com as execuções, mensagens e registros de cada um |
-| `/integrations` | todos os jobs de integração, com a saúde de cada um |
-| `/errors` | Logs de Erros: mensagens de erro (e, se marcado, de aviso) do período |
-| `/queries` | Executar Querys, só com a chave `QueryRunner:Enabled` (abaixo) |
+| `/integrations` | jobs de integração aninhados por aplicação; a engrenagem do grupo abre a agenda dos jobs |
+| `/errors` | Logs de Erros: mensagens de erro (e, se marcado, de aviso) do período, aninhadas por aplicação |
+| `/queries` | Executar Querys, com a barra de querys prontas, só com a chave `QueryRunner:Enabled` (abaixo) |
 
 Os filtros do topo (período, tipo, aplicação e busca) valem para a tela em que estão. Na barra superior ficam o botão
 que esconde o menu e o que troca entre o tema escuro e o claro; a escolha do tema fica salva no navegador.
@@ -106,7 +106,7 @@ WebApp/
 │   ├── Executions/     execuções de um job, detalhe de uma execução e de uma mensagem
 │   ├── Filters/        filtros do topo das telas
 │   ├── Loadings/       SpaceLoading, o carregamento padrão do app
-│   ├── MessageBoxes/   diálogo de configurações (agenda dos jobs, somente leitura)
+│   ├── MessageBoxes/   diálogos de configurações: ModuleConfigurations (credenciais e parâmetros do módulo, na Visão geral) e ApplicationConfigurations (agenda dos jobs, nas Integrações), ambos somente leitura
 │   └── NavMenus/       menu lateral
 ├── Data/               IMonitorRepository, IQueryRunner, SqlInspector, acesso à tela de consultas e os mocks
 ├── Layout/             MainLayout (barra, menu e tema) e BlankLayout (login)

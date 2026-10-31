@@ -249,7 +249,12 @@ namespace WebApp.Data.Mocks
         public CatalogJob Catalog { get; }
         public int IdApp { get; }
         public MockProfile Profile { get; }
-        public bool IsActive => Profile != MockProfile.Inactive;
+        /// <summary>
+        /// Ativação escolhida na tela (Ativar/Desativar); nula mantém o perfil do mock.
+        /// </summary>
+        public bool? ActiveOverride { get; set; }
+
+        public bool IsActive => ActiveOverride ?? Profile != MockProfile.Inactive;
         public int OffsetMinutes { get; }
         public int MaxRecords { get; }
         public TimeSpan LateBy { get; }

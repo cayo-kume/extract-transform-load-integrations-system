@@ -27,7 +27,7 @@
             <div class="d-flex flex-row flex-wrap align-center gap-4 pa-4">
                 @foreach (var summarizedApp in FilteredApps.Skip(i).Take(4))
                 {
-                    <AppCard Summary="summarizedApp" ShowLogo="true" />
+                    <AppCard Summary="summarizedApp" ShowLogo="true" OnChanged="Load" />
                 }
             </div>
         }

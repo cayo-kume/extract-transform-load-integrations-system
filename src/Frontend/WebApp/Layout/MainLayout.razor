@@ -13,6 +13,7 @@
             <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="DrawerToggle" />
         </MudTooltip>
         <MudSpacer />
+        <MudText Typo="Typo.body2" Class="mr-4" Style="color: var(--mud-palette-text-secondary)">@LoggedCompany.Label</MudText>
         <MudTooltip Text="@(_isDarkMode ? "Tema claro" : "Tema escuro")">
             <MudIconButton Icon="@DarkLightModeButtonIcon" Color="Color.Inherit" OnClick="DarkModeToggle" />
         </MudTooltip>

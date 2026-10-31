@@ -9,6 +9,11 @@ namespace WebApp.Models
         public string? Title { get; set; }
         public string? Description { get; set; }
 
+        /// <summary>
+        /// Imagem da aplicação para a empresa logada; nula quando não há imagem (o card mostra as iniciais).
+        /// </summary>
+        public string? ImageUrl { get; set; }
+
         public int Integrations { get; set; }
         public int Procedures { get; set; }
         public int ActiveJobs { get; set; }

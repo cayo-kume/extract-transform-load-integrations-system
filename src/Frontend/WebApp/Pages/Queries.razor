@@ -35,28 +35,48 @@
         </MudItem>
 
         <MudItem xs="12" Class="px-4">
-            <MudTextField T="string"
-                          @bind-Value="_sql"
-                          Immediate="true"
-                          Lines="12"
-                          Variant="Variant.Outlined"
-                          Label="SQL (Ctrl+Enter executa)"
-                          Class="sql-editor"
-                          Disabled="Busy"
-                          OnKeyDown="OnEditorKeyDown" />
+            <div class="d-flex gap-4 align-start">
+                <div class="flex-grow-1" style="min-width: 0">
+                    <MudTextField T="string"
+                                  @bind-Value="_sql"
+                                  Immediate="true"
+                                  Lines="12"
+                                  Variant="Variant.Outlined"
+                                  Label="SQL (Ctrl+Enter executa)"
+                                  Class="sql-editor"
+                                  Disabled="Busy"
+                                  OnKeyDown="OnEditorKeyDown" />
 
-            <div class="d-flex align-center gap-2 mt-2">
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PlayArrow" OnClick="Execute" Disabled="@(Busy || string.IsNullOrWhiteSpace(_sql) || _database is null)">
-                    Executar
-                </MudButton>
-                @if (_running)
-                {
-                    <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Stop" OnClick="Cancel">Cancelar</MudButton>
-                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Color="Color.Primary" />
-                    <MudText Typo="Typo.body2">Executando em @_database...</MudText>
-                }
-                <MudSpacer />
-                <MudText Typo="Typo.caption">Escritas, DDL e procedures rodam numa transação e pedem confirmação.</MudText>
+                    <div class="d-flex align-center gap-2 mt-2">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PlayArrow" OnClick="Execute" Disabled="@(Busy || string.IsNullOrWhiteSpace(_sql) || _database is null)">
+                            Executar
+                        </MudButton>
+                        @if (_running)
+                        {
+                            <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Stop" OnClick="Cancel">Cancelar</MudButton>
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Color="Color.Primary" />
+                            <MudText Typo="Typo.body2">Executando em @_database...</MudText>
+                        }
+                        <MudSpacer />
+                        <MudText Typo="Typo.caption">Escritas, DDL e procedures rodam numa transação e pedem confirmação.</MudText>
+                    </div>
+                </div>
+
+                <!-- Barra fixa de querys prontas: clicar cola o SQL no editor e seleciona o banco, sem executar -->
+                <MudPaper Elevation="0" Outlined="true" Class="ready-queries pa-3">
+                    <MudText Typo="Typo.subtitle2" Class="mb-1">Querys prontas</MudText>
+                    @foreach (var category in ReadyQueries.ByCategory)
+                    {
+                        <MudText Typo="Typo.caption" Class="ready-queries-category">@category.Key</MudText>
+                        @foreach (var query in category)
+                        {
+                            <MudButton FullWidth="true" Variant="Variant.Outlined" Size="Size.Small" Class="ready-query-button" OnClick="@(() => PasteReadyQuery(query))" Disabled="Busy">
+                                @query.Title
+                            </MudButton>
+                        }
+                    }
+                    <MudText Typo="Typo.caption" Class="mt-2 d-block">O clique só cola o SQL no editor; executar é com você.</MudText>
+                </MudPaper>
             </div>
         </MudItem>
 
@@ -428,6 +448,17 @@
             _database = item.Database;
 
         _sql = item.Sql;
+    }
+
+    private void PasteReadyQuery(ReadyQuery query)
+    {
+        if (Busy)
+            return;
+
+        if (_databases.Contains(query.Database))
+            _database = query.Database;
+
+        _sql = query.Sql;
     }
 
     private static string Format(object value) => value switch

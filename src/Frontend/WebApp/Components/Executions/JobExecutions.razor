@@ -2,7 +2,7 @@
 
 @* Execuções de um job no período, paginadas; cada linha abre as mensagens e os registros da execução. *@
 
-<MudTable @ref="_table" T="ExecutionModel" ServerData="LoadExecutions" Dense="true" Hover="true" Elevation="0" Breakpoint="Breakpoint.Sm" RowsPerPage="10">
+<MudTable @ref="_table" T="ExecutionModel" ServerData="LoadExecutions" Dense="true" Hover="true" Elevation="0" Breakpoint="Breakpoint.Sm" RowsPerPage="5">
     <ToolBarContent>
         <MudText Typo="Typo.body1">Execuções de <strong>@Job.Title</strong></MudText>
     </ToolBarContent>
@@ -60,7 +60,7 @@
         <MudText Typo="Typo.body2">Nenhuma execução no período.</MudText>
     </NoRecordsContent>
     <PagerContent>
-        <TablePager HideRowsPerPage="true" />
+        <TablePager PageSizeOptions="new[] { 5, 10, 25 }" />
     </PagerContent>
 </MudTable>
 

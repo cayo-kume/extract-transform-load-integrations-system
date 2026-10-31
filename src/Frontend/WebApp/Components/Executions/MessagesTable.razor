@@ -1,0 +1,86 @@
+@inject IMonitorRepository MonitorRepository
+
+@* Mensagens de uma aplicação a partir de um nível, paginadas (tela Logs de Erros, dentro do grupo da aplicação). *@
+
+<MudTable @ref="_table" T="MessageModel" ServerData="LoadMessages" Hover="true" Dense="true" Breakpoint="Breakpoint.Sm" RowsPerPage="25" Elevation="0">
+    <HeaderContent>
+        <MudTh>Nível</MudTh>
+        <MudTh>Execução</MudTh>
+        <MudTh>Job</MudTh>
+        <MudTh>Mensagem</MudTh>
+        <MudTh></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Nível">
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@MonitorDisplay.LevelColor(context.Level)" Icon="@MonitorDisplay.LevelIcon(context.Level)">
+                @MonitorDisplay.LevelLabel(context.Level)
+            </MudChip>
+        </MudTd>
+        <MudTd DataLabel="Execução" Style="white-space: nowrap">@MonitorDisplay.Date(context.ExecutionStartDate)</MudTd>
+        <MudTd DataLabel="Job">@context.IdJob - @context.JobTitle</MudTd>
+        <MudTd DataLabel="Mensagem">@context.Message</MudTd>
+        <MudTd>
+            @if (MessageDetails.HasDetails(context))
+            {
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => Toggle(context.IdExecutionMessage))">
+                    @(_opened.Contains(context.IdExecutionMessage) ? "Ocultar" : "Detalhes")
+                </MudButton>
+            }
+        </MudTd>
+    </RowTemplate>
+    <ChildRowContent>
+        @if (_opened.Contains(context.IdExecutionMessage))
+        {
+            <MudTr>
+                <td colspan="5" class="pa-2">
+                    <MessageDetails Message="context" />
+                </td>
+            </MudTr>
+        }
+    </ChildRowContent>
+    <NoRecordsContent>
+        <MudText Typo="Typo.body2">Nenhuma mensagem no período.</MudText>
+    </NoRecordsContent>
+    <LoadingContent>
+        <SpaceLoading Label="Carregando as mensagens" />
+    </LoadingContent>
+    <PagerContent>
+        <TablePager PageSizeOptions="new[] { 25, 50, 100 }" />
+    </PagerContent>
+</MudTable>
+
+@code {
+    [Parameter, EditorRequired] public int IdApp { get; set; }
+
+    [Parameter] public Period Period { get; set; } = Period.Last24Hours;
+
+    [Parameter] public MessageLevel MinLevel { get; set; } = MessageLevel.Error;
+
+    private MudTable<MessageModel>? _table;
+    private (Period, MessageLevel, int) _loaded;
+    private readonly HashSet<long> _opened = [];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // a tabela carrega sozinha na primeira vez; depois, recarrega quando o período, o nível ou a aplicação muda
+        // (IdApp entra na chave por defesa: com o @key no grupo, a instância não deveria trocar de aplicação)
+        if (_table is not null && _loaded != (Period, MinLevel, IdApp))
+        {
+            _opened.Clear();
+            await _table.ReloadServerData();
+        }
+    }
+
+    private void Toggle(long idExecutionMessage)
+    {
+        if (!_opened.Remove(idExecutionMessage))
+            _opened.Add(idExecutionMessage);
+    }
+
+    private async Task<TableData<MessageModel>> LoadMessages(TableState state, CancellationToken cancellationToken)
+    {
+        _loaded = (Period, MinLevel, IdApp);
+        var page = await MonitorRepository.GetMessagesByLevelAsync(Period, MinLevel, IdApp, state.Page, state.PageSize, cancellationToken);
+        return new TableData<MessageModel> { Items = page.Items, TotalItems = page.TotalCount };
+    }
+}

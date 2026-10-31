@@ -1,3 +1,4 @@
+using WebApp.Components.Cards;
 using WebApp.Models;
 
 namespace WebApp.Data.Mocks
@@ -16,6 +17,10 @@ namespace WebApp.Data.Mocks
 
         private readonly MockTimeline _timeline = new();
         private readonly object _cacheLock = new();
+        private readonly object _stateLock = new();
+
+        // imagens próprias por aplicação (a da empresa logada); quem não tem aqui usa a imagem padrão do módulo
+        private readonly Dictionary<int, (string ContentType, byte[] Data)> _images = new();
         private (Period Period, DateTime Minute, IReadOnlyList<AppSummaryModel> Result)? _summariesCache;
 
         public async Task<IReadOnlyList<AppSummaryModel>> GetAppSummariesAsync(Period period, CancellationToken cancellationToken = default)
@@ -44,6 +49,7 @@ namespace WebApp.Data.Mocks
                         IdParent = app.IdParent,
                         Title = app.Title,
                         Description = app.Description,
+                        ImageUrl = ImageUrlOf(app.IdParent),
                         Integrations = jobs.Count(x => x.Catalog.IdType == 2),
                         Procedures = jobs.Count(x => x.Catalog.IdType == 1),
                         ActiveJobs = jobs.Count(x => x.IsActive),
@@ -146,7 +152,9 @@ namespace WebApp.Data.Mocks
             var now = DateTime.Now;
             var from = now - period.ToTimeSpan();
 
+            // a visão geral mostra só integrações ativas (decisão de 31/10/2026)
             return _timeline.Jobs
+                .Where(x => x.IsActive && x.Catalog.IdType == 2)
                 .Select(x => (Job: x, Last: _timeline.Last(x, now)))
                 .Where(x => x.Last is not null && x.Last.StartDate >= from)
                 .OrderByDescending(x => x.Last!.StartDate)
@@ -226,6 +234,116 @@ namespace WebApp.Data.Mocks
         {
             await Delay(cancellationToken);
             return Types;
+        }
+
+        public async Task<IReadOnlyList<ModuleSettingModel>> GetModuleSettingsAsync(int idApp, CancellationToken cancellationToken = default)
+        {
+            await Delay(cancellationToken);
+            return ModuleSettings.GetValueOrDefault(idApp, []);
+        }
+
+        private const string Masked = "••••••••••••••••";
+
+        // credenciais e parâmetros globais por módulo, no formato dos scripts de Parameters; valores de credencial mascarados
+        private static readonly Dictionary<int, IReadOnlyList<ModuleSettingModel>> ModuleSettings = new()
+        {
+            [30] =
+            [
+                new() { Label = "Token da API", Value = Masked, IsSecret = true },
+                new() { Label = "URL base da API", Value = "https://api.movidesk.com/public/v1" },
+                new() { Label = "Timeout das chamadas (segundos)", Value = "60" }
+            ],
+            [50] =
+            [
+                new() { Label = "API Key", Value = Masked, IsSecret = true },
+                new() { Label = "URL base da API", Value = "https://api.aftersale.com.br" },
+                new() { Label = "Timeout das chamadas (segundos)", Value = "60" }
+            ],
+            [70] =
+            [
+                new() { Label = "Chave da API", Value = Masked, IsSecret = true },
+                new() { Label = "URL base da API", Value = "https://api.core.dcg.com.br" },
+                new() { Label = "Timeout das chamadas (segundos)", Value = "90" }
+            ],
+            [80] =
+            [
+                new() { Label = "Chave do ERP", Value = Masked, IsSecret = true },
+                new() { Label = "Chave do B2C", Value = Masked, IsSecret = true },
+                new() { Label = "URL base da API", Value = "https://webapi.microvix.com.br/1.0/api/integracao" },
+                new() { Label = "Timeout das chamadas (segundos)", Value = "120" },
+                new() { Label = "Tamanho do lote (Bulk Insert)", Value = "5000" }
+            ],
+            [90] =
+            [
+                new() { Label = "Timeout das procedures (segundos)", Value = "600" },
+                new() { Label = "Tamanho do lote (Bulk Insert)", Value = "10000" }
+            ],
+            [130] =
+            [
+                new() { Label = "Client Id", Value = Masked, IsSecret = true },
+                new() { Label = "Client Secret", Value = Masked, IsSecret = true },
+                new() { Label = "URL base da API", Value = "https://api-homolog.totvs.com.br" },
+                new() { Label = "Timeout das chamadas (segundos)", Value = "120" }
+            ]
+        };
+
+        public async Task SetJobActiveAsync(int idJob, int idType, bool isActive, CancellationToken cancellationToken = default)
+        {
+            await Delay(cancellationToken);
+
+            var job = _timeline.Find(idJob, idType)
+                ?? throw new InvalidOperationException($"Job {idJob} (tipo {idType}) não existe no catálogo.");
+
+            job.ActiveOverride = isActive;
+            Changed();
+        }
+
+        public async Task SetModuleActiveAsync(int idApp, bool isActive, CancellationToken cancellationToken = default)
+        {
+            await Delay(cancellationToken);
+
+            foreach (var job in _timeline.Jobs.Where(x => x.IdApp == idApp))
+                job.ActiveOverride = isActive;
+
+            Changed();
+        }
+
+        public async Task SetAppImageAsync(int idApp, string contentType, byte[] data, CancellationToken cancellationToken = default)
+        {
+            await Delay(cancellationToken);
+
+            lock (_stateLock)
+                _images[idApp] = (contentType, data);
+
+            Changed();
+        }
+
+        public async Task RemoveAppImageAsync(int idApp, CancellationToken cancellationToken = default)
+        {
+            await Delay(cancellationToken);
+
+            lock (_stateLock)
+                _images.Remove(idApp);
+
+            Changed();
+        }
+
+        // qualquer escrita invalida o cache dos resumos, para o card refletir a mudança na próxima carga
+        private void Changed()
+        {
+            lock (_cacheLock)
+                _summariesCache = null;
+        }
+
+        private string? ImageUrlOf(int idApp)
+        {
+            lock (_stateLock)
+            {
+                if (_images.TryGetValue(idApp, out var image))
+                    return $"data:{image.ContentType};base64,{Convert.ToBase64String(image.Data)}";
+            }
+
+            return AppLogos.For(idApp);
         }
 
         private string AppTitle(MockJob job) => _timeline.Apps[job.IdApp].Title;
