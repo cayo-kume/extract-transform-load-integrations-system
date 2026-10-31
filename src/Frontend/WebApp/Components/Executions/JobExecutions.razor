@@ -1,0 +1,95 @@
+@inject IMonitorRepository MonitorRepository
+
+@* Execuções de um job no período, paginadas; cada linha abre as mensagens e os registros da execução. *@
+
+<MudTable @ref="_table" T="ExecutionModel" ServerData="LoadExecutions" Dense="true" Hover="true" Elevation="0" Breakpoint="Breakpoint.Sm" RowsPerPage="10">
+    <ToolBarContent>
+        <MudText Typo="Typo.body1">Execuções de <strong>@Job.Title</strong></MudText>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>Início</MudTh>
+        <MudTh>Fim</MudTh>
+        <MudTh>Duração</MudTh>
+        <MudTh>Registros</MudTh>
+        <MudTh>Avisos</MudTh>
+        <MudTh>Erros</MudTh>
+        <MudTh></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Início">@MonitorDisplay.Date(context.StartDate)</MudTd>
+        <MudTd DataLabel="Fim">@(context.EndDate is null ? "Rodando" : MonitorDisplay.Date(context.EndDate))</MudTd>
+        <MudTd DataLabel="Duração">@MonitorDisplay.Duration(context.Duration)</MudTd>
+        <MudTd DataLabel="Registros">@context.Records</MudTd>
+        <MudTd DataLabel="Avisos">
+            @if (context.Warnings > 0)
+            {
+                <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Outlined">@context.Warnings</MudChip>
+            }
+            else
+            {
+                @context.Warnings
+            }
+        </MudTd>
+        <MudTd DataLabel="Erros">
+            @if (context.Errors > 0)
+            {
+                <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Outlined">@context.Errors</MudChip>
+            }
+            else
+            {
+                @context.Errors
+            }
+        </MudTd>
+        <MudTd>
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => Toggle(context.Execution))">
+                @(_opened.Contains(context.Execution) ? "Ocultar" : "Detalhes")
+            </MudButton>
+        </MudTd>
+    </RowTemplate>
+    <ChildRowContent>
+        @if (_opened.Contains(context.Execution))
+        {
+            <MudTr>
+                <td colspan="7">
+                    <ExecutionDetails Execution="context" />
+                </td>
+            </MudTr>
+        }
+    </ChildRowContent>
+    <NoRecordsContent>
+        <MudText Typo="Typo.body2">Nenhuma execução no período.</MudText>
+    </NoRecordsContent>
+    <PagerContent>
+        <MudTablePager HideRowsPerPage="true" />
+    </PagerContent>
+</MudTable>
+
+@code {
+    [Parameter, EditorRequired] public JobModel Job { get; set; } = default!;
+
+    [Parameter] public Period Period { get; set; } = Period.Last24Hours;
+
+    private MudTable<ExecutionModel>? _table;
+    private Period _loadedPeriod;
+    private readonly HashSet<Guid> _opened = [];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // a tabela carrega sozinha na primeira vez; depois, só recarrega quando o período muda
+        if (_table is not null && _loadedPeriod != Period)
+            await _table.ReloadServerData();
+    }
+
+    private void Toggle(Guid execution)
+    {
+        if (!_opened.Remove(execution))
+            _opened.Add(execution);
+    }
+
+    private async Task<TableData<ExecutionModel>> LoadExecutions(TableState state, CancellationToken cancellationToken)
+    {
+        _loadedPeriod = Period;
+        var page = await MonitorRepository.GetExecutionsAsync(Job.IdJob, Job.IdType, Period, state.Page, state.PageSize, cancellationToken);
+        return new TableData<ExecutionModel> { Items = page.Items, TotalItems = page.TotalCount };
+    }
+}

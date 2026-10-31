@@ -1,5 +1,5 @@
 ﻿@page "/applications"
-@inject IDialogService DialogService
+@inject IMonitorRepository MonitorRepository
 
 <PageTitle>Applications</PageTitle>
 
@@ -8,58 +8,26 @@
         <h1 class="ma-0 text-center">MONITOR<br />DE INTEGRAÇÕES (ETL)</h1>
     </MudItem>
 
-    <Filters />
+    <Filters Value="_filter" ValueChanged="OnFilterChanged" ShowType="false" />
 
-    <MudItem xs="12">
+    <MudItem xs="12" Class="loading-container">
+        <SpaceLoading Overlay="true" Visible="_loading" Label="Carregando as aplicações" />
+
         <div class="d-flex align-center pa-4">
             <h3 class="ma-0 text-center">APLICAÇÕES</h3>
         </div>
 
-        @for (int i = 0; i < summarizedApps.Count(); i += 4)
+        @if (!_loading && FilteredApps.Count == 0)
+        {
+            <MudText Class="pa-4">Nenhuma aplicação encontrada.</MudText>
+        }
+
+        @for (int i = 0; i < FilteredApps.Count; i += 4)
         {
             <div class="d-flex flex-row flex-wrap align-center gap-4 pa-4">
-                @foreach (var summarizedApp in summarizedApps.Skip(i).Take(4))
+                @foreach (var summarizedApp in FilteredApps.Skip(i).Take(4))
                 {
-                    <div class="flex-grow-1 app-card-wrapper">
-                        <MudCard Class="app-card">
-                            <MudCardHeader Class="pa-2">
-                                <CardHeaderContent>
-                                    <div class="d-flex flex-row align-center">
-                                        <div class="flex-grow-1">
-                                            <MudText Typo="Typo.h6">@summarizedApp.AppName</MudText>
-                                        </div>
-                                        <div class="d-flex justify-end">
-                                            <MudChip T="string" Variant="Variant.Outlined" Color="Color.Success">Ativa</MudChip>
-                                        </div>
-                                    </div>
-                                </CardHeaderContent>
-                                <CardHeaderActions>
-                                    <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Default" OnClick="@(() => OpenApplicationConfigurations(ApplicationConfigurations.FromAppName(summarizedApp.AppName)))" />
-                                </CardHeaderActions>
-                            </MudCardHeader>
-                            <MudCardMedia Image="@($"images/logos/{summarizedApp.AppName.ToLower()}.png")" Height="200" />
-                            <MudCardContent Class="py-0 px-2">
-                                <MudTooltip Text="@summarizedApp.AppDescription" Placement="Placement.Top">
-                                    <MudText Typo="Typo.body2" Class="app-description">@summarizedApp.AppDescription</MudText>
-                                </MudTooltip>
-                                <div class="d-flex flex-row gap-18 mb-2 mt-4">
-                                    <MudText Typo="Typo.caption" Class="app-stat app-stat-label">Integrações: @summarizedApp.Integracoes</MudText>
-                                    <MudText Typo="Typo.caption" Class="app-stat">Procedures: @summarizedApp.Procedures</MudText>
-                                </div>
-                                <div class="d-flex flex-row gap-18 mb-2">
-                                    <MudText Typo="Typo.caption" Class="app-stat app-stat-label">Ativas: 5</MudText>
-                                    <MudText Typo="Typo.caption" Class="app-stat">Execuções: @summarizedApp.Execucoes</MudText>
-                                </div>
-                                <div class="d-flex flex-row gap-18">
-                                    <MudText Typo="Typo.caption" Class="app-stat app-stat-label">Erros: @summarizedApp.Errors</MudText>
-                                    <MudText Typo="Typo.caption" Class="app-stat">Warnings: 12</MudText>
-                                </div>
-                            </MudCardContent>
-                            <MudCardActions Class="pa-2">
-                                <MudButton Href="/applications/jobs" Variant="Variant.Text" Color="Color.Primary">All Jobs</MudButton>
-                            </MudCardActions>
-                        </MudCard>
-                    </div>
+                    <AppCard Summary="summarizedApp" ShowLogo="true" />
                 }
             </div>
         }
@@ -67,298 +35,33 @@
 </MudGrid>
 
 @code {
-    private string _period = "24h";
-    private string _type = "Todos";
-    private string _aplication = "Todos";
-    private string _search;
+    private FilterState _filter = new();
+    private bool _loading = true;
+    private IReadOnlyList<AppSummaryModel> _apps = [];
 
-    private List<App> apps = [];
-    private List<SummarizedApp> summarizedApps = [];
+    private List<AppSummaryModel> FilteredApps => _apps
+        .Where(x => _filter.IdApp is null || x.IdParent == _filter.IdApp)
+        .Where(x => _filter.Matches(x.Title, x.Description))
+        .ToList();
 
-    private string[] _periods = { "24h", "12h", "7 dias" };
-
-    private string[] _types = { "Todos" };
-
-    private string[] _aplications = { "Todos" };
-
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        BancoDeDadosGetFullLogs();
-
-        foreach (var app in apps)
-        {
-            summarizedApps.Add(new SummarizedApp(
-                app.Title,
-                app.Description,
-                app.Jobs.Where(x => x.Type == "Integracão").Count(),
-                app.Jobs.Select(x => x.Logs).Count(),
-                app.Jobs.Select(x => x.Logs.Select(y => y.Records)).Count(),
-                app.Jobs.Where(x => x.Type == "Procedure").Count(),
-                app.Jobs.Select(x => x.Logs.Select(y => y.Messages.Where(z => z.IsError))).Count()
-            ));
-        };
+        await Load();
     }
 
-    private Task OpenApplicationConfigurations(ApplicationConfigurations.ApplicationName application)
+    private async Task OnFilterChanged(FilterState filter)
     {
-        var parameters = new DialogParameters<ApplicationConfigurations>
-        {
-            { x => x.Application, application }
-        };
+        var periodChanged = filter.Period != _filter.Period;
+        _filter = filter;
 
-        return DialogService.ShowAsync<ApplicationConfigurations>("Configurações", parameters);
+        if (periodChanged)
+            await Load();
     }
 
-    private async Task<IEnumerable<string>> SearchPeriod(string value, CancellationToken token)
+    private async Task Load()
     {
-        // In real life use an asynchronous function for fetching data from an api.
-        await Task.Delay(5, token);
-
-        if (string.IsNullOrEmpty(value))
-            return _periods;
-
-        return _periods.Where(x => x.Contains(value, StringComparison.InvariantCultureIgnoreCase));
-    }
-
-    private async Task<IEnumerable<string>> SearchTypes(string value, CancellationToken token)
-    {
-        // In real life use an asynchronous function for fetching data from an api.
-        await Task.Delay(5, token);
-
-        if (string.IsNullOrEmpty(value))
-            return _types;
-
-        return _types.Where(x => x.Contains(value, StringComparison.InvariantCultureIgnoreCase));
-    }
-
-    private async Task<IEnumerable<string>> SearchSystems(string value, CancellationToken token)
-    {
-        // In real life use an asynchronous function for fetching data from an api.
-        await Task.Delay(5, token);
-
-        if (string.IsNullOrEmpty(value))
-            return _aplications;
-
-        return _aplications.Where(x => x.Contains(value, StringComparison.InvariantCultureIgnoreCase));
-    }
-
-    private void BancoDeDadosGetFullLogs()
-    {
-        apps.Add(
-            new App
-            {
-                Title = "AfterSale",
-                Description = "Grupo de Integrações do sistema AfterSale",
-                Jobs = { new Job { Title = "P_LinxClientesFornec_Sync", Description = "Procedure de sincronização entre as tabelas LinxClientesFornec raw e trusted", Type = "Procedure", IntervalTimeInMinutes = 5,
-                    Logs = { new Log { StartDate = DateTime.Now, EndDate = DateTime.Now.AddMinutes(4),
-                        Messages = { new Message { IsError = true, Msg = "Erro ao realizar Bulk Insert" } },
-                        Records = { new Record { FieldKeyValue = "6548 | 35899805838", RecordText = "Cayo Henrique Kume" } }
-                            }
-                        }
-                    }
-                }
-            }
-        );
-
-        apps.Add(
-            new App
-            {
-                Title = "Procedures/ERP",
-                Description = "Grupo de Procedures de sincronização Linx Microvix ERP",
-                Jobs = { new Job { Title = "P_LinxClientesFornec_Sync", Description = "Procedure de sincronização entre as tabelas LinxClientesFornec raw e trusted", Type = "Procedure", IntervalTimeInMinutes = 5,
-                    Logs = { new Log { StartDate = DateTime.Now, EndDate = DateTime.Now.AddMinutes(4),
-                        Messages = { new Message { IsError = true, Msg = "Erro ao realizar Bulk Insert" } },
-                        Records = { new Record { FieldKeyValue = "6548 | 35899805838", RecordText = "Cayo Henrique Kume" } }
-                            }
-                        }
-                    }
-                }
-            }
-        );
-
-        apps.Add(
-            new App
-            {
-                Title = "Integrações/ERP",
-                Description = "Sistema de Integrações do ERP",
-                Jobs = { new Job { Title = "LinxClientesFornec", Description = "Integração de dados da tabela LinxClientesFornec", Type = "Integração", IntervalTimeInMinutes = 5,
-                    Logs = { new Log { StartDate = DateTime.Now, EndDate = DateTime.Now.AddMinutes(4),
-                        Messages = { new Message { IsError = true, Msg = "Erro ao realizar Bulk Insert" } },
-                        Records = { new Record { FieldKeyValue = "6548 | 35899805838", RecordText = "Cayo Henrique Kume" } }
-                            }
-                        }
-                    }
-                }
-            }
-        );
-
-        apps.Add(
-            new App
-            {
-                Title = "Procedures/ERP",
-                Description = "Grupo de Procedures de sincronização Linx Microvix ERP",
-                Jobs = { new Job { Title = "P_LinxGrupoLojas_Sync", Description = "Procedure de sincronização entre as tabelas LinxGrupoLojas raw e trusted", Type = "Procedure", IntervalTimeInMinutes = 5,
-                    Logs = { new Log { StartDate = DateTime.Now, EndDate = DateTime.Now.AddMinutes(4),
-                        Messages = { new Message { IsError = true, Msg = "Erro ao realizar Bulk Insert" } },
-                        Records = { new Record { FieldKeyValue = "6548 | 35899805838", RecordText = "Cayo Henrique Kume" } }
-                            }
-                        }
-                    }
-                }
-            }
-        );
-
-        apps.Add(
-            new App
-            {
-                Title = "Procedures/ERP",
-                Description = "Grupo de Procedures de sincronização Linx Microvix ERP",
-                Jobs = { new Job { Title = "LinxGrupoLojas", Description = "Integração de dados da tabela LinxClientesFornec", Type = "Integração", IntervalTimeInMinutes = 5,
-                    Logs = { new Log { StartDate = DateTime.Now, EndDate = DateTime.Now.AddMinutes(4),
-                        Messages = { new Message { IsError = true, Msg = "Erro ao realizar Bulk Insert" } },
-                        Records = { new Record { FieldKeyValue = "6548 | 35899805838", RecordText = "Cayo Henrique Kume" } }
-                            }
-                        }
-                    }
-                }
-            }
-        );
-
-        apps.Add(
-                    new App
-                    {
-                        Title = "Procedures/ERP",
-                        Description = "Grupo de Procedures de sincronização Linx Microvix ERP",
-                        Jobs = { new Job { Title = "P_LinxClientesFornec_Sync", Description = "Procedure de sincronização entre as tabelas LinxClientesFornec raw e trusted", Type = "Procedure", IntervalTimeInMinutes = 5,
-                    Logs = { new Log { StartDate = DateTime.Now, EndDate = DateTime.Now.AddMinutes(4),
-                        Messages = { new Message { IsError = true, Msg = "Erro ao realizar Bulk Insert" } },
-                        Records = { new Record { FieldKeyValue = "6548 | 35899805838", RecordText = "Cayo Henrique Kume" } }
-                            }
-                        }
-                    }
-                        }
-                    }
-                );
-
-        apps.Add(
-            new App
-            {
-                Title = "Integrações/ERP",
-                Description = "Sistema de Integrações do ERP",
-                Jobs = { new Job { Title = "LinxClientesFornec", Description = "Integração de dados da tabela LinxClientesFornec", Type = "Integração", IntervalTimeInMinutes = 5,
-                    Logs = { new Log { StartDate = DateTime.Now, EndDate = DateTime.Now.AddMinutes(4),
-                        Messages = { new Message { IsError = true, Msg = "Erro ao realizar Bulk Insert" } },
-                        Records = { new Record { FieldKeyValue = "6548 | 35899805838", RecordText = "Cayo Henrique Kume" } }
-                            }
-                        }
-                    }
-                }
-            }
-        );
-
-        apps.Add(
-            new App
-            {
-                Title = "Procedures/ERP",
-                Description = "Grupo de Procedures de sincronização Linx Microvix ERP",
-                Jobs = { new Job { Title = "P_LinxGrupoLojas_Sync", Description = "Procedure de sincronização entre as tabelas LinxGrupoLojas raw e trusted", Type = "Procedure", IntervalTimeInMinutes = 5,
-                    Logs = { new Log { StartDate = DateTime.Now, EndDate = DateTime.Now.AddMinutes(4),
-                        Messages = { new Message { IsError = true, Msg = "Erro ao realizar Bulk Insert" } },
-                        Records = { new Record { FieldKeyValue = "6548 | 35899805838", RecordText = "Cayo Henrique Kume" } }
-                            }
-                        }
-                    }
-                }
-            }
-        );
-
-        apps.Add(
-            new App
-            {
-                Title = "Procedures/ERP",
-                Description = "Grupo de Procedures de sincronização Linx Microvix ERP",
-                Jobs = { new Job { Title = "LinxGrupoLojas", Description = "Integração de dados da tabela LinxClientesFornec", Type = "Integração", IntervalTimeInMinutes = 5,
-                    Logs = { new Log { StartDate = DateTime.Now, EndDate = DateTime.Now.AddMinutes(4),
-                        Messages = { new Message { IsError = true, Msg = "Erro ao realizar Bulk Insert" } },
-                        Records = { new Record { FieldKeyValue = "6548 | 35899805838", RecordText = "Cayo Henrique Kume" } }
-                            }
-                        }
-                    }
-                }
-            }
-        );
-    }
-
-    private class SummarizedApp
-    {
-        public string? AppName { get; set; }
-        public string? AppDescription { get; set; }
-
-        public Int32 Integracoes { get; set; }
-        public Int32 Execucoes { get; set; }
-        public Int32 Records { get; set; }
-        public Int32 Procedures { get; set; }
-        public Int32 Errors { get; set; }
-
-        public SummarizedApp(
-            string? AppName,
-            string? AppDescription,
-            Int32 Integracoes,
-            Int32 Execucoes,
-            Int32 Records,
-            Int32 Procedures,
-            Int32 Errors
-        )
-        {
-            this.AppName = AppName;
-            this.AppDescription = AppDescription;
-            this.Integracoes = Integracoes;
-            this.Execucoes = Execucoes;
-            this.Records = Records;
-            this.Procedures = Procedures;
-            this.Errors = Errors;
-        }
-    }
-
-    private class App
-    {
-        public string? Title { get; set; }
-        public string? Description { get; set; }
-
-        public List<Job> Jobs { get; set; } = [];
-    }
-
-    private class Job
-    {
-        public string? Title { get; set; }
-        public string? Description { get; set; }
-        public string? Type { get; set; }
-        public Int32 IntervalTimeInMinutes { get; set; }
-
-        public List<Log> Logs { get; set; } = [];
-    }
-
-    private class Log
-    {
-        public DateTime StartDate { get; set; }
-        public DateTime EndDate { get; set; }
-
-        public List<Message> Messages { get; set; } = [];
-        public List<Record> Records { get; set; } = [];
-    };
-
-    private class Message
-    {
-        public bool IsError { get; set; }
-        public string? Msg { get; set; }
-        public string? SqlCommand { get; set; }
-        public string? ExceptionMessage { get; set; }
-        public string? ExceptionStackTrace { get; set; }
-    }
-
-    private class Record
-    {
-        public string? FieldKeyValue { get; set; }
-        public string? RecordText { get; set; }
+        _loading = true;
+        _apps = await MonitorRepository.GetAppSummariesAsync(_filter.Period);
+        _loading = false;
     }
 }

@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor.Services;
 using WebApp;
+using WebApp.Data;
+using WebApp.Data.Mocks;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,10 +10,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-// Aqui você deve adicionar os serviços que antes vinham da sua API
-// (ex: builder.Services.AddDbContext<SeuContexto>(...))
-// (ex: builder.Services.AddScoped<ISeuServico, SeuServico>())
 builder.Services.AddMudServices();
+
+// Dados do painel: só o mock até a fase 5 do plano (docs/PLANO-WEBAPP.md), quando entra o MonitorRepository com o banco
+builder.Services.AddSingleton<IMonitorRepository, MockMonitorRepository>();
 
 var app = builder.Build();
 
@@ -21,6 +23,8 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+// Endereço que não existe cai na página /not-found, a mesma do roteador
+app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
 
 // Habilita o uso da pasta wwwroot

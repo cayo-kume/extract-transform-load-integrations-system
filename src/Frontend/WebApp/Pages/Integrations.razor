@@ -1,7 +1,119 @@
 ﻿@page "/integrations"
+@inject IMonitorRepository MonitorRepository
 
-<h3>Integrations</h3>
+<PageTitle>Integrações</PageTitle>
+
+<MudGrid>
+    <MudItem xs="5" Class="d-flex align-center justify-center pa-1">
+        <h1 class="ma-0 text-center">INTEGRAÇÕES</h1>
+    </MudItem>
+
+    <Filters Value="_filter" ValueChanged="OnFilterChanged" ShowType="false" />
+
+    <MudItem xs="12" Class="loading-container">
+        <SpaceLoading Overlay="true" Visible="_loading" Label="Carregando as integrações" />
+
+        <div class="d-flex align-center gap-2 pa-4">
+            <h3 class="ma-0 text-center">JOBS DE INTEGRAÇÃO</h3>
+            <MudSpacer />
+            @foreach (var health in HealthCounts.Where(x => x.Key.IsActive))
+            {
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@MonitorDisplay.HealthColor(health.Key.Health)" Icon="@MonitorDisplay.HealthIcon(health.Key.Health)">
+                    @MonitorDisplay.HealthLabel(health.Key.Health): @health.Count()
+                </MudChip>
+            }
+            @if (HealthCounts.FirstOrDefault(x => !x.Key.IsActive) is { } inactive)
+            {
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Default" Icon="@Icons.Material.Filled.PauseCircle">Inativo: @inactive.Count()</MudChip>
+            }
+        </div>
+
+        <div class="pa-4">
+            <MudTable Items="@FilteredJobs" Hover="true" Dense="true" Breakpoint="Breakpoint.Sm" RowsPerPage="25">
+                <HeaderContent>
+                    <MudTh>Aplicação</MudTh>
+                    <MudTh>IdJob</MudTh>
+                    <MudTh>Título</MudTh>
+                    <MudTh>Agenda</MudTh>
+                    <MudTh>Saúde</MudTh>
+                    <MudTh>Última execução</MudTh>
+                    <MudTh>Duração</MudTh>
+                    <MudTh>Registros</MudTh>
+                    <MudTh></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Aplicação">@AppTitle(context.IdApp)</MudTd>
+                    <MudTd DataLabel="IdJob">@context.IdJob</MudTd>
+                    <MudTd DataLabel="Título">
+                        <MudTooltip Text="@context.Description">@context.Title</MudTooltip>
+                    </MudTd>
+                    <MudTd DataLabel="Agenda">@MonitorDisplay.Schedule(context)</MudTd>
+                    <MudTd DataLabel="Saúde"><HealthChip Health="context.Health" IsActive="context.IsActive" HasWarnings="@(context.LastExecution?.Warnings > 0)" /></MudTd>
+                    <MudTd DataLabel="Última execução">@MonitorDisplay.Date(context.LastExecution?.StartDate)</MudTd>
+                    <MudTd DataLabel="Duração">@MonitorDisplay.Duration(context.LastExecution?.Duration)</MudTd>
+                    <MudTd DataLabel="Registros">@context.LastExecution?.Records</MudTd>
+                    <MudTd>
+                        <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => Toggle(context))">
+                            @(_opened.Contains(context.IdJob) ? "Ocultar" : "Execuções")
+                        </MudButton>
+                    </MudTd>
+                </RowTemplate>
+                <ChildRowContent>
+                    @if (_opened.Contains(context.IdJob))
+                    {
+                        <MudTr>
+                            <td colspan="9">
+                                <JobExecutions Job="context" Period="_filter.Period" />
+                            </td>
+                        </MudTr>
+                    }
+                </ChildRowContent>
+                <NoRecordsContent>
+                    <MudText Typo="Typo.body2">Nenhuma integração encontrada.</MudText>
+                </NoRecordsContent>
+                <PagerContent>
+                    <MudTablePager />
+                </PagerContent>
+            </MudTable>
+        </div>
+    </MudItem>
+</MudGrid>
 
 @code {
+    private const int IntegrationType = 2;
 
+    private FilterState _filter = new();
+    private bool _loading = true;
+
+    private Dictionary<int, string?> _appTitles = [];
+    private IReadOnlyList<JobModel> _jobs = [];
+    private readonly HashSet<int> _opened = [];
+
+    private List<JobModel> FilteredJobs => _jobs
+        .Where(x => _filter.IdApp is null || x.IdApp == _filter.IdApp)
+        .Where(x => _filter.Matches(x.IdJob.ToString(), x.Title, x.Description))
+        .ToList();
+
+    // inativos à parte: não têm saúde, mas também não são "sem execução"
+    private IEnumerable<IGrouping<(bool IsActive, JobHealth? Health), JobModel>> HealthCounts => FilteredJobs
+        .GroupBy(x => (x.IsActive, x.Health))
+        .OrderBy(x => x.Key.Health is null ? int.MaxValue : (int)x.Key.Health);
+
+    protected override async Task OnInitializedAsync()
+    {
+        var apps = await MonitorRepository.GetAppSummariesAsync(_filter.Period);
+        _appTitles = apps.ToDictionary(x => x.IdParent, x => x.Title);
+        _jobs = await MonitorRepository.GetJobsAsync(idApp: null, IntegrationType);
+        _loading = false;
+    }
+
+    private string? AppTitle(int idApp) => _appTitles.GetValueOrDefault(idApp);
+
+    private void OnFilterChanged(FilterState filter) => _filter = filter;
+
+    private void Toggle(JobModel job)
+    {
+        if (!_opened.Remove(job.IdJob))
+            _opened.Add(job.IdJob);
+    }
 }

@@ -1,129 +1,91 @@
+@inject IMonitorRepository MonitorRepository
+
 <MudDialog>
     <TitleContent>
         <MudText Typo="Typo.h6">
-            Configurações - @ApplicationTitle(Application)
+            Configurações - @(Title ?? "Geral")
         </MudText>
     </TitleContent>
     <DialogContent>
-        <MudText Typo="Typo.h6">
-        </MudText>
-        <MudGrid Spacing="2" Justify="Justify.SpaceAround">
-            @bodyContent
-        </MudGrid>
+        <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3">
+            Agenda dos jobs de auditing.Jobs, somente leitura. A edição entra com a autenticação.
+        </MudAlert>
+        <MudTextField T="string"
+                      @bind-Value="_search"
+                      Immediate="true"
+                      Label="Pesquisar job"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Clearable="true"
+                      Adornment="Adornment.End"
+                      AdornmentIcon="@Icons.Material.Filled.Search" />
+        <MudTable Items="@FilteredJobs" Dense="true" Hover="true" Loading="_loading" Elevation="0" Breakpoint="Breakpoint.Sm" RowsPerPage="10" Class="mt-2">
+            <HeaderContent>
+                <MudTh>Job</MudTh>
+                <MudTh>Tipo</MudTh>
+                <MudTh>Ativo</MudTh>
+                <MudTh>Intervalo (min)</MudTh>
+                <MudTh>Diário às</MudTh>
+                <MudTh>Fila</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Job">@context.IdJob - @context.Title</MudTd>
+                <MudTd DataLabel="Tipo">@context.JobType</MudTd>
+                <MudTd DataLabel="Ativo"><MudSwitch T="bool" Value="context.IsActive" Disabled="true" Color="Color.Success" /></MudTd>
+                <MudTd DataLabel="Intervalo (min)">@context.IntervalTimeInMinutes</MudTd>
+                <MudTd DataLabel="Diário às">@(context.RunningDailyAt?.ToString("HH:mm") ?? "—")</MudTd>
+                <MudTd DataLabel="Fila">@context.Queue</MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudText Typo="Typo.body2">Nenhum job encontrado.</MudText>
+            </NoRecordsContent>
+            <PagerContent>
+                <MudTablePager HideRowsPerPage="true" />
+            </PagerContent>
+        </MudTable>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Close</MudButton>
-        <MudButton Color="Color.Success">Confirm</MudButton>
+        <MudButton OnClick="Close">Fechar</MudButton>
     </DialogActions>
 </MudDialog>
 
 @code {
-    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; }
+    [CascadingParameter] private IMudDialogInstance? MudDialog { get; set; }
 
     /// <summary>
-    /// Aplicação cujas configurações serão exibidas. Define o conteúdo padrão do body.
+    /// Aplicação (IdParent de auditing.Apps) cujos jobs são exibidos. Nula = todas.
     /// </summary>
-    [Parameter] public ApplicationName Application { get; set; } = ApplicationName.Unknown;
+    [Parameter] public int? IdApp { get; set; }
 
-    /// <summary>
-    /// Conteúdo a ser injetado no body. Quando informado, sobrepõe o conteúdo padrão de <see cref="Application"/>.
-    /// </summary>
-    [Parameter] public RenderFragment? BodyContent { get; set; }
+    [Parameter] public string? Title { get; set; }
 
-    private RenderFragment bodyContent
-        => BodyContent ?? Application switch
-        {
-            ApplicationName.AfterSale => AfterSaleContent,
-            ApplicationName.IntegracoesERP => IntegracoesERPContent,
-            ApplicationName.ProceduresERP => ProceduresERPContent,
-            _ => EmptyContent
-        };
+    private IReadOnlyList<JobModel> _jobs = [];
+    private bool _loading = true;
+    private string? _search;
 
-    private void Cancel() => MudDialog?.Cancel();
+    private IEnumerable<JobModel> FilteredJobs => string.IsNullOrWhiteSpace(_search)
+        ? _jobs
+        : _jobs.Where(x => $"{x.IdJob} {x.Title}".Contains(_search.Trim(), StringComparison.InvariantCultureIgnoreCase));
 
-    public enum ApplicationName
+    protected override async Task OnInitializedAsync()
     {
-        Unknown,
-        AfterSale,
-        IntegracoesERP,
-        ProceduresERP
+        _jobs = await MonitorRepository.GetJobsAsync(IdApp, idType: null);
+        _loading = false;
     }
 
+    private void Close() => MudDialog?.Close();
+
     /// <summary>
-    /// Converte o nome da aplicação vindo da base de dados no enum correspondente.
+    /// Abre o diálogo com os jobs de uma aplicação.
     /// </summary>
-    public static ApplicationName FromAppName(string? appName)
-        => appName switch
+    public static Task ShowAsync(IDialogService dialogService, int? idApp, string? title)
+    {
+        var parameters = new DialogParameters<ApplicationConfigurations>
         {
-            "AfterSale" => ApplicationName.AfterSale,
-            "Integrações/ERP" => ApplicationName.IntegracoesERP,
-            "Procedures/ERP" => ApplicationName.ProceduresERP,
-            _ => ApplicationName.Unknown
+            { x => x.IdApp, idApp },
+            { x => x.Title, title }
         };
 
-    private static string ApplicationTitle(ApplicationName application)
-        => application switch
-        {
-            ApplicationName.AfterSale => "AfterSale",
-            ApplicationName.IntegracoesERP => "Integrações/ERP",
-            ApplicationName.ProceduresERP => "Procedures/ERP",
-            _ => "Geral"
-        };
-
-    private static readonly RenderFragment AfterSaleContent =
-    @<text>
-        <MudItem xs="12">
-            <MudText Typo="Typo.caption">API Key</MudText>
-            <MudTextField T="string" Clearable="true" Variant="Variant.Outlined" Style="height:2.5rem" />
-        </MudItem>
-        <MudItem xs="12">
-            <MudText Typo="Typo.caption">Base URL</MudText>
-            <MudTextField T="string" Clearable="true" Variant="Variant.Outlined" Style="height:2.5rem" />
-        </MudItem>
-        <MudItem xs="12">
-            <MudText Typo="Typo.caption">Timeout (segundos)</MudText>
-            <MudNumericField T="int" Min="0" Variant="Variant.Outlined" Style="height:2.5rem" />
-        </MudItem>
-    </text>;
-
-    private static readonly RenderFragment IntegracoesERPContent =
-    @<text>
-        <MudItem xs="12">
-            <MudText Typo="Typo.caption">Chave Linx Microvix</MudText>
-            <MudTextField T="string" Clearable="true" Variant="Variant.Outlined" Style="height:2.5rem" />
-        </MudItem>
-        <MudItem xs="12">
-            <MudText Typo="Typo.caption">Usuário</MudText>
-            <MudTextField T="string" Clearable="true" Variant="Variant.Outlined" Style="height:2.5rem" />
-        </MudItem>
-        <MudItem xs="12">
-            <MudText Typo="Typo.caption">Senha</MudText>
-            <MudTextField T="string" InputType="InputType.Password" Clearable="true" Variant="Variant.Outlined" Style="height:2.5rem" />
-        </MudItem>
-        <MudItem xs="12">
-            <MudText Typo="Typo.caption">Intervalo de execução (minutos)</MudText>
-            <MudNumericField T="int" Min="1" Variant="Variant.Outlined" Style="height:2.5rem" />
-        </MudItem>
-    </text>;
-
-    private static readonly RenderFragment ProceduresERPContent =
-    @<text>
-        <MudItem xs="12">
-            <MudText Typo="Typo.caption">Connection String</MudText>
-            <MudTextField T="string" Clearable="true" Variant="Variant.Outlined" Style="height:2.5rem" />
-        </MudItem>
-        <MudItem xs="12">
-            <MudText Typo="Typo.caption">Command Timeout (segundos)</MudText>
-            <MudNumericField T="int" Min="0" Variant="Variant.Outlined" Style="height:2.5rem" />
-        </MudItem>
-        <MudItem xs="12">
-            <MudText Typo="Typo.caption">Tamanho do lote (Bulk Insert)</MudText>
-            <MudNumericField T="int" Min="1" Variant="Variant.Outlined" Style="height:2.5rem" />
-        </MudItem>
-    </text>;
-
-    private static readonly RenderFragment EmptyContent =
-    @<MudItem xs="12">
-        <MudText Typo="Typo.body2">Nenhuma configuração disponível para esta aplicação.</MudText>
-    </MudItem>;
+        return dialogService.ShowAsync<ApplicationConfigurations>("Configurações", parameters, new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true, CloseButton = true });
+    }
 }

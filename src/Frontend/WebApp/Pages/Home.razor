@@ -1,5 +1,6 @@
 @page "/home"
-@inject IDialogService DialogService
+@implements IAsyncDisposable
+@inject IMonitorRepository MonitorRepository
 
 <PageTitle>Home</PageTitle>
 
@@ -7,67 +8,29 @@
     <MudItem xs="5" Class="d-flex align-center justify-center pa-1">
         <h1 class="ma-0 text-center">MONITOR<br/>DE INTEGRAÇÕES (ETL)</h1>
     </MudItem>
-    
-    <Filters />
 
-    <MudItem xs="12">
+    <Filters Value="_filter" ValueChanged="OnFilterChanged" ShowType="false" ShowSearch="false" />
+
+    <MudItem xs="12" Class="loading-container">
+        <SpaceLoading Overlay="true" Visible="_loading" Label="Carregando o painel" />
+
         <div class="d-flex align-center pa-4">
             <h3 class="ma-0 text-center">APLICAÇÕES MONITORADAS</h3>
             <MudSpacer />
             <MudButton Href ="/applications" StartIcon="@Icons.Material.Filled.ArrowForward" Class="ver-todos-button">Ver Todos</MudButton>
         </div>
-        
+
         <!--1 Fileira de Apps-->
-        @for(int i = 0; i < summarizedApps.Count(); i += 4)
+        @for(int i = 0; i < _apps.Count; i += 4)
         {
             <div class="d-flex flex-row flex-wrap align-center gap-4 pa-4">
-                @foreach (var summarizedApp in summarizedApps.Skip(i).Take(4))
+                @foreach (var summarizedApp in _apps.Skip(i).Take(4))
                 {
-                    <div class="flex-grow-1 app-card-wrapper">
-                        <MudCard Class="app-card">
-                            <MudCardHeader Class="pa-2">
-                                <CardHeaderContent>
-                                    <div class="d-flex flex-row align-center">
-                                        <div class="flex-grow-1">
-                                            <MudText Typo="Typo.h6">@summarizedApp.AppName</MudText>
-                                        </div>
-                                        <div class="d-flex justify-end">
-                                            <MudChip T="string" Variant="Variant.Outlined" Color="Color.Success">Ativa</MudChip>
-                                        </div>
-                                    </div>
-                                </CardHeaderContent>
-                                <CardHeaderActions>
-                                    <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Default" OnClick="@(() => OpenApplicationConfigurations(ApplicationConfigurations.FromAppName(summarizedApp.AppName)))" />
-                                </CardHeaderActions>
-                            </MudCardHeader>
-                            <MudCardContent Class="py-0 px-2">
-                                <MudTooltip Text="@summarizedApp.AppDescription" Placement="Placement.Top">
-                                    <MudText Typo="Typo.body2" Class="app-description">@summarizedApp.AppDescription</MudText>
-                                </MudTooltip>
-                                <div class="d-flex flex-row gap-18 mb-2 mt-4">
-                                    <MudText Typo="Typo.caption" Class="app-stat app-stat-label">Integrações: @summarizedApp.Integracoes</MudText>
-                                    <MudText Typo="Typo.caption" Class="app-stat">Procedures: @summarizedApp.Procedures</MudText>
-                                </div>
-                                <div class="d-flex flex-row gap-18 mb-2">
-                                    <MudText Typo="Typo.caption" Class="app-stat app-stat-label">Ativas: 5</MudText>
-                                    <MudText Typo="Typo.caption" Class="app-stat">Execuções: @summarizedApp.Execucoes</MudText>
-                                </div>
-                                <div class="d-flex flex-row gap-18">
-                                    <MudText Typo="Typo.caption" Class="app-stat app-stat-label">Erros: @summarizedApp.Errors</MudText>
-                                    <MudText Typo="Typo.caption" Class="app-stat">Warnings: 12</MudText>
-                                </div>
-                            </MudCardContent>
-                            <MudCardActions Class="pa-2">
-                                <MudButton Href="/applications/jobs" Variant="Variant.Text" Color="Color.Primary">All Jobs</MudButton>
-                            </MudCardActions>
-                        </MudCard>
-                    </div>
+                    <AppCard Summary="summarizedApp" />
                 }
             </div>
         }
-    </MudItem>
 
-    <MudItem xs="12">
         <div class="d-flex align-center pa-4">
             <h3 class="ma-0 text-center">MÉTRICAS CONSOLIDADAS</h3>
         </div>
@@ -79,12 +42,10 @@
                         <CardHeaderContent>
                             <MudText Typo="Typo.h6">Taxa de Sucesso</MudText>
                         </CardHeaderContent>
-                        <CardHeaderActions>
-                            <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Default" OnClick="@(() => OpenApplicationConfigurations(ApplicationConfigurations.ApplicationName.Unknown))" />
-                        </CardHeaderActions>
                     </MudCardHeader>
                     <MudCardContent>
-                        <MudText>This day everything happened.</MudText>
+                        <MudText Typo="Typo.h4" Color="Color.Success">@SuccessRate.ToString("P1")</MudText>
+                        <MudText Typo="Typo.caption">@(Executions - FailedExecutions) de @Executions execuções sem erro</MudText>
                     </MudCardContent>
                 </MudCard>
             </div>
@@ -94,12 +55,10 @@
                         <CardHeaderContent>
                             <MudText Typo="Typo.h6">Registros Processados</MudText>
                         </CardHeaderContent>
-                        <CardHeaderActions>
-                            <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Default" OnClick="@(() => OpenApplicationConfigurations(ApplicationConfigurations.ApplicationName.Unknown))" />
-                        </CardHeaderActions>
                     </MudCardHeader>
                     <MudCardContent>
-                        <MudText>This day everything happened.</MudText>
+                        <MudText Typo="Typo.h4" Color="Color.Primary">@Records.ToString("N0")</MudText>
+                        <MudText Typo="Typo.caption">em @Executions.ToString("N0") execuções</MudText>
                     </MudCardContent>
                 </MudCard>
             </div>
@@ -109,25 +68,23 @@
                         <CardHeaderContent>
                             <MudText Typo="Typo.h6">Falhas Ativas</MudText>
                         </CardHeaderContent>
-                        <CardHeaderActions>
-                            <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Default" OnClick="@(() => OpenApplicationConfigurations(ApplicationConfigurations.ApplicationName.Unknown))" />
-                        </CardHeaderActions>
                     </MudCardHeader>
                     <MudCardContent>
-                        <MudText>This day everything happened.</MudText>
+                        <MudText Typo="Typo.h4" Color="@(ActiveFailures > 0 ? Color.Error : Color.Success)">@ActiveFailures</MudText>
+                        <MudText Typo="Typo.caption">@FailedJobs com erro e @LateJobs atrasados agora</MudText>
                     </MudCardContent>
                 </MudCard>
             </div>
         </div>
-    </MudItem>
 
-    <MudItem xs="12">
         <div class="d-flex align-center pa-4">
             <h3 class="ma-0 text-center">PAINEL DE SAÚDE (HEARTBEAT ATIVO)</h3>
+            <MudSpacer />
+            <MudText Typo="Typo.caption">Atualizado às @_updatedAt.ToString("HH:mm:ss"), a cada minuto</MudText>
         </div>
 
         <div class="pa-4">
-            <MudTable Items="@summarizedLogs.Take(4)" Hover="true" Dense="true" Breakpoint="Breakpoint.Sm" Loading=false LoadingProgressColor="Color.Info" ">
+            <MudTable Items="@_heartbeat" Hover="true" Dense="true" Breakpoint="Breakpoint.Sm">
                 <HeaderContent>
                     <MudTh>Saúde</MudTh>
                     <MudTh>Tipo</MudTh>
@@ -138,12 +95,12 @@
                     <MudTh>Registros</MudTh>
                 </HeaderContent>
                 <RowTemplate>
-                    <MudTd DataLabel="Saúde">@context.Health</MudTd>
-                    <MudTd DataLabel="Tipo">@context.Type</MudTd>
-                    <MudTd DataLabel="Aplicação">@context.AppName</MudTd>
-                    <MudTd DataLabel="Nome" HideSmall=false>@context.JobName</MudTd>
-                    <MudTd DataLabel="Inicio (Data/Hora)">@context.StartDate</MudTd>
-                    <MudTd DataLabel="Duração">@context.Duration</MudTd>
+                    <MudTd DataLabel="Saúde"><HealthChip Health="context.Health" HasWarnings="context.HasWarnings" /></MudTd>
+                    <MudTd DataLabel="Tipo">@context.JobType</MudTd>
+                    <MudTd DataLabel="Aplicação">@context.AppTitle</MudTd>
+                    <MudTd DataLabel="Nome" HideSmall=false>@context.JobTitle</MudTd>
+                    <MudTd DataLabel="Inicio (Data/Hora)">@MonitorDisplay.Date(context.StartDate)</MudTd>
+                    <MudTd DataLabel="Duração">@MonitorDisplay.Duration(context.Duration)</MudTd>
                     <MudTd DataLabel="Registros">@context.Records</MudTd>
                 </RowTemplate>
             </MudTable>
@@ -152,293 +109,77 @@
 </MudGrid>
 
 @code {
-    private List<App> apps = [];
-    private List<SummarizedApp> summarizedApps = [];
-    private List<SummarizedLog> summarizedLogs = [];
+    private static readonly TimeSpan RefreshInterval = TimeSpan.FromSeconds(60);
 
-    protected override void OnInitialized()
+    private FilterState _filter = new();
+    private bool _loading = true;
+    private DateTime _updatedAt;
+
+    private IReadOnlyList<AppSummaryModel> _apps = [];
+    private IReadOnlyList<JobModel> _jobs = [];
+    private IReadOnlyList<HeartbeatModel> _heartbeat = [];
+
+    private PeriodicTimer? _timer;
+    private readonly CancellationTokenSource _disposed = new();
+
+    private int Executions => _apps.Sum(x => x.Executions);
+    private int FailedExecutions => _apps.Sum(x => x.FailedExecutions);
+    private int Records => _apps.Sum(x => x.Records);
+    private double SuccessRate => Executions == 0 ? 1 : (double)(Executions - FailedExecutions) / Executions;
+    private int FailedJobs => _jobs.Count(x => x.Health == JobHealth.Error);
+    private int LateJobs => _jobs.Count(x => x.Health == JobHealth.Late);
+    private int ActiveFailures => FailedJobs + LateJobs;
+
+    protected override async Task OnInitializedAsync()
     {
-        BancoDeDadosGetFullLogs();
+        await Load();
+        _ = Refresh();
+    }
 
-        foreach (var app in apps)
+    private async Task OnFilterChanged(FilterState filter)
+    {
+        _filter = filter;
+        _loading = true;
+        await Load();
+    }
+
+    private async Task Load()
+    {
+        var apps = await MonitorRepository.GetAppSummariesAsync(_filter.Period, _disposed.Token);
+        _apps = apps.Where(x => _filter.IdApp is null || x.IdParent == _filter.IdApp).ToList();
+        _jobs = await MonitorRepository.GetJobsAsync(_filter.IdApp, idType: null, _disposed.Token);
+
+        var heartbeat = await MonitorRepository.GetHeartbeatAsync(_filter.Period, top: 50, _disposed.Token);
+        _heartbeat = heartbeat.Where(x => _filter.IdApp is null || x.IdApp == _filter.IdApp).Take(10).ToList();
+
+        _updatedAt = DateTime.Now;
+        _loading = false;
+    }
+
+    // recarrega cards, métricas e heartbeat a cada minuto, sem o overlay de carregamento
+    private async Task Refresh()
+    {
+        _timer = new PeriodicTimer(RefreshInterval);
+
+        try
         {
-            summarizedApps.Add(new SummarizedApp(
-                app.Title,
-                app.Description,
-                app.Jobs.Where(x => x.Type == "Integracão").Count(),
-                app.Jobs.Select(x => x.Logs).Count(),
-                app.Jobs.Select(x => x.Logs.Select(y => y.Records)).Count(),
-                app.Jobs.Where(x => x.Type == "Procedure").Count(),
-                app.Jobs.Select(x => x.Logs.Select(y => y.Messages.Where(z => z.IsError))).Count()
-            ));
-
-            foreach (var job in app.Jobs)
+            while (await _timer.WaitForNextTickAsync(_disposed.Token))
             {
-                foreach (var log in job.Logs)
+                await InvokeAsync(async () =>
                 {
-                    summarizedLogs.Add(new SummarizedLog(
-                        app.Title, 
-                        job.Title, 
-                        job.Description, 
-                        job.Type, 
-                        job.IntervalTimeInMinutes,
-                        log.Records.Count(),
-                        log.StartDate,
-                        log.EndDate
-                    ));
-                }
+                    await Load();
+                    StateHasChanged();
+                });
             }
-        };
-    }
-
-    private Task OpenApplicationConfigurations(ApplicationConfigurations.ApplicationName application)
-    {
-        var parameters = new DialogParameters<ApplicationConfigurations>
+        }
+        catch (OperationCanceledException)
         {
-            { x => x.Application, application }
-        };
-
-        return DialogService.ShowAsync<ApplicationConfigurations>("Configurações", parameters);
-    }
-
-    private void BancoDeDadosGetFullLogs()
-    {
-        apps.Add(
-            new App
-            {
-                Title = "Procedures/ERP",
-                Description = "Grupo de Procedures de sincronização Linx Microvix ERP",
-                Jobs = { new Job { Title = "P_LinxClientesFornec_Sync", Description = "Procedure de sincronização entre as tabelas LinxClientesFornec raw e trusted", Type = "Procedure", IntervalTimeInMinutes = 5,
-                    Logs = { new Log { StartDate = DateTime.Now, EndDate = DateTime.Now.AddMinutes(4),
-                        Messages = { new Message { IsError = true, Msg = "Erro ao realizar Bulk Insert" } },
-                        Records = { new Record { FieldKeyValue = "6548 | 35899805838", RecordText = "Cayo Henrique Kume" } }
-                            }
-                        }
-                    }
-                }
-            }
-        );
-
-        apps.Add(
-            new App
-            {
-                Title = "Integrações/ERP",
-                Description = "Sistema de Integrações do ERP",
-                Jobs = { new Job { Title = "LinxClientesFornec", Description = "Integração de dados da tabela LinxClientesFornec", Type = "Integração", IntervalTimeInMinutes = 5,
-                    Logs = { new Log { StartDate = DateTime.Now, EndDate = DateTime.Now.AddMinutes(4),
-                        Messages = { new Message { IsError = true, Msg = "Erro ao realizar Bulk Insert" } },
-                        Records = { new Record { FieldKeyValue = "6548 | 35899805838", RecordText = "Cayo Henrique Kume" } }
-                            }
-                        }
-                    }
-                }
-            }
-        );
-
-        apps.Add(
-            new App
-            {
-                Title = "Procedures/ERP",
-                Description = "Grupo de Procedures de sincronização Linx Microvix ERP",
-                Jobs = { new Job { Title = "P_LinxGrupoLojas_Sync", Description = "Procedure de sincronização entre as tabelas LinxGrupoLojas raw e trusted", Type = "Procedure", IntervalTimeInMinutes = 5,
-                    Logs = { new Log { StartDate = DateTime.Now, EndDate = DateTime.Now.AddMinutes(4),
-                        Messages = { new Message { IsError = true, Msg = "Erro ao realizar Bulk Insert" } },
-                        Records = { new Record { FieldKeyValue = "6548 | 35899805838", RecordText = "Cayo Henrique Kume" } }
-                            }
-                        }
-                    }
-                }
-            }
-        );
-
-        apps.Add(
-            new App
-            {
-                Title = "Procedures/ERP",
-                Description = "Grupo de Procedures de sincronização Linx Microvix ERP",
-                Jobs = { new Job { Title = "LinxGrupoLojas", Description = "Integração de dados da tabela LinxClientesFornec", Type = "Integração", IntervalTimeInMinutes = 5,
-                    Logs = { new Log { StartDate = DateTime.Now, EndDate = DateTime.Now.AddMinutes(4),
-                        Messages = { new Message { IsError = true, Msg = "Erro ao realizar Bulk Insert" } },
-                        Records = { new Record { FieldKeyValue = "6548 | 35899805838", RecordText = "Cayo Henrique Kume" } }
-                            }
-                        }
-                    }
-                }
-            }
-        );
-
-        apps.Add(
-                    new App
-                    {
-                        Title = "Procedures/ERP",
-                        Description = "Grupo de Procedures de sincronização Linx Microvix ERP",
-                        Jobs = { new Job { Title = "P_LinxClientesFornec_Sync", Description = "Procedure de sincronização entre as tabelas LinxClientesFornec raw e trusted", Type = "Procedure", IntervalTimeInMinutes = 5,
-                    Logs = { new Log { StartDate = DateTime.Now, EndDate = DateTime.Now.AddMinutes(4),
-                        Messages = { new Message { IsError = true, Msg = "Erro ao realizar Bulk Insert" } },
-                        Records = { new Record { FieldKeyValue = "6548 | 35899805838", RecordText = "Cayo Henrique Kume" } }
-                            }
-                        }
-                    }
-                        }
-                    }
-                );
-
-        apps.Add(
-            new App
-            {
-                Title = "Integrações/ERP",
-                Description = "Sistema de Integrações do ERP",
-                Jobs = { new Job { Title = "LinxClientesFornec", Description = "Integração de dados da tabela LinxClientesFornec", Type = "Integração", IntervalTimeInMinutes = 5,
-                    Logs = { new Log { StartDate = DateTime.Now, EndDate = DateTime.Now.AddMinutes(4),
-                        Messages = { new Message { IsError = true, Msg = "Erro ao realizar Bulk Insert" } },
-                        Records = { new Record { FieldKeyValue = "6548 | 35899805838", RecordText = "Cayo Henrique Kume" } }
-                            }
-                        }
-                    }
-                }
-            }
-        );
-
-        apps.Add(
-            new App
-            {
-                Title = "Procedures/ERP",
-                Description = "Grupo de Procedures de sincronização Linx Microvix ERP",
-                Jobs = { new Job { Title = "P_LinxGrupoLojas_Sync", Description = "Procedure de sincronização entre as tabelas LinxGrupoLojas raw e trusted", Type = "Procedure", IntervalTimeInMinutes = 5,
-                    Logs = { new Log { StartDate = DateTime.Now, EndDate = DateTime.Now.AddMinutes(4),
-                        Messages = { new Message { IsError = true, Msg = "Erro ao realizar Bulk Insert" } },
-                        Records = { new Record { FieldKeyValue = "6548 | 35899805838", RecordText = "Cayo Henrique Kume" } }
-                            }
-                        }
-                    }
-                }
-            }
-        );
-
-        apps.Add(
-            new App
-            {
-                Title = "Procedures/ERP",
-                Description = "Grupo de Procedures de sincronização Linx Microvix ERP",
-                Jobs = { new Job { Title = "LinxGrupoLojas", Description = "Integração de dados da tabela LinxClientesFornec", Type = "Integração", IntervalTimeInMinutes = 5,
-                    Logs = { new Log { StartDate = DateTime.Now, EndDate = DateTime.Now.AddMinutes(4),
-                        Messages = { new Message { IsError = true, Msg = "Erro ao realizar Bulk Insert" } },
-                        Records = { new Record { FieldKeyValue = "6548 | 35899805838", RecordText = "Cayo Henrique Kume" } }
-                            }
-                        }
-                    }
-                }
-            }
-        );
-    }
-
-    private class SummarizedApp
-    {
-        public string? AppName { get; set; }
-        public string? AppDescription { get; set; }
-
-        public Int32 Integracoes { get; set; }
-        public Int32 Execucoes { get; set; }
-        public Int32 Records { get; set; }
-        public Int32 Procedures { get; set; }
-        public Int32 Errors { get; set; }
-
-        public SummarizedApp(
-            string? AppName,
-            string? AppDescription,
-            Int32 Integracoes,
-            Int32 Execucoes,
-            Int32 Records,
-            Int32 Procedures,
-            Int32 Errors
-        )
-        {
-            this.AppName = AppName;
-            this.AppDescription = AppDescription;
-            this.Integracoes = Integracoes;
-            this.Execucoes = Execucoes;
-            this.Records = Records;
-            this.Procedures = Procedures;
-            this.Errors = Errors;
         }
     }
 
-    private class SummarizedLog
+    public async ValueTask DisposeAsync()
     {
-        public string? AppName { get; set; }
-        public string? JobName { get; set; }
-        public string? JobDescription { get; set; }
-        public string? Type { get; set; }
-        public Int32 IntervalTimeInMinutes { get; set; }
-        public Int32 Records { get; set; }
-        public bool Health { get; set; }
-        public DateTime StartDate { get; set; }
-        public TimeOnly Duration { get; set; }
-
-        public SummarizedLog(
-            string? AppName, 
-            string? JobName, 
-            string? JobDescription, 
-            string? Type, 
-            Int32 IntervalTimeInMinutes,
-            Int32 Records,
-            DateTime StartDate,
-            DateTime EndDate
-        )
-        {
-            this.AppName = AppName;
-
-            this.JobName = JobName;
-            this.JobDescription = JobDescription;
-
-            this.Type = Type;
-            this.IntervalTimeInMinutes = IntervalTimeInMinutes;
-            this.Records = Records;
-            this.StartDate = StartDate;
-
-            Duration = TimeOnly.FromTimeSpan(EndDate - StartDate);
-        }
-    }
-
-    private class App
-    {
-        public string? Title { get; set; }
-        public string? Description { get; set; }
-
-        public List<Job> Jobs { get; set; } = [];
-    }
-
-    private class Job
-    {
-        public string? Title { get; set; }
-        public string? Description { get; set; }
-        public string? Type { get; set; }
-        public Int32 IntervalTimeInMinutes { get; set; }
-
-        public List<Log> Logs { get; set; } = [];
-    }
-
-    private class Log 
-    {
-        public DateTime StartDate { get; set; }
-        public DateTime EndDate { get; set; }
-        
-        public List<Message> Messages { get; set; } = [];
-        public List<Record> Records { get; set; } = [];
-    };
-
-    private class Message
-    {
-        public bool IsError { get; set; }
-        public string? Msg { get; set; }
-        public string? SqlCommand { get; set; }
-        public string? ExceptionMessage { get; set; }
-        public string? ExceptionStackTrace { get; set; }
-    }
-
-    private class Record
-    {
-        public string? FieldKeyValue { get; set; }
-        public string? RecordText { get; set; }
+        await _disposed.CancelAsync();
+        _timer?.Dispose();
     }
 }

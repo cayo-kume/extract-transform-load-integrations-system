@@ -165,3 +165,40 @@ code {
 .app-stat-label {
     width: 110px;
 }
+/* Card de aplicação sem logo: as iniciais no lugar da imagem (mesma altura do MudCardMedia) */
+.app-logo-placeholder {
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4rem;
+    font-weight: 700;
+    color: #7e6fff;
+    background-color: rgba(126, 111, 255, 0.08);
+}
+
+/* Container das telas que usam o SpaceLoading com Overlay="true" */
+.loading-container {
+    position: relative;
+    min-height: 240px;
+}
+
+/* Exceção, pilha e comando SQL das mensagens */
+.code-block {
+    font-family: Consolas, 'Courier New', monospace;
+    font-size: 0.75rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 320px;
+    overflow: auto;
+    padding: 8px 12px;
+    margin: 4px 0;
+    border-radius: 6px;
+    background-color: rgba(126, 111, 255, 0.08);
+}
+
+/* Texto do registro gravado em auditing.Records */
+.record-text {
+    font-size: 0.75rem;
+    word-break: break-all;
+}

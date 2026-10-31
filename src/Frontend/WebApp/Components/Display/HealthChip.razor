@@ -1,0 +1,34 @@
+@using WebApp.Models
+
+<div class="d-flex align-center gap-1">
+    @if (IsActive)
+    {
+        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@MonitorDisplay.HealthColor(Health)" Icon="@MonitorDisplay.HealthIcon(Health)">
+            @MonitorDisplay.HealthLabel(Health)
+        </MudChip>
+    }
+    else
+    {
+        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Default" Icon="@Icons.Material.Filled.PauseCircle">Inativo</MudChip>
+    }
+    @if (HasWarnings)
+    {
+        <MudTooltip Text="A última execução tem avisos">
+            <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" Size="Size.Small" />
+        </MudTooltip>
+    }
+</div>
+
+@code {
+    [Parameter] public JobHealth? Health { get; set; }
+
+    /// <summary>
+    /// Job inativo não tem saúde: aparece como "Inativo".
+    /// </summary>
+    [Parameter] public bool IsActive { get; set; } = true;
+
+    /// <summary>
+    /// A última execução tem mensagem de aviso (nível 2): aparece como ícone, sem mudar a saúde.
+    /// </summary>
+    [Parameter] public bool HasWarnings { get; set; }
+}

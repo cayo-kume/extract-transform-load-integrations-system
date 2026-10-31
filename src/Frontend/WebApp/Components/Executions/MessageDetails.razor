@@ -1,0 +1,26 @@
+@* Detalhe de uma mensagem com exceção: texto da exceção, pilha e comando SQL, cada um num bloco de código. *@
+
+@if (!string.IsNullOrWhiteSpace(Message.ExceptionMessage))
+{
+    <MudText Typo="Typo.caption" Class="mt-2">Exceção</MudText>
+    <pre class="code-block">@Message.ExceptionMessage</pre>
+}
+@if (!string.IsNullOrWhiteSpace(Message.ExceptionStackTrace))
+{
+    <MudText Typo="Typo.caption" Class="mt-2">Pilha</MudText>
+    <pre class="code-block">@Message.ExceptionStackTrace</pre>
+}
+@if (!string.IsNullOrWhiteSpace(Message.SqlCommand))
+{
+    <MudText Typo="Typo.caption" Class="mt-2">Comando SQL</MudText>
+    <pre class="code-block">@Message.SqlCommand</pre>
+}
+
+@code {
+    [Parameter, EditorRequired] public MessageModel Message { get; set; } = default!;
+
+    public static bool HasDetails(MessageModel message) =>
+        !string.IsNullOrWhiteSpace(message.ExceptionMessage)
+        || !string.IsNullOrWhiteSpace(message.ExceptionStackTrace)
+        || !string.IsNullOrWhiteSpace(message.SqlCommand);
+}

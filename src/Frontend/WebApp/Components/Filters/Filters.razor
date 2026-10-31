@@ -1,91 +1,108 @@
-﻿<!--Filtros-->
-<MudItem xs="7">
+﻿@inject IMonitorRepository MonitorRepository
+
+<!--Filtros-->
+<MudItem xs="@Columns">
     <div class="d-flex flex-row align-center gap-2 ml-8 mr-8">
         <div class="flex-grow-1">
-            <MudAutocomplete @bind-value="_period"
-                             SearchFunc="SearchPeriod"
-                             Variant=Variant.Outlined
-                             Label="Período"
-                             Margin=Margin.Normal
-                             Placeholder="Período"
-                             Clearable=true
-                             Modal=true />
+            <MudSelect T="Period"
+                       Value="Value.Period"
+                       ValueChanged="@(x => Change(Value with { Period = x }))"
+                       Variant="Variant.Outlined"
+                       Label="Período"
+                       Margin="Margin.Normal">
+                <MudSelectItem Value="Period.Last12Hours">12h</MudSelectItem>
+                <MudSelectItem Value="Period.Last24Hours">24h</MudSelectItem>
+                <MudSelectItem Value="Period.Last7Days">7 dias</MudSelectItem>
+            </MudSelect>
         </div>
-        <div class="flex-grow-1">
-            <MudAutocomplete @bind-value="_type"
-                             SearchFunc="SearchTypes"
-                             Variant=Variant.Outlined
-                             Label="Tipo"
-                             Margin=Margin.Normal
-                             Placeholder="Tipo"
-                             Clearable=true
-                             Modal=true />
-        </div>
-        <div class="flex-grow-1">
-            <MudAutocomplete @bind-value="_aplication"
-                             SearchFunc="SearchSystems"
-                             Variant=Variant.Outlined
-                             Label="Aplicação"
-                             Margin=Margin.Normal
-                             Placeholder="Aplicação"
-                             Clearable=true
-                             Modal=true />
-        </div>
+        @if (ShowType)
+        {
+            <div class="flex-grow-1">
+                <MudSelect T="int?"
+                           Value="Value.IdType"
+                           ValueChanged="@(x => Change(Value with { IdType = x }))"
+                           Variant="Variant.Outlined"
+                           Label="Tipo"
+                           Margin="Margin.Normal">
+                    <MudSelectItem T="int?" Value="null">Todos</MudSelectItem>
+                    @foreach (var type in _types)
+                    {
+                        <MudSelectItem T="int?" Value="type.IdType">@type.JobType</MudSelectItem>
+                    }
+                </MudSelect>
+            </div>
+        }
+        @if (ShowApp)
+        {
+            <div class="flex-grow-1">
+                <MudSelect T="int?"
+                           Value="Value.IdApp"
+                           ValueChanged="@(x => Change(Value with { IdApp = x }))"
+                           Variant="Variant.Outlined"
+                           Label="Aplicação"
+                           Margin="Margin.Normal">
+                    <MudSelectItem T="int?" Value="null">Todas</MudSelectItem>
+                    @foreach (var app in _apps)
+                    {
+                        <MudSelectItem T="int?" Value="app.IdParent">@app.Title</MudSelectItem>
+                    }
+                </MudSelect>
+            </div>
+        }
     </div>
-    <!--Pesquisa-->
-    <div class="d-flex flex-row align-center ml-8 mr-8">
-        <MudTextField @bind-Value="_search"
-                      Label="Search"
-                      Variant="Variant.Outlined"
-                      Adornment="Adornment.End"
-                      AdornmentIcon="@Icons.Material.Filled.Search"
-                      AdornmentColor="Color.Default" />
-    </div>
+    @if (ShowSearch)
+    {
+        <!--Pesquisa-->
+        <div class="d-flex flex-row align-center ml-8 mr-8">
+            <MudTextField T="string"
+                          Value="Value.Search"
+                          ValueChanged="@(x => Change(Value with { Search = x }))"
+                          DebounceInterval="400"
+                          Immediate="true"
+                          Label="Pesquisar"
+                          Variant="Variant.Outlined"
+                          Clearable="true"
+                          Adornment="Adornment.End"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          AdornmentColor="Color.Default" />
+        </div>
+    }
 </MudItem>
 
 @code {
-    private string _period = "24h";
-    private string _type = "Todos";
-    private string _aplication = "Todos";
-    private string _search;
+    [Parameter] public FilterState Value { get; set; } = new();
 
-    private string[] _periods = { "24h", "12h", "7 dias" };
+    [Parameter] public EventCallback<FilterState> ValueChanged { get; set; }
 
-    private string[] _types = { "Todos" };
+    [Parameter] public bool ShowType { get; set; } = true;
 
-    private string[] _aplications = { "Todos" };
+    [Parameter] public bool ShowApp { get; set; } = true;
 
-    private async Task<IEnumerable<string>> SearchPeriod(string value, CancellationToken token)
+    [Parameter] public bool ShowSearch { get; set; } = true;
+
+    /// <summary>
+    /// Largura no MudGrid (de 1 a 12).
+    /// </summary>
+    [Parameter] public int Columns { get; set; } = 7;
+
+    private IReadOnlyList<TypeModel> _types = [];
+    private IReadOnlyList<AppSummaryModel> _apps = [];
+
+    protected override async Task OnInitializedAsync()
     {
-        // In real life use an asynchronous function for fetching data from an api.
-        await Task.Delay(5, token);
+        if (ShowType)
+            _types = await MonitorRepository.GetTypesAsync();
 
-        if (string.IsNullOrEmpty(value))
-            return _periods;
-
-        return _periods.Where(x => x.Contains(value, StringComparison.InvariantCultureIgnoreCase));
+        if (ShowApp)
+            _apps = await MonitorRepository.GetAppSummariesAsync(Value.Period);
     }
 
-    private async Task<IEnumerable<string>> SearchTypes(string value, CancellationToken token)
+    private Task Change(FilterState value)
     {
-        // In real life use an asynchronous function for fetching data from an api.
-        await Task.Delay(5, token);
+        if (value == Value)
+            return Task.CompletedTask;
 
-        if (string.IsNullOrEmpty(value))
-            return _types;
-
-        return _types.Where(x => x.Contains(value, StringComparison.InvariantCultureIgnoreCase));
+        Value = value;
+        return ValueChanged.InvokeAsync(value);
     }
-
-    private async Task<IEnumerable<string>> SearchSystems(string value, CancellationToken token)
-    {
-        // In real life use an asynchronous function for fetching data from an api.
-        await Task.Delay(5, token);
-
-        if (string.IsNullOrEmpty(value))
-            return _aplications;
-
-        return _aplications.Where(x => x.Contains(value, StringComparison.InvariantCultureIgnoreCase));
-    }
-
 }

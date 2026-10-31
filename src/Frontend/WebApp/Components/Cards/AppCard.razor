@@ -1,0 +1,71 @@
+@inject IDialogService DialogService
+
+<div class="flex-grow-1 app-card-wrapper">
+    <MudCard Class="app-card">
+        <MudCardHeader Class="pa-2">
+            <CardHeaderContent>
+                <div class="d-flex flex-row align-center">
+                    <div class="flex-grow-1">
+                        <MudText Typo="Typo.h6">@Summary.Title</MudText>
+                    </div>
+                    <div class="d-flex justify-end">
+                        @if (Summary.IsActive)
+                        {
+                            <MudChip T="string" Variant="Variant.Outlined" Color="Color.Success">Ativa</MudChip>
+                        }
+                        else
+                        {
+                            <MudChip T="string" Variant="Variant.Outlined" Color="Color.Default">Inativa</MudChip>
+                        }
+                    </div>
+                </div>
+            </CardHeaderContent>
+            <CardHeaderActions>
+                <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Default" OnClick="OpenConfigurations" />
+            </CardHeaderActions>
+        </MudCardHeader>
+        @if (ShowLogo)
+        {
+            @if (AppLogos.For(Summary.IdParent) is string logo)
+            {
+                <MudCardMedia Image="@logo" Height="200" />
+            }
+            else
+            {
+                <div class="app-logo-placeholder">@AppLogos.Initials(Summary.Title)</div>
+            }
+        }
+        <MudCardContent Class="py-0 px-2">
+            <MudTooltip Text="@Summary.Description" Placement="Placement.Top">
+                <MudText Typo="Typo.body2" Class="app-description">@Summary.Description</MudText>
+            </MudTooltip>
+            <div class="d-flex flex-row gap-18 mb-2 mt-4">
+                <MudText Typo="Typo.caption" Class="app-stat app-stat-label">Integrações: @Summary.Integrations</MudText>
+                <MudText Typo="Typo.caption" Class="app-stat">Procedures: @Summary.Procedures</MudText>
+            </div>
+            <div class="d-flex flex-row gap-18 mb-2">
+                <MudText Typo="Typo.caption" Class="app-stat app-stat-label">Ativas: @Summary.ActiveJobs</MudText>
+                <MudText Typo="Typo.caption" Class="app-stat">Execuções: @Summary.Executions</MudText>
+            </div>
+            <div class="d-flex flex-row gap-18">
+                <MudText Typo="Typo.caption" Class="app-stat app-stat-label">Erros: @Summary.Errors</MudText>
+                <MudText Typo="Typo.caption" Class="app-stat">Warnings: @Summary.Warnings</MudText>
+            </div>
+        </MudCardContent>
+        <MudCardActions Class="pa-2">
+            <MudButton Href="@($"/applications/{Summary.IdParent}/jobs")" Variant="Variant.Text" Color="Color.Primary">All Jobs</MudButton>
+        </MudCardActions>
+    </MudCard>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public AppSummaryModel Summary { get; set; } = default!;
+
+    /// <summary>
+    /// Mostra o logo (ou as iniciais) entre o cabeçalho e os números.
+    /// </summary>
+    [Parameter] public bool ShowLogo { get; set; }
+
+    private Task OpenConfigurations() =>
+        ApplicationConfigurations.ShowAsync(DialogService, Summary.IdParent, Summary.Title);
+}

@@ -1,0 +1,81 @@
+@inject IMonitorRepository MonitorRepository
+
+@* Mensagens e registros de uma execução, carregados quando o componente aparece. *@
+
+<div class="pa-2">
+    <MudText Typo="Typo.subtitle2">Mensagens</MudText>
+    @if (_messages is null)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-2" />
+    }
+    else if (_messages.Count == 0)
+    {
+        <MudText Typo="Typo.body2" Class="my-1">Nenhuma mensagem: a execução ainda está rodando.</MudText>
+    }
+    else
+    {
+        @foreach (var message in _messages)
+        {
+            <div class="d-flex align-start gap-2 my-1">
+                <MudTooltip Text="@MonitorDisplay.LevelLabel(message.Level)">
+                    <MudIcon Icon="@MonitorDisplay.LevelIcon(message.Level)" Color="@MonitorDisplay.LevelColor(message.Level)" Size="Size.Small" />
+                </MudTooltip>
+                <div class="flex-grow-1" style="min-width: 0">
+                    <MudText Typo="Typo.body2">@message.Message</MudText>
+                    @if (MessageDetails.HasDetails(message))
+                    {
+                        <MudButton Variant="Variant.Text" Size="Size.Small" Color="Color.Primary" OnClick="@(() => Toggle(message.IdExecutionMessage))">
+                            @(_opened.Contains(message.IdExecutionMessage) ? "Ocultar detalhes" : "Ver detalhes")
+                        </MudButton>
+                        @if (_opened.Contains(message.IdExecutionMessage))
+                        {
+                            <MessageDetails Message="message" />
+                        }
+                    }
+                </div>
+            </div>
+        }
+    }
+
+    <MudText Typo="Typo.subtitle2" Class="mt-3">Registros (@Execution.Records)</MudText>
+    @if (Execution.Records > 0)
+    {
+        <MudTable T="RecordModel" ServerData="LoadRecords" Dense="true" Hover="true" Elevation="0" Breakpoint="Breakpoint.Sm" RowsPerPage="5">
+            <HeaderContent>
+                <MudTh>Chave</MudTh>
+                <MudTh>Registro</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Chave" Style="white-space: nowrap">@context.FieldKeyValue</MudTd>
+                <MudTd DataLabel="Registro"><code class="record-text">@context.RecordText</code></MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager HideRowsPerPage="true" />
+            </PagerContent>
+        </MudTable>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public ExecutionModel Execution { get; set; } = default!;
+
+    private IReadOnlyList<MessageModel>? _messages;
+    private readonly HashSet<long> _opened = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _messages = await MonitorRepository.GetMessagesAsync(Execution.Execution);
+    }
+
+    private void Toggle(long idExecutionMessage)
+    {
+        if (!_opened.Remove(idExecutionMessage))
+            _opened.Add(idExecutionMessage);
+    }
+
+    private async Task<TableData<RecordModel>> LoadRecords(TableState state, CancellationToken cancellationToken)
+    {
+        var page = await MonitorRepository.GetRecordsAsync(Execution.Execution, state.Page, state.PageSize, cancellationToken);
+        return new TableData<RecordModel> { Items = page.Items, TotalItems = page.TotalCount };
+    }
+}

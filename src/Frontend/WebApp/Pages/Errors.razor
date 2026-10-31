@@ -1,0 +1,109 @@
+@page "/errors"
+@inject IMonitorRepository MonitorRepository
+
+<PageTitle>Logs de Erros</PageTitle>
+
+<MudGrid>
+    <MudItem xs="5" Class="d-flex align-center justify-center pa-1">
+        <h1 class="ma-0 text-center">LOGS DE ERROS</h1>
+    </MudItem>
+
+    <Filters Value="_filter" ValueChanged="OnFilterChanged" ShowType="false" ShowSearch="false" />
+
+    <MudItem xs="12">
+        <div class="d-flex align-center gap-4 pa-4">
+            <h3 class="ma-0 text-center">MENSAGENS</h3>
+            <MudSpacer />
+            <MudCheckBox T="bool" Value="_includeWarnings" ValueChanged="OnIncludeWarningsChanged" Color="Color.Warning" Label="Incluir avisos" />
+        </div>
+
+        <div class="pa-4">
+            <MudTable @ref="_table" T="MessageModel" ServerData="LoadMessages" Hover="true" Dense="true" Breakpoint="Breakpoint.Sm" RowsPerPage="25">
+                <HeaderContent>
+                    <MudTh>Nível</MudTh>
+                    <MudTh>Execução</MudTh>
+                    <MudTh>Aplicação</MudTh>
+                    <MudTh>Job</MudTh>
+                    <MudTh>Mensagem</MudTh>
+                    <MudTh></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Nível">
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@MonitorDisplay.LevelColor(context.Level)" Icon="@MonitorDisplay.LevelIcon(context.Level)">
+                            @MonitorDisplay.LevelLabel(context.Level)
+                        </MudChip>
+                    </MudTd>
+                    <MudTd DataLabel="Execução" Style="white-space: nowrap">@MonitorDisplay.Date(context.ExecutionStartDate)</MudTd>
+                    <MudTd DataLabel="Aplicação">@context.AppTitle</MudTd>
+                    <MudTd DataLabel="Job">@context.IdJob - @context.JobTitle</MudTd>
+                    <MudTd DataLabel="Mensagem">@context.Message</MudTd>
+                    <MudTd>
+                        @if (MessageDetails.HasDetails(context))
+                        {
+                            <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => Toggle(context.IdExecutionMessage))">
+                                @(_opened.Contains(context.IdExecutionMessage) ? "Ocultar" : "Detalhes")
+                            </MudButton>
+                        }
+                    </MudTd>
+                </RowTemplate>
+                <ChildRowContent>
+                    @if (_opened.Contains(context.IdExecutionMessage))
+                    {
+                        <MudTr>
+                            <td colspan="6" class="pa-2">
+                                <MessageDetails Message="context" />
+                            </td>
+                        </MudTr>
+                    }
+                </ChildRowContent>
+                <NoRecordsContent>
+                    <MudText Typo="Typo.body2">Nenhuma mensagem no período.</MudText>
+                </NoRecordsContent>
+                <LoadingContent>
+                    <SpaceLoading Label="Carregando as mensagens" />
+                </LoadingContent>
+                <PagerContent>
+                    <MudTablePager />
+                </PagerContent>
+            </MudTable>
+        </div>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private FilterState _filter = new();
+    private bool _includeWarnings;
+    private MudTable<MessageModel>? _table;
+    private readonly HashSet<long> _opened = [];
+
+    private async Task<TableData<MessageModel>> LoadMessages(TableState state, CancellationToken cancellationToken)
+    {
+        var minLevel = _includeWarnings ? MessageLevel.Warning : MessageLevel.Error;
+        var page = await MonitorRepository.GetMessagesByLevelAsync(_filter.Period, minLevel, _filter.IdApp, state.Page, state.PageSize, cancellationToken);
+        return new TableData<MessageModel> { Items = page.Items, TotalItems = page.TotalCount };
+    }
+
+    private Task OnFilterChanged(FilterState filter)
+    {
+        _filter = filter;
+        return Reload();
+    }
+
+    private Task OnIncludeWarningsChanged(bool value)
+    {
+        _includeWarnings = value;
+        return Reload();
+    }
+
+    private Task Reload()
+    {
+        _opened.Clear();
+        return _table?.ReloadServerData() ?? Task.CompletedTask;
+    }
+
+    private void Toggle(long idExecutionMessage)
+    {
+        if (!_opened.Remove(idExecutionMessage))
+            _opened.Add(idExecutionMessage);
+    }
+}
