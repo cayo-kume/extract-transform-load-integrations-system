@@ -64,12 +64,14 @@ WebApi/
 │   ├── JobExpirationTimeoutFilter.cs                       retenção dos jobs concluídos
 │   ├── SkipConcurrentExecutionFilter.cs                    trava de concorrência
 │   ├── SchedulerRefreshJob.cs, FailedJobsCleanupJob.cs     jobs de manutenção
-│   ├── JobCron.cs                                          agenda de auditing.Jobs → cron
-│   └── RecurringJobs/                                      mapas IdJob → método, um por módulo
+│   └── HangfireJobRunner.cs                                o que o Hangfire executa: repassa ao ScheduledJobRunner
 ├── appsettings.json
 ├── WebApi.http
 └── docs/PLANO-HOST-WEBAPI.md
 ```
+
+Os mapas `IdJob → método` (`RecurringJobs/`), o `JobCron` e o `ScheduledJobRunner` ficam no projeto
+`src/Backend/Hosts/Hosts.Scheduling`, que o WebApi e o WebJob dividem.
 
 ## Configuração
 
@@ -205,7 +207,7 @@ rotas são para uso manual e consciente (o DW continua com a própria trava no p
 
 * **Job recorrente novo num módulo do host:** a linha no script de jobs da service (com `RunningDailyAt` e `Queue`, ver
   [PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md](../../../../docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md) §3.1), a rota no
-  controller, a entrada no mapa do módulo em `Scheduling/RecurringJobs/<Módulo>RecurringJobs.cs`, com o método sem
+  controller, a entrada no mapa do módulo em `src/Backend/Hosts/Hosts.Scheduling/RecurringJobs/<Módulo>RecurringJobs.cs`, com o método sem
   parâmetros do service, e `[JobVersion("1.0.0")]` no método da classe do service. Sem o mapa, o `SchedulerRefresh` avisa e deixa o job fora da agenda.
 * **Módulo novo:** referência no `WebApi.csproj`, registro no `ServicesExtensions`, controller, o mapa
   `<Módulo>RecurringJobs.cs` incluído no `RecurringJobMap` e o script de jobs com as colunas novas (plano, passo 6).

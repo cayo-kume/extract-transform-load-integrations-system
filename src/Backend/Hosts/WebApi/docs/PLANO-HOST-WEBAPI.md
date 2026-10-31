@@ -326,7 +326,8 @@ Só vale com `Hangfire:Enabled = true`. A agenda vem inteira de `auditing.Jobs`:
 
 ### 4.2 Do registro da tabela ao cron
 
-1. Um mapa por módulo `IdJob → método do service` (em `Scheduling/RecurringJobs/<Módulo>RecurringJobs.cs`), porque os
+1. Um mapa por módulo `IdJob → método do service` (em `Scheduling/RecurringJobs/<Módulo>RecurringJobs.cs`; desde a fase 1
+   do PLANO-HOST-WEBJOB.md, no projeto `src/Backend/Hosts/Hosts.Scheduling`, junto com o `JobCron`), porque os
    títulos dos jobs nem sempre são o nome do método (`MovideskGetTickets` → `GetTickets()`).
 2. Para cada job ativo (`IdType = 2` e `IsActive = 1`) que está no mapa:
 

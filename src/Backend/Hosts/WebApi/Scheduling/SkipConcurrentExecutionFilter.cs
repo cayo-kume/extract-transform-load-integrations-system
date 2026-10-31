@@ -2,7 +2,7 @@ using Application.Shared.Abstractions.Services;
 using Hangfire.Server;
 using Hangfire.States;
 using System.Collections.Concurrent;
-using WebApi.Scheduling.RecurringJobs;
+using Hosts.Scheduling.RecurringJobs;
 
 namespace WebApi.Scheduling
 {

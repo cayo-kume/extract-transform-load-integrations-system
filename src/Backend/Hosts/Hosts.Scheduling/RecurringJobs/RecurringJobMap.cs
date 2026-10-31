@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace WebApi.Scheduling.RecurringJobs
+namespace Hosts.Scheduling.RecurringJobs
 {
     /// <summary>
     /// todos os mapas IdJob → método dos módulos registrados no host (src/Backend/Hosts/WebApi/docs/PLANO-HOST-WEBAPI.md §4.2). Um

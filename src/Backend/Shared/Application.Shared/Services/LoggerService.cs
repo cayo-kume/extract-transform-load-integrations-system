@@ -11,6 +11,7 @@ namespace Application.Shared.Services
     {
         private readonly ILoggerRepository _logRepository;
         public Log? Log { get; private set; }
+        private bool _committed;
 
         public LoggerService(ILoggerRepository logRepository) =>
             _logRepository = logRepository;
@@ -22,11 +23,13 @@ namespace Application.Shared.Services
             return this;
         }
 
+        // mesma ordem da interface (message, sqlCommand, exceptionMessage, stackTraceMessage): as chamadas passam pela interface,
+        // e com a ordem diferente os três textos chegavam trocados em auditing.Messages
         public ILoggerService AddMessage(
             string message,
+            string commandSQL,
             string exceptionMessage,
-            string stackTraceMessage,
-            string commandSQL
+            string stackTraceMessage
         )
         {
             if (Log is null) return this;
@@ -93,7 +96,10 @@ namespace Application.Shared.Services
             if (Log is null) return;
 
             await _logRepository.LogInsert(Log);
+            _committed = true;
         }
+
+        public bool HasUncommittedLog => Log is not null && !_committed;
 
         public Guid? GetExecutionGuid()
         {

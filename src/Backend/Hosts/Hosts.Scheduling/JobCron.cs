@@ -1,4 +1,4 @@
-namespace WebApi.Scheduling
+namespace Hosts.Scheduling
 {
     /// <summary>
     /// conversão da agenda de auditing.Jobs em cron (src/Backend/Hosts/WebApi/docs/PLANO-HOST-WEBAPI.md §4.2). O cron conta a partir da

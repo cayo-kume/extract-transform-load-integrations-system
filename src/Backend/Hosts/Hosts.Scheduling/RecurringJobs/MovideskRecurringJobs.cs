@@ -1,6 +1,6 @@
 using Application.Movidesk.Abstractions.Services;
 
-namespace WebApi.Scheduling.RecurringJobs
+namespace Hosts.Scheduling.RecurringJobs
 {
     /// <summary>
     /// jobs recorrentes do Movidesk: IdJob de auditing.Jobs → método do service (src/Backend/Hosts/WebApi/docs/PLANO-HOST-WEBAPI.md

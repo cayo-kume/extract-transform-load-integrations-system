@@ -169,7 +169,7 @@ SQLServer/
   (src/Backend/Hosts/WebApi/docs/PLANO-HOST-WEBAPI.md §4.1). `RunningDailyAt` é `NULL`, menos nos jobs de integração
   diários (`IntervalTimeInMinutes = 1440`), que levam a hora (`'23:00'`); `Queue` é `'default'`. `IsActive` fica de fora
   e nasce 0: o job só entra na agenda do Hangfire depois de um `UPDATE`.
-* Um job recorrente novo também entra no mapa do host (`src/Backend/Hosts/WebApi/Scheduling/RecurringJobs/<Módulo>RecurringJobs.cs`),
+* Um job recorrente novo também entra no mapa dos hosts (`src/Backend/Hosts/Hosts.Scheduling/RecurringJobs/<Módulo>RecurringJobs.cs`),
   com o método sem parâmetros do service que grava o job no log; sem o mapa, o `SchedulerRefresh` avisa e o deixa fora da
   agenda.
 * O método do service chamado por um job recorrente leva `[JobVersion("MAJOR.MINOR.PATCH")]` (`Application.Shared.Attributes`)

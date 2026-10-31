@@ -14,6 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Hosts.Scheduling\Hosts.Scheduling.csproj" />
     <ProjectReference Include="..\..\Modules\DataWarehouse\Application.DataWarehouse\Application.DataWarehouse.csproj" />
     <ProjectReference Include="..\..\Modules\DataWarehouse\Infrastructure.DataWarehouse\Infrastructure.DataWarehouse.csproj" />
     <ProjectReference Include="..\..\Modules\General\AfterSale\Application.AfterSale\Application.AfterSale.csproj" />

@@ -1,6 +1,6 @@
 using Application.LinxMicrovix.Outbound.Abstractions.Services;
 
-namespace WebApi.Scheduling.RecurringJobs
+namespace Hosts.Scheduling.RecurringJobs
 {
     /// <summary>
     /// jobs recorrentes do Linx Microvix (ERP e B2C): IdJob de auditing.Jobs → método do service (src/Backend/Hosts/WebApi/docs/PLANO-HOST-WEBAPI.md

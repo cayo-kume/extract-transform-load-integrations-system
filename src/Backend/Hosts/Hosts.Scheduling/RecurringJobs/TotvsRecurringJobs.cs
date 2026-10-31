@@ -1,6 +1,6 @@
 using Application.Totvs.Abstractions.Services;
 
-namespace WebApi.Scheduling.RecurringJobs
+namespace Hosts.Scheduling.RecurringJobs
 {
     /// <summary>
     /// jobs recorrentes da Totvs: IdJob de auditing.Jobs → método do service (src/Backend/Hosts/WebApi/docs/PLANO-HOST-WEBAPI.md

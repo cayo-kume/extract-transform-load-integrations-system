@@ -54,6 +54,12 @@ namespace Application.Shared.Abstractions.Services
         public Task CommitAllChanges();
 
         /// <summary>
+        /// há um log aberto (AddLog) que ainda não foi gravado (CommitAllChanges). O executor de jobs dos hosts de agenda usa para
+        /// gravar o erro de uma execução que caiu no meio sem gravar o log duas vezes (a chave de auditing.Logs não aceita)
+        /// </summary>
+        public bool HasUncommittedLog { get; }
+
+        /// <summary>
         /// Clear records list and messages list
         /// </summary>
         /// <returns>ILoggerService</returns>

@@ -82,7 +82,7 @@ tabela "Situação em 30/10/2026" deste plano ficou como estava, por ser o retra
 ### 2.1 Projeto compartilhado
 
 1. Os mapas `IdJob → método` (`Scheduling/RecurringJobs/`), o `JobCron` e o executor (2.2) saem do WebApi para
-   um projeto compartilhado pelos hosts (ex.: `src/Backend/Hosts/Hosts.Scheduling`, uma class library). Não podem ir para
+   um projeto compartilhado pelos hosts (`src/Backend/Hosts/Hosts.Scheduling`, uma class library). Não podem ir para
    o Shared: os mapas referenciam os services dos módulos, e os módulos referenciam o Shared.
 2. O WebApi passa a referenciar esse projeto; o comportamento dele não muda (mesmos 327 jobs, mesma conferência).
 
@@ -114,6 +114,40 @@ Proposta:
 
 Conferência: um job que lança exceção no meio grava uma linha em `auditing.Logs` com `EndDate` e a mensagem de erro em
 `auditing.Messages` (`IsError`), nos dois hosts.
+
+**Feito em 30/10/2026 (2.1 e 2.2).**
+
+* **Projeto `src/Backend/Hosts/Hosts.Scheduling`** (class library, sem Hangfire), no `.slnx` e referenciado pelo WebApi:
+  os mapas (`RecurringJobs/`, com `git mv`, namespace `Hosts.Scheduling.RecurringJobs`), o `JobCron`, o
+  `ScheduledJobRunner` e o `AddScheduledJobRunner()`. O `RecurringJobDefinition` não depende mais do Hangfire: guarda o
+  método compilado e o chama no escopo da execução (`Invoke`).
+* **`ScheduledJobRunner`** (scoped): chama o método do mapa e, numa exceção, grava a mensagem, fecha e grava o log, e
+  relança. Ele não cria escopo: o host cria um por execução (o Hangfire já faz isso), e o service e o `ILoggerService`
+  vêm do mesmo escopo. Só grava com log aberto e ainda não gravado (`ILoggerService.HasUncommittedLog`, novo): um service
+  que já gravou o log antes de relançar não ganha uma segunda linha, que a chave de `auditing.Logs` recusaria.
+* **WebApi:** o Hangfire executa `WebApi.Scheduling.HangfireJobRunner.Run(idJob, nome)`, que repassa para o
+  `ScheduledJobRunner`; o nome do recurring job aparece no dashboard (`[JobDisplayName("{1}")]`). Na subida, o log diz
+  quantos jobs os mapas têm.
+* O `WebJobExceptionHandlingMiddleware` do Shared ficou como estava: ninguém deste repositório o usa; sai quando o
+  sistema antigo sair.
+
+**Achado e corrigido no Shared:** a interface declara `AddMessage(message, sqlCommand, exceptionMessage,
+stackTraceMessage)`, mas o `LoggerService` implementava `(message, exceptionMessage, stackTraceMessage, commandSQL)`.
+Como todas as chamadas passam pela interface, os três textos chegavam trocados em `auditing.Messages` (o comando SQL em
+`ExceptionMessage`, a mensagem da exceção em `ExceptionStackTrace` e a pilha em `SqlCommand`), nas rotas
+(`ExceptionHandler`) e no DW. A ordem da classe passou a ser a da interface; os chamadores não mudam.
+
+Conferido num banco de teste próprio na instância SQL Server do Docker (apagado no fim; o `Company` não foi tocado), com
+os migrators de todos os módulos e o host com o Hangfire ligado:
+
+* os mapas carregaram 327 jobs, e 3000, 8006 e 9002 entraram na agenda com os mesmos nomes de antes
+  (`3000-MovideskGetTickets - V1.0.0`...);
+* com `movidesk.MovideskParameters` renomeada só no banco de teste, o 3000 caiu logo depois de abrir o log: `Failed` no
+  Hangfire, **uma** linha em `auditing.Logs` com `EndDate` e a mensagem em `auditing.Messages` com `IsError = 1` e cada
+  texto na sua coluna (`SqlCommand` com o `SELECT`, `ExceptionMessage` com "Invalid object name", a pilha em
+  `ExceptionStackTrace`);
+* o 9002 rodou pelo mesmo caminho e terminou `Succeeded`;
+* build sem erros e com os mesmos avisos.
 
 # Fase 2 — Host rodando no local
 

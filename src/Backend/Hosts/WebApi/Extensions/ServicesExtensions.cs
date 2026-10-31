@@ -1,6 +1,7 @@
 ﻿using Application.Shared.Abstractions.Services;
 using Hangfire;
 using Hangfire.SqlServer;
+using Hosts.Scheduling;
 using Infrastructure.AfterSale.DependencyInjection;
 using Infrastructure.DataWarehouse.DependencyInjection;
 using Infrastructure.Shared;
@@ -82,6 +83,9 @@ namespace WebApi.Extensions
                     UseRecommendedIsolationLevel = true,
                     DisableGlobalLocks = true
                 }));
+
+            // executor dos jobs da agenda (Hosts.Scheduling): grava o log da execução que cai no meio
+            services.AddScheduledJobRunner();
 
             services.AddHangfireServer(options =>
             {

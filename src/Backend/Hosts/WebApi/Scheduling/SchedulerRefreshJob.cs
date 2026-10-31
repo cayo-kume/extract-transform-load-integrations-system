@@ -2,7 +2,8 @@ using Domain.Shared.Abstractions.Repositorys;
 using Hangfire;
 using Hangfire.Storage;
 using Microsoft.Extensions.Options;
-using WebApi.Scheduling.RecurringJobs;
+using Hosts.Scheduling;
+using Hosts.Scheduling.RecurringJobs;
 
 namespace WebApi.Scheduling
 {
@@ -78,8 +79,9 @@ namespace WebApi.Scheduling
                 else
                     added++;
 
-                // o Hangfire só grava o que mudou; o AddOrUpdate também corrige um método trocado no mapa
-                job.Definition.AddOrUpdate(_recurringJobManager, recurringJobId, job.Queue, job.Cron, new RecurringJobOptions { TimeZone = timeZone });
+                // o Hangfire executa o HangfireJobRunner, que passa pelo ScheduledJobRunner (log do erro); só grava o que mudou
+                var idJob = job.Definition.IdJob;
+                _recurringJobManager.AddOrUpdate<HangfireJobRunner>(recurringJobId, job.Queue, runner => runner.Run(idJob, recurringJobId), job.Cron, new RecurringJobOptions { TimeZone = timeZone });
             }
 
             var removed = current.Keys.Except(desired.Keys).ToList();

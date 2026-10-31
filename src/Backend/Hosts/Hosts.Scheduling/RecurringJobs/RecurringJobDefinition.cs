@@ -1,18 +1,18 @@
 using Application.Shared.Attributes;
-using Hangfire;
+using Microsoft.Extensions.DependencyInjection;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace WebApi.Scheduling.RecurringJobs
+namespace Hosts.Scheduling.RecurringJobs
 {
     /// <summary>
     /// o que um job de auditing.Jobs executa (src/Backend/Hosts/WebApi/docs/PLANO-HOST-WEBAPI.md §4.2): o método sem parâmetros do
     /// service, a versão dele ([JobVersion] no método da classe do service, §4.10) e a chave da trava de concorrência (§4.7).
-    /// Quando, em que fila e se roda vem da tabela, pelo SchedulerRefreshJob
+    /// Quando, em que fila e se roda vem da tabela. Serve aos dois hosts de agenda: quem executa é o ScheduledJobRunner
     /// </summary>
     public class RecurringJobDefinition
     {
-        private readonly Action<IRecurringJobManager, string, string, string, RecurringJobOptions> _addOrUpdate;
+        private readonly Func<IServiceProvider, Task> _invoke;
 
         public int IdJob { get; }
 
@@ -32,26 +32,31 @@ namespace WebApi.Scheduling.RecurringJobs
         /// </summary>
         public string? Version { get; }
 
-        private RecurringJobDefinition(int idJob, string concurrencyKey, string target, string? version, Action<IRecurringJobManager, string, string, string, RecurringJobOptions> addOrUpdate) =>
-            (IdJob, ConcurrencyKey, Target, Version, _addOrUpdate) = (idJob, concurrencyKey, target, version, addOrUpdate);
+        private RecurringJobDefinition(int idJob, string concurrencyKey, string target, string? version, Func<IServiceProvider, Task> invoke) =>
+            (IdJob, ConcurrencyKey, Target, Version, _invoke) = (idJob, concurrencyKey, target, version, invoke);
 
         public static RecurringJobDefinition For<TService>(int idJob, Expression<Func<TService, Task>> call, string? concurrencyGroup = null)
+            where TService : notnull
         {
             var method = ((MethodCallExpression)call.Body).Method;
+            var compiled = call.Compile();
 
             return new(
                 idJob,
                 concurrencyGroup is null ? ConcurrencyKeyFor(idJob) : $"group:{concurrencyGroup}",
                 $"{typeof(TService).Name}.{method.Name}",
                 VersionOf(typeof(TService), method),
-                (manager, recurringJobId, queue, cron, options) => manager.AddOrUpdate(recurringJobId, queue, call, cron, options));
+                services => compiled(services.GetRequiredService<TService>()));
         }
 
         public static string ConcurrencyKeyFor(int idJob) =>
             $"job:{idJob}";
 
-        public void AddOrUpdate(IRecurringJobManager manager, string recurringJobId, string queue, string cron, RecurringJobOptions options) =>
-            _addOrUpdate(manager, recurringJobId, queue, cron, options);
+        /// <summary>
+        /// chama o método do service, resolvido no escopo da execução (o mesmo do ILoggerService que o executor usa)
+        /// </summary>
+        public Task Invoke(IServiceProvider services) =>
+            _invoke(services);
 
         /// <summary>
         /// a expressão aponta para o método da interface; a versão está no método da classe que a implementa, no mesmo assembly

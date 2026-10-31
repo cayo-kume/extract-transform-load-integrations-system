@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    o que os hosts de agenda (WebApi com o Hangfire e WebJob) dividem: os mapas IdJob → método, o JobCron e o executor de
+    jobs (src/Backend/Hosts/WebJob/docs/PLANO-HOST-WEBJOB.md, passo 2). Não pode ir para o Shared: os mapas referenciam os
+    services dos módulos, e os módulos referenciam o Shared. Sem Hangfire: o que é do Hangfire fica no WebApi
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Modules\DataWarehouse\Application.DataWarehouse\Application.DataWarehouse.csproj" />
+    <ProjectReference Include="..\..\Modules\General\AfterSale\Application.AfterSale\Application.AfterSale.csproj" />
+    <ProjectReference Include="..\..\Modules\General\Movidesk\Application.Movidesk\Application.Movidesk.csproj" />
+    <ProjectReference Include="..\..\Modules\LinxCommerce\Application.LinxCommerce\Application.LinxCommerce.csproj" />
+    <ProjectReference Include="..\..\Modules\LinxMicrovix\LinxMicrovix - Outbound Web Service\Application.LinxMicrovix.Outbound\Application.LinxMicrovix.Outbound.csproj" />
+    <ProjectReference Include="..\..\Modules\Totvs\Application.Totvs\Application.Totvs.csproj" />
+  </ItemGroup>
+
+</Project>
