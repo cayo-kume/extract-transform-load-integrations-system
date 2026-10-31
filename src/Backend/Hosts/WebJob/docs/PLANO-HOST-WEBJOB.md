@@ -174,6 +174,13 @@ storage e uma classe por job.
 3. Connection strings e credenciais por variável de ambiente (na Azure, as configurações do App Service) ou
    user-secrets no local, nunca no `appsettings.json` do git.
 
+**Feito em 30/10/2026 (3.1 e 3.2).** Saiu o `Worker.cs`; o `WebJob.csproj` referencia o `Hosts.Scheduling` e o
+`Infrastructure` dos seis módulos; `Extensions/ServicesExtensions.cs` registra o Shared, os módulos (os mesmos do WebApi)
+e o `ScheduledJobRunner`. O `appsettings.json` tem só o `Logging` e as seções dos módulos (`AfterSale`, `Movidesk`,
+`LinxMicrovix` e `Totvs`, com as escritas da Totvs desligadas), sem `ConnectionStrings`: a connection string vem de
+variável de ambiente (`ConnectionStrings__Connection`) ou de user-secrets (o `UserSecretsId` já existe). Build sem erros
+e sem avisos no host; o host sobe e, em Development, a validação do DI na subida passa com todos os módulos.
+
 ## Passo 4 — Agenda a partir de `auditing.Jobs`
 
 O intervalo de cada job vem de `auditing.Jobs`, igual ao Hangfire: `IsActive`, `IntervalTimeInMinutes`,

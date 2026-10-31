@@ -1,7 +1,8 @@
-using WebJob;
+using WebJob.Extensions;
 
 var builder = Host.CreateApplicationBuilder(args);
-builder.Services.AddHostedService<Worker>();
+
+builder.AddServices();
 
 var host = builder.Build();
 host.Run();

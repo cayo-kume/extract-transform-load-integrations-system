@@ -10,4 +10,14 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.8" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Hosts.Scheduling\Hosts.Scheduling.csproj" />
+    <ProjectReference Include="..\..\Modules\DataWarehouse\Infrastructure.DataWarehouse\Infrastructure.DataWarehouse.csproj" />
+    <ProjectReference Include="..\..\Modules\General\AfterSale\Infrastructure.AfterSale\Infrastructure.AfterSale.csproj" />
+    <ProjectReference Include="..\..\Modules\General\Movidesk\Infrastructure.Movidesk\Infrastructure.Movidesk.csproj" />
+    <ProjectReference Include="..\..\Modules\LinxCommerce\Infrastructure.LinxCommerce\Infrastructure.LinxCommerce.csproj" />
+    <ProjectReference Include="..\..\Modules\LinxMicrovix\LinxMicrovix - Outbound Web Service\Infrastructure.LinxMicrovix.Outbound\Infrastructure.LinxMicrovix.Outbound.csproj" />
+    <ProjectReference Include="..\..\Modules\Totvs\Infrastructure.Totvs\Infrastructure.Totvs.csproj" />
+  </ItemGroup>
 </Project>
