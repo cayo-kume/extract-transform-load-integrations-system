@@ -1,12 +1,14 @@
 @inject IMonitorRepository MonitorRepository
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject ILogger<MessagesTable> Logger
 
-@* Mensagens de uma aplicação a partir de um nível, paginadas (tela Logs de Erros, dentro do grupo da aplicação). *@
+@* Mensagens de um job (ou de toda a aplicação, sem job), paginadas: tela Logs de Erros, dentro da causa do job. *@
 
 <MudTable @ref="_table" T="MessageModel" ServerData="LoadMessages" Hover="true" Dense="true" Breakpoint="Breakpoint.Sm" RowsPerPage="25" Elevation="0">
     <HeaderContent>
         <MudTh>Nível</MudTh>
         <MudTh>Execução</MudTh>
-        <MudTh>Job</MudTh>
         <MudTh>Mensagem</MudTh>
         <MudTh></MudTh>
     </HeaderContent>
@@ -17,22 +19,26 @@
             </MudChip>
         </MudTd>
         <MudTd DataLabel="Execução" Style="white-space: nowrap">@MonitorDisplay.Date(context.ExecutionStartDate)</MudTd>
-        <MudTd DataLabel="Job">@context.IdJob - @context.JobTitle</MudTd>
         <MudTd DataLabel="Mensagem">@context.Message</MudTd>
         <MudTd>
-            @if (MessageDetails.HasDetails(context))
-            {
-                <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => Toggle(context.IdExecutionMessage))">
-                    @(_opened.Contains(context.IdExecutionMessage) ? "Ocultar" : "Detalhes")
-                </MudButton>
-            }
+            <div class="d-flex align-center gap-1 justify-end">
+                <MudTooltip Text="Mensagens e registros da execução, com o Guid e o link para o job">
+                    <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => ExecutionDialog.ShowAsync(DialogService, context, Query.Period))">Execução</MudButton>
+                </MudTooltip>
+                @if (MessageDetails.HasDetails(context))
+                {
+                    <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => Toggle(context.IdExecutionMessage))">
+                        @(_opened.Contains(context.IdExecutionMessage) ? "Ocultar" : "Detalhes")
+                    </MudButton>
+                }
+            </div>
         </MudTd>
     </RowTemplate>
     <ChildRowContent>
         @if (_opened.Contains(context.IdExecutionMessage))
         {
             <MudTr>
-                <td colspan="5" class="pa-2">
+                <td colspan="4" class="pa-2">
                     <MessageDetails Message="context" />
                 </td>
             </MudTr>
@@ -50,21 +56,19 @@
 </MudTable>
 
 @code {
-    [Parameter, EditorRequired] public int IdApp { get; set; }
-
-    [Parameter] public Period Period { get; set; } = Period.Last24Hours;
-
-    [Parameter] public MessageLevel MinLevel { get; set; } = MessageLevel.Error;
+    /// <summary>
+    /// Período, nível, aplicação, job, texto e causa das mensagens.
+    /// </summary>
+    [Parameter, EditorRequired] public MessageQuery Query { get; set; } = default!;
 
     private MudTable<MessageModel>? _table;
-    private (Period, MessageLevel, int) _loaded;
+    private MessageQuery? _loaded;
     private readonly HashSet<long> _opened = [];
 
     protected override async Task OnParametersSetAsync()
     {
-        // a tabela carrega sozinha na primeira vez; depois, recarrega quando o período, o nível ou a aplicação muda
-        // (IdApp entra na chave por defesa: com o @key no grupo, a instância não deveria trocar de aplicação)
-        if (_table is not null && _loaded != (Period, MinLevel, IdApp))
+        // a tabela carrega sozinha na primeira vez; depois, recarrega quando o filtro muda
+        if (_table is not null && _loaded != Query)
         {
             _opened.Clear();
             await _table.ReloadServerData();
@@ -79,8 +83,9 @@
 
     private async Task<TableData<MessageModel>> LoadMessages(TableState state, CancellationToken cancellationToken)
     {
-        _loaded = (Period, MinLevel, IdApp);
-        var page = await MonitorRepository.GetMessagesByLevelAsync(Period, MinLevel, IdApp, state.Page, state.PageSize, cancellationToken);
+        _loaded = Query;
+        var page = new PagedResult<MessageModel>();
+        await Snackbar.TryAsync(Logger, async () => page = await MonitorRepository.GetMessagesByLevelAsync(Query, state.Page, state.PageSize, cancellationToken), "Não foi possível carregar as mensagens.");
         return new TableData<MessageModel> { Items = page.Items, TotalItems = page.TotalCount };
     }
 }

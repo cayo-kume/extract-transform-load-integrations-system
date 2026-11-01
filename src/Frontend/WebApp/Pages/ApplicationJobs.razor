@@ -2,12 +2,16 @@
 @page "/applications/{IdApp:int}/jobs"
 @inject IDialogService DialogService
 @inject IMonitorRepository MonitorRepository
+@inject NavigationManager Navigation
+@inject FilterSession FilterSession
+@inject ISnackbar Snackbar
+@inject ILogger<ApplicationJobs> Logger
 
 <PageTitle>Jobs</PageTitle>
 
 <MudGrid>
     <MudItem xs="5" Class="d-flex align-center justify-center pa-1">
-        <h1 class="ma-0 text-center">JOBS</h1>
+        <h1 class="ma-0 text-center">@(IdApp is int id && AppTitle(id) is string title ? $"JOBS - {title.ToUpperInvariant()}" : "JOBS")</h1>
     </MudItem>
 
     <Filters Value="_filter" ValueChanged="OnFilterChanged" ShowType="false" />
@@ -15,8 +19,16 @@
     <MudItem xs="12" Class="loading-container">
         <SpaceLoading Overlay="true" Visible="_loading" Label="Carregando os jobs" />
 
-        <div class="d-flex align-center gap-2 px-4 pt-2">
+        <div class="d-flex align-center gap-2 px-4 pt-2 flex-wrap">
+            @if (_focusJob is int focus)
+            {
+                <MudChip T="string" Color="Color.Primary" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.FilterAlt" OnClose="ClearFocus" CloseIcon="@Icons.Material.Filled.Close">
+                    Mostrando só o job @focus
+                </MudChip>
+                <MudLink Typo="Typo.body2" OnClick="ClearFocus">ver todos</MudLink>
+            }
             <MudSpacer />
+            <RefreshBar UpdatedAt="_updatedAt" OnRefresh="Refresh" />
             <TypeSegment Value="_type" ValueChanged="OnTypeChanged" />
         </div>
 
@@ -24,60 +36,72 @@
         {
             var appJobs = JobsOf(app.IdParent);
 
-            <div class="d-flex align-center gap-2 pa-4">
-                <h3 class="ma-0 text-center"><strong>@app.IdParent - @app.Title</strong></h3>
-                <MudText Typo="Typo.body2">@app.Description</MudText>
-                <MudSpacer />
-                <MudText Typo="Typo.caption">@appJobs.Count job(s)</MudText>
-                <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Default" OnClick="@(() => OpenSettings(app))" />
-            </div>
+            <div @key="app.IdParent">
+                <div class="d-flex align-center gap-2 pa-4">
+                    <h3 class="ma-0 text-center"><strong>@app.IdParent - @app.Title</strong></h3>
+                    <MudText Typo="Typo.body2">@app.Description</MudText>
+                    <MudSpacer />
+                    <MudText Typo="Typo.caption">@appJobs.Count job(s)</MudText>
+                    <MudTooltip Text="Configurações do módulo">
+                        <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Default" OnClick="@(() => OpenSettings(app))" />
+                    </MudTooltip>
+                </div>
 
-            <div class="pa-4">
-                <MudTable Items="@appJobs" Hover="true" Dense="true" Breakpoint="Breakpoint.Sm" RowsPerPage="50" Elevation="0">
-                    <HeaderContent>
-                        <MudTh>IdJob</MudTh>
-                        <MudTh>Tipo</MudTh>
-                        <MudTh>Título</MudTh>
-                        <MudTh>Agenda</MudTh>
-                        <MudTh>Ativo</MudTh>
-                        <MudTh>Saúde</MudTh>
-                        <MudTh>Última execução</MudTh>
-                        <MudTh></MudTh>
-                    </HeaderContent>
-                    <RowTemplate>
-                        <MudTd DataLabel="IdJob">@context.IdJob</MudTd>
-                        <MudTd DataLabel="Tipo">@context.JobType</MudTd>
-                        <MudTd DataLabel="Título">
-                            <MudTooltip Text="@context.Description">@context.Title</MudTooltip>
-                        </MudTd>
-                        <MudTd DataLabel="Agenda">@MonitorDisplay.Schedule(context)</MudTd>
-                        <MudTd DataLabel="Ativo">
-                            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@(context.IsActive ? Color.Success : Color.Default)" OnClick="@(() => ToggleJob(context))">
-                                @(context.IsActive ? "sim" : "não")
-                            </MudChip>
-                        </MudTd>
-                        <MudTd DataLabel="Saúde"><HealthChip Health="context.Health" IsActive="context.IsActive" HasWarnings="@(context.LastExecution?.Warnings > 0)" /></MudTd>
-                        <MudTd DataLabel="Última execução">@MonitorDisplay.Date(context.LastExecution?.StartDate)</MudTd>
-                        <MudTd>
-                            <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => Toggle(context))">
-                                @(_opened.Contains((context.IdJob, context.IdType)) ? "Ocultar" : "Execuções")
-                            </MudButton>
-                        </MudTd>
-                    </RowTemplate>
-                    <ChildRowContent>
-                        @if (_opened.Contains((context.IdJob, context.IdType)))
-                        {
-                            <MudTr>
-                                <td colspan="9">
-                                    <JobExecutions Job="context" Period="_filter.Period" />
-                                </td>
-                            </MudTr>
-                        }
-                    </ChildRowContent>
-                    <PagerContent>
-                        <TablePager PageSizeOptions="new[] { 10, 25, 50 }" />
-                    </PagerContent>
-                </MudTable>
+                <div class="pa-4">
+                    <MudTable Items="@appJobs" Hover="true" Dense="true" Breakpoint="Breakpoint.Sm" RowsPerPage="50" Elevation="0">
+                        <HeaderContent>
+                            <MudTh>IdJob</MudTh>
+                            <MudTh>Tipo</MudTh>
+                            <MudTh>Título</MudTh>
+                            <MudTh>Agenda</MudTh>
+                            <MudTh>Ativo</MudTh>
+                            <MudTh>Saúde</MudTh>
+                            <MudTh>Última execução</MudTh>
+                            <MudTh></MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="IdJob">@context.IdJob</MudTd>
+                            <MudTd DataLabel="Tipo">@context.JobType</MudTd>
+                            <MudTd DataLabel="Título">
+                                <MudTooltip Text="@context.Description">@context.Title</MudTooltip>
+                            </MudTd>
+                            <MudTd DataLabel="Agenda">@MonitorDisplay.Schedule(context)</MudTd>
+                            <MudTd DataLabel="Ativo">
+                                @{ var saving = _saving.Contains((context.IdJob, context.IdType)); }
+                                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@(context.IsActive ? Color.Success : Color.Default)" Disabled="saving" OnClick="@(() => ToggleJob(context))">
+                                    @if (saving)
+                                    {
+                                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-1" Style="width: 12px; height: 12px" />
+                                    }
+                                    @(context.IsActive ? "sim" : "não")
+                                </MudChip>
+                            </MudTd>
+                            <MudTd DataLabel="Saúde"><HealthChip Context="HealthContext.From(context)" Now="_updatedAt" /></MudTd>
+                            <MudTd DataLabel="Última execução">@MonitorDisplay.Date(context.LastExecution?.StartDate)</MudTd>
+                            <MudTd>
+                                <div class="d-flex align-center gap-1">
+                                    <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => Toggle(context))">
+                                        @(_opened.Contains((context.IdJob, context.IdType)) ? "Ocultar" : "Execuções")
+                                    </MudButton>
+                                    <JobActions Job="context" OnChanged="Refresh" />
+                                </div>
+                            </MudTd>
+                        </RowTemplate>
+                        <ChildRowContent>
+                            @if (_opened.Contains((context.IdJob, context.IdType)))
+                            {
+                                <MudTr>
+                                    <td colspan="9">
+                                        <JobExecutions Job="context" Period="_filter.Period" />
+                                    </td>
+                                </MudTr>
+                            }
+                        </ChildRowContent>
+                        <PagerContent>
+                            <TablePager PageSizeOptions="new[] { 10, 25, 50 }" />
+                        </PagerContent>
+                    </MudTable>
+                </div>
             </div>
         }
 
@@ -94,15 +118,31 @@
     /// </summary>
     [Parameter] public int? IdApp { get; set; }
 
+    [SupplyParameterFromQuery(Name = "period")] public string? PeriodQuery { get; set; }
+
+    /// <summary>
+    /// Filtro de tipo (TypeSegment): 2 integrações, 1 procedures.
+    /// </summary>
+    [SupplyParameterFromQuery(Name = "type")] public int? TypeQuery { get; set; }
+
+    /// <summary>
+    /// Link direto para um job (?job=3001&amp;type=2): só ele na tela, já com as execuções abertas.
+    /// </summary>
+    [SupplyParameterFromQuery(Name = "job")] public int? JobQuery { get; set; }
+
     private FilterState _filter = new();
     private int? _type;
+    private int? _focusJob;
     private bool _loading = true;
+    private bool _loaded;
+    private DateTime _updatedAt;
 
     private IReadOnlyList<AppSummaryModel> _apps = [];
     private IReadOnlyList<JobModel> _jobs = [];
 
-    // linhas abertas, por (IdJob, IdType)
+    // linhas abertas e chips gravando, por (IdJob, IdType)
     private readonly HashSet<(int IdJob, int IdType)> _opened = [];
+    private readonly HashSet<(int IdJob, int IdType)> _saving = [];
 
     private IEnumerable<AppSummaryModel> FilteredApps => _apps
         .Where(x => _filter.IdApp is null || x.IdParent == _filter.IdApp)
@@ -110,35 +150,113 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        _filter = _filter with { IdApp = IdApp };
-        await Load();
+        var period = MonitorDisplay.ParsePeriod(PeriodQuery) ?? FilterSession.Period;
+        FilterSession.Period = period;
+        _filter = _filter with { Period = period, IdApp = IdApp };
+        _type = TypeQuery is 1 or 2 ? TypeQuery : null;
+
+        // a lista de jobs não depende do período nem do filtro: carrega uma vez e no Atualizar
+        if (!_loaded)
+        {
+            await Load();
+            _loaded = true;
+        }
+
+        // o job do link abre na primeira passagem; depois, abrir e fechar é com o usuário
+        if (JobQuery != _focusJob)
+        {
+            _focusJob = JobQuery;
+            foreach (var job in _jobs.Where(x => x.IdJob == JobQuery && (_type is null || x.IdType == _type)))
+                _opened.Add((job.IdJob, job.IdType));
+        }
     }
 
     private async Task Load()
     {
-        _loading = true;
-        _apps = await MonitorRepository.GetAppSummariesAsync(_filter.Period);
-        _jobs = await MonitorRepository.GetJobsAsync(idApp: null, idType: null);
+        await Snackbar.TryAsync(Logger, async () =>
+        {
+            _apps = await MonitorRepository.GetAppSummariesAsync(_filter.Period);
+            _jobs = await MonitorRepository.GetJobsAsync(idApp: null, idType: null);
+            _updatedAt = DateTime.Now;
+        }, "Não foi possível carregar os jobs.");
+
         _loading = false;
     }
 
-    // jobs da aplicação na ordem do IdJob (decisão de 31/10/2026), com o filtro de tipo e de busca
+    // recarrega sem o overlay, mantendo as linhas abertas
+    private Task Refresh() => Load();
+
+    // jobs da aplicação na ordem do IdJob (decisão de 31/10/2026), com o filtro de tipo, de busca e do job do link
     private List<JobModel> JobsOf(int idApp) => _jobs
         .Where(x => x.IdApp == idApp)
         .Where(x => _type is null || x.IdType == _type)
+        .Where(x => _focusJob is null || x.IdJob == _focusJob)
         .Where(x => _filter.Matches(x.IdJob.ToString(), x.Title, x.Description))
         .OrderBy(x => x.IdJob)
         .ThenBy(x => x.IdType)
         .ToList();
 
-    private void OnFilterChanged(FilterState filter) => _filter = filter;
+    private string? AppTitle(int idApp) => _apps.FirstOrDefault(x => x.IdParent == idApp)?.Title;
 
-    private void OnTypeChanged(int? type) => _type = type;
+    // trocar a aplicação muda o endereço (a URL não mente sobre o que está na tela); o período vai junto
+    private void OnFilterChanged(FilterState filter)
+    {
+        if (filter.IdApp != _filter.IdApp)
+        {
+            var path = filter.IdApp is int idApp ? $"/applications/{idApp}/jobs" : "/applications/jobs";
+            var type = _type is null ? "" : $"&type={_type}";
+            Navigation.NavigateTo($"{path}?period={MonitorDisplay.PeriodQuery(filter.Period)}{type}");
+            return;
+        }
+
+        if (filter.Period != _filter.Period)
+        {
+            Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("period", MonitorDisplay.PeriodQuery(filter.Period)));
+            return;
+        }
+
+        _filter = filter;
+    }
+
+    private void OnTypeChanged(int? type) =>
+        Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("type", type));
+
+    private void ClearFocus() =>
+        Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("job", (int?)null));
 
     private async Task ToggleJob(JobModel job)
     {
-        await MonitorRepository.SetJobActiveAsync(job.IdJob, job.IdType, !job.IsActive);
+        var isActive = !job.IsActive;
+        var key = (job.IdJob, job.IdType);
+        _saving.Add(key);
+
+        try
+        {
+            if (!await SetJobActive(job, isActive))
+                return;
+
+            Snackbar.JobToggled(job, isActive, () => InvokeAsync(async () =>
+            {
+                if (await SetJobActive(job, !isActive))
+                    Snackbar.Add(MonitorDisplay.JobToggled(job.IdJob, job.Title, !isActive), Severity.Info);
+
+                StateHasChanged();
+            }));
+        }
+        finally
+        {
+            _saving.Remove(key);
+        }
+    }
+
+    // grava e recarrega sem o overlay; em falha, o chip continua como estava
+    private async Task<bool> SetJobActive(JobModel job, bool isActive)
+    {
+        if (!await Snackbar.TryAsync(Logger, () => MonitorRepository.SetJobActiveAsync(job.IdJob, job.IdType, isActive), $"Não foi possível {(isActive ? "ativar" : "desativar")} o job {job.IdJob}."))
+            return false;
+
         await Load();
+        return true;
     }
 
     private async Task OpenSettings(AppSummaryModel app)

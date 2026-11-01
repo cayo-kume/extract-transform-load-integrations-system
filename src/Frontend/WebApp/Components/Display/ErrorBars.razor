@@ -1,0 +1,50 @@
+@* Barras de execuções com erro por faixa de tempo, em CSS puro (sem MudChart): segue o tema claro/escuro e serve tanto à
+   faixa da Visão geral quanto à miniatura no cabeçalho de cada aplicação nos Logs de Erros. *@
+
+<div class="error-bars" style="height: @(Height)px" role="img" aria-label="@AriaLabel">
+    @foreach (var bucket in Buckets)
+    {
+        var percent = Max == 0 ? 0 : bucket.FailedExecutions * 100.0 / Max;
+        <div class="error-bar @(bucket.FailedExecutions == 0 ? "empty" : "")"
+             style="height: @(bucket.FailedExecutions == 0 ? "2px" : $"{Math.Max(percent, 6).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)}%")"
+             title="@Tooltip(bucket)"></div>
+    }
+</div>
+@if (ShowLabels)
+{
+    <div class="error-bars-labels">
+        @for (var i = 0; i < Buckets.Count; i++)
+        {
+            <span>@(i % LabelEvery == 0 ? Label(Buckets[i]) : "")</span>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<ExecutionBucketModel> Buckets { get; set; } = [];
+
+    [Parameter] public int Height { get; set; } = 120;
+
+    /// <summary>
+    /// Rótulos do eixo do tempo embaixo das barras; a miniatura não tem.
+    /// </summary>
+    [Parameter] public bool ShowLabels { get; set; }
+
+    /// <summary>
+    /// Um rótulo a cada N barras, para 24 horas não embolarem.
+    /// </summary>
+    [Parameter] public int LabelEvery { get; set; } = 1;
+
+    private int Max => Buckets.Count == 0 ? 0 : Buckets.Max(x => x.FailedExecutions);
+
+    private bool Daily => Buckets.Count > 0 && Buckets[0].End - Buckets[0].Start >= TimeSpan.FromDays(1);
+
+    private string Label(ExecutionBucketModel bucket) =>
+        Daily ? bucket.Start.ToString("ddd dd/MM") : bucket.Start.ToString("HH:mm");
+
+    private string Tooltip(ExecutionBucketModel bucket) =>
+        $"{(Daily ? bucket.Start.ToString("ddd dd/MM") : $"{bucket.Start:dd/MM HH:mm}–{bucket.End:HH:mm}")}: " +
+        $"{bucket.FailedExecutions:N0} de {bucket.Executions:N0} execuções com erro";
+
+    private string AriaLabel => $"Execuções com erro por faixa de tempo: {Buckets.Sum(x => x.FailedExecutions):N0} no total";
+}

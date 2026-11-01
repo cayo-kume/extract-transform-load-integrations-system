@@ -45,18 +45,38 @@ namespace WebApp.Data.Mocks
                 yield break;
 
             var cutoff = Cutoff(job, now);
-            if (to > cutoff)
-                to = cutoff;
+            var slots = Slots(job, from, to > cutoff ? cutoff : to);
 
-            foreach (var k in Slots(job, from, to))
+            // as execuções pedidas por "Executar agora" entram na ordem de início, junto com as da agenda
+            var manual = ManualSlots(job, from, to > now ? now : to).ToList();
+            if (manual.Count > 0)
+                slots = slots.Concat(manual).OrderBy(k => StartOf(job, k)).ToList();
+
+            foreach (var k in slots)
                 yield return Build(job, k, now);
         }
 
         /// <summary>
-        /// Última execução do job até agora, olhando até 30 dias para trás.
+        /// Última execução do job até agora (da agenda ou pedida pelo painel), olhando até 30 dias para trás.
         /// </summary>
-        public MockExecution? Last(MockJob job, DateTime now) =>
-            LastSlot(job, now) is long k ? Build(job, k, now) : null;
+        public MockExecution? Last(MockJob job, DateTime now)
+        {
+            if (!job.IsActive)
+                return null;
+
+            var scheduled = LastSlot(job, now);
+            var manual = ManualSlots(job, DateTime.MinValue, now).Select(k => (long?)k).LastOrDefault();
+
+            long? k = (scheduled, manual) switch
+            {
+                (null, null) => null,
+                (long s, null) => s,
+                (null, long m) => m,
+                (long s, long m) => StartOf(job, m) > StartOf(job, s) ? m : s
+            };
+
+            return k is long slot ? Build(job, slot, now) : null;
+        }
 
         public MockExecution? Decode(Guid execution, DateTime now)
         {
@@ -65,8 +85,23 @@ namespace WebApp.Data.Mocks
             if (job is null)
                 return null;
 
-            var result = Build(job, BitConverter.ToInt64(bytes, 8), now);
+            var k = BitConverter.ToInt64(bytes, 8);
+            if (k < 0)
+                return -k - 1 < job.ManualRuns.Length && job.ManualRuns[-k - 1] <= now ? Build(job, k, now) : null;
+
+            var result = Build(job, k, now);
             return result.StartDate <= Cutoff(job, now) ? result : null;
+        }
+
+        // execuções fora da agenda: slots negativos, -1 para a primeira de MockJob.ManualRuns, -2 para a segunda...
+        private static IEnumerable<long> ManualSlots(MockJob job, DateTime from, DateTime to)
+        {
+            var runs = job.ManualRuns;
+            for (var i = 0; i < runs.Length; i++)
+            {
+                if (runs[i] >= from && runs[i] <= to)
+                    yield return -(i + 1);
+            }
         }
 
         private static long? LastSlot(MockJob job, DateTime now)
@@ -111,8 +146,13 @@ namespace WebApp.Data.Mocks
             return JobHealth.Ok;
         }
 
-        private static DateTime Cutoff(MockJob job, DateTime now) =>
-            job.Profile == MockProfile.Late ? now - job.LateBy : now;
+        // o atrasado parou de rodar; o travado não começa outra execução enquanto a última não termina
+        private static DateTime Cutoff(MockJob job, DateTime now) => job.Profile switch
+        {
+            MockProfile.Late => now - job.LateBy,
+            MockProfile.Stuck => now - job.StuckBy,
+            _ => now
+        };
 
         private static IEnumerable<long> Slots(MockJob job, DateTime from, DateTime to)
         {
@@ -165,6 +205,9 @@ namespace WebApp.Data.Mocks
         {
             var catalog = job.Catalog;
 
+            if (k < 0)
+                return job.ManualRuns[-k - 1];
+
             if (catalog.RunningDailyAt is TimeOnly at)
                 return Origin.AddDays(k) + at.ToTimeSpan();
 
@@ -179,16 +222,25 @@ namespace WebApp.Data.Mocks
             var catalog = job.Catalog;
             var start = StartOf(job, k);
             var end = start.AddSeconds(DurationSeconds(job, k));
-            var running = end > now;
+            var stuck = job.Profile == MockProfile.Stuck && LastSlot(job, now) == k;
+            var running = end > now || stuck;
 
             var isProcedure = catalog.IdType == 1;
             var failingLast = job.Profile == MockProfile.FailingLast && LastSlot(job, now) == k;
-            var errors = running ? 0 : failingLast || Hash(job, k, 2) % 1000 < (ulong)(isProcedure ? 8 : 25) ? 1 : 0;
+
+            // às 3h o banco fica instável para todas as aplicações (a janela de manutenção), para o mapa de calor mostrar um
+            // padrão por horário; a execução pedida pelo painel não cai nessa regra
+            var unstable = k >= 0 && start.Hour == 3 && !isProcedure && Hash(job, k, 8) % 100 < 20;
+            var errors = running ? 0 : failingLast || unstable || Hash(job, k, 2) % 1000 < (ulong)(isProcedure ? 8 : 25) ? 1 : 0;
             var warningRate = isProcedure ? 0UL : job.Profile == MockProfile.Noisy ? 45UL : 6UL;
             var warnings = running || errors > 0 ? 0 : Hash(job, k, 3) % 100 < warningRate ? 1 + (int)(Hash(job, k, 4) % 3) : 0;
             var records = running || (errors > 0 && Hash(job, k, 5) % 2 == 0) || Hash(job, k, 6) % 100 < 15
                 ? 0
                 : (int)(Hash(job, k, 7) % (ulong)job.MaxRecords);
+
+            // a execução pedida pelo painel é o "rodar de novo depois de corrigir": no mock, sai sempre sem erro
+            if (k < 0)
+                errors = 0;
 
             return new MockExecution(job, k, Encode(catalog, k), start, running ? null : end, records, warnings, errors);
         }
@@ -241,7 +293,12 @@ namespace WebApp.Data.Mocks
         Late,
         FailingLast,
         Noisy,
-        LongRunning
+        LongRunning,
+
+        /// <summary>
+        /// A última execução não termina (passa de 1 × intervalo rodando), o caso que o heartbeat do WebJob recupera.
+        /// </summary>
+        Stuck
     }
 
     internal sealed class MockJob
@@ -255,9 +312,16 @@ namespace WebApp.Data.Mocks
         public bool? ActiveOverride { get; set; }
 
         public bool IsActive => ActiveOverride ?? Profile != MockProfile.Inactive;
+        /// <summary>
+        /// Inícios das execuções pedidas por "Executar agora", em ordem. Trocado por um array novo a cada pedido, para quem
+        /// está lendo não ver a lista pela metade.
+        /// </summary>
+        public DateTime[] ManualRuns { get; set; } = [];
+
         public int OffsetMinutes { get; }
         public int MaxRecords { get; }
         public TimeSpan LateBy { get; }
+        public TimeSpan StuckBy { get; }
 
         public MockJob(CatalogJob catalog, int idApp)
         {
@@ -274,6 +338,8 @@ namespace WebApp.Data.Mocks
                 < 8 when scheduled => MockProfile.Late,
                 < 12 => MockProfile.FailingLast,
                 < 17 when catalog.IdType == 2 => MockProfile.Noisy,
+                // um terço dos que rodariam longo ficam travados (hoje, 5 integrações do catálogo)
+                < 20 when scheduled && catalog.IdType == 2 && catalog.RunningDailyAt is null && (h >> 32) % 3 == 0 => MockProfile.Stuck,
                 < 20 when scheduled && catalog.IdType == 2 && catalog.RunningDailyAt is null => MockProfile.LongRunning,
                 _ => MockProfile.Normal
             };
@@ -281,6 +347,7 @@ namespace WebApp.Data.Mocks
             OffsetMinutes = scheduled ? (int)((h >> 8) % (ulong)Math.Min(catalog.IntervalTimeInMinutes, 60)) : 0;
             MaxRecords = 20 + (int)((h >> 16) % 3000);
             LateBy = TimeSpan.FromMinutes(Math.Max(catalog.IntervalTimeInMinutes, 1) * (2 + (int)((h >> 24) % 5)));
+            StuckBy = TimeSpan.FromMinutes(Math.Max(catalog.IntervalTimeInMinutes, 1) * 1.5);
         }
     }
 

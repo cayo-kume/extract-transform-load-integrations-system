@@ -41,5 +41,15 @@ namespace WebApp.Models
         /// Nula para job inativo ou sob demanda que ainda não rodou.
         /// </summary>
         public JobHealth? Health { get; set; }
+
+        /// <summary>
+        /// Falha reconhecida por quem opera o painel; nulo quando não há reconhecimento válido.
+        /// </summary>
+        public AcknowledgementModel? Acknowledgement { get; set; }
+
+        /// <summary>
+        /// Pedido de "Executar agora" ainda não atendido.
+        /// </summary>
+        public RunRequestModel? RunRequest { get; set; }
     }
 }

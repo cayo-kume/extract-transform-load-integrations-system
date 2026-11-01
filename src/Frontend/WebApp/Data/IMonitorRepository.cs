@@ -14,6 +14,12 @@ namespace WebApp.Data
         Task<IReadOnlyList<AppSummaryModel>> GetAppSummariesAsync(Period period, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Execuções por faixa de tempo de cada aplicação: o período dividido em buckets faixas iguais, alinhadas à hora
+        /// (ou ao dia) cheia. previousWindow devolve a janela de mesmo tamanho imediatamente anterior, para comparação.
+        /// </summary>
+        Task<IReadOnlyList<AppBucketsModel>> GetExecutionBucketsAsync(Period period, int buckets, bool previousWindow = false, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Jobs com a última execução e a saúde, filtrados pela aplicação (já resolvida, ver JobModel.IdApp) e pelo tipo.
         /// </summary>
         Task<IReadOnlyList<JobModel>> GetJobsAsync(int? idApp, int? idType, CancellationToken cancellationToken = default);
@@ -23,19 +29,37 @@ namespace WebApp.Data
         /// </summary>
         Task<PagedResult<ExecutionModel>> GetExecutionsAsync(int idJob, int idType, Period period, int page, int pageSize, CancellationToken cancellationToken = default);
 
+        /// <summary>
+        /// Uma execução pelo Guid (a PK lógica de auditing.Logs), em qualquer período; nula se não existe.
+        /// </summary>
+        Task<ExecutionModel?> GetExecutionAsync(Guid execution, CancellationToken cancellationToken = default);
+
         Task<IReadOnlyList<MessageModel>> GetMessagesAsync(Guid execution, CancellationToken cancellationToken = default);
 
         Task<PagedResult<RecordModel>> GetRecordsAsync(Guid execution, int page, int pageSize, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Última execução de cada job no período, da mais recente para a mais antiga, até top linhas.
+        /// Última execução de cada integração ativa, por gravidade: Erro, Atrasado, Rodando, falhas reconhecidas e Ok; em
+        /// cada grupo, do início mais recente para o mais antigo, até top linhas. Entra quem rodou no período e quem está
+        /// com Erro ou Atrasado, mesmo sem execução no período.
         /// </summary>
         Task<IReadOnlyList<HeartbeatModel>> GetHeartbeatAsync(Period period, int top, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Mensagens a partir de um nível no período (Logs de Erros), com a aplicação, o job e o início da execução.
         /// </summary>
-        Task<PagedResult<MessageModel>> GetMessagesByLevelAsync(Period period, MessageLevel minLevel, int? idApp, int page, int pageSize, CancellationToken cancellationToken = default);
+        Task<PagedResult<MessageModel>> GetMessagesByLevelAsync(MessageQuery query, int page, int pageSize, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Jobs de uma aplicação (query.IdApp) com mensagens no período, com os totais, a última ocorrência e a situação
+        /// atual. Com query.Search, só os jobs com mensagens que têm o texto, e os totais contam só essas.
+        /// </summary>
+        Task<IReadOnlyList<MessageJobSummaryModel>> GetMessageJobsAsync(MessageQuery query, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Causas das mensagens de um job (query.IdJob e query.IdType), da ocorrência mais recente para a mais antiga.
+        /// </summary>
+        Task<IReadOnlyList<MessageGroupModel>> GetMessageGroupsAsync(MessageQuery query, CancellationToken cancellationToken = default);
 
         Task<IReadOnlyList<TypeModel>> GetTypesAsync(CancellationToken cancellationToken = default);
 
@@ -54,6 +78,19 @@ namespace WebApp.Data
         /// Liga ou desliga todos os jobs de um módulo (o chip "Ativa" do card).
         /// </summary>
         Task SetModuleActiveAsync(int idApp, bool isActive, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Reconhece a falha atual do job (a última execução, ou a falta dela) com uma nota opcional. Vale até a próxima
+        /// execução e por no máximo 24 h.
+        /// </summary>
+        Task AcknowledgeAsync(int idJob, int idType, string? note, CancellationToken cancellationToken = default);
+
+        Task RemoveAcknowledgementAsync(int idJob, int idType, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Pede ao host uma execução do job fora da agenda ("Executar agora"). Um pedido pendente por job.
+        /// </summary>
+        Task RequestRunAsync(int idJob, int idType, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Imagem própria da aplicação para a empresa logada. A imagem padrão do módulo é a que não tem registro aqui.

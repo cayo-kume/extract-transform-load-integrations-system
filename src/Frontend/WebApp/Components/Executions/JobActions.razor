@@ -1,0 +1,98 @@
+@inject IMonitorRepository MonitorRepository
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject ILogger<JobActions> Logger
+
+@* Ações da linha de um job (menu de três pontos): reconhecer a falha e executar agora. Fica no menu, e não no clique do
+   chip de saúde, porque o chip também aparece nos cabeçalhos e nos contadores, onde o clique seria ambíguo. *@
+
+@if (CanAcknowledge || Job.Acknowledgement is not null || CanRun || RunHint is not null)
+{
+    <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small" Dense="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" aria-label="Ações do job">
+        @if (Job.Acknowledgement is not null)
+        {
+            <MudMenuItem Icon="@Icons.Material.Filled.RemoveDone" OnClick="RemoveAcknowledgement">Desfazer reconhecimento</MudMenuItem>
+        }
+        else if (CanAcknowledge)
+        {
+            <MudMenuItem Icon="@Icons.Material.Filled.DoneAll" OnClick="Acknowledge">Reconhecer falha</MudMenuItem>
+        }
+        @if (CanRun)
+        {
+            <MudMenuItem Icon="@Icons.Material.Filled.PlayArrow" OnClick="RequestRun">Executar agora</MudMenuItem>
+        }
+        else if (RunHint is not null)
+        {
+            <MudMenuItem Icon="@Icons.Material.Filled.PlayArrow" Disabled="true">@RunHint</MudMenuItem>
+        }
+    </MudMenu>
+}
+
+@code {
+    [Parameter, EditorRequired] public JobModel Job { get; set; } = default!;
+
+    /// <summary>
+    /// Chamado depois de uma ação que deu certo, para a tela recarregar.
+    /// </summary>
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private bool CanAcknowledge => Job.IsActive && Job.Health is JobHealth.Error or JobHealth.Late;
+
+    // só integrações ativas, paradas e sem pedido pendente; e só onde o pedido ganha tempo da agenda: diários, sob
+    // demanda e intervalos maiores que o ciclo do host
+    private bool Schedulable => Job.IsActive && Job.IdType == 2;
+
+    private bool GainsTime => Job.RunningDailyAt is not null
+        || Job.IntervalTimeInMinutes == 0
+        || Job.IntervalTimeInMinutes > HealthChip.HostRecheckMinutes;
+
+    private bool CanRun => Schedulable && GainsTime && Job.Health != JobHealth.Running && Job.RunRequest is null;
+
+    private string? RunHint => !Schedulable ? null : Job switch
+    {
+        { RunRequest: not null } => "Execução já solicitada",
+        { Health: JobHealth.Running } => "Executar agora: o job está rodando",
+        _ when !GainsTime => $"Executar agora: a próxima execução sai em até {Job.IntervalTimeInMinutes} min",
+        _ => null
+    };
+
+    private async Task Acknowledge()
+    {
+        var parameters = new DialogParameters<AcknowledgeDialog> { { x => x.Job, Job } };
+        var reference = await DialogService.ShowAsync<AcknowledgeDialog>("Reconhecer falha", parameters, new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        var result = await reference.Result;
+        if (result is null || result.Canceled)
+            return;
+
+        var saved = await Snackbar.TryAsync(Logger, () => MonitorRepository.AcknowledgeAsync(Job.IdJob, Job.IdType, result.Data as string), "Não foi possível reconhecer a falha.");
+        if (!saved)
+            return;
+
+        Snackbar.Add($"Falha do job {Job.IdJob} {Job.Title} reconhecida.", Severity.Info);
+        await OnChanged.InvokeAsync();
+    }
+
+    private async Task RemoveAcknowledgement()
+    {
+        if (await Snackbar.TryAsync(Logger, () => MonitorRepository.RemoveAcknowledgementAsync(Job.IdJob, Job.IdType), "Não foi possível desfazer o reconhecimento."))
+            await OnChanged.InvokeAsync();
+    }
+
+    private async Task RequestRun()
+    {
+        var confirmed = await DialogService.ShowMessageBoxAsync(
+            "Executar agora",
+            (MarkupString)$"<p>Pedir ao host uma execução de <strong>{System.Net.WebUtility.HtmlEncode($"{Job.IdJob} - {Job.Title}")}</strong> para <strong>{System.Net.WebUtility.HtmlEncode(LoggedCompany.Label)}</strong>, fora da agenda?</p><p>O host lê o pedido no próximo ciclo, em até {HealthChip.HostRecheckMinutes} min. Se o job estiver com a trava ocupada, o pedido espera.</p>",
+            yesText: "Executar",
+            cancelText: "Cancelar");
+
+        if (confirmed != true)
+            return;
+
+        if (await Snackbar.TryAsync(Logger, () => MonitorRepository.RequestRunAsync(Job.IdJob, Job.IdType), "Não foi possível pedir a execução."))
+        {
+            Snackbar.Add($"Execução de {Job.IdJob} {Job.Title} solicitada.", Severity.Info);
+            await OnChanged.InvokeAsync();
+        }
+    }
+}

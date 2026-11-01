@@ -1,0 +1,79 @@
+@inject IMonitorRepository MonitorRepository
+@inject QueryRunnerAccess QueryRunnerAccess
+@inject ISnackbar Snackbar
+@inject ILogger<ExecutionDialog> Logger
+
+@* A execução de uma mensagem dos Logs de Erros, sem sair da tela: mensagens, registros, o Guid para copiar e os links para
+   o job e para a query pronta dos registros. *@
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">Execução de @Message.IdJob - @Message.JobTitle</MudText>
+    </TitleContent>
+    <DialogContent>
+        <div class="d-flex align-center gap-2 flex-wrap mb-2">
+            <MudText Typo="Typo.body2">@Message.AppTitle · início em @MonitorDisplay.Date(Message.ExecutionStartDate)</MudText>
+            <MudSpacer />
+            <code class="execution-guid">@Message.Execution</code>
+            <CopyButton Text="@Message.Execution.ToString()" Tooltip="Copiar o Guid da execução" />
+        </div>
+
+        @if (_loading)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-4" />
+        }
+        else if (_execution is null)
+        {
+            <MudText Typo="Typo.body2">A execução não foi encontrada.</MudText>
+        }
+        else
+        {
+            <ExecutionDetails Execution="_execution" />
+        }
+    </DialogContent>
+    <DialogActions>
+        @if (Message.IdApp is int idApp)
+        {
+            <MudButton Href="@MonitorDisplay.JobLink(idApp, Message.IdJob, Message.IdType, Period)" StartIcon="@Icons.Material.Filled.OpenInNew">Ir para o job</MudButton>
+        }
+        @if (QueryRunnerAccess.IsAllowed)
+        {
+            <MudButton Href="@($"/queries?ready={ReadyQueries.ExecutionRecordsKey}&execution={Message.Execution}")" StartIcon="@Icons.Material.Filled.Storage">Registros no SQL</MudButton>
+        }
+        <MudSpacer />
+        <MudButton OnClick="Close">Fechar</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance? MudDialog { get; set; }
+
+    [Parameter] public MessageModel Message { get; set; } = default!;
+
+    /// <summary>
+    /// Período da tela de origem, levado no link para o job.
+    /// </summary>
+    [Parameter] public Period Period { get; set; }
+
+    private ExecutionModel? _execution;
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Snackbar.TryAsync(Logger, async () => _execution = await MonitorRepository.GetExecutionAsync(Message.Execution), "Não foi possível carregar a execução.");
+        _loading = false;
+    }
+
+    private void Close() => MudDialog?.Close();
+
+    public static Task ShowAsync(IDialogService dialogService, MessageModel message, Period period)
+    {
+        var parameters = new DialogParameters<ExecutionDialog>
+        {
+            { x => x.Message, message },
+            { x => x.Period, period }
+        };
+
+        return dialogService.ShowAsync<ExecutionDialog>("Execução", parameters, new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true, CloseButton = true });
+    }
+}

@@ -1,10 +1,14 @@
 @inject IMonitorRepository MonitorRepository
+@inject ISnackbar Snackbar
+@inject ILogger<JobExecutions> Logger
 
 @* Execuções de um job no período, paginadas; cada linha abre as mensagens e os registros da execução. *@
 
 <MudTable @ref="_table" T="ExecutionModel" ServerData="LoadExecutions" Dense="true" Hover="true" Elevation="0" Breakpoint="Breakpoint.Sm" RowsPerPage="5">
     <ToolBarContent>
         <MudText Typo="Typo.body1">Execuções de <strong>@Job.Title</strong></MudText>
+        <MudSpacer />
+        <MudLink Href="@MonitorDisplay.ErrorsLink(Job.IdApp, Job.IdJob, Job.IdType, Period)" Typo="Typo.body2">Erros deste job no período</MudLink>
     </ToolBarContent>
     <HeaderContent>
         <MudTh>Início</MudTh>
@@ -18,7 +22,7 @@
     <RowTemplate>
         <MudTd DataLabel="Início">@MonitorDisplay.Date(context.StartDate)</MudTd>
         <MudTd DataLabel="Fim">@(context.EndDate is null ? "Rodando" : MonitorDisplay.Date(context.EndDate))</MudTd>
-        <MudTd DataLabel="Duração">@MonitorDisplay.Duration(context.Duration)</MudTd>
+        <MudTd DataLabel="Duração"><DurationText Start="context.StartDate" End="context.EndDate" /></MudTd>
         <MudTd DataLabel="Registros">@context.Records</MudTd>
         <MudTd DataLabel="Avisos">
             @if (context.Warnings > 0)
@@ -89,7 +93,8 @@
     private async Task<TableData<ExecutionModel>> LoadExecutions(TableState state, CancellationToken cancellationToken)
     {
         _loadedPeriod = Period;
-        var page = await MonitorRepository.GetExecutionsAsync(Job.IdJob, Job.IdType, Period, state.Page, state.PageSize, cancellationToken);
+        var page = new PagedResult<ExecutionModel>();
+        await Snackbar.TryAsync(Logger, async () => page = await MonitorRepository.GetExecutionsAsync(Job.IdJob, Job.IdType, Period, state.Page, state.PageSize, cancellationToken), "Não foi possível carregar as execuções.");
         return new TableData<ExecutionModel> { Items = page.Items, TotalItems = page.TotalCount };
     }
 }

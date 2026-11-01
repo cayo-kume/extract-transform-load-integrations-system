@@ -29,6 +29,16 @@ namespace WebApp.Models
         public int Warnings { get; set; }
         public int Errors { get; set; }
 
+        /// <summary>
+        /// Início da execução com erro mais recente no período.
+        /// </summary>
+        public DateTime? LastErrorAt { get; set; }
+
+        /// <summary>
+        /// Jobs ativos cuja última execução tem erro (saúde Erro), no momento da consulta.
+        /// </summary>
+        public int FailingJobs { get; set; }
+
         public bool IsActive => ActiveJobs > 0;
     }
 }

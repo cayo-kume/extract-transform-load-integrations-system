@@ -1,6 +1,10 @@
 ﻿@page "/integrations"
 @inject IDialogService DialogService
 @inject IMonitorRepository MonitorRepository
+@inject NavigationManager Navigation
+@inject FilterSession FilterSession
+@inject ISnackbar Snackbar
+@inject ILogger<Integrations> Logger
 
 <PageTitle>Integrações</PageTitle>
 
@@ -14,18 +18,26 @@
     <MudItem xs="12" Class="loading-container">
         <SpaceLoading Overlay="true" Visible="_loading" Label="Carregando as integrações" />
 
-        <div class="d-flex align-center gap-2 px-4 pt-4">
+        <div class="d-flex align-center gap-2 px-4 pt-4 flex-wrap">
             <h3 class="ma-0 text-center">JOBS ATIVOS</h3>
             <MudSpacer />
+            <RefreshBar UpdatedAt="_updatedAt" OnRefresh="Load" />
             <TypeSegment Value="_type" ValueChanged="OnTypeChanged" />
         </div>
 
-        <div class="d-flex align-center gap-2 px-4 pb-2">
+        <!-- Os contadores de saúde filtram a tela: clicar de novo tira o filtro -->
+        <div class="d-flex align-center gap-2 px-4 pb-2 flex-wrap">
             @foreach (var health in HealthCounts)
             {
-                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@MonitorDisplay.HealthColor(health.Key)" Icon="@MonitorDisplay.HealthIcon(health.Key)">
+                var selected = health.Key is not null && health.Key == _health;
+                <MudChip T="string" Size="Size.Small" Variant="@(selected ? Variant.Filled : Variant.Outlined)" Color="@MonitorDisplay.HealthColor(health.Key)" Icon="@MonitorDisplay.HealthIcon(health.Key)"
+                         OnClick="@(() => ToggleHealth(health.Key))">
                     @MonitorDisplay.HealthLabel(health.Key): @health.Count()
                 </MudChip>
+            }
+            @if (_health is not null)
+            {
+                <MudLink Typo="Typo.body2" OnClick="@(() => ToggleHealth(_health))">mostrar todas</MudLink>
             }
         </div>
 
@@ -37,10 +49,10 @@
 
                 @* @key: sem ele, o Blazor reaproveita a MudTable de um grupo para outra aplicação quando o filtro muda *@
                 <div class="app-group" @key="group.Key">
-                    <div class="app-group-head" role="button" tabindex="0" @onclick="@(() => ToggleGroup(group.Key))" @onkeydown="@(e => OnGroupKeyDown(e, group.Key))">
+                    <div class="app-group-head" role="button" tabindex="0" aria-expanded="@(expanded ? "true" : "false")" @onclick="@(() => ToggleGroup(group.Key))" @onkeydown="@(e => OnGroupKeyDown(e, group.Key))">
                         <MudIcon Icon="@(expanded ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)" Size="Size.Small" />
                         <MudText Typo="Typo.subtitle2">@AppTitle(group.Key)</MudText>
-                        <MudText Typo="Typo.caption">@group.Count() ativo(s)</MudText>
+                        <MudText Typo="Typo.caption">@group.Count() @(_health is null ? "ativo(s)" : "no filtro")</MudText>
                         <MudSpacer />
                         @foreach (var health in GroupHealthCounts(group))
                         {
@@ -50,9 +62,10 @@
                                 </MudChip>
                             </MudTooltip>
                         }
-                        <div @onclick:stopPropagation="true">
+                        @* stopPropagation no clique e no teclado: Enter na engrenagem não pode abrir ou fechar o grupo *@
+                        <div @onclick:stopPropagation="true" @onkeydown:stopPropagation="true">
                             <MudTooltip Text="Configurações do módulo">
-                                <MudIconButton Icon="@Icons.Material.Filled.Settings" Size="Size.Small" Color="Color.Default" OnClick="@(() => OpenSchedule(group.Key))" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Settings" Size="Size.Small" Color="Color.Default" OnClick="@(() => OpenSchedule(group.Key))" aria-label="Configurações do módulo" />
                             </MudTooltip>
                         </div>
                     </div>
@@ -78,18 +91,21 @@
                                     <MudTooltip Text="@context.Description">@context.Title</MudTooltip>
                                 </MudTd>
                                 <MudTd DataLabel="Agenda">@MonitorDisplay.Schedule(context)</MudTd>
-                                <MudTd DataLabel="Saúde"><HealthChip Health="context.Health" IsActive="context.IsActive" HasWarnings="@(context.LastExecution?.Warnings > 0)" /></MudTd>
+                                <MudTd DataLabel="Saúde"><HealthChip Context="HealthContext.From(context)" Now="_updatedAt" /></MudTd>
                                 <MudTd DataLabel="Última execução">@MonitorDisplay.Date(context.LastExecution?.StartDate)</MudTd>
-                                <MudTd DataLabel="Duração">@MonitorDisplay.Duration(context.LastExecution?.Duration)</MudTd>
+                                <MudTd DataLabel="Duração"><DurationText Start="context.LastExecution?.StartDate" End="context.LastExecution?.EndDate" Now="_updatedAt" /></MudTd>
                                 <MudTd DataLabel="Registros">@context.LastExecution?.Records</MudTd>
                                 <MudTd>
-                                    <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => Toggle(context))">
-                                        @(_opened.Contains(context.IdJob) ? "Ocultar" : "Execuções")
-                                    </MudButton>
+                                    <div class="d-flex align-center gap-1">
+                                        <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => Toggle(context))">
+                                            @(_opened.Contains((context.IdJob, context.IdType)) ? "Ocultar" : "Execuções")
+                                        </MudButton>
+                                        <JobActions Job="context" OnChanged="Load" />
+                                    </div>
                                 </MudTd>
                             </RowTemplate>
                             <ChildRowContent>
-                                @if (_opened.Contains(context.IdJob))
+                                @if (_opened.Contains((context.IdJob, context.IdType)))
                                 {
                                     <MudTr>
                                         <td colspan="9">
@@ -115,30 +131,50 @@
 </MudGrid>
 
 @code {
+    [SupplyParameterFromQuery(Name = "period")] public string? PeriodQuery { get; set; }
+
+    [SupplyParameterFromQuery(Name = "app")] public int? AppQuery { get; set; }
+
+    [SupplyParameterFromQuery(Name = "type")] public int? TypeQuery { get; set; }
+
+    /// <summary>
+    /// Filtro de saúde (?health=error|late|running|ok), aberto pelos links de "Falhas Ativas" da Visão geral.
+    /// </summary>
+    [SupplyParameterFromQuery(Name = "health")] public string? HealthQuery { get; set; }
+
     private FilterState _filter = new();
     private int? _type;
+    private JobHealth? _health;
     private bool _loading = true;
+    private bool _loaded;
+    private DateTime _updatedAt;
 
     private Dictionary<int, string?> _appTitles = [];
     private IReadOnlyList<JobModel> _jobs = [];
-    private readonly HashSet<int> _opened = [];
+    private readonly HashSet<(int IdJob, int IdType)> _opened = [];
 
-    // grupos abertos; começam todos recolhidos, e o estado vale enquanto a tela está aberta
+    // grupos abertos; começam todos recolhidos (com filtro de saúde, todos abertos), e o estado vale enquanto a tela está aberta
     private readonly HashSet<int> _expandedApps = [];
 
     // só jobs ativos (decisão de 31/10/2026), de integração e de procedure, com o filtro de tipo e de busca
-    private List<JobModel> FilteredJobs => _jobs
+    private List<JobModel> ActiveJobs => _jobs
         .Where(x => x.IsActive)
         .Where(x => _filter.IdApp is null || x.IdApp == _filter.IdApp)
         .Where(x => _type is null || x.IdType == _type)
         .Where(x => _filter.Matches(x.IdJob.ToString(), x.Title, x.Description))
         .ToList();
 
+    // com o filtro de saúde: falhas reconhecidas não contam como Erro ou Atrasado (o mesmo critério de "Falhas Ativas")
+    private List<JobModel> FilteredJobs => ActiveJobs
+        .Where(x => _health is null || (x.Health == _health && (_health is not (JobHealth.Error or JobHealth.Late) || x.Acknowledgement is null)))
+        .ToList();
+
     private IEnumerable<IGrouping<int, JobModel>> Groups => FilteredJobs
         .GroupBy(x => x.IdApp)
         .OrderBy(x => AppTitle(x.Key));
 
-    private IEnumerable<IGrouping<JobHealth?, JobModel>> HealthCounts => FilteredJobs
+    // os contadores contam o universo sem o filtro de saúde, para dar para trocar de um estado para outro
+    private IEnumerable<IGrouping<JobHealth?, JobModel>> HealthCounts => ActiveJobs
         .GroupBy(x => x.Health)
         .OrderBy(x => x.Key is null ? int.MaxValue : (int)x.Key);
 
@@ -146,19 +182,82 @@
         .GroupBy(x => x.Health)
         .OrderBy(x => x.Key is null ? int.MaxValue : (int)x.Key);
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnParametersSetAsync()
     {
-        var apps = await MonitorRepository.GetAppSummariesAsync(_filter.Period);
-        _appTitles = apps.ToDictionary(x => x.IdParent, x => x.Title);
-        _jobs = await MonitorRepository.GetJobsAsync(idApp: null, idType: null);
+        var period = MonitorDisplay.ParsePeriod(PeriodQuery) ?? FilterSession.Period;
+        FilterSession.Period = period;
+        _filter = _filter with { Period = period, IdApp = AppQuery };
+        _type = TypeQuery is 1 or 2 ? TypeQuery : null;
+        var health = HealthQuery switch
+        {
+            "error" => JobHealth.Error,
+            "late" => JobHealth.Late,
+            "running" => JobHealth.Running,
+            "ok" => JobHealth.Ok,
+            _ => (JobHealth?)null
+        };
+
+        if (!_loaded)
+        {
+            await Load();
+            _loaded = true;
+        }
+
+        // ao escolher um estado, os grupos que têm jobs nele já abrem, para não precisar abrir um por um
+        if (health != _health)
+        {
+            _health = health;
+            if (health is not null)
+                _expandedApps.UnionWith(FilteredJobs.Select(x => x.IdApp));
+        }
+    }
+
+    // recarrega sem o overlay, mantendo os grupos e as linhas abertas
+    private async Task Load()
+    {
+        await Snackbar.TryAsync(Logger, async () =>
+        {
+            var apps = await MonitorRepository.GetAppSummariesAsync(_filter.Period);
+            _appTitles = apps.ToDictionary(x => x.IdParent, x => x.Title);
+            _jobs = await MonitorRepository.GetJobsAsync(idApp: null, idType: null);
+            _updatedAt = DateTime.Now;
+        }, "Não foi possível carregar as integrações.");
+
         _loading = false;
     }
 
     private string? AppTitle(int idApp) => _appTitles.GetValueOrDefault(idApp);
 
-    private void OnFilterChanged(FilterState filter) => _filter = filter;
+    private void OnFilterChanged(FilterState filter)
+    {
+        if (filter.Period == _filter.Period && filter.IdApp == _filter.IdApp)
+        {
+            _filter = filter;
+            return;
+        }
 
-    private void OnTypeChanged(int? type) => _type = type;
+        Navigation.NavigateTo(Navigation.GetUriWithQueryParameters(new Dictionary<string, object?>
+        {
+            ["period"] = MonitorDisplay.PeriodQuery(filter.Period),
+            ["app"] = filter.IdApp
+        }));
+    }
+
+    private void OnTypeChanged(int? type) =>
+        Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("type", type));
+
+    private void ToggleHealth(JobHealth? health)
+    {
+        var value = health is null || health == _health ? null : health switch
+        {
+            JobHealth.Error => "error",
+            JobHealth.Late => "late",
+            JobHealth.Running => "running",
+            _ => "ok"
+        };
+
+        Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("health", value));
+    }
 
     private void ToggleGroup(int idApp)
     {
@@ -175,14 +274,14 @@
 
     private void Toggle(JobModel job)
     {
-        if (!_opened.Remove(job.IdJob))
-            _opened.Add(job.IdJob);
+        if (!_opened.Remove((job.IdJob, job.IdType)))
+            _opened.Add((job.IdJob, job.IdType));
     }
 
     // a agenda e as credenciais do módulo ficam no diálogo, na aba Agenda
     private async Task OpenSchedule(int idApp)
     {
         await ModuleConfigurations.ShowAsync(DialogService, idApp, AppTitle(idApp), initialTab: 3);
-        _jobs = await MonitorRepository.GetJobsAsync(idApp: null, idType: null);
+        await Load();
     }
 }

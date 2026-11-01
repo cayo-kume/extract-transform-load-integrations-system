@@ -1,26 +1,83 @@
-@* Detalhe de uma mensagem com exceção: texto da exceção, pilha e comando SQL, cada um num bloco de código. *@
+@* Detalhe de uma mensagem com exceção: texto da exceção, pilha e comando SQL, cada um num bloco de código com o botão de
+   copiar no canto, e "Copiar tudo" num texto só, com o contexto, pronto para colar num chamado. *@
 
+<div class="d-flex align-center mt-1">
+    <MudSpacer />
+    <MudButton Variant="Variant.Text" Size="Size.Small" StartIcon="@Icons.Material.Filled.ContentCopy" OnClick="CopyAll">Copiar tudo</MudButton>
+</div>
 @if (!string.IsNullOrWhiteSpace(Message.ExceptionMessage))
 {
     <MudText Typo="Typo.caption" Class="mt-2">Exceção</MudText>
-    <pre class="code-block">@Message.ExceptionMessage</pre>
+    <div class="code-block-wrapper">
+        <pre class="code-block">@Message.ExceptionMessage</pre>
+        <CopyButton Text="@Message.ExceptionMessage" Tooltip="Copiar a exceção" Class="code-block-copy" />
+    </div>
 }
 @if (!string.IsNullOrWhiteSpace(Message.ExceptionStackTrace))
 {
     <MudText Typo="Typo.caption" Class="mt-2">Pilha</MudText>
-    <pre class="code-block">@Message.ExceptionStackTrace</pre>
+    <div class="code-block-wrapper">
+        <pre class="code-block">@Message.ExceptionStackTrace</pre>
+        <CopyButton Text="@Message.ExceptionStackTrace" Tooltip="Copiar a pilha" Class="code-block-copy" />
+    </div>
 }
 @if (!string.IsNullOrWhiteSpace(Message.SqlCommand))
 {
     <MudText Typo="Typo.caption" Class="mt-2">Comando SQL</MudText>
-    <pre class="code-block">@Message.SqlCommand</pre>
+    <div class="code-block-wrapper">
+        <pre class="code-block">@Message.SqlCommand</pre>
+        <CopyButton Text="@Message.SqlCommand" Tooltip="Copiar o comando SQL" Class="code-block-copy" />
+    </div>
 }
 
 @code {
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+
     [Parameter, EditorRequired] public MessageModel Message { get; set; } = default!;
 
     public static bool HasDetails(MessageModel message) =>
         !string.IsNullOrWhiteSpace(message.ExceptionMessage)
         || !string.IsNullOrWhiteSpace(message.ExceptionStackTrace)
         || !string.IsNullOrWhiteSpace(message.SqlCommand);
+
+    /// <summary>
+    /// Cabeçalho com aplicação, job, execução, data e nível, e depois mensagem, exceção, pilha e SQL.
+    /// </summary>
+    public static string TicketText(MessageModel message)
+    {
+        var lines = new List<string>
+        {
+            $"Empresa: {LoggedCompany.Label}",
+            $"Aplicação: {message.AppTitle ?? "—"}",
+            $"Job: {message.IdJob} - {message.JobTitle ?? "—"} (tipo {message.IdType})",
+            $"Execução: {message.Execution}",
+            $"Início da execução: {MonitorDisplay.Date(message.ExecutionStartDate)}",
+            $"Nível: {MonitorDisplay.LevelLabel(message.Level)}",
+            "",
+            $"Mensagem: {message.Message}"
+        };
+
+        if (!string.IsNullOrWhiteSpace(message.ExceptionMessage))
+            lines.AddRange(["", "Exceção:", message.ExceptionMessage]);
+        if (!string.IsNullOrWhiteSpace(message.ExceptionStackTrace))
+            lines.AddRange(["", "Pilha:", message.ExceptionStackTrace]);
+        if (!string.IsNullOrWhiteSpace(message.SqlCommand))
+            lines.AddRange(["", "Comando SQL:", message.SqlCommand]);
+
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private async Task CopyAll()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("webApp.copy", TicketText(Message));
+            Snackbar.Add("Copiado, pronto para colar num chamado.", Severity.Normal, config => config.VisibleStateDuration = 2000);
+        }
+        catch (JSException)
+        {
+            Snackbar.Add("Não foi possível copiar: o navegador bloqueou a área de transferência.", Severity.Warning);
+        }
+    }
 }

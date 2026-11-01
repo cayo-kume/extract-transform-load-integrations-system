@@ -1,5 +1,7 @@
 @inject IDialogService DialogService
 @inject IMonitorRepository MonitorRepository
+@inject ISnackbar Snackbar
+@inject ILogger<AppCard> Logger
 
 <div class="flex-grow-1 app-card-wrapper">
     <MudCard Class="app-card">
@@ -14,8 +16,13 @@
                         <MudChip T="string"
                                  Variant="Variant.Outlined"
                                  Color="@(Summary.IsActive ? Color.Success : Color.Default)"
-                                 Icon="@(Summary.IsActive ? null : Icons.Material.Filled.PauseCircle)"
+                                 Icon="@(_saving ? null : Summary.IsActive ? null : Icons.Material.Filled.PauseCircle)"
+                                 Disabled="_saving"
                                  OnClick="ToggleModule">
+                            @if (_saving)
+                            {
+                                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-1" Style="width: 14px; height: 14px" />
+                            }
                             @(Summary.IsActive ? "Ativa" : "Inativa")
                         </MudChip>
                     </div>
@@ -54,7 +61,7 @@
             </div>
         </MudCardContent>
         <MudCardActions Class="pa-2">
-            <MudButton Href="@($"/applications/{Summary.IdParent}/jobs")" Variant="Variant.Text" Color="Color.Primary">Ver jobs</MudButton>
+            <MudButton Href="@($"/applications/{Summary.IdParent}/jobs?period={MonitorDisplay.PeriodQuery(Period)}")" Variant="Variant.Text" Color="Color.Primary">Ver jobs</MudButton>
         </MudCardActions>
     </MudCard>
 </div>
@@ -72,10 +79,51 @@
     /// </summary>
     [Parameter] public EventCallback OnChanged { get; set; }
 
+    /// <summary>
+    /// Período da tela, levado no link "Ver jobs".
+    /// </summary>
+    [Parameter] public Period Period { get; set; } = Period.Last24Hours;
+
+    private bool _saving;
+
+    private int TotalJobs => Summary.Integrations + Summary.Procedures;
+
+    // desativar desliga todos os jobs do módulo e pede confirmação com os números reais, avisando que religar ativa todos,
+    // inclusive os que estavam desligados um a um (o chip só mostra "Inativa" com nenhum job ativo)
     private async Task ToggleModule()
     {
-        await MonitorRepository.SetModuleActiveAsync(Summary.IdParent, !Summary.IsActive);
-        await OnChanged.InvokeAsync();
+        var activate = !Summary.IsActive;
+        var company = System.Net.WebUtility.HtmlEncode(LoggedCompany.Label);
+
+        if (!activate)
+        {
+            var confirmed = await DialogService.ShowMessageBoxAsync(
+                $"Desativar {Summary.Title}?",
+                (MarkupString)$"<p>Os <strong>{Summary.ActiveJobs}</strong> jobs ativos (de {TotalJobs}) param de rodar para <strong>{company}</strong>.</p><p>Religar o módulo ativa todos os {TotalJobs} jobs, inclusive os que estavam desligados um a um.</p>",
+                yesText: "Desativar",
+                cancelText: "Cancelar");
+
+            if (confirmed != true)
+                return;
+        }
+
+        _saving = true;
+
+        try
+        {
+            if (!await Snackbar.TryAsync(Logger, () => MonitorRepository.SetModuleActiveAsync(Summary.IdParent, activate), $"Não foi possível {(activate ? "ativar" : "desativar")} {Summary.Title}."))
+                return;
+
+            Snackbar.Add(activate
+                ? $"{Summary.Title}: {TotalJobs} jobs ativados para {LoggedCompany.Name}."
+                : $"{Summary.Title}: {Summary.ActiveJobs} jobs desativados para {LoggedCompany.Name}.", activate ? Severity.Success : Severity.Warning);
+
+            await OnChanged.InvokeAsync();
+        }
+        finally
+        {
+            _saving = false;
+        }
     }
 
     // o "macro": credenciais, imagem e parâmetros globais do módulo, para a empresa logada

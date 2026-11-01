@@ -1,5 +1,6 @@
 @inject IMonitorRepository MonitorRepository
 @inject ISnackbar Snackbar
+@inject ILogger<ModuleConfigurations> Logger
 
 @* Configurações de um módulo para a empresa logada, em abas: imagem (a da empresa), credenciais e parâmetros (só leitura
    nesta fase) e agenda (ativar e desativar cada job). Ver docs/PLANO-WEBAPP.md, "Ajustes de layout". *@
@@ -177,8 +178,26 @@
 
     private async Task SetJobActive(JobModel job, bool isActive)
     {
-        await MonitorRepository.SetJobActiveAsync(job.IdJob, job.IdType, isActive);
+        if (!await Save(job, isActive))
+            return;
+
+        Snackbar.JobToggled(job, isActive, () => InvokeAsync(async () =>
+        {
+            if (await Save(job, !isActive))
+                Snackbar.Add(MonitorDisplay.JobToggled(job.IdJob, job.Title, !isActive), Severity.Info);
+
+            StateHasChanged();
+        }));
+    }
+
+    // em falha, o switch continua como estava
+    private async Task<bool> Save(JobModel job, bool isActive)
+    {
+        if (!await Snackbar.TryAsync(Logger, () => MonitorRepository.SetJobActiveAsync(job.IdJob, job.IdType, isActive), $"Não foi possível {(isActive ? "ativar" : "desativar")} o job {job.IdJob}."))
+            return false;
+
         await LoadAll();
+        return true;
     }
 
     private void Close() => MudDialog?.Close();

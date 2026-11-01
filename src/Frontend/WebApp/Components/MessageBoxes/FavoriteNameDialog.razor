@@ -1,0 +1,43 @@
+@* Nome de uma query favorita (ao salvar do histórico ou ao renomear); devolve o nome e cancela com o X. *@
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@(Rename ? "Renomear favorita" : "Salvar como favorita")</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField T="string" @bind-Value="Name" Label="Nome" Variant="Variant.Outlined" MaxLength="80" Counter="80" Immediate="true" AutoFocus="true" Required="true" />
+        <MudText Typo="Typo.caption" Class="mt-2 d-block">A favorita aparece em "Minhas querys", na barra lateral, e fica salva só neste navegador.</MudText>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@string.IsNullOrWhiteSpace(Name)" OnClick="Confirm">Salvar</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance? MudDialog { get; set; }
+
+    [Parameter] public string? Name { get; set; }
+
+    [Parameter] public bool Rename { get; set; }
+
+    private void Cancel() => MudDialog?.Cancel();
+
+    private void Confirm() => MudDialog?.Close(DialogResult.Ok(Name!.Trim()));
+
+    /// <summary>
+    /// Pede o nome; nulo se cancelou.
+    /// </summary>
+    public static async Task<string?> AskAsync(IDialogService dialogService, string? name, bool rename)
+    {
+        var parameters = new DialogParameters<FavoriteNameDialog>
+        {
+            { x => x.Name, name },
+            { x => x.Rename, rename }
+        };
+
+        var reference = await dialogService.ShowAsync<FavoriteNameDialog>("Favorita", parameters, new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        var result = await reference.Result;
+        return result is null || result.Canceled ? null : result.Data as string;
+    }
+}

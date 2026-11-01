@@ -11,10 +11,23 @@ namespace WebApp.Models
         public int IdType { get; set; }
         public string? JobType { get; set; }
         public string? JobTitle { get; set; }
-        public DateTime StartDate { get; set; }
+        /// <summary>
+        /// Início da última execução; nulo para job atrasado que nunca rodou.
+        /// </summary>
+        public DateTime? StartDate { get; set; }
+
         public DateTime? EndDate { get; set; }
         public int Records { get; set; }
         public JobHealth Health { get; set; }
+
+        /// <summary>
+        /// Agenda do job, para o chip dizer desde quando está atrasado ou há quanto tempo roda.
+        /// </summary>
+        public int IntervalTimeInMinutes { get; set; }
+
+        public TimeOnly? RunningDailyAt { get; set; }
+
+        public AcknowledgementModel? Acknowledgement { get; set; }
 
         /// <summary>
         /// A última execução tem mensagem de aviso (nível 2), que não muda a saúde.

@@ -1,34 +1,92 @@
 @using WebApp.Models
 
+@* Saúde de um job, curta no chip ("Atrasado 1h40", "Rodando 2h13") e com o detalhe no tooltip. O tempo é contado a partir
+   de Now, o momento da carga da tela, para todas as linhas baterem com o "Atualizado às". *@
+
 <div class="d-flex align-center gap-1">
-    @if (IsActive)
-    {
-        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@MonitorDisplay.HealthColor(Health)" Icon="@MonitorDisplay.HealthIcon(Health)">
-            @MonitorDisplay.HealthLabel(Health)
-        </MudChip>
-    }
-    else
+    @if (!Context.IsActive)
     {
         <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Default" Icon="@Icons.Material.Filled.PauseCircle">Inativo</MudChip>
     }
-    @if (HasWarnings)
+    else if (Context.IsAcknowledged)
+    {
+        <MudTooltip Text="@AcknowledgementText">
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Default" Icon="@Icons.Material.Filled.DoneAll">
+                @MonitorDisplay.HealthLabel(Context.Health) · reconhecido
+            </MudChip>
+        </MudTooltip>
+    }
+    else
+    {
+        <MudTooltip Text="@Detail" Disabled="@(Detail is null)">
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@Color" Icon="@MonitorDisplay.HealthIcon(Context.Health)">
+                @Label
+            </MudChip>
+        </MudTooltip>
+    }
+    @if (Context.HasWarnings)
     {
         <MudTooltip Text="A última execução tem avisos">
             <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" Size="Size.Small" />
         </MudTooltip>
     }
+    @if (Context.IsActive && Context.RunRequest is { } request)
+    {
+        var expired = Now - request.RequestedAt > RunRequestTimeout;
+        <MudTooltip Text="@(expired ? "O host não leu o pedido: confira se ele está no ar" : $"O host inicia em até {HostRecheckMinutes} min")">
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@(expired ? Color.Warning : Color.Info)" Icon="@Icons.Material.Filled.PlayCircleOutline">
+                Solicitada às @request.RequestedAt.ToString("HH:mm")
+            </MudChip>
+        </MudTooltip>
+    }
 </div>
 
 @code {
-    [Parameter] public JobHealth? Health { get; set; }
+    /// <summary>
+    /// Intervalo em que o host relê a agenda e os pedidos de "Executar agora".
+    /// </summary>
+    public const int HostRecheckMinutes = 5;
 
     /// <summary>
-    /// Job inativo não tem saúde: aparece como "Inativo".
+    /// Pedido sem execução depois disso vira aviso: o host provavelmente está fora.
     /// </summary>
-    [Parameter] public bool IsActive { get; set; } = true;
+    public static readonly TimeSpan RunRequestTimeout = TimeSpan.FromMinutes(30);
+
+    [Parameter, EditorRequired] public HealthContext Context { get; set; } = default!;
 
     /// <summary>
-    /// A última execução tem mensagem de aviso (nível 2): aparece como ícone, sem mudar a saúde.
+    /// Momento da carga da tela; o padrão é agora.
     /// </summary>
-    [Parameter] public bool HasWarnings { get; set; }
+    [Parameter] public DateTime? Now { get; set; }
+
+    private DateTime NowOrDefault => Now ?? DateTime.Now;
+
+    private Color Color => Context.IsRunningTooLong(NowOrDefault) ? Color.Warning : MonitorDisplay.HealthColor(Context.Health);
+
+    private string Label => Context switch
+    {
+        { Health: JobHealth.Late, ExpectedStart: DateTime expected } when NowOrDefault > expected =>
+            $"Atrasado {MonitorDisplay.Elapsed(NowOrDefault - expected)}",
+        { Health: JobHealth.Running, LastStart: DateTime start } =>
+            $"Rodando {MonitorDisplay.Elapsed(NowOrDefault - start)}",
+        _ => MonitorDisplay.HealthLabel(Context.Health)
+    };
+
+    private string? Detail => Context switch
+    {
+        { Health: JobHealth.Late, LastStart: null } => "Nunca rodou",
+        { Health: JobHealth.Late, ExpectedStart: DateTime expected, LastStart: DateTime start } =>
+            $"Esperado às {MonitorDisplay.Time(expected, NowOrDefault)}; última execução às {MonitorDisplay.Time(start, NowOrDefault)}",
+        { Health: JobHealth.Running, LastStart: DateTime start } when Context.IsRunningTooLong(NowOrDefault) =>
+            $"Desde {MonitorDisplay.Time(start, NowOrDefault)}: passou de 1 × o intervalo ({Context.IntervalTimeInMinutes} min), o heartbeat do host vai recuperar a execução",
+        { Health: JobHealth.Running, LastStart: DateTime start } => $"Desde {MonitorDisplay.Time(start, NowOrDefault)}",
+        { Health: JobHealth.Error, LastStart: DateTime start } => $"Última execução às {MonitorDisplay.Time(start, NowOrDefault)}, com erro",
+        _ => null
+    };
+
+    private string AcknowledgementText => Context.Acknowledgement is { } acknowledgement
+        ? $"Reconhecido por {acknowledgement.User} às {MonitorDisplay.Time(acknowledgement.At, NowOrDefault)}" +
+          (acknowledgement.Note is null ? "" : $": {acknowledgement.Note}") +
+          ". Vale até a próxima execução."
+        : "";
 }

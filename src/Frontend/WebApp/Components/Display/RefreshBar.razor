@@ -1,0 +1,65 @@
+@* "Atualizado às" e o botão de recarregar, no cabeçalho das telas. Quando a última tentativa falhou, avisa que os dados
+   na tela são os da última carga que deu certo. *@
+
+<div class="d-flex align-center gap-1">
+    @if (FailedAt is DateTime failed)
+    {
+        <MudTooltip Text="Os dados na tela são da última carga que deu certo">
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Warning" Icon="@Icons.Material.Filled.CloudOff">
+                Falha ao atualizar às @failed.ToString("HH:mm")@(RetryText is null ? "" : $"; {RetryText}")
+            </MudChip>
+        </MudTooltip>
+    }
+    @if (UpdatedAt == default)
+    {
+        <MudText Typo="Typo.caption">Ainda sem dados carregados</MudText>
+    }
+    else
+    {
+        <MudText Typo="Typo.caption">Atualizado às @UpdatedAt.ToString("HH:mm:ss")@Suffix</MudText>
+    }
+    <MudTooltip Text="Atualizar">
+        @if (_refreshing)
+        {
+            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mx-2" />
+        }
+        else
+        {
+            <MudIconButton Icon="@Icons.Material.Filled.Refresh" Size="Size.Small" OnClick="Refresh" aria-label="Atualizar" />
+        }
+    </MudTooltip>
+</div>
+
+@code {
+    [Parameter] public DateTime UpdatedAt { get; set; }
+
+    /// <summary>
+    /// Texto depois da hora, como ", a cada minuto".
+    /// </summary>
+    [Parameter] public string? Suffix { get; set; }
+
+    /// <summary>
+    /// Hora da última tentativa que falhou, enquanto não houver uma que dê certo.
+    /// </summary>
+    [Parameter] public DateTime? FailedAt { get; set; }
+
+    [Parameter] public string? RetryText { get; set; }
+
+    [Parameter] public EventCallback OnRefresh { get; set; }
+
+    private bool _refreshing;
+
+    private async Task Refresh()
+    {
+        _refreshing = true;
+
+        try
+        {
+            await OnRefresh.InvokeAsync();
+        }
+        finally
+        {
+            _refreshing = false;
+        }
+    }
+}

@@ -1,0 +1,33 @@
+@inject IJSRuntime JS
+@inject ISnackbar Snackbar
+
+@* Copia um texto para a área de transferência. Text ou GetText (monta o texto só no clique). *@
+
+<MudTooltip Text="@Tooltip">
+    <MudIconButton Icon="@Icons.Material.Filled.ContentCopy" Size="Size.Small" Class="@Class" OnClick="Copy" aria-label="@Tooltip" />
+</MudTooltip>
+
+@code {
+    [Parameter] public string? Text { get; set; }
+
+    [Parameter] public Func<string>? GetText { get; set; }
+
+    [Parameter] public string Tooltip { get; set; } = "Copiar";
+
+    [Parameter] public string? Class { get; set; }
+
+    private async Task Copy()
+    {
+        var text = GetText?.Invoke() ?? Text ?? "";
+
+        try
+        {
+            await JS.InvokeVoidAsync("webApp.copy", text);
+            Snackbar.Add("Copiado.", Severity.Normal, config => config.VisibleStateDuration = 1500);
+        }
+        catch (JSException)
+        {
+            Snackbar.Add("Não foi possível copiar: o navegador bloqueou a área de transferência.", Severity.Warning);
+        }
+    }
+}

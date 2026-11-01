@@ -75,5 +75,66 @@ namespace WebApp.Components.Display
         };
 
         public static string Date(DateTime? date) => date?.ToString("dd/MM/yyyy HH:mm:ss") ?? "—";
+
+        /// <summary>
+        /// Hora curta: "05:12" se for hoje, "31/10 23:05" se não.
+        /// </summary>
+        public static string Time(DateTime date, DateTime now) =>
+            date.Date == now.Date ? date.ToString("HH:mm") : date.ToString("dd/MM HH:mm");
+
+        /// <summary>
+        /// Tempo decorrido em poucos caracteres: "45 min", "2h13", "3 d 4 h".
+        /// </summary>
+        public static string Elapsed(TimeSpan elapsed) => elapsed switch
+        {
+            { TotalMinutes: < 1 } => "< 1 min",
+            { TotalHours: < 1 } => $"{(int)elapsed.TotalMinutes} min",
+            { TotalDays: < 1 } => $"{(int)elapsed.TotalHours}h{elapsed.Minutes:00}",
+            _ => $"{(int)elapsed.TotalDays} d {elapsed.Hours} h"
+        };
+
+        /// <summary>
+        /// "há 4 min", "há 2h13", "agora".
+        /// </summary>
+        public static string Ago(DateTime date, DateTime now) =>
+            now - date < TimeSpan.FromMinutes(1) ? "agora" : $"há {Elapsed(now - date)}";
+
+        /// <summary>
+        /// A mesma frase em todas as telas, para o que mudou ficar registrado na tela (e, na fase 5, na auditoria).
+        /// </summary>
+        public static string JobToggled(int idJob, string? title, bool isActive) =>
+            $"Job {idJob} {title} {(isActive ? "ativado" : "desativado")}";
+
+        /// <summary>
+        /// Valor do período na URL: 12h, 24h ou 7d.
+        /// </summary>
+        public static string PeriodQuery(Period period) => period switch
+        {
+            Period.Last12Hours => "12h",
+            Period.Last7Days => "7d",
+            _ => "24h"
+        };
+
+        public static Period? ParsePeriod(string? value) => value switch
+        {
+            "12h" => Period.Last12Hours,
+            "24h" => Period.Last24Hours,
+            "7d" => Period.Last7Days,
+            _ => null
+        };
+
+        /// <summary>
+        /// Link para a tela de Jobs já aberta num job, no período da tela de origem.
+        /// </summary>
+        public static string JobLink(int idApp, int idJob, int idType, Period period) =>
+            $"/applications/{idApp}/jobs?job={idJob}&type={idType}&period={PeriodQuery(period)}";
+
+        /// <summary>
+        /// Link para os Logs de Erros já abertos na aplicação (e no job, se informado), no período da tela de origem.
+        /// </summary>
+        public static string ErrorsLink(int idApp, int? idJob, int? idType, Period period) =>
+            idJob is null
+                ? $"/errors?app={idApp}&period={PeriodQuery(period)}"
+                : $"/errors?app={idApp}&job={idJob}&type={idType}&period={PeriodQuery(period)}";
     }
 }

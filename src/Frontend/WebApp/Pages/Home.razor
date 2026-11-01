@@ -1,6 +1,10 @@
 @page "/home"
 @implements IAsyncDisposable
 @inject IMonitorRepository MonitorRepository
+@inject NavigationManager Navigation
+@inject FilterSession FilterSession
+@inject ISnackbar Snackbar
+@inject ILogger<Home> Logger
 
 <PageTitle>Visão geral</PageTitle>
 
@@ -17,16 +21,16 @@
         <div class="d-flex align-center pa-4">
             <h3 class="ma-0 text-center">APLICAÇÕES MONITORADAS</h3>
             <MudSpacer />
-            <MudButton Href ="/applications" StartIcon="@Icons.Material.Filled.ArrowForward" Class="ver-todos-button">Ver Todos</MudButton>
+            <MudLink Href="@WithPeriod("/applications")" Typo="Typo.body2">Ver em Aplicações</MudLink>
         </div>
 
-        <!--1 Fileira de Apps-->
+        <!-- Cards na ordem da gravidade: com erro, atrasadas e inativas primeiro -->
         @for(int i = 0; i < _apps.Count; i += 4)
         {
             <div class="d-flex flex-row flex-wrap align-center gap-4 pa-4">
                 @foreach (var summarizedApp in _apps.Skip(i).Take(4))
                 {
-                    <AppCard Summary="summarizedApp" OnChanged="ReloadAsync" />
+                    <AppCard @key="summarizedApp.IdParent" Summary="summarizedApp" Period="_filter.Period" OnChanged="ReloadAsync" />
                 }
             </div>
         }
@@ -35,8 +39,8 @@
             <h3 class="ma-0 text-center">MÉTRICAS CONSOLIDADAS</h3>
         </div>
 
-        <div class="d-flex flex-row align-center gap-4 pa-4">
-            <div class="flex-grow-1">
+        <div class="d-flex flex-row align-stretch gap-4 pa-4 flex-wrap">
+            <div class="flex-grow-1 metric-card">
                 <MudCard Class="app-card">
                     <MudCardHeader>
                         <CardHeaderContent>
@@ -44,12 +48,52 @@
                         </CardHeaderContent>
                     </MudCardHeader>
                     <MudCardContent>
-                        <MudText Typo="Typo.h4" Color="Color.Success">@SuccessRate.ToString("P1")</MudText>
+                        <div class="d-flex align-baseline gap-2 flex-wrap">
+                            <MudText Typo="Typo.h4" Color="@RateColor(SuccessRate)">@SuccessRate.ToString("P1")</MudText>
+                            @if (SuccessDelta is double delta)
+                            {
+                                @if (Math.Abs(delta) < 0.05)
+                                {
+                                    <MudText Typo="Typo.caption">= estável vs @PeriodLabel anteriores</MudText>
+                                }
+                                else
+                                {
+                                    <MudText Typo="Typo.caption" Color="@(delta >= 0 ? Color.Success : Color.Error)">
+                                        @(delta >= 0 ? "▲" : "▼") @Math.Abs(delta).ToString("N1") p.p. vs @PeriodLabel anteriores
+                                    </MudText>
+                                }
+                            }
+                        </div>
                         <MudText Typo="Typo.caption">@(Executions - FailedExecutions) de @Executions execuções sem erro</MudText>
+
+                        <!-- Por aplicação, da pior para a melhor; o clique filtra a tela pela aplicação -->
+                        <div class="mt-2">
+                            @foreach (var app in SuccessByApp)
+                            {
+                                var rate = app.Executions == 0 ? (double?)null : (double)(app.Executions - app.FailedExecutions) / app.Executions;
+                                <div class="success-row" role="button" tabindex="0" title="@(app.Executions == 0 ? "Sem execuções no período" : $"{app.Executions - app.FailedExecutions:N0} de {app.Executions:N0} execuções sem erro")"
+                                     @onclick="@(() => ToggleApp(app.IdParent))" @onkeydown="@(e => OnAppKeyDown(e, app.IdParent))">
+                                    <span class="success-row-title">@app.Title</span>
+                                    @if (rate is double value)
+                                    {
+                                        <MudProgressLinear Value="@(value * 100)" Color="@RateColor(value)" Class="flex-grow-1" Rounded="true" Size="Size.Small" />
+                                        <span class="success-row-value">@value.ToString("P1")</span>
+                                    }
+                                    else
+                                    {
+                                        <MudText Typo="Typo.caption" Class="flex-grow-1">sem execuções</MudText>
+                                    }
+                                </div>
+                            }
+                            @if (_filter.IdApp is not null)
+                            {
+                                <MudLink Typo="Typo.caption" OnClick="@(() => ToggleApp(_filter.IdApp.Value))">Ver todas</MudLink>
+                            }
+                        </div>
                     </MudCardContent>
                 </MudCard>
             </div>
-            <div class="flex-grow-1">
+            <div class="flex-grow-1 metric-card">
                 <MudCard Class="app-card">
                     <MudCardHeader>
                         <CardHeaderContent>
@@ -59,10 +103,16 @@
                     <MudCardContent>
                         <MudText Typo="Typo.h4" Color="Color.Primary">@Records.ToString("N0")</MudText>
                         <MudText Typo="Typo.caption">em @Executions.ToString("N0") execuções</MudText>
+                        @if (RecordsDelta is double change && Math.Abs(change) >= 0.0005)
+                        {
+                            <MudText Typo="Typo.caption" Class="d-block" Color="@(change >= 0 ? Color.Success : Color.Warning)">
+                                @(change >= 0 ? "▲" : "▼") @Math.Abs(change).ToString("P1") vs @PeriodLabel anteriores
+                            </MudText>
+                        }
                     </MudCardContent>
                 </MudCard>
             </div>
-            <div class="flex-grow-1">
+            <div class="flex-grow-1 metric-card">
                 <MudCard Class="app-card">
                     <MudCardHeader>
                         <CardHeaderContent>
@@ -70,8 +120,35 @@
                         </CardHeaderContent>
                     </MudCardHeader>
                     <MudCardContent>
-                        <MudText Typo="Typo.h4" Color="@(ActiveFailures > 0 ? Color.Error : Color.Success)">@ActiveFailures</MudText>
-                        <MudText Typo="Typo.caption">@FailedJobs com erro e @LateJobs atrasados agora</MudText>
+                        <div class="d-flex align-baseline gap-2">
+                            <MudText Typo="Typo.h4" Color="@(ActiveFailures.Count > 0 ? Color.Error : Color.Success)">@ActiveFailures.Count</MudText>
+                            @if (AcknowledgedFailures > 0)
+                            {
+                                <MudText Typo="Typo.caption">(+@AcknowledgedFailures reconhecida(s))</MudText>
+                            }
+                        </div>
+                        <MudText Typo="Typo.caption">
+                            <MudLink Typo="Typo.caption" Href="@IntegrationsLink("error")">@FailedJobs com erro</MudLink>
+                            e
+                            <MudLink Typo="Typo.caption" Href="@IntegrationsLink("late")">@LateJobs atrasados</MudLink>
+                            agora
+                        </MudText>
+
+                        <!-- As 5 primeiras: erro antes de atrasado, a mais antiga primeiro (a que mais dói) -->
+                        <div class="mt-2">
+                            @foreach (var job in ActiveFailures.Take(5))
+                            {
+                                <div class="failure-row">
+                                    <MudIcon Icon="@MonitorDisplay.HealthIcon(job.Health)" Color="@MonitorDisplay.HealthColor(job.Health)" Size="Size.Small" />
+                                    <MudLink Href="@MonitorDisplay.JobLink(job.IdApp, job.IdJob, job.IdType, _filter.Period)" Typo="Typo.caption" Class="failure-row-title">@job.IdJob - @job.Title</MudLink>
+                                    <MudText Typo="Typo.caption" Class="failure-row-reason">@FailureReason(job)</MudText>
+                                </div>
+                            }
+                            @if (ActiveFailures.Count > 5)
+                            {
+                                <MudLink Typo="Typo.caption" Href="@IntegrationsLink(null)">+@(ActiveFailures.Count - 5) em Integrações</MudLink>
+                            }
+                        </div>
                     </MudCardContent>
                 </MudCard>
             </div>
@@ -80,10 +157,11 @@
         <div class="d-flex align-center pa-4">
             <h3 class="ma-0 text-center">PAINEL DE SAÚDE (HEARTBEAT ATIVO)</h3>
             <MudSpacer />
-            <MudText Typo="Typo.caption">Atualizado às @_updatedAt.ToString("HH:mm:ss"), a cada minuto</MudText>
+            <RefreshBar UpdatedAt="_updatedAt" Suffix=", a cada minuto" FailedAt="_failedAt" RetryText="tentando de novo em 1 min" OnRefresh="ManualRefresh" />
         </div>
 
         <div class="pa-4">
+            <MudText Typo="Typo.caption" Class="d-block mb-2">Integrações ativas, as com erro e as atrasadas primeiro, mesmo que não tenham rodado no período.</MudText>
             <MudTable Items="@_heartbeat" Hover="true" Dense="true" Breakpoint="Breakpoint.Sm">
                 <HeaderContent>
                     <MudTh>Saúde</MudTh>
@@ -93,17 +171,45 @@
                     <MudTh>Início</MudTh>
                     <MudTh>Duração</MudTh>
                     <MudTh>Registros</MudTh>
+                    <MudTh></MudTh>
                 </HeaderContent>
                 <RowTemplate>
-                    <MudTd DataLabel="Saúde"><HealthChip Health="context.Health" HasWarnings="context.HasWarnings" /></MudTd>
+                    <MudTd DataLabel="Saúde"><HealthChip Context="HealthContext.From(context)" Now="_updatedAt" /></MudTd>
                     <MudTd DataLabel="Tipo">@context.JobType</MudTd>
                     <MudTd DataLabel="Aplicação">@context.AppTitle</MudTd>
-                    <MudTd DataLabel="Nome" HideSmall=false>@context.JobTitle</MudTd>
+                    <MudTd DataLabel="Nome" HideSmall=false>
+                        <MudTooltip Text="Abrir o job">
+                            <MudLink Href="@MonitorDisplay.JobLink(context.IdApp, context.IdJob, context.IdType, _filter.Period)" Typo="Typo.body2">@context.JobTitle</MudLink>
+                        </MudTooltip>
+                    </MudTd>
                     <MudTd DataLabel="Início">@MonitorDisplay.Date(context.StartDate)</MudTd>
-                    <MudTd DataLabel="Duração">@MonitorDisplay.Duration(context.Duration)</MudTd>
+                    <MudTd DataLabel="Duração"><DurationText Start="context.StartDate" End="context.EndDate" Now="_updatedAt" /></MudTd>
                     <MudTd DataLabel="Registros">@context.Records</MudTd>
+                    <MudTd>
+                        @if (JobOf(context) is { } job)
+                        {
+                            <JobActions Job="job" OnChanged="ReloadAsync" />
+                        }
+                    </MudTd>
                 </RowTemplate>
             </MudTable>
+        </div>
+
+        <div class="d-flex align-center pa-4">
+            <h3 class="ma-0 text-center">EXECUÇÕES COM ERRO POR @(_filter.Period == Period.Last7Days ? "DIA" : "HORA")</h3>
+        </div>
+
+        <div class="px-4 pb-2">
+            <ErrorBars Buckets="TotalBuckets" Height="110" ShowLabels="true" LabelEvery="LabelEvery" />
+            <MudText Typo="Typo.caption">Passe o mouse numa barra para ver quantas execuções da faixa tiveram erro.</MudText>
+        </div>
+
+        <div class="d-flex align-center pa-4">
+            <h3 class="ma-0 text-center">MAPA DE CALOR: APLICAÇÃO × @(_filter.Period == Period.Last7Days ? "DIA" : "HORA")</h3>
+        </div>
+
+        <div class="px-4 pb-4">
+            <ErrorHeatmap Rows="HeatmapRows" Title="AppTitle" Period="_filter.Period" LabelEvery="LabelEvery" />
         </div>
     </MudItem>
 </MudGrid>
@@ -111,13 +217,26 @@
 @code {
     private static readonly TimeSpan RefreshInterval = TimeSpan.FromSeconds(60);
 
+    // faixas da taxa de sucesso: abaixo de 95% é erro, até 99% é aviso
+    private const double ErrorThreshold = 0.95;
+    private const double WarningThreshold = 0.99;
+
+    [SupplyParameterFromQuery(Name = "period")] public string? PeriodQuery { get; set; }
+
+    [SupplyParameterFromQuery(Name = "app")] public int? AppQuery { get; set; }
+
     private FilterState _filter = new();
+    private (Period, int?)? _loaded;
     private bool _loading = true;
     private DateTime _updatedAt;
+    private DateTime? _failedAt;
 
+    private IReadOnlyList<AppSummaryModel> _allApps = [];
     private IReadOnlyList<AppSummaryModel> _apps = [];
     private IReadOnlyList<JobModel> _jobs = [];
     private IReadOnlyList<HeartbeatModel> _heartbeat = [];
+    private IReadOnlyList<AppBucketsModel> _buckets = [];
+    private IReadOnlyList<AppBucketsModel> _previousBuckets = [];
 
     private PeriodicTimer? _timer;
     private readonly CancellationTokenSource _disposed = new();
@@ -126,44 +245,216 @@
     private int FailedExecutions => _apps.Sum(x => x.FailedExecutions);
     private int Records => _apps.Sum(x => x.Records);
     private double SuccessRate => Executions == 0 ? 1 : (double)(Executions - FailedExecutions) / Executions;
-    private int FailedJobs => _jobs.Count(x => x.Health == JobHealth.Error);
-    private int LateJobs => _jobs.Count(x => x.Health == JobHealth.Late);
-    private int ActiveFailures => FailedJobs + LateJobs;
 
-    protected override async Task OnInitializedAsync()
+    // falhas só de jobs ativos (o mesmo universo de Integrações, para o número bater com o destino do link)
+    private List<JobModel> ActiveFailures => _jobs
+        .Where(x => x.IsActive && x.Health is JobHealth.Error or JobHealth.Late && x.Acknowledgement is null)
+        .OrderBy(x => x.Health == JobHealth.Error ? 0 : 1)
+        .ThenBy(x => x.LastExecution?.StartDate ?? DateTime.MinValue)
+        .ToList();
+
+    private int FailedJobs => ActiveFailures.Count(x => x.Health == JobHealth.Error);
+    private int LateJobs => ActiveFailures.Count(x => x.Health == JobHealth.Late);
+    private int AcknowledgedFailures => _jobs.Count(x => x.IsActive && x.Health is JobHealth.Error or JobHealth.Late && x.Acknowledgement is not null);
+
+    private IEnumerable<AppBucketsModel> FilteredBuckets(IReadOnlyList<AppBucketsModel> buckets) =>
+        buckets.Where(x => _filter.IdApp is null || x.IdApp == _filter.IdApp);
+
+    // a janela anterior de mesmo tamanho, somada de todas as aplicações do filtro
+    private (int Executions, int Failed, int Records) Previous => FilteredBuckets(_previousBuckets)
+        .SelectMany(x => x.Buckets)
+        .Aggregate((0, 0, 0), (sum, x) => (sum.Item1 + x.Executions, sum.Item2 + x.FailedExecutions, sum.Item3 + x.Records));
+
+    private double? SuccessDelta => Previous.Executions == 0
+        ? null
+        : (SuccessRate - (double)(Previous.Executions - Previous.Failed) / Previous.Executions) * 100;
+
+    private double? RecordsDelta => Previous.Records == 0 ? null : (double)(Records - Previous.Records) / Previous.Records;
+
+    private string PeriodLabel => _filter.Period switch
     {
-        await Load();
+        Period.Last12Hours => "12h",
+        Period.Last7Days => "7 dias",
+        _ => "24h"
+    };
+
+    private IEnumerable<AppSummaryModel> SuccessByApp => _allApps
+        .Where(x => _filter.IdApp is null || x.IdParent == _filter.IdApp)
+        .OrderBy(x => x.Executions == 0 ? 1 : 0)
+        .ThenBy(x => x.Executions == 0 ? 1 : (double)(x.Executions - x.FailedExecutions) / x.Executions)
+        .ThenBy(x => x.Title);
+
+    private IReadOnlyList<ExecutionBucketModel> TotalBuckets
+    {
+        get
+        {
+            var rows = FilteredBuckets(_buckets).ToList();
+            if (rows.Count == 0)
+                return [];
+
+            return rows[0].Buckets
+                .Select((bucket, i) => new ExecutionBucketModel
+                {
+                    Start = bucket.Start,
+                    End = bucket.End,
+                    Executions = rows.Sum(x => x.Buckets[i].Executions),
+                    FailedExecutions = rows.Sum(x => x.Buckets[i].FailedExecutions),
+                    Errors = rows.Sum(x => x.Buckets[i].Errors),
+                    Records = rows.Sum(x => x.Buckets[i].Records)
+                })
+                .ToList();
+        }
+    }
+
+    // linhas na mesma ordem dos cards
+    private IReadOnlyList<AppBucketsModel> HeatmapRows => _apps
+        .Select(app => _buckets.FirstOrDefault(x => x.IdApp == app.IdParent))
+        .OfType<AppBucketsModel>()
+        .ToList();
+
+    private int Buckets => _filter.Period switch
+    {
+        Period.Last12Hours => 12,
+        Period.Last7Days => 7,
+        _ => 24
+    };
+
+    private int LabelEvery => _filter.Period switch
+    {
+        Period.Last12Hours => 2,
+        Period.Last7Days => 1,
+        _ => 3
+    };
+
+    protected override void OnInitialized()
+    {
         _ = Refresh();
     }
 
-    private async Task OnFilterChanged(FilterState filter)
+    // período e aplicação vêm da URL (?period=7d&app=30); sem período na URL, vale o último escolhido nesta aba
+    protected override async Task OnParametersSetAsync()
     {
-        _filter = filter;
+        var period = MonitorDisplay.ParsePeriod(PeriodQuery) ?? FilterSession.Period;
+        FilterSession.Period = period;
+
+        if (_loaded == (period, AppQuery))
+            return;
+
+        _filter = _filter with { Period = period, IdApp = AppQuery };
+        _loaded = (period, AppQuery);
         _loading = true;
-        await Load();
+        await Load(quiet: false);
     }
 
-    // mudanças feitas pelos cards (ativar o módulo, trocar a imagem) refletem nos números e no heartbeat
+    private void OnFilterChanged(FilterState filter)
+    {
+        if (filter.Period == _filter.Period && filter.IdApp == _filter.IdApp)
+            return;
+
+        Navigation.NavigateTo(Navigation.GetUriWithQueryParameters(new Dictionary<string, object?>
+        {
+            ["period"] = MonitorDisplay.PeriodQuery(filter.Period),
+            ["app"] = filter.IdApp
+        }));
+    }
+
+    // o clique numa aplicação da taxa de sucesso filtra a tela; na aplicação já filtrada, limpa o filtro
+    private void ToggleApp(int idApp) =>
+        OnFilterChanged(_filter with { IdApp = _filter.IdApp == idApp ? null : idApp });
+
+    private void OnAppKeyDown(KeyboardEventArgs args, int idApp)
+    {
+        if (args.Key is "Enter" or " ")
+            ToggleApp(idApp);
+    }
+
+    // mudanças feitas pelos cards e pelas ações das linhas refletem nos números e no heartbeat
     private async Task ReloadAsync()
     {
-        await Load();
+        await Load(quiet: false);
         StateHasChanged();
     }
 
-    private async Task Load()
+    private Task ManualRefresh() => Load(quiet: false);
+
+    private async Task Load(bool quiet)
     {
-        var apps = await MonitorRepository.GetAppSummariesAsync(_filter.Period, _disposed.Token);
-        _apps = apps.Where(x => _filter.IdApp is null || x.IdParent == _filter.IdApp).ToList();
-        _jobs = await MonitorRepository.GetJobsAsync(_filter.IdApp, idType: null, _disposed.Token);
+        try
+        {
+            var apps = await MonitorRepository.GetAppSummariesAsync(_filter.Period, _disposed.Token);
+            var jobs = await MonitorRepository.GetJobsAsync(idApp: null, idType: null, _disposed.Token);
+            var heartbeat = await MonitorRepository.GetHeartbeatAsync(_filter.Period, top: 50, _disposed.Token);
+            _buckets = await MonitorRepository.GetExecutionBucketsAsync(_filter.Period, Buckets, previousWindow: false, _disposed.Token);
+            _previousBuckets = await MonitorRepository.GetExecutionBucketsAsync(_filter.Period, Buckets, previousWindow: true, _disposed.Token);
 
-        var heartbeat = await MonitorRepository.GetHeartbeatAsync(_filter.Period, top: 50, _disposed.Token);
-        _heartbeat = heartbeat.Where(x => _filter.IdApp is null || x.IdApp == _filter.IdApp).Take(10).ToList();
+            _allApps = apps;
+            _jobs = jobs.Where(x => _filter.IdApp is null || x.IdApp == _filter.IdApp).ToList();
+            _apps = apps
+                .Where(x => _filter.IdApp is null || x.IdParent == _filter.IdApp)
+                .OrderBy(x => SeverityRank(x.IdParent, x))
+                .ThenBy(x => x.Title)
+                .ToList();
+            _heartbeat = heartbeat.Where(x => _filter.IdApp is null || x.IdApp == _filter.IdApp).Take(10).ToList();
 
-        _updatedAt = DateTime.Now;
-        _loading = false;
+            _updatedAt = DateTime.Now;
+            _failedAt = null;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            // os dados anteriores ficam na tela; no timer, um Snackbar só por sequência de falhas
+            Logger.LogError(exception, "Falha ao atualizar a visão geral");
+            if (!quiet || _failedAt is null)
+                Snackbar.Add("Não foi possível atualizar o painel.", Severity.Error);
+
+            _failedAt = DateTime.Now;
+        }
+        finally
+        {
+            _loading = false;
+        }
     }
 
-    // recarrega cards, métricas e heartbeat a cada minuto, sem o overlay de carregamento
+    // ordem dos cards: aplicação com job em erro, com atrasado, inativa, e o resto
+    private int SeverityRank(int idApp, AppSummaryModel app)
+    {
+        var jobs = _jobs.Where(x => x.IdApp == idApp && x.IsActive && x.Acknowledgement is null).ToList();
+        if (jobs.Any(x => x.Health == JobHealth.Error))
+            return 0;
+        if (jobs.Any(x => x.Health == JobHealth.Late))
+            return 1;
+        return app.IsActive ? 3 : 2;
+    }
+
+    private JobModel? JobOf(HeartbeatModel heartbeat) =>
+        _jobs.FirstOrDefault(x => x.IdJob == heartbeat.IdJob && x.IdType == heartbeat.IdType);
+
+    private string? AppTitle(int idApp) => _allApps.FirstOrDefault(x => x.IdParent == idApp)?.Title;
+
+    private Color RateColor(double rate) => rate < ErrorThreshold ? Color.Error : rate < WarningThreshold ? Color.Warning : Color.Success;
+
+    private string FailureReason(JobModel job) => job switch
+    {
+        { Health: JobHealth.Error, LastExecution: { } last } => $"erro às {MonitorDisplay.Time(last.StartDate, _updatedAt)}",
+        { Health: JobHealth.Late, LastExecution: null } => "nunca rodou",
+        { Health: JobHealth.Late, LastExecution: { } last } => $"sem rodar desde {MonitorDisplay.Time(last.StartDate, _updatedAt)}",
+        _ => ""
+    };
+
+    private string WithPeriod(string path) => $"{path}?period={MonitorDisplay.PeriodQuery(_filter.Period)}";
+
+    private string IntegrationsLink(string? health)
+    {
+        var link = $"/integrations?period={MonitorDisplay.PeriodQuery(_filter.Period)}";
+        if (_filter.IdApp is int idApp)
+            link += $"&app={idApp}";
+        return health is null ? link : $"{link}&health={health}";
+    }
+
+    // recarrega cards, métricas e heartbeat a cada minuto, sem o overlay; uma batida com erro não para o timer
     private async Task Refresh()
     {
         _timer = new PeriodicTimer(RefreshInterval);
@@ -174,7 +465,7 @@
             {
                 await InvokeAsync(async () =>
                 {
-                    await Load();
+                    await Load(quiet: true);
                     StateHasChanged();
                 });
             }

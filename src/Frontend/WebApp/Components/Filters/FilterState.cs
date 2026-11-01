@@ -1,3 +1,4 @@
+using WebApp.Data;
 using WebApp.Models;
 
 namespace WebApp.Components.Filters
@@ -22,10 +23,10 @@ namespace WebApp.Components.Filters
         public string? Search { get; init; }
 
         /// <summary>
-        /// O texto da busca aparece em algum dos campos (sem diferenciar maiúsculas); busca vazia aceita tudo.
+        /// O texto da busca aparece em algum dos campos (sem diferenciar maiúsculas nem acentos); busca vazia aceita tudo.
         /// </summary>
         public bool Matches(params string?[] fields) =>
             string.IsNullOrWhiteSpace(Search)
-            || fields.Any(x => x?.Contains(Search.Trim(), StringComparison.InvariantCultureIgnoreCase) == true);
+            || fields.Any(x => MessageGrouping.Contains(x, Search));
     }
 }

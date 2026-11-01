@@ -1,0 +1,27 @@
+@* Duração de uma execução; rodando, mostra o decorrido em itálico em vez de "—". *@
+
+@if (End is DateTime end && Start is DateTime start)
+{
+    @MonitorDisplay.Duration(end - start)
+}
+else if (Start is DateTime running)
+{
+    <MudTooltip Text="@($"Rodando desde {MonitorDisplay.Time(running, Now ?? DateTime.Now)}")">
+        <i>@MonitorDisplay.Elapsed((Now ?? DateTime.Now) - running)…</i>
+    </MudTooltip>
+}
+else
+{
+    @("—")
+}
+
+@code {
+    [Parameter] public DateTime? Start { get; set; }
+
+    [Parameter] public DateTime? End { get; set; }
+
+    /// <summary>
+    /// Momento da carga da tela; o padrão é agora.
+    /// </summary>
+    [Parameter] public DateTime? Now { get; set; }
+}

@@ -1,6 +1,8 @@
 @inherits LayoutComponentBase
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@implements IDisposable
 @inject ProtectedLocalStorage LocalStorage
+@inject NavigationManager Navigation
 
 <MudThemeProvider Theme="@_theme" IsDarkMode="_isDarkMode" />
 <MudPopoverProvider />
@@ -13,7 +15,7 @@
             <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="DrawerToggle" />
         </MudTooltip>
         <MudSpacer />
-        <MudText Typo="Typo.body2" Class="mr-4" Style="color: var(--mud-palette-text-secondary)">@LoggedCompany.Label</MudText>
+        <MudText Typo="Typo.body2" Class="mr-4 logged-company">@LoggedCompany.Label</MudText>
         <MudTooltip Text="@(_isDarkMode ? "Tema claro" : "Tema escuro")">
             <MudIconButton Icon="@DarkLightModeButtonIcon" Color="Color.Inherit" OnClick="DarkModeToggle" />
         </MudTooltip>
@@ -22,7 +24,20 @@
         <NavMenu/>
     </MudDrawer>
     <MudMainContent>
-        @Body
+        @* Uma exceção numa tela mostra este cartão em vez de derrubar o painel; trocar de tela também limpa o erro *@
+        <ErrorBoundary @ref="_boundary">
+            <ChildContent>
+                @Body
+            </ChildContent>
+            <ErrorContent>
+                <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Class="ma-4">
+                    <div class="d-flex align-center gap-4 flex-wrap">
+                        <MudText>Algo deu errado nesta tela. Os outros painéis continuam funcionando.</MudText>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Refresh" OnClick="Recover">Tentar de novo</MudButton>
+                    </div>
+                </MudAlert>
+            </ErrorContent>
+        </ErrorBoundary>
     </MudMainContent>
 </MudLayout>
 
@@ -30,10 +45,12 @@
     private bool _drawerOpen = true;
     private bool _isDarkMode = true;
     private MudTheme? _theme;
+    private ErrorBoundary? _boundary;
 
     protected override void OnInitialized()
     {
         base.OnInitialized();
+        Navigation.LocationChanged += OnLocationChanged;
 
         _theme = new()
         {
@@ -64,6 +81,13 @@
         {
         }
     }
+
+    private void Recover() => _boundary?.Recover();
+
+    // sem isso, o cartão de erro de uma tela continua aparecendo depois de navegar para outra
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs args) => _ = InvokeAsync(Recover);
+
+    public void Dispose() => Navigation.LocationChanged -= OnLocationChanged;
 
     private void DrawerToggle()
     {

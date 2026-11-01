@@ -8,6 +8,16 @@ namespace WebApp.Data
     {
         public const string DefaultDatabase = "NEWBLOOMERS";
 
+        /// <summary>
+        /// Query "Registros de uma execução", aberta pelos Logs de Erros em /queries?ready=...&amp;execution=...
+        /// </summary>
+        public const string ExecutionRecordsKey = "registros-execucao";
+
+        /// <summary>
+        /// Marcador da execução no SQL das querys prontas.
+        /// </summary>
+        public const string ExecutionPlaceholder = "<execution>";
+
         public static readonly IReadOnlyList<ReadyQuery> All =
         [
             new("Auditoria", "Últimas 100 execuções", DefaultDatabase, """
@@ -37,7 +47,7 @@ namespace WebApp.Data
                 SELECT TOP 100 R.FieldKeyValue, R.RecordText
                 FROM auditing.Records R WITH (NOLOCK)
                 WHERE R.Execution = '<execution>'
-                """),
+                """, ExecutionRecordsKey),
             new("Jobs", "Jobs por aplicação", DefaultDatabase, """
                 SELECT A.Title AS App, J.IdJob, J.Title, J.IntervalTimeInMinutes, T.JobType
                 FROM auditing.Jobs J WITH (NOLOCK)
@@ -62,7 +72,12 @@ namespace WebApp.Data
         ];
 
         public static IEnumerable<IGrouping<string, ReadyQuery>> ByCategory => All.GroupBy(x => x.Category);
+
+        public static ReadyQuery? Find(string? key) => key is null ? null : All.FirstOrDefault(x => x.Key == key);
     }
 
-    public sealed record ReadyQuery(string Category, string Title, string Database, string Sql);
+    /// <summary>
+    /// Key identifica a query num link (?ready=); só as que outras telas abrem precisam de uma.
+    /// </summary>
+    public sealed record ReadyQuery(string Category, string Title, string Database, string Sql, string? Key = null);
 }

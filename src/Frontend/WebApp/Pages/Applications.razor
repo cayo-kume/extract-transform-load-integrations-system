@@ -1,5 +1,9 @@
 ﻿@page "/applications"
 @inject IMonitorRepository MonitorRepository
+@inject NavigationManager Navigation
+@inject FilterSession FilterSession
+@inject ISnackbar Snackbar
+@inject ILogger<Applications> Logger
 
 <PageTitle>Aplicações</PageTitle>
 
@@ -15,6 +19,8 @@
 
         <div class="d-flex align-center pa-4">
             <h3 class="ma-0 text-center">APLICAÇÕES</h3>
+            <MudSpacer />
+            <RefreshBar UpdatedAt="_updatedAt" OnRefresh="Load" />
         </div>
 
         @if (!_loading && FilteredApps.Count == 0)
@@ -27,7 +33,7 @@
             <div class="d-flex flex-row flex-wrap align-center gap-4 pa-4">
                 @foreach (var summarizedApp in FilteredApps.Skip(i).Take(4))
                 {
-                    <AppCard Summary="summarizedApp" ShowLogo="true" OnChanged="Load" />
+                    <AppCard @key="summarizedApp.IdParent" Summary="summarizedApp" ShowLogo="true" Period="_filter.Period" OnChanged="Load" />
                 }
             </div>
         }
@@ -35,8 +41,14 @@
 </MudGrid>
 
 @code {
+    [SupplyParameterFromQuery(Name = "period")] public string? PeriodQuery { get; set; }
+
+    [SupplyParameterFromQuery(Name = "app")] public int? AppQuery { get; set; }
+
     private FilterState _filter = new();
+    private Period? _loadedPeriod;
     private bool _loading = true;
+    private DateTime _updatedAt;
     private IReadOnlyList<AppSummaryModel> _apps = [];
 
     private List<AppSummaryModel> FilteredApps => _apps
@@ -44,24 +56,45 @@
         .Where(x => _filter.Matches(x.Title, x.Description))
         .ToList();
 
-    protected override async Task OnInitializedAsync()
+    // período e aplicação vêm da URL; a busca fica só na tela
+    protected override async Task OnParametersSetAsync()
     {
-        await Load();
+        var period = MonitorDisplay.ParsePeriod(PeriodQuery) ?? FilterSession.Period;
+        FilterSession.Period = period;
+        _filter = _filter with { Period = period, IdApp = AppQuery };
+
+        if (_loadedPeriod != period)
+        {
+            _loadedPeriod = period;
+            _loading = true;
+            await Load();
+        }
     }
 
-    private async Task OnFilterChanged(FilterState filter)
+    private void OnFilterChanged(FilterState filter)
     {
-        var periodChanged = filter.Period != _filter.Period;
-        _filter = filter;
+        if (filter.Period == _filter.Period && filter.IdApp == _filter.IdApp)
+        {
+            _filter = filter;
+            return;
+        }
 
-        if (periodChanged)
-            await Load();
+        _filter = _filter with { Search = filter.Search };
+        Navigation.NavigateTo(Navigation.GetUriWithQueryParameters(new Dictionary<string, object?>
+        {
+            ["period"] = MonitorDisplay.PeriodQuery(filter.Period),
+            ["app"] = filter.IdApp
+        }));
     }
 
     private async Task Load()
     {
-        _loading = true;
-        _apps = await MonitorRepository.GetAppSummariesAsync(_filter.Period);
+        await Snackbar.TryAsync(Logger, async () =>
+        {
+            _apps = await MonitorRepository.GetAppSummariesAsync(_filter.Period);
+            _updatedAt = DateTime.Now;
+        }, "Não foi possível carregar as aplicações.");
+
         _loading = false;
     }
 }

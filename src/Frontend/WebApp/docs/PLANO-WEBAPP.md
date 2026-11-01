@@ -289,7 +289,7 @@ A tela consulta **todos os bancos** do servidor e pode **ler, inserir, alterar e
    `AUDITING`, o nome que o Shared monta quando falta `AuditingConnection`; e `Company`, o banco local de teste do DbUp.
    O DataWarehouse fica em schemas do banco principal), resultados falsos para `SELECT` (colunas tiradas da lista do
    SELECT, linhas geradas, `TOP n` respeitado), um número de linhas afetadas para escritas e um erro de exemplo quando o
-   SQL contém `erro`, com o mesmo atraso do mock do repositório. `WAITFOR` no SQL atrasa 8 s, para testar o cancelamento,
+   SQL contém a palavra `erro` isolada (`IsError` não conta), com o mesmo atraso do mock do repositório. `WAITFOR` no SQL atrasa 8 s, para testar o cancelamento,
    e `EXEC` com `COMMIT` simula a procedure que fecha a transação por conta própria. Assim a tela é desenvolvida e
    testada inteira, confirmações incluídas, sem banco.
 3. O `SqlInspector` decide o que pede confirmação e o que ganha o segundo aviso, lendo as palavras-chave do SQL sem
@@ -356,6 +356,59 @@ mockup para aprovação):
 4. **Logs de Erros:** mensagens aninhadas por aplicação (`MessagesTable` dentro de cada grupo, paginada por grupo),
    com as contagens no cabeçalho. O filtro de aplicação saiu do topo, porque os grupos fazem esse papel; aplicação sem
    mensagem no período não aparece.
+5. **Rodada 2 (mockup v4, 31/10/2026):** topo com a empresa logada (`LoggedCompany`, `NEWBLOOMERS - 35899805838`),
+   sem seletor; o chip do card liga e desliga o módulo; o diálogo do módulo ganhou as abas Imagem (envio até 300 KB),
+   Credenciais, Parâmetros e Agenda (switch por job), no lugar do `ApplicationConfigurations`; Jobs com filtro
+   Todos / Integrações / Procedures, ordem por `IdJob` e 50 linhas por página; Integrações e painel de saúde só com
+   ativos; execuções com 5 por página e erros com 25. Ativação e imagem mudam só o mock e somem ao recarregar; a
+   gravação (`UPDATE auditing.Jobs.IsActive` por empresa e `monitor.AppImage`) depende de
+   `src/Backend/Shared/docs/PROPOSTA-DOC-COMPANY-AUDITING.md`.
+6. **Rodada 3 (31/10/2026):** Logs de Erros agrupados por aplicação e, dentro dela, por job (`GetMessageJobsAsync`),
+   com 25 mensagens por página em cada job; a barra de querys prontas virou uma coluna com a altura da página.
+7. **Melhorias 1 a 23 (01/11/2026, branch `implementacao-40-melhorias`):** as 23 ideias aprovadas do documento das 40
+   melhorias, na versão enxuta que os juízes sugeriram:
+   - **Visão geral:** heartbeat por gravidade (Erro, Atrasado, Rodando, reconhecidas, Ok), incluindo quem está com erro
+     ou atrasado sem ter rodado no período; nome do job leva ao job; "Falhas Ativas" só com ativos, com as 5 primeiras
+     (erro antes de atrasado, a mais antiga primeiro) e links para Integrações filtrada por saúde; taxa de sucesso por
+     aplicação em barras (abaixo de 95% vermelho, até 99% laranja; o clique filtra a tela) e delta contra a janela
+     anterior; barras de execuções com erro por hora (por dia em 7 dias) e mapa de calor aplicação × hora, abaixo do
+     painel de saúde para ele continuar na primeira tela; cards na ordem da gravidade; "Ver Todos" virou o link
+     "Ver em Aplicações".
+   - **Chip de saúde:** "Atrasado 1h40" e "Rodando 2h13", com o detalhe no tooltip; rodando além de 1 × o intervalo
+     fica laranja (o caso que o heartbeat do host recupera), sem entrar em "Falhas Ativas"; a duração de uma execução
+     rodando mostra o decorrido em itálico. O tempo é contado a partir da carga da tela.
+   - **Reconhecer falha** (menu ⋮ da linha): tira o job de "Falhas Ativas" até a próxima execução ou 24 h, com nota;
+     a saúde não muda. **Executar agora** (mesmo menu): só integrações ativas, paradas e onde ganha tempo da agenda
+     (diários, sob demanda e intervalo maior que o ciclo de 5 min do host); "Solicitada às HH:mm" até a execução
+     começar, aviso depois de 30 min. Os dois só no mock: ver o passo 11.5.
+   - **Ligar e desligar:** desativar o módulo pede confirmação com os números reais e avisa que religar ativa todos os
+     jobs; ligar e desligar um job (Jobs e aba Agenda) mostra o que mudou com "Desfazer" por 10 s; o chip fica
+     desabilitado enquanto grava.
+   - **Navegação:** Aplicações e Jobs no menu; período, aplicação, tipo e saúde na URL (`?period=7d&app=30&type=2`), e o
+     último período escolhido acompanha a aba quando a URL não traz um (`FilterSession`); a busca fica só na tela. Links
+     diretos: `/applications/{id}/jobs?job=&type=&period=` mostra só o job, já com as execuções abertas; `/errors?app=&job=`
+     abre a aplicação e o job; `/queries?ready=registros-execucao&execution=` cola a query pronta com a execução.
+     Trocar a aplicação em Jobs muda o endereço. Jobs mostra "JOBS - {aplicação}" quando a rota traz uma.
+   - **Logs de Erros:** busca pelo IdJob e pelo título e, a partir de 3 letras, pelo texto das mensagens e da exceção
+     (abre as aplicações com resultado e até 5 jobs, e volta aos grupos de antes ao limpar); "Incluir avisos" na URL;
+     cabeçalho da aplicação com jobs falhando agora, último erro e a miniatura das execuções com erro; cabeçalho do job
+     com a saúde atual, a última ocorrência, a mensagem mais recente e o número de causas, ainda falhando primeiro;
+     dentro do job, as **causas** (mensagens com o mesmo texto, números e Guids à parte), cada uma abrindo as suas
+     mensagens; o botão "Execução" abre a execução num diálogo, com o Guid, os registros e os links para o job e para o
+     SQL; "Erros deste job no período" nas execuções faz o caminho de volta.
+   - **Copiar:** botão no canto dos blocos de exceção, pilha e SQL, e "Copiar tudo" com o contexto para um chamado; o
+     erro e as mensagens do SQL em Executar Querys também copiam.
+   - **Atualizar:** "Atualizado às" e o botão de recarregar em Aplicações, Jobs, Integrações e Logs de Erros, sem perder
+     o que está aberto; a Visão geral continua com o timer de 1 min.
+   - **Erros do repositório:** viram Snackbar e a tela continua com os dados que já tinha (`PageGuard`); na Visão
+     geral, uma batida com erro não para o timer e o topo avisa "Falha ao atualizar às HH:mm"; o `@Body` fica dentro de
+     um `ErrorBoundary` com o cartão "Algo deu errado nesta tela" e "Tentar de novo". No mock,
+     `MockMonitorRepository:FailureRate` (de 0 a 1) faz uma parte das chamadas falhar, para testar isso.
+   - **Executar Querys:** favoritas com nome (estrela no histórico), em "Minhas querys" acima das prontas, até 30, no
+     navegador (na fase 6 podem ir para o banco por usuário); o histórico mostra o SQL inteiro e o banco ao passar o
+     mouse; o resultado do `SELECT` filtra por qualquer célula e ordena pelas colunas, e "Exportar filtrado" aparece com
+     filtro ativo ("Exportar CSV" continua exportando tudo).
+   - **Correção:** Enter na engrenagem de um grupo em Integrações não abre nem fecha mais o grupo.
 
 # Fase 5 — Banco de dados (não implementar agora)
 
@@ -464,9 +517,24 @@ repositório; num banco que já rodou o script, aplica-se à parte.
 
 ### 11.4 Cache
 
-Os resumos (`GetAppSummariesAsync`, `GetHeartbeatAsync`) passam por `IMemoryCache` com expiração curta (30 s a 1 min),
-no modelo de `docs/PADRAO-CACHE-INTEGRACOES.md`. Com várias abas abertas atualizando sozinhas (passo 4.6), o banco
-recebe uma consulta por minuto, não uma por aba.
+Os resumos (`GetAppSummariesAsync`, `GetHeartbeatAsync`, `GetExecutionBucketsAsync` e `GetJobsAsync`) passam por
+`IMemoryCache` com expiração curta (30 s a 1 min), no modelo de `docs/PADRAO-CACHE-INTEGRACOES.md`. Com várias abas
+abertas atualizando sozinhas (passo 4.6), o banco recebe uma consulta por minuto, não uma por aba.
+
+### 11.5 O que as melhorias de 01/11/2026 pedem do banco
+
+1. **Reconhecer falha:** tabela `monitor.JobAcknowledgement` (`IdJob`, `IdType`, `DocCompany`, `Execution` anulável,
+   `Note`, `User`, `At`, `ExpiresAt`) no `Script008` do schema `monitor`, com FK para `auditing.Jobs`; `INSERT` e
+   `DELETE` nela entram nas permissões do `etl_monitor` (passo 10). O usuário fica fixo até a fase 6.
+2. **Executar agora:** o host precisa ler o pedido no ciclo da agenda e marcar quando começou. Duas formas: duas
+   colunas em `auditing.Jobs` (`RunRequestedAt`, `RunRequestedBy`), que o host já lê por empresa e zera ao rodar, ou a
+   tabela `monitor.JobRunRequest` com estado (pendente, iniciado, ignorado, expirado) se quiserem o histórico de quem
+   pediu. Decidir com quem cuida do host; até lá, o pedido só existe no mock.
+3. **Logs de Erros:** a busca vira `Message LIKE @search OR ExceptionMessage LIKE @search` no mesmo filtro de período e
+   empresa (sem índice de texto completo); as causas são agrupadas em C# (`Data/MessageGrouping.cs`) sobre as mensagens
+   do job no período, não com `GROUP BY` no SQL; `GetExecutionAsync` é uma leitura pela PK lógica (`Execution`).
+4. **Gráficos:** `GetExecutionBucketsAsync` é um `GROUP BY` da hora (ou do dia) de `StartDate` em `auditing.Logs`, por
+   aplicação, com `EXISTS` em `auditing.Messages` de erro.
 
 ## Passo 12 — Executar Querys com o banco
 

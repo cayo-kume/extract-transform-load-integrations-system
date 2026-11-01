@@ -1,0 +1,78 @@
+@inject IMonitorRepository MonitorRepository
+@inject ISnackbar Snackbar
+@inject ILogger<MessageCauses> Logger
+
+@* As causas das mensagens de um job (mensagens com o mesmo texto, trocando números e Guids por marcadores), da mais recente
+   para a mais antiga. Um job de 5 min falhando o dia todo vira 1 ou 2 linhas; abrir a causa mostra as mensagens dela. *@
+
+@if (_groups is null)
+{
+    <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-2" />
+}
+else if (_groups.Count == 0)
+{
+    <MudText Typo="Typo.body2" Class="pa-2">Nenhuma mensagem no período.</MudText>
+}
+else
+{
+    @foreach (var group in _groups)
+    {
+        var expanded = _expanded.Contains(group.Key);
+
+        <div class="cause" @key="group.Key">
+            <div class="cause-head" role="button" tabindex="0" aria-expanded="@(expanded ? "true" : "false")" @onclick="@(() => Toggle(group.Key))" @onkeydown="@(e => OnKeyDown(e, group.Key))">
+                <MudIcon Icon="@(expanded ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)" Size="Size.Small" />
+                <MudIcon Icon="@MonitorDisplay.LevelIcon(group.Level)" Color="@MonitorDisplay.LevelColor(group.Level)" Size="Size.Small" />
+                <MudText Typo="Typo.body2" Class="cause-text" title="@group.Example">@group.Example</MudText>
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@MonitorDisplay.LevelColor(group.Level)">@group.Count.ToString("N0")×</MudChip>
+                <MudText Typo="Typo.caption" Class="cause-dates">
+                    última às @MonitorDisplay.Time(group.LastAt, _now)@(group.Count > 1 ? $" · primeira às {MonitorDisplay.Time(group.FirstAt, _now)}" : "")
+                </MudText>
+            </div>
+
+            @if (expanded)
+            {
+                <MessagesTable Query="@(Query with { GroupKey = group.Key })" />
+            }
+        </div>
+    }
+}
+
+@code {
+    /// <summary>
+    /// Mensagens de um job: aplicação, job, período, nível e texto procurado.
+    /// </summary>
+    [Parameter, EditorRequired] public MessageQuery Query { get; set; } = default!;
+
+    private IReadOnlyList<MessageGroupModel>? _groups;
+    private MessageQuery? _loaded;
+    private DateTime _now;
+    private readonly HashSet<string> _expanded = [];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_loaded == Query)
+            return;
+
+        _loaded = Query;
+        _now = DateTime.Now;
+        await Snackbar.TryAsync(Logger, async () => _groups = await MonitorRepository.GetMessageGroupsAsync(Query), "Não foi possível carregar as causas das mensagens.");
+        _groups ??= [];
+
+        // uma causa só: já abre, não há o que escolher
+        if (_groups.Count == 1)
+            _expanded.Add(_groups[0].Key);
+    }
+
+    private void Toggle(string key)
+    {
+        if (!_expanded.Remove(key))
+            _expanded.Add(key);
+    }
+
+    private void OnKeyDown(KeyboardEventArgs args, string key)
+    {
+        if (args.Key is "Enter" or " ")
+            Toggle(key);
+    }
+}

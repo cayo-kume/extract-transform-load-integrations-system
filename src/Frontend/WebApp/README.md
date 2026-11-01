@@ -28,15 +28,34 @@ usam o ambiente `Development`.
 | Rota | Tela |
 |---|---|
 | `/` | login (sem autenticação por enquanto) |
-| `/home` | visão geral: cards das aplicações, métricas consolidadas e painel de saúde, atualizados a cada minuto |
-| `/applications` | cards das aplicações, com logo |
-| `/applications/jobs` e `/applications/{IdApp}/jobs` | jobs por aplicação, com as execuções, mensagens e registros de cada um |
-| `/integrations` | jobs de integração aninhados por aplicação; a engrenagem do grupo abre a agenda dos jobs |
-| `/errors` | Logs de Erros: mensagens de erro (e, se marcado, de aviso) do período, aninhadas por aplicação |
-| `/queries` | Executar Querys, com a barra de querys prontas, só com a chave `QueryRunner:Enabled` (abaixo) |
+| `/home` | visão geral: cards das aplicações (os com problema primeiro), métricas com a taxa de sucesso por aplicação e o delta contra a janela anterior, "Falhas Ativas" com os jobs, painel de saúde por gravidade, barras de execuções com erro por hora e mapa de calor aplicação × hora, atualizados a cada minuto |
+| `/applications` | cards das aplicações, com a imagem da empresa; o chip "Ativa" liga ou desliga o módulo (desligar pede confirmação) |
+| `/applications/jobs` e `/applications/{IdApp}/jobs` | todos os jobs da aplicação (ativos e inativos), na ordem do `IdJob`, com filtro Todos / Integrações / Procedures e o chip que liga ou desliga cada um (com "Desfazer"); cada job abre as execuções, mensagens e registros. `?job=3001&type=2` mostra só esse job, já aberto |
+| `/integrations` | só os jobs ativos (integrações e procedures), aninhados por aplicação, com filtro de tipo e de saúde (os contadores do topo filtram; `?health=error`); a engrenagem do grupo abre as configurações do módulo |
+| `/errors` | Logs de Erros: mensagens de erro (e, se marcado, de aviso) do período, por aplicação, job e causa, com busca pelo job e pelo texto; `?app=30&job=3001` abre o grupo |
+| `/queries` | Executar Querys, com favoritas e querys prontas na barra lateral, só com a chave `QueryRunner:Enabled` (abaixo) |
 
-Os filtros do topo (período, tipo, aplicação e busca) valem para a tela em que estão. Na barra superior ficam o botão
-que esconde o menu e o que troca entre o tema escuro e o claro; a escolha do tema fica salva no navegador.
+O menu lateral tem Visão Geral, Aplicações, Jobs, Integrações, Logs de Erros e, para quem tem acesso, Executar Querys.
+Período, aplicação, tipo e saúde ficam na URL (`?period=7d&app=30`), então o link de uma tela abre do mesmo jeito para
+outra pessoa; sem `period` na URL, vale o último período escolhido na aba. A busca fica só na tela. Na barra superior
+ficam o botão que esconde o menu, a empresa logada (`LoggedCompany`, fixa em `NEWBLOOMERS - 35899805838` até a
+autenticação) e o botão que troca entre o tema escuro e o claro; a escolha do tema fica salva no navegador. Paginação
+padrão: 50 linhas nas grids de jobs, 5 nas execuções e 25 nas mensagens de erro.
+
+O chip de saúde diz há quanto tempo: "Atrasado 1h40", "Rodando 2h13" (laranja quando passa de 1 × o intervalo), com o
+detalhe no tooltip. O menu ⋮ de cada job tem **Reconhecer falha** (o job sai de "Falhas Ativas" até a próxima execução
+ou 24 h, com uma nota para o próximo turno) e **Executar agora** (pede ao host uma execução fora da agenda). Nos Logs de
+Erros, o botão **Execução** abre a execução da mensagem num diálogo, com o Guid, os registros e os links para o job e
+para a query pronta; os blocos de exceção, pilha e SQL têm botão de copiar, e "Copiar tudo" junta o contexto para um
+chamado. Aplicações, Jobs, Integrações e Logs de Erros têm "Atualizado às" e o botão de recarregar.
+
+Ativar ou desativar um job ou um módulo, reconhecer uma falha, pedir uma execução e trocar a imagem de uma aplicação só
+mudam o mock e somem ao reiniciar o app. Com o banco, viram `UPDATE` em `auditing.Jobs.IsActive`, gravação em
+`monitor.JobAcknowledgement` e `monitor.AppImage` e o pedido lido pelo host, por empresa
+(`src/Backend/Shared/docs/PROPOSTA-DOC-COMPANY-AUDITING.md` e o passo 11.5 do plano).
+
+Erro do repositório vira um aviso (Snackbar) e a tela continua com os dados que já tinha; uma exceção numa tela mostra
+o cartão "Algo deu errado nesta tela", com "Tentar de novo", sem derrubar o painel.
 
 ## De onde vem cada número
 
@@ -45,8 +64,10 @@ que esconde o menu e o que troca entre o tema escuro e o claro; a escolha do tem
 | Integrações e procedures do card | jobs da aplicação em `auditing.Jobs`, por `IdType` (2 e 1) |
 | Ativas | jobs com `IsActive = 1` |
 | Execuções, registros, erros e avisos | linhas de `auditing.Logs` no período, com os registros (`auditing.Records`) e as mensagens de nível 3 e 2 (`auditing.Messages`) de cada uma |
-| Taxa de sucesso | execuções sem mensagem de erro ÷ execuções, no período |
-| Falhas ativas | jobs com saúde **Erro** ou **Atrasado** agora |
+| Taxa de sucesso | execuções sem mensagem de erro ÷ execuções, no período; o delta compara com a janela anterior de mesmo tamanho |
+| Falhas ativas | jobs ativos com saúde **Erro** ou **Atrasado** agora, sem as falhas reconhecidas (contadas à parte) |
+| Barras e mapa de calor | execuções com erro por hora (por dia em 7 dias) e a proporção delas em cada aplicação |
+| Causa (Logs de Erros) | mensagens do job com o mesmo texto, trocando números e Guids por marcadores (`Data/MessageGrouping.cs`) |
 | Saúde | pela última execução do job: **Rodando** (sem fim), **Erro** (tem mensagem de erro), **Atrasado** (não começou nenhuma em 1 × o intervalo) ou **Ok**. Job sob demanda nunca fica atrasado, e job inativo não tem saúde |
 
 Nas procedures, o `IdParent` de `auditing.Jobs` é o job de integração que as chama, não a aplicação; o painel resolve a
@@ -59,12 +80,19 @@ implementada no back-end, o banco só tem `IsError`.
 | Arquivo | O que faz |
 |---|---|
 | `Data/Mocks/MockCatalog.cs` | as 6 aplicações e os 960 jobs dos módulos do host, copiados dos scripts de insert em `auditing.Apps` e `auditing.Jobs`. Job novo nos scripts entra aqui na mesma ordem |
-| `Data/Mocks/MockTimeline.cs` | gera as execuções a partir da agenda de cada job, sem guardar nada: os dados são os mesmos a cada carga, e as execuções novas aparecem conforme o relógio anda. Uma parte dos jobs tem um perfil fixo (inativo, atrasado, falhando, com muitos avisos ou sempre rodando), para todos os estados aparecerem |
+| `Data/Mocks/MockTimeline.cs` | gera as execuções a partir da agenda de cada job, sem guardar nada: os dados são os mesmos a cada carga, e as execuções novas aparecem conforme o relógio anda. Uma parte dos jobs tem um perfil fixo (inativo, atrasado, falhando, com muitos avisos, sempre rodando ou travado além do intervalo), para todos os estados aparecerem; às 3h as integrações falham mais (o padrão do mapa de calor); "Executar agora" cria uma execução 1 minuto depois, sempre sem erro |
 | `Data/Mocks/MockTexts.cs` | mensagens e registros, com os textos que os services gravam hoje |
 | `Data/Mocks/MockQueryRunner.cs` | executor falso da tela de consultas (abaixo) |
 
 As telas só conhecem as interfaces `IMonitorRepository` e `IQueryRunner`. Na fase 5, trocar o registro do mock no
 `Program.cs` pela implementação com o banco é o único ponto a mudar.
+
+Para ver o tratamento de erro sem banco, `MockMonitorRepository:FailureRate` (de 0 a 1, `0` por padrão) faz essa
+proporção das chamadas do mock falhar:
+
+```bash
+dotnet user-secrets set "MockMonitorRepository:FailureRate" "0.3" --project src/Frontend/WebApp
+```
 
 ## Executar Querys
 
@@ -85,16 +113,18 @@ O que a tela faz:
 
 - seletor de banco, com o banco escolhido sempre em destaque;
 - editor de SQL, com `Ctrl+Enter` para executar e botão para cancelar;
-- resultado paginado, cortado em 1.000 linhas (com aviso), e exportação para CSV no formato do Excel em português;
+- resultado paginado, cortado em 1.000 linhas (com aviso), com filtro por qualquer célula e ordenação pelas colunas, e
+  exportação para CSV no formato do Excel em português ("Exportar filtrado" exporta só o que a grade mostra);
 - `INSERT`, `UPDATE`, `DELETE`, `MERGE`, `CREATE`, `ALTER`, `DROP`, `TRUNCATE` e `EXEC` pedem confirmação; `UPDATE` ou
   `DELETE` sem `WHERE`, `DROP` e `TRUNCATE` ganham um segundo aviso. Comentários e texto entre aspas não contam;
 - a alteração fica numa transação, com **Confirmar** e **Desfazer**; sem resposta em 60 s, ou saindo da tela, ela é
   desfeita;
-- histórico das 20 últimas consultas, guardado no navegador.
+- histórico das 20 últimas consultas e até 30 favoritas com nome (a estrela no histórico), guardados no navegador; as
+  favoritas ficam em "Minhas querys", acima das querys prontas.
 
 No mock, nada chega a um banco: os bancos são `NEWBLOOMERS`, `AUDITING` e `Company`, o `SELECT` devolve colunas tiradas do
-próprio SQL e linhas geradas, SQL com a palavra `erro` simula um erro do SQL Server e `WAITFOR` demora 8 s, para testar o
-cancelamento.
+próprio SQL e linhas geradas, SQL com a palavra `erro` isolada (por exemplo `dbo.erro`; `IsError` não conta) simula um erro do SQL
+Server e `WAITFOR` demora 8 s, para testar o cancelamento.
 
 ## Estrutura
 
@@ -102,11 +132,13 @@ cancelamento.
 WebApp/
 ├── Components/
 │   ├── Cards/          AppCard e os logos das aplicações
-│   ├── Display/        textos, cores e ícones de saúde e nível, chip de saúde, paginador e traduções do MudBlazor
-│   ├── Executions/     execuções de um job, detalhe de uma execução e de uma mensagem
-│   ├── Filters/        filtros do topo das telas
+│   ├── Display/        textos, cores e ícones de saúde e nível, chip de saúde, gráficos, copiar, atualizar, paginador,
+│   │                   tratamento de erro (PageGuard) e traduções do MudBlazor
+│   ├── Executions/     execuções de um job, ações do job, detalhe de uma execução e de uma mensagem, causas e mensagens
+│   ├── Filters/        filtros do topo das telas e o período da aba (FilterSession)
 │   ├── Loadings/       SpaceLoading, o carregamento padrão do app
-│   ├── MessageBoxes/   diálogos de configurações: ModuleConfigurations (credenciais e parâmetros do módulo, na Visão geral) e ApplicationConfigurations (agenda dos jobs, nas Integrações), ambos somente leitura
+│   ├── MessageBoxes/   ModuleConfigurations (abas Imagem, Credenciais, Parâmetros e Agenda), execução de uma mensagem,
+│   │                   nota do reconhecimento e nome da favorita
 │   └── NavMenus/       menu lateral
 ├── Data/               IMonitorRepository, IQueryRunner, SqlInspector, acesso à tela de consultas e os mocks
 ├── Layout/             MainLayout (barra, menu e tema) e BlankLayout (login)

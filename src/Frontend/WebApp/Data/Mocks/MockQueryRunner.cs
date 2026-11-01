@@ -32,7 +32,7 @@ namespace WebApp.Data.Mocks
             // o mesmo atraso que o banco terá; consultas longas dão tempo de testar o cancelamento
             await Task.Delay(Random.Shared.Next(300, 900) + (sql.Contains("WAITFOR", StringComparison.OrdinalIgnoreCase) ? 8000 : 0), cancellationToken);
 
-            if (sql.Contains("erro", StringComparison.OrdinalIgnoreCase))
+            if (SimulatedError().IsMatch(sql))
             {
                 return new QueryResult
                 {
@@ -158,5 +158,9 @@ namespace WebApp.Data.Mocks
 
         [GeneratedRegex(@"\bTOP\s*\(?\s*(?<n>\d+)", RegexOptions.IgnoreCase)]
         private static partial Regex TopClause();
+
+        // só a palavra "erro" isolada (dbo.erro) simula o erro; IsError, Errors e tabela_erro não disparam
+        [GeneratedRegex(@"\berro\b", RegexOptions.IgnoreCase)]
+        private static partial Regex SimulatedError();
     }
 }

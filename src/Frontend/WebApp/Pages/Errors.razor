@@ -1,5 +1,9 @@
 @page "/errors"
 @inject IMonitorRepository MonitorRepository
+@inject NavigationManager Navigation
+@inject FilterSession FilterSession
+@inject ISnackbar Snackbar
+@inject ILogger<Errors> Logger
 
 <PageTitle>Logs de Erros</PageTitle>
 
@@ -8,87 +12,323 @@
         <h1 class="ma-0 text-center">LOGS DE ERROS</h1>
     </MudItem>
 
-    @* sem o filtro de aplicação: os grupos abaixo já fazem esse papel *@
-    <Filters Value="_filter" ValueChanged="OnFilterChanged" ShowType="false" ShowApp="false" ShowSearch="false" />
+    @* sem o filtro de aplicação: os grupos abaixo já fazem esse papel; a busca acha o job pelo IdJob e pelo título, e as
+       mensagens pelo texto (a partir de 3 letras) *@
+    <Filters Value="_filter" ValueChanged="OnFilterChanged" ShowType="false" ShowApp="false" />
 
     <MudItem xs="12" Class="loading-container">
         <SpaceLoading Overlay="true" Visible="_loading" Label="Carregando as mensagens" />
 
-        <div class="d-flex align-center gap-4 pa-4">
+        <div class="d-flex align-center gap-4 pa-4 flex-wrap">
             <h3 class="ma-0 text-center">MENSAGENS</h3>
+            @if (Searching)
+            {
+                <MudText Typo="Typo.body2">
+                    Busca por <strong>"@Search"</strong>@(TextSearch is null ? $" no IdJob e no título (o texto das mensagens entra a partir de {MessageGrouping.MinSearchLength} letras)" : " no IdJob, no título e no texto das mensagens")
+                </MudText>
+            }
             <MudSpacer />
             <MudCheckBox T="bool" Value="_includeWarnings" ValueChanged="OnIncludeWarningsChanged" Color="Color.Warning" Label="Incluir avisos" />
+            <RefreshBar UpdatedAt="_updatedAt" OnRefresh="Refresh" />
+            <CopyButton GetText="@(() => Navigation.Uri)" Tooltip="Copiar o link desta tela (período, avisos e grupos do link)" />
         </div>
 
-        <!-- Mensagens aninhadas por aplicação; aplicação sem mensagem no período não aparece -->
+        <!-- Aplicação, depois job, depois as causas e as mensagens; aplicação sem mensagem no período não aparece -->
         <div class="px-4 pb-4">
             @foreach (var app in AppsWithMessages)
             {
                 var expanded = _expandedApps.Contains(app.IdParent);
+                var jobs = VisibleJobs(app.IdParent);
+                var errors = Searching ? jobs.Sum(x => x.Job.Errors) : app.Errors;
+                var warnings = Searching ? jobs.Sum(x => x.Job.Warnings) : app.Warnings;
 
                 @* @key: sem ele, o Blazor reaproveita a MessagesTable de um grupo para outra aplicação quando a lista muda *@
                 <div class="app-group" @key="app.IdParent">
-                    <div class="app-group-head" role="button" tabindex="0" @onclick="@(() => ToggleGroup(app.IdParent))" @onkeydown="@(e => OnGroupKeyDown(e, app.IdParent))">
+                    <div class="app-group-head" role="button" tabindex="0" aria-expanded="@(expanded ? "true" : "false")" @onclick="@(() => ToggleGroup(app.IdParent))" @onkeydown="@(e => OnGroupKeyDown(e, app.IdParent))">
                         <MudIcon Icon="@(expanded ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)" Size="Size.Small" />
                         <MudText Typo="Typo.subtitle2">@app.Title</MudText>
-                        <MudSpacer />
-                        @if (app.Errors > 0)
+                        @if (app.FailingJobs > 0)
                         {
-                            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Error" Icon="@Icons.Material.Filled.Error">@app.Errors.ToString("N0") erro(s)</MudChip>
+                            <MudText Typo="Typo.caption" Color="Color.Error">@app.FailingJobs job(s) falhando agora</MudText>
                         }
-                        @if (_includeWarnings && app.Warnings > 0)
+                        @if (app.LastErrorAt is DateTime lastError)
                         {
-                            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Warning" Icon="@Icons.Material.Filled.Warning">@app.Warnings.ToString("N0") aviso(s)</MudChip>
+                            <MudText Typo="Typo.caption">último erro @MonitorDisplay.Ago(lastError, _updatedAt) (@MonitorDisplay.Time(lastError, _updatedAt))</MudText>
+                        }
+                        <MudSpacer />
+                        @if (Sparkline(app.IdParent) is { } buckets)
+                        {
+                            <div class="error-sparkline" title="Execuções com erro no período, da mais antiga à mais recente">
+                                <ErrorBars Buckets="buckets" Height="22" />
+                            </div>
+                        }
+                        @if (errors > 0)
+                        {
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Error" Icon="@Icons.Material.Filled.Error">@errors.ToString("N0") erro(s)</MudChip>
+                        }
+                        @if (_includeWarnings && warnings > 0)
+                        {
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Warning" Icon="@Icons.Material.Filled.Warning">@warnings.ToString("N0") aviso(s)</MudChip>
                         }
                     </div>
 
                     @if (expanded)
                     {
-                        <MessagesTable IdApp="app.IdParent" Period="_filter.Period" MinLevel="@(_includeWarnings ? MessageLevel.Warning : MessageLevel.Error)" />
+                        @if (!_jobs.ContainsKey(app.IdParent))
+                        {
+                            <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+                        }
+                        @foreach (var item in jobs)
+                        {
+                            var job = item.Job;
+                            var jobExpanded = _expandedJobs.Contains((job.IdJob, job.IdType));
+
+                            @* @key: mesmo motivo do grupo da aplicação, agora para os jobs *@
+                            <div class="job-group" @key="(job.IdJob, job.IdType)">
+                                <div class="job-group-head" role="button" tabindex="0" aria-expanded="@(jobExpanded ? "true" : "false")" @onclick="@(() => ToggleJob(job))" @onkeydown="@(e => OnJobKeyDown(e, job))">
+                                    <MudIcon Icon="@(jobExpanded ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)" Size="Size.Small" />
+                                    <HealthChip Context="HealthContext.From(job)" Now="_updatedAt" />
+                                    <MudText Typo="Typo.body2" Class="job-title">@job.IdJob - @job.JobTitle</MudText>
+                                    @if (job.LastErrorAt is DateTime last)
+                                    {
+                                        <MudText Typo="Typo.caption" Class="job-last">última às @MonitorDisplay.Time(last, _updatedAt)</MudText>
+                                    }
+                                    <MudText Typo="Typo.caption" Class="job-last-message" title="@job.LastMessage">@job.LastMessage</MudText>
+                                    @if (job.Errors > 0)
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Error">
+                                            @(item.Total is int total ? $"{job.Errors:N0} de {total:N0} erro(s)" : $"{job.Errors:N0} erro(s)")
+                                        </MudChip>
+                                    }
+                                    @if (_includeWarnings && job.Warnings > 0)
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Warning">@job.Warnings.ToString("N0") aviso(s)</MudChip>
+                                    }
+                                    <MudTooltip Text="Mensagens com o mesmo texto (números e Guids à parte) formam uma causa">
+                                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text">@job.Causes causa(s)</MudChip>
+                                    </MudTooltip>
+                                    <div @onclick:stopPropagation="true" @onkeydown:stopPropagation="true">
+                                        <MudTooltip Text="Abrir o job na tela de Jobs">
+                                            <MudIconButton Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small" Href="@MonitorDisplay.JobLink(job.IdApp, job.IdJob, job.IdType, _filter.Period)" aria-label="Abrir o job" />
+                                        </MudTooltip>
+                                    </div>
+                                </div>
+
+                                @if (jobExpanded)
+                                {
+                                    <div class="job-causes">
+                                        <MessageCauses Query="@(BaseQuery with { IdApp = app.IdParent, IdJob = job.IdJob, IdType = job.IdType, Search = item.Search })" />
+                                    </div>
+                                }
+                            </div>
+                        }
                     }
                 </div>
             }
 
             @if (!_loading && !AppsWithMessages.Any())
             {
-                <MudText Typo="Typo.body2">Nenhuma mensagem no período.</MudText>
+                <MudText Typo="Typo.body2">@(Searching ? "Nada encontrado para a busca no período." : "Nenhuma mensagem no período.")</MudText>
             }
         </div>
     </MudItem>
 </MudGrid>
 
 @code {
+    // com busca, abre sozinho no máximo isso de jobs: cada um aberto faz a sua própria consulta
+    private const int MaxAutoExpandedJobs = 5;
+
+    [SupplyParameterFromQuery(Name = "period")] public string? PeriodQuery { get; set; }
+
+    [SupplyParameterFromQuery(Name = "warnings")] public int? WarningsQuery { get; set; }
+
+    /// <summary>
+    /// Link direto (?app=30&amp;job=3001&amp;type=2): abre a aplicação e o job.
+    /// </summary>
+    [SupplyParameterFromQuery(Name = "app")] public int? AppQuery { get; set; }
+
+    [SupplyParameterFromQuery(Name = "job")] public int? JobQuery { get; set; }
+
+    [SupplyParameterFromQuery(Name = "type")] public int? TypeQuery { get; set; }
+
     private FilterState _filter = new();
     private bool _includeWarnings;
     private bool _loading = true;
+    private DateTime _updatedAt;
+    private (Period, bool)? _loadedKey;
+    private (int?, int?, int?)? _linked;
 
     private IReadOnlyList<AppSummaryModel> _apps = [];
+    private IReadOnlyList<AppBucketsModel> _sparklines = [];
 
-    // grupos abertos; começam todos recolhidos, e o estado vale enquanto a tela está aberta
-    private readonly HashSet<int> _expandedApps = [];
+    // jobs de cada aplicação (todos, e só os que têm o texto procurado), e os grupos abertos; começam todos recolhidos
+    private readonly Dictionary<int, IReadOnlyList<MessageJobSummaryModel>> _jobs = [];
+    private readonly Dictionary<int, IReadOnlyList<MessageJobSummaryModel>> _textJobs = [];
+    private HashSet<int> _expandedApps = [];
+    private HashSet<(int IdJob, int IdType)> _expandedJobs = [];
 
-    private IEnumerable<AppSummaryModel> AppsWithMessages => _apps
-        .Where(x => x.Errors > 0 || (_includeWarnings && x.Warnings > 0))
-        .OrderBy(x => x.Title);
+    // os grupos abertos antes da busca, para voltar a eles quando a busca é limpa
+    private (HashSet<int> Apps, HashSet<(int, int)> Jobs)? _beforeSearch;
 
-    protected override async Task OnInitializedAsync()
+    private MessageLevel MinLevel => _includeWarnings ? MessageLevel.Warning : MessageLevel.Error;
+
+    private MessageQuery BaseQuery => new() { Period = _filter.Period, MinLevel = MinLevel };
+
+    private string? Search => string.IsNullOrWhiteSpace(_filter.Search) ? null : _filter.Search.Trim();
+
+    private bool Searching => Search is not null;
+
+    private string? TextSearch => Search is { Length: >= MessageGrouping.MinSearchLength } search ? search : null;
+
+    private IEnumerable<AppSummaryModel> AppsWithMessages => Searching
+        ? _apps.Where(x => VisibleJobs(x.IdParent).Count > 0).OrderBy(x => x.Title)
+        : _apps.Where(x => x.Errors > 0 || (_includeWarnings && x.Warnings > 0)).OrderBy(x => x.Title);
+
+    /// <summary>
+    /// Job na tela: Search é o texto que as mensagens dele precisam ter (nulo quando casou pelo IdJob ou pelo título, e
+    /// aí aparecem todas); Total é o total sem a busca, para o "3 de 120".
+    /// </summary>
+    private sealed record JobItem(MessageJobSummaryModel Job, string? Search, int? Total);
+
+    private List<JobItem> VisibleJobs(int idApp)
     {
-        await Load();
+        var all = _jobs.GetValueOrDefault(idApp) ?? [];
+        if (!Searching)
+            return all.Select(x => new JobItem(x, null, null)).ToList();
+
+        var byName = all.Where(x => _filter.Matches(x.IdJob.ToString(), x.JobTitle)).ToList();
+        var byText = (_textJobs.GetValueOrDefault(idApp) ?? [])
+            .Where(x => !byName.Any(y => y.IdJob == x.IdJob && y.IdType == x.IdType))
+            .Select(x => new JobItem(x, TextSearch, all.FirstOrDefault(y => y.IdJob == x.IdJob && y.IdType == x.IdType)?.Errors));
+
+        return byName.Select(x => new JobItem(x, null, null))
+            .Concat(byText)
+            .OrderBy(x => x.Job.CurrentHealth == JobHealth.Error && x.Job.Acknowledgement is null ? 0 : 1)
+            .ThenByDescending(x => x.Job.LastErrorAt)
+            .ToList();
     }
 
-    private async Task OnFilterChanged(FilterState filter)
+    private IReadOnlyList<ExecutionBucketModel>? Sparkline(int idApp) =>
+        _sparklines.FirstOrDefault(x => x.IdApp == idApp)?.Buckets;
+
+    protected override async Task OnParametersSetAsync()
     {
+        var period = MonitorDisplay.ParsePeriod(PeriodQuery) ?? FilterSession.Period;
+        FilterSession.Period = period;
+        _filter = _filter with { Period = period };
+
+        if (_loadedKey != (period, WarningsQuery == 1))
+        {
+            _loadedKey = (period, WarningsQuery == 1);
+            _includeWarnings = WarningsQuery == 1;
+            await Load();
+            await RefreshExpandedJobsAsync();
+        }
+
+        // link direto: abre a aplicação e o job uma vez; depois, abrir e fechar é com o usuário
+        if (_linked != (AppQuery, JobQuery, TypeQuery))
+        {
+            _linked = (AppQuery, JobQuery, TypeQuery);
+
+            if (AppQuery is int idApp)
+            {
+                _expandedApps.Add(idApp);
+                if (!_jobs.ContainsKey(idApp))
+                    await LoadJobs(idApp);
+
+                foreach (var job in (_jobs.GetValueOrDefault(idApp) ?? []).Where(x => x.IdJob == JobQuery && (TypeQuery is null || x.IdType == TypeQuery)))
+                    _expandedJobs.Add((job.IdJob, job.IdType));
+            }
+        }
+    }
+
+    private Task OnFilterChanged(FilterState filter)
+    {
+        if (filter.Period != _filter.Period)
+        {
+            Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("period", MonitorDisplay.PeriodQuery(filter.Period)));
+            return Task.CompletedTask;
+        }
+
+        return OnSearchChanged(filter);
+    }
+
+    // com busca: carrega os jobs de todas as aplicações, abre as que têm resultado e até 5 jobs; sem busca: volta aos
+    // grupos que estavam abertos antes
+    private async Task OnSearchChanged(FilterState filter)
+    {
+        var wasSearching = Searching;
         _filter = filter;
-        await Load();
+
+        if (Searching)
+        {
+            _beforeSearch ??= ([.. _expandedApps], [.. _expandedJobs]);
+            await RefreshExpandedJobsAsync();
+
+            var apps = AppsWithMessages.ToList();
+            _expandedApps = apps.Select(x => x.IdParent).ToHashSet();
+            _expandedJobs = apps
+                .SelectMany(x => VisibleJobs(x.IdParent))
+                .Take(MaxAutoExpandedJobs)
+                .Select(x => (x.Job.IdJob, x.Job.IdType))
+                .ToHashSet();
+        }
+        else if (wasSearching && _beforeSearch is { } before)
+        {
+            _expandedApps = before.Apps;
+            _expandedJobs = before.Jobs;
+            _beforeSearch = null;
+            _textJobs.Clear();
+            await RefreshExpandedJobsAsync();
+        }
     }
 
-    private void OnIncludeWarningsChanged(bool value) => _includeWarnings = value;
+    // a inclusão de avisos muda quais jobs aparecem e os totais; fica na URL (?warnings=1), como o período
+    private void OnIncludeWarningsChanged(bool value) =>
+        Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("warnings", value ? 1 : (int?)null));
 
     private async Task Load()
     {
-        _loading = true;
-        _apps = await MonitorRepository.GetAppSummariesAsync(_filter.Period);
+        await Snackbar.TryAsync(Logger, async () =>
+        {
+            _apps = await MonitorRepository.GetAppSummariesAsync(_filter.Period);
+            _sparklines = await MonitorRepository.GetExecutionBucketsAsync(_filter.Period, buckets: 24);
+            _updatedAt = DateTime.Now;
+        }, "Não foi possível carregar as mensagens.");
+
         _loading = false;
+    }
+
+    // recarrega sem o overlay, mantendo os grupos abertos (as tabelas de mensagens abertas ficam como estão)
+    private async Task Refresh()
+    {
+        await Load();
+        await RefreshExpandedJobsAsync();
+    }
+
+    private async Task RefreshExpandedJobsAsync()
+    {
+        _jobs.Clear();
+        _textJobs.Clear();
+
+        // com busca, todas as aplicações com mensagem no período; sem busca, só as abertas
+        var apps = Searching
+            ? _apps.Where(x => x.Errors > 0 || (_includeWarnings && x.Warnings > 0)).Select(x => x.IdParent).ToList()
+            : _expandedApps.ToList();
+
+        await Task.WhenAll(apps.Select(LoadJobs));
+    }
+
+    private async Task LoadJobs(int idApp)
+    {
+        await Snackbar.TryAsync(Logger, async () =>
+        {
+            var query = BaseQuery with { IdApp = idApp };
+            _jobs[idApp] = await MonitorRepository.GetMessageJobsAsync(query);
+
+            if (TextSearch is string search)
+                _textJobs[idApp] = await MonitorRepository.GetMessageJobsAsync(query with { Search = search });
+        }, "Não foi possível carregar os jobs da aplicação.");
     }
 
     private async Task ToggleGroup(int idApp)
@@ -97,13 +337,25 @@
             return;
 
         _expandedApps.Add(idApp);
+        await LoadJobs(idApp);
 
-        // refresca as contagens do cabeçalho sem o overlay: o período é uma janela deslizante, e a tabela recém-aberta
-        // consulta "agora" — o cache de um minuto do repositório segura o custo
-        _apps = await MonitorRepository.GetAppSummariesAsync(_filter.Period);
+        // refresca as contagens do cabeçalho: o período é uma janela deslizante
+        await Load();
     }
 
-    // o cabeçalho é um div clicável; Enter e espaço fazem o mesmo papel para quem navega por teclado
+    private void ToggleJob(MessageJobSummaryModel job)
+    {
+        if (!_expandedJobs.Remove((job.IdJob, job.IdType)))
+            _expandedJobs.Add((job.IdJob, job.IdType));
+    }
+
+    // os cabeçalhos são divs clicáveis; Enter e espaço fazem o mesmo papel para quem navega por teclado
     private Task OnGroupKeyDown(KeyboardEventArgs args, int idApp) =>
         args.Key is "Enter" or " " ? ToggleGroup(idApp) : Task.CompletedTask;
+
+    private void OnJobKeyDown(KeyboardEventArgs args, MessageJobSummaryModel job)
+    {
+        if (args.Key is "Enter" or " ")
+            ToggleJob(job);
+    }
 }

@@ -15,20 +15,41 @@ namespace WebApp.Data.Mocks
             new() { IdType = 2, JobType = "Integração" }
         ];
 
+        // até a fase 6 (autenticação), quem reconhece e quem pede execução é um nome fixo
+        private const string User = "operador";
+        private static readonly TimeSpan AcknowledgementLifetime = TimeSpan.FromHours(24);
+
+        // o host lê os pedidos de "Executar agora" a cada ciclo da agenda; no mock, a execução começa 1 minuto depois
+        private static readonly TimeSpan HostPickup = TimeSpan.FromMinutes(1);
+
         private readonly MockTimeline _timeline = new();
         private readonly object _cacheLock = new();
         private readonly object _stateLock = new();
+        private readonly double _failureRate;
 
         // imagens próprias por aplicação (a da empresa logada); quem não tem aqui usa a imagem padrão do módulo
         private readonly Dictionary<int, (string ContentType, byte[] Data)> _images = new();
+        private readonly Dictionary<(int IdJob, int IdType), AcknowledgementModel> _acknowledgements = new();
+        private readonly Dictionary<(int IdJob, int IdType), RunRequestModel> _runRequests = new();
+
         private (Period Period, DateTime Minute, IReadOnlyList<AppSummaryModel> Result)? _summariesCache;
+        private readonly Dictionary<(Period Period, int Buckets, bool Previous), (DateTime Minute, IReadOnlyList<AppBucketsModel> Result)> _bucketsCache = new();
+
+        /// <summary>
+        /// MockMonitorRepository:FailureRate (de 0 a 1) faz uma parte das chamadas falhar, para testar o tratamento de erro
+        /// das telas sem banco. Fica 0 no appsettings.json.
+        /// </summary>
+        public MockMonitorRepository(IConfiguration configuration)
+        {
+            _failureRate = configuration.GetValue<double>("MockMonitorRepository:FailureRate");
+        }
 
         public async Task<IReadOnlyList<AppSummaryModel>> GetAppSummariesAsync(Period period, CancellationToken cancellationToken = default)
         {
             await Delay(cancellationToken);
 
             var now = DateTime.Now;
-            var minute = now.AddTicks(-(now.Ticks % TimeSpan.TicksPerMinute));
+            var minute = MinuteOf(now);
 
             lock (_cacheLock)
             {
@@ -57,13 +78,64 @@ namespace WebApp.Data.Mocks
                         FailedExecutions = executions.Count(x => x.Errors > 0),
                         Records = executions.Sum(x => x.Records),
                         Warnings = executions.Sum(x => x.Warnings),
-                        Errors = executions.Sum(x => x.Errors)
+                        Errors = executions.Sum(x => x.Errors),
+                        LastErrorAt = executions.Where(x => x.Errors > 0).Select(x => (DateTime?)x.StartDate).Max(),
+                        FailingJobs = jobs.Count(x => _timeline.Health(x, _timeline.Last(x, now), now) == JobHealth.Error)
                     };
                 })
                 .ToList();
 
             lock (_cacheLock)
                 _summariesCache = (period, minute, result);
+
+            return result;
+        }
+
+        public async Task<IReadOnlyList<AppBucketsModel>> GetExecutionBucketsAsync(Period period, int buckets, bool previousWindow = false, CancellationToken cancellationToken = default)
+        {
+            await Delay(cancellationToken);
+
+            var now = DateTime.Now;
+            var minute = MinuteOf(now);
+            var key = (period, buckets, previousWindow);
+
+            lock (_cacheLock)
+            {
+                if (_bucketsCache.TryGetValue(key, out var cache) && cache.Minute == minute)
+                    return cache.Result;
+            }
+
+            // faixas alinhadas à hora (ou ao dia) cheia: a última termina na próxima hora cheia depois de agora
+            var width = period.ToTimeSpan() / buckets;
+            var alignment = width >= TimeSpan.FromDays(1) ? TimeSpan.FromDays(1) : width >= TimeSpan.FromHours(1) ? TimeSpan.FromHours(1) : width;
+            var end = new DateTime((now.Ticks + alignment.Ticks - 1) / alignment.Ticks * alignment.Ticks);
+            if (previousWindow)
+                end -= width * buckets;
+            var start = end - width * buckets;
+
+            var result = _timeline.Apps.Values
+                .OrderBy(x => x.Title)
+                .Select(app =>
+                {
+                    var counts = Enumerable.Range(0, buckets)
+                        .Select(i => new ExecutionBucketModel { Start = start + width * i, End = start + width * (i + 1) })
+                        .ToArray();
+
+                    foreach (var execution in _timeline.Jobs.Where(x => x.IdApp == app.IdParent).SelectMany(x => _timeline.Between(x, start, end, now)))
+                    {
+                        var bucket = counts[Math.Clamp((int)((execution.StartDate - start) / width), 0, buckets - 1)];
+                        bucket.Executions++;
+                        bucket.FailedExecutions += execution.Errors > 0 ? 1 : 0;
+                        bucket.Errors += execution.Errors;
+                        bucket.Records += execution.Records;
+                    }
+
+                    return new AppBucketsModel { IdApp = app.IdParent, Buckets = counts };
+                })
+                .ToList();
+
+            lock (_cacheLock)
+                _bucketsCache[key] = (minute, result);
 
             return result;
         }
@@ -95,7 +167,9 @@ namespace WebApp.Data.Mocks
                         RunningDailyAt = x.Catalog.RunningDailyAt,
                         Queue = x.Catalog.Queue,
                         LastExecution = last is null ? null : ToModel(last),
-                        Health = _timeline.Health(x, last, now)
+                        Health = _timeline.Health(x, last, now),
+                        Acknowledgement = AcknowledgementOf(x, last, now),
+                        RunRequest = RunRequestOf(x, now)
                     };
                 })
                 .ToList();
@@ -118,6 +192,14 @@ namespace WebApp.Data.Mocks
                 Items = executions.Skip(page * pageSize).Take(pageSize).Select(ToModel).ToList(),
                 TotalCount = executions.Count
             };
+        }
+
+        public async Task<ExecutionModel?> GetExecutionAsync(Guid execution, CancellationToken cancellationToken = default)
+        {
+            await Delay(cancellationToken);
+
+            var found = _timeline.Decode(execution, DateTime.Now);
+            return found is null ? null : ToModel(found);
         }
 
         public async Task<IReadOnlyList<MessageModel>> GetMessagesAsync(Guid execution, CancellationToken cancellationToken = default)
@@ -152,12 +234,17 @@ namespace WebApp.Data.Mocks
             var now = DateTime.Now;
             var from = now - period.ToTimeSpan();
 
-            // a visão geral mostra só integrações ativas (decisão de 31/10/2026)
+            // a visão geral mostra só integrações ativas (decisão de 31/10/2026), as falhas antes de qualquer Ok
             return _timeline.Jobs
                 .Where(x => x.IsActive && x.Catalog.IdType == 2)
-                .Select(x => (Job: x, Last: _timeline.Last(x, now)))
-                .Where(x => x.Last is not null && x.Last.StartDate >= from)
-                .OrderByDescending(x => x.Last!.StartDate)
+                .Select(x =>
+                {
+                    var last = _timeline.Last(x, now);
+                    return (Job: x, Last: last, Health: _timeline.Health(x, last, now), Acknowledgement: AcknowledgementOf(x, last, now));
+                })
+                .Where(x => x.Health is JobHealth.Error or JobHealth.Late || (x.Last is not null && x.Last.StartDate >= from))
+                .OrderBy(x => SeverityRank(x.Health, x.Acknowledgement))
+                .ThenByDescending(x => x.Last?.StartDate ?? DateTime.MinValue)
                 .Take(top)
                 .Select(x => new HeartbeatModel
                 {
@@ -167,31 +254,109 @@ namespace WebApp.Data.Mocks
                     IdType = x.Job.Catalog.IdType,
                     JobType = JobType(x.Job.Catalog.IdType),
                     JobTitle = x.Job.Catalog.Title,
-                    StartDate = x.Last!.StartDate,
-                    EndDate = x.Last.EndDate,
-                    Records = x.Last.Records,
-                    Health = _timeline.Health(x.Job, x.Last, now) ?? JobHealth.Ok,
-                    HasWarnings = x.Last.Warnings > 0
+                    StartDate = x.Last?.StartDate,
+                    EndDate = x.Last?.EndDate,
+                    Records = x.Last?.Records ?? 0,
+                    Health = x.Health ?? JobHealth.Ok,
+                    HasWarnings = x.Last?.Warnings > 0,
+                    IntervalTimeInMinutes = x.Job.Catalog.IntervalTimeInMinutes,
+                    RunningDailyAt = x.Job.Catalog.RunningDailyAt,
+                    Acknowledgement = x.Acknowledgement
                 })
                 .ToList();
         }
 
-        public async Task<PagedResult<MessageModel>> GetMessagesByLevelAsync(Period period, MessageLevel minLevel, int? idApp, int page, int pageSize, CancellationToken cancellationToken = default)
+        // Erro, Atrasado, Rodando, falhas reconhecidas e por fim Ok
+        private static int SeverityRank(JobHealth? health, AcknowledgementModel? acknowledgement) => health switch
+        {
+            JobHealth.Error or JobHealth.Late when acknowledgement is not null => 3,
+            JobHealth.Error => 0,
+            JobHealth.Late => 1,
+            JobHealth.Running => 2,
+            _ => 4
+        };
+
+        public async Task<IReadOnlyList<MessageJobSummaryModel>> GetMessageJobsAsync(MessageQuery query, CancellationToken cancellationToken = default)
         {
             await Delay(cancellationToken);
 
             var now = DateTime.Now;
-            var from = now - period.ToTimeSpan();
 
-            var executions = _timeline.Jobs
-                .Where(x => idApp is null || x.IdApp == idApp)
-                .SelectMany(x => _timeline.Between(x, from, now, now))
-                .Where(x => x.Errors > 0 || (minLevel <= MessageLevel.Warning && x.Warnings > 0))
-                .OrderByDescending(x => x.StartDate)
+            return Messages(query, now)
+                .GroupBy(x => x.Execution.Job)
+                .Select(group =>
+                {
+                    var job = group.Key;
+                    var last = _timeline.Last(job, now);
+                    var latest = group.First();
+
+                    return new MessageJobSummaryModel
+                    {
+                        IdApp = job.IdApp,
+                        IdJob = job.Catalog.IdJob,
+                        IdType = job.Catalog.IdType,
+                        JobTitle = job.Catalog.Title,
+                        Errors = group.Count(x => x.Message.Level == MessageLevel.Error),
+                        Warnings = group.Count(x => x.Message.Level == MessageLevel.Warning),
+                        Causes = group.Select(x => MessageGrouping.Key(x.Message)).Distinct().Count(),
+                        LastErrorAt = latest.Execution.StartDate,
+                        LastMessage = latest.Message.Message,
+                        IsActive = job.IsActive,
+                        CurrentHealth = _timeline.Health(job, last, now),
+                        IntervalTimeInMinutes = job.Catalog.IntervalTimeInMinutes,
+                        RunningDailyAt = job.Catalog.RunningDailyAt,
+                        LastStartDate = last?.StartDate,
+                        LastEndDate = last?.EndDate,
+                        Acknowledgement = AcknowledgementOf(job, last, now)
+                    };
+                })
+                // ainda falhando primeiro, depois os recuperados; em cada bloco, a ocorrência mais recente primeiro
+                .OrderBy(x => x.CurrentHealth == JobHealth.Error && x.Acknowledgement is null ? 0 : 1)
+                .ThenByDescending(x => x.LastErrorAt)
+                .ThenBy(x => x.IdJob)
                 .ToList();
+        }
+
+        public async Task<IReadOnlyList<MessageGroupModel>> GetMessageGroupsAsync(MessageQuery query, CancellationToken cancellationToken = default)
+        {
+            await Delay(cancellationToken);
+
+            return Messages(query, DateTime.Now)
+                .GroupBy(x => MessageGrouping.Key(x.Message))
+                .Select(group => new MessageGroupModel
+                {
+                    Key = group.Key,
+                    Level = group.First().Message.Level,
+                    Example = group.First().Message.Message,
+                    Count = group.Count(),
+                    FirstAt = group.Min(x => x.Execution.StartDate),
+                    LastAt = group.Max(x => x.Execution.StartDate)
+                })
+                .OrderByDescending(x => x.LastAt)
+                .ToList();
+        }
+
+        public async Task<PagedResult<MessageModel>> GetMessagesByLevelAsync(MessageQuery query, int page, int pageSize, CancellationToken cancellationToken = default)
+        {
+            await Delay(cancellationToken);
+
+            var now = DateTime.Now;
+
+            // com busca ou causa, é preciso gerar o texto de todas as mensagens para filtrar
+            if (!string.IsNullOrWhiteSpace(query.Search) || query.GroupKey is not null)
+            {
+                var all = Messages(query, now).Select(x => x.Message).ToList();
+                return new PagedResult<MessageModel>
+                {
+                    Items = all.Skip(page * pageSize).Take(pageSize).ToList(),
+                    TotalCount = all.Count
+                };
+            }
+
+            var executions = ExecutionsWithMessages(query, now).ToList();
 
             // cada execução tem um erro ou de 1 a 3 avisos: conta as mensagens sem gerar o texto de todas
-            int Count(MockExecution x) => (minLevel <= MessageLevel.Warning ? x.Warnings : 0) + x.Errors;
+            int Count(MockExecution x) => (query.MinLevel <= MessageLevel.Warning ? x.Warnings : 0) + x.Errors;
 
             var skip = page * pageSize;
             var items = new List<MessageModel>();
@@ -205,13 +370,8 @@ namespace WebApp.Data.Mocks
                     continue;
                 }
 
-                var appTitle = AppTitle(execution.Job);
-                foreach (var message in MockTexts.Messages(execution, appTitle).Where(x => x.Level >= minLevel).Skip(skip))
+                foreach (var message in MessagesOf(execution, query.MinLevel).Skip(skip))
                 {
-                    message.IdApp = execution.Job.IdApp;
-                    message.AppTitle = appTitle;
-                    message.JobTitle = execution.Job.Catalog.Title;
-                    message.ExecutionStartDate = execution.StartDate;
                     items.Add(message);
 
                     if (items.Count == pageSize)
@@ -228,6 +388,40 @@ namespace WebApp.Data.Mocks
                 Items = items,
                 TotalCount = executions.Sum(Count)
             };
+        }
+
+        // execuções com mensagens do nível pedido no período, da mais recente para a mais antiga
+        private IEnumerable<MockExecution> ExecutionsWithMessages(MessageQuery query, DateTime now)
+        {
+            var from = now - query.Period.ToTimeSpan();
+
+            return _timeline.Jobs
+                .Where(x => query.IdApp is null || x.IdApp == query.IdApp)
+                .Where(x => query.IdJob is null || (x.Catalog.IdJob == query.IdJob && x.Catalog.IdType == query.IdType))
+                .SelectMany(x => _timeline.Between(x, from, now, now))
+                .Where(x => x.Errors > 0 || (query.MinLevel <= MessageLevel.Warning && x.Warnings > 0))
+                .OrderByDescending(x => x.StartDate);
+        }
+
+        // as mensagens do filtro, com o texto gerado, da execução mais recente para a mais antiga
+        private IEnumerable<(MockExecution Execution, MessageModel Message)> Messages(MessageQuery query, DateTime now) =>
+            ExecutionsWithMessages(query, now)
+                .SelectMany(execution => MessagesOf(execution, query.MinLevel).Select(message => (execution, message)))
+                .Where(x => MessageGrouping.Matches(x.message, query.Search))
+                .Where(x => query.GroupKey is null || MessageGrouping.Key(x.message) == query.GroupKey);
+
+        private IEnumerable<MessageModel> MessagesOf(MockExecution execution, MessageLevel minLevel)
+        {
+            var appTitle = AppTitle(execution.Job);
+
+            foreach (var message in MockTexts.Messages(execution, appTitle).Where(x => x.Level >= minLevel))
+            {
+                message.IdApp = execution.Job.IdApp;
+                message.AppTitle = appTitle;
+                message.JobTitle = execution.Job.Catalog.Title;
+                message.ExecutionStartDate = execution.StartDate;
+                yield return message;
+            }
         }
 
         public async Task<IReadOnlyList<TypeModel>> GetTypesAsync(CancellationToken cancellationToken = default)
@@ -291,10 +485,7 @@ namespace WebApp.Data.Mocks
         {
             await Delay(cancellationToken);
 
-            var job = _timeline.Find(idJob, idType)
-                ?? throw new InvalidOperationException($"Job {idJob} (tipo {idType}) não existe no catálogo.");
-
-            job.ActiveOverride = isActive;
+            FindJob(idJob, idType).ActiveOverride = isActive;
             Changed();
         }
 
@@ -304,6 +495,58 @@ namespace WebApp.Data.Mocks
 
             foreach (var job in _timeline.Jobs.Where(x => x.IdApp == idApp))
                 job.ActiveOverride = isActive;
+
+            Changed();
+        }
+
+        public async Task AcknowledgeAsync(int idJob, int idType, string? note, CancellationToken cancellationToken = default)
+        {
+            await Delay(cancellationToken);
+
+            var job = FindJob(idJob, idType);
+            var now = DateTime.Now;
+
+            lock (_stateLock)
+            {
+                _acknowledgements[(idJob, idType)] = new AcknowledgementModel
+                {
+                    Execution = _timeline.Last(job, now)?.Execution,
+                    Note = string.IsNullOrWhiteSpace(note) ? null : note.Trim(),
+                    User = User,
+                    At = now,
+                    ExpiresAt = now + AcknowledgementLifetime
+                };
+            }
+
+            Changed();
+        }
+
+        public async Task RemoveAcknowledgementAsync(int idJob, int idType, CancellationToken cancellationToken = default)
+        {
+            await Delay(cancellationToken);
+
+            lock (_stateLock)
+                _acknowledgements.Remove((idJob, idType));
+
+            Changed();
+        }
+
+        public async Task RequestRunAsync(int idJob, int idType, CancellationToken cancellationToken = default)
+        {
+            await Delay(cancellationToken);
+
+            var job = FindJob(idJob, idType);
+            var now = DateTime.Now;
+
+            lock (_stateLock)
+            {
+                // um pedido pendente por job: pedir de novo não enfileira outra execução
+                if (RunRequestOf(job, now) is not null)
+                    return;
+
+                _runRequests[(idJob, idType)] = new RunRequestModel { RequestedAt = now, RequestedBy = User };
+                job.ManualRuns = [.. job.ManualRuns, now + HostPickup];
+            }
 
             Changed();
         }
@@ -328,11 +571,53 @@ namespace WebApp.Data.Mocks
             Changed();
         }
 
+        // o reconhecimento vale para a execução reconhecida e até expirar; depois disso, some sozinho
+        private AcknowledgementModel? AcknowledgementOf(MockJob job, MockExecution? last, DateTime now)
+        {
+            var key = (job.Catalog.IdJob, job.Catalog.IdType);
+
+            lock (_stateLock)
+            {
+                if (!_acknowledgements.TryGetValue(key, out var acknowledgement))
+                    return null;
+
+                if (acknowledgement.Execution == last?.Execution && now < acknowledgement.ExpiresAt)
+                    return acknowledgement;
+
+                _acknowledgements.Remove(key);
+                return null;
+            }
+        }
+
+        // o pedido fica pendente até começar uma execução depois dele
+        private RunRequestModel? RunRequestOf(MockJob job, DateTime now)
+        {
+            var key = (job.Catalog.IdJob, job.Catalog.IdType);
+
+            lock (_stateLock)
+            {
+                if (!_runRequests.TryGetValue(key, out var request))
+                    return null;
+
+                if (!job.ManualRuns.Any(x => x >= request.RequestedAt && x <= now))
+                    return request;
+
+                _runRequests.Remove(key);
+                return null;
+            }
+        }
+
+        private MockJob FindJob(int idJob, int idType) =>
+            _timeline.Find(idJob, idType) ?? throw new InvalidOperationException($"Job {idJob} (tipo {idType}) não existe no catálogo.");
+
         // qualquer escrita invalida o cache dos resumos, para o card refletir a mudança na próxima carga
         private void Changed()
         {
             lock (_cacheLock)
+            {
                 _summariesCache = null;
+                _bucketsCache.Clear();
+            }
         }
 
         private string? ImageUrlOf(int idApp)
@@ -350,6 +635,8 @@ namespace WebApp.Data.Mocks
 
         private static string? JobType(int idType) => Types.FirstOrDefault(x => x.IdType == idType)?.JobType;
 
+        private static DateTime MinuteOf(DateTime now) => now.AddTicks(-(now.Ticks % TimeSpan.TicksPerMinute));
+
         private static ExecutionModel ToModel(MockExecution execution) => new()
         {
             IdExecution = (long)(MockTimeline.Hash(execution.Job, execution.K, 0) % 900_000_000_000) + 1,
@@ -363,8 +650,13 @@ namespace WebApp.Data.Mocks
             Errors = execution.Errors
         };
 
-        // o mesmo atraso que o banco terá, para o SpaceLoading aparecer
-        private static Task Delay(CancellationToken cancellationToken) =>
-            Task.Delay(Random.Shared.Next(150, 400), cancellationToken);
+        // o mesmo atraso que o banco terá, para o SpaceLoading aparecer; com FailureRate, às vezes falha como o banco falharia
+        private async Task Delay(CancellationToken cancellationToken)
+        {
+            await Task.Delay(Random.Shared.Next(150, 400), cancellationToken);
+
+            if (_failureRate > 0 && Random.Shared.NextDouble() < _failureRate)
+                throw new InvalidOperationException("Falha simulada do banco (MockMonitorRepository:FailureRate).");
+        }
     }
 }

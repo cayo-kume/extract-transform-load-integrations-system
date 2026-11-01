@@ -1,5 +1,6 @@
 @page "/queries"
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using ResultRow = object?[]
 @implements IAsyncDisposable
 @inject QueryRunnerAccess QueryRunnerAccess
 @inject IQueryRunner QueryRunner
@@ -13,30 +14,30 @@
 
 @if (QueryRunnerAccess.IsAllowed)
 {
-    <MudGrid>
-        <MudItem xs="5" Class="d-flex align-center justify-center pa-1">
-            <h1 class="ma-0 text-center">EXECUTAR QUERYS</h1>
-        </MudItem>
+    <div class="queries-layout">
+        <div class="queries-main">
+            <MudGrid>
+                <MudItem xs="5" Class="d-flex align-center justify-center pa-1">
+                    <h1 class="ma-0 text-center">EXECUTAR QUERYS</h1>
+                </MudItem>
 
-        <MudItem xs="7">
-            <div class="d-flex flex-row align-center gap-2 ml-8 mr-8">
-                <div class="flex-grow-1">
-                    <MudSelect T="string" @bind-Value="_database" Variant="Variant.Outlined" Label="Banco" Margin="Margin.Normal" Disabled="Busy">
-                        @foreach (var database in _databases)
-                        {
-                            <MudSelectItem Value="database">@database</MudSelectItem>
-                        }
-                    </MudSelect>
-                </div>
-                <MudChip T="string" Color="Color.Warning" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.Storage" Size="Size.Large">
-                    @(_database ?? "—")
-                </MudChip>
-            </div>
-        </MudItem>
+                <MudItem xs="7">
+                    <div class="d-flex flex-row align-center gap-2 mx-4 flex-wrap">
+                        <div class="flex-grow-1">
+                            <MudSelect T="string" @bind-Value="_database" Variant="Variant.Outlined" Label="Banco" Margin="Margin.Normal" Disabled="Busy">
+                                @foreach (var database in _databases)
+                                {
+                                    <MudSelectItem Value="database">@database</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </div>
+                        <MudChip T="string" Color="Color.Warning" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.Storage" Size="Size.Large">
+                            @(_database ?? "—")
+                        </MudChip>
+                    </div>
+                </MudItem>
 
-        <MudItem xs="12" Class="px-4">
-            <div class="d-flex gap-4 align-start">
-                <div class="flex-grow-1" style="min-width: 0">
+                <MudItem xs="12" Class="px-4">
                     <MudTextField T="string"
                                   @bind-Value="_sql"
                                   Immediate="true"
@@ -60,138 +61,190 @@
                         <MudSpacer />
                         <MudText Typo="Typo.caption">Escritas, DDL e procedures rodam numa transação e pedem confirmação.</MudText>
                     </div>
-                </div>
+                </MudItem>
 
-                <!-- Barra fixa de querys prontas: clicar cola o SQL no editor e seleciona o banco, sem executar -->
-                <MudPaper Elevation="0" Outlined="true" Class="ready-queries pa-3">
-                    <MudText Typo="Typo.subtitle2" Class="mb-1">Querys prontas</MudText>
-                    @foreach (var category in ReadyQueries.ByCategory)
-                    {
-                        <MudText Typo="Typo.caption" Class="ready-queries-category">@category.Key</MudText>
-                        @foreach (var query in category)
-                        {
-                            <MudButton FullWidth="true" Variant="Variant.Outlined" Size="Size.Small" Class="ready-query-button" OnClick="@(() => PasteReadyQuery(query))" Disabled="Busy">
-                                @query.Title
-                            </MudButton>
-                        }
-                    }
-                    <MudText Typo="Typo.caption" Class="mt-2 d-block">O clique só cola o SQL no editor; executar é com você.</MudText>
-                </MudPaper>
-            </div>
-        </MudItem>
-
-        @if (_pending is not null)
-        {
-            <MudItem xs="12" Class="px-4">
-                <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.HourglassTop">
-                    <div class="d-flex align-center gap-4 flex-wrap">
-                        <MudText>
-                            <strong>@PendingDescription</strong> em <strong>@_pendingDatabase</strong>, ainda não confirmado.
-                            Sem resposta em <strong>@_remaining s</strong>, a alteração é desfeita.
-                        </MudText>
-                        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Commit" Disabled="_finishing">Confirmar</MudButton>
-                        <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="@(() => Rollback(timedOut: false))" Disabled="_finishing">Desfazer</MudButton>
-                    </div>
-                    <MudProgressLinear Color="Color.Warning" Value="@(_remaining * 100.0 / IQueryRunner.ConfirmationTimeout.TotalSeconds)" Class="mt-2" />
-                </MudAlert>
-            </MudItem>
-        }
-
-        @if (_result is not null)
-        {
-            <MudItem xs="12" Class="px-4">
-                @if (_result.Error is not null)
+                @if (_pending is not null)
                 {
-                    <MudAlert Severity="Severity.Error" Variant="Variant.Outlined">
-                        <pre class="code-block ma-0">@_result.Error</pre>
-                    </MudAlert>
-                }
-                else
-                {
-                    <div class="d-flex align-center gap-2 mb-2 flex-wrap">
-                        <MudText Typo="Typo.body2">@Summary</MudText>
-                        @if (_result.TransactionClosedByCommand)
-                        {
-                            <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Outlined">
-                                A procedure já confirmou ou desfez por conta própria: não há o que desfazer.
-                            </MudChip>
-                        }
-                        <MudSpacer />
-                        @if (_result.Kind == QueryKind.Select && _result.Rows.Count > 0)
-                        {
-                            <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Download" OnClick="ExportCsv">Exportar CSV</MudButton>
-                        }
-                    </div>
-
-                    @if (_result.Truncated)
-                    {
-                        <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-2">
-                            O resultado tem @_result.TotalRows.ToString("N0") linhas; a tela mostra só as @IQueryRunner.MaxRows.ToString("N0") primeiras.
+                    <MudItem xs="12" Class="px-4">
+                        <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.HourglassTop">
+                            <div class="d-flex align-center gap-4 flex-wrap">
+                                <MudText>
+                                    <strong>@PendingDescription</strong> em <strong>@_pendingDatabase</strong>, ainda não confirmado.
+                                    Sem resposta em <strong>@_remaining s</strong>, a alteração é desfeita.
+                                </MudText>
+                                <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Commit" Disabled="_finishing">Confirmar</MudButton>
+                                <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="@(() => Rollback(timedOut: false))" Disabled="_finishing">Desfazer</MudButton>
+                            </div>
+                            <MudProgressLinear Color="Color.Warning" Value="@(_remaining * 100.0 / IQueryRunner.ConfirmationTimeout.TotalSeconds)" Class="mt-2" />
                         </MudAlert>
-                    }
-
-                    @if (_result.Kind == QueryKind.Select)
-                    {
-                        <MudTable Items="@_result.Rows" Dense="true" Hover="true" Bordered="true" Breakpoint="Breakpoint.None" RowsPerPage="50" HorizontalScrollbar="true">
-                            <HeaderContent>
-                                @foreach (var column in _result.Columns)
-                                {
-                                    <MudTh Style="white-space: nowrap">@column</MudTh>
-                                }
-                            </HeaderContent>
-                            <RowTemplate>
-                                @foreach (var value in context)
-                                {
-                                    <MudTd Style="white-space: nowrap">
-                                        @if (value is null)
-                                        {
-                                            <span class="sql-null">NULL</span>
-                                        }
-                                        else
-                                        {
-                                            @Format(value)
-                                        }
-                                    </MudTd>
-                                }
-                            </RowTemplate>
-                            <NoRecordsContent>
-                                <MudText Typo="Typo.body2">Nenhuma linha.</MudText>
-                            </NoRecordsContent>
-                            <PagerContent>
-                                <TablePager HideRowsPerPage="true" />
-                            </PagerContent>
-                        </MudTable>
-                    }
-
-                    @if (_result.Messages.Count > 0)
-                    {
-                        <MudText Typo="Typo.caption" Class="mt-2">Mensagens</MudText>
-                        <pre class="code-block">@string.Join(Environment.NewLine, _result.Messages)</pre>
-                    }
+                    </MudItem>
                 }
-            </MudItem>
-        }
 
-        <MudItem xs="12" Class="px-4">
-            <MudExpansionPanels Elevation="0">
-                <MudExpansionPanel Text="@($"Histórico da sessão ({_history.Count})")">
-                    @if (_history.Count == 0)
+                @if (_result is not null)
+                {
+                    <MudItem xs="12" Class="px-4">
+                        @if (_result.Error is not null)
+                        {
+                            <MudAlert Severity="Severity.Error" Variant="Variant.Outlined">
+                                <div class="code-block-wrapper">
+                                    <pre class="code-block ma-0">@_result.Error</pre>
+                                    <CopyButton Text="@_result.Error" Tooltip="Copiar o erro" Class="code-block-copy" />
+                                </div>
+                            </MudAlert>
+                        }
+                        else
+                        {
+                            <div class="d-flex align-center gap-2 mb-2 flex-wrap">
+                                <MudText Typo="Typo.body2">@Summary</MudText>
+                                @if (_result.TransactionClosedByCommand)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Outlined">
+                                        A procedure já confirmou ou desfez por conta própria: não há o que desfazer.
+                                    </MudChip>
+                                }
+                                <MudSpacer />
+                                @if (_result.Kind == QueryKind.Select && _result.Rows.Count > 0)
+                                {
+                                    <div class="result-filter">
+                                        <MudTextField T="string" Value="_resultFilter" ValueChanged="OnResultFilterChanged" DebounceInterval="300" Immediate="true" Label="Filtrar resultado" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.FilterList" />
+                                    </div>
+                                    @if (FilterActive)
+                                    {
+                                        <MudText Typo="Typo.caption">@FilteredCount.ToString("N0") de @_result.Rows.Count.ToString("N0") linhas@(_result.Truncated ? $" (filtro só nas {IQueryRunner.MaxRows:N0} carregadas)" : "")</MudText>
+                                        <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Download" OnClick="@(() => ExportCsv(filtered: true))">Exportar filtrado (@FilteredCount.ToString("N0"))</MudButton>
+                                    }
+                                    <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Download" OnClick="@(() => ExportCsv(filtered: false))">Exportar CSV</MudButton>
+                                }
+                            </div>
+
+                            @if (_result.Truncated)
+                            {
+                                <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-2">
+                                    O resultado tem @_result.TotalRows.ToString("N0") linhas; a tela mostra só as @IQueryRunner.MaxRows.ToString("N0") primeiras. Filtro e ordem valem só para elas.
+                                </MudAlert>
+                            }
+
+                            @if (_result.Kind == QueryKind.Select)
+                            {
+                                @* @key: um resultado novo recria a tabela, zerando a ordenação e a página *@
+                                <MudTable @key="_result" @ref="_resultTable" T="ResultRow" Items="@_result.Rows" Filter="FilterRow" Dense="true" Hover="true" Bordered="true" Breakpoint="Breakpoint.None" RowsPerPage="50" HorizontalScrollbar="true">
+                                    <HeaderContent>
+                                        @for (var i = 0; i < _result.Columns.Count; i++)
+                                        {
+                                            var index = i;
+                                            <MudTh Style="white-space: nowrap">
+                                                <MudTableSortLabel T="ResultRow" SortBy="@(row => row[index]!)">@_result.Columns[index]</MudTableSortLabel>
+                                            </MudTh>
+                                        }
+                                    </HeaderContent>
+                                    <RowTemplate>
+                                        @foreach (var value in context)
+                                        {
+                                            <MudTd Style="white-space: nowrap">
+                                                @if (value is null)
+                                                {
+                                                    <span class="sql-null">NULL</span>
+                                                }
+                                                else
+                                                {
+                                                    @Format(value)
+                                                }
+                                            </MudTd>
+                                        }
+                                    </RowTemplate>
+                                    <NoRecordsContent>
+                                        <MudText Typo="Typo.body2">Nenhuma linha.</MudText>
+                                    </NoRecordsContent>
+                                    <PagerContent>
+                                        <TablePager HideRowsPerPage="true" />
+                                    </PagerContent>
+                                </MudTable>
+                            }
+
+                            @if (_result.Messages.Count > 0)
+                            {
+                                <MudText Typo="Typo.caption" Class="mt-2">Mensagens</MudText>
+                                <div class="code-block-wrapper">
+                                    <pre class="code-block">@string.Join(Environment.NewLine, _result.Messages)</pre>
+                                    <CopyButton Text="@string.Join(Environment.NewLine, _result.Messages)" Tooltip="Copiar as mensagens" Class="code-block-copy" />
+                                </div>
+                            }
+                        }
+                    </MudItem>
+                }
+
+                <MudItem xs="12" Class="px-4">
+                    <MudExpansionPanels Elevation="0">
+                        <MudExpansionPanel Text="@($"Histórico da sessão ({_history.Count})")">
+                            @if (_history.Count == 0)
+                            {
+                                <MudText Typo="Typo.body2">Nenhuma consulta ainda.</MudText>
+                            }
+                            @foreach (var item in _history)
+                            {
+                                var favorite = FavoriteOf(item.Database, item.Sql);
+                                <div class="d-flex align-center gap-2 my-1">
+                                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@item.Database</MudChip>
+                                    <MudText Typo="Typo.caption" Style="white-space: nowrap">@item.ExecutedAt.ToString("dd/MM HH:mm:ss")</MudText>
+                                    @* o SQL inteiro e o banco no title: duas consultas que começam igual deixam de ser iguais na lista *@
+                                    @if (favorite is not null)
+                                    {
+                                        <MudText Typo="Typo.body2" Class="history-sql flex-grow-1" title="@($"{item.Database}{Environment.NewLine}{item.Sql}")"><strong>@favorite.Name</strong></MudText>
+                                    }
+                                    else
+                                    {
+                                        <code class="history-sql flex-grow-1" title="@($"{item.Database}{Environment.NewLine}{item.Sql}")">@item.Sql</code>
+                                    }
+                                    <MudButton Variant="Variant.Text" Size="Size.Small" Color="Color.Primary" OnClick="@(() => Reopen(item))" Disabled="Busy">Reabrir</MudButton>
+                                    <MudTooltip Text="@(favorite is null ? "Salvar como favorita" : "Já é favorita")">
+                                        <MudIconButton Icon="@(favorite is null ? Icons.Material.Filled.StarBorder : Icons.Material.Filled.Star)" Size="Size.Small" Color="@(favorite is null ? Color.Default : Color.Warning)" Disabled="@(favorite is not null)" OnClick="@(() => AddFavorite(item))" aria-label="Salvar como favorita" />
+                                    </MudTooltip>
+                                </div>
+                            }
+                        </MudExpansionPanel>
+                    </MudExpansionPanels>
+                </MudItem>
+            </MudGrid>
+        </div>
+
+        <!-- Barra de querys prontas, com a altura da página: clicar cola o SQL no editor e seleciona o banco, sem executar -->
+        <MudPaper Elevation="0" Outlined="true" Class="ready-queries">
+            <div class="ready-queries-sticky pa-3">
+                <MudText Typo="Typo.subtitle2" Class="mb-1">Minhas querys</MudText>
+                @if (_favorites.Count == 0)
+                {
+                    <MudText Typo="Typo.caption" Class="d-block mb-2">Use a estrela no histórico para salvar uma consulta aqui. As favoritas ficam só neste navegador.</MudText>
+                }
+                <div class="favorite-queries">
+                    @foreach (var favorite in _favorites)
                     {
-                        <MudText Typo="Typo.body2">Nenhuma consulta ainda.</MudText>
-                    }
-                    @foreach (var item in _history)
-                    {
-                        <div class="d-flex align-center gap-2 my-1">
-                            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@item.Database</MudChip>
-                            <MudText Typo="Typo.caption" Style="white-space: nowrap">@item.ExecutedAt.ToString("dd/MM HH:mm:ss")</MudText>
-                            <code class="history-sql flex-grow-1">@item.Sql</code>
-                            <MudButton Variant="Variant.Text" Size="Size.Small" Color="Color.Primary" OnClick="@(() => Reopen(item))" Disabled="Busy">Reabrir</MudButton>
+                        <div class="d-flex align-center gap-1" @key="favorite">
+                            <MudTooltip Text="@($"{favorite.Database}{Environment.NewLine}{favorite.Sql}")" Class="flex-grow-1" Style="min-width: 0">
+                                <MudButton FullWidth="true" Variant="Variant.Outlined" Size="Size.Small" Class="ready-query-button" OnClick="@(() => PasteFavorite(favorite))" Disabled="Busy">
+                                    @favorite.Name
+                                </MudButton>
+                            </MudTooltip>
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => RenameFavorite(favorite))" aria-label="Renomear" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="@(() => RemoveFavorite(favorite))" aria-label="Remover" />
                         </div>
                     }
-                </MudExpansionPanel>
-            </MudExpansionPanels>
-        </MudItem>
-    </MudGrid>
+                </div>
+
+                <MudText Typo="Typo.subtitle2" Class="mb-1 mt-3">Querys prontas</MudText>
+                @foreach (var category in ReadyQueries.ByCategory)
+                {
+                    <MudText Typo="Typo.caption" Class="ready-queries-category">@category.Key</MudText>
+                    @foreach (var query in category)
+                    {
+                        <MudButton FullWidth="true" Variant="Variant.Outlined" Size="Size.Small" Class="ready-query-button" OnClick="@(() => PasteReadyQuery(query))" Disabled="Busy">
+                            @query.Title
+                        </MudButton>
+                    }
+                }
+                <MudText Typo="Typo.caption" Class="mt-2 d-block">O clique só cola o SQL no editor; executar é com você.</MudText>
+            </div>
+        </MudPaper>
+    </div>
 }
 
 @code {
@@ -199,6 +252,19 @@
 
     private const string HistoryKey = "queries-history";
     private const int HistorySize = 20;
+
+    // favoritas: fora do limite do histórico, mas com um teto para a barra lateral não crescer sem fim; ficam no navegador
+    // até a autenticação (fase 6), quando podem ir para o banco por usuário
+    private const string FavoritesKey = "queries-favorites";
+    private const int MaxFavorites = 30;
+
+    /// <summary>
+    /// Query pronta aberta por link (?ready=registros-execucao&amp;execution=guid, dos Logs de Erros): cola o SQL com a
+    /// execução preenchida e não executa.
+    /// </summary>
+    [SupplyParameterFromQuery(Name = "ready")] public string? ReadyQuery { get; set; }
+
+    [SupplyParameterFromQuery(Name = "execution")] public string? ExecutionQuery { get; set; }
 
     private IReadOnlyList<string> _databases = [];
     private string? _database;
@@ -216,8 +282,18 @@
     private CancellationTokenSource? _countdown;
 
     private List<HistoryItem> _history = [];
+    private List<FavoriteItem> _favorites = [];
+
+    // filtro do resultado: o texto de cada linha é montado uma vez por resultado, não a cada tecla
+    private MudTable<object?[]>? _resultTable;
+    private string? _resultFilter;
+    private Dictionary<object?[], string> _rowTexts = new(ReferenceEqualityComparer.Instance);
 
     private bool Busy => _running || _pending is not null;
+
+    private bool FilterActive => !string.IsNullOrWhiteSpace(_resultFilter);
+
+    private int FilteredCount => _result?.Rows.Count(FilterRow) ?? 0;
 
     private string Summary => _result switch
     {
@@ -243,6 +319,13 @@
 
         _databases = await QueryRunner.GetDatabasesAsync();
         _database = _databases.Contains("NEWBLOOMERS") ? "NEWBLOOMERS" : _databases.FirstOrDefault();
+
+        if (ReadyQueries.Find(ReadyQuery) is { } ready)
+        {
+            PasteReadyQuery(ready);
+            if (Guid.TryParse(ExecutionQuery, out var execution))
+                _sql = _sql?.Replace(ReadyQueries.ExecutionPlaceholder, execution.ToString());
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -250,15 +333,18 @@
         if (!firstRender || !QueryRunnerAccess.IsAllowed)
             return;
 
-        // o histórico fica no navegador; se não der para ler (aba anônima, dados limpos), começa vazio
+        // o histórico e as favoritas ficam no navegador; se não der para ler (aba anônima, dados limpos), começam vazios
         try
         {
             var stored = await LocalStorage.GetAsync<List<HistoryItem>>(HistoryKey);
             if (stored.Success && stored.Value is not null)
-            {
                 _history = stored.Value;
-                StateHasChanged();
-            }
+
+            var favorites = await LocalStorage.GetAsync<List<FavoriteItem>>(FavoritesKey);
+            if (favorites.Success && favorites.Value is not null)
+                _favorites = favorites.Value;
+
+            StateHasChanged();
         }
         catch (Exception)
         {
@@ -283,12 +369,17 @@
 
         _running = true;
         _result = null;
+        _resultFilter = null;
         _execution = new CancellationTokenSource();
         StateHasChanged();
 
         try
         {
             _result = await QueryRunner.ExecuteAsync(database, sql, _execution.Token);
+            _rowTexts = new Dictionary<object?[], string>(ReferenceEqualityComparer.Instance);
+            foreach (var row in _result.Rows)
+                _rowTexts[row] = string.Join(' ', row.Select(x => x is null ? "NULL" : Format(x)));
+
             await AddToHistory(database, sql);
 
             if (_result.TransactionId is not null)
@@ -401,10 +492,19 @@
         _finishing = false;
     }
 
-    private async Task ExportCsv()
+    private void OnResultFilterChanged(string? value) => _resultFilter = value;
+
+    // qualquer célula, sem diferenciar maiúsculas nem acentos, como as buscas do painel
+    private bool FilterRow(object?[] row) =>
+        !FilterActive || MessageGrouping.Contains(_rowTexts.GetValueOrDefault(row), _resultFilter);
+
+    // "Exportar CSV" sempre exporta o resultado inteiro; "Exportar filtrado" exporta o que a grade mostra, na ordem dela
+    private async Task ExportCsv(bool filtered)
     {
         if (_result is null)
             return;
+
+        var rows = filtered && _resultTable is not null ? _resultTable.FilteredItems.ToList() : _result.Rows.ToList();
 
         static string Cell(object? value)
         {
@@ -421,9 +521,72 @@
 
         // ponto e vírgula, vírgula decimal e BOM: o Excel em português abre direto, com números e acentos
         var lines = new List<string> { string.Join(';', _result.Columns.Select(Cell)) };
-        lines.AddRange(_result.Rows.Select(row => string.Join(';', row.Select(Cell))));
+        lines.AddRange(rows.Select(row => string.Join(';', row.Select(Cell))));
 
-        await JS.InvokeVoidAsync("webApp.download", $"{_database}_{DateTime.Now:yyyyMMdd_HHmmss}.csv", "﻿" + string.Join("\r\n", lines), "text/csv;charset=utf-8");
+        await JS.InvokeVoidAsync("webApp.download", $"{_database}_{DateTime.Now:yyyyMMdd_HHmmss}{(filtered ? "_filtrado" : "")}.csv", "﻿" + string.Join("\r\n", lines), "text/csv;charset=utf-8");
+    }
+
+    private FavoriteItem? FavoriteOf(string database, string sql) =>
+        _favorites.FirstOrDefault(x => x.Database == database && x.Sql == sql);
+
+    // nome sugerido: a primeira linha do SQL, cortada
+    private async Task AddFavorite(HistoryItem item)
+    {
+        if (_favorites.Count >= MaxFavorites)
+        {
+            Snackbar.Add($"Já são {MaxFavorites} favoritas: remova uma antes de salvar outra.", Severity.Warning);
+            return;
+        }
+
+        var firstLine = item.Sql.Split('\n', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim() ?? "";
+        var name = await FavoriteNameDialog.AskAsync(DialogService, firstLine.Length > 60 ? firstLine[..60] : firstLine, rename: false);
+        if (name is null)
+            return;
+
+        _favorites.Insert(0, new FavoriteItem(name, item.Database, item.Sql));
+        await SaveFavorites();
+    }
+
+    private async Task RenameFavorite(FavoriteItem favorite)
+    {
+        var name = await FavoriteNameDialog.AskAsync(DialogService, favorite.Name, rename: true);
+        if (name is null)
+            return;
+
+        var index = _favorites.IndexOf(favorite);
+        if (index >= 0)
+            _favorites[index] = favorite with { Name = name };
+
+        await SaveFavorites();
+    }
+
+    private async Task RemoveFavorite(FavoriteItem favorite)
+    {
+        _favorites.Remove(favorite);
+        await SaveFavorites();
+    }
+
+    private async Task SaveFavorites()
+    {
+        try
+        {
+            await LocalStorage.SetAsync(FavoritesKey, _favorites);
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Não foi possível salvar as favoritas neste navegador.", Severity.Warning);
+        }
+    }
+
+    private void PasteFavorite(FavoriteItem favorite)
+    {
+        if (Busy)
+            return;
+
+        if (_databases.Contains(favorite.Database))
+            _database = favorite.Database;
+
+        _sql = favorite.Sql;
     }
 
     private async Task AddToHistory(string database, string sql)
@@ -480,4 +643,6 @@
     }
 
     private sealed record HistoryItem(string Database, string Sql, DateTime ExecutedAt);
+
+    private sealed record FavoriteItem(string Name, string Database, string Sql);
 }
