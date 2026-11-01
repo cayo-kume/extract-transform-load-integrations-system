@@ -420,90 +420,6 @@ code {
     opacity: 0.8;
 }
 
-/* Barras de execuções com erro por faixa de tempo (Visão geral e miniatura dos Logs de Erros) */
-.error-bars {
-    display: flex;
-    align-items: flex-end;
-    gap: 2px;
-}
-
-.error-bar {
-    flex: 1 1 0;
-    min-width: 2px;
-    background-color: var(--mud-palette-error);
-    border-radius: 2px 2px 0 0;
-    opacity: 0.85;
-}
-
-.error-bar.empty {
-    background-color: var(--mud-palette-lines-default);
-}
-
-.error-bars-labels {
-    display: flex;
-    gap: 2px;
-    font-size: 0.6875rem;
-    color: var(--mud-palette-text-secondary);
-}
-
-.error-bars-labels span {
-    flex: 1 1 0;
-    min-width: 2px;
-    white-space: nowrap;
-    overflow: visible;
-}
-
-.error-sparkline {
-    width: 140px;
-    flex: none;
-}
-
-/* Mapa de calor aplicação × hora: a cor sobe do fundo até o vermelho do tema pela proporção de execuções com erro */
-.heatmap {
-    display: grid;
-    gap: 2px;
-    align-items: center;
-}
-
-.heatmap-label {
-    font-size: 0.75rem;
-    color: var(--mud-palette-text-primary);
-    text-decoration: none;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    padding-right: 8px;
-}
-
-.heatmap-label:hover {
-    text-decoration: underline;
-}
-
-.heatmap-cell {
-    display: inline-block;
-    height: 20px;
-    min-width: 12px;
-    border-radius: 3px;
-}
-
-.heatmap-legend .heatmap-cell {
-    width: 16px;
-    height: 12px;
-}
-
-.heatmap-axis {
-    font-size: 0.6875rem;
-    color: var(--mud-palette-text-secondary);
-    white-space: nowrap;
-}
-
-.heat-none { background-color: transparent; border: 1px dashed var(--mud-palette-lines-default); }
-.heat-0 { background-color: color-mix(in srgb, var(--mud-palette-success) 18%, transparent); }
-.heat-1 { background-color: color-mix(in srgb, var(--mud-palette-error) 22%, transparent); }
-.heat-2 { background-color: color-mix(in srgb, var(--mud-palette-error) 45%, transparent); }
-.heat-3 { background-color: color-mix(in srgb, var(--mud-palette-error) 70%, transparent); }
-.heat-4 { background-color: var(--mud-palette-error); }
-
 /* Logs de Erros: cabeçalho do job com a situação atual, a última ocorrência e a mensagem mais recente numa linha */
 .job-group-head .job-title {
     white-space: nowrap;
@@ -780,4 +696,105 @@ code {
 .compact-table .mud-table-cell {
     padding-left: 8px !important;
     padding-right: 8px !important;
+}
+
+/* Cabeçalho padrão das telas (PageHeader): ícone no quadrado roxo, produto em laranja, nome da tela e o traço */
+.page-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.page-header-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    color: #fff;
+    background: linear-gradient(135deg, #7e6fff, #5a4ad6);
+    box-shadow: 0 4px 14px rgba(126, 111, 255, 0.35);
+}
+
+.page-header-eyebrow {
+    font-size: 0.65625rem;
+    font-weight: 700;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: var(--mud-palette-warning);
+}
+
+.page-header-title {
+    margin: 0;
+    font-size: 1.375rem;
+    font-weight: 600;
+    line-height: 1.15;
+    color: var(--mud-palette-text-primary);
+}
+
+.page-header-subtitle {
+    font-size: 0.75rem;
+    color: var(--mud-palette-text-secondary);
+    margin-top: 2px;
+}
+
+.page-header-bar {
+    height: 3px;
+    width: 64px;
+    border-radius: 2px;
+    margin-top: 8px;
+    background: linear-gradient(90deg, var(--mud-palette-primary), var(--mud-palette-warning));
+}
+
+/* Visão geral: registros por dia nos 7 últimos dias, no card de registros (RecordsByDay); hoje destacado */
+.records-by-day {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    height: 96px;
+    margin-top: 14px;
+}
+
+.records-day {
+    flex: 1 1 0;
+    min-width: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+}
+
+.records-day-bar {
+    width: 100%;
+    border-radius: 3px 3px 0 0;
+    background-color: color-mix(in srgb, var(--mud-palette-primary) 55%, transparent);
+}
+
+.records-day.today .records-day-bar {
+    background-color: var(--mud-palette-primary);
+}
+
+.records-day-value,
+.records-day-label {
+    font-size: 0.625rem;
+    color: var(--mud-palette-text-secondary);
+    white-space: nowrap;
+}
+
+.records-day.today .records-day-label {
+    color: var(--mud-palette-text-primary);
+    font-weight: 600;
+}
+
+/* Executar Querys: o seletor do banco com a cara do chip laranja de antes */
+.database-chip .mud-button-root {
+    border-radius: 20px;
+    text-transform: none;
+    font-size: 1rem;
+    font-weight: 400;
+    padding: 4px 14px;
 }

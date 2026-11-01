@@ -468,6 +468,16 @@ mockup para aprovação):
     saúde da Visão geral o ⋮ continua. Para os botões caberem sem rolar para o lado, a tabela tem células mais estreitas,
     a última execução em data curta e o resumo das procedures embaixo do título. Na Sob Demanda, os contadores de verbo
     viraram filtros (mais de um ao mesmo tempo; nenhum = todos).
+14. **Rodada 10 (01/11/2026, mockup v2 aprovado):** o cabeçalho de todas as telas virou o `PageHeader` (ícone em
+    quadrado com gradiente, "Monitor de Integrações · ETL" em cima, título menor e uma linha de subtítulo), no lugar do
+    texto grande. Visão geral: saíram as barras de execuções com erro por hora e o mapa de calor (`ErrorBars` e
+    `ErrorHeatmap` apagados); o card de registros ganhou as barras de registros por dia nos 7 últimos dias
+    (`RecordsByDay`, com o filtro de aplicação); os cards Taxa de Sucesso e Falhas Ativas ficaram como estavam; o painel
+    de saúde tem um grupo recolhível por aplicação, com os chips de saúde das integrações ativas no cabeçalho, as
+    aplicações com erro sem reconhecimento e depois as atrasadas primeiro e já abertas, até 10 integrações por aplicação
+    e "mais N · ver todas em Integrações". Logs de Erros: saiu a miniatura das execuções com erro no cabeçalho da
+    aplicação. Sob Demanda: o nome do método não traz mais o IdJob (fica no tooltip). Executar Querys: o chip do banco é
+    o seletor (menu com os bancos), no lugar do campo de seleção.
 
 # Fase 5 — Banco de dados (não implementar agora)
 

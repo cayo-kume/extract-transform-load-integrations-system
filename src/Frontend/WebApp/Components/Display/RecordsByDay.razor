@@ -1,0 +1,37 @@
+@* Registros processados por dia, nos 7 últimos dias (rodada 10), dentro do card de registros da Visão geral: uma barra
+   por dia da semana, o valor abreviado em cima e o completo no tooltip; hoje (ainda em curso) fica destacado. *@
+
+<div class="records-by-day" role="img" aria-label="Registros processados por dia, últimos 7 dias">
+    @foreach (var day in Days)
+    {
+        var today = day.Start.Date == (Now ?? DateTime.Now).Date;
+        var percent = Max == 0 ? 0 : day.Records * 100.0 / Max;
+        <div class="records-day @(today ? "today" : "")" title="@Tooltip(day, today)">
+            <span class="records-day-value">@Abbreviate(day.Records)</span>
+            <div class="records-day-bar" style="height: @(Math.Max(percent, 2).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture))%"></div>
+            <span class="records-day-label">@day.Start.ToString("ddd").TrimEnd('.')@(today ? " · hoje" : "")</span>
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>
+    /// Uma faixa por dia, na ordem do tempo (GetExecutionBucketsAsync com 7 dias e 7 faixas).
+    /// </summary>
+    [Parameter, EditorRequired] public IReadOnlyList<ExecutionBucketModel> Days { get; set; } = [];
+
+    [Parameter] public DateTime? Now { get; set; }
+
+    private int Max => Days.Count == 0 ? 0 : Days.Max(x => x.Records);
+
+    // "110 mi", "48 mil", "312"
+    private static string Abbreviate(int value) => value switch
+    {
+        >= 1_000_000 => $"{value / 1_000_000.0:0.#} mi",
+        >= 1_000 => $"{value / 1_000.0:0.#} mil",
+        _ => value.ToString("N0")
+    };
+
+    private static string Tooltip(ExecutionBucketModel day, bool today) =>
+        $"{day.Start:ddd dd/MM}{(today ? " (até agora)" : "")}: {day.Records:N0} registros em {day.Executions:N0} execuções";
+}

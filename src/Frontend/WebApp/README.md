@@ -28,12 +28,12 @@ usam o ambiente `Development`.
 | Rota | Tela |
 |---|---|
 | `/` | login (sem autenticação por enquanto) |
-| `/home` | visão geral: cards das aplicações (os com problema primeiro), métricas com a taxa de sucesso por aplicação e o delta contra a janela anterior, "Falhas Ativas" com os jobs, painel de saúde por gravidade, barras de execuções com erro por hora e mapa de calor aplicação × hora, atualizados a cada minuto |
+| `/home` | visão geral: cards das aplicações (os com problema primeiro), métricas com a taxa de sucesso por aplicação e o delta contra a janela anterior, "Falhas Ativas" com os jobs, registros por dia nos 7 últimos dias dentro do card de registros, painel de saúde com um grupo recolhível por aplicação (as com erro ou atraso primeiro e já abertas, até 10 integrações cada e o link para o resto em Integrações), atualizados a cada minuto |
 | `/applications` | cards das aplicações, com a imagem da empresa; o chip "Ativa" liga ou desliga o módulo (desligar pede confirmação) |
 | `/integrations` | Integrações (era Jobs e Integrações): todos os jobs, num grupo recolhível por aplicação, com o filtro **Situação** (Ativos, Inativos e Todos; abre em Ativos), o de tipo (Todos, Integrações e Procedures), o de saúde (os contadores do topo filtram; `?health=error`) e a busca. Na ordem do `IdJob`, cada integração com as procedures que chama dentro dela, o chip que liga ou desliga cada job (com "Desfazer"), duração e registros da última execução, e os botões Execuções, Executar agora e Reconhecer; cada job abre as execuções, mensagens e registros. O botão **Agenda** de cada aplicação põe a tabela em modo de edição da agenda. Os grupos começam fechados e abrem com uma aplicação só (`?app=70`), com o link de um job (`?job=3001&type=2`, em qualquer situação), com busca ou com filtro de saúde. As rotas `/jobs`, `/applications/jobs` e `/applications/{IdApp}/jobs` caem aqui; as `/applications/...` abrem em Todos |
 | `/errors` | Logs de Erros: mensagens de erro (e, se marcado, de aviso) do período, por aplicação, integração, procedure e causa, com busca pelo job e pelo texto; `?app=30&job=3001` abre o grupo |
 | `/on-demand` | Sob Demanda: as integrações sem agenda, no estilo do Swagger (método, parâmetros, corpo JSON, Executar e resposta), com filtro por verbo nos contadores do topo, só com a chave `Admin:Enabled` (abaixo) |
-| `/queries` | Executar Querys, com favoritas e querys prontas na barra lateral, só com a chave `Admin:Enabled` (abaixo) |
+| `/queries` | Executar Querys, com favoritas e querys prontas na barra lateral; o chip do banco no topo é o próprio seletor. Só com a chave `Admin:Enabled` (abaixo) |
 
 O menu lateral tem Visão Geral, Aplicações, Integrações, Logs de Erros e, para quem tem acesso, Sob Demanda e Executar
 Querys. As integrações sob demanda (sem agenda) não aparecem em Integrações nem no painel de saúde:
@@ -76,7 +76,7 @@ o cartão "Algo deu errado nesta tela", com "Tentar de novo", sem derrubar o pai
 | Execuções, registros, erros e avisos | linhas de `auditing.Logs` no período, com os registros (`auditing.Records`) e as mensagens de nível 3 e 2 (`auditing.Messages`) de cada uma |
 | Taxa de sucesso | execuções sem mensagem de erro ÷ execuções, no período; o delta compara com a janela anterior de mesmo tamanho |
 | Falhas ativas | jobs ativos com saúde **Erro** ou **Atrasado** agora, sem as falhas reconhecidas (contadas à parte) |
-| Barras e mapa de calor | execuções com erro por hora (por dia em 7 dias) e a proporção delas em cada aplicação |
+| Registros por dia | registros das execuções de cada um dos 7 últimos dias, com o filtro de aplicação (o período não muda o gráfico); hoje conta até agora |
 | Causa (Logs de Erros) | mensagens do job com o mesmo texto, trocando números e Guids por marcadores (`Data/MessageGrouping.cs`) |
 | Saúde | pela última execução do job: **Rodando** (sem fim), **Erro** (tem mensagem de erro), **Atrasado** (não começou nenhuma em 1 × o intervalo) ou **Ok**. Job sob demanda nunca fica atrasado, e job inativo não tem saúde |
 
@@ -90,7 +90,7 @@ implementada no back-end, o banco só tem `IsError`.
 | Arquivo | O que faz |
 |---|---|
 | `Data/Mocks/MockCatalog.cs` | as 6 aplicações e os 960 jobs dos módulos do host, copiados dos scripts de insert em `auditing.Apps` e `auditing.Jobs`. Job novo nos scripts entra aqui na mesma ordem |
-| `Data/Mocks/MockTimeline.cs` | gera as execuções a partir da agenda de cada job, sem guardar nada: os dados são os mesmos a cada carga, e as execuções novas aparecem conforme o relógio anda. Uma parte dos jobs tem um perfil fixo (inativo, atrasado, falhando, com muitos avisos, sempre rodando ou travado além do intervalo), para todos os estados aparecerem; às 3h as integrações falham mais (o padrão do mapa de calor); "Executar agora" cria uma execução 1 minuto depois, sempre sem erro |
+| `Data/Mocks/MockTimeline.cs` | gera as execuções a partir da agenda de cada job, sem guardar nada: os dados são os mesmos a cada carga, e as execuções novas aparecem conforme o relógio anda. Uma parte dos jobs tem um perfil fixo (inativo, atrasado, falhando, com muitos avisos, sempre rodando ou travado além do intervalo), para todos os estados aparecerem; às 3h as integrações falham mais; "Executar agora" cria uma execução 1 minuto depois, sempre sem erro |
 | `Data/Mocks/MockTexts.cs` | mensagens e registros, com os textos que os services gravam hoje |
 | `Data/Mocks/MockQueryRunner.cs` | executor falso da tela de consultas (abaixo) |
 

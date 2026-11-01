@@ -10,8 +10,8 @@
 @if (AdminAccess.IsAllowed)
 {
     <MudGrid>
-        <MudItem xs="5" Class="d-flex align-center justify-center pa-1">
-            <h1 class="ma-0 text-center">SOB DEMANDA</h1>
+        <MudItem xs="5" Class="d-flex align-center pa-1 pl-4">
+            <PageHeader Icon="@Icons.Material.Filled.PlayCircle" Title="Sob Demanda" Subtitle="Integrações sem agenda, chamadas na hora" />
         </MudItem>
 
         <MudItem xs="7">
@@ -76,7 +76,7 @@
                                     <div class="op op-@operation.Verb.ToLowerInvariant()" @key="operation.IdJob">
                                         <div class="op-head" role="button" tabindex="0" aria-expanded="@(open ? "true" : "false")" @onclick="@(() => ToggleOperation(operation.IdJob))" @onkeydown="@(e => OnOperationKeyDown(e, operation.IdJob))">
                                             <span class="op-verb">@operation.Verb</span>
-                                            <span class="op-name" title="@operation.Description">@operation.IdJob · @operation.Title — @operation.Description</span>
+                                            <span class="op-name" title="@($"IdJob {operation.IdJob}: {operation.Description}")">@operation.Title — @operation.Description</span>
                                             <MudIcon Icon="@(open ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)" Size="Size.Small" />
                                         </div>
                                         @if (open)

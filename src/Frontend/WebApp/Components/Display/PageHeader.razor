@@ -1,0 +1,25 @@
+@* Cabeçalho padrão das telas (rodada 10): o ícone da tela num quadrado com o roxo do tema, o nome do produto pequeno em
+   laranja (a cor da empresa no topo), o nome da tela, uma frase do que ela mostra e um traço roxo→laranja. *@
+
+<div class="page-header">
+    <div class="page-header-icon" aria-hidden="true">
+        <MudIcon Icon="@Icon" />
+    </div>
+    <div class="page-header-text">
+        <div class="page-header-eyebrow">Monitor de Integrações · ETL</div>
+        <h1 class="page-header-title">@Title</h1>
+        @if (!string.IsNullOrWhiteSpace(Subtitle))
+        {
+            <div class="page-header-subtitle">@Subtitle</div>
+        }
+        <div class="page-header-bar"></div>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Icon { get; set; } = default!;
+
+    [Parameter, EditorRequired] public string Title { get; set; } = default!;
+
+    [Parameter] public string? Subtitle { get; set; }
+}

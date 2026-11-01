@@ -9,8 +9,8 @@
 <PageTitle>Logs de Erros</PageTitle>
 
 <MudGrid>
-    <MudItem xs="5" Class="d-flex align-center justify-center pa-1">
-        <h1 class="ma-0 text-center">LOGS DE ERROS</h1>
+    <MudItem xs="5" Class="d-flex align-center pa-1 pl-4">
+        <PageHeader Icon="@Icons.Material.Filled.ReportProblem" Title="Logs de Erros" Subtitle="Erros e avisos por integração e causa" />
     </MudItem>
 
     @* sem o filtro de aplicação: os grupos abaixo já fazem esse papel; a busca acha o job pelo IdJob e pelo título, e as
@@ -57,12 +57,6 @@
                             <MudText Typo="Typo.caption">último erro @MonitorDisplay.Ago(lastError, _updatedAt) (@MonitorDisplay.Time(lastError, _updatedAt))</MudText>
                         }
                         <MudSpacer />
-                        @if (Sparkline(app.IdParent) is { } buckets)
-                        {
-                            <div class="error-sparkline" title="Execuções com erro no período, da mais antiga à mais recente">
-                                <ErrorBars Buckets="buckets" Height="22" />
-                            </div>
-                        }
                         @if (errors > 0)
                         {
                             <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Error" Icon="@Icons.Material.Filled.Error">@errors.ToString("N0") erro(s)</MudChip>
@@ -180,7 +174,6 @@
     private (int?, int?, int?)? _linked;
 
     private IReadOnlyList<AppSummaryModel> _apps = [];
-    private IReadOnlyList<AppBucketsModel> _sparklines = [];
 
     // jobs de cada aplicação (todos, e só os que têm o texto procurado), e os grupos abertos; começam todos recolhidos
     private readonly Dictionary<int, IReadOnlyList<MessageJobSummaryModel>> _jobs = [];
@@ -229,9 +222,6 @@
             .ThenByDescending(x => x.Job.LastErrorAt)
             .ToList();
     }
-
-    private IReadOnlyList<ExecutionBucketModel>? Sparkline(int idApp) =>
-        _sparklines.FirstOrDefault(x => x.IdApp == idApp)?.Buckets;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -331,7 +321,6 @@
         await Snackbar.TryAsync(Logger, async () =>
         {
             _apps = await MonitorRepository.GetAppSummariesAsync(_filter.Period);
-            _sparklines = await MonitorRepository.GetExecutionBucketsAsync(_filter.Period, buckets: 24);
             _updatedAt = DateTime.Now;
         }, "Não foi possível carregar as mensagens.");
 
