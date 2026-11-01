@@ -1,5 +1,5 @@
 @page "/on-demand"
-@inject OnDemandAccess OnDemandAccess
+@inject AdminAccess AdminAccess
 @inject IOnDemandRunner OnDemandRunner
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
@@ -7,7 +7,7 @@
 
 <PageTitle>Sob Demanda</PageTitle>
 
-@if (OnDemandAccess.IsAllowed)
+@if (AdminAccess.IsAllowed)
 {
     <MudGrid>
         <MudItem xs="5" Class="d-flex align-center justify-center pa-1">
@@ -116,7 +116,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        if (!OnDemandAccess.IsAllowed)
+        if (!AdminAccess.IsAllowed)
         {
             Navigation.NotFound();
             return;

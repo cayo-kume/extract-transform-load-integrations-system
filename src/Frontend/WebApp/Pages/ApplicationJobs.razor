@@ -32,61 +32,79 @@
             <TypeSegment Value="_type" ValueChanged="OnTypeChanged" />
         </div>
 
-        @foreach (var app in FilteredApps)
-        {
-            var nodes = NodesOf(app.IdParent);
+        <!-- Um grupo recolhível por aplicação, como em Integrações e Logs de Erros; dentro, as integrações com as procedures -->
+        <div class="px-4 pb-4 pt-2">
+            @foreach (var app in FilteredApps)
+            {
+                var nodes = NodesOf(app.IdParent);
+                var jobs = JobsIn(nodes);
+                var expanded = IsExpanded(app.IdParent);
 
-            <div @key="app.IdParent">
-                <div class="d-flex align-center gap-2 pa-4">
-                    <h3 class="ma-0 text-center"><strong>@app.IdParent - @app.Title</strong></h3>
-                    <MudText Typo="Typo.body2">@app.Description</MudText>
-                    <MudSpacer />
-                    <MudText Typo="Typo.caption">@(nodes.Count + nodes.Sum(x => x.Children.Count)) job(s)</MudText>
-                    <MudTooltip Text="Configurações do módulo">
-                        <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Default" OnClick="@(() => OpenSettings(app))" />
-                    </MudTooltip>
-                </div>
+                @* @key: sem ele, o Blazor reaproveita a MudTable de um grupo para outra aplicação quando o filtro muda *@
+                <div class="app-group" @key="app.IdParent">
+                    <div class="app-group-head" role="button" tabindex="0" aria-expanded="@(expanded ? "true" : "false")" @onclick="@(() => ToggleApp(app.IdParent))" @onkeydown="@(e => OnAppKeyDown(e, app.IdParent))">
+                        <MudIcon Icon="@(expanded ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)" Size="Size.Small" />
+                        <MudText Typo="Typo.subtitle2" Style="white-space: nowrap">@app.IdParent - @app.Title</MudText>
+                        <MudText Typo="Typo.caption" Class="app-group-description">@app.Description</MudText>
+                        <MudSpacer />
+                        <MudText Typo="Typo.caption" Style="white-space: nowrap">@jobs.Count job(s) · @jobs.Count(x => x.IsActive) ativo(s)</MudText>
+                        @foreach (var health in HealthCounts(jobs))
+                        {
+                            <MudTooltip Text="@health.Label">
+                                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@health.Color" Icon="@health.Icon">@health.Count</MudChip>
+                            </MudTooltip>
+                        }
+                        @* stopPropagation no clique e no teclado: a engrenagem não abre nem fecha o grupo *@
+                        <div @onclick:stopPropagation="true" @onkeydown:stopPropagation="true">
+                            <MudTooltip Text="Configurações do módulo">
+                                <MudIconButton Icon="@Icons.Material.Filled.Settings" Size="Size.Small" Color="Color.Default" OnClick="@(() => OpenSettings(app))" aria-label="Configurações do módulo" />
+                            </MudTooltip>
+                        </div>
+                    </div>
 
-                <!-- Integrações na ordem do IdJob, cada uma com as procedures que chama; 50 integrações por página -->
-                <div class="pa-4">
-                    <MudTable Items="@nodes" Hover="true" Dense="true" Breakpoint="Breakpoint.Sm" RowsPerPage="50" Elevation="0" RowClassFunc="@((node, _) => node.IsContext ? "context-row" : "")">
-                        <HeaderContent>
-                            <MudTh>IdJob</MudTh>
-                            <MudTh>Tipo</MudTh>
-                            <MudTh>Título</MudTh>
-                            <MudTh>Agenda</MudTh>
-                            <MudTh>Ativo</MudTh>
-                            <MudTh>Saúde</MudTh>
-                            <MudTh>Última execução</MudTh>
-                            <MudTh></MudTh>
-                        </HeaderContent>
-                        <RowTemplate>
-                            @JobCells((context.Job, context))
-                        </RowTemplate>
-                        <ChildRowContent>
-                            @Executions(context.Job)
-                            @if (JobTree.IsExpanded(context, _toggled))
-                            {
-                                @foreach (var child in context.Children)
+                    @if (expanded)
+                    {
+                        <!-- Integrações na ordem do IdJob, cada uma com as procedures que chama; 50 integrações por página -->
+                        <MudTable Items="@nodes" Hover="true" Dense="true" Breakpoint="Breakpoint.Sm" RowsPerPage="50" Elevation="0" RowClassFunc="@((node, _) => node.IsContext ? "context-row" : "")">
+                            <HeaderContent>
+                                <MudTh>IdJob</MudTh>
+                                <MudTh>Tipo</MudTh>
+                                <MudTh>Título</MudTh>
+                                <MudTh>Agenda</MudTh>
+                                <MudTh>Ativo</MudTh>
+                                <MudTh>Saúde</MudTh>
+                                <MudTh>Última execução</MudTh>
+                                <MudTh></MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                @JobCells((context.Job, context))
+                            </RowTemplate>
+                            <ChildRowContent>
+                                @Executions(context.Job)
+                                @if (JobTree.IsExpanded(context, _toggled))
                                 {
-                                    <MudTr @key="(child.IdJob, child.IdType)" Class="child-row">
-                                        @JobCells((child, null))
-                                    </MudTr>
-                                    @Executions(child)
+                                    @foreach (var child in context.Children)
+                                    {
+                                        <MudTr @key="(child.IdJob, child.IdType)" Class="child-row">
+                                            @JobCells((child, null))
+                                        </MudTr>
+                                        @Executions(child)
+                                    }
                                 }
-                            }
-                        </ChildRowContent>
-                        <PagerContent>
-                            <TablePager PageSizeOptions="new[] { 10, 25, 50 }" />
-                        </PagerContent>
-                    </MudTable>
+                            </ChildRowContent>
+                            <PagerContent>
+                                <TablePager PageSizeOptions="new[] { 10, 25, 50 }" />
+                            </PagerContent>
+                        </MudTable>
+                    }
                 </div>
-            </div>
-        }
-        @if (!_loading && !FilteredApps.Any())
-        {
-            <MudText Class="pa-4">Nenhum job encontrado.</MudText>
-        }
+            }
+
+            @if (!_loading && !FilteredApps.Any())
+            {
+                <MudText Typo="Typo.body2">Nenhum job encontrado.</MudText>
+            }
+        </div>
     </MudItem>
 </MudGrid>
 
@@ -124,6 +142,47 @@
 
     // integrações abertas ou fechadas pelo usuário (inverte o estado que o filtro escolheu)
     private readonly HashSet<(int, int)> _toggled = [];
+
+    // grupos de aplicação: abertos pelo usuário (quando começam fechados) e fechados pelo usuário (quando abrem sozinhos)
+    private readonly HashSet<int> _expandedApps = [];
+    private readonly HashSet<int> _collapsedApps = [];
+
+    // o grupo abre sozinho com uma aplicação só na rota, com o job do link ou com busca; nos outros casos começa fechado
+    private bool OpensByItself => IdApp is not null || _focusJob is not null || !string.IsNullOrWhiteSpace(_filter.Search);
+
+    private bool IsExpanded(int idApp) =>
+        OpensByItself ? !_collapsedApps.Contains(idApp) : _expandedApps.Contains(idApp);
+
+    private void ToggleApp(int idApp)
+    {
+        var set = OpensByItself ? _collapsedApps : _expandedApps;
+        if (!set.Remove(idApp))
+            set.Add(idApp);
+    }
+
+    // o cabeçalho é um div clicável; Enter e espaço fazem o mesmo papel para quem navega por teclado
+    private void OnAppKeyDown(KeyboardEventArgs args, int idApp)
+    {
+        if (args.Key is "Enter" or " ")
+            ToggleApp(idApp);
+    }
+
+    // os jobs mostrados no grupo: as integrações (sem as que só estão ali como cabeçalho) e as procedures
+    private static List<JobModel> JobsIn(List<JobNode> nodes) =>
+        nodes.Where(x => !x.IsContext).Select(x => x.Job).Concat(nodes.SelectMany(x => x.Children)).ToList();
+
+    private sealed record HealthCount(string Label, Color Color, string Icon, int Count);
+
+    // os chips de saúde de Integrações, mais um para os inativos, porque esta tela mostra ativos e inativos
+    private static IEnumerable<HealthCount> HealthCounts(List<JobModel> jobs)
+    {
+        foreach (var group in jobs.Where(x => x.IsActive).GroupBy(x => x.Health).OrderBy(x => x.Key is null ? int.MaxValue : (int)x.Key))
+            yield return new HealthCount(MonitorDisplay.HealthLabel(group.Key), MonitorDisplay.HealthColor(group.Key), MonitorDisplay.HealthIcon(group.Key), group.Count());
+
+        var inactive = jobs.Count(x => !x.IsActive);
+        if (inactive > 0)
+            yield return new HealthCount("Inativo", Color.Default, Icons.Material.Filled.PauseCircle, inactive);
+    }
 
     private IEnumerable<AppSummaryModel> FilteredApps => _apps
         .Where(x => _filter.IdApp is null || x.IdParent == _filter.IdApp)
@@ -250,6 +309,10 @@
             Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("period", MonitorDisplay.PeriodQuery(filter.Period)));
             return;
         }
+
+        // busca nova: os grupos abrem de novo (e, ao limpar, voltam a como o usuário deixou antes da busca)
+        if (filter.Search != _filter.Search)
+            _collapsedApps.Clear();
 
         _filter = filter;
     }

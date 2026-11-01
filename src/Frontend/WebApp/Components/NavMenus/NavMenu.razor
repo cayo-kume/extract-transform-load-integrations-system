@@ -1,5 +1,4 @@
-﻿@inject QueryRunnerAccess QueryRunnerAccess
-@inject OnDemandAccess OnDemandAccess
+﻿@inject AdminAccess AdminAccess
 
 <MudNavMenu>
     <MudImage ObjectFit="ObjectFit.Cover" Height="150" Width="240" Src="/images/logos/logo_150x300.png" />
@@ -8,12 +7,12 @@
     <MudNavLink Href="/applications" Match="NavLinkMatch.All">Aplicações</MudNavLink>
     <MudNavLink Href="/applications/jobs" Match="NavLinkMatch.All">Jobs</MudNavLink>
     <MudNavLink Href="/integrations" Match="NavLinkMatch.Prefix">Integrações</MudNavLink>
-    @if (OnDemandAccess.IsAllowed)
+    @if (AdminAccess.IsAllowed)
     {
         <MudNavLink Href="/on-demand" Match="NavLinkMatch.Prefix">Sob Demanda</MudNavLink>
     }
     <MudNavLink Href="/errors" Match="NavLinkMatch.Prefix">Logs de Erros</MudNavLink>
-    @if (QueryRunnerAccess.IsAllowed)
+    @if (AdminAccess.IsAllowed)
     {
         <MudNavLink Href="/queries" Match="NavLinkMatch.Prefix">Executar Querys</MudNavLink>
     }

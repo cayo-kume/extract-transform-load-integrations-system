@@ -251,8 +251,9 @@ A tela existe e é desenvolvida agora (decisão de 30/10/2026), mas é de uso re
 
 Sem autenticação, o acesso é controlado pelo ambiente em que o WebApp roda:
 
-1. Uma chave `QueryRunner:Enabled` no `appsettings.json`, `false` por padrão e fora de qualquer `appsettings` que vá
-   para o git como `true`. Ela é ligada só na máquina do Cayo, por User Secrets.
+1. Uma chave `Admin:Enabled` no `appsettings.json` (era `QueryRunner:Enabled`; desde 01/11/2026 a mesma chave libera
+   também a tela Sob Demanda), `false` por padrão e fora de qualquer `appsettings` que vá para o git como `true`. Ela é
+   ligada só na máquina do administrador, por User Secrets.
 2. A tela só abre com a chave ligada **e** o ambiente `Development`. Em qualquer outro caso, a rota `/queries` responde
    como página não encontrada e o item "Executar Querys" não aparece no menu.
 3. Quando o passo 14 entrar, a chave dá lugar a uma política de autorização ligada a um grupo do Entra ID, e a regra de
@@ -330,7 +331,7 @@ do WebApp explicando como rodar com o mock. Com isso, a parte visual está fecha
 
 ## Passo 9 — Documentação
 
-1. `README.md` do WebApp: como rodar com o mock, a chave `QueryRunner:Enabled` (passo 7.1), as telas e de onde vem cada
+1. `README.md` do WebApp: como rodar com o mock, a chave `Admin:Enabled` (passo 7.1), as telas e de onde vem cada
    número.
 2. Atualizar a linha do front-end no `README.md` da raiz, que hoje diz "em construção".
 3. Nas fases seguintes, o mesmo README ganha o que cada uma entregar: configuração do banco (fase 5), login e grupos
@@ -435,9 +436,15 @@ mockup para aprovação):
      conferidas antes de chamar, corpo JSON com exemplo e modelo, Executar, resposta e as últimas chamadas pelo painel,
      com o link para a execução. Empresa e usuário vêm preenchidos e travados. GET executa direto; POST, PUT e PATCH pedem
      confirmação; DELETE, em vermelho. `?job=3002` abre o método.
-   - Acesso como Executar Querys: só com `OnDemand:Enabled` e o ambiente Development, até a autenticação (passo 14).
+   - Acesso como Executar Querys: só com `Admin:Enabled` (a mesma chave das duas telas de administrador) e o ambiente
+     Development, até a autenticação (passo 14).
    - Nesta fase, `MockOnDemandRunner`: o catálogo sai das descrições dos jobs (e de uma tabela com as rotas da AfterSale e
      do DataWarehouse, copiadas dos controllers), a resposta é simulada e a chamada que roda vira uma execução do job.
+10. **Rodada 6 (01/11/2026, mockup aprovado):** Jobs com um grupo recolhível por aplicação, como Integrações e Logs de
+    Erros. O cabeçalho mostra código, nome e descrição da aplicação, "N job(s) · N ativo(s)", os chips de saúde (com um
+    para os inativos, porque a tela mostra os dois) e a engrenagem do módulo. Os grupos começam fechados em
+    `/applications/jobs`; abrem sozinhos com uma aplicação só na rota, com o link de um job (`?job=`) ou com busca, e o
+    usuário pode fechar. Uma chave só, `Admin:Enabled`, passou a liberar Executar Querys e Sob Demanda (`AdminAccess`).
 
 # Fase 5 — Banco de dados (não implementar agora)
 
@@ -626,8 +633,8 @@ comentado.
 
 Grupos do Entra ID para as funções restritas. Quem não está em nenhum grupo só lê o painel.
 
-1. **Executar Querys:** um grupo próprio, numa política de autorização, no lugar da chave `QueryRunner:Enabled` e da
-   regra de `Development` (passo 7.1).
+1. **Executar Querys e Sob Demanda:** o grupo de administradores, numa política de autorização, no lugar da chave
+   `Admin:Enabled` e da regra de `Development` (passo 7.1).
 2. **Edição da agenda:** um grupo para quem pode ligar e desligar jobs e mudar horários no diálogo de configurações
    (passo 6). A gravação é um `UPDATE` só das colunas `IsActive`, `IntervalTimeInMinutes`, `RunningDailyAt` e `Queue`,
    feito por um método `UpdateJobScheduleAsync` no `MonitorRepository`, com a permissão de `UPDATE` nessas colunas

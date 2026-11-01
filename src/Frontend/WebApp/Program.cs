@@ -28,12 +28,13 @@ builder.Services.AddSingleton<IMonitorRepository, MockMonitorRepository>();
 // Último período escolhido, por aba (circuito): acompanha o usuário entre as telas quando a URL não traz ?period=
 builder.Services.AddScoped<FilterSession>();
 
-// Executar Querys: acesso pela chave QueryRunner:Enabled em Development e, até a fase 5, o executor falso
-builder.Services.AddSingleton<QueryRunnerAccess>();
+// Telas de administrador (Executar Querys e Sob Demanda): acesso pela chave Admin:Enabled em Development
+builder.Services.AddSingleton<AdminAccess>();
+
+// Executar Querys: até a fase 5, o executor falso
 builder.Services.AddSingleton<IQueryRunner, MockQueryRunner>();
 
-// Sob Demanda: acesso pela chave OnDemand:Enabled em Development e, até a fase 5, respostas simuladas
-builder.Services.AddSingleton<OnDemandAccess>();
+// Sob Demanda: até a fase 5, respostas simuladas
 builder.Services.AddSingleton<IOnDemandRunner, MockOnDemandRunner>();
 
 var app = builder.Build();

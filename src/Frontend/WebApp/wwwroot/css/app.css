@@ -726,3 +726,12 @@ code {
     font-weight: 700;
     color: var(--mud-palette-warning);
 }
+
+/* Jobs: a descrição da aplicação no cabeçalho do grupo, numa linha, cortada com reticências */
+.app-group-description {
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 0.8;
+}

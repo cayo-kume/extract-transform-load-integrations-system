@@ -30,11 +30,11 @@ usam o ambiente `Development`.
 | `/` | login (sem autenticação por enquanto) |
 | `/home` | visão geral: cards das aplicações (os com problema primeiro), métricas com a taxa de sucesso por aplicação e o delta contra a janela anterior, "Falhas Ativas" com os jobs, painel de saúde por gravidade, barras de execuções com erro por hora e mapa de calor aplicação × hora, atualizados a cada minuto |
 | `/applications` | cards das aplicações, com a imagem da empresa; o chip "Ativa" liga ou desliga o módulo (desligar pede confirmação) |
-| `/applications/jobs` e `/applications/{IdApp}/jobs` | todos os jobs da aplicação (ativos e inativos), na ordem do `IdJob`, cada integração com as procedures que chama dentro dela, com filtro Todos / Integrações / Procedures e o chip que liga ou desliga cada um (com "Desfazer"); cada job abre as execuções, mensagens e registros. `?job=3001&type=2` mostra só esse job, já aberto |
+| `/applications/jobs` e `/applications/{IdApp}/jobs` | todos os jobs (ativos e inativos), num grupo recolhível por aplicação (fechados em `/applications/jobs`, aberto com uma aplicação só, com o link de um job ou com busca), com o total de jobs, de ativos e os chips de saúde no cabeçalho; na ordem do `IdJob`, cada integração com as procedures que chama dentro dela, com filtro Todos / Integrações / Procedures e o chip que liga ou desliga cada um (com "Desfazer"); cada job abre as execuções, mensagens e registros. `?job=3001&type=2` mostra só esse job, já aberto |
 | `/integrations` | só os jobs ativos, aninhados por aplicação e, dentro dela, procedures dentro da integração pai, com filtro de tipo e de saúde (os contadores do topo filtram; `?health=error`); a engrenagem do grupo abre as configurações do módulo |
 | `/errors` | Logs de Erros: mensagens de erro (e, se marcado, de aviso) do período, por aplicação, integração, procedure e causa, com busca pelo job e pelo texto; `?app=30&job=3001` abre o grupo |
-| `/on-demand` | Sob Demanda: as integrações sem agenda, no estilo do Swagger (método, parâmetros, corpo JSON, Executar e resposta), só com a chave `OnDemand:Enabled` (abaixo) |
-| `/queries` | Executar Querys, com favoritas e querys prontas na barra lateral, só com a chave `QueryRunner:Enabled` (abaixo) |
+| `/on-demand` | Sob Demanda: as integrações sem agenda, no estilo do Swagger (método, parâmetros, corpo JSON, Executar e resposta), só com a chave `Admin:Enabled` (abaixo) |
+| `/queries` | Executar Querys, com favoritas e querys prontas na barra lateral, só com a chave `Admin:Enabled` (abaixo) |
 
 O menu lateral tem Visão Geral, Aplicações, Jobs, Integrações, Logs de Erros e, para quem tem acesso, Sob Demanda e
 Executar Querys. As integrações sob demanda (sem agenda) não aparecem em Jobs, Integrações, Agenda nem no painel de saúde:
@@ -102,20 +102,23 @@ proporção das chamadas do mock falhar:
 dotnet user-secrets set "MockMonitorRepository:FailureRate" "0.3" --project src/Frontend/WebApp
 ```
 
-## Executar Querys
+## Telas de administrador
 
-A tela consulta e altera qualquer banco do servidor, por isso é restrita. Até a autenticação, ela só abre com as duas
-condições:
+Executar Querys altera qualquer banco do servidor, e Sob Demanda escreve nos sistemas de origem (Movidesk, Totvs,
+AfterSale), por isso as duas são restritas ao administrador. Até a autenticação, elas só abrem com as duas condições:
 
 1. o ambiente `Development`;
-2. a chave `QueryRunner:Enabled = true`, que fica `false` no `appsettings.json` e é ligada só na máquina de quem usa a
-   tela, por User Secrets:
+2. a chave `Admin:Enabled = true`, que fica `false` no `appsettings.json` e é ligada só na máquina do administrador, por
+   User Secrets. Uma chave só libera as duas telas:
 
 ```bash
-dotnet user-secrets set "QueryRunner:Enabled" "true" --project src/Frontend/WebApp
+dotnet user-secrets set "Admin:Enabled" "true" --project src/Frontend/WebApp
 ```
 
-Fora disso, `/queries` cai na página de não encontrado e o item some do menu.
+Para esconder as duas de novo, `dotnet user-secrets remove "Admin:Enabled" --project src/Frontend/WebApp`; depois de mudar
+a chave, reinicie o app. Fora disso, `/queries` e `/on-demand` caem na página de não encontrado e os itens somem do menu.
+
+## Executar Querys
 
 O que a tela faz:
 
@@ -136,13 +139,7 @@ Server e `WAITFOR` demora 8 s, para testar o cancelamento.
 
 ## Sob Demanda
 
-As operações escrevem nos sistemas de origem (Movidesk, Totvs, AfterSale), por isso a tela é restrita como Executar
-Querys: só abre no ambiente `Development` com a chave `OnDemand:Enabled = true`, ligada por User Secrets na máquina de
-quem usa:
-
-```bash
-dotnet user-secrets set "OnDemand:Enabled" "true" --project src/Frontend/WebApp
-```
+Restrita ao administrador, com a mesma chave `Admin:Enabled` de Executar Querys (acima).
 
 Até a fase 5, o `MockOnDemandRunner` não chama o host: o catálogo sai das descrições dos jobs, a resposta é simulada (um
 em cada seis GETs devolve 404) e a chamada que roda vira uma execução do job, que "Ver execução" abre.
