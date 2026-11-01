@@ -75,6 +75,17 @@ namespace WebApp.Data
         Task SetJobActiveAsync(int idJob, int idType, bool isActive, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Agenda de uma integração: intervalo em minutos (0 = sob demanda), hora diária (com ela, o intervalo é 1440) e
+        /// fila do host. Na implementação real, é um UPDATE em auditing.Jobs na linha da empresa; o host relê no próximo ciclo.
+        /// </summary>
+        Task SetJobScheduleAsync(int idJob, int idType, int intervalTimeInMinutes, TimeOnly? runningDailyAt, string queue, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Filas que os jobs já usam, para sugerir no campo Fila.
+        /// </summary>
+        Task<IReadOnlyList<string>> GetQueuesAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Liga ou desliga todos os jobs de um módulo (o chip "Ativa" do card).
         /// </summary>
         Task SetModuleActiveAsync(int idApp, bool isActive, CancellationToken cancellationToken = default);

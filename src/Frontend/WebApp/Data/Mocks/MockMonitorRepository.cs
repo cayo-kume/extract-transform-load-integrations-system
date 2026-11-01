@@ -32,6 +32,10 @@ namespace WebApp.Data.Mocks
         private readonly Dictionary<(int IdJob, int IdType), AcknowledgementModel> _acknowledgements = new();
         private readonly Dictionary<(int IdJob, int IdType), RunRequestModel> _runRequests = new();
 
+        // agenda alterada pelo diálogo de configurações; no mock, muda o que as telas mostram, mas as execuções continuam
+        // geradas pela agenda do catálogo (quem passaria a rodar na agenda nova é o host)
+        private readonly Dictionary<(int IdJob, int IdType), (int Interval, TimeOnly? DailyAt, string Queue)> _schedules = new();
+
         private (Period Period, DateTime Minute, IReadOnlyList<AppSummaryModel> Result)? _summariesCache;
         private readonly Dictionary<(Period Period, int Buckets, bool Previous), (DateTime Minute, IReadOnlyList<AppBucketsModel> Result)> _bucketsCache = new();
 
@@ -152,6 +156,7 @@ namespace WebApp.Data.Mocks
                 .Select(x =>
                 {
                     var last = _timeline.Last(x, now);
+                    var schedule = ScheduleOf(x);
 
                     return new JobModel
                     {
@@ -162,10 +167,10 @@ namespace WebApp.Data.Mocks
                         JobType = JobType(x.Catalog.IdType),
                         Title = x.Catalog.Title,
                         Description = x.Catalog.Description,
-                        IntervalTimeInMinutes = x.Catalog.IntervalTimeInMinutes,
+                        IntervalTimeInMinutes = schedule.Interval,
                         IsActive = x.IsActive,
-                        RunningDailyAt = x.Catalog.RunningDailyAt,
-                        Queue = x.Catalog.Queue,
+                        RunningDailyAt = schedule.DailyAt,
+                        Queue = schedule.Queue,
                         LastExecution = last is null ? null : ToModel(last),
                         Health = _timeline.Health(x, last, now),
                         Acknowledgement = AcknowledgementOf(x, last, now),
@@ -497,6 +502,37 @@ namespace WebApp.Data.Mocks
                 job.ActiveOverride = isActive;
 
             Changed();
+        }
+
+        public async Task SetJobScheduleAsync(int idJob, int idType, int intervalTimeInMinutes, TimeOnly? runningDailyAt, string queue, CancellationToken cancellationToken = default)
+        {
+            await Delay(cancellationToken);
+
+            FindJob(idJob, idType);
+            if (intervalTimeInMinutes < 0)
+                throw new ArgumentOutOfRangeException(nameof(intervalTimeInMinutes), "O intervalo não pode ser negativo.");
+
+            lock (_stateLock)
+                _schedules[(idJob, idType)] = (runningDailyAt is null ? intervalTimeInMinutes : 1440, runningDailyAt, queue.Trim());
+
+            Changed();
+        }
+
+        public async Task<IReadOnlyList<string>> GetQueuesAsync(CancellationToken cancellationToken = default)
+        {
+            await Delay(cancellationToken);
+
+            return _timeline.Jobs.Select(x => ScheduleOf(x).Queue).Distinct().Order().ToList();
+        }
+
+        private (int Interval, TimeOnly? DailyAt, string Queue) ScheduleOf(MockJob job)
+        {
+            lock (_stateLock)
+            {
+                return _schedules.TryGetValue((job.Catalog.IdJob, job.Catalog.IdType), out var schedule)
+                    ? schedule
+                    : (job.Catalog.IntervalTimeInMinutes, job.Catalog.RunningDailyAt, job.Catalog.Queue);
+            }
         }
 
         public async Task AcknowledgeAsync(int idJob, int idType, string? note, CancellationToken cancellationToken = default)

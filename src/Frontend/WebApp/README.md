@@ -30,9 +30,9 @@ usam o ambiente `Development`.
 | `/` | login (sem autenticação por enquanto) |
 | `/home` | visão geral: cards das aplicações (os com problema primeiro), métricas com a taxa de sucesso por aplicação e o delta contra a janela anterior, "Falhas Ativas" com os jobs, painel de saúde por gravidade, barras de execuções com erro por hora e mapa de calor aplicação × hora, atualizados a cada minuto |
 | `/applications` | cards das aplicações, com a imagem da empresa; o chip "Ativa" liga ou desliga o módulo (desligar pede confirmação) |
-| `/applications/jobs` e `/applications/{IdApp}/jobs` | todos os jobs da aplicação (ativos e inativos), na ordem do `IdJob`, com filtro Todos / Integrações / Procedures e o chip que liga ou desliga cada um (com "Desfazer"); cada job abre as execuções, mensagens e registros. `?job=3001&type=2` mostra só esse job, já aberto |
-| `/integrations` | só os jobs ativos (integrações e procedures), aninhados por aplicação, com filtro de tipo e de saúde (os contadores do topo filtram; `?health=error`); a engrenagem do grupo abre as configurações do módulo |
-| `/errors` | Logs de Erros: mensagens de erro (e, se marcado, de aviso) do período, por aplicação, job e causa, com busca pelo job e pelo texto; `?app=30&job=3001` abre o grupo |
+| `/applications/jobs` e `/applications/{IdApp}/jobs` | todos os jobs da aplicação (ativos e inativos), na ordem do `IdJob`, cada integração com as procedures que chama dentro dela, com filtro Todos / Integrações / Procedures e o chip que liga ou desliga cada um (com "Desfazer"); cada job abre as execuções, mensagens e registros. `?job=3001&type=2` mostra só esse job, já aberto |
+| `/integrations` | só os jobs ativos, aninhados por aplicação e, dentro dela, procedures dentro da integração pai, com filtro de tipo e de saúde (os contadores do topo filtram; `?health=error`); a engrenagem do grupo abre as configurações do módulo |
+| `/errors` | Logs de Erros: mensagens de erro (e, se marcado, de aviso) do período, por aplicação, integração, procedure e causa, com busca pelo job e pelo texto; `?app=30&job=3001` abre o grupo |
 | `/queries` | Executar Querys, com favoritas e querys prontas na barra lateral, só com a chave `QueryRunner:Enabled` (abaixo) |
 
 O menu lateral tem Visão Geral, Aplicações, Jobs, Integrações, Logs de Erros e, para quem tem acesso, Executar Querys.
@@ -49,7 +49,12 @@ Erros, o botão **Execução** abre a execução da mensagem num diálogo, com o
 para a query pronta; os blocos de exceção, pilha e SQL têm botão de copiar, e "Copiar tudo" junta o contexto para um
 chamado. Aplicações, Jobs, Integrações e Logs de Erros têm "Atualizado às" e o botão de recarregar.
 
-Ativar ou desativar um job ou um módulo, reconhecer uma falha, pedir uma execução e trocar a imagem de uma aplicação só
+As procedures aparecem dentro da integração que as chama (o `IdParent` delas), com a setinha na linha da integração e o
+resumo "11 procedures · 1 com erro". Na aba Agenda do diálogo de configurações (engrenagem dos cards e dos grupos de
+Integrações), o intervalo, a hora diária e a fila das integrações são editáveis e só gravam em "Salvar alterações", com
+confirmação.
+
+Ativar ou desativar um job ou um módulo, mudar a agenda, reconhecer uma falha, pedir uma execução e trocar a imagem de uma aplicação só
 mudam o mock e somem ao reiniciar o app. Com o banco, viram `UPDATE` em `auditing.Jobs.IsActive`, gravação em
 `monitor.JobAcknowledgement` e `monitor.AppImage` e o pedido lido pelo host, por empresa
 (`src/Backend/Shared/docs/PROPOSTA-DOC-COMPANY-AUDITING.md` e o passo 11.5 do plano).

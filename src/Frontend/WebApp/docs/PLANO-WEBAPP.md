@@ -409,6 +409,22 @@ mockup para aprovação):
      mouse; o resultado do `SELECT` filtra por qualquer célula e ordena pelas colunas, e "Exportar filtrado" aparece com
      filtro ativo ("Exportar CSV" continua exportando tudo).
    - **Correção:** Enter na engrenagem de um grupo em Integrações não abre nem fecha mais o grupo.
+8. **Rodada 4 (01/11/2026, mockup aprovado):**
+   - **Procedures dentro da integração pai** (`IdParent` da procedure = `IdJob` da integração; `Components/Display/JobTree.cs`)
+     em Jobs, Integrações e na aba Agenda: a integração tem a setinha que mostra as procedures recuadas, com o resumo
+     "11 procedures · 1 com erro". Todos / Integrações / Procedures: só integrações não mostra filhas; só procedures
+     mostra cada uma sob a integração pai em cinza, já aberta. A busca e o link (`?job=`) abrem a integração com as filhas
+     que casaram; integração que casa traz todas. Integração que não passa no filtro (inativa em Integrações, ou noutro
+     estado de saúde) aparece em cinza como cabeçalho das procedures que passam. A paginação de 50 conta só integrações.
+   - **Aba Agenda editável:** intervalo (min), hora diária e fila das integrações; a procedure só liga e desliga (roda
+     com a integração). Com hora diária, o intervalo fica 1440. A fila sugere as que já existem e aceita uma nova com a
+     regra do host (minúsculas, dígitos, _ e -), avisando que ela precisa estar em `Hangfire:Server:Queues`. Nada grava
+     até "Salvar alterações", que confirma listando cada mudança; fechar com alterações pendentes pergunta antes de
+     descartar. No mock, a agenda nova muda o que as telas mostram, mas as execuções seguem a agenda do catálogo.
+   - **Logs de Erros:** aplicação → integração → procedures. O cabeçalho da integração soma os erros dela e das filhas
+     ("2 próprio(s) · 7 nas procedures") e mostra a saúde da integração; dentro dele ficam as causas da própria integração e
+     um cabeçalho por procedure com mensagens, com tudo o que o cabeçalho de job já tinha (saúde, última ocorrência,
+     mensagem, causas, link) e as próprias causas. Ainda falhando (a integração ou alguma filha) primeiro.
 
 # Fase 5 — Banco de dados (não implementar agora)
 
@@ -535,6 +551,9 @@ abertas atualizando sozinhas (passo 4.6), o banco recebe uma consulta por minuto
    do job no período, não com `GROUP BY` no SQL; `GetExecutionAsync` é uma leitura pela PK lógica (`Execution`).
 4. **Gráficos:** `GetExecutionBucketsAsync` é um `GROUP BY` da hora (ou do dia) de `StartDate` em `auditing.Logs`, por
    aplicação, com `EXISTS` em `auditing.Messages` de erro.
+5. **Agenda (rodada 4):** `SetJobScheduleAsync` é um `UPDATE` de `IntervalTimeInMinutes`, `RunningDailyAt` e `Queue` em
+   `auditing.Jobs` na linha da empresa, liberado ao `etl_monitor` só nessas colunas (passo 10) e, na fase 6, só ao grupo
+   que edita a agenda (passo 14); `GetQueuesAsync` é um `SELECT DISTINCT Queue`.
 
 ## Passo 12 — Executar Querys com o banco
 

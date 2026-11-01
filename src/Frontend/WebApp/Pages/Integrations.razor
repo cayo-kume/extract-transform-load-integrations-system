@@ -72,7 +72,8 @@
 
                     @if (expanded)
                     {
-                        <MudTable Items="@group.ToList()" Hover="true" Dense="true" Breakpoint="Breakpoint.Sm" RowsPerPage="50" Elevation="0">
+                        @* as integrações com as procedures que chamam; integração inativa aparece em cinza quando tem procedure ativa *@
+                        <MudTable Items="@NodesOf(group.Key)" Hover="true" Dense="true" Breakpoint="Breakpoint.Sm" RowsPerPage="50" Elevation="0" RowClassFunc="@((node, _) => node.IsContext ? "context-row" : "")">
                             <HeaderContent>
                                 <MudTh>IdJob</MudTh>
                                 <MudTh>Tipo</MudTh>
@@ -85,33 +86,19 @@
                                 <MudTh></MudTh>
                             </HeaderContent>
                             <RowTemplate>
-                                <MudTd DataLabel="IdJob">@context.IdJob</MudTd>
-                                <MudTd DataLabel="Tipo">@context.JobType</MudTd>
-                                <MudTd DataLabel="Título">
-                                    <MudTooltip Text="@context.Description">@context.Title</MudTooltip>
-                                </MudTd>
-                                <MudTd DataLabel="Agenda">@MonitorDisplay.Schedule(context)</MudTd>
-                                <MudTd DataLabel="Saúde"><HealthChip Context="HealthContext.From(context)" Now="_updatedAt" /></MudTd>
-                                <MudTd DataLabel="Última execução">@MonitorDisplay.Date(context.LastExecution?.StartDate)</MudTd>
-                                <MudTd DataLabel="Duração"><DurationText Start="context.LastExecution?.StartDate" End="context.LastExecution?.EndDate" Now="_updatedAt" /></MudTd>
-                                <MudTd DataLabel="Registros">@context.LastExecution?.Records</MudTd>
-                                <MudTd>
-                                    <div class="d-flex align-center gap-1">
-                                        <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => Toggle(context))">
-                                            @(_opened.Contains((context.IdJob, context.IdType)) ? "Ocultar" : "Execuções")
-                                        </MudButton>
-                                        <JobActions Job="context" OnChanged="Load" />
-                                    </div>
-                                </MudTd>
+                                @JobCells((context.Job, context))
                             </RowTemplate>
                             <ChildRowContent>
-                                @if (_opened.Contains((context.IdJob, context.IdType)))
+                                @Executions(context.Job)
+                                @if (JobTree.IsExpanded(context, _toggled))
                                 {
-                                    <MudTr>
-                                        <td colspan="9">
-                                            <JobExecutions Job="context" Period="_filter.Period" />
-                                        </td>
-                                    </MudTr>
+                                    @foreach (var child in context.Children)
+                                    {
+                                        <MudTr @key="(child.IdJob, child.IdType)" Class="child-row">
+                                            @JobCells((child, null))
+                                        </MudTr>
+                                        @Executions(child)
+                                    }
                                 }
                             </ChildRowContent>
                             <PagerContent>
@@ -166,8 +153,69 @@
 
     // com o filtro de saúde: falhas reconhecidas não contam como Erro ou Atrasado (o mesmo critério de "Falhas Ativas")
     private List<JobModel> FilteredJobs => ActiveJobs
-        .Where(x => _health is null || (x.Health == _health && (_health is not (JobHealth.Error or JobHealth.Late) || x.Acknowledgement is null)))
+        .Where(HealthMatches)
         .ToList();
+
+    private bool HealthMatches(JobModel job) =>
+        _health is null || (job.Health == _health && (_health is not (JobHealth.Error or JobHealth.Late) || job.Acknowledgement is null));
+
+    // integrações abertas ou fechadas pelo usuário (inverte o estado que o filtro escolheu)
+    private readonly HashSet<(int, int)> _toggled = [];
+
+    // as integrações da aplicação com as procedures que chamam; a integração que não passa no filtro (inativa, ou em
+    // outro estado de saúde) fica como cabeçalho em cinza das procedures que passam
+    private List<JobNode> NodesOf(int idApp) => JobTree.Build(
+        _jobs.Where(x => x.IdApp == idApp).ToList(),
+        filter: x => x.IsActive && HealthMatches(x),
+        matches: x => _filter.Matches(x.IdJob.ToString(), x.Title, x.Description),
+        _type,
+        narrowing: _health is not null || !string.IsNullOrWhiteSpace(_filter.Search));
+
+    // as células de uma linha, iguais para a integração (com a setinha e o resumo das procedures) e para a procedure
+    private RenderFragment JobCells((JobModel Job, JobNode? Node) row) => __builder =>
+    {
+        var job = row.Job;
+        <MudTd DataLabel="IdJob" Class="@(row.Node is null ? "child-indent" : "")" Style="white-space: nowrap">
+            @if (row.Node is { } node)
+            {
+                <JobTreeToggle Node="node" Toggled="_toggled" OnToggle="@(() => JobTree.Toggle(node, _toggled))" />
+            }
+            @job.IdJob
+        </MudTd>
+        <MudTd DataLabel="Tipo">@job.JobType</MudTd>
+        <MudTd DataLabel="Título">
+            <MudTooltip Text="@job.Description">@job.Title</MudTooltip>
+            @if (row.Node is { TotalChildren: > 0 } parent)
+            {
+                <MudText Typo="Typo.caption" Class="ml-2" Color="@(parent.FailingChildren > 0 ? Color.Error : Color.Default)">@parent.Summary</MudText>
+            }
+        </MudTd>
+        <MudTd DataLabel="Agenda">@(JobTree.IsProcedure(job) ? $"com a {job.IdParent}" : MonitorDisplay.Schedule(job))</MudTd>
+        <MudTd DataLabel="Saúde"><HealthChip Context="HealthContext.From(job)" Now="_updatedAt" /></MudTd>
+        <MudTd DataLabel="Última execução">@MonitorDisplay.Date(job.LastExecution?.StartDate)</MudTd>
+        <MudTd DataLabel="Duração"><DurationText Start="job.LastExecution?.StartDate" End="job.LastExecution?.EndDate" Now="_updatedAt" /></MudTd>
+        <MudTd DataLabel="Registros">@job.LastExecution?.Records</MudTd>
+        <MudTd>
+            <div class="d-flex align-center gap-1">
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => Toggle(job))">
+                    @(_opened.Contains((job.IdJob, job.IdType)) ? "Ocultar" : "Execuções")
+                </MudButton>
+                <JobActions Job="job" OnChanged="Load" />
+            </div>
+        </MudTd>
+    };
+
+    private RenderFragment Executions(JobModel job) => __builder =>
+    {
+        if (_opened.Contains((job.IdJob, job.IdType)))
+        {
+            <MudTr>
+                <td colspan="9">
+                    <JobExecutions Job="job" Period="_filter.Period" />
+                </td>
+            </MudTr>
+        }
+    };
 
     private IEnumerable<IGrouping<int, JobModel>> Groups => FilteredJobs
         .GroupBy(x => x.IdApp)

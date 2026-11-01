@@ -1,9 +1,11 @@
 @inject IMonitorRepository MonitorRepository
 @inject ISnackbar Snackbar
 @inject ILogger<ModuleConfigurations> Logger
+@inject IDialogService DialogService
 
 @* Configurações de um módulo para a empresa logada, em abas: imagem (a da empresa), credenciais e parâmetros (só leitura
-   nesta fase) e agenda (ativar e desativar cada job). Ver docs/PLANO-WEBAPP.md, "Ajustes de layout". *@
+   nesta fase) e agenda (ativar e desativar cada job, e o intervalo, a hora diária e a fila das integrações, com as
+   procedures dentro da integração que as chama). Ver docs/PLANO-WEBAPP.md, "Ajustes de layout". *@
 
 <MudDialog>
     <TitleContent>
@@ -65,23 +67,83 @@
 
                 <MudTabPanel Text="Agenda">
                     <div class="pa-2">
-                        <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3">Ativar ou desativar um job vale para a empresa logada. Nesta fase, só muda o mock; com o banco, grava em auditing.Jobs.IsActive.</MudAlert>
-                        <MudTextField T="string" @bind-Value="_search" Immediate="true" Label="Pesquisar job" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-2" />
-                        <MudTable Items="@FilteredJobs" Dense="true" Hover="true" Breakpoint="Breakpoint.Sm" RowsPerPage="50" Elevation="0">
+                        <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3">Ativar, desativar e a agenda valem para a empresa logada. Nesta fase só mudam o mock; com o banco, gravam em auditing.Jobs (IsActive, IntervalTimeInMinutes, RunningDailyAt e Queue).</MudAlert>
+                        <div class="d-flex align-center gap-4 mb-2 flex-wrap">
+                            <div style="width: 280px">
+                                <MudTextField T="string" @bind-Value="_search" Immediate="true" Label="Pesquisar job" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search" />
+                            </div>
+                            <MudSpacer />
+                            <TypeSegment Value="_type" ValueChanged="@(x => _type = x)" />
+                        </div>
+
+                        <!-- Integrações com as procedures que elas chamam; a agenda se edita só na integração (a procedure roda com ela) -->
+                        <MudTable Items="@Nodes" Dense="true" Hover="true" Breakpoint="Breakpoint.Sm" RowsPerPage="50" Elevation="0" RowClassFunc="@RowClass">
                             <HeaderContent>
                                 <MudTh>IdJob</MudTh>
-                                <MudTh>Tipo</MudTh>
                                 <MudTh>Título</MudTh>
-                                <MudTh>Agenda</MudTh>
+                                <MudTh>Intervalo (min)</MudTh>
+                                <MudTh>Diário às</MudTh>
+                                <MudTh>Fila</MudTh>
                                 <MudTh>Ativo</MudTh>
                             </HeaderContent>
                             <RowTemplate>
-                                <MudTd DataLabel="IdJob">@context.IdJob</MudTd>
-                                <MudTd DataLabel="Tipo">@context.JobType</MudTd>
-                                <MudTd DataLabel="Título">@context.Title</MudTd>
-                                <MudTd DataLabel="Agenda">@MonitorDisplay.Schedule(context)</MudTd>
-                                <MudTd DataLabel="Ativo"><MudSwitch T="bool" Value="context.IsActive" ValueChanged="@(v => SetJobActive(context, v))" Color="Color.Success" Size="Size.Small" /></MudTd>
+                                @{ var job = context.Job; }
+                                <MudTd DataLabel="IdJob" Style="white-space: nowrap">
+                                    <JobTreeToggle Node="context" Toggled="_toggled" OnToggle="@(() => JobTree.Toggle(context, _toggled))" />
+                                    @job.IdJob
+                                </MudTd>
+                                <MudTd DataLabel="Título">
+                                    @job.Title
+                                    @if (context.TotalChildren > 0)
+                                    {
+                                        <MudText Typo="Typo.caption" Class="ml-2">@context.Summary</MudText>
+                                    }
+                                </MudTd>
+                                @if (context.IsContext)
+                                {
+                                    <MudTd colspan="4"><MudText Typo="Typo.caption">integração das procedures abaixo</MudText></MudTd>
+                                }
+                                else if (JobTree.IsProcedure(job))
+                                {
+                                    <MudTd colspan="3"><MudText Typo="Typo.caption">roda com a integração @job.IdParent</MudText></MudTd>
+                                    <MudTd DataLabel="Ativo"><MudSwitch T="bool" Value="job.IsActive" ValueChanged="@(v => SetJobActive(job, v))" Color="Color.Success" Size="Size.Small" /></MudTd>
+                                }
+                                else
+                                {
+                                    var draft = DraftOf(job);
+                                    <MudTd DataLabel="Intervalo (min)">
+                                        <div class="schedule-field @(draft.Interval != job.IntervalTimeInMinutes ? "schedule-changed" : "")">
+                                            <MudNumericField T="int" Value="draft.Interval" ValueChanged="@(v => Change(job, draft with { Interval = v }))" Min="0" Disabled="@(draft.DailyAt is not null)" Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" />
+                                        </div>
+                                    </MudTd>
+                                    <MudTd DataLabel="Diário às">
+                                        <div class="schedule-field @(draft.DailyAt != job.RunningDailyAt ? "schedule-changed" : "")">
+                                            <MudTextField T="string" InputType="InputType.Time" Value="@(draft.DailyAt?.ToString("HH:mm"))" ValueChanged="@(v => Change(job, WithDailyAt(job, draft, v)))" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true" />
+                                        </div>
+                                    </MudTd>
+                                    <MudTd DataLabel="Fila">
+                                        <div class="schedule-field @(draft.Queue != job.Queue ? "schedule-changed" : "")">
+                                            <MudAutocomplete T="string" Value="draft.Queue" ValueChanged="@(v => Change(job, draft with { Queue = v?.Trim() ?? "" }))" SearchFunc="SearchQueues" CoerceValue="true" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                                             Error="@(!IsValidQueue(draft.Queue))" ErrorText="Só minúsculas, dígitos, _ e -" />
+                                        </div>
+                                    </MudTd>
+                                    <MudTd DataLabel="Ativo"><MudSwitch T="bool" Value="job.IsActive" ValueChanged="@(v => SetJobActive(job, v))" Color="Color.Success" Size="Size.Small" /></MudTd>
+                                }
                             </RowTemplate>
+                            <ChildRowContent>
+                                @if (JobTree.IsExpanded(context, _toggled))
+                                {
+                                    @foreach (var child in context.Children)
+                                    {
+                                        <MudTr @key="(child.IdJob, child.IdType)" Class="child-row">
+                                            <MudTd DataLabel="IdJob" Class="child-indent">@child.IdJob</MudTd>
+                                            <MudTd DataLabel="Título">@child.Title</MudTd>
+                                            <MudTd colspan="3"><MudText Typo="Typo.caption">roda com a integração @context.Job.IdJob</MudText></MudTd>
+                                            <MudTd DataLabel="Ativo"><MudSwitch T="bool" Value="child.IsActive" ValueChanged="@(v => SetJobActive(child, v))" Color="Color.Success" Size="Size.Small" /></MudTd>
+                                        </MudTr>
+                                    }
+                                }
+                            </ChildRowContent>
                             <NoRecordsContent>
                                 <MudText Typo="Typo.body2">Nenhum job encontrado.</MudText>
                             </NoRecordsContent>
@@ -89,13 +151,25 @@
                                 <TablePager PageSizeOptions="new[] { 10, 25, 50 }" />
                             </PagerContent>
                         </MudTable>
+                        <MudText Typo="Typo.caption">
+                            50 integrações por página; as procedures não contam. Intervalo 0 = sob demanda. Com "Diário às" preenchido, o
+                            intervalo fica 1440; limpar o horário libera o intervalo. Uma fila nova só roda se algum servidor do host a tiver em
+                            Hangfire:Server:Queues.
+                        </MudText>
                     </div>
                 </MudTabPanel>
             </MudTabs>
         }
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Close">Fechar</MudButton>
+        @if (_drafts.Count > 0)
+        {
+            <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Outlined">@_drafts.Count alteração(ões) não salva(s)</MudChip>
+            <MudSpacer />
+            <MudButton OnClick="Discard" Disabled="_saving">Descartar</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveSchedules" Disabled="@(_saving || _drafts.Values.Any(x => !IsValidQueue(x.Queue)))">Salvar alterações</MudButton>
+        }
+        <MudButton OnClick="Close" Disabled="_saving">Fechar</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -116,22 +190,137 @@
 
     private IReadOnlyList<ModuleSettingModel> _settings = [];
     private IReadOnlyList<JobModel> _jobs = [];
+    private IReadOnlyList<string> _queues = [];
     private string? _imageUrl;
     private string? _search;
+    private int? _type;
     private int _tab;
     private bool _loading = true;
+    private bool _saving;
 
-    private IEnumerable<JobModel> FilteredJobs => string.IsNullOrWhiteSpace(_search)
-        ? _jobs
-        : _jobs.Where(x => $"{x.IdJob} {x.Title}".Contains(_search.Trim(), StringComparison.InvariantCultureIgnoreCase));
+    // integrações abertas ou fechadas pelo usuário, e a agenda alterada e ainda não salva, por (IdJob, IdType)
+    private readonly HashSet<(int, int)> _toggled = [];
+    private readonly Dictionary<(int IdJob, int IdType), ScheduleDraft> _drafts = [];
+
+    /// <summary>
+    /// Agenda de uma integração enquanto é editada: só vai para o repositório no "Salvar alterações".
+    /// </summary>
+    private sealed record ScheduleDraft(int Interval, TimeOnly? DailyAt, string Queue);
+
+    private List<JobNode> Nodes => JobTree.Build(
+        _jobs,
+        filter: _ => true,
+        matches: x => string.IsNullOrWhiteSpace(_search) || MessageGrouping.Contains($"{x.IdJob} {x.Title}", _search),
+        _type,
+        narrowing: !string.IsNullOrWhiteSpace(_search));
 
     protected override async Task OnInitializedAsync()
     {
         _tab = InitialTab;
         _settings = await MonitorRepository.GetModuleSettingsAsync(IdApp);
+        _queues = await MonitorRepository.GetQueuesAsync();
         await LoadAll();
         _loading = false;
     }
+
+    private string RowClass(JobNode node, int index) =>
+        node.IsContext ? "context-row" : _drafts.ContainsKey(node.Key) ? "changed-row" : "";
+
+    private ScheduleDraft DraftOf(JobModel job) =>
+        _drafts.GetValueOrDefault((job.IdJob, job.IdType)) ?? new ScheduleDraft(job.IntervalTimeInMinutes, job.RunningDailyAt, job.Queue ?? "");
+
+    // voltar ao valor de antes tira a integração da lista de alterações
+    private void Change(JobModel job, ScheduleDraft draft)
+    {
+        if (draft == new ScheduleDraft(job.IntervalTimeInMinutes, job.RunningDailyAt, job.Queue ?? ""))
+            _drafts.Remove((job.IdJob, job.IdType));
+        else
+            _drafts[(job.IdJob, job.IdType)] = draft;
+    }
+
+    // com horário diário, o intervalo é 1440; limpar o horário devolve o intervalo de antes (ou 60, se ele era diário)
+    private static ScheduleDraft WithDailyAt(JobModel job, ScheduleDraft draft, string? value)
+    {
+        var dailyAt = TimeOnly.TryParse(value, out var time) ? time : (TimeOnly?)null;
+        if (dailyAt is not null)
+            return draft with { DailyAt = dailyAt, Interval = 1440 };
+
+        var interval = job.RunningDailyAt is null ? job.IntervalTimeInMinutes : 60;
+        return draft with { DailyAt = null, Interval = interval };
+    }
+
+    // a mesma regra do host para nome de fila (Hangfire:Server:Queues)
+    private static bool IsValidQueue(string? queue) =>
+        !string.IsNullOrWhiteSpace(queue) && queue.All(x => x is (>= 'a' and <= 'z') or (>= '0' and <= '9') or '_' or '-');
+
+    private Task<IEnumerable<string>> SearchQueues(string? text, CancellationToken cancellationToken) =>
+        Task.FromResult(string.IsNullOrWhiteSpace(text) ? _queues.AsEnumerable() : _queues.Where(x => x.Contains(text.Trim(), StringComparison.OrdinalIgnoreCase)));
+
+    private static string Describe(JobModel job, ScheduleDraft draft)
+    {
+        static string Schedule(int interval, TimeOnly? dailyAt) =>
+            dailyAt is TimeOnly at ? $"diário às {at:HH\\:mm}" : interval == 0 ? "sob demanda" : $"a cada {interval} min";
+
+        var changes = new List<string>();
+        var before = Schedule(job.IntervalTimeInMinutes, job.RunningDailyAt);
+        var after = Schedule(draft.Interval, draft.DailyAt);
+        if (before != after)
+            changes.Add($"{before} → <strong>{after}</strong>");
+        if (draft.Queue != job.Queue)
+            changes.Add($"fila {System.Net.WebUtility.HtmlEncode(job.Queue)} → <strong>{System.Net.WebUtility.HtmlEncode(draft.Queue)}</strong>");
+
+        return $"<li>{job.IdJob} {System.Net.WebUtility.HtmlEncode(job.Title)}: {string.Join("; ", changes)}</li>";
+    }
+
+    // mudança de agenda vale para a produção: confirma listando o que muda
+    private async Task SaveSchedules()
+    {
+        var changes = _drafts
+            .Select(x => (Job: _jobs.First(y => y.IdJob == x.Key.IdJob && y.IdType == x.Key.IdType), Draft: x.Value))
+            .OrderBy(x => x.Job.IdJob)
+            .ToList();
+
+        var newQueues = changes.Select(x => x.Draft.Queue).Distinct().Where(x => !_queues.Contains(x)).ToList();
+        var warning = newQueues.Count == 0
+            ? ""
+            : $"<p class=\"danger-text\">Fila nova ({System.Net.WebUtility.HtmlEncode(string.Join(", ", newQueues))}): só roda se algum servidor do host a tiver em Hangfire:Server:Queues.</p>";
+
+        var confirmed = await DialogService.ShowMessageBoxAsync(
+            $"Salvar a agenda de {Title}?",
+            (MarkupString)$"<p>Para <strong>{System.Net.WebUtility.HtmlEncode(LoggedCompany.Label)}</strong>:</p><ul>{string.Concat(changes.Select(x => Describe(x.Job, x.Draft)))}</ul>{warning}<p>O host relê a agenda no próximo ciclo (até {HealthChip.HostRecheckMinutes} min).</p>",
+            yesText: "Salvar",
+            cancelText: "Cancelar");
+
+        if (confirmed != true)
+            return;
+
+        _saving = true;
+
+        try
+        {
+            var saved = 0;
+            foreach (var (job, draft) in changes)
+            {
+                if (!await Snackbar.TryAsync(Logger, () => MonitorRepository.SetJobScheduleAsync(job.IdJob, job.IdType, draft.Interval, draft.DailyAt, draft.Queue), $"Não foi possível salvar a agenda do job {job.IdJob}."))
+                    continue;
+
+                _drafts.Remove((job.IdJob, job.IdType));
+                saved++;
+            }
+
+            if (saved > 0)
+                Snackbar.Add($"Agenda salva: {saved} integração(ões).", Severity.Success);
+
+            _queues = await MonitorRepository.GetQueuesAsync();
+            await LoadAll();
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private void Discard() => _drafts.Clear();
 
     private async Task LoadAll()
     {
@@ -200,7 +389,23 @@
         return true;
     }
 
-    private void Close() => MudDialog?.Close();
+    // fechar com agenda não salva pergunta antes de descartar
+    private async Task Close()
+    {
+        if (_drafts.Count > 0)
+        {
+            var discard = await DialogService.ShowMessageBoxAsync(
+                "Descartar as alterações?",
+                $"Há {_drafts.Count} alteração(ões) de agenda não salva(s).",
+                yesText: "Descartar",
+                cancelText: "Continuar editando");
+
+            if (discard != true)
+                return;
+        }
+
+        MudDialog?.Close();
+    }
 
     /// <summary>
     /// Abre o diálogo de um módulo na aba indicada e espera ele fechar.
@@ -214,7 +419,7 @@
             { x => x.InitialTab, initialTab }
         };
 
-        var reference = await dialogService.ShowAsync<ModuleConfigurations>("Configurações", parameters, new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true, CloseButton = true });
+        var reference = await dialogService.ShowAsync<ModuleConfigurations>("Configurações", parameters, new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true, BackdropClick = false, CloseOnEscapeKey = false });
         await reference.Result;
     }
 }

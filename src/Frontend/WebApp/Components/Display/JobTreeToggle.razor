@@ -1,0 +1,24 @@
+@* A setinha da integração que mostra ou esconde as procedures dela; ocupa o mesmo espaço quando não há procedures, para
+   os IdJob ficarem alinhados. *@
+
+@if (Node.Children.Count > 0)
+{
+    var expanded = JobTree.IsExpanded(Node, Toggled);
+    <MudIconButton Icon="@(expanded ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)" Size="Size.Small" OnClick="OnToggle"
+                   aria-label="@(expanded ? "Esconder as procedures" : "Mostrar as procedures")" aria-expanded="@(expanded ? "true" : "false")" />
+}
+else
+{
+    <span class="tree-toggle-space"></span>
+}
+
+@code {
+    [Parameter, EditorRequired] public JobNode Node { get; set; } = default!;
+
+    [Parameter, EditorRequired] public ISet<(int, int)> Toggled { get; set; } = default!;
+
+    /// <summary>
+    /// Quem guarda o estado é a tela: o clique volta para ela, que redesenha as linhas das procedures.
+    /// </summary>
+    [Parameter] public EventCallback OnToggle { get; set; }
+}

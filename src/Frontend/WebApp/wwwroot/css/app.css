@@ -570,3 +570,54 @@ code {
 .favorite-queries > div {
     margin-bottom: 6px;
 }
+
+/* Integração e as procedures que ela chama: a procedure fica recuada, num fundo um pouco mais escuro; a integração que
+   só está ali como cabeçalho das procedures do filtro fica em cinza */
+.child-row > td {
+    background-color: rgba(0, 0, 0, 0.12);
+}
+
+.child-row > td.child-indent {
+    padding-left: 48px !important;
+}
+
+.context-row > td {
+    opacity: 0.55;
+}
+
+.tree-toggle-space {
+    display: inline-block;
+    width: 30px;
+}
+
+/* Aba Agenda: campos de agenda compactos na linha, com borda laranja quando foram alterados e ainda não salvos */
+.changed-row > td {
+    background-color: rgba(255, 181, 69, 0.06);
+}
+
+.schedule-field {
+    min-width: 96px;
+    max-width: 150px;
+}
+
+.schedule-field .mud-input-control {
+    margin-top: 0 !important;
+}
+
+.schedule-changed .mud-input-outlined-border {
+    border-color: var(--mud-palette-warning) !important;
+}
+
+/* Logs de Erros: a procedure dentro da integração, recuada */
+.job-group-head.child {
+    padding-left: 52px;
+    background-color: rgba(0, 0, 0, 0.12);
+}
+
+.job-group-child {
+    border-top: 1px solid var(--mud-palette-lines-default);
+}
+
+.job-group-child .job-causes {
+    padding-left: 52px;
+}
