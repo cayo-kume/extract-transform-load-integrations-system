@@ -4,6 +4,7 @@
 @inject FilterSession FilterSession
 @inject ISnackbar Snackbar
 @inject ILogger<Errors> Logger
+@inject OnDemandAccess OnDemandAccess
 
 <PageTitle>Logs de Erros</PageTitle>
 
@@ -471,6 +472,10 @@
             <MudIcon Icon="@(expanded ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)" Size="Size.Small" />
             <HealthChip Context="HealthContext.From(job)" Now="_updatedAt" />
             <MudText Typo="Typo.body2" Class="job-title">@job.IdJob - @job.JobTitle</MudText>
+            @if (job.IsOnDemand)
+            {
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Info">sob demanda</MudChip>
+            }
             @if (job.LastErrorAt is DateTime last)
             {
                 <MudText Typo="Typo.caption" Class="job-last">última às @MonitorDisplay.Time(last, _updatedAt)</MudText>
@@ -491,11 +496,17 @@
             </MudTooltip>
             <div @onclick:stopPropagation="true" @onkeydown:stopPropagation="true">
                 <MudTooltip Text="Abrir o job na tela de Jobs">
-                    <MudIconButton Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small" Href="@MonitorDisplay.JobLink(job.IdApp, job.IdJob, job.IdType, _filter.Period)" aria-label="Abrir o job" />
+                    <MudIconButton Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small" Href="@JobHref(job)" aria-label="Abrir o job" />
                 </MudTooltip>
             </div>
         </div>
     };
+
+    // a sob demanda abre na tela Sob Demanda (quando ela está liberada); as outras, na tela de Jobs
+    private string JobHref(MessageJobSummaryModel job) =>
+        job.IsOnDemand && OnDemandAccess.IsAllowed
+            ? $"/on-demand?job={job.IdJob}"
+            : MonitorDisplay.JobLink(job.IdApp, job.IdJob, job.IdType, _filter.Period);
 
     private RenderFragment Causes(int idApp, JobItem item) => __builder =>
     {

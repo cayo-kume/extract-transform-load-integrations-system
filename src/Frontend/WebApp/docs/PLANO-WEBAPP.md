@@ -425,6 +425,19 @@ mockup para aprovação):
      ("2 próprio(s) · 7 nas procedures") e mostra a saúde da integração; dentro dele ficam as causas da própria integração e
      um cabeçalho por procedure com mensagens, com tudo o que o cabeçalho de job já tinha (saúde, última ocorrência,
      mensagem, causas, link) e as próprias causas. Ainda falhando (a integração ou alguma filha) primeiro.
+9. **Rodada 5 (01/11/2026, mockup aprovado): Sob Demanda.**
+   - As integrações sob demanda (`JobModel.IsOnDemand`: intervalo 0 e sem hora diária; 135 no catálogo) saem de Jobs,
+     Integrações, aba Agenda (intervalo mínimo 1 min lá), painel de saúde e "Falhas Ativas". As execuções delas continuam
+     nas métricas, nos gráficos e nos Logs de Erros, com o chip "sob demanda"; o link do job vai para a tela nova.
+   - Tela **Sob Demanda** (`/on-demand`, item "Sob Demanda" no menu), no estilo do Swagger: aplicação → tag do host →
+     método, cada um numa faixa com a cor do verbo e o nome do endpoint ("3002 · MovideskGetTicketById — Integração de um
+     ticket por número"), sem a rota. Abrindo: parâmetros (nome, onde vai, tipo, obrigatório) com as regras do host
+     conferidas antes de chamar, corpo JSON com exemplo e modelo, Executar, resposta e as últimas chamadas pelo painel,
+     com o link para a execução. Empresa e usuário vêm preenchidos e travados. GET executa direto; POST, PUT e PATCH pedem
+     confirmação; DELETE, em vermelho. `?job=3002` abre o método.
+   - Acesso como Executar Querys: só com `OnDemand:Enabled` e o ambiente Development, até a autenticação (passo 14).
+   - Nesta fase, `MockOnDemandRunner`: o catálogo sai das descrições dos jobs (e de uma tabela com as rotas da AfterSale e
+     do DataWarehouse, copiadas dos controllers), a resposta é simulada e a chamada que roda vira uma execução do job.
 
 # Fase 5 — Banco de dados (não implementar agora)
 
@@ -554,6 +567,13 @@ abertas atualizando sozinhas (passo 4.6), o banco recebe uma consulta por minuto
 5. **Agenda (rodada 4):** `SetJobScheduleAsync` é um `UPDATE` de `IntervalTimeInMinutes`, `RunningDailyAt` e `Queue` em
    `auditing.Jobs` na linha da empresa, liberado ao `etl_monitor` só nessas colunas (passo 10) e, na fase 6, só ao grupo
    que edita a agenda (passo 14); `GetQueuesAsync` é um `SELECT DISTINCT Queue`.
+6. **Sob Demanda (rodada 5):** o `IOnDemandRunner` real chama o WebApi por HTTP, do servidor do WebApp (nunca do
+   navegador), com a URL do host em configuração; é uma exceção à decisão "sem API", que era sobre a leitura do banco. O
+   catálogo de métodos sai do `swagger.json` do host em Development e, como o Swagger some em Release (`IgnoreApi` nos
+   controllers), um catálogo gerado a partir dele fica guardado no WebApp para produção. "Quem" e "Parâmetros" das últimas
+   chamadas vêm das tabelas de requisições de cada módulo (por exemplo `movidesk.MovideskRequests`). **Antes disso, a
+   empresa logada precisa ser um CNPJ de 14 dígitos:** o host exige `^\d{14}$` no `docCompany`, e `LoggedCompany.DocCompany`
+   hoje é `35899805838` (11 dígitos), a mesma divergência com o `44065634000106` dos scripts.
 
 ## Passo 12 — Executar Querys com o banco
 

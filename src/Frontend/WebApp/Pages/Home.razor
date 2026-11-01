@@ -248,14 +248,14 @@
 
     // falhas só de jobs ativos (o mesmo universo de Integrações, para o número bater com o destino do link)
     private List<JobModel> ActiveFailures => _jobs
-        .Where(x => x.IsActive && x.Health is JobHealth.Error or JobHealth.Late && x.Acknowledgement is null)
+        .Where(x => x.IsActive && !x.IsOnDemand && x.Health is JobHealth.Error or JobHealth.Late && x.Acknowledgement is null)
         .OrderBy(x => x.Health == JobHealth.Error ? 0 : 1)
         .ThenBy(x => x.LastExecution?.StartDate ?? DateTime.MinValue)
         .ToList();
 
     private int FailedJobs => ActiveFailures.Count(x => x.Health == JobHealth.Error);
     private int LateJobs => ActiveFailures.Count(x => x.Health == JobHealth.Late);
-    private int AcknowledgedFailures => _jobs.Count(x => x.IsActive && x.Health is JobHealth.Error or JobHealth.Late && x.Acknowledgement is not null);
+    private int AcknowledgedFailures => _jobs.Count(x => x.IsActive && !x.IsOnDemand && x.Health is JobHealth.Error or JobHealth.Late && x.Acknowledgement is not null);
 
     private IEnumerable<AppBucketsModel> FilteredBuckets(IReadOnlyList<AppBucketsModel> buckets) =>
         buckets.Where(x => _filter.IdApp is null || x.IdApp == _filter.IdApp);
@@ -421,7 +421,7 @@
     // ordem dos cards: aplicação com job em erro, com atrasado, inativa, e o resto
     private int SeverityRank(int idApp, AppSummaryModel app)
     {
-        var jobs = _jobs.Where(x => x.IdApp == idApp && x.IsActive && x.Acknowledgement is null).ToList();
+        var jobs = _jobs.Where(x => x.IdApp == idApp && x.IsActive && !x.IsOnDemand && x.Acknowledgement is null).ToList();
         if (jobs.Any(x => x.Health == JobHealth.Error))
             return 0;
         if (jobs.Any(x => x.Health == JobHealth.Late))

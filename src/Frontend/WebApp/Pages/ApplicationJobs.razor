@@ -170,7 +170,8 @@
     // integrações da aplicação na ordem do IdJob (decisão de 31/10/2026), cada uma com as procedures que chama, com o
     // filtro de tipo, de busca e do job do link (procedure do link aparece dentro da integração pai, já aberta)
     private List<JobNode> NodesOf(int idApp) => JobTree.Build(
-        _jobs.Where(x => x.IdApp == idApp).ToList(),
+        // as sob demanda ficam na tela Sob Demanda; só aparecem aqui pelo link direto (?job=), vindo dos Logs de Erros
+        _jobs.Where(x => x.IdApp == idApp && (!x.IsOnDemand || x.IdJob == _focusJob)).ToList(),
         filter: _ => true,
         matches: x => (_focusJob is null || x.IdJob == _focusJob) && _filter.Matches(x.IdJob.ToString(), x.Title, x.Description),
         _type,

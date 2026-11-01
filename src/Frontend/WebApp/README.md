@@ -33,9 +33,12 @@ usam o ambiente `Development`.
 | `/applications/jobs` e `/applications/{IdApp}/jobs` | todos os jobs da aplicação (ativos e inativos), na ordem do `IdJob`, cada integração com as procedures que chama dentro dela, com filtro Todos / Integrações / Procedures e o chip que liga ou desliga cada um (com "Desfazer"); cada job abre as execuções, mensagens e registros. `?job=3001&type=2` mostra só esse job, já aberto |
 | `/integrations` | só os jobs ativos, aninhados por aplicação e, dentro dela, procedures dentro da integração pai, com filtro de tipo e de saúde (os contadores do topo filtram; `?health=error`); a engrenagem do grupo abre as configurações do módulo |
 | `/errors` | Logs de Erros: mensagens de erro (e, se marcado, de aviso) do período, por aplicação, integração, procedure e causa, com busca pelo job e pelo texto; `?app=30&job=3001` abre o grupo |
+| `/on-demand` | Sob Demanda: as integrações sem agenda, no estilo do Swagger (método, parâmetros, corpo JSON, Executar e resposta), só com a chave `OnDemand:Enabled` (abaixo) |
 | `/queries` | Executar Querys, com favoritas e querys prontas na barra lateral, só com a chave `QueryRunner:Enabled` (abaixo) |
 
-O menu lateral tem Visão Geral, Aplicações, Jobs, Integrações, Logs de Erros e, para quem tem acesso, Executar Querys.
+O menu lateral tem Visão Geral, Aplicações, Jobs, Integrações, Logs de Erros e, para quem tem acesso, Sob Demanda e
+Executar Querys. As integrações sob demanda (sem agenda) não aparecem em Jobs, Integrações, Agenda nem no painel de saúde:
+ficam na tela Sob Demanda.
 Período, aplicação, tipo e saúde ficam na URL (`?period=7d&app=30`), então o link de uma tela abre do mesmo jeito para
 outra pessoa; sem `period` na URL, vale o último período escolhido na aba. A busca fica só na tela. Na barra superior
 ficam o botão que esconde o menu, a empresa logada (`LoggedCompany`, fixa em `NEWBLOOMERS - 35899805838` até a
@@ -130,6 +133,19 @@ O que a tela faz:
 No mock, nada chega a um banco: os bancos são `NEWBLOOMERS`, `AUDITING` e `Company`, o `SELECT` devolve colunas tiradas do
 próprio SQL e linhas geradas, SQL com a palavra `erro` isolada (por exemplo `dbo.erro`; `IsError` não conta) simula um erro do SQL
 Server e `WAITFOR` demora 8 s, para testar o cancelamento.
+
+## Sob Demanda
+
+As operações escrevem nos sistemas de origem (Movidesk, Totvs, AfterSale), por isso a tela é restrita como Executar
+Querys: só abre no ambiente `Development` com a chave `OnDemand:Enabled = true`, ligada por User Secrets na máquina de
+quem usa:
+
+```bash
+dotnet user-secrets set "OnDemand:Enabled" "true" --project src/Frontend/WebApp
+```
+
+Até a fase 5, o `MockOnDemandRunner` não chama o host: o catálogo sai das descrições dos jobs, a resposta é simulada (um
+em cada seis GETs devolve 404) e a chamada que roda vira uma execução do job, que "Ver execução" abre.
 
 ## Estrutura
 

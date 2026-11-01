@@ -621,3 +621,108 @@ code {
 .job-group-child .job-causes {
     padding-left: 52px;
 }
+
+/* Sob Demanda: as operações no estilo do Swagger, uma faixa com a cor do verbo e o nome do endpoint */
+.op-tag {
+    padding: 10px 12px 4px;
+    color: var(--mud-palette-text-primary);
+    font-weight: 500;
+    border-top: 1px solid var(--mud-palette-lines-default);
+}
+
+.op {
+    margin: 6px 12px;
+    border: 1px solid;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.op-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 8px;
+    cursor: pointer;
+}
+
+.op-verb {
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.75rem;
+    border-radius: 3px;
+    padding: 4px 0;
+    width: 64px;
+    text-align: center;
+    flex: none;
+}
+
+.op-name {
+    flex: 1 1 0;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.8125rem;
+}
+
+.op-get { border-color: #61affe; background-color: rgba(97, 175, 254, 0.08); }
+.op-get .op-verb, .op-execute-get { background-color: #61affe !important; }
+.op-post { border-color: #49cc90; background-color: rgba(73, 204, 144, 0.08); }
+.op-post .op-verb, .op-execute-post { background-color: #49cc90 !important; }
+.op-put { border-color: #fca130; background-color: rgba(252, 161, 48, 0.08); }
+.op-put .op-verb, .op-execute-put { background-color: #fca130 !important; }
+.op-patch { border-color: #50e3c2; background-color: rgba(80, 227, 194, 0.08); }
+.op-patch .op-verb, .op-execute-patch { background-color: #50e3c2 !important; }
+.op-delete { border-color: #f93e3e; background-color: rgba(249, 62, 62, 0.08); }
+.op-delete .op-verb, .op-execute-delete { background-color: #f93e3e !important; }
+
+.op-execute {
+    color: #fff !important;
+    min-width: 160px;
+}
+
+.op-body {
+    border-top: 1px solid var(--mud-palette-lines-default);
+    background-color: var(--mud-palette-surface);
+    padding: 10px 12px;
+}
+
+.op-section {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 4px;
+    margin-bottom: 6px;
+    border-bottom: 1px solid var(--mud-palette-lines-default);
+}
+
+.op-param-name {
+    font-family: Consolas, 'Courier New', monospace;
+    color: var(--mud-palette-text-primary);
+}
+
+.op-param-required {
+    color: var(--mud-palette-error);
+    font-size: 0.6875rem;
+    margin-left: 4px;
+}
+
+.op-param-type {
+    color: var(--mud-palette-text-secondary);
+    font-size: 0.6875rem;
+}
+
+.op-parameters td {
+    vertical-align: top;
+}
+
+.op-response {
+    border: 1px solid var(--mud-palette-lines-default);
+    border-radius: 6px;
+    padding: 8px 10px;
+}
+
+.logged-company-text {
+    font-weight: 700;
+    color: var(--mud-palette-warning);
+}

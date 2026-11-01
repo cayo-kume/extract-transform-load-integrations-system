@@ -38,5 +38,10 @@ namespace WebApp.Models
         public DateTime? LastStartDate { get; set; }
         public DateTime? LastEndDate { get; set; }
         public AcknowledgementModel? Acknowledgement { get; set; }
+
+        /// <summary>
+        /// Integração sob demanda (ver JobModel.IsOnDemand): o cabeçalho ganha o chip e o link vai para a tela Sob Demanda.
+        /// </summary>
+        public bool IsOnDemand => IdType == 2 && IntervalTimeInMinutes == 0 && RunningDailyAt is null;
     }
 }

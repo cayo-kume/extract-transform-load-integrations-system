@@ -43,6 +43,12 @@ namespace WebApp.Models
         public JobHealth? Health { get; set; }
 
         /// <summary>
+        /// Integração sem agenda (intervalo 0, sem hora diária): só roda quando alguém chama, pela tela Sob Demanda. Fica fora
+        /// das grids de Jobs, Integrações, Agenda e do painel de saúde.
+        /// </summary>
+        public bool IsOnDemand => IdType == 2 && IntervalTimeInMinutes == 0 && RunningDailyAt is null;
+
+        /// <summary>
         /// Falha reconhecida por quem opera o painel; nulo quando não há reconhecimento válido.
         /// </summary>
         public AcknowledgementModel? Acknowledgement { get; set; }

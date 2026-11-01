@@ -5,9 +5,10 @@ namespace WebApp.Data.Mocks
 {
     /// <summary>
     /// Implementação falsa do IMonitorRepository: os jobs reais do MockCatalog e execuções geradas pelo MockTimeline.
-    /// Registrada como singleton, porque não guarda estado por usuário e mantém um cache curto dos resumos.
+    /// Registrada como singleton, porque não guarda estado por usuário e mantém um cache curto dos resumos. A MockTimeline é
+    /// a mesma do MockOnDemandRunner, para uma chamada da tela Sob Demanda virar uma execução do job.
     /// </summary>
-    public class MockMonitorRepository : IMonitorRepository
+    internal class MockMonitorRepository : IMonitorRepository
     {
         private static readonly IReadOnlyList<TypeModel> Types =
         [
@@ -22,7 +23,7 @@ namespace WebApp.Data.Mocks
         // o host lê os pedidos de "Executar agora" a cada ciclo da agenda; no mock, a execução começa 1 minuto depois
         private static readonly TimeSpan HostPickup = TimeSpan.FromMinutes(1);
 
-        private readonly MockTimeline _timeline = new();
+        private readonly MockTimeline _timeline;
         private readonly object _cacheLock = new();
         private readonly object _stateLock = new();
         private readonly double _failureRate;
@@ -43,9 +44,10 @@ namespace WebApp.Data.Mocks
         /// MockMonitorRepository:FailureRate (de 0 a 1) faz uma parte das chamadas falhar, para testar o tratamento de erro
         /// das telas sem banco. Fica 0 no appsettings.json.
         /// </summary>
-        public MockMonitorRepository(IConfiguration configuration)
+        public MockMonitorRepository(IConfiguration configuration, MockTimeline timeline)
         {
             _failureRate = configuration.GetValue<double>("MockMonitorRepository:FailureRate");
+            _timeline = timeline;
         }
 
         public async Task<IReadOnlyList<AppSummaryModel>> GetAppSummariesAsync(Period period, CancellationToken cancellationToken = default)
@@ -239,9 +241,9 @@ namespace WebApp.Data.Mocks
             var now = DateTime.Now;
             var from = now - period.ToTimeSpan();
 
-            // a visão geral mostra só integrações ativas (decisão de 31/10/2026), as falhas antes de qualquer Ok
+            // a visão geral mostra só integrações ativas e com agenda (decisão de 31/10/2026), as falhas antes de qualquer Ok
             return _timeline.Jobs
-                .Where(x => x.IsActive && x.Catalog.IdType == 2)
+                .Where(x => x.IsActive && x.Catalog.IdType == 2 && !IsOnDemand(x))
                 .Select(x =>
                 {
                     var last = _timeline.Last(x, now);
@@ -525,6 +527,10 @@ namespace WebApp.Data.Mocks
             return _timeline.Jobs.Select(x => ScheduleOf(x).Queue).Distinct().Order().ToList();
         }
 
+        // a mesma regra de JobModel.IsOnDemand, com a agenda alterada pelo diálogo
+        private bool IsOnDemand(MockJob job) =>
+            job.Catalog.IdType == 2 && ScheduleOf(job) is { Interval: 0, DailyAt: null };
+
         private (int Interval, TimeOnly? DailyAt, string Queue) ScheduleOf(MockJob job)
         {
             lock (_stateLock)
@@ -581,7 +587,7 @@ namespace WebApp.Data.Mocks
                     return;
 
                 _runRequests[(idJob, idType)] = new RunRequestModel { RequestedAt = now, RequestedBy = User };
-                job.ManualRuns = [.. job.ManualRuns, now + HostPickup];
+                _timeline.AddManualRun(job, now + HostPickup);
             }
 
             Changed();

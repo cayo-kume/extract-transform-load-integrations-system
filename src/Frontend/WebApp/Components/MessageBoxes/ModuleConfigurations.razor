@@ -113,7 +113,7 @@
                                     var draft = DraftOf(job);
                                     <MudTd DataLabel="Intervalo (min)">
                                         <div class="schedule-field @(draft.Interval != job.IntervalTimeInMinutes ? "schedule-changed" : "")">
-                                            <MudNumericField T="int" Value="draft.Interval" ValueChanged="@(v => Change(job, draft with { Interval = v }))" Min="0" Disabled="@(draft.DailyAt is not null)" Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" />
+                                            <MudNumericField T="int" Value="draft.Interval" ValueChanged="@(v => Change(job, draft with { Interval = v }))" Min="1" Disabled="@(draft.DailyAt is not null)" Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" />
                                         </div>
                                     </MudTd>
                                     <MudTd DataLabel="Diário às">
@@ -152,7 +152,7 @@
                             </PagerContent>
                         </MudTable>
                         <MudText Typo="Typo.caption">
-                            50 integrações por página; as procedures não contam. Intervalo 0 = sob demanda. Com "Diário às" preenchido, o
+                            50 integrações por página; as procedures não contam. Intervalo mínimo de 1 min (as sob demanda ficam na tela Sob Demanda). Com "Diário às" preenchido, o
                             intervalo fica 1440; limpar o horário libera o intervalo. Uma fila nova só roda se algum servidor do host a tiver em
                             Hangfire:Server:Queues.
                         </MudText>
@@ -326,7 +326,9 @@
     {
         var summaries = await MonitorRepository.GetAppSummariesAsync(Period.Last24Hours);
         _imageUrl = summaries.FirstOrDefault(x => x.IdParent == IdApp)?.ImageUrl;
+        // as sob demanda não têm agenda: ficam na tela Sob Demanda
         _jobs = (await MonitorRepository.GetJobsAsync(IdApp, idType: null))
+            .Where(x => !x.IsOnDemand)
             .OrderBy(x => x.IdJob)
             .ThenBy(x => x.IdType)
             .ToList();

@@ -1,0 +1,280 @@
+@using System.Text.Json
+@using System.Text.RegularExpressions
+@inject IOnDemandRunner OnDemandRunner
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject ILogger<OnDemandOperationPanel> Logger
+
+@* O corpo de uma operação aberta na tela Sob Demanda, como no Swagger: parâmetros, corpo JSON, Executar, resposta e as
+   últimas chamadas feitas pelo painel. Empresa e usuário vêm preenchidos e travados. *@
+
+<div class="op-body">
+    <div class="op-section">
+        <MudText Typo="Typo.subtitle2">Parâmetros</MudText>
+        <MudSpacer />
+        <MudButton Variant="Variant.Text" Size="Size.Small" Color="Color.Primary" OnClick="Clear" Disabled="_running">Limpar</MudButton>
+    </div>
+    @if (Operation.Parameters.Count == 0)
+    {
+        <MudText Typo="Typo.body2" Class="mb-2">Sem parâmetros.</MudText>
+    }
+    else
+    {
+        <MudSimpleTable Dense="true" Elevation="0" Class="op-parameters">
+            <thead>
+                <tr><th style="width: 220px">Nome</th><th style="width: 280px">Descrição</th><th>Valor</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var parameter in Operation.Parameters)
+                {
+                    var error = ErrorOf(parameter);
+                    <tr @key="parameter.Name">
+                        <td>
+                            <span class="op-param-name">@parameter.Name</span>
+                            @if (parameter.Required)
+                            {
+                                <span class="op-param-required">* obrigatório</span>
+                            }
+                            <div class="op-param-type">@parameter.Type <i>(@LocationLabel(parameter.Location))</i></div>
+                        </td>
+                        <td><MudText Typo="Typo.body2">@parameter.Description</MudText></td>
+                        <td>
+                            <div class="d-flex align-center gap-2">
+                                <div style="width: 260px">
+                                    <MudTextField T="string" Value="@ValueOf(parameter)" ValueChanged="@(v => _values[parameter.Name] = v)" Immediate="true"
+                                                  InputType="@(parameter.Type == "date" ? InputType.Date : InputType.Text)" Disabled="@(parameter.IsLocked || _running)"
+                                                  Variant="Variant.Outlined" Margin="Margin.Dense" Error="@(error is not null)" ErrorText="@error" />
+                                </div>
+                                @if (parameter.Name == "docCompany")
+                                {
+                                    <MudText Typo="Typo.caption">empresa logada</MudText>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </MudSimpleTable>
+    }
+
+    @if (Operation.HasBody)
+    {
+        <div class="op-section mt-3">
+            <MudText Typo="Typo.subtitle2">Corpo da requisição</MudText>
+            <span class="op-param-required">* obrigatório</span>
+            <MudSpacer />
+            <MudText Typo="Typo.caption">application/json</MudText>
+        </div>
+        <MudTabs Elevation="0" Rounded="false" TabPanelsClass="pt-2" @bind-ActivePanelIndex="_bodyTab">
+            <MudTabPanel Text="Valor de exemplo">
+                <MudTextField T="string" @bind-Value="_body" Lines="10" Variant="Variant.Outlined" Class="sql-editor" Disabled="_running" Immediate="true"
+                              Error="@(_bodyError is not null)" ErrorText="@_bodyError" />
+            </MudTabPanel>
+            <MudTabPanel Text="Modelo">
+                <pre class="code-block">@Operation.BodyModel</pre>
+            </MudTabPanel>
+        </MudTabs>
+    }
+
+    <div class="d-flex align-center gap-3 mt-3">
+        <MudButton Variant="Variant.Filled" Class="@($"op-execute op-execute-{Operation.Verb.ToLowerInvariant()}")" OnClick="Execute" Disabled="_running">
+            @if (_running)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" Style="width: 16px; height: 16px" />
+            }
+            Executar
+        </MudButton>
+        <MudSpacer />
+        @if (Operation.Writes)
+        {
+            <MudText Typo="Typo.caption" Color="Color.Warning">Escreve em @Operation.AppTitle: pede confirmação</MudText>
+        }
+        else
+        {
+            <MudText Typo="Typo.caption">GET de uma integração: grava o registro nas tabelas da integração, sem alterar nada em @Operation.AppTitle</MudText>
+        }
+    </div>
+
+    @if (_result is { } result)
+    {
+        <div class="op-section mt-3"><MudText Typo="Typo.subtitle2">Resposta</MudText></div>
+        <div class="op-response">
+            <div class="d-flex align-center gap-2 flex-wrap">
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@(result.IsSuccess ? Color.Success : Color.Error)">@result.StatusCode @result.Reason</MudChip>
+                <MudText Typo="Typo.caption">@result.Duration.TotalSeconds.ToString("N2") s · @result.At.ToString("dd/MM HH:mm:ss")</MudText>
+                <MudSpacer />
+                <CopyButton Text="@result.Body" Tooltip="Copiar a resposta" />
+                @if (result.Execution is Guid execution)
+                {
+                    <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => OpenExecution(execution, result.At))">Ver execução</MudButton>
+                }
+            </div>
+            <pre class="code-block ma-0 mt-1">@result.Body</pre>
+        </div>
+    }
+
+    <div class="op-section mt-3"><MudText Typo="Typo.subtitle2">Últimas chamadas deste método pelo painel</MudText></div>
+    @if (_calls.Count == 0)
+    {
+        <MudText Typo="Typo.body2">Nenhuma chamada ainda.</MudText>
+    }
+    else
+    {
+        <MudSimpleTable Dense="true" Elevation="0">
+            <thead>
+                <tr><th>Início</th><th>Quem</th><th>Parâmetros</th><th>Resultado</th><th></th></tr>
+            </thead>
+            <tbody>
+                @foreach (var call in _calls)
+                {
+                    <tr>
+                        <td>@call.At.ToString("dd/MM HH:mm:ss")</td>
+                        <td>@call.User</td>
+                        <td><code>@(string.IsNullOrEmpty(call.Parameters) ? "—" : call.Parameters)</code></td>
+                        <td>
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@(call.StatusCode is >= 200 and < 300 ? Color.Success : Color.Error)">@call.StatusCode @call.Reason</MudChip>
+                        </td>
+                        <td>
+                            @if (call.Execution is Guid execution)
+                            {
+                                <MudButton Variant="Variant.Text" Size="Size.Small" Color="Color.Primary" OnClick="@(() => OpenExecution(execution, call.At))">Ver execução</MudButton>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </MudSimpleTable>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public OnDemandOperation Operation { get; set; } = default!;
+
+    private readonly Dictionary<string, string?> _values = [];
+    private string? _body;
+    private string? _bodyError;
+    private int _bodyTab;
+    private bool _running;
+    private bool _tried;
+    private OnDemandResult? _result;
+    private IReadOnlyList<OnDemandCall> _calls = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        Clear();
+        await LoadCalls();
+    }
+
+    private void Clear()
+    {
+        _values.Clear();
+        foreach (var parameter in Operation.Parameters)
+            _values[parameter.Name] = parameter.LockedValue;
+
+        _body = Operation.BodyExample;
+        _bodyError = null;
+        _result = null;
+        _tried = false;
+    }
+
+    private string? ValueOf(OnDemandParameter parameter) => _values.GetValueOrDefault(parameter.Name);
+
+    private static string LocationLabel(ParameterLocation location) => location switch
+    {
+        ParameterLocation.Header => "header",
+        ParameterLocation.Path => "path",
+        _ => "query"
+    };
+
+    // as mesmas regras do host ([RegularExpression], :min(1), :guid), conferidas antes de chamar; os travados (empresa e
+    // usuário) vêm do painel e não são conferidos aqui (a empresa logada de hoje tem 11 dígitos: ver o PLANO, passo 11.5)
+    private string? ErrorOf(OnDemandParameter parameter)
+    {
+        if (parameter.IsLocked)
+            return null;
+
+        var value = ValueOf(parameter)?.Trim();
+        if (string.IsNullOrEmpty(value))
+            return _tried && parameter.Required ? "Obrigatório" : null;
+
+        return parameter.Type switch
+        {
+            "integer (≥ 1)" => long.TryParse(value, out var number) && number >= 1 ? null : "Número inteiro maior que zero",
+            "integer" => long.TryParse(value, out _) ? null : "Número inteiro",
+            "uuid" => Guid.TryParse(value, out _) ? null : "Guid (ex.: 3f2504e0-4f89-11d3-9a0c-0305e82c3301)",
+            "string (14 dígitos)" => Regex.IsMatch(value, @"^\d{14}$") ? null : "14 dígitos",
+            "string (44 dígitos)" => Regex.IsMatch(value, @"^\d{44}$") ? null : "44 dígitos",
+            _ => null
+        };
+    }
+
+    private async Task Execute()
+    {
+        _tried = true;
+        if (Operation.Parameters.Any(x => ErrorOf(x) is not null))
+            return;
+
+        if (Operation.HasBody)
+        {
+            try
+            {
+                using var _ = JsonDocument.Parse(_body ?? "");
+                _bodyError = null;
+            }
+            catch (JsonException exception)
+            {
+                // o JsonException traz a linha (LineNumber começa em 0)
+                _bodyError = $"JSON inválido na linha {(exception.LineNumber ?? 0) + 1}: {exception.Message.Split('.')[0]}.";
+                _bodyTab = 0;
+                return;
+            }
+        }
+
+        if (Operation.Writes && !await Confirm())
+            return;
+
+        _running = true;
+
+        try
+        {
+            await Snackbar.TryAsync(Logger, async () => _result = await OnDemandRunner.ExecuteAsync(Operation, _values, Operation.HasBody ? _body : null), $"Não foi possível chamar {Operation.Title}.");
+            await LoadCalls();
+        }
+        finally
+        {
+            _running = false;
+        }
+    }
+
+    // escrita no sistema de origem pede confirmação; DELETE, em vermelho, como os comandos perigosos de Executar Querys
+    private async Task<bool> Confirm()
+    {
+        var job = System.Net.WebUtility.HtmlEncode($"{Operation.IdJob} · {Operation.Title}");
+        var company = System.Net.WebUtility.HtmlEncode(LoggedCompany.Label);
+        var app = System.Net.WebUtility.HtmlEncode(Operation.AppTitle);
+        var text = $"<p><strong>{job}</strong> para <strong>{company}</strong>.</p><p>{(Operation.Verb == "DELETE" ? "Exclui" : "Escreve")} em {app}. Não há como desfazer pelo painel.</p>";
+
+        var confirmed = await DialogService.ShowMessageBoxAsync(
+            $"Executar {Operation.Verb}?",
+            (MarkupString)(Operation.Verb == "DELETE" ? $"<div class=\"danger-text\">{text}</div>" : text),
+            yesText: Operation.Verb == "DELETE" ? "Excluir" : "Executar",
+            cancelText: "Cancelar");
+
+        return confirmed == true;
+    }
+
+    private async Task LoadCalls() =>
+        _calls = await OnDemandRunner.GetCallsAsync(Operation.IdJob, top: 5);
+
+    private Task OpenExecution(Guid execution, DateTime at) =>
+        ExecutionDialog.ShowAsync(DialogService, new MessageModel
+        {
+            Execution = execution,
+            IdApp = Operation.IdApp,
+            AppTitle = Operation.AppTitle,
+            IdJob = Operation.IdJob,
+            IdType = 2,
+            JobTitle = Operation.Title,
+            ExecutionStartDate = at
+        }, Period.Last24Hours, showJobLink: false);
+}

@@ -145,7 +145,7 @@
 
     // só jobs ativos (decisão de 31/10/2026), de integração e de procedure, com o filtro de tipo e de busca
     private List<JobModel> ActiveJobs => _jobs
-        .Where(x => x.IsActive)
+        .Where(x => x.IsActive && !x.IsOnDemand)
         .Where(x => _filter.IdApp is null || x.IdApp == _filter.IdApp)
         .Where(x => _type is null || x.IdType == _type)
         .Where(x => _filter.Matches(x.IdJob.ToString(), x.Title, x.Description))
@@ -165,7 +165,7 @@
     // as integrações da aplicação com as procedures que chamam; a integração que não passa no filtro (inativa, ou em
     // outro estado de saúde) fica como cabeçalho em cinza das procedures que passam
     private List<JobNode> NodesOf(int idApp) => JobTree.Build(
-        _jobs.Where(x => x.IdApp == idApp).ToList(),
+        _jobs.Where(x => x.IdApp == idApp && !x.IsOnDemand).ToList(),
         filter: x => x.IsActive && HealthMatches(x),
         matches: x => _filter.Matches(x.IdJob.ToString(), x.Title, x.Description),
         _type,

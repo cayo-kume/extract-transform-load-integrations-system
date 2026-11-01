@@ -21,6 +21,8 @@ builder.Services.AddMudServices();
 builder.Services.AddTransient<MudLocalizer, PortugueseMudLocalizer>();
 
 // Dados do painel: só o mock até a fase 5 do plano (docs/PLANO-WEBAPP.md), quando entra o MonitorRepository com o banco
+// A MockTimeline gera as execuções do mock e é a mesma para o painel e para a tela Sob Demanda
+builder.Services.AddSingleton<MockTimeline>();
 builder.Services.AddSingleton<IMonitorRepository, MockMonitorRepository>();
 
 // Último período escolhido, por aba (circuito): acompanha o usuário entre as telas quando a URL não traz ?period=
@@ -29,6 +31,10 @@ builder.Services.AddScoped<FilterSession>();
 // Executar Querys: acesso pela chave QueryRunner:Enabled em Development e, até a fase 5, o executor falso
 builder.Services.AddSingleton<QueryRunnerAccess>();
 builder.Services.AddSingleton<IQueryRunner, MockQueryRunner>();
+
+// Sob Demanda: acesso pela chave OnDemand:Enabled em Development e, até a fase 5, respostas simuladas
+builder.Services.AddSingleton<OnDemandAccess>();
+builder.Services.AddSingleton<IOnDemandRunner, MockOnDemandRunner>();
 
 var app = builder.Build();
 

@@ -1,0 +1,168 @@
+@page "/on-demand"
+@inject OnDemandAccess OnDemandAccess
+@inject IOnDemandRunner OnDemandRunner
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject ILogger<OnDemand> Logger
+
+<PageTitle>Sob Demanda</PageTitle>
+
+@if (OnDemandAccess.IsAllowed)
+{
+    <MudGrid>
+        <MudItem xs="5" Class="d-flex align-center justify-center pa-1">
+            <h1 class="ma-0 text-center">SOB DEMANDA</h1>
+        </MudItem>
+
+        <MudItem xs="7">
+            <div class="d-flex flex-row align-center gap-2 ml-8 mr-8">
+                <div class="flex-grow-1">
+                    <MudSelect T="int?" @bind-Value="_idApp" Variant="Variant.Outlined" Label="Aplicação" Margin="Margin.Normal">
+                        <MudSelectItem T="int?" Value="null">Todas</MudSelectItem>
+                        @foreach (var app in Apps)
+                        {
+                            <MudSelectItem T="int?" Value="app.IdApp">@app.AppTitle</MudSelectItem>
+                        }
+                    </MudSelect>
+                </div>
+            </div>
+            <div class="d-flex flex-row align-center ml-8 mr-8">
+                <MudTextField T="string" @bind-Value="_search" DebounceInterval="300" Immediate="true" Label="Pesquisar método" Variant="Variant.Outlined"
+                              Clearable="true" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search" AdornmentColor="Color.Default" />
+            </div>
+        </MudItem>
+
+        <MudItem xs="12" Class="loading-container">
+            <SpaceLoading Overlay="true" Visible="_loading" Label="Carregando os métodos" />
+
+            <div class="d-flex align-center gap-2 px-4 pb-2 flex-wrap">
+                @foreach (var verb in Filtered.GroupBy(x => x.Verb).OrderBy(x => VerbOrder(x.Key)))
+                {
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@verb.Key @verb.Count()</MudChip>
+                }
+                <MudSpacer />
+                <MudText Typo="Typo.caption">Empresa: <span class="logged-company-text">@LoggedCompany.Label</span></MudText>
+            </div>
+
+            <!-- Como o Swagger do host: aplicação, depois a tag, depois o método; o clique abre os parâmetros -->
+            <div class="px-4 pb-4">
+                @foreach (var app in Filtered.GroupBy(x => (x.IdApp, x.AppTitle)).OrderBy(x => x.Key.AppTitle))
+                {
+                    var expanded = Searching || _expandedApps.Contains(app.Key.IdApp);
+
+                    <div class="app-group" @key="app.Key.IdApp">
+                        <div class="app-group-head" role="button" tabindex="0" aria-expanded="@(expanded ? "true" : "false")" @onclick="@(() => ToggleApp(app.Key.IdApp))" @onkeydown="@(e => OnAppKeyDown(e, app.Key.IdApp))">
+                            <MudIcon Icon="@(expanded ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)" Size="Size.Small" />
+                            <MudText Typo="Typo.subtitle2">@app.Key.AppTitle</MudText>
+                            <MudText Typo="Typo.caption">@app.Count() método(s)</MudText>
+                        </div>
+
+                        @if (expanded)
+                        {
+                            @foreach (var tag in app.GroupBy(x => x.Tag))
+                            {
+                                <div class="op-tag">@tag.Key</div>
+                                @foreach (var operation in tag)
+                                {
+                                    var open = _opened.Contains(operation.IdJob);
+                                    <div class="op op-@operation.Verb.ToLowerInvariant()" @key="operation.IdJob">
+                                        <div class="op-head" role="button" tabindex="0" aria-expanded="@(open ? "true" : "false")" @onclick="@(() => ToggleOperation(operation.IdJob))" @onkeydown="@(e => OnOperationKeyDown(e, operation.IdJob))">
+                                            <span class="op-verb">@operation.Verb</span>
+                                            <span class="op-name" title="@operation.Description">@operation.IdJob · @operation.Title — @operation.Description</span>
+                                            <MudIcon Icon="@(open ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)" Size="Size.Small" />
+                                        </div>
+                                        @if (open)
+                                        {
+                                            <OnDemandOperationPanel Operation="operation" />
+                                        }
+                                    </div>
+                                }
+                            }
+                        }
+                    </div>
+                }
+
+                @if (!_loading && !Filtered.Any())
+                {
+                    <MudText Typo="Typo.body2">Nenhum método encontrado.</MudText>
+                }
+            </div>
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    /// <summary>
+    /// Link direto para um método (?job=3002, dos Logs de Erros): abre a aplicação e o método.
+    /// </summary>
+    [SupplyParameterFromQuery(Name = "job")] public int? JobQuery { get; set; }
+
+    private IReadOnlyList<OnDemandOperation> _operations = [];
+    private bool _loading = true;
+    private int? _idApp;
+    private string? _search;
+
+    // aplicações e métodos abertos; começam fechados, e a busca abre os que casam
+    private readonly HashSet<int> _expandedApps = [];
+    private readonly HashSet<int> _opened = [];
+
+    private bool Searching => !string.IsNullOrWhiteSpace(_search);
+
+    private IEnumerable<(int IdApp, string AppTitle)> Apps => _operations.Select(x => (x.IdApp, x.AppTitle)).Distinct().OrderBy(x => x.AppTitle);
+
+    private IEnumerable<OnDemandOperation> Filtered => _operations
+        .Where(x => _idApp is null || x.IdApp == _idApp)
+        .Where(x => !Searching || MessageGrouping.Contains($"{x.IdJob} {x.Title} {x.Description}", _search));
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!OnDemandAccess.IsAllowed)
+        {
+            Navigation.NotFound();
+            return;
+        }
+
+        await Snackbar.TryAsync(Logger, async () => _operations = await OnDemandRunner.GetOperationsAsync(), "Não foi possível carregar os métodos sob demanda.");
+        _loading = false;
+
+        if (_operations.FirstOrDefault(x => x.IdJob == JobQuery) is { } linked)
+        {
+            _expandedApps.Add(linked.IdApp);
+            _opened.Add(linked.IdJob);
+        }
+    }
+
+    private static int VerbOrder(string verb) => verb switch
+    {
+        "GET" => 0,
+        "POST" => 1,
+        "PUT" => 2,
+        "PATCH" => 3,
+        _ => 4
+    };
+
+    private void ToggleApp(int idApp)
+    {
+        if (!_expandedApps.Remove(idApp))
+            _expandedApps.Add(idApp);
+    }
+
+    private void ToggleOperation(int idJob)
+    {
+        if (!_opened.Remove(idJob))
+            _opened.Add(idJob);
+    }
+
+    // os cabeçalhos são divs clicáveis; Enter e espaço fazem o mesmo papel para quem navega por teclado
+    private void OnAppKeyDown(KeyboardEventArgs args, int idApp)
+    {
+        if (args.Key is "Enter" or " ")
+            ToggleApp(idApp);
+    }
+
+    private void OnOperationKeyDown(KeyboardEventArgs args, int idJob)
+    {
+        if (args.Key is "Enter" or " ")
+            ToggleOperation(idJob);
+    }
+}

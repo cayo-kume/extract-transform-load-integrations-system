@@ -93,6 +93,21 @@ namespace WebApp.Data.Mocks
             return result.StartDate <= Cutoff(job, now) ? result : null;
         }
 
+        private readonly object _manualRunsLock = new();
+
+        /// <summary>
+        /// Uma execução fora da agenda ("Executar agora" ou uma chamada da tela Sob Demanda), começando em start; devolve o
+        /// Guid dela, que GetExecutionAsync e GetMessagesAsync já encontram.
+        /// </summary>
+        public Guid AddManualRun(MockJob job, DateTime start)
+        {
+            lock (_manualRunsLock)
+            {
+                job.ManualRuns = [.. job.ManualRuns, start];
+                return Encode(job.Catalog, -job.ManualRuns.Length);
+            }
+        }
+
         // execuções fora da agenda: slots negativos, -1 para a primeira de MockJob.ManualRuns, -2 para a segunda...
         private static IEnumerable<long> ManualSlots(MockJob job, DateTime from, DateTime to)
         {

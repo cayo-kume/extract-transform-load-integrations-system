@@ -32,7 +32,7 @@
         }
     </DialogContent>
     <DialogActions>
-        @if (Message.IdApp is int idApp)
+        @if (ShowJobLink && Message.IdApp is int idApp)
         {
             <MudButton Href="@MonitorDisplay.JobLink(idApp, Message.IdJob, Message.IdType, Period)" StartIcon="@Icons.Material.Filled.OpenInNew">Ir para o job</MudButton>
         }
@@ -55,6 +55,11 @@
     /// </summary>
     [Parameter] public Period Period { get; set; }
 
+    /// <summary>
+    /// "Ir para o job" leva à tela de Jobs; quem abre o diálogo da tela Sob Demanda não precisa dele.
+    /// </summary>
+    [Parameter] public bool ShowJobLink { get; set; } = true;
+
     private ExecutionModel? _execution;
     private bool _loading = true;
 
@@ -66,12 +71,13 @@
 
     private void Close() => MudDialog?.Close();
 
-    public static Task ShowAsync(IDialogService dialogService, MessageModel message, Period period)
+    public static Task ShowAsync(IDialogService dialogService, MessageModel message, Period period, bool showJobLink = true)
     {
         var parameters = new DialogParameters<ExecutionDialog>
         {
             { x => x.Message, message },
-            { x => x.Period, period }
+            { x => x.Period, period },
+            { x => x.ShowJobLink, showJobLink }
         };
 
         return dialogService.ShowAsync<ExecutionDialog>("Execução", parameters, new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true, CloseButton = true });
