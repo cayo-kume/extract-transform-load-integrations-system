@@ -460,6 +460,14 @@ mockup para aprovação):
     Ativo, e uma faixa com o que falta salvar, Descartar, Salvar alterações (a mesma confirmação) e Concluir; sair com
     alteração pendente pergunta antes de descartar. Na Visão geral e em Aplicações, a engrenagem segue com a aba Agenda.
     A lógica de edição ficou em `ScheduleDrafts` e `ScheduleCells`, usados pelos dois lugares.
+13. **Rodada 9 (01/11/2026, mockup aprovado):** a tela Jobs passou a se chamar **Integrações** (`/integrations`,
+    `Pages/Integrations.razor`; `/jobs` e as rotas `/applications/...` caem nela), sem a engrenagem no grupo. A agenda é
+    só dela: o diálogo de configurações dos cards ficou com Imagem, Credenciais e Parâmetros em todas as telas. O ⋮ da
+    linha virou os botões **Executar agora** (toda integração ativa; o tooltip diz quando sai a próxima pela agenda e por
+    que o botão está desligado) e **Reconhecer** / **Desfazer reconhecimento** (`JobActions` com `Inline`); no painel de
+    saúde da Visão geral o ⋮ continua. Para os botões caberem sem rolar para o lado, a tabela tem células mais estreitas,
+    a última execução em data curta e o resumo das procedures embaixo do título. Na Sob Demanda, os contadores de verbo
+    viraram filtros (mais de um ao mesmo tempo; nenhum = todos).
 
 # Fase 5 — Banco de dados (não implementar agora)
 

@@ -1,5 +1,5 @@
-﻿@page "/jobs"
-@page "/integrations"
+﻿@page "/integrations"
+@page "/jobs"
 @page "/applications/jobs"
 @page "/applications/{IdApp:int}/jobs"
 @inject IDialogService DialogService
@@ -7,17 +7,17 @@
 @inject NavigationManager Navigation
 @inject FilterSession FilterSession
 @inject ISnackbar Snackbar
-@inject ILogger<Jobs> Logger
+@inject ILogger<Integrations> Logger
 
-@* Jobs e Integrações numa tela só (rodada 7): situação (ativos, inativos ou todos), tipo, saúde e busca, com um grupo
-   recolhível por aplicação e as procedures dentro da integração. As rotas antigas (/integrations, /applications/jobs e
-   /applications/{id}/jobs) caem aqui, para nenhum link salvo quebrar. *@
+@* Integrações (era Jobs e Integrações, rodadas 7 e 9): situação (ativos, inativos ou todos), tipo, saúde e busca, com um
+   grupo recolhível por aplicação, as procedures dentro da integração e o botão Agenda de cada aplicação, o único lugar onde
+   a agenda se edita. As rotas /jobs, /applications/jobs e /applications/{id}/jobs caem aqui, para nenhum link salvo quebrar. *@
 
-<PageTitle>Jobs</PageTitle>
+<PageTitle>Integrações</PageTitle>
 
 <MudGrid>
     <MudItem xs="5" Class="d-flex align-center justify-center pa-1">
-        <h1 class="ma-0 text-center">@(_filter.IdApp is int id && AppTitle(id) is string title ? $"JOBS - {title.ToUpperInvariant()}" : "JOBS")</h1>
+        <h1 class="ma-0 text-center">@(_filter.IdApp is int id && AppTitle(id) is string title ? $"INTEGRAÇÕES - {title.ToUpperInvariant()}" : "INTEGRAÇÕES")</h1>
     </MudItem>
 
     <Filters Value="_filter" ValueChanged="OnFilterChanged" ShowType="false" />
@@ -88,13 +88,11 @@
                                 <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@health.Color" Icon="@health.Icon">@health.Count</MudChip>
                             </MudTooltip>
                         }
-                        @* stopPropagation no clique e no teclado: a agenda e a engrenagem não abrem nem fecham o grupo *@
-                        <div class="d-flex align-center gap-1" @onclick:stopPropagation="true" @onkeydown:stopPropagation="true">
+                        @* stopPropagation no clique e no teclado: o botão Agenda não abre nem fecha o grupo; a engrenagem saiu daqui
+                           (rodada 9): imagem, credenciais e parâmetros ficam na engrenagem dos cards *@
+                        <div @onclick:stopPropagation="true" @onkeydown:stopPropagation="true">
                             <MudTooltip Text="@(scheduling ? "Voltar à tabela de jobs" : "Editar o intervalo, a hora diária e a fila das integrações")">
                                 <MudButton Variant="@(scheduling ? Variant.Filled : Variant.Outlined)" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Schedule" OnClick="@(() => ToggleSchedule(app, jobs))">Agenda</MudButton>
-                            </MudTooltip>
-                            <MudTooltip Text="Configurações do módulo">
-                                <MudIconButton Icon="@Icons.Material.Filled.Settings" Size="Size.Small" Color="Color.Default" OnClick="@(() => OpenSettings(app))" aria-label="Configurações do módulo" />
                             </MudTooltip>
                         </div>
                     </div>
@@ -102,7 +100,7 @@
                     @if (expanded && scheduling)
                     {
                         <!-- Modo agenda: intervalo, hora diária e fila das integrações; a procedure roda com a integração -->
-                        <MudTable Items="@nodes" Hover="true" Dense="true" Breakpoint="Breakpoint.Sm" RowsPerPage="50" Elevation="0"
+                        <MudTable Items="@nodes" Class="compact-table" Hover="true" Dense="true" Breakpoint="Breakpoint.Sm" RowsPerPage="50" Elevation="0"
                                   RowClassFunc="@((node, _) => node.IsContext ? "context-row" : _drafts.IsChanged(node.Job) ? "changed-row" : "")">
                             <HeaderContent>
                                 <MudTh>IdJob</MudTh>
@@ -147,7 +145,7 @@
                     else if (expanded)
                     {
                         <!-- Integrações na ordem do IdJob, cada uma com as procedures que chama; 50 integrações por página -->
-                        <MudTable Items="@nodes" Hover="true" Dense="true" Breakpoint="Breakpoint.Sm" RowsPerPage="50" Elevation="0" RowClassFunc="@((node, _) => node.IsContext ? "context-row" : "")">
+                        <MudTable Items="@nodes" Class="compact-table" Hover="true" Dense="true" Breakpoint="Breakpoint.Sm" RowsPerPage="50" Elevation="0" RowClassFunc="@((node, _) => node.IsContext ? "context-row" : "")">
                             <HeaderContent>
                                 <MudTh>IdJob</MudTh>
                                 <MudTh>Tipo</MudTh>
@@ -210,7 +208,7 @@
     [SupplyParameterFromQuery(Name = "period")] public string? PeriodQuery { get; set; }
 
     /// <summary>
-    /// Situação: active, inactive ou all. Sem ela, Ativos (o menu e /integrations) ou Todos (as rotas antigas de Jobs).
+    /// Situação: active, inactive ou all. Sem ela, Ativos (o menu, /integrations e /jobs) ou Todos (as rotas antigas /applications/...).
     /// </summary>
     [SupplyParameterFromQuery(Name = "status")] public string? StatusQuery { get; set; }
 
@@ -366,7 +364,7 @@
         _filter = _filter with { Period = period, IdApp = AppQuery ?? IdApp };
         _type = TypeQuery is 1 or 2 ? TypeQuery : null;
 
-        // sem situação na URL: as rotas antigas de Jobs mostravam todos; o menu e /integrations, só os ativos
+        // sem situação na URL: as rotas antigas /applications/... mostravam todos; o menu, /integrations e /jobs, só os ativos
         var oldJobsRoute = new Uri(Navigation.Uri).AbsolutePath.StartsWith("/applications", StringComparison.OrdinalIgnoreCase);
         _status = StatusQuery switch
         {
@@ -422,7 +420,7 @@
         _loading = false;
     }
 
-    // toda mudança de filtro vai para /jobs com a situação explícita, para a URL dizer o que está na tela (e as rotas
+    // toda mudança de filtro vai para /integrations com a situação explícita, para a URL dizer o que está na tela (e as rotas
     // antigas não mudarem a situação padrão no meio do caminho); o que não muda segue como está
     private void Go(JobStatus status, JobHealth? health, int? type, int? app, Period period)
     {
@@ -436,7 +434,7 @@
             ["job"] = _focusJob
         };
 
-        Navigation.NavigateTo(Navigation.GetUriWithQueryParameters("/jobs", query));
+        Navigation.NavigateTo(Navigation.GetUriWithQueryParameters("/integrations", query));
     }
 
     private void OnFilterChanged(FilterState filter)
@@ -486,7 +484,7 @@
             <MudTooltip Text="@job.Description">@job.Title</MudTooltip>
             @if (row.Node is { TotalChildren: > 0 } parent)
             {
-                <MudText Typo="Typo.caption" Class="ml-2" Color="@(parent.FailingChildren > 0 ? Color.Error : Color.Default)">@parent.Summary</MudText>
+                <MudText Typo="Typo.caption" Class="d-block" Color="@(parent.FailingChildren > 0 ? Color.Error : Color.Default)">@parent.Summary</MudText>
             }
         </MudTd>
         <MudTd DataLabel="Agenda">@(JobTree.IsProcedure(job) ? $"com a {job.IdParent}" : MonitorDisplay.Schedule(job))</MudTd>
@@ -500,15 +498,25 @@
             </MudChip>
         </MudTd>
         <MudTd DataLabel="Saúde"><HealthChip Context="HealthContext.From(job)" Now="_updatedAt" /></MudTd>
-        <MudTd DataLabel="Última execução">@MonitorDisplay.Date(job.LastExecution?.StartDate)</MudTd>
+        @* data curta, com a completa no tooltip, para os botões da linha caberem na largura da tela *@
+        <MudTd DataLabel="Última execução" Style="white-space: nowrap">
+            @if (job.LastExecution?.StartDate is DateTime started)
+            {
+                <span title="@MonitorDisplay.Date(started)">@MonitorDisplay.Time(started, _updatedAt)</span>
+            }
+            else
+            {
+                @("—")
+            }
+        </MudTd>
         <MudTd DataLabel="Duração"><DurationText Start="job.LastExecution?.StartDate" End="job.LastExecution?.EndDate" Now="_updatedAt" /></MudTd>
         <MudTd DataLabel="Registros">@job.LastExecution?.Records</MudTd>
         <MudTd>
-            <div class="d-flex align-center gap-1">
+            <div class="d-flex align-center gap-1 flex-wrap">
                 <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => Toggle(job))">
                     @(_opened.Contains((job.IdJob, job.IdType)) ? "Ocultar" : "Execuções")
                 </MudButton>
-                <JobActions Job="job" OnChanged="Load" />
+                <JobActions Job="job" OnChanged="Load" Inline="true" />
             </div>
         </MudTd>
     };
@@ -558,13 +566,6 @@
 
         await Load();
         return true;
-    }
-
-    // imagem, credenciais e parâmetros do módulo; a agenda, nesta tela, fica no botão Agenda do grupo
-    private async Task OpenSettings(AppSummaryModel app)
-    {
-        await ModuleConfigurations.ShowAsync(DialogService, app.IdParent, app.Title, showSchedule: false);
-        await Load();
     }
 
     // entrar no modo agenda abre o grupo; sair com alteração pendente pergunta antes de descartar

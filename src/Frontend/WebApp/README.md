@@ -30,13 +30,13 @@ usam o ambiente `Development`.
 | `/` | login (sem autenticação por enquanto) |
 | `/home` | visão geral: cards das aplicações (os com problema primeiro), métricas com a taxa de sucesso por aplicação e o delta contra a janela anterior, "Falhas Ativas" com os jobs, painel de saúde por gravidade, barras de execuções com erro por hora e mapa de calor aplicação × hora, atualizados a cada minuto |
 | `/applications` | cards das aplicações, com a imagem da empresa; o chip "Ativa" liga ou desliga o módulo (desligar pede confirmação) |
-| `/jobs` | Jobs (era Jobs e Integrações): todos os jobs, num grupo recolhível por aplicação, com o filtro **Situação** (Ativos, Inativos e Todos; abre em Ativos), o de tipo (Todos, Integrações e Procedures), o de saúde (os contadores do topo filtram; `?health=error`) e a busca. Na ordem do `IdJob`, cada integração com as procedures que chama dentro dela, o chip que liga ou desliga cada job (com "Desfazer"), duração e registros da última execução; cada job abre as execuções, mensagens e registros. Os grupos começam fechados e abrem com uma aplicação só (`?app=70`), com o link de um job (`?job=3001&type=2`, em qualquer situação), com busca ou com filtro de saúde. As rotas antigas (`/integrations`, `/applications/jobs` e `/applications/{IdApp}/jobs`) caem aqui; as de Jobs abrem em Todos |
+| `/integrations` | Integrações (era Jobs e Integrações): todos os jobs, num grupo recolhível por aplicação, com o filtro **Situação** (Ativos, Inativos e Todos; abre em Ativos), o de tipo (Todos, Integrações e Procedures), o de saúde (os contadores do topo filtram; `?health=error`) e a busca. Na ordem do `IdJob`, cada integração com as procedures que chama dentro dela, o chip que liga ou desliga cada job (com "Desfazer"), duração e registros da última execução, e os botões Execuções, Executar agora e Reconhecer; cada job abre as execuções, mensagens e registros. O botão **Agenda** de cada aplicação põe a tabela em modo de edição da agenda. Os grupos começam fechados e abrem com uma aplicação só (`?app=70`), com o link de um job (`?job=3001&type=2`, em qualquer situação), com busca ou com filtro de saúde. As rotas `/jobs`, `/applications/jobs` e `/applications/{IdApp}/jobs` caem aqui; as `/applications/...` abrem em Todos |
 | `/errors` | Logs de Erros: mensagens de erro (e, se marcado, de aviso) do período, por aplicação, integração, procedure e causa, com busca pelo job e pelo texto; `?app=30&job=3001` abre o grupo |
-| `/on-demand` | Sob Demanda: as integrações sem agenda, no estilo do Swagger (método, parâmetros, corpo JSON, Executar e resposta), só com a chave `Admin:Enabled` (abaixo) |
+| `/on-demand` | Sob Demanda: as integrações sem agenda, no estilo do Swagger (método, parâmetros, corpo JSON, Executar e resposta), com filtro por verbo nos contadores do topo, só com a chave `Admin:Enabled` (abaixo) |
 | `/queries` | Executar Querys, com favoritas e querys prontas na barra lateral, só com a chave `Admin:Enabled` (abaixo) |
 
-O menu lateral tem Visão Geral, Aplicações, Jobs, Logs de Erros e, para quem tem acesso, Sob Demanda e Executar
-Querys. As integrações sob demanda (sem agenda) não aparecem em Jobs, Agenda nem no painel de saúde:
+O menu lateral tem Visão Geral, Aplicações, Integrações, Logs de Erros e, para quem tem acesso, Sob Demanda e Executar
+Querys. As integrações sob demanda (sem agenda) não aparecem em Integrações nem no painel de saúde:
 ficam na tela Sob Demanda.
 Período, aplicação, tipo e saúde ficam na URL (`?period=7d&app=30`), então o link de uma tela abre do mesmo jeito para
 outra pessoa; sem `period` na URL, vale o último período escolhido na aba. A busca fica só na tela. Na barra superior
@@ -45,17 +45,19 @@ autenticação) e o botão que troca entre o tema escuro e o claro; a escolha do
 padrão: 50 linhas nas grids de jobs, 5 nas execuções e 25 nas mensagens de erro.
 
 O chip de saúde diz há quanto tempo: "Atrasado 1h40", "Rodando 2h13" (laranja quando passa de 1 × o intervalo), com o
-detalhe no tooltip. O menu ⋮ de cada job tem **Reconhecer falha** (o job sai de "Falhas Ativas" até a próxima execução
-ou 24 h, com uma nota para o próximo turno) e **Executar agora** (pede ao host uma execução fora da agenda). Nos Logs de
+detalhe no tooltip. Na tela Integrações, cada linha tem os botões **Executar agora** (pede ao host uma execução fora da
+agenda; ao passar o mouse, diz quando sai a próxima pela agenda e por que o botão está desligado, quando estiver) e
+**Reconhecer** (com Erro ou Atrasado: o job sai de "Falhas Ativas" até a próxima execução ou 24 h, com uma nota para o
+próximo turno); no painel de saúde da Visão geral, as mesmas ações ficam no menu ⋮ da linha. Nos Logs de
 Erros, o botão **Execução** abre a execução da mensagem num diálogo, com o Guid, os registros e os links para o job e
 para a query pronta; os blocos de exceção, pilha e SQL têm botão de copiar, e "Copiar tudo" junta o contexto para um
-chamado. Aplicações, Jobs e Logs de Erros têm "Atualizado às" e o botão de recarregar.
+chamado. Aplicações, Integrações e Logs de Erros têm "Atualizado às" e o botão de recarregar.
 
 As procedures aparecem dentro da integração que as chama (o `IdParent` delas), com a setinha na linha da integração e o
 resumo "11 procedures · 1 com erro". O intervalo, a hora diária e a fila das integrações são editáveis e só gravam em
-"Salvar alterações", com confirmação: na tela Jobs, pelo botão **Agenda** no cabeçalho de cada aplicação, que põe a tabela
-dela em modo de edição da agenda; na Visão geral e em Aplicações, pela aba Agenda do diálogo da engrenagem. Na tela
-Jobs, a engrenagem abre o diálogo só com Imagem, Credenciais e Parâmetros.
+"Salvar alterações", com confirmação, só na tela Integrações, pelo botão **Agenda** no cabeçalho de cada aplicação, que
+põe a tabela dela em modo de edição da agenda. A engrenagem dos cards (Visão geral e Aplicações) abre o diálogo com
+Imagem, Credenciais e Parâmetros.
 
 Ativar ou desativar um job ou um módulo, mudar a agenda, reconhecer uma falha, pedir uma execução e trocar a imagem de uma aplicação só
 mudam o mock e somem ao reiniciar o app. Com o banco, viram `UPDATE` em `auditing.Jobs.IsActive`, gravação em
@@ -155,7 +157,7 @@ WebApp/
 │   ├── Executions/     execuções de um job, ações do job, detalhe de uma execução e de uma mensagem, causas e mensagens
 │   ├── Filters/        filtros do topo das telas e o período da aba (FilterSession)
 │   ├── Loadings/       SpaceLoading, o carregamento padrão do app
-│   ├── MessageBoxes/   ModuleConfigurations (abas Imagem, Credenciais, Parâmetros e Agenda), execução de uma mensagem,
+│   ├── MessageBoxes/   ModuleConfigurations (abas Imagem, Credenciais e Parâmetros), execução de uma mensagem,
 │   │                   nota do reconhecimento e nome da favorita
 │   └── NavMenus/       menu lateral
 ├── Data/               IMonitorRepository, IQueryRunner, SqlInspector, acesso à tela de consultas e os mocks

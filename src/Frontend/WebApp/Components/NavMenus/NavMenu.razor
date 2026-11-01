@@ -5,8 +5,8 @@
     <MudNavLink Href="/home" Match="NavLinkMatch.Prefix">Visão Geral</MudNavLink>
     @* All: com Prefix, "Aplicações" acenderia nas rotas antigas de Jobs (/applications/jobs) *@
     <MudNavLink Href="/applications" Match="NavLinkMatch.All">Aplicações</MudNavLink>
-    @* Jobs e Integrações viraram uma tela só (rodada 7) *@
-    <MudNavLink Href="/jobs" Match="NavLinkMatch.Prefix">Jobs</MudNavLink>
+    @* Jobs e Integrações viraram uma tela só, com o nome Integrações (rodadas 7 e 9) *@
+    <MudNavLink Href="/integrations" Match="NavLinkMatch.Prefix">Integrações</MudNavLink>
     @if (AdminAccess.IsAllowed)
     {
         <MudNavLink Href="/on-demand" Match="NavLinkMatch.Prefix">Sob Demanda</MudNavLink>

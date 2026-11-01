@@ -36,9 +36,17 @@
             <SpaceLoading Overlay="true" Visible="_loading" Label="Carregando os métodos" />
 
             <div class="d-flex align-center gap-2 px-4 pb-2 flex-wrap">
-                @foreach (var verb in Filtered.GroupBy(x => x.Verb).OrderBy(x => VerbOrder(x.Key)))
+                @* os contadores de verbo filtram: dá para marcar mais de um; nenhum marcado mostra todos *@
+                @foreach (var verb in FilteredByAppAndSearch.GroupBy(x => x.Verb).OrderBy(x => VerbOrder(x.Key)))
                 {
-                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@verb.Key @verb.Count()</MudChip>
+                    var selected = _verbs.Contains(verb.Key);
+                    <button type="button" class="verb-chip verb-chip-@verb.Key.ToLowerInvariant() @(selected ? "selected" : "")" aria-pressed="@(selected ? "true" : "false")" @onclick="@(() => ToggleVerb(verb.Key))">
+                        @verb.Key @verb.Count()
+                    </button>
+                }
+                @if (_verbs.Count > 0)
+                {
+                    <MudLink Typo="Typo.body2" OnClick="@(() => _verbs.Clear())">mostrar todos</MudLink>
                 }
                 <MudSpacer />
                 <MudText Typo="Typo.caption">Empresa: <span class="logged-company-text">@LoggedCompany.Label</span></MudText>
@@ -110,9 +118,22 @@
 
     private IEnumerable<(int IdApp, string AppTitle)> Apps => _operations.Select(x => (x.IdApp, x.AppTitle)).Distinct().OrderBy(x => x.AppTitle);
 
-    private IEnumerable<OnDemandOperation> Filtered => _operations
+    // verbos marcados nos contadores do topo; vazio = todos
+    private readonly HashSet<string> _verbs = [];
+
+    // o número de cada verbo conta com a aplicação e a busca, mas sem o filtro de verbo, para dar para marcar outro
+    private IEnumerable<OnDemandOperation> FilteredByAppAndSearch => _operations
         .Where(x => _idApp is null || x.IdApp == _idApp)
         .Where(x => !Searching || MessageGrouping.Contains($"{x.IdJob} {x.Title} {x.Description}", _search));
+
+    private IEnumerable<OnDemandOperation> Filtered => FilteredByAppAndSearch
+        .Where(x => _verbs.Count == 0 || _verbs.Contains(x.Verb));
+
+    private void ToggleVerb(string verb)
+    {
+        if (!_verbs.Remove(verb))
+            _verbs.Add(verb);
+    }
 
     protected override async Task OnInitializedAsync()
     {

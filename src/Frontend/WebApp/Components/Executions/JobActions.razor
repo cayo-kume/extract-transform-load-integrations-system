@@ -3,10 +3,34 @@
 @inject ISnackbar Snackbar
 @inject ILogger<JobActions> Logger
 
-@* Ações da linha de um job (menu de três pontos): reconhecer a falha e executar agora. Fica no menu, e não no clique do
-   chip de saúde, porque o chip também aparece nos cabeçalhos e nos contadores, onde o clique seria ambíguo. *@
+@* Ações da linha de um job: executar agora e reconhecer a falha. Na tela Integrações (Inline), são botões com nome ao lado
+   de "Execuções" (rodada 9); no painel de saúde da Visão geral, um menu de três pontos. Nunca no clique do chip de saúde,
+   porque o chip também aparece nos cabeçalhos e nos contadores, onde o clique seria ambíguo. *@
 
-@if (CanAcknowledge || Job.Acknowledgement is not null || CanRun || RunHint is not null)
+@if (Inline)
+{
+    <div class="d-flex align-center gap-1 flex-wrap">
+        @if (Schedulable)
+        {
+            <MudTooltip Text="@RunTooltip">
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.PlayArrow" Disabled="@(!CanRun)" OnClick="RequestRun">Executar agora</MudButton>
+            </MudTooltip>
+        }
+        @if (Job.Acknowledgement is not null)
+        {
+            <MudTooltip Text="A falha volta para Falhas Ativas">
+                <MudButton Variant="Variant.Text" Color="Color.Default" Size="Size.Small" StartIcon="@Icons.Material.Filled.RemoveDone" OnClick="RemoveAcknowledgement">Desfazer reconhecimento</MudButton>
+            </MudTooltip>
+        }
+        else if (CanAcknowledge)
+        {
+            <MudTooltip Text="Tira a falha de Falhas Ativas até a próxima execução, com uma nota para o próximo turno">
+                <MudButton Variant="Variant.Outlined" Color="Color.Warning" Size="Size.Small" StartIcon="@Icons.Material.Filled.DoneAll" OnClick="Acknowledge">Reconhecer</MudButton>
+            </MudTooltip>
+        }
+    </div>
+}
+else if (CanAcknowledge || Job.Acknowledgement is not null || CanRun || RunHint is not null)
 {
     <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small" Dense="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" aria-label="Ações do job">
         @if (Job.Acknowledgement is not null)
@@ -36,6 +60,11 @@
     /// </summary>
     [Parameter] public EventCallback OnChanged { get; set; }
 
+    /// <summary>
+    /// Botões com nome na linha (tela Integrações) em vez do menu de três pontos.
+    /// </summary>
+    [Parameter] public bool Inline { get; set; }
+
     private bool CanAcknowledge => Job.IsActive && Job.Health is JobHealth.Error or JobHealth.Late;
 
     // só integrações ativas, paradas e sem pedido pendente; e só onde o pedido ganha tempo da agenda: diários, sob
@@ -55,6 +84,30 @@
         _ when !GainsTime => $"Executar agora: a próxima execução sai em até {Job.IntervalTimeInMinutes} min",
         _ => null
     };
+
+    // quando sai a próxima pela agenda e, se o botão está desligado, por quê
+    private string RunTooltip
+    {
+        get
+        {
+            if (Job.RunRequest is { } request)
+                return $"Execução solicitada às {request.RequestedAt:HH:mm}; o host começa em até {HealthChip.HostRecheckMinutes} min";
+
+            if (Job.Health == JobHealth.Running)
+                return "O job está rodando";
+
+            var next = Job.RunningDailyAt is TimeOnly at
+                ? $"A próxima execução pela agenda sai às {at:HH\\:mm}"
+                : $"A próxima execução pela agenda sai em até {Interval(Job.IntervalTimeInMinutes)}";
+
+            return GainsTime
+                ? $"{next}. Executar agora pede ao host uma fora da agenda; ele começa em até {HealthChip.HostRecheckMinutes} min."
+                : next;
+        }
+    }
+
+    private static string Interval(int minutes) =>
+        minutes >= 60 && minutes % 60 == 0 ? $"{minutes / 60} h" : $"{minutes} min";
 
     private async Task Acknowledge()
     {

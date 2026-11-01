@@ -746,3 +746,38 @@ code {
     border-top: 1px solid var(--mud-palette-lines-default);
     background-color: rgba(255, 181, 69, 0.05);
 }
+
+/* Sob Demanda: os contadores de verbo são filtros, na cor do verbo; marcado fica com o fundo preenchido */
+.verb-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid;
+    border-radius: 14px;
+    padding: 2px 10px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    background: transparent;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.verb-chip-get { border-color: #61affe; color: #61affe; }
+.verb-chip-post { border-color: #49cc90; color: #49cc90; }
+.verb-chip-put { border-color: #fca130; color: #fca130; }
+.verb-chip-patch { border-color: #50e3c2; color: #50e3c2; }
+.verb-chip-delete { border-color: #f93e3e; color: #f93e3e; }
+
+.verb-chip.selected { color: #fff; }
+.verb-chip-get.selected { background-color: #61affe; }
+.verb-chip-post.selected { background-color: #49cc90; }
+.verb-chip-put.selected { background-color: #fca130; }
+.verb-chip-patch.selected { background-color: #50e3c2; }
+.verb-chip-delete.selected { background-color: #f93e3e; }
+
+/* Integrações: células com menos espaço dos lados, para a linha (com Execuções, Executar agora e Reconhecer) caber na
+   largura da tela sem rolar para o lado */
+.compact-table .mud-table-cell {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+}

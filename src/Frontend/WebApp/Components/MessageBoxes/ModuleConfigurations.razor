@@ -1,12 +1,9 @@
 @inject IMonitorRepository MonitorRepository
 @inject ISnackbar Snackbar
-@inject ILogger<ModuleConfigurations> Logger
-@inject IDialogService DialogService
 
 @* Configurações de um módulo para a empresa logada, em abas: imagem (a da empresa), credenciais e parâmetros (só leitura
-   nesta fase) e agenda (ativar e desativar cada job, e o intervalo, a hora diária e a fila das integrações, com as
-   procedures dentro da integração que as chama). Pela tela Jobs, abre sem a aba Agenda: lá a agenda se edita no próprio
-   grupo (ShowSchedule). Ver docs/PLANO-WEBAPP.md, "Ajustes de layout". *@
+   nesta fase). A agenda (ligar e desligar os jobs, intervalo, hora diária e fila) fica só na tela Integrações, no botão
+   Agenda de cada aplicação (rodada 9). Ver docs/PLANO-WEBAPP.md, "Ajustes de layout". *@
 
 <MudDialog>
     <TitleContent>
@@ -65,99 +62,12 @@
                         }
                     </div>
                 </MudTabPanel>
-
-                @if (ShowSchedule)
-                {
-                    <MudTabPanel Text="Agenda">
-                        <div class="pa-2">
-                            <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3">Ativar, desativar e a agenda valem para a empresa logada. Nesta fase só mudam o mock; com o banco, gravam em auditing.Jobs (IsActive, IntervalTimeInMinutes, RunningDailyAt e Queue).</MudAlert>
-                            <div class="d-flex align-center gap-4 mb-2 flex-wrap">
-                                <div style="width: 280px">
-                                    <MudTextField T="string" @bind-Value="_search" Immediate="true" Label="Pesquisar job" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search" />
-                                </div>
-                                <MudSpacer />
-                                <TypeSegment Value="_type" ValueChanged="@(x => _type = x)" />
-                            </div>
-
-                            <!-- Integrações com as procedures que elas chamam; a agenda se edita só na integração (a procedure roda com ela) -->
-                            <MudTable Items="@Nodes" Dense="true" Hover="true" Breakpoint="Breakpoint.Sm" RowsPerPage="50" Elevation="0" RowClassFunc="@RowClass">
-                                <HeaderContent>
-                                    <MudTh>IdJob</MudTh>
-                                    <MudTh>Título</MudTh>
-                                    <MudTh>Intervalo (min)</MudTh>
-                                    <MudTh>Diário às</MudTh>
-                                    <MudTh>Fila</MudTh>
-                                    <MudTh>Ativo</MudTh>
-                                </HeaderContent>
-                                <RowTemplate>
-                                    @{ var job = context.Job; }
-                                    <MudTd DataLabel="IdJob" Style="white-space: nowrap">
-                                        <JobTreeToggle Node="context" Toggled="_toggled" OnToggle="@(() => JobTree.Toggle(context, _toggled))" />
-                                        @job.IdJob
-                                    </MudTd>
-                                    <MudTd DataLabel="Título">
-                                        @job.Title
-                                        @if (context.TotalChildren > 0)
-                                        {
-                                            <MudText Typo="Typo.caption" Class="ml-2">@context.Summary</MudText>
-                                        }
-                                    </MudTd>
-                                    @if (context.IsContext)
-                                    {
-                                        <MudTd colspan="4"><MudText Typo="Typo.caption">integração das procedures abaixo</MudText></MudTd>
-                                    }
-                                    else if (JobTree.IsProcedure(job))
-                                    {
-                                        <MudTd colspan="3"><MudText Typo="Typo.caption">roda com a integração @job.IdParent</MudText></MudTd>
-                                        <MudTd DataLabel="Ativo"><MudSwitch T="bool" Value="job.IsActive" ValueChanged="@(v => SetJobActive(job, v))" Color="Color.Success" Size="Size.Small" /></MudTd>
-                                    }
-                                    else
-                                    {
-                                        <ScheduleCells Job="job" Drafts="_drafts" />
-                                        <MudTd DataLabel="Ativo"><MudSwitch T="bool" Value="job.IsActive" ValueChanged="@(v => SetJobActive(job, v))" Color="Color.Success" Size="Size.Small" /></MudTd>
-                                    }
-                                </RowTemplate>
-                                <ChildRowContent>
-                                    @if (JobTree.IsExpanded(context, _toggled))
-                                    {
-                                        @foreach (var child in context.Children)
-                                        {
-                                            <MudTr @key="(child.IdJob, child.IdType)" Class="child-row">
-                                                <MudTd DataLabel="IdJob" Class="child-indent">@child.IdJob</MudTd>
-                                                <MudTd DataLabel="Título">@child.Title</MudTd>
-                                                <MudTd colspan="3"><MudText Typo="Typo.caption">roda com a integração @context.Job.IdJob</MudText></MudTd>
-                                                <MudTd DataLabel="Ativo"><MudSwitch T="bool" Value="child.IsActive" ValueChanged="@(v => SetJobActive(child, v))" Color="Color.Success" Size="Size.Small" /></MudTd>
-                                            </MudTr>
-                                        }
-                                    }
-                                </ChildRowContent>
-                                <NoRecordsContent>
-                                    <MudText Typo="Typo.body2">Nenhum job encontrado.</MudText>
-                                </NoRecordsContent>
-                                <PagerContent>
-                                    <TablePager PageSizeOptions="new[] { 10, 25, 50 }" />
-                                </PagerContent>
-                            </MudTable>
-                            <MudText Typo="Typo.caption">
-                                50 integrações por página; as procedures não contam. Intervalo mínimo de 1 min (as sob demanda ficam na tela Sob Demanda). Com "Diário às" preenchido, o
-                                intervalo fica 1440; limpar o horário libera o intervalo. Uma fila nova só roda se algum servidor do host a tiver em
-                                Hangfire:Server:Queues.
-                            </MudText>
-                        </div>
-                    </MudTabPanel>
-                }
             </MudTabs>
+            <MudText Typo="Typo.caption" Class="mt-2 d-block">Ligar e desligar os jobs e mudar a agenda: tela Integrações, no botão Agenda da aplicação.</MudText>
         }
     </DialogContent>
     <DialogActions>
-        @if (_drafts.Count > 0)
-        {
-            <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Outlined">@_drafts.Count alteração(ões) não salva(s)</MudChip>
-            <MudSpacer />
-            <MudButton OnClick="Discard" Disabled="_saving">Descartar</MudButton>
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveSchedules" Disabled="@(_saving || _drafts.HasInvalidQueue)">Salvar alterações</MudButton>
-        }
-        <MudButton OnClick="Close" Disabled="_saving">Fechar</MudButton>
+        <MudButton OnClick="Close">Fechar</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -172,74 +82,27 @@
     [Parameter] public string? Title { get; set; }
 
     /// <summary>
-    /// Aba que abre primeiro: 0 Imagem, 1 Credenciais, 2 Parâmetros, 3 Agenda.
+    /// Aba que abre primeiro: 0 Imagem, 1 Credenciais, 2 Parâmetros.
     /// </summary>
     [Parameter] public int InitialTab { get; set; }
 
-    /// <summary>
-    /// Mostra a aba Agenda; a tela Jobs abre o diálogo sem ela, porque lá a agenda se edita no grupo da aplicação.
-    /// </summary>
-    [Parameter] public bool ShowSchedule { get; set; } = true;
-
     private IReadOnlyList<ModuleSettingModel> _settings = [];
-    private IReadOnlyList<JobModel> _jobs = [];
     private string? _imageUrl;
-    private string? _search;
-    private int? _type;
     private int _tab;
     private bool _loading = true;
-    private bool _saving;
-
-    // integrações abertas ou fechadas pelo usuário, e a agenda alterada e ainda não salva
-    private readonly HashSet<(int, int)> _toggled = [];
-    private readonly ScheduleDrafts _drafts = new();
-
-    private List<JobNode> Nodes => JobTree.Build(
-        _jobs,
-        filter: _ => true,
-        matches: x => string.IsNullOrWhiteSpace(_search) || MessageGrouping.Contains($"{x.IdJob} {x.Title}", _search),
-        _type,
-        narrowing: !string.IsNullOrWhiteSpace(_search));
 
     protected override async Task OnInitializedAsync()
     {
         _tab = InitialTab;
         _settings = await MonitorRepository.GetModuleSettingsAsync(IdApp);
-        _drafts.Queues = await MonitorRepository.GetQueuesAsync();
-        await LoadAll();
+        await LoadImage();
         _loading = false;
     }
 
-    private string RowClass(JobNode node, int index) =>
-        node.IsContext ? "context-row" : _drafts.IsChanged(node.Job) ? "changed-row" : "";
-
-    private async Task SaveSchedules()
-    {
-        _saving = true;
-
-        try
-        {
-            if (await _drafts.ConfirmAndSaveAsync(DialogService, Snackbar, Logger, MonitorRepository, Title, _jobs) > 0)
-                await LoadAll();
-        }
-        finally
-        {
-            _saving = false;
-        }
-    }
-
-    private void Discard() => _drafts.Clear();
-
-    private async Task LoadAll()
+    private async Task LoadImage()
     {
         var summaries = await MonitorRepository.GetAppSummariesAsync(Period.Last24Hours);
         _imageUrl = summaries.FirstOrDefault(x => x.IdParent == IdApp)?.ImageUrl;
-        // as sob demanda não têm agenda: ficam na tela Sob Demanda
-        _jobs = (await MonitorRepository.GetJobsAsync(IdApp, idType: null))
-            .Where(x => !x.IsOnDemand)
-            .OrderBy(x => x.IdJob)
-            .ThenBy(x => x.IdType)
-            .ToList();
     }
 
     private async Task OnImageSelected(InputFileChangeEventArgs e)
@@ -264,73 +127,32 @@
         await stream.CopyToAsync(memory);
 
         await MonitorRepository.SetAppImageAsync(IdApp, file.ContentType, memory.ToArray());
-        await LoadAll();
+        await LoadImage();
         Snackbar.Add("Imagem salva.", Severity.Success);
     }
 
     private async Task RemoveImage()
     {
         await MonitorRepository.RemoveAppImageAsync(IdApp);
-        await LoadAll();
+        await LoadImage();
         Snackbar.Add("Imagem removida: o card volta para a imagem padrão.", Severity.Info);
     }
 
-    private async Task SetJobActive(JobModel job, bool isActive)
-    {
-        if (!await Save(job, isActive))
-            return;
-
-        Snackbar.JobToggled(job, isActive, () => InvokeAsync(async () =>
-        {
-            if (await Save(job, !isActive))
-                Snackbar.Add(MonitorDisplay.JobToggled(job.IdJob, job.Title, !isActive), Severity.Info);
-
-            StateHasChanged();
-        }));
-    }
-
-    // em falha, o switch continua como estava
-    private async Task<bool> Save(JobModel job, bool isActive)
-    {
-        if (!await Snackbar.TryAsync(Logger, () => MonitorRepository.SetJobActiveAsync(job.IdJob, job.IdType, isActive), $"Não foi possível {(isActive ? "ativar" : "desativar")} o job {job.IdJob}."))
-            return false;
-
-        await LoadAll();
-        return true;
-    }
-
-    // fechar com agenda não salva pergunta antes de descartar
-    private async Task Close()
-    {
-        if (_drafts.Count > 0)
-        {
-            var discard = await DialogService.ShowMessageBoxAsync(
-                "Descartar as alterações?",
-                $"Há {_drafts.Count} alteração(ões) de agenda não salva(s).",
-                yesText: "Descartar",
-                cancelText: "Continuar editando");
-
-            if (discard != true)
-                return;
-        }
-
-        MudDialog?.Close();
-    }
+    private void Close() => MudDialog?.Close();
 
     /// <summary>
     /// Abre o diálogo de um módulo na aba indicada e espera ele fechar.
     /// </summary>
-    public static async Task ShowAsync(IDialogService dialogService, int idApp, string? title, int initialTab = 0, bool showSchedule = true)
+    public static async Task ShowAsync(IDialogService dialogService, int idApp, string? title, int initialTab = 0)
     {
         var parameters = new DialogParameters<ModuleConfigurations>
         {
             { x => x.IdApp, idApp },
             { x => x.Title, title },
-            { x => x.InitialTab, initialTab },
-            { x => x.ShowSchedule, showSchedule }
+            { x => x.InitialTab, initialTab }
         };
 
-        var reference = await dialogService.ShowAsync<ModuleConfigurations>("Configurações", parameters, new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true, BackdropClick = false, CloseOnEscapeKey = false });
+        var reference = await dialogService.ShowAsync<ModuleConfigurations>("Configurações", parameters, new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true, CloseButton = true });
         await reference.Result;
     }
 }
