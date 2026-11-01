@@ -735,3 +735,14 @@ code {
     text-overflow: ellipsis;
     opacity: 0.8;
 }
+
+/* Jobs, modo agenda: a faixa no fim do grupo com o que falta salvar, Descartar, Salvar alterações e Concluir */
+.schedule-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 8px 12px;
+    border-top: 1px solid var(--mud-palette-lines-default);
+    background-color: rgba(255, 181, 69, 0.05);
+}

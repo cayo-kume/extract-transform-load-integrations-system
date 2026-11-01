@@ -1,0 +1,37 @@
+@* As três células de agenda de uma integração (Intervalo, Diário às e Fila), editáveis, na linha da tabela: o campo
+   alterado fica com a borda laranja até salvar. O estado fica em Drafts; OnChanged avisa a tela para redesenhar o resto
+   (contador de alterações, linha marcada). *@
+
+@{ var draft = Drafts.Of(Job); }
+<MudTd DataLabel="Intervalo (min)">
+    <div class="schedule-field @(draft.Interval != Job.IntervalTimeInMinutes ? "schedule-changed" : "")">
+        <MudNumericField T="int" Value="draft.Interval" ValueChanged="@(v => Change(draft with { Interval = v }))" Min="1" Disabled="@(draft.DailyAt is not null || Disabled)" Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" />
+    </div>
+</MudTd>
+<MudTd DataLabel="Diário às">
+    <div class="schedule-field @(draft.DailyAt != Job.RunningDailyAt ? "schedule-changed" : "")">
+        <MudTextField T="string" InputType="InputType.Time" Value="@(draft.DailyAt?.ToString("HH:mm"))" ValueChanged="@(v => Change(ScheduleDrafts.WithDailyAt(Job, draft, v)))" Disabled="Disabled" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true" />
+    </div>
+</MudTd>
+<MudTd DataLabel="Fila">
+    <div class="schedule-field @(draft.Queue != Job.Queue ? "schedule-changed" : "")">
+        <MudAutocomplete T="string" Value="draft.Queue" ValueChanged="@(v => Change(draft with { Queue = v?.Trim() ?? "" }))" SearchFunc="Drafts.SearchQueues" CoerceValue="true" Disabled="Disabled" Variant="Variant.Outlined" Margin="Margin.Dense"
+                         Error="@(!ScheduleDrafts.IsValidQueue(draft.Queue))" ErrorText="Só minúsculas, dígitos, _ e -" />
+    </div>
+</MudTd>
+
+@code {
+    [Parameter, EditorRequired] public JobModel Job { get; set; } = default!;
+
+    [Parameter, EditorRequired] public ScheduleDrafts Drafts { get; set; } = default!;
+
+    [Parameter] public bool Disabled { get; set; }
+
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private Task Change(ScheduleDrafts.Draft draft)
+    {
+        Drafts.Change(Job, draft);
+        return OnChanged.InvokeAsync();
+    }
+}

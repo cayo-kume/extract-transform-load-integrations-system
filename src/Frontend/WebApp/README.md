@@ -52,9 +52,10 @@ para a query pronta; os blocos de exceção, pilha e SQL têm botão de copiar, 
 chamado. Aplicações, Jobs e Logs de Erros têm "Atualizado às" e o botão de recarregar.
 
 As procedures aparecem dentro da integração que as chama (o `IdParent` delas), com a setinha na linha da integração e o
-resumo "11 procedures · 1 com erro". Na aba Agenda do diálogo de configurações (engrenagem dos cards e dos grupos de
-Jobs), o intervalo, a hora diária e a fila das integrações são editáveis e só gravam em "Salvar alterações", com
-confirmação.
+resumo "11 procedures · 1 com erro". O intervalo, a hora diária e a fila das integrações são editáveis e só gravam em
+"Salvar alterações", com confirmação: na tela Jobs, pelo botão **Agenda** no cabeçalho de cada aplicação, que põe a tabela
+dela em modo de edição da agenda; na Visão geral e em Aplicações, pela aba Agenda do diálogo da engrenagem. Na tela
+Jobs, a engrenagem abre o diálogo só com Imagem, Credenciais e Parâmetros.
 
 Ativar ou desativar um job ou um módulo, mudar a agenda, reconhecer uma falha, pedir uma execução e trocar a imagem de uma aplicação só
 mudam o mock e somem ao reiniciar o app. Com o banco, viram `UPDATE` em `auditing.Jobs.IsActive`, gravação em

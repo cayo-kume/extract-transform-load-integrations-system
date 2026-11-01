@@ -453,6 +453,13 @@ mockup para aprovação):
     antigas (`/integrations`, `/applications/jobs` e `/applications/{id}/jobs`) caem na tela nova (as de Jobs em Todos), e
     os links (Falhas Ativas, "Ver jobs", "Abrir o job" e "Ir para o job") apontam para `/jobs`. Toda mudança de filtro
     escreve a situação na URL (`?status=active|inactive|all`).
+12. **Rodada 8 (01/11/2026, mockup aprovado, opção A):** na tela Jobs, a agenda saiu do diálogo da engrenagem, que lá
+    abre só com Imagem, Credenciais e Parâmetros (`ModuleConfigurations.ShowSchedule`). No lugar, um botão **Agenda** no
+    cabeçalho do grupo, entre os chips de saúde e a engrenagem, põe a tabela da aplicação em modo agenda: Intervalo,
+    Diário às e Fila editáveis em cada integração (também na integração em cinza, porque a agenda vale ao religar), o chip
+    Ativo, e uma faixa com o que falta salvar, Descartar, Salvar alterações (a mesma confirmação) e Concluir; sair com
+    alteração pendente pergunta antes de descartar. Na Visão geral e em Aplicações, a engrenagem segue com a aba Agenda.
+    A lógica de edição ficou em `ScheduleDrafts` e `ScheduleCells`, usados pelos dois lugares.
 
 # Fase 5 — Banco de dados (não implementar agora)
 
