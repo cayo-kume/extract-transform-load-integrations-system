@@ -1,17 +1,23 @@
-﻿@page "/applications/jobs"
+﻿@page "/jobs"
+@page "/integrations"
+@page "/applications/jobs"
 @page "/applications/{IdApp:int}/jobs"
 @inject IDialogService DialogService
 @inject IMonitorRepository MonitorRepository
 @inject NavigationManager Navigation
 @inject FilterSession FilterSession
 @inject ISnackbar Snackbar
-@inject ILogger<ApplicationJobs> Logger
+@inject ILogger<Jobs> Logger
+
+@* Jobs e Integrações numa tela só (rodada 7): situação (ativos, inativos ou todos), tipo, saúde e busca, com um grupo
+   recolhível por aplicação e as procedures dentro da integração. As rotas antigas (/integrations, /applications/jobs e
+   /applications/{id}/jobs) caem aqui, para nenhum link salvo quebrar. *@
 
 <PageTitle>Jobs</PageTitle>
 
 <MudGrid>
     <MudItem xs="5" Class="d-flex align-center justify-center pa-1">
-        <h1 class="ma-0 text-center">@(IdApp is int id && AppTitle(id) is string title ? $"JOBS - {title.ToUpperInvariant()}" : "JOBS")</h1>
+        <h1 class="ma-0 text-center">@(_filter.IdApp is int id && AppTitle(id) is string title ? $"JOBS - {title.ToUpperInvariant()}" : "JOBS")</h1>
     </MudItem>
 
     <Filters Value="_filter" ValueChanged="OnFilterChanged" ShowType="false" />
@@ -20,19 +26,44 @@
         <SpaceLoading Overlay="true" Visible="_loading" Label="Carregando os jobs" />
 
         <div class="d-flex align-center gap-2 px-4 pt-2 flex-wrap">
+            <MudText Typo="Typo.caption">Situação</MudText>
+            <MudButtonGroup Variant="Variant.Outlined" Size="Size.Small">
+                @foreach (var status in new[] { JobStatus.Active, JobStatus.Inactive, JobStatus.All })
+                {
+                    <MudButton Variant="@(_status == status ? Variant.Filled : Variant.Outlined)" Color="Color.Primary" OnClick="@(() => Go(status, status == JobStatus.Inactive ? null : _health, _type, _filter.IdApp, _filter.Period))">@StatusLabel(status)</MudButton>
+                }
+            </MudButtonGroup>
+            <MudText Typo="Typo.caption" Class="ml-2">Tipo</MudText>
+            <TypeSegment Value="_type" ValueChanged="@(type => Go(_status, _health, type, _filter.IdApp, _filter.Period))" />
+            <MudSpacer />
+            <RefreshBar UpdatedAt="_updatedAt" OnRefresh="Load" />
+        </div>
+
+        <!-- Os contadores de saúde filtram a tela: clicar de novo tira o filtro -->
+        <div class="d-flex align-center gap-2 px-4 pt-2 flex-wrap">
+            @foreach (var health in TopHealthCounts)
+            {
+                var selected = health.Key is not null && health.Key == _health;
+                <MudChip T="string" Size="Size.Small" Variant="@(selected ? Variant.Filled : Variant.Outlined)" Color="@MonitorDisplay.HealthColor(health.Key)" Icon="@MonitorDisplay.HealthIcon(health.Key)"
+                         OnClick="@(() => Go(_status == JobStatus.Inactive ? JobStatus.Active : _status, health.Key is null || selected ? null : health.Key, _type, _filter.IdApp, _filter.Period))">
+                    @MonitorDisplay.HealthLabel(health.Key): @health.Count()
+                </MudChip>
+            }
+            @if (_health is not null)
+            {
+                <MudLink Typo="Typo.body2" OnClick="@(() => Go(_status, null, _type, _filter.IdApp, _filter.Period))">mostrar todas</MudLink>
+            }
             @if (_focusJob is int focus)
             {
+                <MudSpacer />
                 <MudChip T="string" Color="Color.Primary" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.FilterAlt" OnClose="ClearFocus" CloseIcon="@Icons.Material.Filled.Close">
                     Mostrando só o job @focus
                 </MudChip>
                 <MudLink Typo="Typo.body2" OnClick="ClearFocus">ver todos</MudLink>
             }
-            <MudSpacer />
-            <RefreshBar UpdatedAt="_updatedAt" OnRefresh="Refresh" />
-            <TypeSegment Value="_type" ValueChanged="OnTypeChanged" />
         </div>
 
-        <!-- Um grupo recolhível por aplicação, como em Integrações e Logs de Erros; dentro, as integrações com as procedures -->
+        <!-- Um grupo recolhível por aplicação, como em Logs de Erros; dentro, as integrações com as procedures -->
         <div class="px-4 pb-4 pt-2">
             @foreach (var app in FilteredApps)
             {
@@ -47,7 +78,9 @@
                         <MudText Typo="Typo.subtitle2" Style="white-space: nowrap">@app.IdParent - @app.Title</MudText>
                         <MudText Typo="Typo.caption" Class="app-group-description">@app.Description</MudText>
                         <MudSpacer />
-                        <MudText Typo="Typo.caption" Style="white-space: nowrap">@jobs.Count job(s) · @jobs.Count(x => x.IsActive) ativo(s)</MudText>
+                        <MudText Typo="Typo.caption" Style="white-space: nowrap">
+                            @(_health is null ? $"{jobs.Count} job(s) · {jobs.Count(x => x.IsActive)} ativo(s)" : $"{jobs.Count} no filtro")
+                        </MudText>
                         @foreach (var health in HealthCounts(jobs))
                         {
                             <MudTooltip Text="@health.Label">
@@ -74,6 +107,8 @@
                                 <MudTh>Ativo</MudTh>
                                 <MudTh>Saúde</MudTh>
                                 <MudTh>Última execução</MudTh>
+                                <MudTh>Duração</MudTh>
+                                <MudTh>Registros</MudTh>
                                 <MudTh></MudTh>
                             </HeaderContent>
                             <RowTemplate>
@@ -109,12 +144,26 @@
 </MudGrid>
 
 @code {
+    private enum JobStatus
+    {
+        Active,
+        Inactive,
+        All
+    }
+
     /// <summary>
-    /// Aplicação da rota /applications/{IdApp}/jobs; sem ela, todas.
+    /// Aplicação da rota antiga /applications/{IdApp}/jobs; a rota nova usa ?app=.
     /// </summary>
     [Parameter] public int? IdApp { get; set; }
 
+    [SupplyParameterFromQuery(Name = "app")] public int? AppQuery { get; set; }
+
     [SupplyParameterFromQuery(Name = "period")] public string? PeriodQuery { get; set; }
+
+    /// <summary>
+    /// Situação: active, inactive ou all. Sem ela, Ativos (o menu e /integrations) ou Todos (as rotas antigas de Jobs).
+    /// </summary>
+    [SupplyParameterFromQuery(Name = "status")] public string? StatusQuery { get; set; }
 
     /// <summary>
     /// Filtro de tipo (TypeSegment): 2 integrações, 1 procedures.
@@ -122,12 +171,19 @@
     [SupplyParameterFromQuery(Name = "type")] public int? TypeQuery { get; set; }
 
     /// <summary>
-    /// Link direto para um job (?job=3001&amp;type=2): só ele na tela, já com as execuções abertas.
+    /// Filtro de saúde (?health=error|late|running|ok), aberto pelos links de "Falhas Ativas" da Visão geral.
+    /// </summary>
+    [SupplyParameterFromQuery(Name = "health")] public string? HealthQuery { get; set; }
+
+    /// <summary>
+    /// Link direto para um job (?job=3001&amp;type=2): só ele na tela, em qualquer situação, já com as execuções abertas.
     /// </summary>
     [SupplyParameterFromQuery(Name = "job")] public int? JobQuery { get; set; }
 
     private FilterState _filter = new();
+    private JobStatus _status = JobStatus.Active;
     private int? _type;
+    private JobHealth? _health;
     private int? _focusJob;
     private bool _loading = true;
     private bool _loaded;
@@ -147,8 +203,32 @@
     private readonly HashSet<int> _expandedApps = [];
     private readonly HashSet<int> _collapsedApps = [];
 
-    // o grupo abre sozinho com uma aplicação só na rota, com o job do link ou com busca; nos outros casos começa fechado
-    private bool OpensByItself => IdApp is not null || _focusJob is not null || !string.IsNullOrWhiteSpace(_filter.Search);
+    private static string StatusLabel(JobStatus status) => status switch
+    {
+        JobStatus.Active => "Ativos",
+        JobStatus.Inactive => "Inativos",
+        _ => "Todos"
+    };
+
+    private static string StatusQueryOf(JobStatus status) => status switch
+    {
+        JobStatus.Active => "active",
+        JobStatus.Inactive => "inactive",
+        _ => "all"
+    };
+
+    private static string? HealthQueryOf(JobHealth? health) => health switch
+    {
+        JobHealth.Error => "error",
+        JobHealth.Late => "late",
+        JobHealth.Running => "running",
+        JobHealth.Ok => "ok",
+        _ => null
+    };
+
+    // o grupo abre sozinho com uma aplicação só, com o job do link, com busca ou com filtro de saúde; senão começa fechado
+    private bool OpensByItself =>
+        _filter.IdApp is not null || _focusJob is not null || _health is not null || !string.IsNullOrWhiteSpace(_filter.Search);
 
     private bool IsExpanded(int idApp) =>
         OpensByItself ? !_collapsedApps.Contains(idApp) : _expandedApps.Contains(idApp);
@@ -167,13 +247,54 @@
             ToggleApp(idApp);
     }
 
+    // o job do link aparece em qualquer situação; fora isso, a situação escolhida
+    private bool StatusMatches(JobModel job) =>
+        _focusJob is not null || _status switch
+        {
+            JobStatus.Active => job.IsActive,
+            JobStatus.Inactive => !job.IsActive,
+            _ => true
+        };
+
+    // com o filtro de saúde: falhas reconhecidas não contam como Erro ou Atrasado (o mesmo critério de "Falhas Ativas")
+    private bool HealthMatches(JobModel job) =>
+        _health is null || (job.IsActive && job.Health == _health && (_health is not (JobHealth.Error or JobHealth.Late) || job.Acknowledgement is null));
+
+    private bool SearchMatches(JobModel job) =>
+        (_focusJob is null || job.IdJob == _focusJob) && _filter.Matches(job.IdJob.ToString(), job.Title, job.Description);
+
+    // as sob demanda ficam na tela Sob Demanda; só aparecem aqui pelo link direto (?job=), vindo dos Logs de Erros
+    private IEnumerable<JobModel> Scoped => _jobs
+        .Where(x => !x.IsOnDemand || x.IdJob == _focusJob)
+        .Where(x => _filter.IdApp is null || x.IdApp == _filter.IdApp);
+
+    // os contadores do topo contam o universo sem o filtro de saúde, para dar para trocar de um estado para outro
+    private IEnumerable<IGrouping<JobHealth?, JobModel>> TopHealthCounts => Scoped
+        .Where(x => x.IsActive && StatusMatches(x) && SearchMatches(x))
+        .Where(x => _type is null || x.IdType == _type)
+        .GroupBy(x => x.Health)
+        .OrderBy(x => x.Key is null ? int.MaxValue : (int)x.Key);
+
+    // integrações da aplicação na ordem do IdJob (decisão de 31/10/2026), cada uma com as procedures que chama; a
+    // integração que não passa no filtro (situação, saúde) fica como cabeçalho em cinza das procedures que passam
+    private List<JobNode> NodesOf(int idApp) => JobTree.Build(
+        Scoped.Where(x => x.IdApp == idApp).ToList(),
+        filter: x => StatusMatches(x) && HealthMatches(x),
+        matches: SearchMatches,
+        _type,
+        narrowing: _focusJob is not null || _health is not null || !string.IsNullOrWhiteSpace(_filter.Search));
+
+    private IEnumerable<AppSummaryModel> FilteredApps => _apps
+        .Where(x => _filter.IdApp is null || x.IdParent == _filter.IdApp)
+        .Where(x => NodesOf(x.IdParent).Count > 0);
+
     // os jobs mostrados no grupo: as integrações (sem as que só estão ali como cabeçalho) e as procedures
     private static List<JobModel> JobsIn(List<JobNode> nodes) =>
         nodes.Where(x => !x.IsContext).Select(x => x.Job).Concat(nodes.SelectMany(x => x.Children)).ToList();
 
     private sealed record HealthCount(string Label, Color Color, string Icon, int Count);
 
-    // os chips de saúde de Integrações, mais um para os inativos, porque esta tela mostra ativos e inativos
+    // os chips de saúde dos ativos, mais um para os inativos quando a situação os inclui
     private static IEnumerable<HealthCount> HealthCounts(List<JobModel> jobs)
     {
         foreach (var group in jobs.Where(x => x.IsActive).GroupBy(x => x.Health).OrderBy(x => x.Key is null ? int.MaxValue : (int)x.Key))
@@ -184,16 +305,38 @@
             yield return new HealthCount("Inativo", Color.Default, Icons.Material.Filled.PauseCircle, inactive);
     }
 
-    private IEnumerable<AppSummaryModel> FilteredApps => _apps
-        .Where(x => _filter.IdApp is null || x.IdParent == _filter.IdApp)
-        .Where(x => NodesOf(x.IdParent).Count > 0);
-
     protected override async Task OnParametersSetAsync()
     {
         var period = MonitorDisplay.ParsePeriod(PeriodQuery) ?? FilterSession.Period;
         FilterSession.Period = period;
-        _filter = _filter with { Period = period, IdApp = IdApp };
+        _filter = _filter with { Period = period, IdApp = AppQuery ?? IdApp };
         _type = TypeQuery is 1 or 2 ? TypeQuery : null;
+
+        // sem situação na URL: as rotas antigas de Jobs mostravam todos; o menu e /integrations, só os ativos
+        var oldJobsRoute = new Uri(Navigation.Uri).AbsolutePath.StartsWith("/applications", StringComparison.OrdinalIgnoreCase);
+        _status = StatusQuery switch
+        {
+            "active" => JobStatus.Active,
+            "inactive" => JobStatus.Inactive,
+            "all" => JobStatus.All,
+            _ => oldJobsRoute ? JobStatus.All : JobStatus.Active
+        };
+
+        var health = HealthQuery switch
+        {
+            "error" => JobHealth.Error,
+            "late" => JobHealth.Late,
+            "running" => JobHealth.Running,
+            "ok" => JobHealth.Ok,
+            _ => (JobHealth?)null
+        };
+
+        // filtro de saúde novo: os grupos com jobs no estado abrem de novo
+        if (health != _health)
+        {
+            _health = health;
+            _collapsedApps.Clear();
+        }
 
         // a lista de jobs não depende do período nem do filtro: carrega uma vez e no Atualizar
         if (!_loaded)
@@ -211,6 +354,7 @@
         }
     }
 
+    // recarrega sem o overlay, mantendo as linhas e os grupos abertos
     private async Task Load()
     {
         await Snackbar.TryAsync(Logger, async () =>
@@ -223,18 +367,51 @@
         _loading = false;
     }
 
-    // recarrega sem o overlay, mantendo as linhas abertas
-    private Task Refresh() => Load();
+    // toda mudança de filtro vai para /jobs com a situação explícita, para a URL dizer o que está na tela (e as rotas
+    // antigas não mudarem a situação padrão no meio do caminho); o que não muda segue como está
+    private void Go(JobStatus status, JobHealth? health, int? type, int? app, Period period)
+    {
+        var query = new Dictionary<string, object?>
+        {
+            ["period"] = MonitorDisplay.PeriodQuery(period),
+            ["app"] = app,
+            ["status"] = StatusQueryOf(status),
+            ["type"] = type,
+            ["health"] = HealthQueryOf(health),
+            ["job"] = _focusJob
+        };
 
-    // integrações da aplicação na ordem do IdJob (decisão de 31/10/2026), cada uma com as procedures que chama, com o
-    // filtro de tipo, de busca e do job do link (procedure do link aparece dentro da integração pai, já aberta)
-    private List<JobNode> NodesOf(int idApp) => JobTree.Build(
-        // as sob demanda ficam na tela Sob Demanda; só aparecem aqui pelo link direto (?job=), vindo dos Logs de Erros
-        _jobs.Where(x => x.IdApp == idApp && (!x.IsOnDemand || x.IdJob == _focusJob)).ToList(),
-        filter: _ => true,
-        matches: x => (_focusJob is null || x.IdJob == _focusJob) && _filter.Matches(x.IdJob.ToString(), x.Title, x.Description),
-        _type,
-        narrowing: _focusJob is not null || !string.IsNullOrWhiteSpace(_filter.Search));
+        Navigation.NavigateTo(Navigation.GetUriWithQueryParameters("/jobs", query));
+    }
+
+    private void OnFilterChanged(FilterState filter)
+    {
+        if (filter.IdApp != _filter.IdApp)
+        {
+            Go(_status, _health, _type, filter.IdApp, filter.Period);
+            return;
+        }
+
+        if (filter.Period != _filter.Period)
+        {
+            Go(_status, _health, _type, filter.IdApp, filter.Period);
+            return;
+        }
+
+        // busca nova: os grupos abrem de novo (e, ao limpar, voltam a como o usuário deixou antes da busca)
+        if (filter.Search != _filter.Search)
+            _collapsedApps.Clear();
+
+        _filter = filter;
+    }
+
+    private void ClearFocus()
+    {
+        _focusJob = null;
+        Go(_status, _health, _type, _filter.IdApp, _filter.Period);
+    }
+
+    private string? AppTitle(int idApp) => _apps.FirstOrDefault(x => x.IdParent == idApp)?.Title;
 
     // as células de uma linha de job, iguais para a integração (com a setinha e o resumo das procedures) e para a
     // procedure (recuada, dentro da integração)
@@ -269,12 +446,14 @@
         </MudTd>
         <MudTd DataLabel="Saúde"><HealthChip Context="HealthContext.From(job)" Now="_updatedAt" /></MudTd>
         <MudTd DataLabel="Última execução">@MonitorDisplay.Date(job.LastExecution?.StartDate)</MudTd>
+        <MudTd DataLabel="Duração"><DurationText Start="job.LastExecution?.StartDate" End="job.LastExecution?.EndDate" Now="_updatedAt" /></MudTd>
+        <MudTd DataLabel="Registros">@job.LastExecution?.Records</MudTd>
         <MudTd>
             <div class="d-flex align-center gap-1">
                 <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => Toggle(job))">
                     @(_opened.Contains((job.IdJob, job.IdType)) ? "Ocultar" : "Execuções")
                 </MudButton>
-                <JobActions Job="job" OnChanged="Refresh" />
+                <JobActions Job="job" OnChanged="Load" />
             </div>
         </MudTd>
     };
@@ -284,44 +463,12 @@
         if (_opened.Contains((job.IdJob, job.IdType)))
         {
             <MudTr>
-                <td colspan="9">
+                <td colspan="10">
                     <JobExecutions Job="job" Period="_filter.Period" />
                 </td>
             </MudTr>
         }
     };
-
-    private string? AppTitle(int idApp) => _apps.FirstOrDefault(x => x.IdParent == idApp)?.Title;
-
-    // trocar a aplicação muda o endereço (a URL não mente sobre o que está na tela); o período vai junto
-    private void OnFilterChanged(FilterState filter)
-    {
-        if (filter.IdApp != _filter.IdApp)
-        {
-            var path = filter.IdApp is int idApp ? $"/applications/{idApp}/jobs" : "/applications/jobs";
-            var type = _type is null ? "" : $"&type={_type}";
-            Navigation.NavigateTo($"{path}?period={MonitorDisplay.PeriodQuery(filter.Period)}{type}");
-            return;
-        }
-
-        if (filter.Period != _filter.Period)
-        {
-            Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("period", MonitorDisplay.PeriodQuery(filter.Period)));
-            return;
-        }
-
-        // busca nova: os grupos abrem de novo (e, ao limpar, voltam a como o usuário deixou antes da busca)
-        if (filter.Search != _filter.Search)
-            _collapsedApps.Clear();
-
-        _filter = filter;
-    }
-
-    private void OnTypeChanged(int? type) =>
-        Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("type", type));
-
-    private void ClearFocus() =>
-        Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("job", (int?)null));
 
     private async Task ToggleJob(JobModel job)
     {
@@ -358,6 +505,7 @@
         return true;
     }
 
+    // a agenda e as credenciais do módulo ficam no diálogo, na aba Agenda
     private async Task OpenSettings(AppSummaryModel app)
     {
         await ModuleConfigurations.ShowAsync(DialogService, app.IdParent, app.Title, initialTab: 3);

@@ -127,7 +127,7 @@ namespace WebApp.Components.Display
         /// Link para a tela de Jobs já aberta num job, no período da tela de origem.
         /// </summary>
         public static string JobLink(int idApp, int idJob, int idType, Period period) =>
-            $"/applications/{idApp}/jobs?job={idJob}&type={idType}&period={PeriodQuery(period)}";
+            $"/jobs?app={idApp}&job={idJob}&type={idType}&period={PeriodQuery(period)}";
 
         /// <summary>
         /// Link para os Logs de Erros já abertos na aplicação (e no job, se informado), no período da tela de origem.

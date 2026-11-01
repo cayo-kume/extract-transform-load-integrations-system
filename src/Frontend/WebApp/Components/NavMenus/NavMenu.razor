@@ -3,10 +3,10 @@
 <MudNavMenu>
     <MudImage ObjectFit="ObjectFit.Cover" Height="150" Width="240" Src="/images/logos/logo_150x300.png" />
     <MudNavLink Href="/home" Match="NavLinkMatch.Prefix">Visão Geral</MudNavLink>
-    @* All: com Prefix, "Aplicações" acenderia junto com "Jobs" em /applications/jobs *@
+    @* All: com Prefix, "Aplicações" acenderia nas rotas antigas de Jobs (/applications/jobs) *@
     <MudNavLink Href="/applications" Match="NavLinkMatch.All">Aplicações</MudNavLink>
-    <MudNavLink Href="/applications/jobs" Match="NavLinkMatch.All">Jobs</MudNavLink>
-    <MudNavLink Href="/integrations" Match="NavLinkMatch.Prefix">Integrações</MudNavLink>
+    @* Jobs e Integrações viraram uma tela só (rodada 7) *@
+    <MudNavLink Href="/jobs" Match="NavLinkMatch.Prefix">Jobs</MudNavLink>
     @if (AdminAccess.IsAllowed)
     {
         <MudNavLink Href="/on-demand" Match="NavLinkMatch.Prefix">Sob Demanda</MudNavLink>

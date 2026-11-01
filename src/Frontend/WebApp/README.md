@@ -30,14 +30,13 @@ usam o ambiente `Development`.
 | `/` | login (sem autenticação por enquanto) |
 | `/home` | visão geral: cards das aplicações (os com problema primeiro), métricas com a taxa de sucesso por aplicação e o delta contra a janela anterior, "Falhas Ativas" com os jobs, painel de saúde por gravidade, barras de execuções com erro por hora e mapa de calor aplicação × hora, atualizados a cada minuto |
 | `/applications` | cards das aplicações, com a imagem da empresa; o chip "Ativa" liga ou desliga o módulo (desligar pede confirmação) |
-| `/applications/jobs` e `/applications/{IdApp}/jobs` | todos os jobs (ativos e inativos), num grupo recolhível por aplicação (fechados em `/applications/jobs`, aberto com uma aplicação só, com o link de um job ou com busca), com o total de jobs, de ativos e os chips de saúde no cabeçalho; na ordem do `IdJob`, cada integração com as procedures que chama dentro dela, com filtro Todos / Integrações / Procedures e o chip que liga ou desliga cada um (com "Desfazer"); cada job abre as execuções, mensagens e registros. `?job=3001&type=2` mostra só esse job, já aberto |
-| `/integrations` | só os jobs ativos, aninhados por aplicação e, dentro dela, procedures dentro da integração pai, com filtro de tipo e de saúde (os contadores do topo filtram; `?health=error`); a engrenagem do grupo abre as configurações do módulo |
+| `/jobs` | Jobs (era Jobs e Integrações): todos os jobs, num grupo recolhível por aplicação, com o filtro **Situação** (Ativos, Inativos e Todos; abre em Ativos), o de tipo (Todos, Integrações e Procedures), o de saúde (os contadores do topo filtram; `?health=error`) e a busca. Na ordem do `IdJob`, cada integração com as procedures que chama dentro dela, o chip que liga ou desliga cada job (com "Desfazer"), duração e registros da última execução; cada job abre as execuções, mensagens e registros. Os grupos começam fechados e abrem com uma aplicação só (`?app=70`), com o link de um job (`?job=3001&type=2`, em qualquer situação), com busca ou com filtro de saúde. As rotas antigas (`/integrations`, `/applications/jobs` e `/applications/{IdApp}/jobs`) caem aqui; as de Jobs abrem em Todos |
 | `/errors` | Logs de Erros: mensagens de erro (e, se marcado, de aviso) do período, por aplicação, integração, procedure e causa, com busca pelo job e pelo texto; `?app=30&job=3001` abre o grupo |
 | `/on-demand` | Sob Demanda: as integrações sem agenda, no estilo do Swagger (método, parâmetros, corpo JSON, Executar e resposta), só com a chave `Admin:Enabled` (abaixo) |
 | `/queries` | Executar Querys, com favoritas e querys prontas na barra lateral, só com a chave `Admin:Enabled` (abaixo) |
 
-O menu lateral tem Visão Geral, Aplicações, Jobs, Integrações, Logs de Erros e, para quem tem acesso, Sob Demanda e
-Executar Querys. As integrações sob demanda (sem agenda) não aparecem em Jobs, Integrações, Agenda nem no painel de saúde:
+O menu lateral tem Visão Geral, Aplicações, Jobs, Logs de Erros e, para quem tem acesso, Sob Demanda e Executar
+Querys. As integrações sob demanda (sem agenda) não aparecem em Jobs, Agenda nem no painel de saúde:
 ficam na tela Sob Demanda.
 Período, aplicação, tipo e saúde ficam na URL (`?period=7d&app=30`), então o link de uma tela abre do mesmo jeito para
 outra pessoa; sem `period` na URL, vale o último período escolhido na aba. A busca fica só na tela. Na barra superior
@@ -50,11 +49,11 @@ detalhe no tooltip. O menu ⋮ de cada job tem **Reconhecer falha** (o job sai d
 ou 24 h, com uma nota para o próximo turno) e **Executar agora** (pede ao host uma execução fora da agenda). Nos Logs de
 Erros, o botão **Execução** abre a execução da mensagem num diálogo, com o Guid, os registros e os links para o job e
 para a query pronta; os blocos de exceção, pilha e SQL têm botão de copiar, e "Copiar tudo" junta o contexto para um
-chamado. Aplicações, Jobs, Integrações e Logs de Erros têm "Atualizado às" e o botão de recarregar.
+chamado. Aplicações, Jobs e Logs de Erros têm "Atualizado às" e o botão de recarregar.
 
 As procedures aparecem dentro da integração que as chama (o `IdParent` delas), com a setinha na linha da integração e o
 resumo "11 procedures · 1 com erro". Na aba Agenda do diálogo de configurações (engrenagem dos cards e dos grupos de
-Integrações), o intervalo, a hora diária e a fila das integrações são editáveis e só gravam em "Salvar alterações", com
+Jobs), o intervalo, a hora diária e a fila das integrações são editáveis e só gravam em "Salvar alterações", com
 confirmação.
 
 Ativar ou desativar um job ou um módulo, mudar a agenda, reconhecer uma falha, pedir uma execução e trocar a imagem de uma aplicação só

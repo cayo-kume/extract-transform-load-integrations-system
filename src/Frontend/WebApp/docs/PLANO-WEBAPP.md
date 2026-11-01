@@ -445,6 +445,14 @@ mockup para aprovação):
     para os inativos, porque a tela mostra os dois) e a engrenagem do módulo. Os grupos começam fechados em
     `/applications/jobs`; abrem sozinhos com uma aplicação só na rota, com o link de um job (`?job=`) ou com busca, e o
     usuário pode fechar. Uma chave só, `Admin:Enabled`, passou a liberar Executar Querys e Sob Demanda (`AdminAccess`).
+11. **Rodada 7 (01/11/2026, mockup aprovado):** Jobs e Integrações viraram uma tela só, **Jobs** (`/jobs`,
+    `Pages/Jobs.razor`), e "Integrações" saiu do menu. Ela junta o que cada uma tinha: filtro **Situação** (Ativos,
+    Inativos e Todos, no lugar do "só ativos" de Integrações), chip Ativo com Desfazer, filtro de saúde nos contadores do
+    topo (`?health=`), colunas Duração e Registros, grupos recolhíveis por aplicação (abrem com uma aplicação só, link de
+    job, busca ou filtro de saúde). Pelo menu abre em Ativos; o "Ver jobs" do card abre a aplicação em Todos. As rotas
+    antigas (`/integrations`, `/applications/jobs` e `/applications/{id}/jobs`) caem na tela nova (as de Jobs em Todos), e
+    os links (Falhas Ativas, "Ver jobs", "Abrir o job" e "Ir para o job") apontam para `/jobs`. Toda mudança de filtro
+    escreve a situação na URL (`?status=active|inactive|all`).
 
 # Fase 5 — Banco de dados (não implementar agora)
 

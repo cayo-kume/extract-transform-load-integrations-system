@@ -128,9 +128,9 @@
                             }
                         </div>
                         <MudText Typo="Typo.caption">
-                            <MudLink Typo="Typo.caption" Href="@IntegrationsLink("error")">@FailedJobs com erro</MudLink>
+                            <MudLink Typo="Typo.caption" Href="@JobsLink("error")">@FailedJobs com erro</MudLink>
                             e
-                            <MudLink Typo="Typo.caption" Href="@IntegrationsLink("late")">@LateJobs atrasados</MudLink>
+                            <MudLink Typo="Typo.caption" Href="@JobsLink("late")">@LateJobs atrasados</MudLink>
                             agora
                         </MudText>
 
@@ -146,7 +146,7 @@
                             }
                             @if (ActiveFailures.Count > 5)
                             {
-                                <MudLink Typo="Typo.caption" Href="@IntegrationsLink(null)">+@(ActiveFailures.Count - 5) em Integrações</MudLink>
+                                <MudLink Typo="Typo.caption" Href="@JobsLink(null)">+@(ActiveFailures.Count - 5) em Jobs</MudLink>
                             }
                         </div>
                     </MudCardContent>
@@ -246,7 +246,7 @@
     private int Records => _apps.Sum(x => x.Records);
     private double SuccessRate => Executions == 0 ? 1 : (double)(Executions - FailedExecutions) / Executions;
 
-    // falhas só de jobs ativos (o mesmo universo de Integrações, para o número bater com o destino do link)
+    // falhas só de jobs ativos (o universo de Jobs em Ativos, para o número bater com o destino do link)
     private List<JobModel> ActiveFailures => _jobs
         .Where(x => x.IsActive && !x.IsOnDemand && x.Health is JobHealth.Error or JobHealth.Late && x.Acknowledgement is null)
         .OrderBy(x => x.Health == JobHealth.Error ? 0 : 1)
@@ -446,9 +446,9 @@
 
     private string WithPeriod(string path) => $"{path}?period={MonitorDisplay.PeriodQuery(_filter.Period)}";
 
-    private string IntegrationsLink(string? health)
+    private string JobsLink(string? health)
     {
-        var link = $"/integrations?period={MonitorDisplay.PeriodQuery(_filter.Period)}";
+        var link = $"/jobs?status=active&period={MonitorDisplay.PeriodQuery(_filter.Period)}";
         if (_filter.IdApp is int idApp)
             link += $"&app={idApp}";
         return health is null ? link : $"{link}&health={health}";
