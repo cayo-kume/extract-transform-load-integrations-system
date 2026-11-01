@@ -38,6 +38,11 @@ usam o ambiente `Development`.
 O menu lateral tem Visão Geral, Aplicações, Integrações, Logs de Erros e, para quem tem acesso, Sob Demanda e Executar
 Querys. As integrações sob demanda (sem agenda) não aparecem em Integrações nem no painel de saúde:
 ficam na tela Sob Demanda.
+
+As telas funcionam no celular e no tablet. Abaixo de 960px, o cabeçalho e os filtros ficam um embaixo do outro, os
+cabeçalhos dos grupos quebram em duas linhas e, em Executar Querys, a barra de querys prontas vira um bloco recolhível
+acima do editor. Abaixo de 600px, as tabelas viram blocos (com menos colunas na Visão geral e em Integrações) e os
+diálogos ocupam a tela toda. As regras ficam no fim do `wwwroot/css/app.css`.
 Período, aplicação, tipo e saúde ficam na URL (`?period=7d&app=30`), então o link de uma tela abre do mesmo jeito para
 outra pessoa; sem `period` na URL, vale o último período escolhido na aba. A busca fica só na tela. Na barra superior
 ficam o botão que esconde o menu, a empresa logada (`LoggedCompany`, fixa em `NEWBLOOMERS - 35899805838` até a

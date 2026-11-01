@@ -16,7 +16,7 @@
 <PageTitle>Integrações</PageTitle>
 
 <MudGrid>
-    <MudItem xs="5" Class="d-flex align-center pa-1 pl-16">
+    <MudItem xs="12" md="5" Class="d-flex align-center pa-1 pl-10 pl-md-16">
         <PageHeader Icon="@Icons.Material.Filled.SyncAlt" Title="@(_filter.IdApp is int id && AppTitle(id) is string title ? $"Integrações · {title}" : "Integrações")" Subtitle="Jobs, agenda e execuções" />
     </MudItem>
 
@@ -25,16 +25,21 @@
     <MudItem xs="12" Class="loading-container">
         <SpaceLoading Overlay="true" Visible="_loading" Label="Carregando os jobs" />
 
+        @* segment-filter: no celular, cada filtro ocupa a linha toda, com o nome em cima *@
         <div class="d-flex align-center gap-2 px-4 pt-2 flex-wrap">
-            <MudText Typo="Typo.caption">Situação</MudText>
-            <MudButtonGroup Variant="Variant.Outlined" Size="Size.Small">
-                @foreach (var status in new[] { JobStatus.Active, JobStatus.Inactive, JobStatus.All })
-                {
-                    <MudButton Variant="@(_status == status ? Variant.Filled : Variant.Outlined)" Color="Color.Primary" OnClick="@(() => Go(status, status == JobStatus.Inactive ? null : _health, _type, _filter.IdApp, _filter.Period))">@StatusLabel(status)</MudButton>
-                }
-            </MudButtonGroup>
-            <MudText Typo="Typo.caption" Class="ml-2">Tipo</MudText>
-            <TypeSegment Value="_type" ValueChanged="@(type => Go(_status, _health, type, _filter.IdApp, _filter.Period))" />
+            <div class="segment-filter">
+                <MudText Typo="Typo.caption">Situação</MudText>
+                <MudButtonGroup Variant="Variant.Outlined" Size="Size.Small">
+                    @foreach (var status in new[] { JobStatus.Active, JobStatus.Inactive, JobStatus.All })
+                    {
+                        <MudButton Variant="@(_status == status ? Variant.Filled : Variant.Outlined)" Color="Color.Primary" OnClick="@(() => Go(status, status == JobStatus.Inactive ? null : _health, _type, _filter.IdApp, _filter.Period))">@StatusLabel(status)</MudButton>
+                    }
+                </MudButtonGroup>
+            </div>
+            <div class="segment-filter ml-md-2">
+                <MudText Typo="Typo.caption">Tipo</MudText>
+                <TypeSegment Value="_type" ValueChanged="@(type => Go(_status, _health, type, _filter.IdApp, _filter.Period))" />
+            </div>
             <MudSpacer />
             <RefreshBar UpdatedAt="_updatedAt" OnRefresh="Load" />
         </div>
@@ -77,30 +82,33 @@
                     <div class="app-group-head" role="button" tabindex="0" aria-expanded="@(expanded ? "true" : "false")" @onclick="@(() => ToggleApp(app.IdParent))" @onkeydown="@(e => OnAppKeyDown(e, app.IdParent))">
                         <MudIcon Icon="@(expanded ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)" Size="Size.Small" />
                         <MudText Typo="Typo.subtitle2" Style="white-space: nowrap">@app.IdParent - @app.Title</MudText>
-                        <MudText Typo="Typo.caption" Class="app-group-description">@app.Description</MudText>
-                        <MudSpacer />
-                        <MudText Typo="Typo.caption" Style="white-space: nowrap">
-                            @(_health is null ? $"{jobs.Count} job(s) · {jobs.Count(x => x.IsActive)} ativo(s)" : $"{jobs.Count} no filtro")
-                        </MudText>
-                        @foreach (var health in HealthCounts(jobs))
-                        {
-                            <MudTooltip Text="@health.Label">
-                                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@health.Color" Icon="@health.Icon">@health.Count</MudChip>
-                            </MudTooltip>
-                        }
-                        @* stopPropagation no clique e no teclado: o botão Agenda não abre nem fecha o grupo; a engrenagem saiu daqui
-                           (rodada 9): imagem, credenciais e parâmetros ficam na engrenagem dos cards *@
-                        <div @onclick:stopPropagation="true" @onkeydown:stopPropagation="true">
-                            <MudTooltip Text="@(scheduling ? "Voltar à tabela de jobs" : "Editar o intervalo, a hora diária e a fila das integrações")">
-                                <MudButton Variant="@(scheduling ? Variant.Filled : Variant.Outlined)" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Schedule" OnClick="@(() => ToggleSchedule(app, jobs))">Agenda</MudButton>
-                            </MudTooltip>
+                        <MudText Typo="Typo.caption" Class="app-group-description d-none d-md-block">@app.Description</MudText>
+                        @* no celular, os números, os chips e o botão Agenda descem para a segunda linha *@
+                        <div class="app-group-meta">
+                            <MudText Typo="Typo.caption" Style="white-space: nowrap">
+                                @(_health is null ? $"{jobs.Count} job(s) · {jobs.Count(x => x.IsActive)} ativo(s)" : $"{jobs.Count} no filtro")
+                            </MudText>
+                            @foreach (var health in HealthCounts(jobs))
+                            {
+                                <MudTooltip Text="@health.Label">
+                                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@health.Color" Icon="@health.Icon">@health.Count</MudChip>
+                                </MudTooltip>
+                            }
+                            @* stopPropagation no clique e no teclado: o botão Agenda não abre nem fecha o grupo; a engrenagem saiu daqui
+                               (rodada 9): imagem, credenciais e parâmetros ficam na engrenagem dos cards *@
+                            <div @onclick:stopPropagation="true" @onkeydown:stopPropagation="true">
+                                <MudTooltip Text="@(scheduling ? "Voltar à tabela de jobs" : "Editar o intervalo, a hora diária e a fila das integrações")">
+                                    <MudButton Variant="@(scheduling ? Variant.Filled : Variant.Outlined)" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Schedule" OnClick="@(() => ToggleSchedule(app, jobs))">Agenda</MudButton>
+                                </MudTooltip>
+                            </div>
                         </div>
                     </div>
 
                     @if (expanded && scheduling)
                     {
-                        <!-- Modo agenda: intervalo, hora diária e fila das integrações; a procedure roda com a integração -->
-                        <MudTable Items="@nodes" Class="compact-table" Hover="true" Dense="true" Breakpoint="Breakpoint.Sm" RowsPerPage="50" Elevation="0"
+                        <!-- Modo agenda: intervalo, hora diária e fila das integrações; a procedure roda com a integração. Sem o
+                             modo cartão: no celular a tabela rola para o lado dentro do grupo -->
+                        <MudTable Items="@nodes" Class="compact-table" Hover="true" Dense="true" Breakpoint="Breakpoint.None" RowsPerPage="50" Elevation="0"
                                   RowClassFunc="@((node, _) => node.IsContext ? "context-row" : _drafts.IsChanged(node.Job) ? "changed-row" : "")">
                             <HeaderContent>
                                 <MudTh>IdJob</MudTh>
@@ -472,22 +480,29 @@
     {
         var job = row.Job;
         var saving = _saving.Contains((job.IdJob, job.IdType));
+        @* a seta e o número, e o título e o resumo, num bloco só: no modo cartão do celular cada filho da célula vira um
+           item ao lado do rótulo *@
         <MudTd DataLabel="IdJob" Class="@(row.Node is null ? "child-indent" : "")" Style="white-space: nowrap">
-            @if (row.Node is { } node)
-            {
-                <JobTreeToggle Node="node" Toggled="_toggled" OnToggle="@(() => JobTree.Toggle(node, _toggled))" />
-            }
-            @job.IdJob
+            <span class="d-inline-flex align-center">
+                @if (row.Node is { } node)
+                {
+                    <JobTreeToggle Node="node" Toggled="_toggled" OnToggle="@(() => JobTree.Toggle(node, _toggled))" />
+                }
+                @job.IdJob
+            </span>
         </MudTd>
-        <MudTd DataLabel="Tipo">@job.JobType</MudTd>
+        @* no celular (modo cartão) saem Tipo, Agenda, Duração e Registros *@
+        <MudTd DataLabel="Tipo" HideSmall="true">@job.JobType</MudTd>
         <MudTd DataLabel="Título">
-            <MudTooltip Text="@job.Description">@job.Title</MudTooltip>
-            @if (row.Node is { TotalChildren: > 0 } parent)
-            {
-                <MudText Typo="Typo.caption" Class="d-block" Color="@(parent.FailingChildren > 0 ? Color.Error : Color.Default)">@parent.Summary</MudText>
-            }
+            <div>
+                <MudTooltip Text="@job.Description">@job.Title</MudTooltip>
+                @if (row.Node is { TotalChildren: > 0 } parent)
+                {
+                    <MudText Typo="Typo.caption" Class="d-block" Color="@(parent.FailingChildren > 0 ? Color.Error : Color.Default)">@parent.Summary</MudText>
+                }
+            </div>
         </MudTd>
-        <MudTd DataLabel="Agenda">@(JobTree.IsProcedure(job) ? $"com a {job.IdParent}" : MonitorDisplay.Schedule(job))</MudTd>
+        <MudTd DataLabel="Agenda" HideSmall="true">@(JobTree.IsProcedure(job) ? $"com a {job.IdParent}" : MonitorDisplay.Schedule(job))</MudTd>
         <MudTd DataLabel="Ativo">
             <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@(job.IsActive ? Color.Success : Color.Default)" Disabled="saving" OnClick="@(() => ToggleJob(job))">
                 @if (saving)
@@ -509,9 +524,9 @@
                 @("—")
             }
         </MudTd>
-        <MudTd DataLabel="Duração"><DurationText Start="job.LastExecution?.StartDate" End="job.LastExecution?.EndDate" Now="_updatedAt" /></MudTd>
-        <MudTd DataLabel="Registros">@job.LastExecution?.Records</MudTd>
-        <MudTd>
+        <MudTd DataLabel="Duração" HideSmall="true"><DurationText Start="job.LastExecution?.StartDate" End="job.LastExecution?.EndDate" Now="_updatedAt" /></MudTd>
+        <MudTd DataLabel="Registros" HideSmall="true">@job.LastExecution?.Records</MudTd>
+        <MudTd Class="job-actions-cell">
             <div class="d-flex align-center gap-1 flex-wrap">
                 <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => Toggle(job))">
                     @(_opened.Contains((job.IdJob, job.IdType)) ? "Ocultar" : "Execuções")

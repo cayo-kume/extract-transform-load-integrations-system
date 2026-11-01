@@ -10,12 +10,12 @@
 @if (AdminAccess.IsAllowed)
 {
     <MudGrid>
-        <MudItem xs="5" Class="d-flex align-center pa-1 pl-16">
+        <MudItem xs="12" md="5" Class="d-flex align-center pa-1 pl-10 pl-md-16">
             <PageHeader Icon="@Icons.Material.Filled.PlayCircle" Title="Sob Demanda" Subtitle="Integrações sem agenda, chamadas na hora" />
         </MudItem>
 
-        <MudItem xs="7">
-            <div class="d-flex flex-row align-center gap-2 ml-8 mr-8">
+        <MudItem xs="12" md="7">
+            <div class="d-flex flex-row align-center gap-2 mx-4 mx-md-8">
                 <div class="flex-grow-1">
                     <MudSelect T="int?" @bind-Value="_idApp" Variant="Variant.Outlined" Label="Aplicação" Margin="Margin.Normal">
                         <MudSelectItem T="int?" Value="null">Todas</MudSelectItem>
@@ -26,7 +26,7 @@
                     </MudSelect>
                 </div>
             </div>
-            <div class="d-flex flex-row align-center ml-8 mr-8">
+            <div class="d-flex flex-row align-center mx-4 mx-md-8">
                 <MudTextField T="string" @bind-Value="_search" DebounceInterval="300" Immediate="true" Label="Pesquisar método" Variant="Variant.Outlined"
                               Clearable="true" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search" AdornmentColor="Color.Default" />
             </div>

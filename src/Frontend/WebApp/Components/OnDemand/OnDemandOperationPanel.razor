@@ -40,7 +40,7 @@
                         <td><MudText Typo="Typo.body2">@parameter.Description</MudText></td>
                         <td>
                             <div class="d-flex align-center gap-2">
-                                <div style="width: 260px">
+                                <div class="op-param-value">
                                     <MudTextField T="string" Value="@ValueOf(parameter)" ValueChanged="@(v => _values[parameter.Name] = v)" Immediate="true"
                                                   InputType="@(parameter.Type == "date" ? InputType.Date : InputType.Text)" Disabled="@(parameter.IsLocked || _running)"
                                                   Variant="Variant.Outlined" Margin="Margin.Dense" Error="@(error is not null)" ErrorText="@error" />
@@ -76,7 +76,8 @@
         </MudTabs>
     }
 
-    <div class="d-flex align-center gap-3 mt-3">
+    @* no celular, a explicação desce para baixo do botão *@
+    <div class="op-execute-row d-flex align-center flex-wrap gap-3 mt-3">
         <MudButton Variant="Variant.Filled" Class="@($"op-execute op-execute-{Operation.Verb.ToLowerInvariant()}")" OnClick="Execute" Disabled="_running">
             @if (_running)
             {

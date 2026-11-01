@@ -17,13 +17,13 @@
     <div class="queries-layout">
         <div class="queries-main">
             <MudGrid>
-                <MudItem xs="5" Class="d-flex align-center pa-1 pl-16">
+                <MudItem xs="12" md="5" Class="d-flex align-center pa-1 pl-10 pl-md-16">
                     <PageHeader Icon="@Icons.Material.Filled.Terminal" Title="Executar Querys" Subtitle="Consultas e alterações nos bancos" />
                 </MudItem>
 
                 <!-- O próprio chip do banco é o seletor (rodada 10): clicar abre a lista, com o banco atual marcado -->
-                <MudItem xs="7" Class="d-flex align-center justify-end">
-                    <div class="mx-4">
+                <MudItem xs="12" md="7" Class="d-flex align-center justify-start justify-md-end">
+                    <div class="ml-1 mx-md-4">
                         @* o botão do próprio MudMenu, com a cara do chip (arredondado, contorno laranja): um MudChip no
                            ActivatorContent consome o clique e o menu não abre *@
                         <MudMenu Label="@(_database ?? "—")" Variant="Variant.Outlined" Color="Color.Warning" Size="Size.Large"
@@ -34,6 +34,23 @@
                                 <MudMenuItem Icon="@(database == _database ? Icons.Material.Filled.Check : null)" OnClick="@(() => _database = database)">@database</MudMenuItem>
                             }
                         </MudMenu>
+                    </div>
+                </MudItem>
+
+                <!-- No celular, a barra de querys prontas vira um bloco recolhível acima do editor, fechado ao abrir a tela -->
+                <MudItem xs="12" Class="px-4 d-md-none">
+                    <div class="app-group mb-0">
+                        <div class="app-group-head" role="button" tabindex="0" aria-expanded="@(_readyOpen ? "true" : "false")" @onclick="@(() => _readyOpen = !_readyOpen)" @onkeydown="OnReadyKeyDown">
+                            <MudIcon Icon="@(_readyOpen ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)" Size="Size.Small" />
+                            <MudText Typo="Typo.subtitle2">Minhas querys e querys prontas</MudText>
+                            <MudText Typo="Typo.caption">@(_favorites.Count + ReadyQueries.ByCategory.Sum(x => x.Count()))</MudText>
+                        </div>
+                        @if (_readyOpen)
+                        {
+                            <div class="pa-3">
+                                @ReadyQueriesList
+                            </div>
+                        }
                     </div>
                 </MudItem>
 
@@ -48,7 +65,7 @@
                                   Disabled="Busy"
                                   OnKeyDown="OnEditorKeyDown" />
 
-                    <div class="d-flex align-center gap-2 mt-2">
+                    <div class="d-flex align-center flex-wrap gap-2 mt-2">
                         <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PlayArrow" OnClick="Execute" Disabled="@(Busy || string.IsNullOrWhiteSpace(_sql) || _database is null)">
                             Executar
                         </MudButton>
@@ -183,7 +200,7 @@
                             @foreach (var item in _history)
                             {
                                 var favorite = FavoriteOf(item.Database, item.Sql);
-                                <div class="d-flex align-center gap-2 my-1">
+                                <div class="history-row d-flex align-center gap-2 my-1">
                                     <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@item.Database</MudChip>
                                     <MudText Typo="Typo.caption" Style="white-space: nowrap">@item.ExecutedAt.ToString("dd/MM HH:mm:ss")</MudText>
                                     @* o SQL inteiro e o banco no title: duas consultas que começam igual deixam de ser iguais na lista *@
@@ -208,40 +225,9 @@
         </div>
 
         <!-- Barra de querys prontas, com a altura da página: clicar cola o SQL no editor e seleciona o banco, sem executar -->
-        <MudPaper Elevation="0" Outlined="true" Class="ready-queries">
+        <MudPaper Elevation="0" Outlined="true" Class="ready-queries d-none d-md-block">
             <div class="ready-queries-sticky pa-3">
-                <MudText Typo="Typo.subtitle2" Class="mb-1">Minhas querys</MudText>
-                @if (_favorites.Count == 0)
-                {
-                    <MudText Typo="Typo.caption" Class="d-block mb-2">Use a estrela no histórico para salvar uma consulta aqui. As favoritas ficam só neste navegador.</MudText>
-                }
-                <div class="favorite-queries">
-                    @foreach (var favorite in _favorites)
-                    {
-                        <div class="d-flex align-center gap-1" @key="favorite">
-                            <MudTooltip Text="@($"{favorite.Database}{Environment.NewLine}{favorite.Sql}")" Class="flex-grow-1" Style="min-width: 0">
-                                <MudButton FullWidth="true" Variant="Variant.Outlined" Size="Size.Small" Class="ready-query-button" OnClick="@(() => PasteFavorite(favorite))" Disabled="Busy">
-                                    @favorite.Name
-                                </MudButton>
-                            </MudTooltip>
-                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => RenameFavorite(favorite))" aria-label="Renomear" />
-                            <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="@(() => RemoveFavorite(favorite))" aria-label="Remover" />
-                        </div>
-                    }
-                </div>
-
-                <MudText Typo="Typo.subtitle2" Class="mb-1 mt-3">Querys prontas</MudText>
-                @foreach (var category in ReadyQueries.ByCategory)
-                {
-                    <MudText Typo="Typo.caption" Class="ready-queries-category">@category.Key</MudText>
-                    @foreach (var query in category)
-                    {
-                        <MudButton FullWidth="true" Variant="Variant.Outlined" Size="Size.Small" Class="ready-query-button" OnClick="@(() => PasteReadyQuery(query))" Disabled="Busy">
-                            @query.Title
-                        </MudButton>
-                    }
-                }
-                <MudText Typo="Typo.caption" Class="mt-2 d-block">O clique só cola o SQL no editor; executar é com você.</MudText>
+                @ReadyQueriesList
             </div>
         </MudPaper>
     </div>
@@ -249,6 +235,52 @@
 
 @code {
     private static readonly System.Globalization.CultureInfo CsvCulture = new("pt-BR");
+
+    // celular: o bloco de querys prontas acima do editor, fechado ao abrir a tela
+    private bool _readyOpen;
+
+    private void OnReadyKeyDown(KeyboardEventArgs args)
+    {
+        if (args.Key is "Enter" or " ")
+            _readyOpen = !_readyOpen;
+    }
+
+    // favoritas e querys prontas: na barra lateral no desktop e no bloco recolhível no celular
+    private RenderFragment ReadyQueriesList => __builder =>
+    {
+        <MudText Typo="Typo.subtitle2" Class="mb-1">Minhas querys</MudText>
+        if (_favorites.Count == 0)
+        {
+            <MudText Typo="Typo.caption" Class="d-block mb-2">Use a estrela no histórico para salvar uma consulta aqui. As favoritas ficam só neste navegador.</MudText>
+        }
+        <div class="favorite-queries">
+            @foreach (var favorite in _favorites)
+            {
+                <div class="d-flex align-center gap-1" @key="favorite">
+                    <MudTooltip Text="@($"{favorite.Database}{Environment.NewLine}{favorite.Sql}")" Class="flex-grow-1" Style="min-width: 0">
+                        <MudButton FullWidth="true" Variant="Variant.Outlined" Size="Size.Small" Class="ready-query-button" OnClick="@(() => PasteFavorite(favorite))" Disabled="Busy">
+                            @favorite.Name
+                        </MudButton>
+                    </MudTooltip>
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => RenameFavorite(favorite))" aria-label="Renomear" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="@(() => RemoveFavorite(favorite))" aria-label="Remover" />
+                </div>
+            }
+        </div>
+
+        <MudText Typo="Typo.subtitle2" Class="mb-1 mt-3">Querys prontas</MudText>
+        foreach (var category in ReadyQueries.ByCategory)
+        {
+            <MudText Typo="Typo.caption" Class="ready-queries-category">@category.Key</MudText>
+            foreach (var query in category)
+            {
+                <MudButton FullWidth="true" Variant="Variant.Outlined" Size="Size.Small" Class="ready-query-button" OnClick="@(() => PasteReadyQuery(query))" Disabled="Busy">
+                    @query.Title
+                </MudButton>
+            }
+        }
+        <MudText Typo="Typo.caption" Class="mt-2 d-block">O clique só cola o SQL no editor; executar é com você.</MudText>
+    };
 
     private const string HistoryKey = "queries-history";
     private const int HistorySize = 20;

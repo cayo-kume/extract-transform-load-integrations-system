@@ -9,7 +9,7 @@
 <PageTitle>Visão geral</PageTitle>
 
 <MudGrid>
-    <MudItem xs="5" Class="d-flex align-center pa-1 pl-16">
+    <MudItem xs="12" md="5" Class="d-flex align-center pa-1 pl-10 pl-md-16">
         <PageHeader Icon="@Icons.Material.Filled.Dashboard" Title="Visão geral" Subtitle="Saúde, falhas e volume das aplicações" />
     </MudItem>
 
@@ -158,8 +158,9 @@
             </div>
         </div>
 
-        <div class="d-flex align-center pa-4">
-            <h3 class="ma-0 text-center">PAINEL DE SAÚDE (HEARTBEAT ATIVO)</h3>
+        @* no celular, o "Atualizado às" desce para a linha de baixo *@
+        <div class="d-flex align-center flex-wrap gap-2 pa-4">
+            <h3 class="ma-0">PAINEL DE SAÚDE<span class="d-none d-md-inline"> (HEARTBEAT ATIVO)</span></h3>
             <MudSpacer />
             <RefreshBar UpdatedAt="_updatedAt" Suffix=", a cada minuto" FailedAt="_failedAt" RetryText="tentando de novo em 1 min" OnRefresh="ManualRefresh" />
         </div>
@@ -179,13 +180,14 @@
                         <MudIcon Icon="@(expanded ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)" Size="Size.Small" />
                         <MudText Typo="Typo.subtitle2">@group.First().AppTitle</MudText>
                         <MudText Typo="Typo.caption">@integrations.Count ativa(s)</MudText>
-                        <MudSpacer />
-                        @foreach (var health in integrations.GroupBy(x => x.Health).OrderBy(x => x.Key is null ? int.MaxValue : (int)x.Key))
-                        {
-                            <MudTooltip Text="@MonitorDisplay.HealthLabel(health.Key)">
-                                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@MonitorDisplay.HealthColor(health.Key)" Icon="@MonitorDisplay.HealthIcon(health.Key)">@health.Count()</MudChip>
-                            </MudTooltip>
-                        }
+                        <div class="app-group-meta">
+                            @foreach (var health in integrations.GroupBy(x => x.Health).OrderBy(x => x.Key is null ? int.MaxValue : (int)x.Key))
+                            {
+                                <MudTooltip Text="@MonitorDisplay.HealthLabel(health.Key)">
+                                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@MonitorDisplay.HealthColor(health.Key)" Icon="@MonitorDisplay.HealthIcon(health.Key)">@health.Count()</MudChip>
+                                </MudTooltip>
+                            }
+                        </div>
                     </div>
 
                     @if (expanded)
@@ -202,15 +204,16 @@
                             </HeaderContent>
                             <RowTemplate>
                                 <MudTd DataLabel="Saúde"><HealthChip Context="HealthContext.From(context)" Now="_updatedAt" /></MudTd>
-                                <MudTd DataLabel="Tipo">@context.JobType</MudTd>
+                                @* no celular, cada integração vira um bloco só com saúde, nome, início e o ⋮ *@
+                                <MudTd DataLabel="Tipo" HideSmall="true">@context.JobType</MudTd>
                                 <MudTd DataLabel="Nome" HideSmall=false>
                                     <MudTooltip Text="Abrir o job">
                                         <MudLink Href="@MonitorDisplay.JobLink(context.IdApp, context.IdJob, context.IdType, _filter.Period)" Typo="Typo.body2">@context.JobTitle</MudLink>
                                     </MudTooltip>
                                 </MudTd>
                                 <MudTd DataLabel="Início">@MonitorDisplay.Date(context.StartDate)</MudTd>
-                                <MudTd DataLabel="Duração"><DurationText Start="context.StartDate" End="context.EndDate" Now="_updatedAt" /></MudTd>
-                                <MudTd DataLabel="Registros">@context.Records</MudTd>
+                                <MudTd DataLabel="Duração" HideSmall="true"><DurationText Start="context.StartDate" End="context.EndDate" Now="_updatedAt" /></MudTd>
+                                <MudTd DataLabel="Registros" HideSmall="true">@context.Records</MudTd>
                                 <MudTd>
                                     @if (JobOf(context) is { } job)
                                     {

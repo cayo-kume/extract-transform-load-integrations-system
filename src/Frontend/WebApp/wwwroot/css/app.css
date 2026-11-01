@@ -798,3 +798,264 @@ code {
     font-weight: 400;
     padding: 4px 14px;
 }
+
+/* Cabeçalho dos grupos recolhíveis: os números e chips à direita (app-group-meta) e as informações ao lado do nome
+   (app-group-info); no celular, os dois descem para uma segunda linha (abaixo) */
+.app-group-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+}
+
+.app-group-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Integrações: Situação e Tipo, cada um com o nome ao lado; no celular, o nome em cima e os botões na largura toda */
+.segment-filter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Sob Demanda: o campo de valor do parâmetro */
+.op-param-value {
+    width: 260px;
+}
+
+/* Rodada 11: celular e tablet, abaixo de 960px (o md da MudBlazor). O desktop fica como estava. */
+@media (max-width: 959.98px) {
+    .page-header {
+        gap: 12px;
+    }
+
+    .page-header-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 11px;
+    }
+
+    .page-header-eyebrow {
+        font-size: 0.625rem;
+        letter-spacing: 1px;
+    }
+
+    .page-header-title {
+        font-size: 1.25rem;
+    }
+
+    /* cabeçalho do grupo em duas linhas: a seta e o nome em cima; números, chips e botões embaixo, alinhados ao nome */
+    .app-group-head {
+        flex-wrap: wrap;
+        row-gap: 4px;
+    }
+
+    .app-group-meta,
+    .app-group-info {
+        flex-basis: 100%;
+        flex-wrap: wrap;
+        gap: 6px 10px;
+        margin-left: 0;
+        padding-left: 30px;
+    }
+
+    /* em Logs de Erros a contagem de erros fica ao lado do nome, e os jobs falhando e o último erro vão para baixo */
+    .app-group-info {
+        order: 1;
+    }
+
+    .segment-filter {
+        flex-basis: 100%;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 2px;
+    }
+
+    .segment-filter .mud-button-group-root {
+        display: flex;
+        width: 100%;
+    }
+
+    .segment-filter .mud-button-group-root .mud-button-root {
+        flex: 1 1 0;
+        font-size: 0.6875rem;
+        padding-left: 4px;
+        padding-right: 4px;
+    }
+
+    /* Logs de Erros: o nome do job quebra em até duas linhas; a última mensagem e os chips vão para baixo */
+    .job-group-head {
+        flex-wrap: wrap;
+        row-gap: 4px;
+        padding-left: 12px;
+    }
+
+    .job-group-head.child,
+    .job-group-child .job-causes {
+        padding-left: 28px;
+    }
+
+    .job-group-head .job-title {
+        flex: 1 1 0;
+        min-width: 0;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    /* a seta, a saúde e o nome na primeira linha (o ::after força a quebra); a última ocorrência, os chips e o botão
+       na segunda; a última mensagem na terceira */
+    /* o MudChip sem tooltip vem dentro de um mud-chip-container com display: contents: o item do flex é o chip */
+    .job-group-head > *,
+    .job-group-head > .mud-chip-container > * {
+        order: 2;
+    }
+
+    .job-group-head > :nth-child(-n+3) {
+        order: 0;
+    }
+
+    .job-group-head::after {
+        content: "";
+        flex-basis: 100%;
+        order: 1;
+    }
+
+    .job-group-head .job-last-message {
+        flex-basis: 100%;
+        order: 3;
+    }
+
+    /* Sob Demanda: o nome do método em até duas linhas; os parâmetros um embaixo do outro */
+    .op {
+        margin: 6px 8px;
+    }
+
+    .op-name {
+        white-space: normal;
+        overflow-wrap: anywhere;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+
+    /* os seletores repetem os da MudSimpleTable (com * e table) para vencê-los, porque o navegador carrega a MudBlazor
+       depois do app.css */
+    .mud-simple-table.op-parameters table thead {
+        display: none;
+    }
+
+    .mud-simple-table.op-parameters table,
+    .mud-simple-table.op-parameters table tbody,
+    .mud-simple-table.op-parameters table * tr,
+    .mud-simple-table.op-parameters table * tr > td {
+        display: block;
+        width: auto;
+    }
+
+    .mud-simple-table.op-parameters table * tr > td {
+        border-bottom: none;
+        padding: 2px 4px;
+    }
+
+    .mud-simple-table.op-parameters table * tr {
+        padding: 6px 0;
+        border-bottom: 1px solid var(--mud-palette-lines-default);
+    }
+
+    .op-param-value {
+        width: 100%;
+    }
+
+    .op-execute-row > .mud-typography {
+        flex-basis: 100%;
+    }
+
+    /* Executar Querys: no histórico, o SQL fica numa linha só dele */
+    .history-row {
+        flex-wrap: wrap;
+    }
+
+    .history-row .history-sql {
+        flex-basis: 100%;
+        order: 1;
+    }
+
+    .history-row .mud-button-root,
+    .history-row .mud-tooltip-root {
+        order: 2;
+    }
+
+    .queries-layout {
+        min-height: 0;
+    }
+}
+
+/* Celular (abaixo de 600px, o sm da MudBlazor) */
+@media (max-width: 599.98px) {
+    /* barra do topo: o nome da empresa menor, cortado com reticências quando não cabe */
+    .mud-appbar .logged-company {
+        font-size: 0.75rem;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-right: 4px !important;
+    }
+
+    /* tabelas no modo cartão: o valor quebra a linha em vez de passar da largura da tela */
+    .mud-sm-table .mud-table-cell {
+        gap: 12px;
+        min-width: 0;
+        overflow-wrap: anywhere;
+        white-space: normal !important;
+    }
+
+    .mud-sm-table .mud-table-cell > * {
+        min-width: 0;
+    }
+
+    .mud-sm-table .mud-table-cell:before {
+        flex: none;
+    }
+
+    /* Integrações: os botões da linha (Execuções, Executar agora, Reconhecer) na largura toda, sem o rótulo vazio; a
+       classe a mais vence a regra da MudBlazor, que o navegador carrega depois do app.css */
+    .mud-sm-table .mud-table-cell.job-actions-cell:before {
+        content: none;
+    }
+
+    .mud-sm-table .mud-table-cell.job-actions-cell > div {
+        width: 100%;
+    }
+
+    .records-by-day {
+        gap: 5px;
+    }
+
+    .records-day-value {
+        font-size: 0.5625rem;
+    }
+
+    /* diálogos (configurações, execução, reconhecer) ocupam a tela toda */
+    .mud-dialog {
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        max-height: 100% !important;
+        border-radius: 0 !important;
+    }
+
+    .mud-dialog.mud-dialog-width-md,
+    .mud-dialog.mud-dialog-width-lg,
+    .mud-dialog.mud-dialog-width-xl,
+    .mud-dialog.mud-dialog-width-full {
+        height: 100%;
+    }
+}

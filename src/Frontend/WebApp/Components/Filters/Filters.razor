@@ -1,8 +1,8 @@
 ﻿@inject IMonitorRepository MonitorRepository
 
 <!--Filtros-->
-<MudItem xs="@Columns">
-    <div class="d-flex flex-row align-center gap-2 ml-8 mr-8">
+<MudItem xs="12" md="@Columns">
+    <div class="d-flex flex-row align-center gap-2 mx-4 mx-md-8">
         <div class="flex-grow-1">
             <MudSelect T="Period"
                        Value="Value.Period"
@@ -53,7 +53,7 @@
     @if (ShowSearch)
     {
         <!--Pesquisa-->
-        <div class="d-flex flex-row align-center ml-8 mr-8">
+        <div class="d-flex flex-row align-center mx-4 mx-md-8">
             <MudTextField T="string"
                           Value="Value.Search"
                           ValueChanged="@(x => Change(Value with { Search = x }))"

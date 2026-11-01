@@ -478,6 +478,26 @@ mockup para aprovação):
     e "mais N · ver todas em Integrações". Logs de Erros: saiu a miniatura das execuções com erro no cabeçalho da
     aplicação. Sob Demanda: o nome do método não traz mais o IdJob (fica no tooltip). Executar Querys: o chip do banco é
     o seletor (menu com os bancos), no lugar do campo de seleção.
+15. **Rodada 11 (01/11/2026, mockup aprovado): telas responsivas.** Tudo vale abaixo de 960px (o `md` da MudBlazor);
+    o desktop ficou como estava. Conferido a 375px, 768px e 1440px, sem rolagem para o lado da página.
+    - **Todas as telas:** o cabeçalho (`PageHeader`) ocupa a linha toda, com a margem de 40px no lugar dos 64px e o ícone e o
+      título menores; os filtros descem para baixo dele. O nome da empresa na barra do topo fica menor e é cortado com
+      reticências. Os diálogos ocupam a tela toda abaixo de 600px. O menu lateral já começava fechado e fechava ao
+      trocar de tela no celular (a MudBlazor faz isso).
+    - **Tabelas no modo cartão** (abaixo de 600px): o valor quebra a linha em vez de sair da tela. Na Visão geral saem
+      Tipo, Duração e Registros do painel de saúde; em Integrações saem Tipo, Agenda, Duração e Registros, e os botões
+      ficam na largura toda. O modo agenda de Integrações não vira cartão: a tabela rola para o lado dentro do grupo.
+    - **Cabeçalhos dos grupos** em duas linhas: o nome em cima e, embaixo, os números, os chips e o botão Agenda
+      (`app-group-meta`) ou os jobs falhando e o último erro (`app-group-info`, em Logs de Erros). O cabeçalho do job em
+      Logs de Erros põe a seta, a saúde e o nome na primeira linha.
+    - **Visão geral:** as barras de registros por dia sem a casa decimal no celular ("109 mi"), e "PAINEL DE SAÚDE"
+      sem o "(HEARTBEAT ATIVO)", com o "Atualizado às" embaixo.
+    - **Integrações:** Situação e Tipo na largura toda, com o nome em cima.
+    - **Sob Demanda:** o nome do método em até duas linhas; os parâmetros um embaixo do outro; a explicação embaixo do
+      Executar.
+    - **Executar Querys:** a barra de favoritas e querys prontas vira um bloco recolhível acima do editor, fechado ao
+      abrir a tela (o mesmo `ReadyQueriesList` da barra do desktop); o chip do banco à esquerda; no histórico, o SQL
+      numa linha só dele; o resultado rola para o lado dentro da caixa.
 
 # Fase 5 — Banco de dados (não implementar agora)
 
