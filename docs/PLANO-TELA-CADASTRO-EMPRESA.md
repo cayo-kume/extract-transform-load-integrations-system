@@ -258,15 +258,33 @@ Fora desta fase:
   descomentar um, a procedure precisa receber a empresa.
 - **Oto** e o host **Quartz** (modelo vazio) ficaram fora.
 
-### 4.5 Repositório do WebApp (Dapper, sem API e sem Shared)
+### 4.5 Repositório do WebApp (Dapper, sem API e sem Shared) — feito no mock; Dapper sem teste no banco
 
-- [ ] `ICompanyRepository`: listar, criar, editar e desativar empresas (`monitor.Company`).
-- [ ] `IModuleParametersRepository`: ler e gravar a linha de `*Parameters` do módulo para a empresa. Cada módulo tem
-      colunas próprias, então a tela usa uma definição por módulo (campo, rótulo, obrigatório, segredo), num único lugar
-      do WebApp. Ao gravar, chama `auditing.sp_Add_Holding_Company` com o `doc_company` da linha.
-- [ ] CNPJs da empresa: listar os de `monitor.HoldingCompanies` da holding, com o módulo de cada parâmetro.
-- [ ] Contratar e remover integração: chama `sp_Add_Company_App` e `sp_Remove_Company_App`.
-- [ ] Mock primeiro, atrás das mesmas interfaces, como o resto do WebApp.
+Feita na branch `implementacao-40-melhorias`, depois do merge desta branch (commit `f051827`).
+
+- [x] `ICompanyRepository` (`src/Frontend/WebApp/Data/ICompanyRepository.cs`): listar, criar (`sp_Add_Company`), editar
+      razão social e nome fantasia e ativar ou desativar empresas em `monitor.Company`. O CNPJ não muda: é a chave dos jobs
+      e dos logs. Aceita o CNPJ formatado e grava só os dígitos (11 ou 14).
+- [x] `IModuleParametersRepository`: lê e grava a linha de `*Parameters` do módulo por CNPJ (uma linha por CNPJ). A
+      definição de campos fica em `Data/ModuleDefinitions.cs` (Movidesk, AfterSale, LinxCommerce, LinxMicrovix e Totvs;
+      DataWarehouse não tem parâmetros), com rótulo, obrigatório, segredo, tipo (texto, `https://` ou GUID) e tamanho.
+      Ao gravar, numa transação: valida, chama `auditing.sp_Add_Holding_Company` e faz o INSERT ou o UPDATE. Segredos
+      nunca voltam (a leitura diz só se estão definidos) e segredo vazio mantém o gravado. Tabela e colunas do SQL só vêm
+      da definição; um módulo sem migrator rodado (tabela ausente) devolve lista vazia.
+- [x] CNPJs da empresa: `GetHoldingCompaniesAsync`, de `monitor.HoldingCompanies`, com os módulos em que cada CNPJ tem
+      parâmetros.
+- [x] Contratar e remover integração: `AddAppAsync` (`sp_Add_Company_App`, devolve os jobs criados) e `RemoveAppAsync`
+      (`sp_Remove_Company_App`). `GetAppsAsync` lista o catálogo (`auditing.Apps`) com os jobs da empresa em cada módulo,
+      contando a árvore de `auditing.fn_JobCatalogTree`.
+- [x] Mock primeiro (`Data/Mocks/MockCompanyRepository.cs`), com as mesmas regras dos erros 50002, 50003 e 50004 das
+      procedures, testado com um programa à parte (21 casos). O Dapper (`Data/Sql/`) compila, mas **ainda não rodou contra
+      o banco**: o teste é no banco do Docker, com `tools/seeds/Import-TestSeeds.ps1`.
+- Os erros de regra chegam à tela como `CompanyRegistrationException`, com o número da procedure em `Code`.
+- Configuração: mock por padrão; `Cadastro:UseDatabase = true` (User Secrets) liga o Dapper sobre
+  `ConnectionStrings:Connection`.
+- **Ponto em aberto:** contratar cria os jobs inativos e remover só os desativa, então o banco não distingue "contratado e
+  ainda não ligado" de "removido". O repositório devolve jobs e jobs ativos; se a tela precisar da diferença, falta uma
+  marca de contratação (por exemplo `monitor.CompanyApp`), a decidir no backend.
 
 ### 4.6 Tela de cadastro (WebApp)
 

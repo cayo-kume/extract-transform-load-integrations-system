@@ -37,6 +37,21 @@ builder.Services.AddSingleton<IQueryRunner, MockQueryRunner>();
 // Sob Demanda: até a fase 5, respostas simuladas
 builder.Services.AddSingleton<IOnDemandRunner, MockOnDemandRunner>();
 
+// Cadastro de empresas (docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.5): mock por padrão; com Cadastro:UseDatabase = true, o
+// banco de ConnectionStrings:Connection, com Dapper
+if (builder.Configuration.GetValue<bool>("Cadastro:UseDatabase"))
+{
+    builder.Services.AddSingleton<WebApp.Data.Sql.CompanyDatabase>();
+    builder.Services.AddSingleton<ICompanyRepository, WebApp.Data.Sql.SqlCompanyRepository>();
+    builder.Services.AddSingleton<IModuleParametersRepository, WebApp.Data.Sql.SqlModuleParametersRepository>();
+}
+else
+{
+    builder.Services.AddSingleton<MockCompanyStore>();
+    builder.Services.AddSingleton<ICompanyRepository, MockCompanyRepository>();
+    builder.Services.AddSingleton<IModuleParametersRepository, MockModuleParametersRepository>();
+}
+
 // Assistente de IA (Claude, API da Anthropic): só leitura, chave em Assistant:ApiKey nos User Secrets
 builder.Services.AddSingleton<AssistantTools>();
 builder.Services.AddSingleton<ClaudeAssistant>();
