@@ -441,7 +441,7 @@ sequenceDiagram
 
 | Chave de cache | Conteúdo |
 |---|---|
-| `Totvs:Parameters` | Empresas e credenciais de `TotvsParameters` |
+| `Totvs:Parameters:<empresa>` | Empresas e credenciais de `TotvsParameters`, por empresa da execução (`ICompanyContext`) |
 | `Totvs:Token:<cnpj>` | Token da empresa |
 | `Totvs:Branches:<cnpj>`, `Totvs:Customers:<cnpj>`, `Totvs:LegalEntities:<cnpj>`, `Totvs:Sellers:<cnpj>` | Cadastros gravados (código → registro) |
 | `Totvs:Skus:<cnpj>:<matriz>` | Referências gravadas, por marca |

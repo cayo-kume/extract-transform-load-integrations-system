@@ -207,7 +207,7 @@ Application.LinxCommerce/
 | Método | O que faz |
 |---|---|
 | `GetBatchTime` | Horário do lote, em Brasília |
-| `GetCompanys` / `GetCompany` | Clientes de `LinxCommerceParameters` ligados à holding da execução em `monitor.HoldingCompanies` (cache `LinxCommerce:Parameters`). Ignora, com mensagem no log, o cliente sem CNPJ de 14 dígitos ou sem `base_url` `https` (aceita `http://localhost`, para testes com API simulada), usuário ou chave |
+| `GetCompanys` / `GetCompany` | Clientes de `LinxCommerceParameters` ligados à holding da execução em `monitor.HoldingCompanies` (cache `LinxCommerce:Parameters:<empresa>`). Ignora, com mensagem no log, o cliente sem CNPJ de 14 dígitos ou sem `base_url` `https` (aceita `http://localhost`, para testes com API simulada), usuário ou chave |
 | `ModifiedDateWindow` | O `Where` da janela pela data de alteração |
 | `Search<T>` | Lê todas as páginas de uma busca (500 por página) e devolve cada item com o seu JSON; `null` se alguma página falhou |
 | `Get<T>` | Lê um registro e devolve o DTO e o JSON sem os campos sensíveis; `null` se falhou |
@@ -281,7 +281,7 @@ sequenceDiagram
 
 | Chave de cache | Conteúdo |
 |---|---|
-| `LinxCommerce:Parameters` | Clientes e credenciais de `LinxCommerceParameters` |
+| `LinxCommerce:Parameters:<empresa>` | Clientes e credenciais de `LinxCommerceParameters`, por empresa da execução (`ICompanyContext`) |
 | `LinxCommerce:Orders:<cnpj>` | `OrderID` → `ModifiedDate` gravada |
 | `LinxCommerce:Products:<cnpj>`, `LinxCommerce:Skus:<cnpj>` | `ProductID` → `ModifiedDate` gravada |
 

@@ -249,7 +249,7 @@ validação e gravação), como no Totvs; não há classe base nem transporte ce
 | Método | O que faz |
 |---|---|
 | `GetBatchTime` | Horário do lote (horário de Brasília), gravado igual em todos os registros de uma gravação |
-| `GetCompanys` / `GetCompany` | Clientes de `linxmicrovix.LinxMicrovixParameters` (em cache, chave `LinxMicrovix:Parameters`, 2 h absoluto / 30 min deslizante) / um cliente pelo CNPJ |
+| `GetCompanys` / `GetCompany` | Clientes de `linxmicrovix.LinxMicrovixParameters` (em cache por empresa da execução, chave `LinxMicrovix:Parameters:<empresa>`, 2 h absoluto / 30 min deslizante) / um cliente pelo CNPJ |
 | `GetStores` | CNPJs das lojas do cliente em cada API (`LinxGrupoLojas` no ERP, `B2CConsultaEmpresas` no B2C), sem cache |
 | `GetLastTimestamp` | Maior timestamp gravado do método para o cliente e a loja; com uma coluna de filtro, por valor (ex.: por `id_tabela`) |
 | `GetSourceValues` | Valores de uma coluna de outro método já gravado, para os métodos que exigem um valor por chamada; pode trazer só os gravados depois da última leitura |
