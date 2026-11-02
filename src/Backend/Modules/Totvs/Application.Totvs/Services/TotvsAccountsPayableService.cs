@@ -82,7 +82,7 @@ namespace Application.Totvs.Services
 
                     // as datas da Totvs são do horário local, sem fuso (o "Z" é ignorado pela API, testado). Banco vazio: 10 meses
                     var lastChange = await _totvsAccountsPayableRepository.GetDuplicatesLastChange(company.doc_company!);
-                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : endDate.AddMonths(-10);
+                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : _totvsService.GetInitialLoad(endDate.AddMonths(-10));
 
                     for (var windowStart = since; windowStart < endDate; windowStart = windowStart.AddDays(DuplicatesWindowDays))
                     {

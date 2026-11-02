@@ -13,6 +13,14 @@ namespace Application.LinxCommerce.Abstractions.Services
         public DateTime GetBatchTime();
 
         /// <summary>
+        /// início da carga inicial (banco vazio): a data própria da leitura, limitada por InitialLoad:MaxMonths a partir do
+        /// horário do lote (IInitialLoad). Sem a chave, devolve <paramref name="since"/> como veio
+        /// </summary>
+        /// <param name="since">início que a leitura usaria sem o teto, no horário de Brasília</param>
+        /// <returns></returns>
+        public DateTime GetInitialLoad(DateTime since);
+
+        /// <summary>
         /// clientes de linxcommerce.LinxCommerceParameters com CNPJ, endereço e credenciais preenchidos ligados à empresa da execução (cache LinxCommerce:Parameters:<empresa>)
         /// </summary>
         public Task<IEnumerable<Company>> GetCompanys();

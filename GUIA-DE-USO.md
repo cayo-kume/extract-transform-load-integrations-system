@@ -259,6 +259,17 @@ dotnet run --project src/Backend/Hosts/WebJob -- --list-jobs
 > A connection string do WebJob e do Worker fica fora do `appsettings.json`:
 > `dotnet user-secrets set "ConnectionStrings:Connection" "<connection string>" --project src/Backend/Hosts/Worker`.
 
+**Carga inicial limitada (testes).** Com o banco vazio, alguns jobs leem o histórico inteiro (Totvs e Linx Microvix
+desde 2000). A chave `InitialLoad:MaxMonths` limita a primeira carga aos últimos N meses, nos três hosts; a leitura
+incremental (com dado no banco) não muda. Fica **desligada no git** e entra por variável de ambiente:
+
+```powershell
+$env:InitialLoad__MaxMonths = '3'
+```
+
+Vale para Totvs, Linx Microvix, Movidesk e LinxCommerce. No Microvix, a carga inicial passa a mandar a data e
+`filtra_somente_timestamp = 0` (detalhes em [docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md](docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md#1-carga-inicial-limitada-a-3-meses)).
+
 ---
 
 ## 🖥️ 6. Painel

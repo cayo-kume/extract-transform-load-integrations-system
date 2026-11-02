@@ -80,7 +80,7 @@ namespace Application.Totvs.Services
 
                     // maxChangeFilterDate só vem com filter.change (testado). Banco vazio: desde 2000
                     var lastChange = await _totvsRepresentativesRepository.GetRepresentativesLastChange(company.doc_company!);
-                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : new DateTime(2000, 1, 1);
+                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : _totvsService.GetInitialLoad(new DateTime(2000, 1, 1));
 
                     var representatives = new List<Domain.Totvs.Dtos.Reads.People.Representatives.Representative>();
                     var representativesJson = new Dictionary<int, string>();
@@ -440,7 +440,7 @@ namespace Application.Totvs.Services
                     var today = _totvsService.GetBatchTime().Date;
 
                     var lastMovement = await _totvsRepresentativesRepository.GetReceptionSalesLastMovementDate(company.doc_company!);
-                    var since = lastMovement.HasValue ? lastMovement.Value.Date.AddDays(-ReceptionSalesRereadDays) : new DateTime(2025, 1, 1);
+                    var since = lastMovement.HasValue ? lastMovement.Value.Date.AddDays(-ReceptionSalesRereadDays) : _totvsService.GetInitialLoad(new DateTime(2025, 1, 1)).Date;
 
                     for (var windowStart = since; windowStart <= today; windowStart = windowStart.AddDays(ReceptionSalesWindowDays))
                     {

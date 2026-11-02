@@ -15,6 +15,16 @@ namespace Application.LinxMicrovix.Outbound.Abstractions.Services
         public DateTime GetBatchTime();
 
         /// <summary>
+        /// janela de datas de uma leitura recorrente pelo timestamp. Com o timestamp do banco em 0 (carga inicial) e
+        /// InitialLoad:MaxMonths ligado: data inicial = horário do lote − MaxMonths e filtra_somente_timestamp = 0, para a API
+        /// filtrar pela data (testado, docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md §1.3). No resto: 2000-01-01 e 1, como sempre.
+        /// Calcular uma vez antes das páginas: da 2ª em diante o timestamp não é mais 0, e a carga não pode trocar de modo no meio
+        /// </summary>
+        /// <param name="timestamp">o timestamp gravado no banco (GetLastTimestamp)</param>
+        /// <returns>data inicial (yyyy-MM-dd) e o valor de filtra_somente_timestamp, para os métodos que o mandam</returns>
+        public (string startDate, string timestampOnly) GetReadWindow(long timestamp);
+
+        /// <summary>
         /// clientes de linxmicrovix.LinxMicrovixParameters, em cache
         /// </summary>
         public Task<IEnumerable<Company>> GetCompanys();

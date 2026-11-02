@@ -94,7 +94,7 @@ namespace Application.Totvs.Services
 
                     // as datas da Totvs são do horário local, sem fuso (o "Z" é ignorado pela API, testado). Banco vazio: desde 01/01/2025
                     var lastChange = await _totvsSalesOrdersRepository.GetSalesOrdersLastChange(company.doc_company!);
-                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : new DateTime(2025, 1, 1);
+                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : _totvsService.GetInitialLoad(new DateTime(2025, 1, 1));
 
                     for (var windowStart = since; windowStart < endDate; windowStart = windowStart.AddDays(OrdersWindowDays))
                     {
@@ -439,7 +439,7 @@ namespace Application.Totvs.Services
 
                     // maxChangeFilterDate só vem com StartChangeDate/EndChangeDate (testado). Banco vazio: desde 2000
                     var lastChange = await _totvsSalesOrdersRepository.GetSaleDiscountTypesLastChange(company.doc_company!);
-                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : new DateTime(2000, 1, 1);
+                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : _totvsService.GetInitialLoad(new DateTime(2000, 1, 1));
 
                     var items = await GetCatalogPages<Domain.Totvs.Dtos.Reads.SalesOrders.Catalogs.SaleDiscountType>(company, "sales-order/v2/discount-type", page => new Dictionary<string, string>
                     {
@@ -545,7 +545,7 @@ namespace Application.Totvs.Services
 
                     // maxChangeFilterDate só vem com StartChangeDate/EndChangeDate (testado). Banco vazio: desde 2000
                     var lastChange = await _totvsSalesOrdersRepository.GetSaleClassificationsLastChange(company.doc_company!);
-                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : new DateTime(2000, 1, 1);
+                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : _totvsService.GetInitialLoad(new DateTime(2000, 1, 1));
 
                     var items = await GetCatalogPages<Domain.Totvs.Dtos.Reads.SalesOrders.Catalogs.SaleClassification>(company, "sales-order/v2/classifications", page => new Dictionary<string, string>
                     {
@@ -650,7 +650,7 @@ namespace Application.Totvs.Services
 
                     // maxChangeFilterDate só vem com StartChangeDate/EndChangeDate (testado). Banco vazio: desde 2000
                     var lastChange = await _totvsSalesOrdersRepository.GetSaleOrderBatchesLastChange(company.doc_company!);
-                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : new DateTime(2000, 1, 1);
+                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : _totvsService.GetInitialLoad(new DateTime(2000, 1, 1));
 
                     var items = await GetCatalogPages<Domain.Totvs.Dtos.Reads.SalesOrders.Catalogs.SaleOrderBatch>(company, "sales-order/v2/batch-items", page => new Dictionary<string, string>
                     {
@@ -766,7 +766,7 @@ namespace Application.Totvs.Services
 
                     // banco vazio: desde 01/01/2025 (a carga inicial dos pedidos), em fatias de 30 dias; depois, MAX(maxChangeFilterDate) − 1 h
                     var lastChange = await _totvsSalesOrdersRepository.GetBillingSuggestionsLastChange(company.doc_company!);
-                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : new DateTime(2025, 1, 1);
+                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : _totvsService.GetInitialLoad(new DateTime(2025, 1, 1));
 
                     for (var windowStart = since; windowStart < endDate; windowStart = windowStart.AddDays(OrdersWindowDays))
                     {

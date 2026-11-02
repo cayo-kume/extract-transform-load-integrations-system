@@ -200,7 +200,7 @@ namespace Application.Movidesk.Services
 
                 // lastUpdate é UTC na API; 1 hora de folga para o atraso de replicação. Banco vazio: /tickets só traz até 90 dias
                 var lastUpdate = await _movideskTicketsRepository.GetTicketsLastUpdate(company.doc_company);
-                var since = lastUpdate.HasValue ? lastUpdate.Value.AddHours(-1) : DateTime.UtcNow.AddDays(-89);
+                var since = lastUpdate.HasValue ? lastUpdate.Value.AddHours(-1) : _movideskService.GetInitialLoad(DateTime.UtcNow.AddDays(-89));
 
                 // fase 1: id e lastUpdate dos tickets da janela, em ordem de id (1.000 por chamada, o máximo da API)
                 var listed = new List<(long id, DateTime? lastUpdate)>();

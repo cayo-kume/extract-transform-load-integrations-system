@@ -91,6 +91,8 @@ namespace Application.LinxMicrovix.Outbound.Services
                     {
                         // timestamp exclusivo: a API devolve só os maiores que o informado; banco vazio (0) traz o histórico inteiro
                         var timestamp = await _linxMicrovixService.GetLastTimestamp(company, EnumJob.LinxClientesFornec, null);
+                        // carga inicial: limitada por InitialLoad:MaxMonths (ILinxMicrovixService.GetReadWindow), decidida antes das páginas
+                        var (startDate, _) = _linxMicrovixService.GetReadWindow(timestamp);
                         var rows = new List<(Domain.LinxMicrovix.Outbound.Dtos.Reads.Erp.Customers.LinxClientesFornec dto, string xml)>();
                         var failed = false;
 
@@ -109,7 +111,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                                             new XElement("Parameter", new XAttribute("id", "chave"), company.erp_chave),
                                             new XElement("Parameter", new XAttribute("id", "cnpjEmp"), cnpj_emp),
                                             new XElement("Parameter", new XAttribute("id", "timestamp"), timestamp),
-                                            new XElement("Parameter", new XAttribute("id", "data_inicial"), "2000-01-01"),
+                                            new XElement("Parameter", new XAttribute("id", "data_inicial"), startDate),
                                             new XElement("Parameter", new XAttribute("id", "data_fim"), endDate),
                                             new XElement("Parameter", new XAttribute("id", "dt_update_inicial"), "2000-01-01"),
                                             new XElement("Parameter", new XAttribute("id", "dt_update_fim"), endDate)
@@ -308,6 +310,8 @@ namespace Application.LinxMicrovix.Outbound.Services
                     {
                         // timestamp exclusivo: a API devolve só os maiores que o informado; banco vazio (0) traz o histórico inteiro
                         var timestamp = await _linxMicrovixService.GetLastTimestamp(company, EnumJob.LinxClientesFornecCamposAdicionais, cnpj_emp);
+                        // carga inicial: limitada por InitialLoad:MaxMonths (ILinxMicrovixService.GetReadWindow), decidida antes das páginas
+                        var (startDate, _) = _linxMicrovixService.GetReadWindow(timestamp);
                         var rows = new List<(Domain.LinxMicrovix.Outbound.Dtos.Reads.Erp.Customers.LinxClientesFornecCamposAdicionais dto, string xml)>();
                         var failed = false;
 
@@ -326,7 +330,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                                             new XElement("Parameter", new XAttribute("id", "chave"), company.erp_chave),
                                             new XElement("Parameter", new XAttribute("id", "cnpjEmp"), cnpj_emp),
                                             new XElement("Parameter", new XAttribute("id", "timestamp"), timestamp),
-                                            new XElement("Parameter", new XAttribute("id", "data_inicial"), "2000-01-01"),
+                                            new XElement("Parameter", new XAttribute("id", "data_inicial"), startDate),
                                             new XElement("Parameter", new XAttribute("id", "data_fim"), endDate)
                                         )
                                     )
@@ -710,6 +714,8 @@ namespace Application.LinxMicrovix.Outbound.Services
                     {
                         // timestamp exclusivo: a API devolve só os maiores que o informado; banco vazio (0) traz o histórico inteiro
                         var timestamp = await _linxMicrovixService.GetLastTimestamp(company, EnumJob.LinxClientesFornecContatos, null);
+                        // carga inicial: limitada por InitialLoad:MaxMonths (ILinxMicrovixService.GetReadWindow), decidida antes das páginas
+                        var (startDate, _) = _linxMicrovixService.GetReadWindow(timestamp);
                         var rows = new List<(Domain.LinxMicrovix.Outbound.Dtos.Reads.Erp.Customers.LinxClientesFornecContatos dto, string xml)>();
                         var failed = false;
 
@@ -728,7 +734,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                                             new XElement("Parameter", new XAttribute("id", "chave"), company.erp_chave),
                                             new XElement("Parameter", new XAttribute("id", "cnpjEmp"), cnpj_emp),
                                             new XElement("Parameter", new XAttribute("id", "timestamp"), timestamp),
-                                            new XElement("Parameter", new XAttribute("id", "data_inicial"), "2000-01-01"),
+                                            new XElement("Parameter", new XAttribute("id", "data_inicial"), startDate),
                                             new XElement("Parameter", new XAttribute("id", "data_fim"), endDate)
                                         )
                                     )
@@ -1118,6 +1124,8 @@ namespace Application.LinxMicrovix.Outbound.Services
                     {
                         // timestamp exclusivo: a API devolve só os maiores que o informado; banco vazio (0) traz o histórico inteiro
                         var timestamp = await _linxMicrovixService.GetLastTimestamp(company, EnumJob.LinxClientesFornecCreditoAvulso, cnpj_emp);
+                        // carga inicial: limitada por InitialLoad:MaxMonths (ILinxMicrovixService.GetReadWindow), decidida antes das páginas
+                        var (startDate, _) = _linxMicrovixService.GetReadWindow(timestamp);
                         var rows = new List<(Domain.LinxMicrovix.Outbound.Dtos.Reads.Erp.Customers.LinxClientesFornecCreditoAvulso dto, string xml)>();
                         var failed = false;
 
@@ -1136,7 +1144,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                                             new XElement("Parameter", new XAttribute("id", "chave"), company.erp_chave),
                                             new XElement("Parameter", new XAttribute("id", "cnpjEmp"), cnpj_emp),
                                             new XElement("Parameter", new XAttribute("id", "timestamp"), timestamp),
-                                            new XElement("Parameter", new XAttribute("id", "data_inicial"), "2000-01-01"),
+                                            new XElement("Parameter", new XAttribute("id", "data_inicial"), startDate),
                                             new XElement("Parameter", new XAttribute("id", "data_fim"), endDate)
                                         )
                                     )

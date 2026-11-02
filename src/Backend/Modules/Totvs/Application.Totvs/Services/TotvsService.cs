@@ -23,6 +23,7 @@ namespace Application.Totvs.Services
         private readonly ITotvsRepository _totvsRepository;
         private readonly IConfiguration _configuration;
         private readonly ICompanyContext _companyContext;
+        private readonly IInitialLoad _initialLoad;
 
         // mais a empresa da execução: a consulta só traz os CNPJs dela (monitor.HoldingCompanies), e o processo atende várias
         private const string ParametersKey = "Totvs:Parameters";
@@ -31,11 +32,14 @@ namespace Application.Totvs.Services
         // janela da trava de repetição das escritas não idempotentes (T5)
         private const int RepeatLockMinutes = 10;
 
-        public TotvsService([FromKeyedServices("TotvsAPI")] IApiClient apiClient, ILoggerService logger, IMemoryCache cache, ITotvsRepository totvsRepository, IConfiguration configuration, ICompanyContext companyContext) =>
-            (_apiClient, _logger, _cache, _totvsRepository, _configuration, _companyContext) = (apiClient, logger, cache, totvsRepository, configuration, companyContext);
+        public TotvsService([FromKeyedServices("TotvsAPI")] IApiClient apiClient, ILoggerService logger, IMemoryCache cache, ITotvsRepository totvsRepository, IConfiguration configuration, ICompanyContext companyContext, IInitialLoad initialLoad) =>
+            (_apiClient, _logger, _cache, _totvsRepository, _configuration, _companyContext, _initialLoad) = (apiClient, logger, cache, totvsRepository, configuration, companyContext, initialLoad);
 
         public DateTime GetBatchTime() =>
             TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time"));
+
+        public DateTime GetInitialLoad(DateTime since) =>
+            _initialLoad.Since(since, GetBatchTime());
 
         public async Task<IEnumerable<Company>> GetCompanys()
         {

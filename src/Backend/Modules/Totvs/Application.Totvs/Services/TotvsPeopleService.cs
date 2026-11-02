@@ -85,7 +85,7 @@ namespace Application.Totvs.Services
 
                     // maxChangeFilterDate só vem com StartChangeDate/EndChangeDate (testado). Banco vazio: carga desde 2000
                     var lastChange = await _totvsPeopleRepository.GetBranchesLastChange(company.doc_company!);
-                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : new DateTime(2000, 1, 1);
+                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : _totvsService.GetInitialLoad(new DateTime(2000, 1, 1));
 
                     var branches = new List<Domain.Totvs.Dtos.Reads.People.Branches.Branch>();
                     var branchesJson = new Dictionary<int, string>();
@@ -294,7 +294,7 @@ namespace Application.Totvs.Services
 
                     // as datas da Totvs são do horário local, sem fuso (o "Z" é ignorado pela API, testado). Banco vazio: desde 2000
                     var lastChange = await _totvsPeopleRepository.GetCustomersLastChange(company.doc_company!);
-                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : new DateTime(2000, 1, 1);
+                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : _totvsService.GetInitialLoad(new DateTime(2000, 1, 1));
 
                     // a carga inicial é lida em fatias (188 mil pessoas físicas na carga inicial, testado), e cada fatia é gravada ao terminar:
                     // uma falha da API interrompe só o resto, e a próxima execução continua do MAX(maxChangeFilterDate)
@@ -510,7 +510,7 @@ namespace Application.Totvs.Services
 
                     // as datas da Totvs são do horário local, sem fuso (o "Z" é ignorado pela API, testado). Banco vazio: desde 2000
                     var lastChange = await _totvsPeopleRepository.GetLegalEntitiesLastChange(company.doc_company!);
-                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : new DateTime(2000, 1, 1);
+                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : _totvsService.GetInitialLoad(new DateTime(2000, 1, 1));
 
                     // a carga inicial é lida em fatias (2,2 mil pessoas jurídicas na carga inicial, testado), e cada fatia é gravada ao terminar:
                     // uma falha da API interrompe só o resto, e a próxima execução continua do MAX(maxChangeFilterDate)

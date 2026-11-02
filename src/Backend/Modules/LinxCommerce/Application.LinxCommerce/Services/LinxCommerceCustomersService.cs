@@ -49,7 +49,7 @@ namespace Application.LinxCommerce.Services
                     // folga. O filtro por ModifiedDate no SearchCustomer está a conferir: o código antigo filtrava por CreatedDate e
                     // nunca lia alterações (4.2, item 3)
                     var lastBatch = await _linxCommerceCustomersRepository.GetCustomersLastBatchTime(company.doc_company!);
-                    var since = lastBatch.HasValue ? lastBatch.Value.AddHours(-1) : CustomersInitialLoad;
+                    var since = lastBatch.HasValue ? lastBatch.Value.AddHours(-1) : _linxCommerceService.GetInitialLoad(CustomersInitialLoad);
 
                     var found = await _linxCommerceService.Search<Domain.LinxCommerce.Dtos.Reads.Customers.SearchCustomerResult>(
                         company,

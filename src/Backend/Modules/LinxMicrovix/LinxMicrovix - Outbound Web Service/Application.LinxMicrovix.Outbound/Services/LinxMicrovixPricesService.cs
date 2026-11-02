@@ -433,6 +433,8 @@ namespace Application.LinxMicrovix.Outbound.Services
                     {
                         // timestamp exclusivo, o mesmo para os dois valores de promocao_ativa: as duas leituras são gravadas juntas ou nenhuma
                         var timestamp = await _linxMicrovixService.GetLastTimestamp(company, EnumJob.LinxProdutosPromocoes, cnpj_emp);
+                        // carga inicial: limitada por InitialLoad:MaxMonths (ILinxMicrovixService.GetReadWindow), decidida antes das páginas
+                        var (startDate, timestampOnly) = _linxMicrovixService.GetReadWindow(timestamp);
                         var startTimestamp = timestamp;
                         var rows = new List<(Domain.LinxMicrovix.Outbound.Dtos.Reads.Erp.Prices.LinxProdutosPromocoes dto, string xml)>();
                         var failed = false;
@@ -456,11 +458,11 @@ namespace Application.LinxMicrovix.Outbound.Services
                                                 new XElement("Parameter", new XAttribute("id", "chave"), company.erp_chave),
                                                 new XElement("Parameter", new XAttribute("id", "cnpjEmp"), cnpj_emp),
                                                 new XElement("Parameter", new XAttribute("id", "timestamp"), timestamp),
-                                                new XElement("Parameter", new XAttribute("id", "data_cad_inicial"), "2000-01-01"),
+                                                new XElement("Parameter", new XAttribute("id", "data_cad_inicial"), startDate),
                                                 new XElement("Parameter", new XAttribute("id", "data_cad_fim"), endDate),
                                                 new XElement("Parameter", new XAttribute("id", "data_vig_inicial"), "2000-01-01"),
                                                 new XElement("Parameter", new XAttribute("id", "data_vig_fim"), endDate),
-                                                new XElement("Parameter", new XAttribute("id", "filtra_somente_timestamp"), "1"),
+                                                new XElement("Parameter", new XAttribute("id", "filtra_somente_timestamp"), timestampOnly),
                                                 new XElement("Parameter", new XAttribute("id", "promocao_ativa"), promocao_ativa)
                                             )
                                         )
@@ -657,6 +659,8 @@ namespace Application.LinxMicrovix.Outbound.Services
                     {
                         // timestamp exclusivo: a API devolve só os maiores que o informado; banco vazio (0) traz o histórico inteiro
                         var timestamp = await _linxMicrovixService.GetLastTimestamp(company, EnumJob.LinxAcoesPromocionais, cnpj_emp);
+                        // carga inicial: limitada por InitialLoad:MaxMonths (ILinxMicrovixService.GetReadWindow), decidida antes das páginas
+                        var (startDate, _) = _linxMicrovixService.GetReadWindow(timestamp);
                         var rows = new List<(Domain.LinxMicrovix.Outbound.Dtos.Reads.Erp.Prices.LinxAcoesPromocionais dto, string xml)>();
                         var failed = false;
 
@@ -675,7 +679,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                                             new XElement("Parameter", new XAttribute("id", "chave"), company.erp_chave),
                                             new XElement("Parameter", new XAttribute("id", "cnpjEmp"), cnpj_emp),
                                             new XElement("Parameter", new XAttribute("id", "timestamp"), timestamp),
-                                            new XElement("Parameter", new XAttribute("id", "data_inicial"), "2000-01-01"),
+                                            new XElement("Parameter", new XAttribute("id", "data_inicial"), startDate),
                                             new XElement("Parameter", new XAttribute("id", "data_fim"), endDate)
                                         )
                                     )
@@ -1268,6 +1272,8 @@ namespace Application.LinxMicrovix.Outbound.Services
                     {
                         // timestamp exclusivo: a API devolve só os maiores que o informado; banco vazio (0) traz o histórico inteiro
                         var timestamp = await _linxMicrovixService.GetLastTimestamp(company, EnumJob.LinxMovimentoAcoesPromocionais, cnpj_emp);
+                        // carga inicial: limitada por InitialLoad:MaxMonths (ILinxMicrovixService.GetReadWindow), decidida antes das páginas
+                        var (startDate, _) = _linxMicrovixService.GetReadWindow(timestamp);
                         var rows = new List<(Domain.LinxMicrovix.Outbound.Dtos.Reads.Erp.Prices.LinxMovimentoAcoesPromocionais dto, string xml)>();
                         var failed = false;
 
@@ -1286,7 +1292,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                                             new XElement("Parameter", new XAttribute("id", "chave"), company.erp_chave),
                                             new XElement("Parameter", new XAttribute("id", "cnpjEmp"), cnpj_emp),
                                             new XElement("Parameter", new XAttribute("id", "timestamp"), timestamp),
-                                            new XElement("Parameter", new XAttribute("id", "data_inicial"), "2000-01-01"),
+                                            new XElement("Parameter", new XAttribute("id", "data_inicial"), startDate),
                                             new XElement("Parameter", new XAttribute("id", "data_fim"), endDate)
                                         )
                                     )
@@ -1474,6 +1480,8 @@ namespace Application.LinxMicrovix.Outbound.Services
                     {
                         // timestamp exclusivo: a API devolve só os maiores que o informado; banco vazio (0) traz o histórico inteiro
                         var timestamp = await _linxMicrovixService.GetLastTimestamp(company, EnumJob.LinxCupomDesconto, cnpj_emp);
+                        // carga inicial: limitada por InitialLoad:MaxMonths (ILinxMicrovixService.GetReadWindow), decidida antes das páginas
+                        var (startDate, _) = _linxMicrovixService.GetReadWindow(timestamp);
                         var rows = new List<(Domain.LinxMicrovix.Outbound.Dtos.Reads.Erp.Prices.LinxCupomDesconto dto, string xml)>();
                         var failed = false;
 
@@ -1492,7 +1500,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                                             new XElement("Parameter", new XAttribute("id", "chave"), company.erp_chave),
                                             new XElement("Parameter", new XAttribute("id", "cnpjEmp"), cnpj_emp),
                                             new XElement("Parameter", new XAttribute("id", "timestamp"), timestamp),
-                                            new XElement("Parameter", new XAttribute("id", "data_inicial"), "2000-01-01"),
+                                            new XElement("Parameter", new XAttribute("id", "data_inicial"), startDate),
                                             new XElement("Parameter", new XAttribute("id", "data_fim"), endDate)
                                         )
                                     )

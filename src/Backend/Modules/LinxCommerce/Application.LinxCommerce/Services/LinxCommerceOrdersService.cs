@@ -56,7 +56,7 @@ namespace Application.LinxCommerce.Services
 
                     // uma hora de folga sobre a maior alteração gravada; banco vazio: a carga inicial
                     var lastModified = await _linxCommerceOrdersRepository.GetOrdersLastModifiedDate(company.doc_company!);
-                    var since = lastModified.HasValue ? LinxCommerceConverters.ToBrasilia(lastModified.Value).AddHours(-1) : OrdersInitialLoad;
+                    var since = lastModified.HasValue ? LinxCommerceConverters.ToBrasilia(lastModified.Value).AddHours(-1) : _linxCommerceService.GetInitialLoad(OrdersInitialLoad);
 
                     var found = await _linxCommerceService.Search<Domain.LinxCommerce.Dtos.Reads.Orders.SearchOrdersResult>(
                         company,

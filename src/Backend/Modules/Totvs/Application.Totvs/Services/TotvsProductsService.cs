@@ -470,7 +470,7 @@ namespace Application.Totvs.Services
                     // lastChageDate vem 0001-01-01 (testado): a janela começa no fim da última janela lida e gravada − 1 h (banco vazio,
                     // desde 2000); sem ProductsCode a rota exige a janela (400 InformOneOfTheFields)
                     var lastWindowEnd = await _totvsProductsRepository.GetSimilarLastWindowEnd(company.doc_company!);
-                    var since = lastWindowEnd?.AddHours(-1) ?? new DateTime(2000, 1, 1);
+                    var since = lastWindowEnd?.AddHours(-1) ?? _totvsService.GetInitialLoad(new DateTime(2000, 1, 1));
 
                     // o que já está gravado, com o hash de cada produto (sem cache: a tabela guarda o hash, T9), lido só se vier produto
                     Dictionary<int, string>? stored = null;
@@ -1003,7 +1003,7 @@ namespace Application.Totvs.Services
 
                         // as datas da Totvs são do horário local, sem fuso (o "Z" é ignorado pela API, testado). Banco vazio: desde 2000
                         var lastChange = await _totvsProductsRepository.GetSkusLastChange(company.doc_company!, baseBranchCode);
-                        var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : new DateTime(2000, 1, 1);
+                        var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : _totvsService.GetInitialLoad(new DateTime(2000, 1, 1));
                         var windowDays = lastChange.HasValue ? WindowDays : InitialWindowDays;
 
                         for (var windowStart = since; windowStart < endDate; windowStart = windowStart.AddDays(windowDays))

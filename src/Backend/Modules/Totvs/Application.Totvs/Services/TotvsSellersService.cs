@@ -81,7 +81,7 @@ namespace Application.Totvs.Services
 
                     // as datas da Totvs são do horário local, sem fuso (o "Z" é ignorado pela API, testado). Banco vazio: desde 2000
                     var lastChange = await _totvsSellersRepository.GetSellersLastChange(company.doc_company!);
-                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : new DateTime(2000, 1, 1);
+                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : _totvsService.GetInitialLoad(new DateTime(2000, 1, 1));
 
                     var sellers = new List<Domain.Totvs.Dtos.Reads.Sellers.Seller>();
                     var sellersJson = new Dictionary<int, string>();

@@ -108,7 +108,7 @@ namespace Application.Totvs.Services
 
                     // maxChangeFilterDate só vem com StartChangeDate/EndChangeDate (testado). Banco vazio: desde 2000
                     var lastChange = await _totvsProductCatalogsRepository.GetClassificationTypesLastChange(company.doc_company!);
-                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : new DateTime(2000, 1, 1);
+                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : _totvsService.GetInitialLoad(new DateTime(2000, 1, 1));
 
                     var items = await GetCatalogPages<Domain.Totvs.Dtos.Reads.Products.Catalogs.ClassificationType>(
                         company,
@@ -217,7 +217,7 @@ namespace Application.Totvs.Services
 
                     // maxChangeFilterDate só vem com StartChangeDate/EndChangeDate (testado). Banco vazio: desde 2000
                     var lastChange = await _totvsProductCatalogsRepository.GetProductClassificationsLastChange(company.doc_company!);
-                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : new DateTime(2000, 1, 1);
+                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : _totvsService.GetInitialLoad(new DateTime(2000, 1, 1));
 
                     var items = await GetCatalogPages<Domain.Totvs.Dtos.Reads.Products.Catalogs.ProductClassification>(
                         company,
@@ -325,7 +325,7 @@ namespace Application.Totvs.Services
 
                     // maxChangeFilterDate só vem com StartChangeDate/EndChangeDate (testado). Banco vazio: desde 2000
                     var lastChange = await _totvsProductCatalogsRepository.GetCategoriesLastChange(company.doc_company!);
-                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : new DateTime(2000, 1, 1);
+                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : _totvsService.GetInitialLoad(new DateTime(2000, 1, 1));
 
                     var items = await GetCatalogPages<Domain.Totvs.Dtos.Reads.Products.Catalogs.Category>(
                         company,
@@ -434,7 +434,7 @@ namespace Application.Totvs.Services
 
                     // maxChangeFilterDate só vem com StartChangeDate/EndChangeDate (testado). Banco vazio: desde 2000
                     var lastChange = await _totvsProductCatalogsRepository.GetGridsLastChange(company.doc_company!);
-                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : new DateTime(2000, 1, 1);
+                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : _totvsService.GetInitialLoad(new DateTime(2000, 1, 1));
 
                     var items = await GetCatalogPages<Domain.Totvs.Dtos.Reads.Products.Catalogs.Grid>(
                         company,
@@ -543,7 +543,7 @@ namespace Application.Totvs.Services
 
                     // maxChangeFilterDate só vem com StartChangeDate/EndChangeDate (testado). Banco vazio: desde 2000
                     var lastChange = await _totvsProductCatalogsRepository.GetMeasurementUnitsLastChange(company.doc_company!);
-                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : new DateTime(2000, 1, 1);
+                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : _totvsService.GetInitialLoad(new DateTime(2000, 1, 1));
 
                     var items = await GetCatalogPages<Domain.Totvs.Dtos.Reads.Products.Catalogs.MeasurementUnit>(
                         company,
@@ -742,7 +742,7 @@ namespace Application.Totvs.Services
 
                     // maxChangeFilterDate só vem com StartChangeDate/EndChangeDate (testado). Banco vazio: desde 2000
                     var lastChange = await _totvsProductCatalogsRepository.GetAdditionalFieldsTypesLastChange(company.doc_company!);
-                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : new DateTime(2000, 1, 1);
+                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : _totvsService.GetInitialLoad(new DateTime(2000, 1, 1));
 
                     var items = await GetCatalogPages<Domain.Totvs.Dtos.Reads.Products.Catalogs.AdditionalFieldType>(
                         company,
@@ -851,7 +851,7 @@ namespace Application.Totvs.Services
 
                     // maxChangeFilterDate só vem com StartChangeDate/EndChangeDate (testado). Banco vazio: desde 2000
                     var lastChange = await _totvsProductCatalogsRepository.GetProductGrouperConfigurationsLastChange(company.doc_company!);
-                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : new DateTime(2000, 1, 1);
+                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : _totvsService.GetInitialLoad(new DateTime(2000, 1, 1));
 
                     var items = await GetCatalogPages<Domain.Totvs.Dtos.Reads.Products.Catalogs.ProductGrouperConfiguration>(
                         company,
@@ -960,7 +960,7 @@ namespace Application.Totvs.Services
 
                     // maxChangeFilterDate só vem com StartChangeDate/EndChangeDate (testado). Banco vazio: desde 2000
                     var lastChange = await _totvsProductCatalogsRepository.GetInstructionItemsLastChange(company.doc_company!);
-                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : new DateTime(2000, 1, 1);
+                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : _totvsService.GetInitialLoad(new DateTime(2000, 1, 1));
 
                     var items = await GetCatalogPages<Domain.Totvs.Dtos.Reads.Products.Catalogs.InstructionItem>(
                         company,
@@ -1069,7 +1069,7 @@ namespace Application.Totvs.Services
 
                     // maxChangeFilterDate só vem com StartChangeDate/EndChangeDate (testado). Banco vazio: desde 2000
                     var lastChange = await _totvsProductCatalogsRepository.GetCompositionsLastChange(company.doc_company!);
-                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : new DateTime(2000, 1, 1);
+                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : _totvsService.GetInitialLoad(new DateTime(2000, 1, 1));
 
                     var items = await GetCatalogPages<Domain.Totvs.Dtos.Reads.Products.Catalogs.Composition>(
                         company,
@@ -1179,7 +1179,7 @@ namespace Application.Totvs.Services
 
                     // maxChangeFilterDate só vem com StartChangeDate/EndChangeDate (testado). Banco vazio: desde 2000
                     var lastChange = await _totvsProductCatalogsRepository.GetPriceTablesLastChange(company.doc_company!);
-                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : new DateTime(2000, 1, 1);
+                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : _totvsService.GetInitialLoad(new DateTime(2000, 1, 1));
 
                     var items = await GetCatalogPages<Domain.Totvs.Dtos.Reads.Products.Catalogs.PriceTable>(
                         company,
@@ -1288,7 +1288,7 @@ namespace Application.Totvs.Services
 
                     // maxChangeFilterDate só vem com StartChangeDate/EndChangeDate (testado). Banco vazio: desde 2000
                     var lastChange = await _totvsProductCatalogsRepository.GetPriceTableScalesLastChange(company.doc_company!);
-                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : new DateTime(2000, 1, 1);
+                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : _totvsService.GetInitialLoad(new DateTime(2000, 1, 1));
 
                     var items = await GetCatalogPages<Domain.Totvs.Dtos.Reads.Products.Catalogs.PriceTableScale>(
                         company,

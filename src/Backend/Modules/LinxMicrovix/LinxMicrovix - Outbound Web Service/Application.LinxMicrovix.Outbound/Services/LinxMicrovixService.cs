@@ -17,6 +17,7 @@ namespace Application.LinxMicrovix.Outbound.Services
         private readonly ILoggerService _logger;
         private readonly ILinxMicrovixRepository _linxMicrovixRepository;
         private readonly ICompanyContext _companyContext;
+        private readonly IInitialLoad _initialLoad;
 
         // mais a empresa da execução: a consulta só traz os CNPJs dela (monitor.HoldingCompanies), e o processo atende várias
         private const string ParametersKey = "LinxMicrovix:Parameters";
@@ -27,11 +28,21 @@ namespace Application.LinxMicrovix.Outbound.Services
         // nomes de coluna vêm do código dos services (lista fechada), mas também entram interpolados: só identificadores
         private static readonly Regex ColumnPattern = new(@"^[A-Za-z_][A-Za-z0-9_]*$", RegexOptions.Compiled);
 
-        public LinxMicrovixService(IMemoryCache cache, ILoggerService logger, ILinxMicrovixRepository linxMicrovixRepository, ICompanyContext companyContext) =>
-            (_cache, _logger, _linxMicrovixRepository, _companyContext) = (cache, logger, linxMicrovixRepository, companyContext);
+        public LinxMicrovixService(IMemoryCache cache, ILoggerService logger, ILinxMicrovixRepository linxMicrovixRepository, ICompanyContext companyContext, IInitialLoad initialLoad) =>
+            (_cache, _logger, _linxMicrovixRepository, _companyContext, _initialLoad) = (cache, logger, linxMicrovixRepository, companyContext, initialLoad);
 
         public DateTime GetBatchTime() =>
             TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time"));
+
+        public (string startDate, string timestampOnly) GetReadWindow(long timestamp)
+        {
+            var historyStart = new DateTime(2000, 1, 1);
+
+            if (timestamp != 0 || _initialLoad.MaxMonths is null)
+                return ($"{historyStart:yyyy-MM-dd}", "1");
+
+            return ($"{_initialLoad.Since(historyStart, GetBatchTime()):yyyy-MM-dd}", "0");
+        }
 
         public async Task<IEnumerable<Company>> GetCompanys()
         {

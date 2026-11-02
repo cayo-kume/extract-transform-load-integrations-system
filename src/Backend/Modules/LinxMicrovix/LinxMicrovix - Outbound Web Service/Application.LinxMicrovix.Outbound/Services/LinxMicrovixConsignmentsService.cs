@@ -488,6 +488,8 @@ namespace Application.LinxMicrovix.Outbound.Services
                     {
                         // timestamp exclusivo: a API devolve só os maiores que o informado; banco vazio (0) traz o histórico inteiro
                         var timestamp = await _linxMicrovixService.GetLastTimestamp(company, EnumJob.LinxMovimentoRemessasAcertos, cnpj_emp);
+                        // carga inicial: limitada por InitialLoad:MaxMonths (ILinxMicrovixService.GetReadWindow), decidida antes das páginas
+                        var (startDate, _) = _linxMicrovixService.GetReadWindow(timestamp);
                         var rows = new List<(Domain.LinxMicrovix.Outbound.Dtos.Reads.Erp.Consignments.LinxMovimentoRemessasAcertos dto, string xml)>();
                         var failed = false;
 
@@ -506,7 +508,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                                             new XElement("Parameter", new XAttribute("id", "chave"), company.erp_chave),
                                             new XElement("Parameter", new XAttribute("id", "cnpjEmp"), cnpj_emp),
                                             new XElement("Parameter", new XAttribute("id", "timestamp"), timestamp),
-                                            new XElement("Parameter", new XAttribute("id", "data_inicial"), "2000-01-01"),
+                                            new XElement("Parameter", new XAttribute("id", "data_inicial"), startDate),
                                             new XElement("Parameter", new XAttribute("id", "data_fim"), endDate)
                                         )
                                     )

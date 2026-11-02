@@ -34,6 +34,9 @@ namespace Infrastructure.Shared
             // a trava abre a própria conexão a cada pedido: não guarda estado entre execuções
             services.AddSingleton<IJobLock, SqlServerJobLock>();
 
+            // teto da carga inicial (InitialLoad:MaxMonths): lido uma vez, vale para o processo
+            services.AddSingleton<IInitialLoad, InitialLoad>();
+
             // empresa da execução: uma por escopo (execução agendada ou requisição)
             services.AddScoped<ICompanyContext, CompanyContext>();
             services.AddScoped<ILoggerService, LoggerService>();

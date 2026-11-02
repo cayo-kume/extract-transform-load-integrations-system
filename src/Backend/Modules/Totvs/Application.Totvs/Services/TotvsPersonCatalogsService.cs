@@ -70,7 +70,7 @@ namespace Application.Totvs.Services
 
                     // maxChangeFilterDate só vem com StartChangeDate/EndChangeDate (testado). Banco vazio: desde 2000
                     var lastChange = await _totvsPersonCatalogsRepository.GetPersonClassificationsLastChange(company.doc_company!);
-                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : new DateTime(2000, 1, 1);
+                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : _totvsService.GetInitialLoad(new DateTime(2000, 1, 1));
 
                     var items = new List<Domain.Totvs.Dtos.Reads.People.Catalogs.PersonClassification>();
                     var itemsJson = new Dictionary<string, string>();
@@ -268,7 +268,7 @@ namespace Application.Totvs.Services
 
                     // maxChangeFilterDate só vem com StartChangeDate/EndChangeDate (testado). Banco vazio: desde 2000
                     var lastChange = await _totvsPersonCatalogsRepository.GetEmailTypesLastChange(company.doc_company!);
-                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : new DateTime(2000, 1, 1);
+                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : _totvsService.GetInitialLoad(new DateTime(2000, 1, 1));
 
                     var items = new List<Domain.Totvs.Dtos.Reads.People.Catalogs.EmailType>();
                     var itemsJson = new Dictionary<int, string>();
@@ -467,7 +467,7 @@ namespace Application.Totvs.Services
 
                     // maxChangeFilterDate só vem com StartChangeDate/EndChangeDate (testado). Banco vazio: desde 2000
                     var lastChange = await _totvsPersonCatalogsRepository.GetPhoneTypesLastChange(company.doc_company!);
-                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : new DateTime(2000, 1, 1);
+                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : _totvsService.GetInitialLoad(new DateTime(2000, 1, 1));
 
                     var items = new List<Domain.Totvs.Dtos.Reads.People.Catalogs.PhoneType>();
                     var itemsJson = new Dictionary<int, string>();
@@ -666,7 +666,7 @@ namespace Application.Totvs.Services
 
                     // maxChangeFilterDate só vem com StartChangeDate/EndChangeDate (testado). Banco vazio: desde 2000
                     var lastChange = await _totvsPersonCatalogsRepository.GetContactTypesLastChange(company.doc_company!);
-                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : new DateTime(2000, 1, 1);
+                    var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : _totvsService.GetInitialLoad(new DateTime(2000, 1, 1));
 
                     var items = new List<Domain.Totvs.Dtos.Reads.People.Catalogs.ContactType>();
                     var itemsJson = new Dictionary<int, string>();

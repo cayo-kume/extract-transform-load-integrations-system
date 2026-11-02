@@ -13,6 +13,14 @@ namespace Application.Totvs.Abstractions.Services
         public DateTime GetBatchTime();
 
         /// <summary>
+        /// início da carga inicial (banco vazio): a data própria da leitura, limitada por InitialLoad:MaxMonths a partir do
+        /// horário do lote (IInitialLoad). Sem a chave, devolve <paramref name="since"/> como veio
+        /// </summary>
+        /// <param name="since">início que a leitura usaria sem o teto</param>
+        /// <returns></returns>
+        public DateTime GetInitialLoad(DateTime since);
+
+        /// <summary>
         /// empresas de totvs.TotvsParameters (hoje só a holding Newbloomers), em cache
         /// </summary>
         public Task<IEnumerable<Company>> GetCompanys();

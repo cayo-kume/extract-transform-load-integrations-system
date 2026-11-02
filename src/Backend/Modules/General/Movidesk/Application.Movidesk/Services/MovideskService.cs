@@ -13,12 +13,16 @@ namespace Application.Movidesk.Services
     {
         private readonly ILoggerService _logger;
         private readonly IMovideskRepository _movideskRepository;
+        private readonly IInitialLoad _initialLoad;
 
-        public MovideskService(ILoggerService logger, IMovideskRepository movideskRepository) =>
-            (_logger, _movideskRepository) = (logger, movideskRepository);
+        public MovideskService(ILoggerService logger, IMovideskRepository movideskRepository, IInitialLoad initialLoad) =>
+            (_logger, _movideskRepository, _initialLoad) = (logger, movideskRepository, initialLoad);
 
         public DateTime GetBatchTime() =>
             TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time"));
+
+        public DateTime GetInitialLoad(DateTime since) =>
+            _initialLoad.Since(since, DateTime.UtcNow);
 
         public void SaveRequest(EnumJob job, string user_name, string httpMethod, string route, string doc_company, string field_key_value, string? responseBody, bool isSuccess, string? requestBody = null) =>
             _movideskRepository.InsertIntoMovideskRequests(

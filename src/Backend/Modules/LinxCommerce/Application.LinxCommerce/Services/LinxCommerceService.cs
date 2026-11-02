@@ -29,6 +29,7 @@ namespace Application.LinxCommerce.Services
         private readonly IMemoryCache _cache;
         private readonly ILinxCommerceRepository _linxCommerceRepository;
         private readonly ICompanyContext _companyContext;
+        private readonly IInitialLoad _initialLoad;
 
         // mais a empresa da execução: a consulta só traz os CNPJs dela (monitor.HoldingCompanies), e o processo atende várias
         private const string ParametersKey = "LinxCommerce:Parameters";
@@ -52,11 +53,14 @@ namespace Application.LinxCommerce.Services
         [GeneratedRegex(@"^\d{14}$")]
         private static partial Regex Cnpj();
 
-        public LinxCommerceService([FromKeyedServices("LinxCommerceAPI")] IApiClient apiClient, ILoggerService logger, IMemoryCache cache, ILinxCommerceRepository linxCommerceRepository, ICompanyContext companyContext) =>
-            (_apiClient, _logger, _cache, _linxCommerceRepository, _companyContext) = (apiClient, logger, cache, linxCommerceRepository, companyContext);
+        public LinxCommerceService([FromKeyedServices("LinxCommerceAPI")] IApiClient apiClient, ILoggerService logger, IMemoryCache cache, ILinxCommerceRepository linxCommerceRepository, ICompanyContext companyContext, IInitialLoad initialLoad) =>
+            (_apiClient, _logger, _cache, _linxCommerceRepository, _companyContext, _initialLoad) = (apiClient, logger, cache, linxCommerceRepository, companyContext, initialLoad);
 
         public DateTime GetBatchTime() =>
             TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time"));
+
+        public DateTime GetInitialLoad(DateTime since) =>
+            _initialLoad.Since(since, GetBatchTime());
 
         public async Task<IEnumerable<Company>> GetCompanys()
         {

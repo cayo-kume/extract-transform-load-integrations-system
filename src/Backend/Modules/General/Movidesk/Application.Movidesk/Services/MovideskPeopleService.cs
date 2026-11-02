@@ -174,7 +174,7 @@ namespace Application.Movidesk.Services
                 // changedDate é nulo para quem nunca foi alterado: a janela olha as duas datas.
                 // banco vazio: primeira carga com as pessoas criadas ou alteradas nos últimos 12 meses
                 var lastChange = await _movideskPeopleRepository.GetPeopleLastChange(company.doc_company);
-                var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : DateTime.UtcNow.AddMonths(-12);
+                var since = lastChange.HasValue ? lastChange.Value.AddHours(-1) : _movideskService.GetInitialLoad(DateTime.UtcNow.AddMonths(-12));
                 var filter = $"changedDate ge {since:yyyy-MM-ddTHH:mm:ss}.00z or createdDate ge {since:yyyy-MM-ddTHH:mm:ss}.00z";
 
                 var people = new List<Domain.Movidesk.Dtos.Reads.People.Person>();

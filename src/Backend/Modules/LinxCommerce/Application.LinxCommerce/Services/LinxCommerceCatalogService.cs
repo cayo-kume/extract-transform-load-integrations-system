@@ -56,7 +56,7 @@ namespace Application.LinxCommerce.Services
 
                     // o código antigo filtrava por CreatedDate dos últimos 7 dias e nunca lia alterações (4.2, item 3)
                     var lastModified = await _linxCommerceCatalogRepository.GetProductsLastModifiedDate(company.doc_company!);
-                    var since = lastModified.HasValue ? LinxCommerceConverters.ToBrasilia(lastModified.Value).AddHours(-1) : CatalogInitialLoad;
+                    var since = lastModified.HasValue ? LinxCommerceConverters.ToBrasilia(lastModified.Value).AddHours(-1) : _linxCommerceService.GetInitialLoad(CatalogInitialLoad);
 
                     var found = await _linxCommerceService.Search<Domain.LinxCommerce.Dtos.Reads.Catalog.SearchProductResult>(
                         company,
@@ -153,7 +153,7 @@ namespace Application.LinxCommerce.Services
 
                     // o código antigo filtrava por CreatedDate do último dia e nunca lia alterações (4.2, item 3)
                     var lastModified = await _linxCommerceCatalogRepository.GetSkusLastModifiedDate(company.doc_company!);
-                    var since = lastModified.HasValue ? LinxCommerceConverters.ToBrasilia(lastModified.Value).AddHours(-1) : CatalogInitialLoad;
+                    var since = lastModified.HasValue ? LinxCommerceConverters.ToBrasilia(lastModified.Value).AddHours(-1) : _linxCommerceService.GetInitialLoad(CatalogInitialLoad);
 
                     var found = await _linxCommerceService.Search<Domain.LinxCommerce.Dtos.Reads.Catalog.SearchSkuResult>(
                         company,
