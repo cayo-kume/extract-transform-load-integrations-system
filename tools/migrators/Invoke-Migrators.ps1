@@ -14,6 +14,10 @@
     migrator, com as tabelas do schema quartz; o WebApi (Hangfire) cria o schema HangFire sozinho ao subir; o WebJob não tem
     tabelas. No fim, o log diz o que configurar em cada host para ele ser o único a agendar.
 
+    Num banco de teste, a opção de seeds roda tools/seeds/Import-TestSeeds.ps1 depois dos migrators, para os módulos
+    marcados: a empresa, os parâmetros (credenciais) e os jobs dela, inativos se não pedir para ativar. Vale a trava daquele
+    script: o nome do banco precisa ter "Test" ou "Teste" e não pode ser "Company".
+
     O banco é criado pelo próprio DbUp se não existir. Os migrators não inserem dados de cliente: a empresa e os parâmetros
     entram depois, pela tela do WebApp ou, em teste, por tools/seeds/Import-TestSeeds.ps1.
 
@@ -40,6 +44,19 @@
     Host que agenda as integrações: WebApi (Hangfire), WebJob (Azure) ou Worker (Quartz.NET). Obrigatório com -NoGui; na
     tela, deixa o host já escolhido.
 
+.PARAMETER TestSeeds
+    Com -NoGui, carrega a empresa de teste com tools/seeds/Import-TestSeeds.ps1 depois dos migrators. Na tela, deixa a
+    opção marcada.
+
+.PARAMETER Company
+    CNPJ da empresa de teste (só dígitos); sem ele, o da holding NEWBLOOMERS (44065634000106).
+
+.PARAMETER CompanyName
+    Razão social da empresa de teste; sem ela, NEWBLOOMERS.
+
+.PARAMETER ActivateJobs
+    Ativa os jobs da empresa de teste. Desligado por padrão: os jobs nascem inativos.
+
 .PARAMETER NoGui
     Roda sem a tela, no console, com os parâmetros acima.
 
@@ -51,6 +68,9 @@
 
 .EXAMPLE
     ./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -Apps Totvs,DataWarehouse -SchedulingHost Worker
+
+.EXAMPLE
+    ./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -SchedulingHost WebApi -TestSeeds
 #>
 [CmdletBinding()]
 param(
@@ -63,6 +83,11 @@ param(
     [string[]]$Apps,
     [ValidateSet('WebApi', 'WebJob', 'Worker')]
     [string]$SchedulingHost,
+    [switch]$TestSeeds,
+    [ValidatePattern('^[0-9]+$')]
+    [string]$Company = '44065634000106',
+    [string]$CompanyName = 'NEWBLOOMERS',
+    [switch]$ActivateJobs,
     [switch]$NoGui
 )
 
@@ -134,7 +159,7 @@ foreach ($app in @($catalog) + @($schedulingHosts.Values | Where-Object App | Fo
 # ---------------------------------------------------------------------------------------------------------------------
 
 $worker = {
-    param($apps, [string]$connectionString, [string[]]$secrets, $queue, $state, $schedulingHost)
+    param($apps, [string]$connectionString, [string[]]$secrets, $queue, $state, $schedulingHost, $seeds)
 
     function Write-Line([string]$text, [string]$kind = 'out') {
         foreach ($secret in $secrets) {
@@ -221,9 +246,47 @@ $worker = {
         }
     }
 
+    Write-Line '' 'out'
+    Write-Line "Migrators concluídos: $($apps.Count) aplicações aplicadas." 'ok'
+
+    # a empresa de teste, no mesmo runspace: Write-Host chega como InformationRecord (amarelo vira aviso) e Write-Warning
+    # como WarningRecord
+    if ($seeds) {
+        if ($state.Cancel) {
+            Write-Line 'Cancelado.' 'warn'
+            return
+        }
+
+        Write-Line '' 'out'
+        Write-Line "Empresa de teste $($seeds.Parameters.Company): tools/seeds/Import-TestSeeds.ps1 ($($seeds.Parameters.Modules -join ', '))" 'step'
+
+        try {
+            $parameters = $seeds.Parameters.Clone()
+            $parameters.Credential = [pscredential]::new($seeds.User, (ConvertTo-SecureString $seeds.Password -AsPlainText -Force))
+
+            & $seeds.Path @parameters *>&1 | ForEach-Object {
+                $kind = 'out'
+
+                if ($_ -is [Management.Automation.ErrorRecord]) { $kind = 'error' }
+                elseif ($_ -is [Management.Automation.WarningRecord]) { $kind = 'warn' }
+                elseif ($_ -is [Management.Automation.InformationRecord] -and $_.MessageData.ForegroundColor -eq 'Yellow') { $kind = 'warn' }
+
+                $text = $_ -is [Management.Automation.WarningRecord] ? "AVISO: $($_.Message)" : "$_"
+
+                foreach ($line in ($text -split "`r?`n")) {
+                    if ($line.Trim()) { Write-Line $line.TrimEnd() $kind }
+                }
+            }
+        }
+        catch {
+            Write-Line "Import-TestSeeds: $($_.Exception.Message)" 'error'
+            return
+        }
+    }
+
     $state.Successful = $true
     Write-Line '' 'out'
-    Write-Line "Concluído: $($apps.Count) aplicações aplicadas." 'ok'
+    Write-Line 'Concluído.' 'ok'
     Write-Line '' 'out'
     Write-Line "Host de agenda: $($schedulingHost.Title). Para ele ser o único a agendar:" 'step'
 
@@ -251,13 +314,13 @@ function Get-Secrets([string]$password) {
     @($password, ($builder.ConnectionString -replace '^password=', '')) | Select-Object -Unique
 }
 
-function Start-Migration($apps, [string]$connectionString, [string[]]$secrets, $schedulingHost) {
+function Start-Migration($apps, [string]$connectionString, [string[]]$secrets, $schedulingHost, $seeds) {
     $queue = [Collections.Concurrent.ConcurrentQueue[object]]::new()
     $state = [hashtable]::Synchronized(@{ Cancel = $false; Process = $null; Successful = $false })
 
     $powershell = [powershell]::Create()
     $null = $powershell.AddScript($worker).AddArgument($apps).AddArgument($connectionString).AddArgument($secrets).
-        AddArgument($queue).AddArgument($state).AddArgument($schedulingHost)
+        AddArgument($queue).AddArgument($state).AddArgument($schedulingHost).AddArgument($seeds)
 
     [pscustomobject]@{ PowerShell = $powershell; Handle = $powershell.BeginInvoke(); Queue = $queue; State = $state }
 }
@@ -267,6 +330,34 @@ function Test-DotnetScript {
 
     $null = & dotnet script --version 2>&1
     $LASTEXITCODE -eq 0
+}
+
+# os seeds: só os módulos marcados que o Import-TestSeeds conhece (o Shared e o Worker não têm parâmetros nem jobs de
+# empresa); a trava do nome do banco é a dele, conferida antes para os migrators não rodarem à toa
+$seedsScript = Join-Path $PSScriptRoot '../seeds/Import-TestSeeds.ps1' | Resolve-Path | Select-Object -ExpandProperty Path
+$seedsModules = 'Totvs', 'LinxMicrovix', 'LinxCommerce', 'Movidesk', 'AfterSale', 'DataWarehouse'
+
+function Get-SeedsProblem([string]$database, [string]$company, $apps) {
+    if ($database -eq 'Company' -or $database -notmatch 'Test') {
+        return "O banco '$database' não parece de teste: para carregar a empresa de teste, o nome precisa ter 'Test' ou 'Teste' e não pode ser 'Company'."
+    }
+
+    if (-not (Get-Command sqlcmd -ErrorAction SilentlyContinue)) { return 'O Import-TestSeeds precisa do sqlcmd no PATH.' }
+
+    if ($company -notmatch '^[0-9]+$') { return 'O CNPJ da empresa de teste precisa ter só dígitos.' }
+
+    if (-not ($apps | Where-Object Name -in $seedsModules)) { return 'Marque ao menos um módulo para carregar a empresa de teste.' }
+}
+
+function New-Seeds([string]$server, [int]$port, [string]$database, [string]$user, [string]$password, [string]$company,
+    [string]$companyName, [bool]$activateJobs, $apps) {
+    @{
+        Path = $seedsScript; User = $user; Password = $password
+        Parameters = @{
+            Database = $database; Server = "$server,$port"; Company = $company; CompanyName = $companyName
+            Modules = @($apps | Where-Object Name -in $seedsModules | ForEach-Object Name); ActivateJobs = $activateJobs
+        }
+    }
 }
 
 $missingTool = 'O dotnet-script não está instalado. Instale com: dotnet tool install -g dotnet-script'
@@ -280,17 +371,20 @@ if ($NoGui) {
 
     if (-not (Test-DotnetScript)) { throw $missingTool }
 
-    if (-not $Credential) { $Credential = Get-Credential -Message "SQL Server $Server,$Port" }
-
     $schedulingHostInfo = $schedulingHosts[$SchedulingHost]
     $selected = @($catalog | Where-Object { $_.Required -or ($Apps ? $_.Name -in $Apps : $_.Default) }) +
         @($schedulingHostInfo.App | Where-Object { $_ })
+
+    if ($TestSeeds -and ($problem = Get-SeedsProblem $Database $Company $selected)) { throw $problem }
+
+    if (-not $Credential) { $Credential = Get-Credential -Message "SQL Server $Server,$Port" }
     $password = $Credential.GetNetworkCredential().Password
     $connectionString = New-ConnectionString $Server $Port $Database $Credential.UserName $password $true
 
     Write-Host "Servidor $Server,$Port, banco ${Database}, host de agenda $($schedulingHostInfo.Title): $(($selected | ForEach-Object Name) -join ', ')"
 
-    $run = Start-Migration $selected $connectionString (Get-Secrets $password) $schedulingHostInfo
+    $seeds = $TestSeeds ? (New-Seeds $Server $Port $Database $Credential.UserName $password $Company $CompanyName $ActivateJobs $selected) : $null
+    $run = Start-Migration $selected $connectionString (Get-Secrets $password) $schedulingHostInfo $seeds
     $colors = @{ out = 'Gray'; step = 'Cyan'; ok = 'Green'; error = 'Red'; warn = 'Yellow' }
 
     while (-not $run.Handle.IsCompleted -or -not $run.Queue.IsEmpty) {
@@ -316,6 +410,9 @@ if ($NoGui) {
 if ([Threading.Thread]::CurrentThread.ApartmentState -ne 'STA') {
     $arguments = @('-NoProfile', '-STA', '-File', $PSCommandPath, '-Server', $Server, '-Port', $Port, '-Database', $Database)
     if ($SchedulingHost) { $arguments += '-SchedulingHost', $SchedulingHost }
+    if ($TestSeeds) { $arguments += '-TestSeeds' }
+    if ($ActivateJobs) { $arguments += '-ActivateJobs' }
+    $arguments += '-Company', $Company, '-CompanyName', $CompanyName
     & (Get-Process -Id $PID).Path @arguments
     return
 }
@@ -327,8 +424,8 @@ $font = [Drawing.Font]::new('Segoe UI', 9)
 
 $form = [Windows.Forms.Form]@{
     Text = 'Migrators: subir tabelas no SQL Server'
-    ClientSize = [Drawing.Size]::new(860, 820)
-    MinimumSize = [Drawing.Size]::new(760, 700)
+    ClientSize = [Drawing.Size]::new(860, 880)
+    MinimumSize = [Drawing.Size]::new(760, 760)
     StartPosition = 'CenterScreen'
     Font = $font
 }
@@ -380,10 +477,17 @@ $hostGroup.Controls.Add($hostDescription)
 $hostRadios = @()
 $x = 14
 
+# sem AutoCheck: o WinForms marca o rádio que recebe o foco (o primeiro, ao voltar de um MessageBox), e o host trocaria
+# sem o usuário clicar; aqui só o clique (ou a barra de espaço) marca
 foreach ($key in $schedulingHosts.Keys) {
     $radio = [Windows.Forms.RadioButton]@{
-        Text = $schedulingHosts[$key].Title; Tag = $key; Location = [Drawing.Point]::new($x, 26); AutoSize = $true
+        Text = $schedulingHosts[$key].Title; Tag = $key; Location = [Drawing.Point]::new($x, 26); AutoSize = $true; AutoCheck = $false
     }
+    $radio.Add_Click({
+        param($sender)
+
+        foreach ($other in $hostRadios) { $other.Checked = $other -eq $sender }
+    })
     $radio.Add_CheckedChanged({
         param($sender)
 
@@ -399,16 +503,40 @@ foreach ($key in $schedulingHosts.Keys) {
 
 if ($SchedulingHost) { ($hostRadios | Where-Object Tag -eq $SchedulingHost).Checked = $true }
 
+# banco de teste: a empresa, as credenciais e os jobs pelo tools/seeds/Import-TestSeeds.ps1, depois dos migrators
+
+$testGroup = [Windows.Forms.GroupBox]@{
+    Text = 'Banco de teste'; Location = [Drawing.Point]::new(12, 232); Size = [Drawing.Size]::new(836, 84); Anchor = 'Top, Left, Right'
+}
+
+$seedsBox = [Windows.Forms.CheckBox]@{
+    Text = 'Carregar a empresa de teste com as credenciais (tools/seeds/Import-TestSeeds.ps1), depois dos migrators'
+    Location = [Drawing.Point]::new(14, 22); AutoSize = $true; Checked = [bool]$TestSeeds
+}
+$companyLabel = [Windows.Forms.Label]@{ Text = 'CNPJ'; Location = [Drawing.Point]::new(30, 53); AutoSize = $true }
+$companyBox = [Windows.Forms.TextBox]@{ Text = $Company; Location = [Drawing.Point]::new(70, 50); Width = 130 }
+$companyNameLabel = [Windows.Forms.Label]@{ Text = 'Razão social'; Location = [Drawing.Point]::new(216, 53); AutoSize = $true }
+$companyNameBox = [Windows.Forms.TextBox]@{ Text = $CompanyName; Location = [Drawing.Point]::new(296, 50); Width = 200 }
+$activateBox = [Windows.Forms.CheckBox]@{
+    Text = 'Ativar os jobs (chamam as APIs reais)'; Location = [Drawing.Point]::new(516, 52); AutoSize = $true; Checked = [bool]$ActivateJobs
+}
+$seedsFields = @($companyLabel, $companyBox, $companyNameLabel, $companyNameBox, $activateBox)
+$testGroup.Controls.AddRange(@($seedsBox) + $seedsFields)
+
+function Update-SeedsFields { foreach ($control in $seedsFields) { $control.Enabled = $seedsBox.Checked } }
+$seedsBox.Add_CheckedChanged({ Update-SeedsFields })
+Update-SeedsFields
+
 # catálogo
 
 $catalogLabel = [Windows.Forms.Label]@{
     Text = 'Catálogo das aplicações (rodam na ordem da lista; o Shared é obrigatório)'
-    Location = [Drawing.Point]::new(12, 236); AutoSize = $true
+    Location = [Drawing.Point]::new(12, 326); AutoSize = $true
 }
 
 $list = [Windows.Forms.ListView]@{
     View = 'Details'; CheckBoxes = $true; FullRowSelect = $true; ShowGroups = $true; HeaderStyle = 'Nonclickable'
-    Location = [Drawing.Point]::new(12, 256); Size = [Drawing.Size]::new(836, 246); Anchor = 'Top, Left, Right'
+    Location = [Drawing.Point]::new(12, 346); Size = [Drawing.Size]::new(836, 246); Anchor = 'Top, Left, Right'
 }
 $null = $list.Columns.Add('Aplicação', 150)
 $null = $list.Columns.Add('Scripts', 60, 'Right')
@@ -437,28 +565,28 @@ $list.Add_ItemCheck({
     if ($sender.Items[$e.Index].Tag.Required) { $e.NewValue = 'Checked' }
 })
 
-$checkAllButton = [Windows.Forms.Button]@{ Text = 'Marcar todas'; Location = [Drawing.Point]::new(12, 510); Size = [Drawing.Size]::new(110, 28) }
-$checkNoneButton = [Windows.Forms.Button]@{ Text = 'Desmarcar todas'; Location = [Drawing.Point]::new(128, 510); Size = [Drawing.Size]::new(120, 28) }
+$checkAllButton = [Windows.Forms.Button]@{ Text = 'Marcar todas'; Location = [Drawing.Point]::new(12, 600); Size = [Drawing.Size]::new(110, 28) }
+$checkNoneButton = [Windows.Forms.Button]@{ Text = 'Desmarcar todas'; Location = [Drawing.Point]::new(128, 600); Size = [Drawing.Size]::new(120, 28) }
 $runButton = [Windows.Forms.Button]@{
-    Text = 'Subir tabelas'; Location = [Drawing.Point]::new(616, 510); Size = [Drawing.Size]::new(120, 28); Anchor = 'Top, Right'
+    Text = 'Subir tabelas'; Location = [Drawing.Point]::new(616, 600); Size = [Drawing.Size]::new(120, 28); Anchor = 'Top, Right'
 }
 $cancelButton = [Windows.Forms.Button]@{
-    Text = 'Cancelar'; Location = [Drawing.Point]::new(742, 510); Size = [Drawing.Size]::new(106, 28); Anchor = 'Top, Right'; Enabled = $false
+    Text = 'Cancelar'; Location = [Drawing.Point]::new(742, 600); Size = [Drawing.Size]::new(106, 28); Anchor = 'Top, Right'; Enabled = $false
 }
 
 # log
 
 $log = [Windows.Forms.RichTextBox]@{
-    Location = [Drawing.Point]::new(12, 548); Size = [Drawing.Size]::new(836, 238); Anchor = 'Top, Bottom, Left, Right'
+    Location = [Drawing.Point]::new(12, 638); Size = [Drawing.Size]::new(836, 208); Anchor = 'Top, Bottom, Left, Right'
     ReadOnly = $true; BackColor = [Drawing.Color]::FromArgb(30, 30, 30); ForeColor = [Drawing.Color]::Gainsboro
     Font = [Drawing.Font]::new('Consolas', 9); WordWrap = $false
 }
 
 $status = [Windows.Forms.Label]@{
-    Text = 'Pronto.'; Location = [Drawing.Point]::new(12, 794); AutoSize = $true; Anchor = 'Bottom, Left'
+    Text = 'Pronto.'; Location = [Drawing.Point]::new(12, 854); AutoSize = $true; Anchor = 'Bottom, Left'
 }
 
-$form.Controls.AddRange(@($connection, $hostGroup, $catalogLabel, $list, $checkAllButton, $checkNoneButton, $runButton, $cancelButton, $log, $status))
+$form.Controls.AddRange(@($connection, $hostGroup, $testGroup, $catalogLabel, $list, $checkAllButton, $checkNoneButton, $runButton, $cancelButton, $log, $status))
 
 $logColors = @{
     out = [Drawing.Color]::Gainsboro; step = [Drawing.Color]::DeepSkyBlue; ok = [Drawing.Color]::LightGreen
@@ -492,7 +620,7 @@ function Get-Fields {
 }
 
 function Set-Running([bool]$running) {
-    foreach ($control in $connection, $hostGroup, $list, $checkAllButton, $checkNoneButton, $runButton) { $control.Enabled = -not $running }
+    foreach ($control in $connection, $hostGroup, $testGroup, $list, $checkAllButton, $checkNoneButton, $runButton) { $control.Enabled = -not $running }
     $cancelButton.Enabled = $running
 }
 
@@ -595,10 +723,24 @@ $runButton.Add_Click({
     $schedulingHost = $schedulingHosts[$hostRadio.Tag]
     $selected = @($list.Items | Where-Object Checked | ForEach-Object Tag) + @($schedulingHost.App | Where-Object { $_ })
     $names = ($selected | ForEach-Object Name) -join ', '
+    $company = $companyBox.Text.Trim()
+    $seedsText = ''
+
+    if ($seedsBox.Checked) {
+        $problem = Get-SeedsProblem $fields.Database $company $selected
+
+        if ($problem) {
+            $null = [Windows.Forms.MessageBox]::Show($problem, $form.Text, 'OK', 'Warning')
+            return
+        }
+
+        $seedsText = "`n`nDepois, a empresa de teste $company com as credenciais (Import-TestSeeds), jobs " +
+            ($activateBox.Checked ? 'ATIVOS.' : 'inativos.')
+    }
 
     $answer = [Windows.Forms.MessageBox]::Show(
         ("Subir as tabelas no banco $($fields.Database) de $($fields.Server),$($fields.Port)?`n`n$names`n`n" +
-            "Host de agenda: $($schedulingHost.Title)`n`nO banco é criado se não existir."),
+            "Host de agenda: $($schedulingHost.Title)$seedsText`n`nO banco é criado se não existir."),
         $form.Text, 'YesNo', 'Question')
 
     if ($answer -ne 'Yes') { return }
@@ -619,7 +761,11 @@ $runButton.Add_Click({
     $status.Text = 'Rodando...'
     Set-Running $true
 
-    $script:run = Start-Migration $selected $connectionString (Get-Secrets $fields.Password) $schedulingHost
+    $seeds = $seedsBox.Checked ?
+        (New-Seeds $fields.Server $fields.Port $fields.Database $fields.User $fields.Password $company $companyNameBox.Text.Trim() $activateBox.Checked $selected) :
+        $null
+
+    $script:run = Start-Migration $selected $connectionString (Get-Secrets $fields.Password) $schedulingHost $seeds
     $timer.Start()
 })
 
@@ -629,7 +775,9 @@ $cancelButton.Add_Click({
     $script:run.State.Cancel = $true
     $process = $script:run.State.Process
 
+    # sem migrator rodando, o que roda é o Import-TestSeeds, no próprio runspace
     if ($process -and -not $process.HasExited) { $process.Kill($true) }
+    else { $null = $script:run.PowerShell.BeginStop($null, $null) }
 
     $status.Text = 'Cancelando...'
 })
