@@ -502,6 +502,16 @@ mockup para aprovação):
       3 + 1, com o último esticado e as linhas desalinhadas), uma grade só (`card-grid`) com quantas colunas de 260px
       couberem, todos os cards da linha com a mesma altura; os três cards de métricas usam a mesma grade. Conferido de
       375px a 1920px.
+16. **Rodada 12 (01/11/2026, mockup aprovado):**
+    - **Integrações:** mais espaço entre Situação e Tipo, até os contadores de saúde e até a lista. Os contadores de
+      saúde viraram botões de filtro iguais aos de verbo da Sob Demanda (`filter-chip`), com mais de um ao mesmo tempo
+      (`?health=error,late`; o `?health=error` dos links da Visão geral continua valendo) e "mostrar todas". O título
+      longo quebra a linha na tabela, que entre 960 e uns 1500px passava da largura do grupo e cortava os botões.
+    - **Sob Demanda:** mais espaço entre os chips de verbo, até os grupos e entre os grupos de aplicação.
+    - **Campos de busca e seleção** (Filtros de todas as telas, Sob Demanda e o "Filtrar resultado" de Executar Querys,
+      classe `brand-field`): 40px de altura (`Margin.Dense`), canto arredondado, contorno roxo com fundo roxo leve, texto
+      em negrito, rótulo sempre em cima (`ShrinkLabel`) em negrito, foco com contorno e brilho laranja; na busca
+      (`brand-search`), a lupa laranja à esquerda, o rótulo laranja e um texto de exemplo.
 
 # Fase 5 — Banco de dados (não implementar agora)
 

@@ -15,9 +15,9 @@
         </MudItem>
 
         <MudItem xs="12" md="7">
-            <div class="d-flex flex-row align-center gap-2 mx-4 mx-md-8">
+            <div class="d-flex flex-row align-center gap-2 mx-4 mx-md-8 mt-2">
                 <div class="flex-grow-1">
-                    <MudSelect T="int?" @bind-Value="_idApp" Variant="Variant.Outlined" Label="Aplicação" Margin="Margin.Normal">
+                    <MudSelect T="int?" @bind-Value="_idApp" Variant="Variant.Outlined" Label="Aplicação" Margin="Margin.Dense" ShrinkLabel="true" Class="brand-field">
                         <MudSelectItem T="int?" Value="null">Todas</MudSelectItem>
                         @foreach (var app in Apps)
                         {
@@ -26,16 +26,17 @@
                     </MudSelect>
                 </div>
             </div>
-            <div class="d-flex flex-row align-center mx-4 mx-md-8">
-                <MudTextField T="string" @bind-Value="_search" DebounceInterval="300" Immediate="true" Label="Pesquisar método" Variant="Variant.Outlined"
-                              Clearable="true" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search" AdornmentColor="Color.Default" />
+            <div class="d-flex flex-row align-center mx-4 mx-md-8 mt-3">
+                <MudTextField T="string" @bind-Value="_search" DebounceInterval="300" Immediate="true" Label="Pesquisar método" Placeholder="Nome ou descrição do método"
+                              ShrinkLabel="true" Margin="Margin.Dense" Class="brand-field brand-search" Variant="Variant.Outlined"
+                              Clearable="true" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" />
             </div>
         </MudItem>
 
         <MudItem xs="12" Class="loading-container">
             <SpaceLoading Overlay="true" Visible="_loading" Label="Carregando os métodos" />
 
-            <div class="d-flex align-center gap-2 px-4 pb-2 flex-wrap">
+            <div class="d-flex align-center gap-3 px-4 pt-3 pb-4 flex-wrap">
                 @* os contadores de verbo filtram: dá para marcar mais de um; nenhum marcado mostra todos *@
                 @foreach (var verb in FilteredByAppAndSearch.GroupBy(x => x.Verb).OrderBy(x => VerbOrder(x.Key)))
                 {
@@ -53,7 +54,7 @@
             </div>
 
             <!-- Como o Swagger do host: aplicação, depois a tag, depois o método; o clique abre os parâmetros -->
-            <div class="px-4 pb-4">
+            <div class="on-demand-groups px-4 pb-4">
                 @foreach (var app in Filtered.GroupBy(x => (x.IdApp, x.AppTitle)).OrderBy(x => x.Key.AppTitle))
                 {
                     var expanded = Searching || _expandedApps.Contains(app.Key.IdApp);

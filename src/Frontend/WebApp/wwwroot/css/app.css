@@ -709,6 +709,13 @@ code {
     padding-right: 8px !important;
 }
 
+/* o título longo (sp_AfterSaleEcommercesReasons_Sync) quebra a linha: sem isso, entre 960 e uns 1500px a tabela passa
+   da largura do grupo e corta os botões */
+.compact-table .mud-table-cell[data-label="Título"] {
+    overflow-wrap: anywhere;
+    min-width: 160px;
+}
+
 /* Cabeçalho padrão das telas (PageHeader): ícone no quadrado roxo, produto em laranja, nome da tela e o traço */
 .page-header {
     display: flex;
@@ -835,6 +842,109 @@ code {
 /* Sob Demanda: o campo de valor do parâmetro */
 .op-param-value {
     width: 260px;
+}
+
+/* Rodada 12: botões de filtro com a cor do estado (contadores de saúde em Integrações), como os de verbo da Sob Demanda;
+   marcado fica com o fundo preenchido */
+.filter-label {
+    font-weight: 700;
+}
+
+.filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid;
+    border-radius: 14px;
+    padding: 3px 12px 3px 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    background: transparent;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.filter-chip .mud-icon-root {
+    font-size: 1rem;
+}
+
+.filter-chip-success { border-color: var(--mud-palette-success); color: var(--mud-palette-success); }
+.filter-chip-warning { border-color: var(--mud-palette-warning); color: var(--mud-palette-warning); }
+.filter-chip-error { border-color: var(--mud-palette-error); color: var(--mud-palette-error); }
+.filter-chip-info { border-color: var(--mud-palette-info); color: var(--mud-palette-info); }
+.filter-chip-default { border-color: var(--mud-palette-text-secondary); color: var(--mud-palette-text-secondary); }
+
+.filter-chip.selected { color: #fff; }
+.filter-chip-success.selected { background-color: var(--mud-palette-success); }
+.filter-chip-warning.selected { background-color: var(--mud-palette-warning); }
+.filter-chip-error.selected { background-color: var(--mud-palette-error); }
+.filter-chip-info.selected { background-color: var(--mud-palette-info); }
+
+/* Sob Demanda: mais espaço entre os grupos de aplicação e no cabeçalho deles */
+.on-demand-groups .app-group {
+    margin-bottom: 10px;
+}
+
+.on-demand-groups .app-group-head {
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+/* Rodada 12: campos de busca e seleção com a identidade do painel. Contorno roxo, fundo roxo leve, texto em negrito,
+   rótulo sempre em cima (ShrinkLabel) em negrito; com o foco, contorno e brilho laranja. A busca (brand-search) tem a
+   lupa laranja à esquerda e o rótulo laranja; os seletores, o rótulo roxo. !important onde a MudBlazor, carregada
+   depois do app.css, define a mesma propriedade com a mesma especificidade. */
+.brand-field .mud-input.mud-input-outlined {
+    border-radius: 10px;
+    background-color: rgba(126, 111, 255, 0.07);
+}
+
+.brand-field .mud-input-outlined-border {
+    border-radius: 10px !important;
+    border-width: 1.5px !important;
+    border-color: rgba(126, 111, 255, 0.55) !important;
+}
+
+.brand-field .mud-input.mud-input-outlined:hover .mud-input-outlined-border {
+    border-color: var(--mud-palette-primary) !important;
+}
+
+.brand-field .mud-input.mud-input-outlined:focus-within {
+    background-color: rgba(255, 181, 69, 0.05);
+    box-shadow: 0 0 0 3px rgba(255, 181, 69, 0.2);
+}
+
+.brand-field .mud-input.mud-input-outlined:focus-within .mud-input-outlined-border {
+    border-color: var(--mud-palette-warning) !important;
+}
+
+.brand-field input,
+.brand-field .mud-select-input {
+    font-weight: 600 !important;
+    color: var(--mud-palette-text-primary);
+}
+
+.brand-field input::placeholder {
+    font-weight: 500;
+    color: rgba(169, 162, 232, 0.8);
+    opacity: 1;
+}
+
+.brand-field .mud-input-label,
+.brand-field legend {
+    font-weight: 700 !important;
+}
+
+.brand-field .mud-input-label {
+    color: #a99fff !important;
+}
+
+.brand-search .mud-input-label {
+    color: var(--mud-palette-warning) !important;
+}
+
+.brand-search .mud-input-adornment-start .mud-icon-root {
+    color: var(--mud-palette-warning) !important;
 }
 
 /* Rodada 11: celular e tablet, abaixo de 960px (o md da MudBlazor). O desktop fica como estava. */

@@ -123,7 +123,7 @@
                                 @if (_result.Kind == QueryKind.Select && _result.Rows.Count > 0)
                                 {
                                     <div class="result-filter">
-                                        <MudTextField T="string" Value="_resultFilter" ValueChanged="OnResultFilterChanged" DebounceInterval="300" Immediate="true" Label="Filtrar resultado" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.FilterList" />
+                                        <MudTextField T="string" Value="_resultFilter" ValueChanged="OnResultFilterChanged" DebounceInterval="300" Immediate="true" Label="Filtrar resultado" ShrinkLabel="true" Class="brand-field brand-search" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.FilterList" />
                                     </div>
                                     @if (FilterActive)
                                     {

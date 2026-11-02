@@ -26,17 +26,17 @@
         <SpaceLoading Overlay="true" Visible="_loading" Label="Carregando os jobs" />
 
         @* segment-filter: no celular, cada filtro ocupa a linha toda, com o nome em cima *@
-        <div class="d-flex align-center gap-2 px-4 pt-2 flex-wrap">
+        <div class="d-flex align-center gap-4 px-4 pt-2 flex-wrap">
             <div class="segment-filter">
                 <MudText Typo="Typo.caption">Situação</MudText>
                 <MudButtonGroup Variant="Variant.Outlined" Size="Size.Small">
                     @foreach (var status in new[] { JobStatus.Active, JobStatus.Inactive, JobStatus.All })
                     {
-                        <MudButton Variant="@(_status == status ? Variant.Filled : Variant.Outlined)" Color="Color.Primary" OnClick="@(() => Go(status, status == JobStatus.Inactive ? null : _health, _type, _filter.IdApp, _filter.Period))">@StatusLabel(status)</MudButton>
+                        <MudButton Variant="@(_status == status ? Variant.Filled : Variant.Outlined)" Color="Color.Primary" OnClick="@(() => Go(status, status == JobStatus.Inactive ? NoHealth : _health, _type, _filter.IdApp, _filter.Period))">@StatusLabel(status)</MudButton>
                     }
                 </MudButtonGroup>
             </div>
-            <div class="segment-filter ml-md-2">
+            <div class="segment-filter">
                 <MudText Typo="Typo.caption">Tipo</MudText>
                 <TypeSegment Value="_type" ValueChanged="@(type => Go(_status, _health, type, _filter.IdApp, _filter.Period))" />
             </div>
@@ -44,19 +44,22 @@
             <RefreshBar UpdatedAt="_updatedAt" OnRefresh="Load" />
         </div>
 
-        <!-- Os contadores de saúde filtram a tela: clicar de novo tira o filtro -->
-        <div class="d-flex align-center gap-2 px-4 pt-2 flex-wrap">
+        <!-- Os contadores de saúde são filtros, como os de verbo da Sob Demanda (rodada 12): dá para marcar mais de um;
+             nenhum marcado mostra todos -->
+        <div class="d-flex align-center gap-3 px-4 pt-4 flex-wrap">
+            <MudText Typo="Typo.caption" Class="filter-label">Saúde</MudText>
             @foreach (var health in TopHealthCounts)
             {
-                var selected = health.Key is not null && health.Key == _health;
-                <MudChip T="string" Size="Size.Small" Variant="@(selected ? Variant.Filled : Variant.Outlined)" Color="@MonitorDisplay.HealthColor(health.Key)" Icon="@MonitorDisplay.HealthIcon(health.Key)"
-                         OnClick="@(() => Go(_status == JobStatus.Inactive ? JobStatus.Active : _status, health.Key is null || selected ? null : health.Key, _type, _filter.IdApp, _filter.Period))">
-                    @MonitorDisplay.HealthLabel(health.Key): @health.Count()
-                </MudChip>
+                var selected = health.Key is JobHealth key && _health.Contains(key);
+                <button type="button" class="filter-chip filter-chip-@MonitorDisplay.HealthColor(health.Key).ToString().ToLowerInvariant() @(selected ? "selected" : "")"
+                        aria-pressed="@(selected ? "true" : "false")" @onclick="@(() => ToggleHealth(health.Key))">
+                    <MudIcon Icon="@MonitorDisplay.HealthIcon(health.Key)" Size="Size.Small" />
+                    @MonitorDisplay.HealthLabel(health.Key) @health.Count()
+                </button>
             }
-            @if (_health is not null)
+            @if (_health.Count > 0)
             {
-                <MudLink Typo="Typo.body2" OnClick="@(() => Go(_status, null, _type, _filter.IdApp, _filter.Period))">mostrar todas</MudLink>
+                <MudLink Typo="Typo.body2" OnClick="@(() => Go(_status, NoHealth, _type, _filter.IdApp, _filter.Period))">mostrar todas</MudLink>
             }
             @if (_focusJob is int focus)
             {
@@ -69,7 +72,7 @@
         </div>
 
         <!-- Um grupo recolhível por aplicação, como em Logs de Erros; dentro, as integrações com as procedures -->
-        <div class="px-4 pb-4 pt-2">
+        <div class="px-4 pb-4 pt-4">
             @foreach (var app in FilteredApps)
             {
                 var nodes = NodesOf(app.IdParent);
@@ -86,7 +89,7 @@
                         @* no celular, os números, os chips e o botão Agenda descem para a segunda linha *@
                         <div class="app-group-meta">
                             <MudText Typo="Typo.caption" Style="white-space: nowrap">
-                                @(_health is null ? $"{jobs.Count} job(s) · {jobs.Count(x => x.IsActive)} ativo(s)" : $"{jobs.Count} no filtro")
+                                @(_health.Count == 0 ? $"{jobs.Count} job(s) · {jobs.Count(x => x.IsActive)} ativo(s)" : $"{jobs.Count} no filtro")
                             </MudText>
                             @foreach (var health in HealthCounts(jobs))
                             {
@@ -238,7 +241,9 @@
     private FilterState _filter = new();
     private JobStatus _status = JobStatus.Active;
     private int? _type;
-    private JobHealth? _health;
+    // estados marcados nos contadores de saúde; vazio = todos
+    private static readonly IReadOnlySet<JobHealth> NoHealth = new HashSet<JobHealth>();
+    private IReadOnlySet<JobHealth> _health = NoHealth;
     private int? _focusJob;
     private bool _loading = true;
     private bool _loaded;
@@ -277,18 +282,39 @@
         _ => "all"
     };
 
-    private static string? HealthQueryOf(JobHealth? health) => health switch
+    private static readonly Dictionary<JobHealth, string> HealthQueryNames = new()
     {
-        JobHealth.Error => "error",
-        JobHealth.Late => "late",
-        JobHealth.Running => "running",
-        JobHealth.Ok => "ok",
-        _ => null
+        [JobHealth.Error] = "error",
+        [JobHealth.Late] = "late",
+        [JobHealth.Running] = "running",
+        [JobHealth.Ok] = "ok"
     };
+
+    // ?health=error,late; nenhum marcado sai da URL
+    private static string? HealthQueryOf(IReadOnlySet<JobHealth> health) =>
+        health.Count == 0 ? null : string.Join(",", health.Order().Select(x => HealthQueryNames[x]));
+
+    private static HashSet<JobHealth> ParseHealth(string? query) =>
+        (query ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .SelectMany(x => HealthQueryNames.Where(n => n.Value == x).Select(n => n.Key))
+            .ToHashSet();
+
+    // marca ou desmarca um estado; o contador sem estado (job sem execução) limpa o filtro. Com a situação Inativos, o
+    // filtro de saúde leva para Ativos (inativo não tem saúde)
+    private void ToggleHealth(JobHealth? health)
+    {
+        var next = new HashSet<JobHealth>(_health);
+        if (health is not JobHealth value)
+            next.Clear();
+        else if (!next.Remove(value))
+            next.Add(value);
+
+        Go(_status == JobStatus.Inactive ? JobStatus.Active : _status, next, _type, _filter.IdApp, _filter.Period);
+    }
 
     // o grupo abre sozinho com uma aplicação só, com o job do link, com busca ou com filtro de saúde; senão começa fechado
     private bool OpensByItself =>
-        _filter.IdApp is not null || _focusJob is not null || _health is not null || !string.IsNullOrWhiteSpace(_filter.Search);
+        _filter.IdApp is not null || _focusJob is not null || _health.Count > 0 || !string.IsNullOrWhiteSpace(_filter.Search);
 
     private bool IsExpanded(int idApp) =>
         OpensByItself ? !_collapsedApps.Contains(idApp) : _expandedApps.Contains(idApp);
@@ -318,7 +344,8 @@
 
     // com o filtro de saúde: falhas reconhecidas não contam como Erro ou Atrasado (o mesmo critério de "Falhas Ativas")
     private bool HealthMatches(JobModel job) =>
-        _health is null || (job.IsActive && job.Health == _health && (_health is not (JobHealth.Error or JobHealth.Late) || job.Acknowledgement is null));
+        _health.Count == 0 || (job.IsActive && job.Health is JobHealth health && _health.Contains(health)
+            && (health is not (JobHealth.Error or JobHealth.Late) || job.Acknowledgement is null));
 
     private bool SearchMatches(JobModel job) =>
         (_focusJob is null || job.IdJob == _focusJob) && _filter.Matches(job.IdJob.ToString(), job.Title, job.Description);
@@ -342,7 +369,7 @@
         filter: x => StatusMatches(x) && HealthMatches(x),
         matches: SearchMatches,
         _type,
-        narrowing: _focusJob is not null || _health is not null || !string.IsNullOrWhiteSpace(_filter.Search));
+        narrowing: _focusJob is not null || _health.Count > 0 || !string.IsNullOrWhiteSpace(_filter.Search));
 
     private IEnumerable<AppSummaryModel> FilteredApps => _apps
         .Where(x => _filter.IdApp is null || x.IdParent == _filter.IdApp)
@@ -382,17 +409,10 @@
             _ => oldJobsRoute ? JobStatus.All : JobStatus.Active
         };
 
-        var health = HealthQuery switch
-        {
-            "error" => JobHealth.Error,
-            "late" => JobHealth.Late,
-            "running" => JobHealth.Running,
-            "ok" => JobHealth.Ok,
-            _ => (JobHealth?)null
-        };
+        var health = ParseHealth(HealthQuery);
 
         // filtro de saúde novo: os grupos com jobs no estado abrem de novo
-        if (health != _health)
+        if (!health.SetEquals(_health))
         {
             _health = health;
             _collapsedApps.Clear();
@@ -430,7 +450,7 @@
 
     // toda mudança de filtro vai para /integrations com a situação explícita, para a URL dizer o que está na tela (e as rotas
     // antigas não mudarem a situação padrão no meio do caminho); o que não muda segue como está
-    private void Go(JobStatus status, JobHealth? health, int? type, int? app, Period period)
+    private void Go(JobStatus status, IReadOnlySet<JobHealth> health, int? type, int? app, Period period)
     {
         var query = new Dictionary<string, object?>
         {

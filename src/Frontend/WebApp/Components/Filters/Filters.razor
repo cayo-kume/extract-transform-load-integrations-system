@@ -1,15 +1,17 @@
 ﻿@inject IMonitorRepository MonitorRepository
 
-<!--Filtros-->
+<!--Filtros (rodada 12): campos mais baixos, contorno roxo, texto em negrito e foco laranja (brand-field no app.css)-->
 <MudItem xs="12" md="@Columns">
-    <div class="d-flex flex-row align-center gap-2 mx-4 mx-md-8">
+    <div class="d-flex flex-row align-center gap-3 mx-4 mx-md-8 mt-2">
         <div class="flex-grow-1">
             <MudSelect T="Period"
                        Value="Value.Period"
                        ValueChanged="@(x => Change(Value with { Period = x }))"
                        Variant="Variant.Outlined"
                        Label="Período"
-                       Margin="Margin.Normal">
+                       Margin="Margin.Dense"
+                       ShrinkLabel="true"
+                       Class="brand-field">
                 <MudSelectItem Value="Period.Last12Hours">12h</MudSelectItem>
                 <MudSelectItem Value="Period.Last24Hours">24h</MudSelectItem>
                 <MudSelectItem Value="Period.Last7Days">7 dias</MudSelectItem>
@@ -23,7 +25,9 @@
                            ValueChanged="@(x => Change(Value with { IdType = x }))"
                            Variant="Variant.Outlined"
                            Label="Tipo"
-                           Margin="Margin.Normal">
+                           Margin="Margin.Dense"
+                           ShrinkLabel="true"
+                           Class="brand-field">
                     <MudSelectItem T="int?" Value="null">Todos</MudSelectItem>
                     @foreach (var type in _types)
                     {
@@ -40,7 +44,9 @@
                            ValueChanged="@(x => Change(Value with { IdApp = x }))"
                            Variant="Variant.Outlined"
                            Label="Aplicação"
-                           Margin="Margin.Normal">
+                           Margin="Margin.Dense"
+                           ShrinkLabel="true"
+                           Class="brand-field">
                     <MudSelectItem T="int?" Value="null">Todas</MudSelectItem>
                     @foreach (var app in _apps)
                     {
@@ -53,18 +59,21 @@
     @if (ShowSearch)
     {
         <!--Pesquisa-->
-        <div class="d-flex flex-row align-center mx-4 mx-md-8">
+        <div class="d-flex flex-row align-center mx-4 mx-md-8 mt-3">
             <MudTextField T="string"
                           Value="Value.Search"
                           ValueChanged="@(x => Change(Value with { Search = x }))"
                           DebounceInterval="400"
                           Immediate="true"
                           Label="Pesquisar"
+                          Placeholder="IdJob, título ou texto"
+                          ShrinkLabel="true"
+                          Margin="Margin.Dense"
+                          Class="brand-field brand-search"
                           Variant="Variant.Outlined"
                           Clearable="true"
-                          Adornment="Adornment.End"
-                          AdornmentIcon="@Icons.Material.Filled.Search"
-                          AdornmentColor="Color.Default" />
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search" />
         </div>
     }
 </MudItem>
