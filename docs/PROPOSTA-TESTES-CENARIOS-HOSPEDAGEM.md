@@ -349,13 +349,63 @@ Registro dos resultados (preenchido na execução):
 
 | Cenário | V1 | V2 | V3 | V4 | V5 | V6 | V7 | V8 | V9 | V10 | Observações |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| C1 | | | | | | | | | | | |
+| C1 (fase A) | OK¹ | OK | OK | OK | — ² | OK | OK | OK | OK³ | OK | ver 6.1 |
+| C1 (fase B) | — | — | OK | OK | OK⁵ | OK | OK | OK⁶ | — | OK | ver 6.2 |
 | C2 | | | | | | | | | | | |
 | C3 | | | | | | | | | | | |
 | C4 | | | | | | | | | | | |
 | C5 | | | | | | | | | | | |
 | C6 | | | | | | | | | | | |
 | C7 | | | | | | | | | | | |
+
+### 6.1 C1, fase A (02/11/2026)
+
+Banco `EtlTeste_C1` no container `sql-server`, WebApi com Hangfire (`dotnet run`, `Development`), painel com
+`Database:Enabled = true`, `InitialLoad:MaxMonths = 3`, as `BaseUrl` de Totvs, Microvix, Movidesk e AfterSale em
+`http://127.0.0.1:9/`. Conjunto mínimo ativo, a cada 5 min: 3000, 3001, 5002, 8000, 8003, 8006, 8095, 9002, 13003,
+13006, 13007 e 13081 (com os pré-requisitos `TotvsGetBranchesList` e `LinxGrupoLojas`).
+
+| | O que se viu |
+|---|---|
+| V1 | ¹ Duas falhas no banco novo, as duas tratadas: (a) o `migrator.csx` do Shared quebrava ao criar `etl_monitor` ("Resetting the connection results in a different state than the initial login"): o `Script001` troca a collation do banco e a conexão do pool aberta antes não volta. **Corrigido** com `SqlConnection.ClearAllPools()` antes dos usuários. (b) O DataWarehouse exige as tabelas do LinxCommerce (`sp_Create_Landing`: `[linxcommerce].[LinxCommerceRequests]` não existe). O LinxCommerce passou a subir **só a estrutura** em todos os cenários (sem parâmetros, jobs inativos), o que mantém a decisão 8 |
+| V2 | `etl_monitor` e `etl_query` criados pelo migrator; o painel conectou com eles |
+| V3 | 12 jobs ativos, `IntervalTimeInMinutes = 5` |
+| V4 | Hangfire criou o schema `HangFire` (11 tabelas) e os 12 recorrentes. O 1º ciclo saiu às 15:45, na virada de 5 min (o cron não roda na subida) |
+| V5 | ² Não se aplica à fase A (nenhum dado volta das APIs). Fica para a fase B |
+| V6 | 2º ciclo às 15:50 com os 12 jobs, nenhuma execução aberta |
+| V7 | Painel igual ao banco: 12 execuções, 7 com erro, 5 sem; os 7 em "Falhas Ativas"; heartbeat atualizado a cada minuto |
+| V8 | Os 7 jobs que chamam API gravaram o erro de conexão em `auditing.Messages` e voltaram no ciclo seguinte. No Hangfire ficam `Failed`, **sem novas tentativas** (nenhuma rajada contra a API). Os que dependem de lojas/filiais gravam o aviso "sem lojas ... rode o GetBranchesList/LinxGrupoLojas antes" e terminam como "Concluída com sucesso" (Ok no painel) |
+| V9 | ³ Processo derrubado (`Stop-Process -Force`) às 16:00:02, no meio de 7 execuções. Na volta, o Hangfire marcou as 7 como `Deleted` (não reexecutou) e o ciclo das 16:05 rodou os 12 normalmente; nada preso, nenhum `Skipped`. **Achado**: a execução interrompida **não deixa registro** em `auditing.Logs`, porque o log só é gravado no fim (`LoggerService.CommitAllChanges`); quem olha só o banco/painel não vê a queda |
+| V10 | Banco, logins `etl_monitor`/`etl_query` e senhas de teste apagados no fim da fase B |
+
+Pontos para decidir (não bloqueiam a fase B):
+
+1. Gravar o início da execução em `auditing.Logs` (e fechar no fim), para uma queda aparecer no painel como execução
+   aberta/atrasada.
+2. O DataWarehouse depender do LinxCommerce: aceitar (subir sempre a estrutura) ou tornar a landing do LinxCommerce
+   opcional.
+3. Job que não roda por falta de pré-requisito aparecer como "Ok" no painel (hoje só a mensagem avisa).
+
+### 6.2 C1, fase B (02/11/2026)
+
+O mesmo banco e os mesmos 12 jobs, agora com as APIs reais (Totvs de produção só leitura, escritas desligadas). O host
+subiu às 16:38; acompanhado até 16:57 (1 carga inicial e 4 ciclos incrementais).
+
+| | O que se viu |
+|---|---|
+| Subida | O cron estava parado desde 16:06 (host fora do ar). Na subida, o Hangfire rodou **uma vez** os recorrentes atrasados (16:38:17), sem esperar a virada de 5 min, e voltou ao ritmo normal às 16:40 |
+| Carga inicial | Tickets do Movidesk: 1.858 em 602 s; pessoas: 1.271 em 86 s; AfterSale: 69 trocas; Totvs: 6 filiais, 53 classificações, 112 vendedores, 1.044 notas; Microvix: 21 lojas, 188 usuários, 124 clientes, 194 movimentos |
+| Ordem dos pré-requisitos | No 1º ciclo, vendedores/notas (Totvs) e clientes/movimento (Microvix) rodaram junto com filiais/lojas e saíram com 0 ou pouco; os dados vieram no ciclo seguinte. Esperado, mas a carga completa leva 2 ciclos |
+| V5 | ⁵ Movidesk (tickets e pessoas) e Totvs (notas, vendedores, classificações): **nenhum registro antes de 02/08/2026**. Microvix: o movimento trouxe 5 documentos de julho com `dt_update` na janela (esperado, 1.3); os clientes trouxeram 118 cadastros antigos (2022–2025) **no ciclo incremental**: o `dt_update` deles é antigo, mas o `timestamp` é maior que o dos clientes recentes, ou seja, a Microvix mexeu neles há pouco. O teto vale para a carga inicial; o incremental pelo timestamp traz o que mudou na origem, como deve. `LinxUsuarios` não tem data na API e veio inteiro (188), como previsto |
+| V6 | Nenhuma duplicidade (tickets, pessoas, movimento, clientes, notas). Incrementais em 1 a 2 s; o `LinxMovimento` leva 65 a 83 s por ciclo mesmo sem novidade (20 lojas, uma chamada cada) |
+| Concorrência | O `MovideskGetTickets` (602 s) foi pulado nos ciclos de 16:40 e 16:45, sem execução dupla, e voltou às 16:50 |
+| V8 | ⁶ Falha real: `TotvsPostSearchInvoices` caiu às 16:46 após 372 s com `HttpIOException: The response ended prematurely` (a Totvs cortou a resposta no meio). As janelas de 30 dias já lidas ficaram gravadas (393 notas); às 16:50 a leitura recomeçou do `MAX(maxChangeFilterDate)` − 1 h e trouxe as outras 665. **Achado**: o `ApiClient` repete por código HTTP (401, 429, 502–504), mas não por erro de rede durante a leitura do corpo; uma nova tentativa nesse caso evitaria perder o ciclo |
+| V7 | Painel igual ao banco: 443 execuções no período (fases A e B, integrações e procedures de sync), 93,5% sem erro, 5.038 registros, 0 falhas ativas no fim |
+
+Pontos para decidir, além dos da 6.1:
+
+4. Nova tentativa no `ApiClient` para erro de rede na leitura da resposta (`HttpIOException`/`HttpRequestException`).
+5. A carga completa depender de 2 ciclos quando os pré-requisitos (filiais, lojas) rodam junto: aceitar ou encadear.
 
 ---
 

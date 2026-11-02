@@ -34,6 +34,10 @@ if (!result.Successful)
 
 // 4. Usuários de banco do WebApp (Script009, src/Frontend/WebApp/docs/PLANO-WEBAPP.md, passo 10): só com a senha na
 // variável de ambiente, nunca no argumento nem no script. Sem a variável, quem administra roda a procedure à mão.
+// Banco novo: o Script001 troca a collation do banco, e a conexão do pool aberta antes dele não volta mais ("Resetting the
+// connection results in a different state than the initial login", visto no teste C1). Limpar o pool abre uma conexão nova
+SqlConnection.ClearAllPools();
+
 foreach (var (procedure, variable) in new[] { ("dbo.sp_Create_Monitor_User", "ETL_MONITOR_PASSWORD"), ("dbo.sp_Grant_Query_User", "ETL_QUERY_PASSWORD") })
 {
     var password = Environment.GetEnvironmentVariable(variable);
