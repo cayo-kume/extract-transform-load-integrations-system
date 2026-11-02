@@ -79,7 +79,7 @@ namespace Application.Totvs.Services
 
             try
             {
-                foreach (var company in await _totvsService.GetCompanys())
+                foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
                     var batchTime = _totvsService.GetBatchTime();
 
@@ -95,6 +95,8 @@ namespace Application.Totvs.Services
 
                     while (page <= totalPages)
                     {
+                        JobProgress.Step("página", page, totalPages);
+
                         var query = new Dictionary<string, string>
                         {
                             { "StartChangeDate", $"{since:yyyy-MM-ddTHH:mm:ss}" },
@@ -277,7 +279,7 @@ namespace Application.Totvs.Services
 
             try
             {
-                foreach (var company in await _totvsService.GetCompanys())
+                foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
                     // as estatísticas só vêm com option.branchStaticDataList (testado): todas as lojas da holding
                     var branchCodes = await _totvsService.GetBranchCodes(company);
@@ -299,6 +301,7 @@ namespace Application.Totvs.Services
                     for (var windowStart = since; windowStart < endDate; windowStart = windowStart.AddDays(PeopleWindowDays))
                     {
                         var windowEnd = windowStart.AddDays(PeopleWindowDays) < endDate ? windowStart.AddDays(PeopleWindowDays) : endDate;
+                        JobProgress.Window(windowStart, windowEnd, since, endDate);
 
                         var people = new List<Domain.Totvs.Dtos.Reads.People.Customers.Customer>();
                         var peopleJson = new Dictionary<int, string>();
@@ -308,6 +311,8 @@ namespace Application.Totvs.Services
 
                         while (page <= totalPages)
                         {
+                            JobProgress.Step("página", page, totalPages);
+
                             var requestBody = JsonConvert.SerializeObject(new
                             {
                                 filter = new
@@ -490,7 +495,7 @@ namespace Application.Totvs.Services
 
             try
             {
-                foreach (var company in await _totvsService.GetCompanys())
+                foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
                     // as estatísticas só vêm com option.branchStaticDataList (testado): todas as lojas da holding
                     var branchCodes = await _totvsService.GetBranchCodes(company);
@@ -512,6 +517,7 @@ namespace Application.Totvs.Services
                     for (var windowStart = since; windowStart < endDate; windowStart = windowStart.AddDays(PeopleWindowDays))
                     {
                         var windowEnd = windowStart.AddDays(PeopleWindowDays) < endDate ? windowStart.AddDays(PeopleWindowDays) : endDate;
+                        JobProgress.Window(windowStart, windowEnd, since, endDate);
 
                         var people = new List<Domain.Totvs.Dtos.Reads.People.LegalEntities.LegalEntity>();
                         var peopleJson = new Dictionary<int, string>();
@@ -521,6 +527,8 @@ namespace Application.Totvs.Services
 
                         while (page <= totalPages)
                         {
+                            JobProgress.Step("página", page, totalPages);
+
                             var requestBody = JsonConvert.SerializeObject(new
                             {
                                 filter = new

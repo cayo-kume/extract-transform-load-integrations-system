@@ -5,6 +5,7 @@ using Domain.LinxCommerce.Dtos.Reads.Base;
 using Domain.LinxCommerce.Entities.Parameters;
 using Domain.LinxCommerce.Enums;
 using Domain.Shared.Abstractions.Api;
+using Domain.Shared.Extensions;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
@@ -110,6 +111,8 @@ namespace Application.LinxCommerce.Services
 
             while (pageIndex < pageCount)
             {
+                JobProgress.Step("página", pageIndex + 1, pageCount);
+
                 var body = new
                 {
                     Page = new { PageIndex = pageIndex, PageSize = SearchPageSize },

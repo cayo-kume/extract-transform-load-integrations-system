@@ -66,7 +66,7 @@ namespace Application.Totvs.Services
 
             try
             {
-                foreach (var company in await _totvsService.GetCompanys())
+                foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
                     // branchCodeList filtra também as filhas: sem todas as lojas, o vendedor vem só com a informação das enviadas (testado)
                     var branchCodes = await _totvsService.GetBranchCodes(company);
@@ -91,6 +91,8 @@ namespace Application.Totvs.Services
 
                     while (page <= totalPages)
                     {
+                        JobProgress.Step("página", page, totalPages);
+
                         // a rota não tem expand nem order (swagger): as filhas vêm sempre
                         var requestBody = JsonConvert.SerializeObject(new
                         {
@@ -281,7 +283,7 @@ namespace Application.Totvs.Services
 
             try
             {
-                foreach (var company in await _totvsService.GetCompanys())
+                foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
                     var batchTime = _totvsService.GetBatchTime();
 
@@ -416,6 +418,8 @@ namespace Application.Totvs.Services
 
                 while (page <= totalPages)
                 {
+                    JobProgress.Step("página", page, totalPages);
+
                     var query = new Dictionary<string, string>
                     {
                         { "Page", page.ToString() },

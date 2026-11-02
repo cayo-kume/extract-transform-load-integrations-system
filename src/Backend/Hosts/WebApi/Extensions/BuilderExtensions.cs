@@ -5,7 +5,14 @@
         public static WebApplicationBuilder AddArchitectures(this WebApplicationBuilder builder)
         {
             // empresa da execução em toda rota: X-Company ou a holding do {docCompany} (CompanyContextFilter)
-            builder.Services.AddControllers(options => options.Filters.Add<CompanyContextFilter>());
+            // em Development, barra de progresso no console para o job chamado pelo Swagger (JobProgressFilter)
+            builder.Services.AddControllers(options =>
+            {
+                options.Filters.Add<CompanyContextFilter>();
+
+                if (builder.Environment.IsDevelopment())
+                    options.Filters.Add<JobProgressFilter>();
+            });
             builder.Services.AddEndpointsApiExplorer();
 
             //builder.Services

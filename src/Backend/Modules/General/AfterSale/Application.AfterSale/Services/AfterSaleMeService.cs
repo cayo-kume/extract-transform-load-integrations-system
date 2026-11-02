@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Application.Shared.Attributes;
+using Domain.Shared.Extensions;
 
 namespace Application.AfterSale.Services
 {
@@ -56,7 +57,7 @@ namespace Application.AfterSale.Services
                 return new HashSet<string>();
             });
 
-            foreach (var company in companys)
+            foreach (var company in companys.WithProgress("empresa"))
             {
                 var response = await _apiClient.GetAsync(
                     route: "v3/api/me",

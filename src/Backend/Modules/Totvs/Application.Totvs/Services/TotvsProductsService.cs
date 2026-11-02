@@ -111,7 +111,7 @@ namespace Application.Totvs.Services
 
             try
             {
-                foreach (var company in await _totvsService.GetCompanys())
+                foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
                     var codes = await GetStockCodes(company);
 
@@ -129,7 +129,7 @@ namespace Application.Totvs.Services
                         }
 
                         // uma chamada por loja: o tempo de resposta cresce com produtos x lojas x códigos (15 lojas numa chamada deram 502, testado)
-                        foreach (var branchCode in brandBranchCodes)
+                        foreach (var branchCode in brandBranchCodes.WithProgress("filial"))
                             totalInseridos += await SyncBalances(company, brandClassificationCode, branchCode, codes);
                     }
                 }
@@ -172,6 +172,7 @@ namespace Application.Totvs.Services
                 for (var windowStart = since; windowStart < batchTime; windowStart = windowStart.AddDays(ValueWindowDays))
                 {
                     var windowEnd = windowStart.AddDays(ValueWindowDays) < batchTime ? windowStart.AddDays(ValueWindowDays) : batchTime;
+                    JobProgress.Window(windowStart, windowEnd, since, batchTime);
                     var (saved, ok) = await ReadBalances(company, branchCode, batchTime, true, page => BalancesBody(brandClassificationCode, branchCode, codes, page, null, windowStart, windowEnd), $"janela {windowStart:dd/MM/yyyy HH:mm} a {windowEnd:dd/MM/yyyy HH:mm}");
 
                     total += saved;
@@ -193,6 +194,8 @@ namespace Application.Totvs.Services
 
                     while (page <= totalPages)
                     {
+                        JobProgress.Step("página", page, totalPages);
+
                         var result = await GetValuePage<Domain.Totvs.Dtos.Reads.Products.Values.ProductBalance>(company, "product/v2/balances/search", body(page), $"loja {branchCode}, {context}, página {page}");
 
                         if (result is null)
@@ -460,7 +463,7 @@ namespace Application.Totvs.Services
 
             try
             {
-                foreach (var company in await _totvsService.GetCompanys())
+                foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
                     var batchTime = _totvsService.GetBatchTime();
 
@@ -508,6 +511,8 @@ namespace Application.Totvs.Services
 
                 while (page <= totalPages)
                 {
+                    JobProgress.Step("página", page, totalPages);
+
                     var query = new Dictionary<string, string>
                     {
                         { "StartChangeDate", $"{start:yyyy-MM-ddTHH:mm:ss}" },
@@ -636,7 +641,7 @@ namespace Application.Totvs.Services
 
             try
             {
-                foreach (var company in await _totvsService.GetCompanys())
+                foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
                     // branchCode filtra uma loja por chamada; sem lojas em TotvsBranches não há o que ler
                     var branchCodes = await _totvsService.GetBranchCodes(company);
@@ -647,7 +652,7 @@ namespace Application.Totvs.Services
                         continue;
                     }
 
-                    foreach (var branchCode in branchCodes)
+                    foreach (var branchCode in branchCodes.WithProgress("filial"))
                         totalInseridos += await SyncBatches(company, branchCode);
                 }
 
@@ -676,6 +681,8 @@ namespace Application.Totvs.Services
 
                 while (page <= totalPages)
                 {
+                    JobProgress.Step("página", page, totalPages);
+
                     var requestBody = JsonConvert.SerializeObject(new
                     {
                         filter = new
@@ -770,7 +777,7 @@ namespace Application.Totvs.Services
 
             try
             {
-                foreach (var company in await _totvsService.GetCompanys())
+                foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
                     foreach (var (baseBranchCode, brandClassificationCode) in BaseBranchCodes)
                     {
@@ -819,6 +826,8 @@ namespace Application.Totvs.Services
 
                 while (page <= totalPages)
                 {
+                    JobProgress.Step("página", page, totalPages);
+
                     var requestBody = JsonConvert.SerializeObject(new
                     {
                         filter = new
@@ -893,6 +902,8 @@ namespace Application.Totvs.Services
 
                     while (page <= totalPages)
                     {
+                        JobProgress.Step("página", page, totalPages);
+
                         var response = await SendValueRequest(company, "product/v2/references/search", Body(BrandFilter(chunk, null), page, ReferencePageSize, null));
                         var result = ParsePage<Domain.Totvs.Dtos.Reads.Products.Reference>(company, "product/v2/references/search", response, $"conferência da matriz {baseBranchCode}, produtos {chunk.First()} a {chunk.Last()}, página {page}");
 
@@ -927,6 +938,8 @@ namespace Application.Totvs.Services
 
                     while (page <= totalPages)
                     {
+                        JobProgress.Step("página", page, totalPages);
+
                         var response = await SendValueRequest(company, "product/v2/references/search", Body(BrandFilter(null, chunk.Select(x => x.Value).Distinct().ToArray()), page, ReferencesPageSize, Expand));
                         var result = ParsePage<Domain.Totvs.Dtos.Reads.Products.Reference>(company, "product/v2/references/search", response, $"conferência da matriz {baseBranchCode}, referências {chunk.First().Value} a {chunk.Last().Value}, página {page}");
 
@@ -973,7 +986,7 @@ namespace Application.Totvs.Services
 
             try
             {
-                foreach (var company in await _totvsService.GetCompanys())
+                foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
                     foreach (var (baseBranchCode, brandClassificationCode) in BaseBranchCodes)
                     {
@@ -996,6 +1009,7 @@ namespace Application.Totvs.Services
                         for (var windowStart = since; windowStart < endDate; windowStart = windowStart.AddDays(windowDays))
                         {
                             var windowEnd = windowStart.AddDays(windowDays) < endDate ? windowStart.AddDays(windowDays) : endDate;
+                            JobProgress.Window(windowStart, windowEnd, since, endDate);
 
                             // a paginação da rota é por produto (count = produtos), e uma referência cujos produtos cruzam o limite da página
                             // vem em partes: as partes são unidas aqui por referenceId antes de virar entidade (decisão 34)
@@ -1006,6 +1020,8 @@ namespace Application.Totvs.Services
 
                             while (page <= totalPages)
                             {
+                                JobProgress.Step("página", page, totalPages);
+
                                 var requestBody = JsonConvert.SerializeObject(new
                                 {
                                     filter = new

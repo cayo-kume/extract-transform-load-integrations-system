@@ -96,7 +96,7 @@ namespace Application.AfterSale.Services
             var companys = await _afterSaleRepository.GetCompanys();
             var _listErrors = new List<Domain.AfterSale.Entities.Errors.Error>();
 
-            foreach (var company in companys)
+            foreach (var company in companys.WithProgress("empresa"))
             {
                 var summarizedReverses = new List<Domain.AfterSale.Dtos.Reads.Reverses.SearchReverses.Reverse>();
                 var listResponses = new List<string>();
@@ -278,7 +278,7 @@ namespace Application.AfterSale.Services
             var summarizedReverses = await _afterSaleReversesRepository.GetSummarizedReversesIdsForGetReverse();
             var _listErrors = new List<Domain.AfterSale.Entities.Errors.Error>();
 
-            foreach (var reversesByCompany in summarizedReverses.Where(x => x != null).GroupBy(x => x!.doc_company))
+            foreach (var reversesByCompany in summarizedReverses.Where(x => x != null).GroupBy(x => x!.doc_company).ToList().WithProgress("empresa"))
             {
                 var company = companys.FirstOrDefault(x => x.doc_company == reversesByCompany.Key);
 
@@ -291,7 +291,7 @@ namespace Application.AfterSale.Services
                 var reversesDtosList = new List<Domain.AfterSale.Dtos.Reads.Reverses.GetReverse.Root>();
                 var reversesJson = new Dictionary<long, string>();
 
-                foreach (var summarizedReverse in reversesByCompany)
+                foreach (var summarizedReverse in reversesByCompany.ToList().WithProgress("reversa"))
                 {
                     var response = await _apiClient.GetAsync(
                         route: $"v3/api/reverses/{summarizedReverse!.id}",
@@ -533,7 +533,7 @@ namespace Application.AfterSale.Services
             var companys = await _afterSaleRepository.GetCompanys();
             var summarizedReverses = await _afterSaleReversesRepository.GetSummarizedReversesIdsForGetCourierAttributes();
 
-            foreach (var reversesByCompany in summarizedReverses.Where(x => x != null).GroupBy(x => x!.doc_company))
+            foreach (var reversesByCompany in summarizedReverses.Where(x => x != null).GroupBy(x => x!.doc_company).ToList().WithProgress("empresa"))
             {
                 var company = companys.FirstOrDefault(x => x.doc_company == reversesByCompany.Key);
 
@@ -547,7 +547,7 @@ namespace Application.AfterSale.Services
                 var courierAttributes = new Dictionary<long, Domain.AfterSale.Dtos.Reads.Reverses.CourierAttributes.CourierAttribute>();
                 var courierAttributesJson = new Dictionary<long, string>();
 
-                foreach (var summarizedReverse in reversesByCompany)
+                foreach (var summarizedReverse in reversesByCompany.ToList().WithProgress("reversa"))
                 {
                     var response = await _apiClient.GetAsync(
                         route: $"v3/api/reverses/{summarizedReverse!.id}/get-courier-attributes",
@@ -649,7 +649,7 @@ namespace Application.AfterSale.Services
             var totalInseridos = 0;
             var companys = await _afterSaleRepository.GetCompanys();
 
-            foreach (var company in companys)
+            foreach (var company in companys.WithProgress("empresa"))
             {
                 var response = await _apiClient.GetAsync(
                     route: "v3/api/reverses/status",
@@ -745,7 +745,7 @@ namespace Application.AfterSale.Services
             var totalInseridos = 0;
             var companys = await _afterSaleRepository.GetCompanys();
 
-            foreach (var company in companys)
+            foreach (var company in companys.WithProgress("empresa"))
             {
                 var response = await _apiClient.GetAsync(
                         route: "v3/api/transportations",

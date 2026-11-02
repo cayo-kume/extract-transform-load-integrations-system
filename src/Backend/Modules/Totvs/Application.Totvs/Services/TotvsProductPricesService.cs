@@ -83,7 +83,7 @@ namespace Application.Totvs.Services
 
             try
             {
-                foreach (var company in await _totvsService.GetCompanys())
+                foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
                     var codes = await GetPriceCodes(company);
 
@@ -101,7 +101,7 @@ namespace Application.Totvs.Services
                         }
 
                         // uma chamada por loja: o tempo de resposta cresce com produtos x lojas x códigos (15 lojas numa chamada deram 502, testado)
-                        foreach (var branchCode in brandBranchCodes)
+                        foreach (var branchCode in brandBranchCodes.WithProgress("filial"))
                             totalInseridos += await SyncPrices(company, brandClassificationCode, branchCode, codes);
                     }
                 }
@@ -144,6 +144,7 @@ namespace Application.Totvs.Services
                 for (var windowStart = since; windowStart < batchTime; windowStart = windowStart.AddDays(WindowDays))
                 {
                     var windowEnd = windowStart.AddDays(WindowDays) < batchTime ? windowStart.AddDays(WindowDays) : batchTime;
+                    JobProgress.Window(windowStart, windowEnd, since, batchTime);
                     var (saved, ok) = await ReadPrices(company, branchCode, batchTime, true, page => PricesBody(brandClassificationCode, branchCode, codes, page, null, windowStart, windowEnd), $"janela {windowStart:dd/MM/yyyy HH:mm} a {windowEnd:dd/MM/yyyy HH:mm}");
 
                     total += saved;
@@ -206,6 +207,8 @@ namespace Application.Totvs.Services
 
                     while (page <= totalPages)
                     {
+                        JobProgress.Step("página", page, totalPages);
+
                         var result = await GetValuePage<Domain.Totvs.Dtos.Reads.Products.Values.ProductPrice>(company, "product/v2/prices/search", body(page), $"loja {branchCode}, {context}, página {page}");
 
                         if (result is null)
@@ -383,7 +386,7 @@ namespace Application.Totvs.Services
 
             try
             {
-                foreach (var company in await _totvsService.GetCompanys())
+                foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
                     var codes = await GetCostCodes(company);
 
@@ -401,7 +404,7 @@ namespace Application.Totvs.Services
                         }
 
                         // uma chamada por loja: o tempo de resposta cresce com produtos x lojas x códigos (15 lojas numa chamada deram 502, testado)
-                        foreach (var branchCode in brandBranchCodes)
+                        foreach (var branchCode in brandBranchCodes.WithProgress("filial"))
                             totalInseridos += await SyncCosts(company, brandClassificationCode, branchCode, codes);
                     }
                 }
@@ -444,6 +447,7 @@ namespace Application.Totvs.Services
                 for (var windowStart = since; windowStart < batchTime; windowStart = windowStart.AddDays(WindowDays))
                 {
                     var windowEnd = windowStart.AddDays(WindowDays) < batchTime ? windowStart.AddDays(WindowDays) : batchTime;
+                    JobProgress.Window(windowStart, windowEnd, since, batchTime);
                     var (saved, ok) = await ReadCosts(company, branchCode, batchTime, true, page => CostsBody(brandClassificationCode, branchCode, codes, page, null, windowStart, windowEnd), $"janela {windowStart:dd/MM/yyyy HH:mm} a {windowEnd:dd/MM/yyyy HH:mm}");
 
                     total += saved;
@@ -500,6 +504,8 @@ namespace Application.Totvs.Services
 
                     while (page <= totalPages)
                     {
+                        JobProgress.Step("página", page, totalPages);
+
                         var result = await GetValuePage<Domain.Totvs.Dtos.Reads.Products.Values.ProductCost>(company, "product/v2/costs/search", body(page), $"loja {branchCode}, {context}, página {page}");
 
                         if (result is null)
@@ -677,7 +683,7 @@ namespace Application.Totvs.Services
 
             try
             {
-                foreach (var company in await _totvsService.GetCompanys())
+                foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
                     // as tabelas vêm do cabeçalho (GetPriceTablesHeaders, que roda antes, como as filiais antes das buscas)
                     var priceTableCodes = (await _totvsProductPricesRepository.GetActivePriceTableCodes(company.doc_company!)).ToList();
@@ -735,6 +741,7 @@ namespace Application.Totvs.Services
                 for (var windowStart = since; windowStart < batchTime; windowStart = windowStart.AddDays(WindowDays))
                 {
                     var windowEnd = windowStart.AddDays(WindowDays) < batchTime ? windowStart.AddDays(WindowDays) : batchTime;
+                    JobProgress.Window(windowStart, windowEnd, since, batchTime);
                     var (saved, ok) = await ReadPriceTable(company, priceTableCode, batchTime, true, page => PriceTablesBody(priceTableCode, branchCodes, page, null, windowStart, windowEnd), $"janela {windowStart:dd/MM/yyyy HH:mm} a {windowEnd:dd/MM/yyyy HH:mm}");
 
                     total += saved;
@@ -783,6 +790,8 @@ namespace Application.Totvs.Services
 
                     while (page <= totalPages)
                     {
+                        JobProgress.Step("página", page, totalPages);
+
                         var result = await GetValuePage<Domain.Totvs.Dtos.Reads.Products.PriceTables.PriceTableProduct>(company, "product/v2/price-tables/search", body(page), $"tabela {priceTableCode}, {context}, página {page}");
 
                         if (result is null)
@@ -872,7 +881,7 @@ namespace Application.Totvs.Services
 
             try
             {
-                foreach (var company in await _totvsService.GetCompanys())
+                foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
                     // BranchCode é obrigatório: uma leitura por loja (hoje só as matrizes 1 e 101 têm promoção, testado)
                     var branchCodes = await _totvsService.GetBranchCodes(company);
@@ -883,7 +892,7 @@ namespace Application.Totvs.Services
                         continue;
                     }
 
-                    foreach (var branchCode in branchCodes)
+                    foreach (var branchCode in branchCodes.WithProgress("filial"))
                         totalInseridos += await SyncPromotions(company, branchCode);
                 }
 
@@ -913,6 +922,8 @@ namespace Application.Totvs.Services
 
                 while (page <= totalPages)
                 {
+                    JobProgress.Step("página", page, totalPages);
+
                     var query = new Dictionary<string, string>
                     {
                         { "BranchCode", branchCode.ToString() },

@@ -71,7 +71,7 @@ namespace Application.Totvs.Services
 
             try
             {
-                foreach (var company in await _totvsService.GetCompanys())
+                foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
                     // branchCodeList é obrigatório (swagger): todas as lojas da holding
                     var branchCodes = await _totvsService.GetBranchCodes(company);
@@ -91,6 +91,7 @@ namespace Application.Totvs.Services
                     for (var windowStart = since; windowStart < endDate; windowStart = windowStart.AddDays(OrdersWindowDays))
                     {
                         var windowEnd = windowStart.AddDays(OrdersWindowDays) < endDate ? windowStart.AddDays(OrdersWindowDays) : endDate;
+                        JobProgress.Window(windowStart, windowEnd, since, endDate);
 
                         var orders = new List<Domain.Totvs.Dtos.Reads.PurchaseOrders.PurchaseOrder>();
                         var ordersJson = new Dictionary<(int, int), string>();
@@ -100,6 +101,8 @@ namespace Application.Totvs.Services
 
                         while (page <= totalPages)
                         {
+                            JobProgress.Step("página", page, totalPages);
+
                             var requestBody = JsonConvert.SerializeObject(new
                             {
                                 filter = new

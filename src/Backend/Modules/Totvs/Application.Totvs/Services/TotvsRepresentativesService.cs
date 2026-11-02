@@ -71,7 +71,7 @@ namespace Application.Totvs.Services
 
             try
             {
-                foreach (var company in await _totvsService.GetCompanys())
+                foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
                     var batchTime = _totvsService.GetBatchTime();
 
@@ -90,6 +90,8 @@ namespace Application.Totvs.Services
 
                     while (page <= totalPages)
                     {
+                        JobProgress.Step("página", page, totalPages);
+
                         var requestBody = JsonConvert.SerializeObject(new
                         {
                             filter = new
@@ -433,7 +435,7 @@ namespace Application.Totvs.Services
 
             try
             {
-                foreach (var company in await _totvsService.GetCompanys())
+                foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
                     var today = _totvsService.GetBatchTime().Date;
 
@@ -444,6 +446,7 @@ namespace Application.Totvs.Services
                     {
                         // a data do movimento é dia inteiro: a fatia vai do primeiro ao último dia, inclusive
                         var windowEnd = windowStart.AddDays(ReceptionSalesWindowDays - 1) < today ? windowStart.AddDays(ReceptionSalesWindowDays - 1) : today;
+                        JobProgress.Window(windowStart, windowEnd, since, today);
 
                         var receptions = new List<Domain.Totvs.Dtos.Reads.People.ReceptionSales.ReceptionSale>();
                         var receptionsJson = new Dictionary<(int, DateTime, int), string>();
@@ -453,6 +456,8 @@ namespace Application.Totvs.Services
 
                         while (page <= totalPages)
                         {
+                            JobProgress.Step("página", page, totalPages);
+
                             var query = new Dictionary<string, string>
                             {
                                 { "StartMovementDate", $"{windowStart:yyyy-MM-dd}" },

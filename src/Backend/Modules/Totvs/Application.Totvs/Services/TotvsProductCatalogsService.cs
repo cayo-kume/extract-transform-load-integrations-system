@@ -102,7 +102,7 @@ namespace Application.Totvs.Services
 
             try
             {
-                foreach (var company in await _totvsService.GetCompanys())
+                foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
                     var batchTime = _totvsService.GetBatchTime();
 
@@ -211,7 +211,7 @@ namespace Application.Totvs.Services
 
             try
             {
-                foreach (var company in await _totvsService.GetCompanys())
+                foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
                     var batchTime = _totvsService.GetBatchTime();
 
@@ -319,7 +319,7 @@ namespace Application.Totvs.Services
 
             try
             {
-                foreach (var company in await _totvsService.GetCompanys())
+                foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
                     var batchTime = _totvsService.GetBatchTime();
 
@@ -428,7 +428,7 @@ namespace Application.Totvs.Services
 
             try
             {
-                foreach (var company in await _totvsService.GetCompanys())
+                foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
                     var batchTime = _totvsService.GetBatchTime();
 
@@ -537,7 +537,7 @@ namespace Application.Totvs.Services
 
             try
             {
-                foreach (var company in await _totvsService.GetCompanys())
+                foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
                     var batchTime = _totvsService.GetBatchTime();
 
@@ -646,7 +646,7 @@ namespace Application.Totvs.Services
 
             try
             {
-                foreach (var company in await _totvsService.GetCompanys())
+                foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
                     var batchTime = _totvsService.GetBatchTime();
 
@@ -736,7 +736,7 @@ namespace Application.Totvs.Services
 
             try
             {
-                foreach (var company in await _totvsService.GetCompanys())
+                foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
                     var batchTime = _totvsService.GetBatchTime();
 
@@ -845,7 +845,7 @@ namespace Application.Totvs.Services
 
             try
             {
-                foreach (var company in await _totvsService.GetCompanys())
+                foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
                     var batchTime = _totvsService.GetBatchTime();
 
@@ -954,7 +954,7 @@ namespace Application.Totvs.Services
 
             try
             {
-                foreach (var company in await _totvsService.GetCompanys())
+                foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
                     var batchTime = _totvsService.GetBatchTime();
 
@@ -1063,7 +1063,7 @@ namespace Application.Totvs.Services
 
             try
             {
-                foreach (var company in await _totvsService.GetCompanys())
+                foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
                     var batchTime = _totvsService.GetBatchTime();
 
@@ -1173,7 +1173,7 @@ namespace Application.Totvs.Services
 
             try
             {
-                foreach (var company in await _totvsService.GetCompanys())
+                foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
                     var batchTime = _totvsService.GetBatchTime();
 
@@ -1282,7 +1282,7 @@ namespace Application.Totvs.Services
 
             try
             {
-                foreach (var company in await _totvsService.GetCompanys())
+                foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
                     var batchTime = _totvsService.GetBatchTime();
 
@@ -1492,6 +1492,8 @@ namespace Application.Totvs.Services
 
             while (page <= totalPages)
             {
+                JobProgress.Step("página", page, totalPages);
+
                 var requestBody = body?.Invoke(page);
 
                 // uma nova tentativa: 401 renova o token, 429 espera o Retry-After e 502/503/504 espera 10 s

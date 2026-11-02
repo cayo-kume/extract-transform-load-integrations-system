@@ -67,7 +67,7 @@ namespace Application.Totvs.Services
 
             try
             {
-                foreach (var company in await _totvsService.GetCompanys())
+                foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
                     // branchCodeList é obrigatório (máx. 900 itens, swagger): todas as lojas da holding
                     var branchCodes = await _totvsService.GetBranchCodes(company);
@@ -87,6 +87,7 @@ namespace Application.Totvs.Services
                     for (var windowStart = since; windowStart < endDate; windowStart = windowStart.AddDays(DuplicatesWindowDays))
                     {
                         var windowEnd = windowStart.AddDays(DuplicatesWindowDays) < endDate ? windowStart.AddDays(DuplicatesWindowDays) : endDate;
+                        JobProgress.Window(windowStart, windowEnd, since, endDate);
 
                         var duplicates = new List<Domain.Totvs.Dtos.Reads.AccountsPayable.Duplicate>();
                         var duplicatesJson = new Dictionary<(int, int, long, int), string>();
@@ -96,6 +97,8 @@ namespace Application.Totvs.Services
 
                         while (page <= totalPages)
                         {
+                            JobProgress.Step("página", page, totalPages);
+
                             // expense vem sempre; o único expand da rota é classifications (o "expense" do código antigo era ignorado, testado)
                             var requestBody = JsonConvert.SerializeObject(new
                             {
@@ -307,7 +310,7 @@ namespace Application.Totvs.Services
 
             try
             {
-                foreach (var company in await _totvsService.GetCompanys())
+                foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
                     // closingCompanyCode é obrigatório e é uma empresa só (sem ele a API responde 400, testado): uma chamada por loja
                     var branchCodes = await _totvsService.GetBranchCodes(company);
@@ -324,13 +327,15 @@ namespace Application.Totvs.Services
                     var commissions = new List<Domain.Totvs.Dtos.Reads.AccountsPayable.CommissionPaid>();
                     var commissionsJson = new Dictionary<(int, int, string), string>();
 
-                    foreach (var branchCode in branchCodes)
+                    foreach (var branchCode in branchCodes.WithProgress("filial"))
                     {
                         var page = 1;
                         var totalPages = 1;
 
                         while (page <= totalPages)
                         {
+                            JobProgress.Step("página", page, totalPages);
+
                             // a rota não tem filtro de alteração nem maxChangeFilterDate: a janela é pela data do fechamento
                             var requestBody = JsonConvert.SerializeObject(new
                             {

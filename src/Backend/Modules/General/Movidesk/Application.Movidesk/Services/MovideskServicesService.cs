@@ -151,7 +151,7 @@ namespace Application.Movidesk.Services
             var totalInseridos = 0;
             var companys = await _movideskRepository.GetCompanys();
 
-            foreach (var company in companys)
+            foreach (var company in companys.WithProgress("empresa"))
             {
                 if (company?.doc_company is null)
                     continue;

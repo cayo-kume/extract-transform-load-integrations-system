@@ -79,7 +79,7 @@ namespace Application.Totvs.Services
 
             try
             {
-                foreach (var company in await _totvsService.GetCompanys())
+                foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
                     // branchCodeList é obrigatório (swagger): todas as lojas da holding
                     var branchCodes = await _totvsService.GetBranchCodes(company);
@@ -99,6 +99,7 @@ namespace Application.Totvs.Services
                     for (var windowStart = since; windowStart < endDate; windowStart = windowStart.AddDays(OrdersWindowDays))
                     {
                         var windowEnd = windowStart.AddDays(OrdersWindowDays) < endDate ? windowStart.AddDays(OrdersWindowDays) : endDate;
+                        JobProgress.Window(windowStart, windowEnd, since, endDate);
 
                         var orders = new List<Domain.Totvs.Dtos.Reads.SalesOrders.SaleOrder>();
                         var ordersJson = new Dictionary<(int, int), string>();
@@ -108,6 +109,8 @@ namespace Application.Totvs.Services
 
                         while (page <= totalPages)
                         {
+                            JobProgress.Step("página", page, totalPages);
+
                             var requestBody = JsonConvert.SerializeObject(new
                             {
                                 filter = new
@@ -430,7 +433,7 @@ namespace Application.Totvs.Services
 
             try
             {
-                foreach (var company in await _totvsService.GetCompanys())
+                foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
                     var batchTime = _totvsService.GetBatchTime();
 
@@ -536,7 +539,7 @@ namespace Application.Totvs.Services
 
             try
             {
-                foreach (var company in await _totvsService.GetCompanys())
+                foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
                     var batchTime = _totvsService.GetBatchTime();
 
@@ -641,7 +644,7 @@ namespace Application.Totvs.Services
 
             try
             {
-                foreach (var company in await _totvsService.GetCompanys())
+                foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
                     var batchTime = _totvsService.GetBatchTime();
 
@@ -747,7 +750,7 @@ namespace Application.Totvs.Services
 
             try
             {
-                foreach (var company in await _totvsService.GetCompanys())
+                foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
                     // a rota não filtra por lista de lojas (BranchCode só junto com SuggestionCode): a sugestão de loja fora de
                     // TotvsBranches da empresa vai para o log e é descartada
@@ -768,6 +771,7 @@ namespace Application.Totvs.Services
                     for (var windowStart = since; windowStart < endDate; windowStart = windowStart.AddDays(OrdersWindowDays))
                     {
                         var windowEnd = windowStart.AddDays(OrdersWindowDays) < endDate ? windowStart.AddDays(OrdersWindowDays) : endDate;
+                        JobProgress.Window(windowStart, windowEnd, since, endDate);
 
                         var items = await GetCatalogPages<Domain.Totvs.Dtos.Reads.SalesOrders.BillingSuggestions.BillingSuggestion>(company, "sales-order/v2/billing-suggestions", page => new Dictionary<string, string>
                         {
@@ -1316,6 +1320,8 @@ namespace Application.Totvs.Services
 
             while (page <= totalPages)
             {
+                JobProgress.Step("página", page, totalPages);
+
                 // uma nova tentativa: 401 renova o token, 429 espera o Retry-After e 502/503/504 espera 10 s
                 ApiResponse? response = null;
 

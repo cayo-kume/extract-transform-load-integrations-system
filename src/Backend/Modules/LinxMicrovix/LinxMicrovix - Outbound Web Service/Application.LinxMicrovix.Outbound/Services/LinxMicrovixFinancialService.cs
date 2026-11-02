@@ -10,6 +10,7 @@ using System.Text;
 using System.Xml;
 using System.Xml.Linq;
 using Application.Shared.Attributes;
+using Domain.Shared.Extensions;
 
 namespace Application.LinxMicrovix.Outbound.Services
 {
@@ -78,7 +79,7 @@ namespace Application.LinxMicrovix.Outbound.Services
 
             try
             {
-                foreach (var company in await _linxMicrovixService.GetCompanys())
+                foreach (var company in (await _linxMicrovixService.GetCompanys()).WithProgress("empresa"))
                 {
                     if (company.erp_chave is null)
                         continue;   // cliente sem o WS de saída padrão
@@ -94,7 +95,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                         continue;
                     }
 
-                    foreach (var cnpj_emp in stores)
+                    foreach (var cnpj_emp in stores.WithProgress("loja"))
                     {
                         // timestamp exclusivo: a API devolve só os maiores que o informado; banco vazio (0) traz o histórico inteiro
                         var timestamp = await _linxMicrovixService.GetLastTimestamp(company, EnumJob.LinxFaturas, cnpj_emp);
@@ -103,6 +104,8 @@ namespace Application.LinxMicrovix.Outbound.Services
 
                         for (var page = 1; page <= MaxPages; page++)
                         {
+                            JobProgress.Step("página", page);
+
                             var requestBody = new XDocument(
                                 new XDeclaration("1.0", "utf-8", null),
                                 new XElement("LinxMicrovix",
@@ -330,7 +333,7 @@ namespace Application.LinxMicrovix.Outbound.Services
 
             try
             {
-                foreach (var company in await _linxMicrovixService.GetCompanys())
+                foreach (var company in (await _linxMicrovixService.GetCompanys()).WithProgress("empresa"))
                 {
                     if (company.erp_chave is null)
                         continue;   // cliente sem o WS de saída padrão
@@ -343,7 +346,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                         continue;
                     }
 
-                    foreach (var cnpj_emp in stores)
+                    foreach (var cnpj_emp in stores.WithProgress("loja"))
                     {
                         // timestamp exclusivo: a API devolve só os maiores que o informado; banco vazio (0) traz o histórico inteiro
                         var timestamp = await _linxMicrovixService.GetLastTimestamp(company, EnumJob.LinxFaturasOrigem, cnpj_emp);
@@ -352,6 +355,8 @@ namespace Application.LinxMicrovix.Outbound.Services
 
                         for (var page = 1; page <= MaxPages; page++)
                         {
+                            JobProgress.Step("página", page);
+
                             var requestBody = new XDocument(
                                 new XDeclaration("1.0", "utf-8", null),
                                 new XElement("LinxMicrovix",
@@ -525,7 +530,7 @@ namespace Application.LinxMicrovix.Outbound.Services
 
             try
             {
-                foreach (var company in await _linxMicrovixService.GetCompanys())
+                foreach (var company in (await _linxMicrovixService.GetCompanys()).WithProgress("empresa"))
                 {
                     if (company.erp_chave is null)
                         continue;   // cliente sem o WS de saída padrão
@@ -539,7 +544,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                     }
 
                     // a resposta não identifica a loja: o dado é do portal, lido pela primeira loja
-                    foreach (var cnpj_emp in stores.Take(1))
+                    foreach (var cnpj_emp in stores.Take(1).WithProgress("loja"))
                     {
                         // timestamp exclusivo: a API devolve só os maiores que o informado; banco vazio (0) traz o histórico inteiro
                         var timestamp = await _linxMicrovixService.GetLastTimestamp(company, EnumJob.LinxPortadores, null);
@@ -548,6 +553,8 @@ namespace Application.LinxMicrovix.Outbound.Services
 
                         for (var page = 1; page <= MaxPages; page++)
                         {
+                            JobProgress.Step("página", page);
+
                             var requestBody = new XDocument(
                                 new XDeclaration("1.0", "utf-8", null),
                                 new XElement("LinxMicrovix",
@@ -724,7 +731,7 @@ namespace Application.LinxMicrovix.Outbound.Services
 
             try
             {
-                foreach (var company in await _linxMicrovixService.GetCompanys())
+                foreach (var company in (await _linxMicrovixService.GetCompanys()).WithProgress("empresa"))
                 {
                     if (company.erp_chave is null)
                         continue;   // cliente sem o WS de saída padrão
@@ -740,7 +747,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                         continue;
                     }
 
-                    foreach (var cnpj_emp in stores)
+                    foreach (var cnpj_emp in stores.WithProgress("loja"))
                     {
                         // timestamp exclusivo: a API devolve só os maiores que o informado; banco vazio (0) traz o histórico inteiro
                         var timestamp = await _linxMicrovixService.GetLastTimestamp(company, EnumJob.LinxAntecipacoesFinanceiras, cnpj_emp);
@@ -749,6 +756,8 @@ namespace Application.LinxMicrovix.Outbound.Services
 
                         for (var page = 1; page <= MaxPages; page++)
                         {
+                            JobProgress.Step("página", page);
+
                             var requestBody = new XDocument(
                                 new XDeclaration("1.0", "utf-8", null),
                                 new XElement("LinxMicrovix",
@@ -943,7 +952,7 @@ namespace Application.LinxMicrovix.Outbound.Services
 
             try
             {
-                foreach (var company in await _linxMicrovixService.GetCompanys())
+                foreach (var company in (await _linxMicrovixService.GetCompanys()).WithProgress("empresa"))
                 {
                     if (company.erp_chave is null)
                         continue;   // cliente sem o WS de saída padrão
@@ -956,7 +965,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                         continue;
                     }
 
-                    foreach (var cnpj_emp in stores)
+                    foreach (var cnpj_emp in stores.WithProgress("loja"))
                     {
                         // timestamp exclusivo: a API devolve só os maiores que o informado; banco vazio (0) traz o histórico inteiro
                         var timestamp = await _linxMicrovixService.GetLastTimestamp(company, EnumJob.LinxAntecipacoesFinanceirasPlanos, cnpj_emp);
@@ -965,6 +974,8 @@ namespace Application.LinxMicrovix.Outbound.Services
 
                         for (var page = 1; page <= MaxPages; page++)
                         {
+                            JobProgress.Step("página", page);
+
                             var requestBody = new XDocument(
                                 new XDeclaration("1.0", "utf-8", null),
                                 new XElement("LinxMicrovix",
@@ -1146,7 +1157,7 @@ namespace Application.LinxMicrovix.Outbound.Services
 
             try
             {
-                foreach (var company in await _linxMicrovixService.GetCompanys())
+                foreach (var company in (await _linxMicrovixService.GetCompanys()).WithProgress("empresa"))
                 {
                     if (company.erp_chave is null)
                         continue;   // cliente sem o WS de saída padrão
@@ -1159,7 +1170,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                         continue;
                     }
 
-                    foreach (var cnpj_emp in stores)
+                    foreach (var cnpj_emp in stores.WithProgress("loja"))
                     {
                         // timestamp exclusivo: a API devolve só os maiores que o informado; banco vazio (0) traz o histórico inteiro
                         var timestamp = await _linxMicrovixService.GetLastTimestamp(company, EnumJob.LinxDesfazimentosAntecipacoes, cnpj_emp);
@@ -1168,6 +1179,8 @@ namespace Application.LinxMicrovix.Outbound.Services
 
                         for (var page = 1; page <= MaxPages; page++)
                         {
+                            JobProgress.Step("página", page);
+
                             var requestBody = new XDocument(
                                 new XDeclaration("1.0", "utf-8", null),
                                 new XElement("LinxMicrovix",
@@ -1347,7 +1360,7 @@ namespace Application.LinxMicrovix.Outbound.Services
 
             try
             {
-                foreach (var company in await _linxMicrovixService.GetCompanys())
+                foreach (var company in (await _linxMicrovixService.GetCompanys()).WithProgress("empresa"))
                 {
                     if (company.erp_chave is null)
                         continue;   // cliente sem o WS de saída padrão
@@ -1360,7 +1373,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                         continue;
                     }
 
-                    foreach (var cnpj_emp in stores)
+                    foreach (var cnpj_emp in stores.WithProgress("loja"))
                     {
                         // timestamp exclusivo: a API devolve só os maiores que o informado; banco vazio (0) traz o histórico inteiro
                         var timestamp = await _linxMicrovixService.GetLastTimestamp(company, EnumJob.LinxDesfazimentosAntecipacoesDocumento, cnpj_emp);
@@ -1369,6 +1382,8 @@ namespace Application.LinxMicrovix.Outbound.Services
 
                         for (var page = 1; page <= MaxPages; page++)
                         {
+                            JobProgress.Step("página", page);
+
                             var requestBody = new XDocument(
                                 new XDeclaration("1.0", "utf-8", null),
                                 new XElement("LinxMicrovix",
@@ -1548,7 +1563,7 @@ namespace Application.LinxMicrovix.Outbound.Services
 
             try
             {
-                foreach (var company in await _linxMicrovixService.GetCompanys())
+                foreach (var company in (await _linxMicrovixService.GetCompanys()).WithProgress("empresa"))
                 {
                     if (company.erp_chave is null)
                         continue;   // cliente sem o WS de saída padrão
@@ -1561,7 +1576,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                         continue;
                     }
 
-                    foreach (var cnpj_emp in stores)
+                    foreach (var cnpj_emp in stores.WithProgress("loja"))
                     {
                         // timestamp exclusivo: a API devolve só os maiores que o informado; banco vazio (0) traz o histórico inteiro
                         var timestamp = await _linxMicrovixService.GetLastTimestamp(company, EnumJob.LinxDesfazimentosAntecipacoesItens, cnpj_emp);
@@ -1570,6 +1585,8 @@ namespace Application.LinxMicrovix.Outbound.Services
 
                         for (var page = 1; page <= MaxPages; page++)
                         {
+                            JobProgress.Step("página", page);
+
                             var requestBody = new XDocument(
                                 new XDeclaration("1.0", "utf-8", null),
                                 new XElement("LinxMicrovix",
@@ -1750,7 +1767,7 @@ namespace Application.LinxMicrovix.Outbound.Services
 
             try
             {
-                foreach (var company in await _linxMicrovixService.GetCompanys())
+                foreach (var company in (await _linxMicrovixService.GetCompanys()).WithProgress("empresa"))
                 {
                     if (company.erp_chave is null)
                         continue;   // cliente sem o WS de saída padrão
@@ -1764,7 +1781,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                     }
 
                     // a resposta não identifica a loja: o dado é do portal, lido pela primeira loja
-                    foreach (var cnpj_emp in stores.Take(1))
+                    foreach (var cnpj_emp in stores.Take(1).WithProgress("loja"))
                     {
                         // timestamp exclusivo: a API devolve só os maiores que o informado; banco vazio (0) traz o histórico inteiro
                         var timestamp = await _linxMicrovixService.GetLastTimestamp(company, EnumJob.LinxCategoriasFinanceiras, null);
@@ -1773,6 +1790,8 @@ namespace Application.LinxMicrovix.Outbound.Services
 
                         for (var page = 1; page <= MaxPages; page++)
                         {
+                            JobProgress.Step("página", page);
+
                             var requestBody = new XDocument(
                                 new XDeclaration("1.0", "utf-8", null),
                                 new XElement("LinxMicrovix",
@@ -1948,7 +1967,7 @@ namespace Application.LinxMicrovix.Outbound.Services
 
             try
             {
-                foreach (var company in await _linxMicrovixService.GetCompanys())
+                foreach (var company in (await _linxMicrovixService.GetCompanys()).WithProgress("empresa"))
                 {
                     if (company.erp_chave is null)
                         continue;   // cliente sem o WS de saída padrão
@@ -1961,7 +1980,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                         continue;
                     }
 
-                    foreach (var cnpj_emp in stores)
+                    foreach (var cnpj_emp in stores.WithProgress("loja"))
                     {
                         // timestamp exclusivo: a API devolve só os maiores que o informado; banco vazio (0) traz o histórico inteiro
                         var timestamp = await _linxMicrovixService.GetLastTimestamp(company, EnumJob.LinxCentroCusto, cnpj_emp);
@@ -1970,6 +1989,8 @@ namespace Application.LinxMicrovix.Outbound.Services
 
                         for (var page = 1; page <= MaxPages; page++)
                         {
+                            JobProgress.Step("página", page);
+
                             var requestBody = new XDocument(
                                 new XDeclaration("1.0", "utf-8", null),
                                 new XElement("LinxMicrovix",
@@ -2146,7 +2167,7 @@ namespace Application.LinxMicrovix.Outbound.Services
 
             try
             {
-                foreach (var company in await _linxMicrovixService.GetCompanys())
+                foreach (var company in (await _linxMicrovixService.GetCompanys()).WithProgress("empresa"))
                 {
                     if (company.erp_chave is null)
                         continue;   // cliente sem o WS de saída padrão
@@ -2159,7 +2180,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                         continue;
                     }
 
-                    foreach (var cnpj_emp in stores)
+                    foreach (var cnpj_emp in stores.WithProgress("loja"))
                     {
                         // timestamp exclusivo: a API devolve só os maiores que o informado; banco vazio (0) traz o histórico inteiro
                         var timestamp = await _linxMicrovixService.GetLastTimestamp(company, EnumJob.LinxPlanoContas, cnpj_emp);
@@ -2168,6 +2189,8 @@ namespace Application.LinxMicrovix.Outbound.Services
 
                         for (var page = 1; page <= MaxPages; page++)
                         {
+                            JobProgress.Step("página", page);
+
                             var requestBody = new XDocument(
                                 new XDeclaration("1.0", "utf-8", null),
                                 new XElement("LinxMicrovix",
@@ -2350,7 +2373,7 @@ namespace Application.LinxMicrovix.Outbound.Services
 
             try
             {
-                foreach (var company in await _linxMicrovixService.GetCompanys())
+                foreach (var company in (await _linxMicrovixService.GetCompanys()).WithProgress("empresa"))
                 {
                     if (company.erp_chave is null)
                         continue;   // cliente sem o WS de saída padrão
@@ -2366,7 +2389,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                         continue;
                     }
 
-                    foreach (var cnpj_emp in stores)
+                    foreach (var cnpj_emp in stores.WithProgress("loja"))
                     {
                         // timestamp exclusivo: a API devolve só os maiores que o informado; banco vazio (0) traz o histórico inteiro
                         var timestamp = await _linxMicrovixService.GetLastTimestamp(company, EnumJob.LinxLancContabil, cnpj_emp);
@@ -2375,6 +2398,8 @@ namespace Application.LinxMicrovix.Outbound.Services
 
                         for (var page = 1; page <= MaxPages; page++)
                         {
+                            JobProgress.Step("página", page);
+
                             var requestBody = new XDocument(
                                 new XDeclaration("1.0", "utf-8", null),
                                 new XElement("LinxMicrovix",
@@ -2570,7 +2595,7 @@ namespace Application.LinxMicrovix.Outbound.Services
 
             try
             {
-                foreach (var company in await _linxMicrovixService.GetCompanys())
+                foreach (var company in (await _linxMicrovixService.GetCompanys()).WithProgress("empresa"))
                 {
                     if (company.erp_chave is null)
                         continue;   // cliente sem o WS de saída padrão
@@ -2584,7 +2609,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                     }
 
                     // a resposta não identifica a loja: o dado é do portal, lido pela primeira loja
-                    foreach (var cnpj_emp in stores.Take(1))
+                    foreach (var cnpj_emp in stores.Take(1).WithProgress("loja"))
                     {
                         // timestamp exclusivo: a API devolve só os maiores que o informado; banco vazio (0) traz o histórico inteiro
                         var timestamp = await _linxMicrovixService.GetLastTimestamp(company, EnumJob.LinxHistoricosContabeis, null);
@@ -2593,6 +2618,8 @@ namespace Application.LinxMicrovix.Outbound.Services
 
                         for (var page = 1; page <= MaxPages; page++)
                         {
+                            JobProgress.Step("página", page);
+
                             var requestBody = new XDocument(
                                 new XDeclaration("1.0", "utf-8", null),
                                 new XElement("LinxMicrovix",
@@ -2774,7 +2801,7 @@ namespace Application.LinxMicrovix.Outbound.Services
 
             try
             {
-                foreach (var company in await _linxMicrovixService.GetCompanys())
+                foreach (var company in (await _linxMicrovixService.GetCompanys()).WithProgress("empresa"))
                 {
                     if (company.erp_chave is null)
                         continue;   // cliente sem o WS de saída padrão
@@ -2788,7 +2815,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                     }
 
                     // a resposta não identifica a loja: o dado é do portal, lido pela primeira loja
-                    foreach (var cnpj_emp in stores.Take(1))
+                    foreach (var cnpj_emp in stores.Take(1).WithProgress("loja"))
                     {
                         // timestamp exclusivo: a API devolve só os maiores que o informado; banco vazio (0) traz o histórico inteiro
                         var timestamp = await _linxMicrovixService.GetLastTimestamp(company, EnumJob.LinxExtratoBancarioLancamentos, null);
@@ -2797,6 +2824,8 @@ namespace Application.LinxMicrovix.Outbound.Services
 
                         for (var page = 1; page <= MaxPages; page++)
                         {
+                            JobProgress.Step("página", page);
+
                             var requestBody = new XDocument(
                                 new XDeclaration("1.0", "utf-8", null),
                                 new XElement("LinxMicrovix",
@@ -2975,7 +3004,7 @@ namespace Application.LinxMicrovix.Outbound.Services
 
             try
             {
-                foreach (var company in await _linxMicrovixService.GetCompanys())
+                foreach (var company in (await _linxMicrovixService.GetCompanys()).WithProgress("empresa"))
                 {
                     if (company.erp_chave is null)
                         continue;   // cliente sem o WS de saída padrão
@@ -2989,7 +3018,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                     }
 
                     // a resposta não identifica a loja: o dado é do portal, lido pela primeira loja
-                    foreach (var cnpj_emp in stores.Take(1))
+                    foreach (var cnpj_emp in stores.Take(1).WithProgress("loja"))
                     {
                         // timestamp exclusivo: a API devolve só os maiores que o informado; banco vazio (0) traz o histórico inteiro
                         var timestamp = await _linxMicrovixService.GetLastTimestamp(company, EnumJob.LinxExtratoBancarioConciliacoes, null);
@@ -2998,6 +3027,8 @@ namespace Application.LinxMicrovix.Outbound.Services
 
                         for (var page = 1; page <= MaxPages; page++)
                         {
+                            JobProgress.Step("página", page);
+
                             var requestBody = new XDocument(
                                 new XDeclaration("1.0", "utf-8", null),
                                 new XElement("LinxMicrovix",

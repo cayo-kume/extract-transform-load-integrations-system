@@ -50,7 +50,7 @@ namespace Application.LinxCommerce.Services
 
             try
             {
-                foreach (var company in await _linxCommerceService.GetCompanys())
+                foreach (var company in (await _linxCommerceService.GetCompanys()).WithProgress("empresa"))
                 {
                     var batchTime = _linxCommerceService.GetBatchTime();
 
@@ -153,7 +153,7 @@ namespace Application.LinxCommerce.Services
 
             try
             {
-                foreach (var company in await _linxCommerceService.GetCompanys())
+                foreach (var company in (await _linxCommerceService.GetCompanys()).WithProgress("empresa"))
                 {
                     var batchTime = _linxCommerceService.GetBatchTime();
 

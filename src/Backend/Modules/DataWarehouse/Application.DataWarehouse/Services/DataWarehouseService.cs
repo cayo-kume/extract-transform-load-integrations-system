@@ -6,6 +6,7 @@ using Domain.DataWarehouse.Enums;
 using Microsoft.Extensions.Configuration;
 using System.Diagnostics;
 using Application.Shared.Attributes;
+using Domain.Shared.Extensions;
 
 namespace Application.DataWarehouse.Services
 {
@@ -103,10 +104,10 @@ namespace Application.DataWarehouse.Services
                 var sources = (await _dataWarehouseRepository.GetLandingSourcesBySchema("linxmicrovix")).ToList();
 
                 // passos 2 e 4 da 10.1, só para o Linx: landing e o snapshot único
-                foreach (var source in sources)
+                foreach (var source in sources.WithProgress("landing"))
                     await Step($"[dw_landing].[sp_{source.source_table}_Load]");
 
-                foreach (var source in sources.Where(x => x.history_frequency == "once"))
+                foreach (var source in sources.Where(x => x.history_frequency == "once").WithProgress("snapshot"))
                     await Step($"[dw_history].[sp_{source.source_table}_Snapshot]");
 
                 // passo 5: clientes Linx
@@ -155,7 +156,7 @@ namespace Application.DataWarehouse.Services
             {
                 var sources = (await _dataWarehouseRepository.GetLandingSources()).Where(x => ShortCycleTables.Contains(x.source_table));
 
-                foreach (var source in sources)
+                foreach (var source in sources.WithProgress("landing"))
                     await Step($"[dw_landing].[sp_{source.source_table}_Load]");
 
                 await Step("[dw_personal_data].sp_Customer_Load");
@@ -196,16 +197,16 @@ namespace Application.DataWarehouse.Services
                 var sources = (await _dataWarehouseRepository.GetLandingSources()).ToList();
 
                 // passo 2: landing
-                foreach (var source in sources)
+                foreach (var source in sources.WithProgress("landing"))
                     await Step($"[dw_landing].[sp_{source.source_table}_Load]");
 
                 // passo 3: filhas apagadas na origem (uma vez por dia)
                 if (daily)
-                    foreach (var source in sources.Where(x => x.detect_missing))
+                    foreach (var source in sources.Where(x => x.detect_missing).WithProgress("detect missing"))
                         await Step($"[dw_landing].[sp_{source.source_table}_DetectMissing]");
 
                 // passo 4: snapshots (os diários só no ciclo diário)
-                foreach (var source in sources.Where(x => x.history_frequency == "hourly" || (daily && x.history_frequency == "daily")))
+                foreach (var source in sources.Where(x => x.history_frequency == "hourly" || (daily && x.history_frequency == "daily")).WithProgress("snapshot"))
                     await Step($"[dw_history].[sp_{source.source_table}_Snapshot]");
 
                 // passo 5: dado pessoal

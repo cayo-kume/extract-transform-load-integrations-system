@@ -1,5 +1,7 @@
 using Domain.Shared.Abstractions.Api;
+using Domain.Shared.Extensions;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 using System.Net.Http.Headers;
 using System.Text;
 
@@ -26,7 +28,9 @@ namespace Infrastructure.Shared.Api
 
             _logger.LogDebug("[ApiClient] GET {Url}", url);
 
+            var started = Stopwatch.GetTimestamp();
             var response = await client.GetAsync(url);
+            JobProgress.ApiCall("GET", route, (int)response.StatusCode, Stopwatch.GetElapsedTime(started));
             var content = await response.Content.ReadAsStringAsync();
 
             _logger.LogDebug("[ApiClient] GET {Url} → {StatusCode}", url, response.StatusCode);
@@ -44,7 +48,9 @@ namespace Infrastructure.Shared.Api
 
             _logger.LogDebug("[ApiClient] POST {Url} Body: {Body}", url, json);
 
+            var started = Stopwatch.GetTimestamp();
             var response = await client.PostAsync(url, httpContent);
+            JobProgress.ApiCall("POST", route, (int)response.StatusCode, Stopwatch.GetElapsedTime(started));
             var content = await response.Content.ReadAsStringAsync();
 
             _logger.LogDebug("[ApiClient] POST {Url} → {StatusCode}", url, response.StatusCode);
@@ -62,7 +68,9 @@ namespace Infrastructure.Shared.Api
 
             _logger.LogDebug("[ApiClient] PUT {Url} Body: {Body}", url, json);
 
+            var started = Stopwatch.GetTimestamp();
             var response = await client.PutAsync(url, httpContent);
+            JobProgress.ApiCall("PUT", route, (int)response.StatusCode, Stopwatch.GetElapsedTime(started));
             var content = await response.Content.ReadAsStringAsync();
 
             _logger.LogDebug("[ApiClient] PUT {Url} → {StatusCode}", url, response.StatusCode);
@@ -85,7 +93,9 @@ namespace Infrastructure.Shared.Api
 
             _logger.LogDebug("[ApiClient] DELETE {Url}", url);
 
+            var started = Stopwatch.GetTimestamp();
             var response = await client.SendAsync(request);
+            JobProgress.ApiCall("DELETE", route, (int)response.StatusCode, Stopwatch.GetElapsedTime(started));
             var content = await response.Content.ReadAsStringAsync();
 
             _logger.LogDebug("[ApiClient] DELETE {Url} → {StatusCode}", url, response.StatusCode);
@@ -102,7 +112,9 @@ namespace Infrastructure.Shared.Api
 
             _logger.LogDebug("[ApiClient] POST-FORM {Url}", url);
 
+            var started = Stopwatch.GetTimestamp();
             var response = await client.PostAsync(url, httpContent);
+            JobProgress.ApiCall("POST", route, (int)response.StatusCode, Stopwatch.GetElapsedTime(started));
             var content = await response.Content.ReadAsStringAsync();
 
             _logger.LogDebug("[ApiClient] POST-FORM {Url} → {StatusCode}", url, response.StatusCode);
@@ -127,7 +139,9 @@ namespace Infrastructure.Shared.Api
 
             _logger.LogDebug("[ApiClient] POST-MULTIPART {Url} File: {FileName}", url, fileName);
 
+            var started = Stopwatch.GetTimestamp();
             var response = await client.PostAsync(url, httpContent);
+            JobProgress.ApiCall("POST", route, (int)response.StatusCode, Stopwatch.GetElapsedTime(started));
             var content = await response.Content.ReadAsStringAsync();
 
             _logger.LogDebug("[ApiClient] POST-MULTIPART {Url} → {StatusCode}", url, response.StatusCode);
@@ -145,7 +159,9 @@ namespace Infrastructure.Shared.Api
 
             _logger.LogDebug("[ApiClient] {Method} {Route}", method, route);
 
+            var started = Stopwatch.GetTimestamp();
             using var response = await client.SendAsync(request);
+            JobProgress.ApiCall(method.Method, route, (int)response.StatusCode, Stopwatch.GetElapsedTime(started));
             var body = await response.Content.ReadAsStringAsync();
 
             // cabeçalhos da resposta e do conteúdo juntos (retry-after vem na resposta, content-type no conteúdo)

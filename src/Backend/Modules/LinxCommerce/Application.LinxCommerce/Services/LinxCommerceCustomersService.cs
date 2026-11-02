@@ -4,6 +4,7 @@ using Domain.LinxCommerce.Abstractions.Repositorys;
 using Domain.LinxCommerce.Enums;
 using FluentValidation;
 using Application.Shared.Attributes;
+using Domain.Shared.Extensions;
 
 namespace Application.LinxCommerce.Services
 {
@@ -40,7 +41,7 @@ namespace Application.LinxCommerce.Services
 
             try
             {
-                foreach (var company in await _linxCommerceService.GetCompanys())
+                foreach (var company in (await _linxCommerceService.GetCompanys()).WithProgress("empresa"))
                 {
                     var batchTime = _linxCommerceService.GetBatchTime();
 

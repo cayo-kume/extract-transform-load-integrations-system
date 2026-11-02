@@ -69,7 +69,7 @@ namespace Application.AfterSale.Services
             var companys = await _afterSaleRepository.GetCompanys();
             var _listErrors = new List<Domain.AfterSale.Entities.Errors.Error>();
 
-            foreach (var company in companys)
+            foreach (var company in companys.WithProgress("empresa"))
             {
                 var summarizedRefunds = new List<Domain.AfterSale.Dtos.Reads.Refunds.SearchRefunds.Refund>();
                 var listResponses = new List<string>();
@@ -246,7 +246,7 @@ namespace Application.AfterSale.Services
             var totalInseridos = 0;
             var companys = await _afterSaleRepository.GetCompanys();
 
-            foreach (var company in companys)
+            foreach (var company in companys.WithProgress("empresa"))
             {
                 var response = await _apiClient.GetAsync(
                     route: "v3/api/refunds/actions",
@@ -342,7 +342,7 @@ namespace Application.AfterSale.Services
             var totalInseridos = 0;
             var companys = await _afterSaleRepository.GetCompanys();
 
-            foreach (var company in companys)
+            foreach (var company in companys.WithProgress("empresa"))
             {
                 var response = await _apiClient.GetAsync(
                     route: "v3/api/refunds/banks",
@@ -440,7 +440,7 @@ namespace Application.AfterSale.Services
             var summarizedRefunds = await _afterSaleRefundsRepository.GetSummarizedRefundsIdsForGetRefund();
             var _listErrors = new List<Domain.AfterSale.Entities.Errors.Error>();
 
-            foreach (var refundsByCompany in summarizedRefunds.Where(x => x != null).GroupBy(x => x!.doc_company))
+            foreach (var refundsByCompany in summarizedRefunds.Where(x => x != null).GroupBy(x => x!.doc_company).ToList().WithProgress("empresa"))
             {
                 var company = companys.FirstOrDefault(x => x?.doc_company == refundsByCompany.Key);
 
@@ -453,7 +453,7 @@ namespace Application.AfterSale.Services
                 var refundsDtosList = new List<Domain.AfterSale.Dtos.Reads.Refunds.GetRefund.Root>();
                 var refundsJson = new Dictionary<long, string>();
 
-                foreach (var summarizedRefund in refundsByCompany)
+                foreach (var summarizedRefund in refundsByCompany.ToList().WithProgress("reembolso"))
                 {
                     var response = await _apiClient.GetAsync(
                         route: $"v3/api/refunds/{summarizedRefund!.id}",
@@ -694,7 +694,7 @@ namespace Application.AfterSale.Services
             var totalInseridos = 0;
             var companys = await _afterSaleRepository.GetCompanys();
 
-            foreach (var company in companys)
+            foreach (var company in companys.WithProgress("empresa"))
             {
                 var response = await _apiClient.GetAsync(
                     route: "v3/api/refunds/status",
@@ -790,7 +790,7 @@ namespace Application.AfterSale.Services
             var totalInseridos = 0;
             var companys = await _afterSaleRepository.GetCompanys();
 
-            foreach (var company in companys)
+            foreach (var company in companys.WithProgress("empresa"))
             {
                 var response = await _apiClient.GetAsync(
                     route: "v3/api/refunds/types",

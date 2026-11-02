@@ -193,7 +193,7 @@ namespace Application.Movidesk.Services
             // início da última chamada à API: os 6 s do limite contam a partir dele
             var lastRequestAt = DateTime.MinValue;
 
-            foreach (var company in companys)
+            foreach (var company in companys.WithProgress("empresa"))
             {
                 if (company?.doc_company is null)
                     continue;
@@ -209,6 +209,8 @@ namespace Application.Movidesk.Services
 
                 while (true)
                 {
+                    JobProgress.Step("página", skip / IdsPageSize + 1);
+
                     // espera o que falta para 6 s desde o início da chamada anterior (limite de 10 requisições por minuto)
                     var wait = lastRequestAt.AddMilliseconds(RequestIntervalInMilliseconds) - DateTime.UtcNow;
 
@@ -312,7 +314,7 @@ namespace Application.Movidesk.Services
 
                 var apiFailed = false;
 
-                foreach (var block in blocks)
+                foreach (var block in blocks.WithProgress("bloco"))
                 {
                     // fase 2: busca o bloco com uma chamada por grupo do $expand e junta as respostas por id
                     var filter = $"id ge {block[0]} and id le {block[^1]} and lastUpdate ge {since:yyyy-MM-ddTHH:mm:ss}.00z";

@@ -77,7 +77,7 @@ namespace Application.Totvs.Services
 
             try
             {
-                foreach (var company in await _totvsService.GetCompanys())
+                foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
                     // branchCodeList é obrigatório (swagger): todas as lojas da holding
                     var branchCodes = await _totvsService.GetBranchCodes(company);
@@ -97,6 +97,7 @@ namespace Application.Totvs.Services
                     for (var windowStart = since; windowStart < endDate; windowStart = windowStart.AddDays(InvoicesWindowDays))
                     {
                         var windowEnd = windowStart.AddDays(InvoicesWindowDays) < endDate ? windowStart.AddDays(InvoicesWindowDays) : endDate;
+                        JobProgress.Window(windowStart, windowEnd, since, endDate);
 
                         var invoices = new List<Domain.Totvs.Dtos.Reads.Invoices.Invoice>();
                         var invoicesJson = new Dictionary<(int, int, DateTime), string>();
@@ -256,6 +257,8 @@ namespace Application.Totvs.Services
 
                         while (page <= totalPages)
                         {
+                            JobProgress.Step("página", page, totalPages);
+
                             var result = await ReadPage(page, InvoicesPageSize);
 
                             if (result is null)
@@ -506,7 +509,7 @@ namespace Application.Totvs.Services
 
             try
             {
-                foreach (var company in await _totvsService.GetCompanys())
+                foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
                     // BranchCodeList é obrigatório (400 EmptyField, testado): as lojas vão repetidas na rota (BranchCodeList=1&BranchCodeList=2),
                     // porque os parâmetros de query do IApiClient são um dicionário; o BuildUrl junta o resto com &
@@ -528,6 +531,7 @@ namespace Application.Totvs.Services
                     for (var windowStart = since; windowStart < endDate; windowStart = windowStart.AddDays(InvoicesWindowDays))
                     {
                         var windowEnd = windowStart.AddDays(InvoicesWindowDays) < endDate ? windowStart.AddDays(InvoicesWindowDays) : endDate;
+                        JobProgress.Window(windowStart, windowEnd, since, endDate);
 
                         var items = await GetFiscalPages<Domain.Totvs.Dtos.Reads.Invoices.InvoiceDisable>(company, route, page => new Dictionary<string, string>
                         {
@@ -637,7 +641,7 @@ namespace Application.Totvs.Services
 
             try
             {
-                foreach (var company in await _totvsService.GetCompanys())
+                foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
                     var batchTime = _totvsService.GetBatchTime();
 
@@ -1154,6 +1158,8 @@ namespace Application.Totvs.Services
 
             while (page <= totalPages)
             {
+                JobProgress.Step("página", page, totalPages);
+
                 // uma nova tentativa: 401 renova o token, 429 espera o Retry-After e 502/503/504 espera 10 s
                 ApiResponse? response = null;
 
