@@ -27,7 +27,9 @@ namespace Application.LinxCommerce.Services
         private readonly ILoggerService _logger;
         private readonly IMemoryCache _cache;
         private readonly ILinxCommerceRepository _linxCommerceRepository;
+        private readonly ICompanyContext _companyContext;
 
+        // mais a empresa da execução: a consulta só traz os CNPJs dela (monitor.HoldingCompanies), e o processo atende várias
         private const string ParametersKey = "LinxCommerce:Parameters";
 
         // o código antigo usava 500 no SearchOrders; as outras buscas liam uma página de 1000 ou 10000 sem paginar
@@ -49,15 +51,17 @@ namespace Application.LinxCommerce.Services
         [GeneratedRegex(@"^\d{14}$")]
         private static partial Regex Cnpj();
 
-        public LinxCommerceService([FromKeyedServices("LinxCommerceAPI")] IApiClient apiClient, ILoggerService logger, IMemoryCache cache, ILinxCommerceRepository linxCommerceRepository) =>
-            (_apiClient, _logger, _cache, _linxCommerceRepository) = (apiClient, logger, cache, linxCommerceRepository);
+        public LinxCommerceService([FromKeyedServices("LinxCommerceAPI")] IApiClient apiClient, ILoggerService logger, IMemoryCache cache, ILinxCommerceRepository linxCommerceRepository, ICompanyContext companyContext) =>
+            (_apiClient, _logger, _cache, _linxCommerceRepository, _companyContext) = (apiClient, logger, cache, linxCommerceRepository, companyContext);
 
         public DateTime GetBatchTime() =>
             TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time"));
 
         public async Task<IEnumerable<Company>> GetCompanys()
         {
-            if (_cache.TryGetValue(ParametersKey, out List<Company>? cached) && cached is not null)
+            var key = $"{ParametersKey}:{_companyContext.Company ?? throw new InvalidOperationException("Parâmetros do módulo sem a empresa da execução: informe ICompanyContext.SetCompany.")}";
+
+            if (_cache.TryGetValue(key, out List<Company>? cached) && cached is not null)
                 return cached;
 
             var companys = new List<Company>();
@@ -86,7 +90,7 @@ namespace Application.LinxCommerce.Services
 
             // tabela vazia não entra no cache: um insert em LinxCommerceParameters vale já na próxima execução
             if (companys.Count > 0)
-                _cache.Set(ParametersKey, companys, new MemoryCacheEntryOptions
+                _cache.Set(key, companys, new MemoryCacheEntryOptions
                 {
                     AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(2),
                     SlidingExpiration = TimeSpan.FromMinutes(30)

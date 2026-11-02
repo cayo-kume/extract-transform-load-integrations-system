@@ -13,7 +13,7 @@ namespace Application.LinxCommerce.Abstractions.Services
         public DateTime GetBatchTime();
 
         /// <summary>
-        /// clientes de linxcommerce.LinxCommerceParameters com CNPJ, endereço e credenciais preenchidos (cache LinxCommerce:Parameters)
+        /// clientes de linxcommerce.LinxCommerceParameters com CNPJ, endereço e credenciais preenchidos ligados à empresa da execução (cache LinxCommerce:Parameters:<empresa>)
         /// </summary>
         public Task<IEnumerable<Company>> GetCompanys();
 

@@ -22,22 +22,26 @@ namespace Application.Totvs.Services
         private readonly IMemoryCache _cache;
         private readonly ITotvsRepository _totvsRepository;
         private readonly IConfiguration _configuration;
+        private readonly ICompanyContext _companyContext;
 
+        // mais a empresa da execução: a consulta só traz os CNPJs dela (monitor.HoldingCompanies), e o processo atende várias
         private const string ParametersKey = "Totvs:Parameters";
         private const string TokenKey = "Totvs:Token";
 
         // janela da trava de repetição das escritas não idempotentes (T5)
         private const int RepeatLockMinutes = 10;
 
-        public TotvsService([FromKeyedServices("TotvsAPI")] IApiClient apiClient, ILoggerService logger, IMemoryCache cache, ITotvsRepository totvsRepository, IConfiguration configuration) =>
-            (_apiClient, _logger, _cache, _totvsRepository, _configuration) = (apiClient, logger, cache, totvsRepository, configuration);
+        public TotvsService([FromKeyedServices("TotvsAPI")] IApiClient apiClient, ILoggerService logger, IMemoryCache cache, ITotvsRepository totvsRepository, IConfiguration configuration, ICompanyContext companyContext) =>
+            (_apiClient, _logger, _cache, _totvsRepository, _configuration, _companyContext) = (apiClient, logger, cache, totvsRepository, configuration, companyContext);
 
         public DateTime GetBatchTime() =>
             TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time"));
 
         public async Task<IEnumerable<Company>> GetCompanys()
         {
-            if (_cache.TryGetValue(ParametersKey, out List<Company>? cached) && cached is not null)
+            var key = $"{ParametersKey}:{_companyContext.Company ?? throw new InvalidOperationException("Parâmetros do módulo sem a empresa da execução: informe ICompanyContext.SetCompany.")}";
+
+            if (_cache.TryGetValue(key, out List<Company>? cached) && cached is not null)
                 return cached;
 
             var companys = (await _totvsRepository.GetCompanys())
@@ -47,7 +51,7 @@ namespace Application.Totvs.Services
 
             // tabela vazia não entra no cache: um insert em TotvsParameters vale já na próxima execução
             if (companys.Count > 0)
-                _cache.Set(ParametersKey, companys, new MemoryCacheEntryOptions
+                _cache.Set(key, companys, new MemoryCacheEntryOptions
                 {
                     AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(2),
                     SlidingExpiration = TimeSpan.FromMinutes(30)

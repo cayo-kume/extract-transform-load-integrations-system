@@ -16,7 +16,9 @@ namespace Application.LinxMicrovix.Outbound.Services
         private readonly IMemoryCache _cache;
         private readonly ILoggerService _logger;
         private readonly ILinxMicrovixRepository _linxMicrovixRepository;
+        private readonly ICompanyContext _companyContext;
 
+        // mais a empresa da execução: a consulta só traz os CNPJs dela (monitor.HoldingCompanies), e o processo atende várias
         private const string ParametersKey = "LinxMicrovix:Parameters";
 
         // CNPJ entra interpolado nas queries: só passa com 14 dígitos
@@ -25,15 +27,17 @@ namespace Application.LinxMicrovix.Outbound.Services
         // nomes de coluna vêm do código dos services (lista fechada), mas também entram interpolados: só identificadores
         private static readonly Regex ColumnPattern = new(@"^[A-Za-z_][A-Za-z0-9_]*$", RegexOptions.Compiled);
 
-        public LinxMicrovixService(IMemoryCache cache, ILoggerService logger, ILinxMicrovixRepository linxMicrovixRepository) =>
-            (_cache, _logger, _linxMicrovixRepository) = (cache, logger, linxMicrovixRepository);
+        public LinxMicrovixService(IMemoryCache cache, ILoggerService logger, ILinxMicrovixRepository linxMicrovixRepository, ICompanyContext companyContext) =>
+            (_cache, _logger, _linxMicrovixRepository, _companyContext) = (cache, logger, linxMicrovixRepository, companyContext);
 
         public DateTime GetBatchTime() =>
             TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time"));
 
         public async Task<IEnumerable<Company>> GetCompanys()
         {
-            if (_cache.TryGetValue(ParametersKey, out List<Company>? cached) && cached is not null)
+            var key = $"{ParametersKey}:{_companyContext.Company ?? throw new InvalidOperationException("Parâmetros do módulo sem a empresa da execução: informe ICompanyContext.SetCompany.")}";
+
+            if (_cache.TryGetValue(key, out List<Company>? cached) && cached is not null)
                 return cached;
 
             var companys = (await _linxMicrovixRepository.GetCompanys())
@@ -43,7 +47,7 @@ namespace Application.LinxMicrovix.Outbound.Services
 
             // tabela vazia não entra no cache: um insert em LinxMicrovixParameters vale já na próxima execução
             if (companys.Count > 0)
-                _cache.Set(ParametersKey, companys, new MemoryCacheEntryOptions
+                _cache.Set(key, companys, new MemoryCacheEntryOptions
                 {
                     AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(2),
                     SlidingExpiration = TimeSpan.FromMinutes(30)
