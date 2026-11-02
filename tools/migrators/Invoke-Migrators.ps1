@@ -6,9 +6,13 @@
 
 .DESCRIPTION
     A tela tem o catálogo das aplicações (as pastas Scripts/SQLServer com migrator.csx) e roda os marcados na ordem do
-    docs/MIGRATOR-CSX.md: Shared (sempre), as integrações, o DataWarehouse e o host Worker. Cada
+    docs/MIGRATOR-CSX.md: Shared (sempre), as integrações, o DataWarehouse e o host de agenda. Cada
     migrator roda com `dotnet script migrator.csx -- "<connection string>"` a partir de uma unidade subst, que encurta o
     caminho e evita o erro de MAX_PATH do SQL Client. No primeiro erro, os seguintes não rodam: eles dependem dos anteriores.
+
+    O host de agenda é um só por banco (README, "Um host de agenda por vez"): o Worker (Quartz.NET) roda o próprio
+    migrator, com as tabelas do schema quartz; o WebApi (Hangfire) cria o schema HangFire sozinho ao subir; o WebJob não tem
+    tabelas. No fim, o log diz o que configurar em cada host para ele ser o único a agendar.
 
     O banco é criado pelo próprio DbUp se não existir. Os migrators não inserem dados de cliente: a empresa e os parâmetros
     entram depois, pela tela do WebApp ou, em teste, por tools/seeds/Import-TestSeeds.ps1.
@@ -32,6 +36,10 @@
 .PARAMETER Apps
     Com -NoGui, só estas aplicações (o Shared entra sempre); sem ele, as marcadas por padrão na tela.
 
+.PARAMETER SchedulingHost
+    Host que agenda as integrações: WebApi (Hangfire), WebJob (Azure) ou Worker (Quartz.NET). Obrigatório com -NoGui; na
+    tela, deixa o host já escolhido.
+
 .PARAMETER NoGui
     Roda sem a tela, no console, com os parâmetros acima.
 
@@ -42,7 +50,7 @@
     ./tools/migrators/Invoke-Migrators.ps1 -Server 10.0.0.15 -Port 1433 -Database NEWBLOOMERS
 
 .EXAMPLE
-    ./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -Apps Totvs,DataWarehouse
+    ./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -Apps Totvs,DataWarehouse -SchedulingHost Worker
 #>
 [CmdletBinding()]
 param(
@@ -51,8 +59,10 @@ param(
     [int]$Port = 1433,
     [string]$Database = 'NEWBLOOMERS',
     [pscredential]$Credential,
-    [ValidateSet('Totvs', 'LinxMicrovix', 'LinxCommerce', 'Movidesk', 'AfterSale', 'DataWarehouse', 'Worker')]
+    [ValidateSet('Totvs', 'LinxMicrovix', 'LinxCommerce', 'Movidesk', 'AfterSale', 'DataWarehouse')]
     [string[]]$Apps,
+    [ValidateSet('WebApi', 'WebJob', 'Worker')]
+    [string]$SchedulingHost,
     [switch]$NoGui
 )
 
@@ -81,11 +91,40 @@ $catalog = @(
         Description = 'AfterSale: trocas e devoluções' }
     @{ Name = 'DataWarehouse'; Group = 'Análise'; Default = $true; Folder = 'Modules/DataWarehouse/Infrastructure.DataWarehouse'
         Description = 'Roda depois das integrações: lê as tabelas delas' }
-    @{ Name = 'Worker'; Group = 'Hosts'; Folder = 'Hosts/Worker'
-        Description = 'Tabelas do Quartz.NET (schema quartz), só se o Worker for o orquestrador' }
 )
 
-foreach ($app in $catalog) {
+# hosts de agenda: um só agenda no banco. Só o Worker tem migrator (as tabelas do Quartz, por último, depois do Shared);
+# Steps é o que acertar para ele ser o único (src/Backend/Hosts/<host>/README.md)
+$schedulingHosts = [ordered]@{
+    WebApi = @{
+        Title = 'WebApi (Hangfire)'
+        Description = 'Hangfire junto das rotas do WebApi. O schema HangFire é criado pelo próprio Hangfire quando o WebApi sobe.'
+        Steps = @(
+            'WebApi: Hangfire:Enabled = true (o schema HangFire é criado na primeira subida)'
+            'Worker: serviço EtlWorker parado ou Quartz:Enabled = false; WebJobs parados no App Service'
+        )
+    }
+    WebJob = @{
+        Title = 'WebJob (Azure)'
+        Description = 'Um WebJob contínuo por job no App Service. Não tem tabelas: a agenda é a auditing.Jobs.'
+        Steps = @(
+            'WebApi: Hangfire:Enabled = false (as rotas continuam para disparo manual)'
+            'Worker: serviço EtlWorker parado ou Quartz:Enabled = false'
+            'Publicar os WebJobs com src/Backend/Hosts/WebJob/Publish/publish-webjob.ps1'
+        )
+    }
+    Worker = @{
+        Title = 'Worker (Quartz.NET)'
+        Description = 'Serviço do Windows EtlWorker com o Quartz.NET em cluster. Sobe as tabelas do Quartz (schema quartz).'
+        App = @{ Name = 'Worker'; Folder = 'Hosts/Worker' }
+        Steps = @(
+            'WebApi: Hangfire:Enabled = false (as rotas continuam para disparo manual); WebJobs parados no App Service'
+            'Publicar o serviço com src/Backend/Hosts/Worker/Publish/publish-worker.ps1'
+        )
+    }
+}
+
+foreach ($app in @($catalog) + @($schedulingHosts.Values | Where-Object App | ForEach-Object App)) {
     $app.Path = Join-Path $backend $app.Folder 'Scripts/SQLServer'
     $app.Scripts = @(Get-ChildItem -LiteralPath $app.Path -Filter '*.sql' -Recurse -File -ErrorAction SilentlyContinue).Count
 }
@@ -95,7 +134,7 @@ foreach ($app in $catalog) {
 # ---------------------------------------------------------------------------------------------------------------------
 
 $worker = {
-    param($apps, [string]$connectionString, [string[]]$secrets, $queue, $state)
+    param($apps, [string]$connectionString, [string[]]$secrets, $queue, $state, $schedulingHost)
 
     function Write-Line([string]$text, [string]$kind = 'out') {
         foreach ($secret in $secrets) {
@@ -185,6 +224,10 @@ $worker = {
     $state.Successful = $true
     Write-Line '' 'out'
     Write-Line "Concluído: $($apps.Count) aplicações aplicadas." 'ok'
+    Write-Line '' 'out'
+    Write-Line "Host de agenda: $($schedulingHost.Title). Para ele ser o único a agendar:" 'step'
+
+    foreach ($step in $schedulingHost.Steps) { Write-Line "  - $step" 'out' }
 }
 
 function New-ConnectionString([string]$server, [int]$port, [string]$database, [string]$user, [string]$password, [bool]$trust) {
@@ -208,13 +251,13 @@ function Get-Secrets([string]$password) {
     @($password, ($builder.ConnectionString -replace '^password=', '')) | Select-Object -Unique
 }
 
-function Start-Migration($apps, [string]$connectionString, [string[]]$secrets) {
+function Start-Migration($apps, [string]$connectionString, [string[]]$secrets, $schedulingHost) {
     $queue = [Collections.Concurrent.ConcurrentQueue[object]]::new()
     $state = [hashtable]::Synchronized(@{ Cancel = $false; Process = $null; Successful = $false })
 
     $powershell = [powershell]::Create()
     $null = $powershell.AddScript($worker).AddArgument($apps).AddArgument($connectionString).AddArgument($secrets).
-        AddArgument($queue).AddArgument($state)
+        AddArgument($queue).AddArgument($state).AddArgument($schedulingHost)
 
     [pscustomobject]@{ PowerShell = $powershell; Handle = $powershell.BeginInvoke(); Queue = $queue; State = $state }
 }
@@ -233,17 +276,21 @@ $missingTool = 'O dotnet-script não está instalado. Instale com: dotnet tool i
 # ---------------------------------------------------------------------------------------------------------------------
 
 if ($NoGui) {
+    if (-not $SchedulingHost) { throw 'Informe o host de agenda com -SchedulingHost (WebApi, WebJob ou Worker).' }
+
     if (-not (Test-DotnetScript)) { throw $missingTool }
 
     if (-not $Credential) { $Credential = Get-Credential -Message "SQL Server $Server,$Port" }
 
-    $selected = $catalog | Where-Object { $_.Required -or ($Apps ? $_.Name -in $Apps : $_.Default) }
+    $schedulingHostInfo = $schedulingHosts[$SchedulingHost]
+    $selected = @($catalog | Where-Object { $_.Required -or ($Apps ? $_.Name -in $Apps : $_.Default) }) +
+        @($schedulingHostInfo.App | Where-Object { $_ })
     $password = $Credential.GetNetworkCredential().Password
     $connectionString = New-ConnectionString $Server $Port $Database $Credential.UserName $password $true
 
-    Write-Host "Servidor $Server,$Port, banco ${Database}: $(($selected | ForEach-Object Name) -join ', ')"
+    Write-Host "Servidor $Server,$Port, banco ${Database}, host de agenda $($schedulingHostInfo.Title): $(($selected | ForEach-Object Name) -join ', ')"
 
-    $run = Start-Migration $selected $connectionString (Get-Secrets $password)
+    $run = Start-Migration $selected $connectionString (Get-Secrets $password) $schedulingHostInfo
     $colors = @{ out = 'Gray'; step = 'Cyan'; ok = 'Green'; error = 'Red'; warn = 'Yellow' }
 
     while (-not $run.Handle.IsCompleted -or -not $run.Queue.IsEmpty) {
@@ -268,6 +315,7 @@ if ($NoGui) {
 
 if ([Threading.Thread]::CurrentThread.ApartmentState -ne 'STA') {
     $arguments = @('-NoProfile', '-STA', '-File', $PSCommandPath, '-Server', $Server, '-Port', $Port, '-Database', $Database)
+    if ($SchedulingHost) { $arguments += '-SchedulingHost', $SchedulingHost }
     & (Get-Process -Id $PID).Path @arguments
     return
 }
@@ -279,8 +327,8 @@ $font = [Drawing.Font]::new('Segoe UI', 9)
 
 $form = [Windows.Forms.Form]@{
     Text = 'Migrators: subir tabelas no SQL Server'
-    ClientSize = [Drawing.Size]::new(860, 760)
-    MinimumSize = [Drawing.Size]::new(760, 640)
+    ClientSize = [Drawing.Size]::new(860, 820)
+    MinimumSize = [Drawing.Size]::new(760, 700)
     StartPosition = 'CenterScreen'
     Font = $font
 }
@@ -300,7 +348,9 @@ function Add-Field([string]$label, [int]$x, [int]$y, [int]$width, $control) {
 }
 
 $serverBox = Add-Field 'Servidor (IP)' 14 22 200 ([Windows.Forms.TextBox]@{ Text = $Server })
-$portBox = Add-Field 'Porta' 226 22 80 ([Windows.Forms.NumericUpDown]@{ Minimum = 1; Maximum = 65535; Value = $Port })
+# o Value só depois do Maximum: as chaves do @{} não têm ordem garantida
+$portBox = Add-Field 'Porta' 226 22 80 ([Windows.Forms.NumericUpDown]@{ Minimum = 1; Maximum = 65535 })
+$portBox.Value = $Port
 $databaseBox = Add-Field 'Banco' 318 22 170 ([Windows.Forms.TextBox]@{ Text = $Database })
 $userBox = Add-Field 'Usuário' 500 22 150 ([Windows.Forms.TextBox]@{ Text = $Credential ? $Credential.UserName : 'sa' })
 $passwordBox = Add-Field 'Senha' 662 22 160 ([Windows.Forms.TextBox]@{ UseSystemPasswordChar = $true })
@@ -314,16 +364,51 @@ $trustBox = [Windows.Forms.CheckBox]@{
 $testButton = [Windows.Forms.Button]@{ Text = 'Testar conexão'; Location = [Drawing.Point]::new(702, 74); Size = [Drawing.Size]::new(120, 28) }
 $connection.Controls.AddRange(@($trustBox, $testButton))
 
+# host de agenda: um só por banco; o radio guarda a chave de $schedulingHosts na Tag
+
+$hostGroup = [Windows.Forms.GroupBox]@{
+    Text = 'Host de agenda das integrações (um só por banco)'; Location = [Drawing.Point]::new(12, 130)
+    Size = [Drawing.Size]::new(836, 96); Anchor = 'Top, Left, Right'
+}
+
+$hostDescription = [Windows.Forms.Label]@{
+    Text = 'Escolha o host que vai agendar os jobs.'; Location = [Drawing.Point]::new(14, 56)
+    Size = [Drawing.Size]::new(808, 32); ForeColor = [Drawing.SystemColors]::GrayText
+}
+$hostGroup.Controls.Add($hostDescription)
+
+$hostRadios = @()
+$x = 14
+
+foreach ($key in $schedulingHosts.Keys) {
+    $radio = [Windows.Forms.RadioButton]@{
+        Text = $schedulingHosts[$key].Title; Tag = $key; Location = [Drawing.Point]::new($x, 26); AutoSize = $true
+    }
+    $radio.Add_CheckedChanged({
+        param($sender)
+
+        if ($sender.Checked) {
+            $hostDescription.Text = $schedulingHosts[$sender.Tag].Description
+            $hostDescription.ForeColor = [Drawing.SystemColors]::ControlText
+        }
+    })
+    $hostGroup.Controls.Add($radio)
+    $hostRadios += $radio
+    $x += 200
+}
+
+if ($SchedulingHost) { ($hostRadios | Where-Object Tag -eq $SchedulingHost).Checked = $true }
+
 # catálogo
 
 $catalogLabel = [Windows.Forms.Label]@{
     Text = 'Catálogo das aplicações (rodam na ordem da lista; o Shared é obrigatório)'
-    Location = [Drawing.Point]::new(12, 132); AutoSize = $true
+    Location = [Drawing.Point]::new(12, 236); AutoSize = $true
 }
 
 $list = [Windows.Forms.ListView]@{
     View = 'Details'; CheckBoxes = $true; FullRowSelect = $true; ShowGroups = $true; HeaderStyle = 'Nonclickable'
-    Location = [Drawing.Point]::new(12, 152); Size = [Drawing.Size]::new(836, 290); Anchor = 'Top, Left, Right'
+    Location = [Drawing.Point]::new(12, 256); Size = [Drawing.Size]::new(836, 246); Anchor = 'Top, Left, Right'
 }
 $null = $list.Columns.Add('Aplicação', 150)
 $null = $list.Columns.Add('Scripts', 60, 'Right')
@@ -352,28 +437,28 @@ $list.Add_ItemCheck({
     if ($sender.Items[$e.Index].Tag.Required) { $e.NewValue = 'Checked' }
 })
 
-$checkAllButton = [Windows.Forms.Button]@{ Text = 'Marcar todas'; Location = [Drawing.Point]::new(12, 450); Size = [Drawing.Size]::new(110, 28) }
-$checkNoneButton = [Windows.Forms.Button]@{ Text = 'Desmarcar todas'; Location = [Drawing.Point]::new(128, 450); Size = [Drawing.Size]::new(120, 28) }
+$checkAllButton = [Windows.Forms.Button]@{ Text = 'Marcar todas'; Location = [Drawing.Point]::new(12, 510); Size = [Drawing.Size]::new(110, 28) }
+$checkNoneButton = [Windows.Forms.Button]@{ Text = 'Desmarcar todas'; Location = [Drawing.Point]::new(128, 510); Size = [Drawing.Size]::new(120, 28) }
 $runButton = [Windows.Forms.Button]@{
-    Text = 'Subir tabelas'; Location = [Drawing.Point]::new(616, 450); Size = [Drawing.Size]::new(120, 28); Anchor = 'Top, Right'
+    Text = 'Subir tabelas'; Location = [Drawing.Point]::new(616, 510); Size = [Drawing.Size]::new(120, 28); Anchor = 'Top, Right'
 }
 $cancelButton = [Windows.Forms.Button]@{
-    Text = 'Cancelar'; Location = [Drawing.Point]::new(742, 450); Size = [Drawing.Size]::new(106, 28); Anchor = 'Top, Right'; Enabled = $false
+    Text = 'Cancelar'; Location = [Drawing.Point]::new(742, 510); Size = [Drawing.Size]::new(106, 28); Anchor = 'Top, Right'; Enabled = $false
 }
 
 # log
 
 $log = [Windows.Forms.RichTextBox]@{
-    Location = [Drawing.Point]::new(12, 488); Size = [Drawing.Size]::new(836, 238); Anchor = 'Top, Bottom, Left, Right'
+    Location = [Drawing.Point]::new(12, 548); Size = [Drawing.Size]::new(836, 238); Anchor = 'Top, Bottom, Left, Right'
     ReadOnly = $true; BackColor = [Drawing.Color]::FromArgb(30, 30, 30); ForeColor = [Drawing.Color]::Gainsboro
     Font = [Drawing.Font]::new('Consolas', 9); WordWrap = $false
 }
 
 $status = [Windows.Forms.Label]@{
-    Text = 'Pronto.'; Location = [Drawing.Point]::new(12, 734); AutoSize = $true; Anchor = 'Bottom, Left'
+    Text = 'Pronto.'; Location = [Drawing.Point]::new(12, 794); AutoSize = $true; Anchor = 'Bottom, Left'
 }
 
-$form.Controls.AddRange(@($connection, $catalogLabel, $list, $checkAllButton, $checkNoneButton, $runButton, $cancelButton, $log, $status))
+$form.Controls.AddRange(@($connection, $hostGroup, $catalogLabel, $list, $checkAllButton, $checkNoneButton, $runButton, $cancelButton, $log, $status))
 
 $logColors = @{
     out = [Drawing.Color]::Gainsboro; step = [Drawing.Color]::DeepSkyBlue; ok = [Drawing.Color]::LightGreen
@@ -407,7 +492,7 @@ function Get-Fields {
 }
 
 function Set-Running([bool]$running) {
-    foreach ($control in $connection, $list, $checkAllButton, $checkNoneButton, $runButton) { $control.Enabled = -not $running }
+    foreach ($control in $connection, $hostGroup, $list, $checkAllButton, $checkNoneButton, $runButton) { $control.Enabled = -not $running }
     $cancelButton.Enabled = $running
 }
 
@@ -500,11 +585,20 @@ $runButton.Add_Click({
     $fields = Get-Fields
     if (-not $fields) { return }
 
-    $selected = @($list.Items | Where-Object Checked | ForEach-Object Tag)
+    $hostRadio = $hostRadios | Where-Object Checked
+
+    if (-not $hostRadio) {
+        $null = [Windows.Forms.MessageBox]::Show('Escolha o host de agenda das integrações.', $form.Text, 'OK', 'Warning')
+        return
+    }
+
+    $schedulingHost = $schedulingHosts[$hostRadio.Tag]
+    $selected = @($list.Items | Where-Object Checked | ForEach-Object Tag) + @($schedulingHost.App | Where-Object { $_ })
     $names = ($selected | ForEach-Object Name) -join ', '
 
     $answer = [Windows.Forms.MessageBox]::Show(
-        "Subir as tabelas no banco $($fields.Database) de $($fields.Server),$($fields.Port)?`n`n$names`n`nO banco é criado se não existir.",
+        ("Subir as tabelas no banco $($fields.Database) de $($fields.Server),$($fields.Port)?`n`n$names`n`n" +
+            "Host de agenda: $($schedulingHost.Title)`n`nO banco é criado se não existir."),
         $form.Text, 'YesNo', 'Question')
 
     if ($answer -ne 'Yes') { return }
@@ -521,11 +615,11 @@ $runButton.Add_Click({
     $connectionString = New-ConnectionString $fields.Server $fields.Port $fields.Database $fields.User $fields.Password $fields.Trust
 
     $log.Clear()
-    Write-Log "Servidor $($fields.Server),$($fields.Port), banco $($fields.Database): $names" 'step'
+    Write-Log "Servidor $($fields.Server),$($fields.Port), banco $($fields.Database), host de agenda $($schedulingHost.Title): $names" 'step'
     $status.Text = 'Rodando...'
     Set-Running $true
 
-    $script:run = Start-Migration $selected $connectionString (Get-Secrets $fields.Password)
+    $script:run = Start-Migration $selected $connectionString (Get-Secrets $fields.Password) $schedulingHost
     $timer.Start()
 })
 

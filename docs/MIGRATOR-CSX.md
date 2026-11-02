@@ -137,20 +137,30 @@ dotnet script --version
 ### Pela tela: todas as aplicações de uma vez
 
 O [`tools/migrators/Invoke-Migrators.ps1`](../tools/migrators/Invoke-Migrators.ps1) abre uma tela Windows Forms com o
-servidor (IP), a porta, o banco, o usuário e a senha, e o catálogo das aplicações: Shared (obrigatório), Totvs,
-LinxMicrovix, LinxCommerce, Movidesk, AfterSale, DataWarehouse e o host Worker. Ele roda os migrators marcados na ordem
-acima, cada um a partir de uma unidade `subst` (sem o problema de MAX_PATH), e para no primeiro erro. A senha aparece como
-`****` no log. Precisa do PowerShell 7 e do `dotnet-script`.
+servidor (IP), a porta, o banco, o usuário e a senha, o host de agenda e o catálogo das aplicações: Shared (obrigatório),
+Totvs, LinxMicrovix, LinxCommerce, Movidesk, AfterSale e DataWarehouse. Ele roda os migrators marcados na ordem acima, cada
+um a partir de uma unidade `subst` (sem o problema de MAX_PATH), e para no primeiro erro. A senha aparece como `****` no
+log. Precisa do PowerShell 7 e do `dotnet-script`.
+
+O host de agenda é um só por banco (README, "Um host de agenda por vez"), e a escolha é obrigatória:
+
+| Host | O que o script faz no banco |
+|---|---|
+| WebApi (Hangfire) | Nada: o Hangfire cria o schema `HangFire` quando o WebApi sobe com `Hangfire:Enabled = true` |
+| WebJob (Azure) | Nada: o WebJob não tem tabelas, a agenda é a `auditing.Jobs` |
+| Worker (Quartz.NET) | Roda o migrator do host, por último: as tabelas do schema `quartz` |
+
+No fim, o log lista o que acertar nos outros hosts para o escolhido ser o único a agendar.
 
 ```powershell
 ./tools/migrators/Invoke-Migrators.ps1
-./tools/migrators/Invoke-Migrators.ps1 -Server 10.0.0.15 -Port 1433 -Database NEWBLOOMERS
+./tools/migrators/Invoke-Migrators.ps1 -Server 10.0.0.15 -Port 1433 -Database NEWBLOOMERS -SchedulingHost Worker
 ```
 
-Com `-NoGui`, roda no console, com `-Credential` e `-Apps` (o Shared entra sempre):
+Com `-NoGui`, roda no console, com `-Credential`, `-Apps` (o Shared entra sempre) e `-SchedulingHost` (obrigatório):
 
 ```powershell
-./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -Apps Totvs,DataWarehouse
+./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -Apps Totvs,DataWarehouse -SchedulingHost WebApi
 ```
 
 Os módulos fora do host (Dootax, FlashCourier etc.) não estão no catálogo: o FlashCourier grava os mesmos ids do
