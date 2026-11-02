@@ -48,13 +48,12 @@ namespace Hosts.Scheduling
 
         /// <summary>
         /// o mesmo que o ExceptionHandler do Shared faz nas rotas: mensagem (o trecho depois do "|" é o comando SQL, quando
-        /// houver), fim do log e gravação. Só com o log aberto e ainda não gravado: um service que já gravou o log antes de
-        /// relançar não ganha uma segunda linha (a chave de auditing.Logs não aceitaria), e um que caiu antes de abrir o log
-        /// não tem onde gravar (fica no log do host)
+        /// houver), fim do log e gravação. Um service que já gravou o log antes de relançar recebe o erro na mesma execução
+        /// (o LoggerService grava só a mensagem nova); um que caiu antes de abrir o log não tem onde gravar (fica no log do host)
         /// </summary>
         private async Task CommitError(RecurringJobDefinition definition, Exception ex)
         {
-            if (!_jobLog.HasUncommittedLog)
+            if (_jobLog.GetExecutionGuid() is null)
             {
                 _logger.LogError(ex, "Job {IdJob} ({Target}), empresa {Company}: falhou sem log aberto para gravar o erro em auditing.", definition.IdJob, definition.Target, _companyContext.Company);
                 return;

@@ -244,11 +244,14 @@ A empresa da execução passou a ser informada pelo agendador e pelas rotas em 4
         depois. Rotas: `Tickets/38367316000199/1` rodou na NEWBLOOMERS; com `X-Company` de outra holding, com CNPJ sem
         holding e com `X-Company` inválido, 400.
 
+- [x] **Execução que falha depois de gravar o log** (achado no teste, já acontecia antes): o `ExceptionHandler` das rotas
+      gravava o log de novo e a chave de `auditing.Logs` recusava (500 sem a mensagem do erro); o `ScheduledJobRunner`
+      descartava o erro. Agora `LoggerService.CommitAllChanges`, chamado de novo, grava só as mensagens e registros novos
+      na mesma execução (`ILoggerRepository.LogAppend`); `HasUncommittedLog` saiu. Testado no Docker: a rota
+      `Tickets/38367316000199/1` devolve o 500 tratado, com uma linha em `Logs` e o erro em `Messages`.
+
 Fora desta fase:
 
-- **Rotas que falham depois de gravar o log:** o `ExceptionHandler` do Shared grava o log de novo e a chave de
-  `auditing.Logs` recusa (500 sem a mensagem do erro). Já acontecia antes; o `ScheduledJobRunner` evita isso com
-  `HasUncommittedLog`, e o `ExceptionHandler` precisa da mesma checagem.
 - **Execução adiada e o disparo seguinte:** uma execução adiada pode rodar logo antes do disparo seguinte da mesma
   empresa; as duas rodam em sequência (a trava da empresa impede rodarem juntas).
 - **Jobs só de procedure** (`RecurringJobDefinition.ForProcedure`, todos comentados) não passam `@Company`: ao

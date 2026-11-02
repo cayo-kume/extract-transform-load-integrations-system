@@ -14,6 +14,11 @@ namespace Application.Shared.Services
         public Log? Log { get; private set; }
         private bool _committed;
 
+        // quantas mensagens e registros do Log já estão no banco: uma segunda gravação (ex.: o erro de um service que caiu depois
+        // de gravar o log) grava só o que veio depois, na mesma execução, sem inserir auditing.Logs de novo
+        private int _committedMessages;
+        private int _committedRecords;
+
         public LoggerService(ILoggerRepository logRepository, ICompanyContext companyContext) =>
             (_logRepository, _companyContext) = (logRepository, companyContext);
 
@@ -96,6 +101,7 @@ namespace Application.Shared.Services
         public ILoggerService Clear()
         {
             Log?.Records.Clear();
+            _committedRecords = 0;
 
             return this;
         }
@@ -104,11 +110,15 @@ namespace Application.Shared.Services
         {
             if (Log is null) return;
 
-            await _logRepository.LogInsert(Log);
-            _committed = true;
-        }
+            if (_committed)
+                await _logRepository.LogAppend(Log.Messages.Skip(_committedMessages), Log.Records.Skip(_committedRecords));
+            else
+                await _logRepository.LogInsert(Log);
 
-        public bool HasUncommittedLog => Log is not null && !_committed;
+            _committed = true;
+            _committedMessages = Log.Messages.Count;
+            _committedRecords = Log.Records.Count;
+        }
 
         public Guid? GetExecutionGuid()
         {
