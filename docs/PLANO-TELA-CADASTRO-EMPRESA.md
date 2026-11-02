@@ -151,11 +151,16 @@ cadastrada falha ao gravar o log.
       duplicou nenhuma linha. `-Database Company` foi recusado.
 - [x] Documentado em `docs/MIGRATOR-CSX.md` (ordem: migrators, depois o `.ps1`).
 
-**Achado do teste:** os parâmetros do Movidesk (`38367316000199`) e do AfterSale (`38367316000199` e `42538267000268`)
-estão com o CNPJ das **marcas** (Misha e Open Era), não com o da holding (`44065634000106`), que só aparece na Totvs. Com
-a decisão de que a empresa do painel é a holding, os jobs desses módulos são criados para a holding, mas os services vão
-procurar os parâmetros por `doc_company` da holding e não vão achar. Precisa de decisão antes da fase 4.4 (pergunta 2 da
-seção 7.2 da proposta): trocar o `doc_company` desses scripts para a holding, ou cadastrar as marcas como empresas.
+**Achado do teste e decisão de 01/11/2026:** os parâmetros do Movidesk (`38367316000199`) e do AfterSale
+(`38367316000199` e `42538267000268`) estavam com o CNPJ das **marcas** (Misha e Open Era), não com o da holding
+(`44065634000106`), que só aparecia na Totvs. Decidido: o `doc_company` dos parâmetros é o da **holding**.
+
+- **Movidesk:** feito. O seed tem uma linha só e passou a usar a holding.
+- **AfterSale:** bloqueado. São **duas contas** (Open Era e Misha), cada uma com o seu token, e o módulo usa o
+  `doc_company` como chave em todas as tabelas (PKs e FKs compostas). Trocar as duas linhas para a holding deixaria duas
+  linhas da mesma empresa em `AfterSaleParameters` (o `.ps1` descartaria a segunda) e misturaria os dados das duas contas
+  na mesma chave. Precisa de decisão: uma coluna nova de conta (marca) em `AfterSaleParameters` e nas chaves do módulo,
+  com a holding no `doc_company`, ou só uma das contas por enquanto.
 
 ### 4.3 Log por empresa (fase F3 da proposta)
 
