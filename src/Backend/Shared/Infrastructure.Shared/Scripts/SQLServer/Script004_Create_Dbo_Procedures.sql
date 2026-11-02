@@ -73,7 +73,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 
-CREATE   procedure [dbo].[sp_Index_Maintenance] (@ParentExecutionGUID uniqueidentifier = null) as
+CREATE   procedure [dbo].[sp_Index_Maintenance] (@ParentExecutionGUID uniqueidentifier = null, @Company varchar(20) = null) as
 begin
 /*
 Autor:   LPereira
@@ -87,7 +87,7 @@ Obs:
             ,@msg       varchar(max)
 
     --Início
-    exec auditing.sp_Log_Start 'sp_index_maintenance', @ParentExecutionGUID, @idjob, @execution output
+    exec auditing.sp_Log_Start 'sp_index_maintenance', @ParentExecutionGUID, @idjob, @execution output, 1, @Company
 
     --ÍNDICES
     DECLARE @sql     NVARCHAR(MAX)
@@ -157,7 +157,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 
-CREATE   procedure [dbo].[sp_Database_Maintenance] @ParentExecutionGUID uniqueidentifier = null as
+CREATE   procedure [dbo].[sp_Database_Maintenance] @ParentExecutionGUID uniqueidentifier = null, @Company varchar(20) = null as
 begin
     declare  @execution	UniqueIdentifier
             ,@output	dbo.MergeOutput
@@ -167,7 +167,7 @@ begin
     begin try
 
     --Início
-    exec auditing.sp_Log_Start 'sp_statistics_maintenance', @ParentExecutionGUID, @idjob, @execution output
+    exec auditing.sp_Log_Start 'sp_statistics_maintenance', @ParentExecutionGUID, @idjob, @execution output, 1, @Company
     
     exec [dbo].[sp_Delete_Auditing_Logs]
     exec dbo.p_index_maintenance
@@ -204,7 +204,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE   procedure [dbo].[sp_Statistics_Maintenance] (@ParentExecutionGUID uniqueidentifier = null) as
+CREATE   procedure [dbo].[sp_Statistics_Maintenance] (@ParentExecutionGUID uniqueidentifier = null, @Company varchar(20) = null) as
 begin
     declare  @execution	    UniqueIdentifier
             ,@output	    dbo.MergeOutput
@@ -214,7 +214,7 @@ begin
             ,@SQL nvarchar(1000)
 
     --Início
-    exec auditing.sp_Log_Start 'p_statistics_maintenance', @ParentExecutionGUID, @idjob, @execution output
+    exec auditing.sp_Log_Start 'p_statistics_maintenance', @ParentExecutionGUID, @idjob, @execution output, 1, @Company
 
     begin try
 

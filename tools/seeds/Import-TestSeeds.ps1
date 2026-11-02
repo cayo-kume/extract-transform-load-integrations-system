@@ -248,12 +248,12 @@ SELECT CONCAT('CREATED=', JobsCreated) FROM @r;
 "@) 'CREATED'
 
     if ($ActivateJobs) {
-        $null = Invoke-Sql -Query "UPDATE auditing.Jobs SET IsActive = 1 WHERE Company = '$Company' AND IdParent = $($module.IdParent);"
+        $null = Invoke-Sql -Query "UPDATE j SET IsActive = 1 FROM auditing.Jobs j JOIN auditing.fn_JobCatalogTree($($module.IdParent)) t ON t.IdJob = j.IdJob AND t.IdType = j.IdType WHERE j.Company = '$Company';"
     }
 
     $state = Invoke-Sql -Query @"
-SELECT CONCAT('TOTAL=', COUNT(*)) FROM auditing.Jobs WHERE Company = '$Company' AND IdParent = $($module.IdParent);
-SELECT CONCAT('ACTIVE=', COUNT(*)) FROM auditing.Jobs WHERE Company = '$Company' AND IdParent = $($module.IdParent) AND IsActive = 1;
+SELECT CONCAT('TOTAL=', COUNT(*)) FROM auditing.Jobs j JOIN auditing.fn_JobCatalogTree($($module.IdParent)) t ON t.IdJob = j.IdJob AND t.IdType = j.IdType WHERE j.Company = '$Company';
+SELECT CONCAT('ACTIVE=', COUNT(*)) FROM auditing.Jobs j JOIN auditing.fn_JobCatalogTree($($module.IdParent)) t ON t.IdJob = j.IdJob AND t.IdType = j.IdType WHERE j.Company = '$Company' AND IsActive = 1;
 "@
 
     [pscustomobject]@{

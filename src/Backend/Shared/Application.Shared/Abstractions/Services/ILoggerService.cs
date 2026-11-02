@@ -5,11 +5,19 @@ namespace Application.Shared.Abstractions.Services
     public interface ILoggerService
     {
         /// <summary>
-        /// Create a new log
+        /// Create a new log, for the company of the execution (ICompanyContext). Without a company, throws
         /// </summary>
         /// <param name="job"></param>
         /// <returns>ILoggerService</returns>
         public ILoggerService AddLog(Enum job);
+
+        /// <summary>
+        /// Create a new log for the company (CNPJ da holding), and set it as the company of the execution (ICompanyContext)
+        /// </summary>
+        /// <param name="job"></param>
+        /// <param name="company"></param>
+        /// <returns>ILoggerService</returns>
+        public ILoggerService AddLog(Enum job, string company);
 
         /// <summary>
         /// Build an ERROR exception message with exception details occurred

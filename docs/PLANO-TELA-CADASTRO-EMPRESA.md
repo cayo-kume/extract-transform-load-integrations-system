@@ -146,9 +146,10 @@ Regras:
       `*Parameters` vazias. Procedures: `sp_Add_Company` cria o 14000 da empresa; `sp_Add_Company_App` da Totvs cria 122
       jobs inativos e, rodada de novo, 0; `sp_Remove_Company_App` desativa; empresa não cadastrada dá 50002.
 
-Ficam para as próximas fases: as procedures de log (`sp_Log_*`) e a `vw_JobsHeartbeat` ainda não conhecem `Company`
-(4.3), e os agendadores ainda leem `auditing.Jobs` sem empresa (4.4). Até lá, um job que roda em um banco com empresa
-cadastrada falha ao gravar o log.
+**Corrigido em 4.3:** `sp_Add_Company_App` copiava só os jobs com `IdParent` = módulo e deixava de fora as procedures
+(`IdType = 1`), cujo `IdParent` é o `IdJob` do job que as chama (ex.: `3500 sp_MovideskTickets_Sync`, `IdParent 3000`).
+Agora a cópia usa `auditing.fn_JobCatalogTree(@idParent)` (Script002), que devolve o módulo com as procedures abaixo
+dele; `sp_Remove_Company_App` e o `.ps1` usam a mesma função. Com isso, a holding recebe os 961 jobs do catálogo.
 
 ### 4.2 Script de teste (`tools/seeds/Import-TestSeeds.ps1`) — feito
 
@@ -192,16 +193,33 @@ WHERE hc.Holding = @company
 
 Uma execução (job, empresa) cobre todos os CNPJs da holding naquele módulo, como o AfterSale com as duas marcas.
 
-### 4.3 Log por empresa (fase F3 da proposta)
+### 4.3 Log por empresa (fase F3 da proposta) — feito
 
-- [ ] `sp_Log_Start` recebe `@company` e localiza o job por `Title`, `IdType` e `Company`; `sp_Log_Message`,
-      `sp_Log_Error` e `sp_Log_End` copiam `Company` de `Logs`.
-- [ ] `LoggerRepository`, entidades (`Log`, `Message`, `Record`, `JobSchedule`) e `LoggerService` com `Company`.
-- [ ] `auditing.vw_JobsHeartbeat` por (job, empresa).
+- [x] `sp_Log_Start` recebe `@company` (último parâmetro) e localiza o job por `Title`, `IdType` e `Company`. Sem
+      empresa, recusa com 50005; job que a empresa não tem, 50001. `sp_Log_Message`, `sp_Log_Error` e `sp_Log_End`
+      copiam `Company` de `Logs`.
+- [x] `dbo.sp_Create_Merge_Procedure` 0.9.2 (Script003): a procedure `sp_*_Sync` gerada recebe `@Company` e passa para
+      `sp_Log_Start`. As de manutenção do Script004 também recebem `@Company`.
+- [x] Empresa da execução: `ICompanyContext` (Application.Shared), um por escopo. Quem inicia a execução chama
+      `SetCompany` (ou `AddLog(job, company)`); trocar de empresa no mesmo escopo é recusado.
+- [x] `LoggerService.AddLog(job)` lê a empresa do contexto e recusa sem ela; `Log`, `Message` e `Record` têm `Company`
+      (o `Log` não nasce sem ela); `LoggerRepository` grava `Company` em `Logs`, `Messages` e `Records`.
+- [x] `SharedRepository.CallDbProcMerge` passa `@Company` do contexto para a `sp_*_Sync`: os 437 `AddLog` e as chamadas
+      de sync dos services não mudaram.
+- [x] `auditing.vw_JobsHeartbeat` por (job, empresa); `JobSchedule` e `JobHeartbeat` com `Company` nas consultas do
+      `JobScheduleRepository` (o filtro por empresa fica para 4.4).
+- [x] Teste no Docker, em banco zerado e apagado no fim: uma execução do 14000 pelo `LoggerService` gravou a empresa em
+      `Logs`, `Messages` (informação e erro) e `Records`, e a `sp_MovideskTickets_Sync` chamada dela gravou o log filho
+      com a mesma empresa; o heartbeat mostra a execução na empresa. Sem empresa: `AddLog` e `sp_Log_Start` (50005)
+      recusam; empresa sem o job: 50001. `sp_Log_Message` e `sp_Log_Error` gravam a empresa.
+
+**Até a 4.4, nenhuma execução roda:** ninguém chama `ICompanyContext.SetCompany` ainda, então `AddLog` recusa todo job
+agendado. O agendador passa a informar a empresa em 4.4.
 
 ### 4.4 Agendador e services (fase F4 da proposta)
 
-- [ ] Agenda por (job, empresa) no WebApi (Hangfire), no WebJob e no Worker.
+- [ ] Agenda por (job, empresa) no WebApi (Hangfire), no WebJob e no Worker; cada execução abre um escopo e chama
+      `ICompanyContext.SetCompany` antes do service (4.3).
 - [ ] Services recebem a empresa e processam só ela, lendo os parâmetros pelo join com `monitor.HoldingCompanies`
       (4.2.1); as procedures de sincronização recebem a empresa da execução.
 

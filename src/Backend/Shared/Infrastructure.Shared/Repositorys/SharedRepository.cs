@@ -1,4 +1,5 @@
-﻿using Dapper;
+﻿using Application.Shared.Abstractions.Services;
+using Dapper;
 using Domain.Shared.Abstractions.Repositorys;
 using Domain.Shared.Extensions;
 using Infrastructure.Shared.Abstractions;
@@ -19,10 +20,12 @@ namespace Infrastructure.Shared.Repositorys
 
         private readonly ISQLServerConnection _sqlServerConnection;
         private readonly string _defaultBulkInsertSchema;
+        private readonly ICompanyContext _companyContext;
 
-        public SharedRepository(ISQLServerConnection sqlServerConnection, IConfiguration configuration)
+        public SharedRepository(ISQLServerConnection sqlServerConnection, IConfiguration configuration, ICompanyContext companyContext)
         {
             _sqlServerConnection = sqlServerConnection;
+            _companyContext = companyContext;
             _defaultBulkInsertSchema = configuration["BulkInsert:DefaultSchema"] ?? "untreated";
         }
 
@@ -171,6 +174,8 @@ namespace Infrastructure.Shared.Repositorys
                 {
                     var parameters = new DynamicParameters();
                     parameters.Add("@Guid", parentExecutionGUID);
+                    // a procedure gerada (dbo.sp_Create_Merge_Procedure 0.9.2) grava o log na empresa da execução
+                    parameters.Add("@Company", _companyContext.Company);
 
                     var result = await conn.ExecuteAsync($"[{schemaName}].[sp_{tableName}_Sync]", param: parameters, commandType: CommandType.StoredProcedure, commandTimeout: StoredProcedureTimeoutSeconds);
 
@@ -195,7 +200,10 @@ namespace Infrastructure.Shared.Repositorys
             {
                 using (var conn = _sqlServerConnection.GetIDbConnection())
                 {
-                    var result = await conn.ExecuteAsync($"[{schemaName}].[sp_{tableName}_Sync]", commandType: CommandType.StoredProcedure, commandTimeout: StoredProcedureTimeoutSeconds);
+                    var parameters = new DynamicParameters();
+                    parameters.Add("@Company", _companyContext.Company);
+
+                    var result = await conn.ExecuteAsync($"[{schemaName}].[sp_{tableName}_Sync]", param: parameters, commandType: CommandType.StoredProcedure, commandTimeout: StoredProcedureTimeoutSeconds);
 
                     if (result > 0)
                         return true;

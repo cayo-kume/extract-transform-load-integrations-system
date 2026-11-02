@@ -10,15 +10,22 @@ namespace Application.Shared.Services
     public class LoggerService : ILoggerService
     {
         private readonly ILoggerRepository _logRepository;
+        private readonly ICompanyContext _companyContext;
         public Log? Log { get; private set; }
         private bool _committed;
 
-        public LoggerService(ILoggerRepository logRepository) =>
-            _logRepository = logRepository;
+        public LoggerService(ILoggerRepository logRepository, ICompanyContext companyContext) =>
+            (_logRepository, _companyContext) = (logRepository, companyContext);
 
-        public ILoggerService AddLog(Enum job)
+        // a empresa vem do contexto da execução, que o agendador ou a rota informam (docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.3)
+        public ILoggerService AddLog(Enum job) =>
+            AddLog(job, _companyContext.Company ?? throw new InvalidOperationException(
+                $"Job {job}: execução sem empresa. Quem inicia a execução precisa informar ICompanyContext.SetCompany."));
+
+        public ILoggerService AddLog(Enum job, string company)
         {
-            Log ??= new Log(job: job);
+            _companyContext.SetCompany(company);
+            Log ??= new Log(job: job, company: company);
 
             return this;
         }
@@ -38,6 +45,7 @@ namespace Application.Shared.Services
                 new Message(
                     job: Log.Job,
                     jobType: Log.IdType,
+                    company: Log.Company,
                     message: message,
                     exceptionMessage: exceptionMessage,
                     stackTraceMessage: stackTraceMessage,
@@ -57,6 +65,7 @@ namespace Application.Shared.Services
                 new Message(
                     job: Log.Job,
                     jobType: Log.IdType,
+                    company: Log.Company,
                     message,
                     Log.Execution
                 )
@@ -70,7 +79,7 @@ namespace Application.Shared.Services
             if (Log is null) return this;
 
             Log.Records.Add(
-                new Record(job: Log.Job, jobType: Log.IdType, key: key, regXML: xml, execution: Log.Execution)
+                new Record(job: Log.Job, jobType: Log.IdType, company: Log.Company, key: key, regXML: xml, execution: Log.Execution)
             );
 
             return this;

@@ -8,6 +8,8 @@ namespace Domain.Shared.Entities.Auditing
 
         public Enum IdType { get; private set; }
 
+        public string Company { get; private set; } = string.Empty;
+
         public bool IsError { get; private set; }
 
         public Guid Execution { get; private set; }
@@ -28,8 +30,9 @@ namespace Domain.Shared.Entities.Auditing
         /// </summary>
         /// <param name="message"></param>
         /// <param name="guidExecution"></param>
-        public Message(Enum job, Enum jobType, string message, Guid guidExecution)
+        public Message(Enum job, Enum jobType, string company, string message, Guid guidExecution)
         {
+            Company = company;
             IdJob = job;
             IdType = jobType;
             Msg = message.Length > 800 ? message.Substring(0, 800) : message;
@@ -43,8 +46,9 @@ namespace Domain.Shared.Entities.Auditing
         /// <param name="message"></param>
         /// <param name="exceptionMessage"></param>
         /// <param name="execution"></param>
-        public Message(Enum job, Enum jobType, string message, string exceptionMessage, string stackTraceMessage, string sqlCommand, Guid execution)
+        public Message(Enum job, Enum jobType, string company, string message, string exceptionMessage, string stackTraceMessage, string sqlCommand, Guid execution)
         {
+            Company = company;
             IdJob = job;
             IdType = jobType;
             Msg = message.Length > 800 ? message.Substring(0, 800) : message;

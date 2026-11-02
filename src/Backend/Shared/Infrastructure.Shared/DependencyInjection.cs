@@ -33,6 +33,8 @@ namespace Infrastructure.Shared
             // a trava abre a própria conexão a cada pedido: não guarda estado entre execuções
             services.AddSingleton<IJobLock, SqlServerJobLock>();
 
+            // empresa da execução: uma por escopo (execução agendada ou requisição)
+            services.AddScoped<ICompanyContext, CompanyContext>();
             services.AddScoped<ILoggerService, LoggerService>();
 
             services.AddScoped<IExceptionHandler, ExceptionHandler>();

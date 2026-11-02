@@ -17,7 +17,7 @@ namespace Infrastructure.Shared.Repositorys
 
         public async Task<IEnumerable<JobSchedule>> GetIntegrationJobs()
         {
-            const string sql = @"SELECT IdJob, Title, IntervalTimeInMinutes, RunningDailyAt, Queue, IsActive
+            const string sql = @"SELECT IdJob, Company, Title, IntervalTimeInMinutes, RunningDailyAt, Queue, IsActive
                                  FROM [auditing].[Jobs]
                                  WHERE IdType = 2";
 
@@ -28,7 +28,7 @@ namespace Infrastructure.Shared.Repositorys
 
         public async Task<JobSchedule?> GetIntegrationJob(int idJob)
         {
-            const string sql = @"SELECT IdJob, Title, IntervalTimeInMinutes, RunningDailyAt, Queue, IsActive
+            const string sql = @"SELECT IdJob, Company, Title, IntervalTimeInMinutes, RunningDailyAt, Queue, IsActive
                                  FROM [auditing].[Jobs]
                                  WHERE IdType = 2 AND IdJob = @idJob";
 
@@ -39,7 +39,7 @@ namespace Infrastructure.Shared.Repositorys
 
         public async Task<IEnumerable<JobHeartbeat>> GetActiveJobsHeartbeat()
         {
-            const string sql = @"SELECT IdParent, IdJob, Title, IntervalTimeInMinutes, RunningDailyAt, Queue, IsActive,
+            const string sql = @"SELECT IdParent, IdJob, Company, Title, IntervalTimeInMinutes, RunningDailyAt, Queue, IsActive,
                                         LastStartDate, LastEndDate, OpenSince
                                  FROM [auditing].[vw_JobsHeartbeat]
                                  WHERE IsActive = 1";

@@ -22,6 +22,7 @@ namespace Infrastructure.Shared.Repositorys
             {
                 IdJob = (Int32)(object)log.Job,
                 IdType = (Int32)(object)log.IdType,
+                Company = log.Company,
                 StartDate = log.StartDate.ToString("s"),
                 EndDate = log.EndDate.ToString("s"),
                 Execution = log.Execution

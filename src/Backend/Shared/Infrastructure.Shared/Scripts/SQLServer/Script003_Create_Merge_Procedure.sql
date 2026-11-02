@@ -1,4 +1,6 @@
-/****** dbo.sp_Create_Merge_Procedure 0.9.1 ******/
+/****** dbo.sp_Create_Merge_Procedure 0.9.2 ******/
+--0.9.2: a procedure gerada recebe @Company (empresa do painel da execução) e passa para auditing.sp_Log_Start, que
+--localiza o job pela empresa (docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.3).
 --nas tabelas com a coluna timestamp (Linx Microvix), o bloco "delete duplicate rows" seleciona também o timestamp (menos quando
 --já é parte da PK), que o output usa (deleted.timestamp) e que desempata a ordem: fica a linha mais nova.
 
@@ -25,7 +27,7 @@ begin
 		@complete_table_name	 varchar(300) = concat(@schema_name, '.', @table_name),
 		@complete_untreated_name varchar(300) = concat('untreated', '.', @table_name),
 
-		@procedure_version		 varchar(10) = '0.9.1',
+		@procedure_version		 varchar(10) = '0.9.2',
 		@procedure_name			 varchar(300) = concat(@schema_name, ".sp_", @table_name, '_Sync'),
 
 		@transaction_name		 varchar(32) = concat('t_', left(@table_name, 30))
@@ -183,8 +185,8 @@ begin
 	set @sql_initial_treatment = concat(
 		--------------------------------------------------------------------------------------------------------------------------------------
 		--Início. logs, tratamento especial para tabelas, exclusão de duplicidades e de registros já integrados.
-		"--declare @Guid uniqueidentifier = null, @Debug bit = 1", char(10),
-		"create or alter proc ", @procedure_name, " (@Guid uniqueidentifier = null, @Debug bit = 0)", char(10),
+		"--declare @Guid uniqueidentifier = null, @Debug bit = 1, @Company varchar(20) = null", char(10),
+		"create or alter proc ", @procedure_name, " (@Guid uniqueidentifier = null, @Debug bit = 0, @Company varchar(20) = null)", char(10),
 		"as", char(10),
 		"begin", char(10),
 		"--procedure created automatically by the [general].[create_merge_procedure] process in ", format(sysutcdatetime() at time zone "UTC" at time zone "E. South America Standard Time", "yyyy.MM.dd HH:mm:ss"), char(10),
@@ -203,7 +205,8 @@ begin
 		"	@parentExecutionGUID = @Guid,", char(10),
 		"	@idJob = @IdJob output,", char(10),
 		"	@execution = @Execution output,", char(10),
-		"	@idType = @IdType", char(10), char(10),
+		"	@idType = @IdType,", char(10),
+		"	@company = @Company", char(10), char(10),
 
 		"declare @res bit", char(10), char(10),
 		"begin try", char(10),

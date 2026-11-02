@@ -1,13 +1,15 @@
 /****** Heartbeat dos jobs de integração (src/Backend/Hosts/WebJob/docs/PLANO-HOST-WEBJOB.md, passo 7) ******/
--- Por job de integração (IdType = 2): a agenda (auditing.Jobs) e a última execução terminada e a execução aberta mais
--- antiga (auditing.Logs). Só dados: a regra de "off" (ex.: sem execução terminada há mais que 1 × o intervalo) fica em
--- quem lê, como a recuperação dos WebJobs e o painel do WebApp. As datas de auditing.Logs estão no horário de Brasília.
+-- Por job de integração (IdType = 2) e empresa (Company): a agenda (auditing.Jobs) e a última execução terminada e a
+-- execução aberta mais antiga (auditing.Logs) daquela empresa. Só dados: a regra de "off" (ex.: sem execução terminada há
+-- mais que 1 × o intervalo) fica em quem lê, como a recuperação dos WebJobs e o painel do WebApp. As datas de
+-- auditing.Logs estão no horário de Brasília.
 -- O índice IX_Logs_Heartbeat (Script001) cobre as duas buscas em auditing.Logs.
 CREATE OR ALTER VIEW [auditing].[vw_JobsHeartbeat]
 AS
 SELECT
     j.IdParent,
     j.IdJob,
+    j.Company,
     j.Title,
     j.IntervalTimeInMinutes,
     j.RunningDailyAt,
@@ -27,6 +29,7 @@ FROM
         WHERE
             l.IdJob = j.IdJob
             AND l.IdType = j.IdType
+            AND l.Company = j.Company
             AND l.EndDate IS NOT NULL
     ) finished
     OUTER APPLY (
@@ -37,6 +40,7 @@ FROM
         WHERE
             l.IdJob = j.IdJob
             AND l.IdType = j.IdType
+            AND l.Company = j.Company
             AND l.EndDate IS NULL
     ) opened
 WHERE
