@@ -280,8 +280,8 @@ Feita na branch `implementacao-40-melhorias`, depois do merge desta branch (comm
       procedures, testado com um programa à parte (21 casos). O Dapper (`Data/Sql/`) compila, mas **ainda não rodou contra
       o banco**: o teste é no banco do Docker, com `tools/seeds/Import-TestSeeds.ps1`.
 - Os erros de regra chegam à tela como `CompanyRegistrationException`, com o número da procedure em `Code`.
-- Configuração: mock por padrão; `Cadastro:UseDatabase = true` (User Secrets) liga o Dapper sobre
-  `ConnectionStrings:Connection`.
+- Configuração: mock por padrão; `Database:Enabled = true` (User Secrets), a mesma chave da fase 5 do WebApp, liga o
+  Dapper sobre `ConnectionStrings:Connection`.
 - **Ponto em aberto:** contratar cria os jobs inativos e remover só os desativa, então o banco não distingue "contratado e
   ainda não ligado" de "removido". O repositório devolve jobs e jobs ativos; se a tela precisar da diferença, falta uma
   marca de contratação (por exemplo `monitor.CompanyApp`), a decidir no backend.

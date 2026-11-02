@@ -20,10 +20,8 @@ builder.Services.AddRazorComponents()
 builder.Services.AddMudServices();
 builder.Services.AddTransient<MudLocalizer, PortugueseMudLocalizer>();
 
-// Dados do painel: só o mock até a fase 5 do plano (docs/PLANO-WEBAPP.md), quando entra o MonitorRepository com o banco
-// A MockTimeline gera as execuções do mock e é a mesma para o painel e para a tela Sob Demanda
-builder.Services.AddSingleton<MockTimeline>();
-builder.Services.AddSingleton<IMonitorRepository, MockMonitorRepository>();
+// Empresa logada (LoggedCompany:DocCompany e LoggedCompany:Name): fixa por configuração até a fase 6 (autenticação)
+WebApp.Models.LoggedCompany.Configure(builder.Configuration);
 
 // Último período escolhido, por aba (circuito): acompanha o usuário entre as telas quando a URL não traz ?period=
 builder.Services.AddScoped<FilterSession>();
@@ -31,26 +29,31 @@ builder.Services.AddScoped<FilterSession>();
 // Telas de administrador (Executar Querys e Sob Demanda): acesso pela chave Admin:Enabled em Development
 builder.Services.AddSingleton<AdminAccess>();
 
-// Executar Querys: até a fase 5, o executor falso
-builder.Services.AddSingleton<IQueryRunner, MockQueryRunner>();
-
-// Sob Demanda: até a fase 5, respostas simuladas
-builder.Services.AddSingleton<IOnDemandRunner, MockOnDemandRunner>();
-
-// Cadastro de empresas (docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.5): mock por padrão; com Cadastro:UseDatabase = true, o
-// banco de ConnectionStrings:Connection, com Dapper
-if (builder.Configuration.GetValue<bool>("Cadastro:UseDatabase"))
+// Dados (docs/PLANO-WEBAPP.md, fase 5): com Database:Enabled = true, o banco, com Dapper: painel e cadastro em
+// ConnectionStrings:Connection (usuário etl_monitor) e Executar Querys em ConnectionStrings:QueryConnection (etl_query),
+// as duas nos User Secrets. Sem a chave, o mock, para mexer no visual sem banco.
+if (builder.Configuration.GetValue<bool>("Database:Enabled"))
 {
-    builder.Services.AddSingleton<WebApp.Data.Sql.CompanyDatabase>();
+    builder.Services.AddMemoryCache();
+    builder.Services.AddSingleton<WebApp.Data.Sql.MainDatabase>();
+    builder.Services.AddSingleton<IMonitorRepository, WebApp.Data.Sql.SqlMonitorRepository>();
+    builder.Services.AddSingleton<IQueryRunner, WebApp.Data.Sql.SqlQueryRunner>();
     builder.Services.AddSingleton<ICompanyRepository, WebApp.Data.Sql.SqlCompanyRepository>();
     builder.Services.AddSingleton<IModuleParametersRepository, WebApp.Data.Sql.SqlModuleParametersRepository>();
 }
 else
 {
+    builder.Services.AddSingleton<IMonitorRepository, MockMonitorRepository>();
+    builder.Services.AddSingleton<IQueryRunner, MockQueryRunner>();
     builder.Services.AddSingleton<MockCompanyStore>();
     builder.Services.AddSingleton<ICompanyRepository, MockCompanyRepository>();
     builder.Services.AddSingleton<IModuleParametersRepository, MockModuleParametersRepository>();
 }
+
+// Sob Demanda: respostas simuladas até o IOnDemandRunner que chama o WebApi (docs/PLANO-WEBAPP.md, 11.5.6). A
+// MockTimeline gera as execuções do mock e é a mesma do painel com mock, para uma chamada virar uma execução do job
+builder.Services.AddSingleton<MockTimeline>();
+builder.Services.AddSingleton<IOnDemandRunner, MockOnDemandRunner>();
 
 // Assistente de IA (Claude, API da Anthropic): só leitura, chave em Assistant:ApiKey nos User Secrets
 builder.Services.AddSingleton<AssistantTools>();

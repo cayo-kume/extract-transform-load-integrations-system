@@ -279,7 +279,8 @@ Abre em **`http://localhost:5067`**, sem banco nem API: os dados são **mockados
 |---|---|
 | `Admin:Enabled = true` | mostra as telas **Sob Demanda** e **Executar Querys** (só em `Development`) |
 | `Assistant:ApiKey` | liga o **assistente de IA** (Claude); as perguntas e os dados consultados vão para a API da Anthropic |
-| `Cadastro:UseDatabase = true` | troca o mock do cadastro de empresas pelo Dapper sobre `ConnectionStrings:Connection` (ainda sem teste no banco) |
+| `Database:Enabled = true` | troca os mocks pelo banco: painel e cadastro em `ConnectionStrings:Connection` (usuário `etl_monitor`) e Executar Querys em `ConnectionStrings:QueryConnection` (`etl_query`) |
+| `LoggedCompany:DocCompany` | CNPJ da empresa logada em `monitor.Company` (padrão `44065634000106`) |
 
 ```bash
 dotnet user-secrets set "Admin:Enabled" "true" --project src/Frontend/WebApp

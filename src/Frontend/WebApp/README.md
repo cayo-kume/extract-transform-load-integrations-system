@@ -41,12 +41,14 @@ histórico de cada fase estão em [docs/PLANO-WEBAPP.md](docs/PLANO-WEBAPP.md).
 | 💻 | **Plataforma** | .NET 10 (`net10.0`), Blazor Web App com renderização interativa no servidor |
 | 🧱 | **Componentes** | MudBlazor 9 |
 | 🌐 | **Endereço local** | `http://localhost:5067` (perfil `http`) e `https://localhost:7236` (perfil `https`) |
-| 🧪 | **Dados** | **mockados** (`MockMonitorRepository` e `MockQueryRunner`): nada é lido nem gravado em banco até a fase 5 do plano |
-| 🏢 | **Cadastro de empresas** | repositórios prontos (mock por padrão; Dapper com `Cadastro:UseDatabase`), sem tela ainda |
+| 🧪 | **Dados** | **mockados** por padrão; com `Database:Enabled = true`, o **banco** (fase 5): painel, cadastro e Executar Querys com Dapper ([abaixo](#️-banco-de-dados-fase-5)) |
+| 🏢 | **Cadastro de empresas** | repositórios prontos (mock ou banco, pela mesma chave), sem tela ainda |
+| 🏛️ | **Empresa logada** | `LoggedCompany:DocCompany` e `LoggedCompany:Name` (padrão `NEWBLOOMERS - 44065634000106`) até a fase 6 |
 | 🔐 | **Autenticação** | nenhuma até a fase 6: o botão "Entrar" só leva para `/home` |
 
 > [!NOTE]
-> Os dados do painel são **mockados**: tudo o que você ativa, desativa, reconhece ou agenda some ao reiniciar o app.
+> Sem `Database:Enabled`, os dados do painel são **mockados**: tudo o que você ativa, desativa, reconhece ou agenda some ao
+> reiniciar o app.
 
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
@@ -72,10 +74,10 @@ flowchart LR
     PAGES --> CAD
     ASSIST --> MON
     ASSIST -. "perguntas e dados" .-> CLAUDE
-    MON -- "hoje" --> MOCK
-    MON -. "fase 5" .-> DB
+    MON -- "padrão" --> MOCK
     CAD -- "padrão" --> MOCK
-    CAD -- "Cadastro:UseDatabase" --> DAPPER --> DB
+    MON -- "Database:Enabled" --> DAPPER
+    CAD -- "Database:Enabled" --> DAPPER --> DB
 
     classDef accent fill:#7c5cff,stroke:#7c5cff,color:#ffffff
     classDef warm fill:#f5a524,stroke:#f5a524,color:#1e1b2e
@@ -185,7 +187,7 @@ diálogos ocupam a tela toda. As regras ficam no fim do `wwwroot/css/app.css`.
 * 🔗 **Período, aplicação, tipo e saúde ficam na URL** (`?period=7d&app=30`), então o link de uma tela abre do mesmo jeito
   para outra pessoa; sem `period` na URL, vale o último período escolhido na aba. A busca fica só na tela.
 * 🧭 **Barra superior:** o botão que esconde o menu, a empresa logada (`LoggedCompany`, fixa em
-  `NEWBLOOMERS - 35899805838` até a autenticação) e o botão que troca entre o tema escuro e o claro; a escolha do tema
+  `NEWBLOOMERS - 44065634000106` por configuração até a autenticação) e o botão que troca entre o tema escuro e o claro; a escolha do tema
   fica salva no navegador.
 * 📄 **Paginação padrão:** 50 linhas nas grids de jobs, 5 nas execuções e 25 nas mensagens de erro.
 
@@ -273,8 +275,8 @@ implementada no back-end, o banco só tem `IsError`.
 | ▶️ `Data/Mocks/MockOnDemandRunner.cs` | executor falso da tela Sob Demanda ([abaixo](#️-sob-demanda)) |
 | 🏢 `Data/Mocks/MockCompanyRepository.cs` | cadastro de empresas em memória ([abaixo](#-cadastro-de-empresas-repositórios)) |
 
-As telas só conhecem as interfaces `IMonitorRepository` e `IQueryRunner`. Na **fase 5**, trocar o registro do mock no
-`Program.cs` pela implementação com o banco é o **único ponto a mudar**.
+As telas só conhecem as interfaces `IMonitorRepository` e `IQueryRunner`: a chave `Database:Enabled` escolhe, no
+`Program.cs`, entre o mock e o banco ([abaixo](#️-banco-de-dados-fase-5)), sem mudar nenhuma tela.
 
 > [!TIP]
 > Para ver o tratamento de erro sem banco, `MockMonitorRepository:FailureRate` (de 0 a 1, `0` por padrão) faz essa
@@ -302,12 +304,45 @@ e das credenciais de cada integração já existe, **sem tela**. A tela (fase 4.
 Os erros de regra chegam à tela como `CompanyRegistrationException`, com o número da procedure em `Code`.
 
 > [!WARNING]
-> O mock é o padrão. `Cadastro:UseDatabase = true` (User Secrets) liga o **Dapper**, que compila mas **ainda não rodou
-> contra o banco**: o teste é no banco do Docker, carregado com `tools/seeds/Import-TestSeeds.ps1`.
->
-> ```bash
-> dotnet user-secrets set "Cadastro:UseDatabase" "true" --project src/Frontend/WebApp
-> ```
+> O mock é o padrão; `Database:Enabled = true` liga o **Dapper** junto com o resto do painel
+> ([abaixo](#️-banco-de-dados-fase-5)). O teste da fase 5 no Docker passou pelo painel e pelo Executar Querys, mas não
+> exercitou o cadastro (não há tela): ele ainda precisa de um teste próprio no banco.
+
+---
+
+## 🗄️ Banco de dados (fase 5)
+
+Com `Database:Enabled = true`, o WebApp lê e grava no banco principal com **Dapper**, sem API e sem projetos Shared
+([plano, fase 5](docs/PLANO-WEBAPP.md#fase-5--banco-de-dados)):
+
+| | Peça | O que faz |
+|:---:|---|---|
+| 📊 | `Data/Sql/SqlMonitorRepository.cs` | o `IMonitorRepository` real: `auditing.*` e `monitor.*` da empresa logada, tudo `WITH (NOLOCK)` e com as contagens prontas no SQL. Jobs e totais por período num cache de 30 s, que toda escrita daqui invalida. Saúde, reconhecimento e ordem iguais às do mock |
+| 💻 | `Data/Sql/SqlQueryRunner.cs` | o `IQueryRunner` real, com a connection string própria (`etl_query`). Todo comando roda numa transação: o SELECT é desfeito no fim, e o resto espera Confirmar ou Desfazer (sem resposta, é desfeito aqui mesmo, também com a aba fechada). Timeout de 30 s, cada comando no log com banco, duração, linhas e desfecho |
+| 🔌 | `Data/Sql/MainDatabase.cs` | a conexão com o banco principal e a hora de Brasília das tabelas |
+
+| Chave (User Secrets) | Valor |
+|---|---|
+| `Database:Enabled` | `true` liga o banco; `false` (padrão do `appsettings.json`) fica no mock |
+| `ConnectionStrings:Connection` | banco principal, com o usuário `etl_monitor` |
+| `ConnectionStrings:QueryConnection` | o mesmo servidor, com o usuário `etl_query` (só para Executar Querys) |
+| `LoggedCompany:DocCompany` | CNPJ da empresa em `monitor.Company` (padrão `44065634000106`) |
+
+```bash
+dotnet user-secrets set "Database:Enabled" "true" --project src/Frontend/WebApp
+dotnet user-secrets set "ConnectionStrings:Connection" "Server=localhost,1433;Database=NEWBLOOMERS;User Id=etl_monitor;Password=...;TrustServerCertificate=True" --project src/Frontend/WebApp
+dotnet user-secrets set "ConnectionStrings:QueryConnection" "Server=localhost,1433;Database=NEWBLOOMERS;User Id=etl_query;Password=...;TrustServerCertificate=True" --project src/Frontend/WebApp
+```
+
+Os usuários `etl_monitor` e `etl_query` saem das procedures `dbo.sp_Create_Monitor_User` e `dbo.sp_Grant_Query_User`
+(Script009 do Shared). A senha nunca fica em script: quem tem `ALTER ANY LOGIN` roda as procedures com ela, à mão ou pelo
+`migrator.csx` do Shared com as variáveis de ambiente `ETL_MONITOR_PASSWORD` e `ETL_QUERY_PASSWORD`. Banco criado depois:
+`EXEC dbo.sp_Grant_Query_User @database = N'<banco>'`.
+
+> [!IMPORTANT]
+> Ainda sem banco: **Executar agora** (o host não lê pedidos de execução; o botão avisa que não foi possível) e a tela
+> **Sob Demanda** (continua simulada, até o executor que chama o WebApi). Avisos (nível 2) só depois da proposta de nível
+> de mensagem: até lá, `IsError` vira erro ou informação.
 
 ---
 

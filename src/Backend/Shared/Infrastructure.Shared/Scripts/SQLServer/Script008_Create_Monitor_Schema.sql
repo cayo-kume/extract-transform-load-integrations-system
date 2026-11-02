@@ -95,6 +95,31 @@ ALTER TABLE [monitor].[AppSetting] ADD  CONSTRAINT [FK_AppSetting_Apps] FOREIGN 
 REFERENCES [auditing].[Apps] ([IdParent])
 GO
 
+-- falha reconhecida pelo painel (src/Frontend/WebApp/docs/PLANO-WEBAPP.md, 11.5.1): um reconhecimento por job da empresa,
+-- válido enquanto a última execução for Execution (nula: job atrasado que nunca rodou) e até ExpiresAt. Reconhecer de novo
+-- substitui o anterior. A saúde do job não muda: o painel só tira o job de "Falhas Ativas".
+CREATE TABLE [monitor].[JobAcknowledgement](
+    [IdJob] [int] NOT NULL,
+    [IdType] [int] NOT NULL,
+    [Company] [varchar](20) NOT NULL,
+    [Execution] [uniqueidentifier] NULL,
+    [Note] [nvarchar](500) NULL,
+    [User] [nvarchar](100) NOT NULL,
+    [At] [datetime] NOT NULL CONSTRAINT [DF_JobAcknowledgement_At] DEFAULT (SYSUTCDATETIME() AT TIME ZONE 'UTC' AT TIME ZONE 'E. South America Standard Time'),
+    [ExpiresAt] [datetime] NOT NULL,
+ CONSTRAINT [PK_JobAcknowledgement] PRIMARY KEY CLUSTERED
+(
+    [IdJob] ASC,
+    [IdType] ASC,
+    [Company] ASC
+)WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+
+ALTER TABLE [monitor].[JobAcknowledgement] ADD  CONSTRAINT [FK_JobAcknowledgement_Jobs] FOREIGN KEY([IdJob], [IdType], [Company])
+REFERENCES [auditing].[Jobs] ([IdJob], [IdType], [Company])
+GO
+
 -- cadastra a empresa (ou só confere, se já existir) e cria os jobs dos hosts dela (IdParent 140, Script007): toda
 -- empresa tem o seu próprio 14000. Os jobs nascem inativos, como em auditing.sp_Add_Company_App (Script002).
 CREATE OR ALTER PROCEDURE [auditing].[sp_Add_Company] (

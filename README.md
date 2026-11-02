@@ -830,7 +830,7 @@ e telas responsivas para celular e tablet.
 | 💻 **Executar Querys** | `/queries` | Consultas SQL com favoritas e querys prontas (só com `Admin:Enabled`) |
 
 O **cadastro de empresas** já tem os repositórios no WebApp (`ICompanyRepository` e `IModuleParametersRepository`, fase
-4.5 do [plano](docs/PLANO-TELA-CADASTRO-EMPRESA.md)): mock por padrão e Dapper com `Cadastro:UseDatabase = true`. A
+4.5 do [plano](docs/PLANO-TELA-CADASTRO-EMPRESA.md)): mock por padrão e Dapper com `Database:Enabled = true`, a mesma chave que liga o painel no banco (fase 5). A
 tela (fase 4.6) só começa depois do mockup aprovado.
 
 > [!NOTE]

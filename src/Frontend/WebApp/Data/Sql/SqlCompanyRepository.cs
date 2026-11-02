@@ -6,54 +6,9 @@ using WebApp.Models;
 namespace WebApp.Data.Sql
 {
     /// <summary>
-    /// Conexão com o banco principal (ConnectionStrings:Connection) e a tradução dos THROW das procedures do cadastro
-    /// (50002, 50003, 50004) em CompanyRegistrationException, com a mensagem da procedure.
-    /// </summary>
-    public class CompanyDatabase(IConfiguration configuration)
-    {
-        // a mesma hora local que os DEFAULT das tabelas de monitor gravam
-        public const string Now = "CAST(SYSUTCDATETIME() AT TIME ZONE 'UTC' AT TIME ZONE 'E. South America Standard Time' AS datetime)";
-
-        private readonly string _connectionString = configuration.GetConnectionString("Connection")
-            ?? throw new InvalidOperationException("ConnectionStrings:Connection não configurada: o cadastro com banco precisa dela.");
-
-        public async Task<SqlConnection> OpenAsync(CancellationToken cancellationToken)
-        {
-            var connection = new SqlConnection(_connectionString);
-            await connection.OpenAsync(cancellationToken);
-            return connection;
-        }
-
-        public static async Task<T> Translate<T>(Func<Task<T>> action)
-        {
-            try
-            {
-                return await action();
-            }
-            catch (SqlException exception) when (exception.Number is 50002 or 50003 or 50004)
-            {
-                throw new CompanyRegistrationException(exception.Message, exception.Number, exception);
-            }
-        }
-
-        /// <summary>
-        /// Tabelas *Parameters de ModuleDefinitions que existem neste banco (um módulo sem migrator rodado não tem a dele).
-        /// </summary>
-        public static async Task<HashSet<string>> ExistingTablesAsync(IDbConnection connection, IDbTransaction? transaction = null)
-        {
-            var tables = ModuleDefinitions.All.Select(x => x.Table).ToArray();
-            var existing = await connection.QueryAsync<string>(
-                "SELECT t.Name FROM (SELECT value AS Name FROM STRING_SPLIT(@tables, '|')) t WHERE OBJECT_ID(t.Name) IS NOT NULL",
-                new { tables = string.Join('|', tables) }, transaction);
-
-            return existing.ToHashSet();
-        }
-    }
-
-    /// <summary>
     /// ICompanyRepository no banco principal, com Dapper (sem API e sem Shared, docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.5).
     /// </summary>
-    public class SqlCompanyRepository(CompanyDatabase database) : ICompanyRepository
+    public class SqlCompanyRepository(MainDatabase database) : ICompanyRepository
     {
         private const string SelectCompany = "SELECT Company, [Name], TradeName, IsActive, CreatedAt, UpdatedAt FROM [monitor].[Company]";
 
@@ -87,7 +42,7 @@ namespace WebApp.Data.Sql
             if (exists > 0)
                 throw new CompanyRegistrationException($"A empresa {key} já está cadastrada.");
 
-            await CompanyDatabase.Translate(() => connection.ExecuteAsync(new CommandDefinition(
+            await MainDatabase.Translate(() => connection.ExecuteAsync(new CommandDefinition(
                 "[auditing].[sp_Add_Company]",
                 new { company = key, name = company.Name.Trim(), tradeName = Blank(company.TradeName) },
                 commandType: CommandType.StoredProcedure, cancellationToken: cancellationToken)));
@@ -100,7 +55,7 @@ namespace WebApp.Data.Sql
 
             await using var connection = await database.OpenAsync(cancellationToken);
             var updated = await connection.ExecuteAsync(new CommandDefinition(
-                $"UPDATE [monitor].[Company] SET [Name] = @name, TradeName = @tradeName, UpdatedAt = {CompanyDatabase.Now} WHERE Company = @company",
+                $"UPDATE [monitor].[Company] SET [Name] = @name, TradeName = @tradeName, UpdatedAt = {MainDatabase.Now} WHERE Company = @company",
                 new { company = ModuleDefinitions.Digits(company), name = name.Trim(), tradeName = Blank(tradeName) }, cancellationToken: cancellationToken));
 
             if (updated == 0)
@@ -111,7 +66,7 @@ namespace WebApp.Data.Sql
         {
             await using var connection = await database.OpenAsync(cancellationToken);
             var updated = await connection.ExecuteAsync(new CommandDefinition(
-                $"UPDATE [monitor].[Company] SET IsActive = @isActive, UpdatedAt = {CompanyDatabase.Now} WHERE Company = @company",
+                $"UPDATE [monitor].[Company] SET IsActive = @isActive, UpdatedAt = {MainDatabase.Now} WHERE Company = @company",
                 new { company = ModuleDefinitions.Digits(company), isActive }, cancellationToken: cancellationToken));
 
             if (updated == 0)
@@ -129,7 +84,7 @@ namespace WebApp.Data.Sql
 
             // em que módulos cada CNPJ tem parâmetros: um SELECT por tabela *Parameters que existe no banco. Tabela e IdParent
             // vêm de ModuleDefinitions, nunca da tela
-            var existing = await CompanyDatabase.ExistingTablesAsync(connection);
+            var existing = await MainDatabase.ExistingTablesAsync(connection);
             var queries = ModuleDefinitions.All
                 .Where(x => existing.Contains(x.Table))
                 .Select(x => $"SELECT DISTINCT {x.IdParent} AS IdParent, CAST(p.doc_company AS varchar(20)) AS DocCompany FROM {x.Table} p JOIN [monitor].[HoldingCompanies] h ON h.Company = p.doc_company WHERE h.Holding = @company")
@@ -177,7 +132,7 @@ namespace WebApp.Data.Sql
         public async Task<int> AddAppAsync(string company, int idParent, CancellationToken cancellationToken = default)
         {
             await using var connection = await database.OpenAsync(cancellationToken);
-            return await CompanyDatabase.Translate(() => connection.ExecuteScalarAsync<int>(new CommandDefinition(
+            return await MainDatabase.Translate(() => connection.ExecuteScalarAsync<int>(new CommandDefinition(
                 "[auditing].[sp_Add_Company_App]", new { company = ModuleDefinitions.Digits(company), idParent },
                 commandType: CommandType.StoredProcedure, cancellationToken: cancellationToken)));
         }

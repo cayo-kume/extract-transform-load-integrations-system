@@ -117,6 +117,23 @@ CREATE NONCLUSTERED INDEX [IX_Logs_Heartbeat] ON [auditing].[Logs] ([Company] AS
 WITH (STATISTICS_NORECOMPUTE = OFF, FILLFACTOR = 90, DATA_COMPRESSION = ROW) ON [PRIMARY]
 GO
 
+-- painel do WebApp (src/Frontend/WebApp/docs/PLANO-WEBAPP.md, 11.3): todo filtro é por período (StartDate) da empresa
+CREATE NONCLUSTERED INDEX [IX_Logs_StartDate] ON [auditing].[Logs] ([Company] ASC, [StartDate] ASC)
+INCLUDE ([IdJob], [IdType], [EndDate], [Execution])
+WITH (STATISTICS_NORECOMPUTE = OFF, FILLFACTOR = 90, DATA_COMPRESSION = ROW) ON [PRIMARY]
+GO
+
+-- painel do WebApp: a última execução de cada job (a que começou por último, terminada ou não) e as execuções de um job
+CREATE NONCLUSTERED INDEX [IX_Logs_JobStartDate] ON [auditing].[Logs] ([Company] ASC, [IdJob] ASC, [IdType] ASC, [StartDate] DESC)
+INCLUDE ([EndDate], [ExecutionParent])
+WITH (STATISTICS_NORECOMPUTE = OFF, FILLFACTOR = 90, DATA_COMPRESSION = ROW) ON [PRIMARY]
+GO
+
+-- painel do WebApp: uma execução pelo Guid (links de execução, mensagens e registros dela)
+CREATE NONCLUSTERED INDEX [IX_Logs_Execution] ON [auditing].[Logs] ([Execution] ASC)
+WITH (STATISTICS_NORECOMPUTE = OFF, FILLFACTOR = 90, DATA_COMPRESSION = ROW) ON [PRIMARY]
+GO
+
 CREATE TABLE [auditing].[Messages](
 	[IdExecutionMessage] [bigint] IDENTITY(1,1) NOT NULL,
 	[IdJob] [int] NOT NULL,
@@ -139,6 +156,12 @@ CREATE TABLE [auditing].[Messages](
 ) ON [PRIMARY]
 GO
 
+-- painel do WebApp: mensagens e erros de cada execução (a PK começa pelo IDENTITY e não serve para essa busca)
+CREATE NONCLUSTERED INDEX [IX_Messages_Execution] ON [auditing].[Messages] ([Company] ASC, [IdJob] ASC, [IdType] ASC, [Execution] ASC)
+INCLUDE ([IsError])
+WITH (STATISTICS_NORECOMPUTE = OFF, FILLFACTOR = 90, DATA_COMPRESSION = ROW) ON [PRIMARY]
+GO
+
 CREATE TABLE [auditing].[Records](
 	[IdRecord] [bigint] IDENTITY(1,1) NOT NULL,
 	[IdJob] [int] NOT NULL,
@@ -156,6 +179,11 @@ CREATE TABLE [auditing].[Records](
 	[Execution] ASC
 )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
+GO
+
+-- painel do WebApp: registros por execução (contagem e lista paginada)
+CREATE NONCLUSTERED INDEX [IX_Records_Execution] ON [auditing].[Records] ([Company] ASC, [IdJob] ASC, [IdType] ASC, [Execution] ASC)
+WITH (STATISTICS_NORECOMPUTE = OFF, FILLFACTOR = 90) ON [PRIMARY]
 GO
 
 CREATE TABLE [auditing].[Types](

@@ -27,7 +27,7 @@ Situação em 30/10/2026:
 | Telas | `/` (login), `/home`, `/applications`, `/applications/jobs`, `/integrations` (vazia) e `/not-found` |
 | Dados | `BancoDeDadosGetFullLogs()` com valores fixos, copiado em `Home`, `Applications` e `ApplicationJobs` |
 | Modelo | classes privadas `App → Job → Log → Message/Record` repetidas em cada página, espelhando as tabelas `auditing.*` |
-| Acesso ao banco | nenhum (e continua assim até a fase 5) |
+| Acesso ao banco | nenhum (até a fase 5, feita em 02/11/2026) |
 | Filtros | `Filters` guarda período, tipo, aplicação e busca só para si e não avisa a página |
 | Configurações | `ApplicationConfigurations` abre um formulário por aplicação, sem ligação a nada; o Confirm não faz nada |
 | Login | o botão "Entrar" só navega para `/home`; o `AuthorizeView` está comentado (e continua assim até a fase 6) |
@@ -42,7 +42,7 @@ Situação em 30/10/2026:
 | 2 — Telas do painel | todas as telas de monitoramento funcionando sobre o mock | 4, 5 e 6 | fase 1 | agora |
 | 3 — Executar Querys | a tela de consultas inteira, sobre um executor falso | 7 | fase 1 (pode andar junto com a fase 2) | agora |
 | 4 — Acabamento | visual fechado e documentado | 8 e 9 | fases 2 e 3 | agora |
-| 5 — Banco de dados | painel e consultas lendo e gravando no banco real | 10, 11 e 12 | fase 4; colunas do passo 4 do plano do host | **não agora** |
+| 5 — Banco de dados | painel e consultas lendo e gravando no banco real | 10, 11 e 12 | fase 4; colunas do passo 4 do plano do host | **feita (02/11/2026)** |
 | 6 — Autenticação | login e liberações por grupo | 13 e 14 | fase 5 | **não agora** |
 | 7 — App MAUI | os mesmos dados no app, por uma API | 15 | fases 5 e 6 | **futuro** |
 
@@ -521,7 +521,53 @@ mockup para aprovação):
     está configurado. Conversa só em memória, por aba. Na fase 5 as ferramentas passam a ler o banco junto com o
     repositório, sem mudar o chat.
 
-# Fase 5 — Banco de dados (não implementar agora)
+# Fase 5 — Banco de dados
+
+**Situação (02/11/2026): implementada e testada no SQL Server do Docker.** Um banco próprio, com os migrators do Shared,
+Totvs, Movidesk e Worker e a empresa de teste do `Import-TestSeeds.ps1`, recebeu execuções controladas (ok, erro, rodando
+e atrasada). O WebApp leu esse banco com `etl_monitor` e `etl_query`. Os números dos cards bateram com a consulta direta
+no banco: 15 execuções e 2 erros no Movidesk, 15 e 1 no Totvs, 315 registros. Também passaram:
+
+- os Logs de Erros, com as causas agrupadas;
+- o detalhe da execução, com mensagens e registros;
+- o reconhecimento de falha;
+- na tela Executar Querys, um `SELECT`, um `UPDATE` confirmado, um `INSERT` desfeito e um `CREATE TABLE` confirmado.
+
+Ficaram de fora ou mudaram em relação ao texto abaixo:
+
+1. **Usuários de banco (passo 10):** em vez de scripts com `$monitor_password$` e `$query_password$`, o `Script009` do
+   Shared cria as procedures `dbo.sp_Create_Monitor_User` e `dbo.sp_Grant_Query_User`. Elas recebem a senha como
+   parâmetro e podem rodar de novo:
+   - completam as permissões de `*Parameters` de um módulo migrado depois;
+   - com `@database`, liberam um banco novo.
+
+   O `migrator.csx` do Shared roda as duas quando há `ETL_MONITOR_PASSWORD` e `ETL_QUERY_PASSWORD` no ambiente. Sem
+   elas, não roda, e o DbUp não quebra por variável faltando. O migrator passou a imprimir só servidor e banco. O
+   `etl_monitor` também ganhou o que o cadastro de empresas (fase 4.5) usa: as procedures de cadastro e
+   `SELECT`/`INSERT`/`UPDATE` nas tabelas `*Parameters`.
+2. **Configuração:** uma chave só, `Database:Enabled` (não `UseMockData`), liga painel, cadastro e Executar Querys no
+   banco; ela substitui a `Cadastro:UseDatabase` da fase 4.5. O pacote é o `Microsoft.Data.SqlClient`, o mesmo do
+   cadastro, não o `System.Data.SqlClient`.
+3. **Empresa logada:** `LoggedCompany:DocCompany` e `LoggedCompany:Name` na configuração, com padrão
+   `44065634000106`, o CNPJ de 14 dígitos dos scripts. Isso resolve a divergência de 11.5.6.
+4. **Índices (11.3)** no `Script001`, com `Company` à frente, como a PK depois da proposta de empresa:
+   - `IX_Logs_StartDate`: período;
+   - `IX_Logs_JobStartDate`: última execução de cada job;
+   - `IX_Logs_Execution`: uma execução pelo Guid;
+   - `IX_Messages_Execution` e `IX_Records_Execution`: mensagens e registros de cada execução.
+
+   Banco que já rodou o `Script001` recebe os índices à parte.
+5. **Reconhecer falha (11.5.1):** `monitor.JobAcknowledgement` no `Script008`, com `Company` (não `DocCompany`) e FK
+   para `auditing.Jobs`. Fica um reconhecimento por job: reconhecer de novo substitui o anterior.
+6. **Executar agora (11.5.2):** continua sem banco. O host ainda não lê pedidos, e o `RequestRunAsync` real recusa com
+   aviso.
+7. **Sob Demanda (11.5.6):** continua com o executor simulado.
+8. **Bug achado no teste:** o `Script005` (tipos de job) estava em ISO-8859, e o DbUp gravava `Integra��o`. Foi
+   convertido para UTF-8 com `N'...'`. Banco que já rodou o script corrige com
+   `UPDATE auditing.Types SET JobType = N'Integração' WHERE IdType = 2`, mais as descrições.
+9. **Não testado no banco:** a edição da agenda, ativar e desativar jobs, as imagens das aplicações e o diálogo de
+   configurações do módulo. O código usa as mesmas tabelas, mas o teste não passou por essas telas.
+
 
 **Objetivo:** o painel e a tela de consultas usando o banco real, com usuários de banco próprios e o mock ainda
 disponível para desenvolver o visual.

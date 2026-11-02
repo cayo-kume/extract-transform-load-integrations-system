@@ -9,6 +9,7 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
 @inject ProtectedLocalStorage LocalStorage
+@inject ILogger<Queries> Logger
 
 <PageTitle>Executar Querys</PageTitle>
 
@@ -349,7 +350,7 @@
             return;
         }
 
-        _databases = await QueryRunner.GetDatabasesAsync();
+        await Snackbar.TryAsync(Logger, async () => _databases = await QueryRunner.GetDatabasesAsync(), "Não foi possível listar os bancos.");
         _database = _databases.Contains("NEWBLOOMERS") ? "NEWBLOOMERS" : _databases.FirstOrDefault();
 
         if (ReadyQueries.Find(ReadyQuery) is { } ready)
@@ -499,9 +500,10 @@
             return;
 
         _finishing = true;
-        await QueryRunner.CommitAsync(transactionId);
+        var committed = await Snackbar.TryAsync(Logger, () => QueryRunner.CommitAsync(transactionId), "Não foi possível confirmar: a alteração foi desfeita.");
         FinishPending();
-        Snackbar.Add("Alteração confirmada.", Severity.Success);
+        if (committed)
+            Snackbar.Add("Alteração confirmada.", Severity.Success);
     }
 
     private async Task Rollback(bool timedOut)
@@ -510,7 +512,12 @@
             return;
 
         _finishing = true;
-        await QueryRunner.RollbackAsync(transactionId);
+        if (!await Snackbar.TryAsync(Logger, () => QueryRunner.RollbackAsync(transactionId), "Não foi possível desfazer pela tela; o banco desfaz sozinho ao fechar a conexão."))
+        {
+            FinishPending();
+            return;
+        }
+
         FinishPending();
         Snackbar.Add(timedOut ? "Tempo esgotado: a alteração foi desfeita." : "Alteração desfeita.", timedOut ? Severity.Warning : Severity.Info);
     }

@@ -9,14 +9,14 @@ namespace WebApp.Data.Sql
     /// ModuleDefinitions; os valores vão sempre como parâmetro. Os segredos não saem daqui: a leitura devolve só se estão
     /// definidos.
     /// </summary>
-    public class SqlModuleParametersRepository(CompanyDatabase database) : IModuleParametersRepository
+    public class SqlModuleParametersRepository(MainDatabase database) : IModuleParametersRepository
     {
         public async Task<IReadOnlyList<ModuleParametersModel>> GetParametersAsync(int idParent, string company, CancellationToken cancellationToken = default)
         {
             var definition = ModuleDefinitions.Get(idParent);
             await using var connection = await database.OpenAsync(cancellationToken);
 
-            if (!(await CompanyDatabase.ExistingTablesAsync(connection)).Contains(definition.Table))
+            if (!(await MainDatabase.ExistingTablesAsync(connection)).Contains(definition.Table))
                 return [];
 
             var rows = await connection.QueryAsync(new CommandDefinition(
@@ -45,7 +45,7 @@ namespace WebApp.Data.Sql
             await using var connection = await database.OpenAsync(cancellationToken);
             await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
 
-            if (!(await CompanyDatabase.ExistingTablesAsync(connection, transaction)).Contains(definition.Table))
+            if (!(await MainDatabase.ExistingTablesAsync(connection, transaction)).Contains(definition.Table))
                 throw new CompanyRegistrationException($"A tabela de parâmetros de {definition.Title} não existe neste banco: rode o migrator do módulo.");
 
             // a linha atual do CNPJ, travada até o fim da transação, para saber quais segredos já estão gravados
@@ -62,7 +62,7 @@ namespace WebApp.Data.Sql
                 throw new CompanyRegistrationException(error);
 
             // liga o CNPJ à empresa antes de gravar: recusa um CNPJ de outra holding ou de outra empresa do painel
-            await CompanyDatabase.Translate(() => connection.ExecuteAsync(new CommandDefinition(
+            await MainDatabase.Translate(() => connection.ExecuteAsync(new CommandDefinition(
                 "[auditing].[sp_Add_Holding_Company]",
                 new { company = key, docCompany = doc, name = string.IsNullOrWhiteSpace(input.DocCompanyName) ? null : input.DocCompanyName.Trim() },
                 transaction, commandType: CommandType.StoredProcedure, cancellationToken: cancellationToken)));
@@ -77,8 +77,8 @@ namespace WebApp.Data.Sql
                 parameters.Add($"p{i}", Value(fields[i], input.Values.GetValueOrDefault(fields[i].Column)));
 
             var sql = current is null
-                ? $"INSERT INTO {definition.Table} (integrated_or_updated_at, doc_company{string.Concat(fields.Select(x => $", [{x.Column}]"))}) VALUES ({CompanyDatabase.Now}, @doc{string.Concat(fields.Select((_, i) => $", @p{i}"))})"
-                : $"UPDATE {definition.Table} SET integrated_or_updated_at = {CompanyDatabase.Now}{string.Concat(fields.Select((x, i) => $", [{x.Column}] = @p{i}"))} WHERE doc_company = @doc";
+                ? $"INSERT INTO {definition.Table} (integrated_or_updated_at, doc_company{string.Concat(fields.Select(x => $", [{x.Column}]"))}) VALUES ({MainDatabase.Now}, @doc{string.Concat(fields.Select((_, i) => $", @p{i}"))})"
+                : $"UPDATE {definition.Table} SET integrated_or_updated_at = {MainDatabase.Now}{string.Concat(fields.Select((x, i) => $", [{x.Column}] = @p{i}"))} WHERE doc_company = @doc";
 
             await connection.ExecuteAsync(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
             await transaction.CommitAsync(cancellationToken);
