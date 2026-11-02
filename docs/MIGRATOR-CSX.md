@@ -134,6 +134,30 @@ dotnet script --version
 
 ## Como rodar
 
+### Pela tela: todas as aplicações de uma vez
+
+O [`tools/migrators/Invoke-Migrators.ps1`](../tools/migrators/Invoke-Migrators.ps1) abre uma tela Windows Forms com o
+servidor (IP), a porta, o banco, o usuário e a senha, e o catálogo das aplicações: Shared (obrigatório), Totvs,
+LinxMicrovix, LinxCommerce, Movidesk, AfterSale, DataWarehouse e o host Worker. Ele roda os migrators marcados na ordem
+acima, cada um a partir de uma unidade `subst` (sem o problema de MAX_PATH), e para no primeiro erro. A senha aparece como
+`****` no log. Precisa do PowerShell 7 e do `dotnet-script`.
+
+```powershell
+./tools/migrators/Invoke-Migrators.ps1
+./tools/migrators/Invoke-Migrators.ps1 -Server 10.0.0.15 -Port 1433 -Database NEWBLOOMERS
+```
+
+Com `-NoGui`, roda no console, com `-Credential` e `-Apps` (o Shared entra sempre):
+
+```powershell
+./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -Apps Totvs,DataWarehouse
+```
+
+Os módulos fora do host (Dootax, FlashCourier etc.) não estão no catálogo: o FlashCourier grava os mesmos ids do
+DataWarehouse em `auditing.Apps` (90) e `auditing.JobCatalog` (9000 a 9004), e os dois no mesmo banco quebram a chave.
+
+### Um módulo por vez
+
 O script lê a **pasta atual** (`.`), então precisa ser executado **de dentro da pasta `Scripts/SQLServer` do módulo**, a
 que contém o `migrator.csx`.
 
