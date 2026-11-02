@@ -353,7 +353,8 @@ Registro dos resultados (preenchido na execução):
 | C1 (fase B) | — | — | OK | OK | OK⁵ | OK | OK | OK⁶ | — | OK | ver 6.2 |
 | C2 | | | | | | | | | | | |
 | C3 | | | | | | | | | | | |
-| C4 | | | | | | | | | | | |
+| C4 (fase A) | OK | OK | OK | OK | — | OK | OK | OK | OK⁷ | OK | ver 6.3 |
+| C4 (fase B) | — | — | OK | OK | OK | OK | OK | OK | — | OK | ver 6.3 |
 | C5 | | | | | | | | | | | |
 | C6 | | | | | | | | | | | |
 | C7 | | | | | | | | | | | |
@@ -406,6 +407,33 @@ Pontos para decidir, além dos da 6.1:
 
 4. Nova tentativa no `ApiClient` para erro de rede na leitura da resposta (`HttpIOException`/`HttpRequestException`).
 5. A carga completa depender de 2 ciclos quando os pré-requisitos (filiais, lojas) rodam junto: aceitar ou encadear.
+
+### 6.3 C4 e extras locais (02/11/2026)
+
+Banco `EtlTeste_C4` (migrator com **Host de agenda = Worker**: 11 tabelas `quartz`), Worker por `dotnet run`
+(`Development`), painel como no C1, os mesmos 12 jobs a cada 5 min. A correção do migrator do C1 valeu: banco novo de
+primeira.
+
+| | O que se viu |
+|---|---|
+| Fase A (V4, V6, V8) | Igual ao C1: o Quartz registrou os 12 jobs, ciclos às 17:10 e 17:15, 7 com o erro de conexão esperado, nenhuma execução aberta. Aviso na subida: o id da instância é gerado automaticamente e o Quartz pede um id fixo para afinidade de nó (ver no A3) |
+| V9 / misfire | ⁷ Worker derrubado às 17:20:01 no meio de 8 execuções (ficaram `EXECUTING` em `QRTZ_FIRED_TRIGGERS`, sem linha em `auditing.Logs`, como no C1). Religado às 17:27 com `Quartz:Misfire:ThresholdInMinutes = 1`: os 12 disparos das 17:25 foram **descartados** com aviso `Misfired` no log, os 8 disparos da instância morta foram limpos sem reexecução e o ciclo das 17:30 rodou normal. **Diferença entre os hosts**: depois de uma queda, o Hangfire roda uma vez o que atrasou; o Quartz descarta o que passou do limite de misfire (15 min no padrão) |
+| Fase B (V5, V6) | Mesmo resultado do C1: carga de 3 meses, nenhuma duplicidade, `MovideskGetTickets` em ~10 min (pulado nos ciclos seguintes com `Skipped: previous execution ... still running`) |
+| A7 | Painel durante a carga inicial: visão geral completa em 93 ms (210 ms com o banco ocioso), tela de integrações normal, nenhum bloqueio em `sys.dm_exec_requests`. **OK** |
+| A6 | WebApi só com rotas (Hangfire desligado) + Worker agendando. Disparo de `GET /MovideskJobs/Movidesk/Tickets` às 17:37, com o mesmo job do Quartz rodando desde 17:35: **as duas execuções rodaram ao mesmo tempo** (rota em 158 s, 455 tickets; agendada até 17:45, 1.858). **Achado**: o `IJobLock` só é pedido pelos agendadores (filtro do Hangfire, `QuartzJobRunner`, `JobScheduleWorker`); as rotas não pedem a trava. Não houve linha duplicada em nenhuma das 16 tabelas de tickets (o merge por chave protegeu), mas a API foi lida em dobro |
+| A2 | Hangfire ligado no mesmo banco com o Worker agendando (17:47 a 17:56). Nos ciclos de 17:50 e 17:55, **10 dos 12 jobs rodaram duas vezes**: o Quartz dispara em :00 e o Hangfire pega a fila por volta de :11 (polling de 15 s); quando o segundo começa, o primeiro já terminou e a trava está livre. A trava só barrou os que ainda rodavam (`AfterSaleReverses`, 15 s; `LinxMovimento`, 63 s). Dados sem duplicidade, chamadas em dobro. **Achado**: nada impede dois agendadores no mesmo banco |
+| A1 | Worker parado às 17:56 e o Hangfire seguiu sozinho: ciclo das 18:00 com uma execução por job, sem duplicidade. Trocar de host é só parar um e ligar o outro; sobra uma linha da instância antiga em `quartz.QRTZ_SCHEDULER_STATE`, sem efeito. **OK** |
+| A5 | Container `sql-server` parado às 18:05:12 (ciclo em andamento) e religado às 18:05:53. O Hangfire voltou sozinho, rodou os atrasados às 18:06 sem erro e o ciclo das 18:10 foi normal. As execuções em andamento às 18:05 **não deixaram registro** (o mesmo achado do V9). **OK**, com o achado |
+| A4 | Segunda holding de teste (`11222333000181`) com o token do AfterSale copiado no banco e o `AfterSaleReverses` ativo. Dados separados por `doc_company` (36 da holding nova; 36 e 33 das marcas da NEWBLOOMERS). Com as duas empresas no mesmo minuto, a trava adiou a NEWBLOOMERS de 18:06 para 18:07 (`Rescheduled: ... running for another company`). **OK** |
+| C4b | **Não feito**: instalar o Worker como serviço do Windows (`publish-worker.ps1`) pede um terminal de administrador; fica para quando houver liberação |
+
+Pontos para decidir, além dos da 6.1 e 6.2:
+
+6. Rotas manuais (sob demanda e recorrentes pelo Swagger/painel) pedirem a mesma trava dos agendadores, devolvendo
+   409/423 quando o job da empresa já está rodando.
+7. Impedir dois agendadores no mesmo banco: por exemplo, o host registrar-se numa tabela ao subir e recusar a agenda
+   se outro tipo de host estiver ativo (heartbeat).
+8. Fixar o id da instância do Quartz (`quartz.scheduler.instanceId`) antes do A3.
 
 ---
 
