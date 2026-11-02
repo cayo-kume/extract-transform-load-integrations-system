@@ -100,9 +100,25 @@ namespace Worker.Extensions
                     .StartNow());
             });
 
+            // um host de agenda por vez (§6.2): aviso no log se o Hangfire estiver agendando no mesmo banco, antes do Quartz subir
+            builder.Services.AddHostedService<SchedulingHostGuard>();
+
             // na parada, espera as execuções em andamento terminarem, até Shutdown:TimeoutInMinutes
             builder.Services.AddQuartzHostedService(options => options.WaitForJobsToComplete = true);
             builder.Services.Configure<HostOptions>(options => options.ShutdownTimeout = TimeSpan.FromMinutes(settings.Shutdown.TimeoutInMinutes));
+
+            return builder;
+        }
+
+        /// <summary>
+        /// serviço do Windows (passo 6.1): o nome vem de Service:Name, o mesmo do perfil de publicação, e vira também a origem no Log
+        /// de Eventos (só Warning para cima, pela seção Logging:EventLog). Fora de um serviço (dotnet run, console), não faz nada
+        /// </summary>
+        public static HostApplicationBuilder AddWindowsServiceHosting(this HostApplicationBuilder builder)
+        {
+            var serviceName = builder.Configuration["Service:Name"] is { Length: > 0 } name ? name : "EtlWorker";
+
+            builder.Services.AddWindowsService(options => options.ServiceName = serviceName);
 
             return builder;
         }

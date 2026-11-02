@@ -568,8 +568,9 @@ rodava em `srv-vm-app01`/`srv-vm-app02`). Contêiner, `systemd` e um WebJob úni
    build roda no console para teste. Como serviço, o diretório de trabalho é o do executável (o `appsettings.json` é
    achado) e o log vai também para o Log de Eventos do Windows (origem com o nome do serviço, só `Warning` para cima).
 2. **Publicação:** `Publish/publish-worker.ps1` (PowerShell 7) com os perfis num `Publish/publish-profiles.psd1` ao lado,
-   como no WebJob. Cada perfil: a máquina (`ComputerName`, vazio = a local), a pasta de instalação, o nome do serviço, a
-   conta do serviço e `SelfContained` (com o runtime junto, `win-x64`, a VM não precisa do .NET 10 instalado).
+   como no WebJob. Cada perfil: a máquina (`ComputerName`, vazio = a local), a pasta de instalação (`InstallPath`), o nome
+   do serviço e o de exibição, a conta do serviço (`ServiceAccount`), o `Environment` e `SelfContained` (com o runtime
+   junto, `win-x64`, a VM não precisa do .NET 10 instalado).
 3. **O que o script faz:** `dotnet publish` (Release); **parar o serviço** (a parada espera os jobs em andamento, até
    `Shutdown:TimeoutInMinutes`, 3.1); copiar o build para a pasta (na máquina remota, pelo compartilhamento administrativo
    ou por uma sessão `PSRemoting`), sem apagar o `appsettings.Production.json` de lá; na primeira vez, **criar o
@@ -599,6 +600,35 @@ subida por causa de um servidor do Hangfire que caiu sem se desregistrar deixari
 são conferidos (precisaria da API da Azure).
 
 ---
+
+**Feito em 01/11/2026 (passo 6).**
+
+* **Host:** `Microsoft.Extensions.Hosting.WindowsServices` 10.0.8 e o `AddWindowsServiceHosting` no `Program.cs`, com o nome
+  do serviço em `Service:Name` (`EtlWorker`), que vira também a origem no Log de Eventos; `Logging:EventLog` só com
+  `Warning` para cima. Fora de um serviço, nada muda: o mesmo build roda no console.
+* **`SchedulingHostGuard`** (6.2): na subida, antes do Quartz, conta os servidores com heartbeat nos últimos 5 minutos em
+  `[HangFire].[Server]` (o schema padrão do Hangfire) e avisa no log; uma falha na conferência também só vira aviso.
+* **`Publish/publish-worker.ps1`** e **`Publish/publish-profiles.psd1`** (perfis `dev` e `prod`, com a máquina local e
+  `C:\Services\EtlWorker`): `-PublishProfile` (alias `-Profile`), `-ProfilesFile`, `-DryRun` e `-Uninstall`. O pacote sai
+  sem os `appsettings.<ambiente>.json` e o script recusa um `appsettings.json` com `ConnectionStrings`. Na máquina (local
+  ou por PowerShell Remoting): para o serviço e espera até 15 minutos; espelha a pasta com `robocopy /MIR` sem tocar no
+  `appsettings.Production.json` de lá; na primeira vez cria o serviço (conta virtual `NT SERVICE\<serviço>` ou a conta de
+  domínio do perfil, com a senha pedida pelo `Get-Credential`), com início automático atrasado, reinício automático
+  (`sc.exe failure`, 1 minuto, até três vezes por dia), leitura da pasta para a conta e a origem no Log de Eventos; grava
+  `DOTNET_ENVIRONMENT` e `Service__Name` no ambiente do serviço; inicia e confere que continua rodando 15 s depois.
+
+Conferido:
+
+* `-DryRun` do perfil `dev`: pacote de 49 MB (340 arquivos, com o runtime), só com o `appsettings.json`, sem scripts;
+  `-Uninstall -DryRun` só descreve a remoção;
+* o `Worker.exe` do pacote rodou no console contra um banco de teste do Docker (apagado no fim): com um servidor do
+  Hangfire simulado em `[HangFire].[Server]` com heartbeat recente, o aviso saiu na subida; com o heartbeat de 1 hora atrás,
+  nenhum aviso; nos dois casos o Worker subiu e montou a agenda.
+
+**Falta (precisa de administrador e muda a configuração da máquina, então fica com a equipe):** a instalação real do
+serviço com o script, numa máquina de teste, e o teste de parada esperando o job em andamento (5.6, item 10): com um job
+lento rodando, `Stop-Service EtlWorker` só termina depois que o job termina. Com a conta virtual e o SQL Server em outra
+máquina com autenticação integrada, o login no banco é o da conta da máquina (`DOMÍNIO\<máquina>$`).
 
 # Fase 5 — Documentação e o que entra depois
 
