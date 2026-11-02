@@ -1,6 +1,6 @@
 # Plano: cadastro de empresas e integrações pela tela (fora do DbUp)
 
-Branch: `implementacao-tela-cadastro`. Status: **4.1 feita**; as fases seguintes ainda não começaram.
+Branch: `implementacao-tela-cadastro`. Status: **4.1 e 4.2 feitas**; as fases seguintes ainda não começaram.
 
 Base: [PROPOSTA-DOC-COMPANY-AUDITING.md](../src/Backend/Shared/docs/PROPOSTA-DOC-COMPANY-AUDITING.md). Este plano
 substitui a fase F2 (seed por procedure a partir das tabelas `*Parameters`) daquela proposta e muda o nome da coluna.
@@ -66,47 +66,52 @@ O `.gitignore` ignora os dois scripts de credenciais que ficam fora do git (Linx
 mas **o DbUp ainda a executa**. Quem tem essa cópia precisa movê-la para `Seeds/SQLServer`. Os scripts que estão no git
 por decisão do usuário (Totvs, Movidesk, AfterSale) continuam no git, só mudaram de pasta.
 
-## 3. Script `.ps1` de dados de teste
+## 3. Script `.ps1` de dados de teste — feito em 4.2
 
 **Objetivo:** subir um banco de teste completo (empresa, parâmetros e jobs de todos os módulos) com um comando, usando os
 scripts de `Seeds/` (passo 2.1), sem passar pela tela de cadastro.
 
-Arquivo proposto: `tools/seeds/Import-TestSeeds.ps1`.
+Arquivo: [`tools/seeds/Import-TestSeeds.ps1`](../tools/seeds/Import-TestSeeds.ps1) (PowerShell 7).
 
 ```powershell
-./tools/seeds/Import-TestSeeds.ps1 -Server 'localhost,1433' -Database 'EtlTeste' -Company '44065634000106'
+./tools/seeds/Import-TestSeeds.ps1 -Database 'EtlTeste'
+./tools/seeds/Import-TestSeeds.ps1 -Database 'EtlTeste' -Modules Totvs,DataWarehouse -ActivateJobs
 ```
 
 | Parâmetro | Padrão | Uso |
 |---|---|---|
+| `-Database` | obrigatório | banco de teste já migrado; **recusa** `Company` e qualquer nome sem `Test`/`Teste`, salvo com `-Force` |
 | `-Server` | `localhost,1433` | instância do container `sql-server` do Docker |
-| `-Database` | obrigatório | banco de teste; **recusa** `Company` e qualquer nome sem `Test`/`Teste`, salvo com `-Force` |
-| `-Credential` | pede com `Get-Credential` | usuário e senha do SQL; a senha nunca vai para a linha de comando nem para log |
-| `-Company` | `44065634000106` | empresa dos jobs (holding NEWBLOOMERS) |
-| `-Modules` | todos | filtro, ex.: `-Modules Totvs,Movidesk` |
-| `-ActivateJobs` | desligado | sem ele os jobs nascem com `IsActive = 0` |
+| `-Credential` | pede com `Get-Credential` | usuário e senha do SQL; a senha vai para o `sqlcmd` pela variável `SQLCMDPASSWORD`, nunca pela linha de comando |
+| `-Company` | `44065634000106` | empresa dos jobs (holding NEWBLOOMERS), só dígitos |
+| `-CompanyName` | `NEWBLOOMERS` | razão social gravada em `monitor.Company` quando a empresa ainda não existe |
+| `-Modules` | todos | `Totvs`, `LinxMicrovix`, `LinxCommerce`, `Movidesk`, `AfterSale`, `DataWarehouse` (só jobs) |
+| `-ActivateJobs` | desligado | ativa os jobs da empresa nos módulos pedidos; sem ele, nascem inativos |
+| `-Force` | desligado | aceita um banco fora da regra de nome |
 
 O que ele faz, em ordem:
 
-1. Confere que o banco existe e que os migrators já rodaram (`auditing.Jobs` e as tabelas `*Parameters` existem). Não roda
-   migrator: isso continua sendo o `migrator.csx`.
-2. Cadastra a empresa com `auditing.sp_Add_Company` (passo 4.1), se ainda não existir. Isso já cria os jobs dos hosts
-   da empresa.
-3. Para cada módulo, executa o script de parâmetros de `Seeds/SQLServer` com `sqlcmd -b`. Script fora do git que não
-   existir na máquina (LinxMicrovix, LinxCommerce) gera um aviso e o módulo é pulado, sem parar o resto.
-4. Para cada módulo, chama `auditing.sp_Add_Company_App @company, @idParent` (passo 4.1), que copia o catálogo de jobs
-   do módulo para `auditing.Jobs` com `Company = @company`.
+1. Confere que os migrators já rodaram (`auditing.JobCatalog` com jobs e `monitor.Company`). Não roda migrator: isso
+   continua sendo o `migrator.csx`.
+2. Cadastra a empresa com `auditing.sp_Add_Company` (passo 4.1), se ainda não existir. Isso já cria os jobs dos hosts.
+3. Para cada módulo, roda o script `*_Insert_Values_Into_*_Parameters_Table.sql` de `Seeds/SQLServer` com `sqlcmd -b`,
+   numa transação. Script fora do git que não existir na máquina (LinxMicrovix, LinxCommerce) gera um aviso e o módulo
+   fica sem parâmetros, sem parar o resto; se o script ainda estiver no caminho antigo (`Scripts/SQLServer/Parameters`,
+   que o DbUp executa), o aviso pede para movê-lo.
+4. Para cada módulo, chama `auditing.sp_Add_Company_App @company, @idParent`, que copia o catálogo de jobs do módulo para
+   `auditing.Jobs` com `Company = @company`.
 5. Com `-ActivateJobs`, faz o `UPDATE auditing.Jobs SET IsActive = 1` só da empresa e dos módulos pedidos.
-6. Imprime um resumo por módulo: parâmetros inseridos, jobs criados, jobs ativos, avisos.
+6. Imprime um resumo por módulo: parâmetros inseridos, jobs novos, jobs da empresa, jobs ativos e avisos.
 
 Regras:
 
-- **Idempotente:** os scripts de parâmetros passam a usar `IF NOT EXISTS (... WHERE doc_company = ...)`, e a procedure
-  não duplica job. Rodar duas vezes não muda nada.
+- **Idempotente sem mexer nos scripts de credenciais:** o `.ps1` inclui o script do módulo (`:r`) numa transação e, no
+  fim, descarta as linhas novas de empresas que já tinham parâmetros no módulo (a regra é uma linha por empresa em cada
+  `*Parameters`). Vale também para os scripts fora do git, que ninguém precisa reescrever. A procedure não duplica job.
 - **Sem tráfego real por acidente:** os scripts têm credenciais de produção. Por isso os jobs nascem inativos e o resumo
   lembra de apontar `<Módulo>__BaseUrl` para `http://127.0.0.1:9/` antes de subir um host contra o banco de teste.
-- Usa o `sqlcmd` que já está instalado (ODBC 17). Sem dependência do módulo `SqlServer` do PowerShell.
-- Também serve para a primeira carga da NEWBLOOMERS num ambiente novo, até a tela existir. Fora do banco de teste exige
+- Usa o `sqlcmd` que já está instalado. Sem dependência do módulo `SqlServer` do PowerShell.
+- Também serve para a primeira carga da NEWBLOOMERS num ambiente novo, até a tela existir: fora do banco de teste exige
   `-Force`.
 
 ## 4. Fases
@@ -135,13 +140,22 @@ Ficam para as próximas fases: as procedures de log (`sp_Log_*`) e a `vw_JobsHea
 (4.3), e os agendadores ainda leem `auditing.Jobs` sem empresa (4.4). Até lá, um job que roda em um banco com empresa
 cadastrada falha ao gravar o log.
 
-### 4.2 Script de teste (`tools/seeds/Import-TestSeeds.ps1`)
+### 4.2 Script de teste (`tools/seeds/Import-TestSeeds.ps1`) — feito
 
-- [ ] Script da seção 3.
-- [ ] Scripts de parâmetros idempotentes.
-- [ ] Teste: banco zerado + migrators + `.ps1` → a holding com os parâmetros de todos os módulos e o catálogo completo em
-      `auditing.Jobs`, todos inativos; segunda execução sem mudança.
-- [ ] Documentar em `docs/MIGRATOR-CSX.md` (ordem: migrators, depois o `.ps1`).
+- [x] Script da seção 3.
+- [x] Idempotência pelo próprio `.ps1` (seção 3, regras), sem reescrever os scripts de parâmetros.
+- [x] Teste no Docker, em banco zerado e apagado no fim: migrators e depois o `.ps1` → a holding com 464 jobs inativos
+      (1 dos hosts, 122 Totvs, 284 LinxMicrovix, 12 LinxCommerce, 16 Movidesk, 24 AfterSale e 5 DataWarehouse) e os
+      parâmetros de Totvs, Movidesk e AfterSale; LinxMicrovix e LinxCommerce avisados (scripts fora do git).
+      `-Modules Totvs,DataWarehouse -ActivateJobs` ativou 127 jobs. Uma terceira execução completa não inseriu nada e não
+      duplicou nenhuma linha. `-Database Company` foi recusado.
+- [x] Documentado em `docs/MIGRATOR-CSX.md` (ordem: migrators, depois o `.ps1`).
+
+**Achado do teste:** os parâmetros do Movidesk (`38367316000199`) e do AfterSale (`38367316000199` e `42538267000268`)
+estão com o CNPJ das **marcas** (Misha e Open Era), não com o da holding (`44065634000106`), que só aparece na Totvs. Com
+a decisão de que a empresa do painel é a holding, os jobs desses módulos são criados para a holding, mas os services vão
+procurar os parâmetros por `doc_company` da holding e não vão achar. Precisa de decisão antes da fase 4.4 (pergunta 2 da
+seção 7.2 da proposta): trocar o `doc_company` desses scripts para a holding, ou cadastrar as marcas como empresas.
 
 ### 4.3 Log por empresa (fase F3 da proposta)
 

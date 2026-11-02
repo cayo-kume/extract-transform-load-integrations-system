@@ -35,7 +35,11 @@ Todos os módulos usam o **mesmo banco** e a mesma tabela de controle do DbUp. R
 Os migrators não inserem dados de cliente: o banco sobe sem empresa, sem parâmetros (credenciais) e com `auditing.Jobs`
 vazio; os jobs ficam no catálogo `auditing.JobCatalog`. Os scripts de parâmetros ficam em `Infrastructure.<Módulo>/Seeds/SQLServer`,
 fora do alcance do DbUp, e a empresa é cadastrada pela tela do WebApp ou, em teste, pelo `.ps1` de seeds
-([PLANO-TELA-CADASTRO-EMPRESA.md](PLANO-TELA-CADASTRO-EMPRESA.md)).
+([PLANO-TELA-CADASTRO-EMPRESA.md](PLANO-TELA-CADASTRO-EMPRESA.md), seção 3). Num banco de teste, depois dos migrators:
+
+```powershell
+./tools/seeds/Import-TestSeeds.ps1 -Database EtlTeste
+```
 
 ## O que o script faz
 
