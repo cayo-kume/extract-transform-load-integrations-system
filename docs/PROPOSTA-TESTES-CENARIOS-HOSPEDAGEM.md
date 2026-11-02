@@ -351,11 +351,11 @@ Registro dos resultados (preenchido na execução):
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | C1 (fase A) | OK¹ | OK | OK | OK | — ² | OK | OK | OK | OK³ | OK | ver 6.1 |
 | C1 (fase B) | — | — | OK | OK | OK⁵ | OK | OK | OK⁶ | — | OK | ver 6.2 |
-| C2 | | | | | | | | | | | |
+| C2 (fases A e B) | OK | OK | OK | OK | OK | OK | OK | OK⁸ | OK | OK | ver 6.4 |
 | C3 | | | | | | | | | | | |
 | C4 (fase A) | OK | OK | OK | OK | — | OK | OK | OK | OK⁷ | OK | ver 6.3 |
 | C4 (fase B) | — | — | OK | OK | OK | OK | OK | OK | — | OK | ver 6.3 |
-| C5 | | | | | | | | | | | |
+| C5 (fases A e B) | OK | OK | OK | OK | OK | OK | OK⁹ | OK | — | OK | ver 6.4 |
 | C6 | | | | | | | | | | | |
 | C7 | | | | | | | | | | | |
 
@@ -434,6 +434,41 @@ Pontos para decidir, além dos da 6.1 e 6.2:
 7. Impedir dois agendadores no mesmo banco: por exemplo, o host registrar-se numa tabela ao subir e recusar a agenda
    se outro tipo de host estiver ativo (heartbeat).
 8. Fixar o id da instância do Quartz (`quartz.scheduler.instanceId`) antes do A3.
+
+### 6.4 C2, C5 e A3 (02/11/2026)
+
+**Montagem do C2/C5** (decisão 5: comandos documentados aqui, sem script novo no repositório). Arquivos numa pasta
+fora do git:
+
+* `dotnet publish -c Release -o publish/webapi` (e `publish/webapp`) dos dois projetos;
+* `Dockerfile`: `FROM mcr.microsoft.com/dotnet/aspnet:10.0`, `COPY publish/${APP}/ .`,
+  `ENV ASPNETCORE_URLS=http://+:8080`, `ENTRYPOINT ["sh", "-c", "exec dotnet /app/$APP_DLL"]` (`APP` e `APP_DLL` por
+  build arg);
+* `nginx.conf`: `resolver 127.0.0.11` e `set $up webapp:8080; proxy_pass http://$up;` (o nginx sobe mesmo sem o
+  `webapi`, como no C5); no painel, `proxy_http_version 1.1`, `Upgrade`/`Connection` e `proxy_read_timeout 1h`;
+* `compose.yaml`: serviços `webapi` (profile `webapi`, `Hangfire__Enabled=true`), `webapp` (`Database__Enabled=true`)
+  e `nginx` (`nginx:1.27`, portas 8080 → painel e 8081 → WebApi), os dois apps com `ASPNETCORE_ENVIRONMENT=Production`
+  e `Server=host.docker.internal,1433`; senhas num `.env` (`--env-file`) e as `BaseUrl` da fase A num `env_file`;
+* `docker compose --env-file secrets.env --profile webapi up -d --build`.
+
+| | O que se viu |
+|---|---|
+| C2, fase A | Hangfire no Linux registrou os 12 jobs; ciclos às 18:40 e 18:45 iguais ao C1; painel e Swagger pelo nginx (200) |
+| Fuso horário | **OK**: o código usa o ID do Windows `E. South America Standard Time`; no Linux a imagem `aspnet:10.0` converte (tem ICU e tzdata) e `auditing.Logs` grava em horário de Brasília |
+| Cultura | No container as mensagens do DW saem com ponto ("0.0 s") e no Windows com vírgula ("0,0 s"): a cultura do processo muda com o sistema. Só texto, sem efeito em dado |
+| Auditoria | ⁸ **Achado**: no 1º ciclo, o `TotvsPostSearchInvoices` ficou com a execução gravada **sem nenhuma mensagem**. O `LoggerRepository.LogInsert` grava em 3 passos sem transação (o próprio código traz o comentário "Adicionar aqui um rollback"): o `INSERT` em `auditing.Logs` passou, o bulk insert das mensagens foi vítima de **deadlock** com outro job gravando no mesmo segundo, e o `CommitError` tentou inserir o log de novo e bateu na chave primária (`PK_JobExecutionsLogs_1`). O erro só ficou no log do container |
+| V9 | `docker restart -t 0` do `webapi` às 18:50:01: 11 jobs terminaram, 1 interrompido foi para `Deleted`; ciclo das 18:55 normal |
+| Painel | WebSocket do Blazor pelo nginx (101). `docker restart` do `webapp`: o navegador recebeu 502 e reconectou sozinho em 6 s, com circuito novo. Em `Production` as telas Sob Demanda e Executar Querys somem do menu (esperado). Avisos esperados no log: chaves de Data Protection só dentro do container; `HttpsRedirection` sem porta HTTPS (não redireciona) |
+| C2, fase B | Totvs (TLS), Microvix, Movidesk e AfterSale funcionam do Linux. Carga de 3 meses: 1.864 tickets, 1.271 pessoas, 1.047 notas, 194 movimentos; nada antes de 02/08 e nenhuma duplicidade. Desta vez a Totvs não cortou a resposta (notas em 343 s) |
+| C5 | Worker local (Quartz) + só o painel atrás do nginx, banco `EtlTeste_C5`. Fase A (1 ciclo, 7 erros esperados) e fase B (1.864 tickets, 1.047 notas, sem duplicidade, nada antes de 02/08). ⁹ **Achado**: o painel no container mostra "Atualizado às 22:20" quando eram 19:20: o container roda em UTC e as telas usam `DateTime.Now` (`Home`, `Integrations`, `Applications`, `Errors`, `HealthChip`, `DurationText`, `RecordsByDay`, `MessageCauses`). Os horários das execuções (vindos do banco) estão certos, e a contagem de atrasados deu 0 corretamente. O SQL Server do container também roda em UTC (`GETDATE()`), enquanto a aplicação grava em Brasília |
+| A3 | Banco `EtlTeste_A3`, dois `Worker.exe` no mesmo banco (fase A). Os dois nós fizeram check-in a cada 20 s e, no ciclo das 19:45, **cada job rodou uma vez**, com o trabalho dividido entre eles. Um nó derrubado às 19:50:01 com 5 execuções em andamento: o outro detectou a instância morta ("ClusterManager: detected 1 failed or restarted instances"), adiou a recuperação dos 5 disparos (jobs `DisallowConcurrentExecution`, não reexecutados) e rodou sozinho o ciclo das 19:55 (12 jobs, uma vez cada). **OK**. As 5 execuções interrompidas ficaram sem registro (mesmo achado do V9) |
+
+Pontos para decidir, além dos anteriores:
+
+9. Gravar o log da execução em transação (log, registros e mensagens juntos) e, no `CommitError`, não inserir de novo
+   um log que já entrou; avaliar a causa do deadlock no bulk insert de `auditing.Messages` com vários jobs gravando juntos.
+10. Fuso do painel em servidor fora de Brasília: `TZ=America/Sao_Paulo` no container/App Service, ou o painel usar o
+    horário de Brasília em vez de `DateTime.Now`.
 
 ---
 
