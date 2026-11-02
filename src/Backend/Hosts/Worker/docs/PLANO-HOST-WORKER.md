@@ -389,27 +389,34 @@ atrasou:
 
 **Como fica: o pulo decide pela execução anterior, não pelo atraso.**
 
-1. **No job.** O `QuartzJobRunner` tem `[PersistJobDataAfterExecution]` e grava no `JobDataMap`, ao terminar, o fim da
-   execução (`LastEndUtc`). Ao começar, compara o horário agendado do disparo (`context.ScheduledFireTimeUtc`) com o
-   `LastEndUtc`: **disparo agendado antes do fim da execução anterior = disparo que aconteceu com ela rodando → pula**,
-   sem pedir a trava e sem abrir conexão. Agendado depois do fim: roda, por mais atrasado que esteja (esperou thread).
-   Como o `JobDataMap` fica no store (3.3), a regra vale entre os Workers do cluster.
-2. **O limiar de misfire fica grande** (`Misfire:ThresholdInMinutes`, **15**): é a tolerância para um disparo esperar
+1. **No job.** O `QuartzJobRunner` tem `[PersistJobDataAfterExecution]` e grava no `JobDataMap` o início e o fim de cada
+   execução (`LastStartUtc` e `LastEndUtc`). Ao começar, olha o horário agendado do disparo
+   (`context.ScheduledFireTimeUtc`): **agendado entre o início e o fim da execução anterior = disparo que aconteceu com ela
+   rodando → pula**, sem pedir a trava e sem abrir conexão. Fora dessa janela, roda, por mais atrasado que esteja: depois
+   do fim, ou antes do início (as duas só esperaram thread). Como o `JobDataMap` fica no store (3.3), a regra vale entre os
+   Workers do cluster. *(Revisto no teste do passo 5: a primeira versão comparava só com o fim, e um job que só esperou
+   thread, e por isso terminou tarde, fazia o disparo seguinte dele ser pulado, o que o Hangfire não faz.)*
+2. **Disparos acumulados viram uma execução só.** Se, ao rodar, o horário seguinte do trigger também já passou
+   (`context.NextFireTimeUtc` no passado), o disparo é dispensado e o mais recente roda no lugar dele. É o caso do Worker
+   que ficou fora por menos que o limiar de misfire: sem isso, na volta, ele rodaria um disparo para cada horário perdido,
+   um atrás do outro. A dispensa não conta como pulo (não houve execução por cima de outra) e fica no log.
+3. **O limiar de misfire fica grande** (`Misfire:ThresholdInMinutes`, **15**): é a tolerância para um disparo esperar
    thread nas rajadas dos minutos cheios. Acima disso, `WithMisfireHandlingInstructionDoNothing`: o disparo é descartado
-   e o job volta no horário seguinte do cron. É o que acontece também depois de o Worker ficar fora: os disparos perdidos
-   não são executados de uma vez na volta. A diferença para o Hangfire fica só aqui: o Hangfire nunca descarta um disparo
-   que espera worker; o Worker descarta depois de 15 minutos de espera, e o log mostra (5.3, item 2).
-3. **Um job lento atrás de vários disparos.** O trigger bloqueado guarda só o próximo disparo, não todos os perdidos.
-   Uma execução de 10 minutos de um job de 3: ao terminar, o disparo mais antigo dentro dos 15 minutos é liberado e
-   pulado pelo item 1, o seguinte também, até o primeiro horário depois do fim, que roda normalmente. Cada um é um pulo
-   barato no log (sem trava, sem conexão), e juntos contam para o aviso de pulos seguidos, como os pulos do Hangfire.
+   e o job volta no horário seguinte do cron. É o que acontece também depois de o Worker ficar fora por mais que o limiar.
+   A diferença para o Hangfire fica aqui: o Hangfire nunca descarta um disparo que espera worker; o Worker descarta depois
+   de 15 minutos de espera, e o log mostra (5.3, item 2).
+4. **Um job lento atrás de vários disparos.** O trigger bloqueado guarda só o próximo disparo, não todos os perdidos.
+   Uma execução de 10 minutos de um job de 3: ao terminar, os disparos que caíram dentro dela são liberados um a um e
+   pulados pelo item 1, até o primeiro horário depois do fim, que roda normalmente. Cada um é um pulo barato no log, e
+   juntos contam para o aviso de pulos seguidos, como os pulos do Hangfire.
 
 | Situação (job de 3 min) | Hangfire | Worker |
 |---|---|---|
-| execução das 10:00 leva 4 min | 10:03 pulado; 10:06 roda | 10:03 pulado (agendado antes do fim, 10:04); 10:06 roda |
-| disparo das 10:03 espera 2 min por thread | roda às 10:05 | roda às 10:05 (agendado depois do fim da anterior) |
+| execução das 10:00 leva 4 min | 10:03 pulado; 10:06 roda | 10:03 pulado (agendado com a anterior rodando, 10:00 a 10:04); 10:06 roda |
+| disparo das 10:03 espera 2 min por thread | roda às 10:05 | roda às 10:05 (fora da janela da anterior) |
 | disparo espera thread mais de 15 min | roda quando houver worker | descartado pelo misfire; volta no horário seguinte |
-| Worker (ou servidor Hangfire) fora por 1 hora | `MisfireHandling` do recurring job | os disparos perdidos são descartados; volta no horário seguinte |
+| Worker (ou servidor Hangfire) fora por 10 minutos | `MisfireHandling` do recurring job | os disparos perdidos viram uma execução só, na volta |
+| Worker fora por 1 hora | `MisfireHandling` do recurring job | os disparos perdidos são descartados; volta no horário seguinte |
 
 ### 5.3 A combinação: duas camadas
 
@@ -428,14 +435,17 @@ integrações). O Quartz entra como primeira camada, mais barata:
 
 1. **`QuartzJobRunner`** (`IJob`, uma classe só para todos os jobs da agenda), com `[DisallowConcurrentExecution]` e
    `[PersistJobDataAfterExecution]`. Lê o `IdJob` do `JobDataMap`, acha a definição no mapa e:
-   1. **disparo agendado antes do fim da execução anterior** (`ScheduledFireTimeUtc < LastEndUtc`, 5.2): não roda,
-      registra no log `Skipped: previous execution of job:<IdJob> still running at <horário agendado>` e conta o pulo;
-   2. senão, pede a trava do `IJobLock` com a chave do mapa (`job:<IdJob>` ou `group:datawarehouse`, as mesmas do
+   1. **disparo agendado com a execução anterior rodando** (`LastStartUtc <= ScheduledFireTimeUtc < LastEndUtc`, 5.2):
+      não roda, registra no log `Skipped: previous execution of job:<IdJob> still running at <horário agendado>` e conta o
+      pulo;
+   2. **disparo acumulado** (o horário seguinte também já passou, 5.2, item 2): dispensado, com registro no log, sem contar
+      como pulo;
+   3. senão, pede a trava do `IJobLock` com a chave do mapa (`job:<IdJob>` ou `group:datawarehouse`, as mesmas do
       Hangfire e do WebJob), sem esperar;
-   3. **conseguiu:** zera o contador de pulos do job, roda pelo `ScheduledJobRunner.Run(definição)`, grava o `LastEndUtc`
+   4. **conseguiu:** zera o contador de pulos do job, grava o `LastStartUtc`, roda pelo `ScheduledJobRunner.Run(definição)`, grava o `LastEndUtc`
       e solta a trava num `finally`, com sucesso ou erro;
-   4. **não conseguiu:** não roda, registra no log `Skipped: previous execution of <chave> still running`, guarda o
-      motivo no `context.Result` e conta o pulo. O `LastEndUtc` não muda (a execução que segura a trava é de outro
+   5. **não conseguiu:** não roda, registra no log `Skipped: previous execution of <chave> still running`, guarda o
+      motivo no `context.Result` e conta o pulo. O `LastStartUtc` e o `LastEndUtc` não mudam (a execução que segura a trava é de outro
       `JobKey` ou de outro host).
 2. **Descartes pelo misfire.** Um disparo que esperou mais que `Misfire:ThresholdInMinutes` é descartado pelo
    `DoNothing` e não chega ao job: quem fica sabendo é um `ITriggerListener` do Worker (`TriggerMisfired`), que registra
@@ -456,15 +466,15 @@ integrações). O Quartz entra como primeira camada, mais barata:
 
 | Cenário | O que acontece |
 |---|---|
-| Job de 3 min leva 4 min | o disparo seguinte é bloqueado pelo Quartz, liberado no fim e pulado pela regra do 5.2 (agendado antes do fim); o job volta no horário seguinte |
+| Job de 3 min leva 4 min | o disparo seguinte é bloqueado pelo Quartz, liberado no fim e pulado pela regra do 5.2 (agendado com a anterior rodando); o job volta no horário seguinte |
 | Job de 3 min leva 3 min e 20 s | o mesmo: o disparo aconteceu com a anterior rodando, então pula, como no Hangfire |
-| Rajada dos minutos cheios (154 jobs de 120 min, pool de 20) | os disparos esperam thread e rodam atrasados, sem pular (agendados depois do fim da anterior); só os que esperam mais de 15 minutos são descartados, com registro no log |
+| Rajada dos minutos cheios (154 jobs de 120 min, pool de 20) | os disparos esperam thread e rodam atrasados, sem pular (fora da janela da execução anterior); só os que esperam mais de 15 minutos são descartados, com registro no log |
 | Dois jobs do DW no mesmo minuto | o Quartz dispara os dois (são `JobKey`s diferentes); o primeiro pega `group:datawarehouse`, o segundo pula pela trava |
 | Troca de versão com o job rodando | o `...V1.0.1` dispara enquanto o `...V1.0.0` roda (o `LastEndUtc` do novo está vazio); a trava `job:<IdJob>` pula o novo |
 | Segundo Worker no mesmo banco | o cluster entrega cada disparo a um Worker só, e o `[DisallowConcurrentExecution]` e o `LastEndUtc` valem entre eles; a trava sobra como garantia |
 | Worker e Hangfire (ou WebJob) ligados juntos numa troca de host | a regra é um host por vez; se acontecer, a mesma chave nos três hosts impede que um job rode junto |
 | Rota manual no WebApi com o job rodando no Worker | roda junto: as rotas ficam fora da trava (decisão de 30/10/2026), uso manual e consciente. O DW mantém a própria trava no processo (409) |
-| O Worker cai no meio de um job | a conexão da trava fecha e a trava é solta; o cluster marca o disparo em andamento como órfão (o job não pede `RequestsRecovery`, então não é reexecutado) e libera o `JobKey`; na volta, os disparos perdidos há mais de 15 minutos são descartados (`DoNothing`) |
+| O Worker cai no meio de um job | a conexão da trava fecha e a trava é solta; o cluster marca o disparo em andamento como órfão (o job não pede `RequestsRecovery`, então não é reexecutado) e libera o `JobKey`; na volta, os disparos perdidos há mais de 15 minutos são descartados (`DoNothing`) e os mais recentes viram uma execução só |
 | Desligamento do serviço | `WaitForJobsToComplete`: o Quartz para de disparar e espera as execuções em andamento, até `Shutdown:TimeoutInMinutes`; passado o tempo, o processo é encerrado e cai no caso acima |
 | Execução presa (API que não responde) | segura a trava e o `JobKey`; todos os disparos seguintes pulam até ela terminar. A defesa é o timeout do `HttpClient` de cada módulo e o `commandTimeout` das procedures, como no Hangfire; o aviso de pulos seguidos mostra o caso no log |
 
@@ -498,6 +508,51 @@ No banco de teste do Docker:
 10. parar o serviço com um job rodando: a parada espera o job.
 
 ---
+
+**Feito em 01/11/2026 (passo 5).**
+
+* **`QuartzJobRunner`** com `[DisallowConcurrentExecution]` e `[PersistJobDataAfterExecution]`, na ordem do 5.3: a janela
+  da execução anterior (`LastStartUtc`/`LastEndUtc`), a dispensa dos disparos acumulados, a trava do `IJobLock` com a chave
+  do mapa e a execução pelo `ScheduledJobRunner`.
+* **`JobSkipCounter`** (singleton): pulos seguidos por job, com o aviso a cada `Concurrency:MaxConsecutiveSkips`; zera
+  quando o job roda.
+* **`MisfireListener`** (`ITriggerListener` no grupo `integrations`): registra o descarte pelo misfire e conta no mesmo
+  contador.
+* **`SchedulerRefreshJob`** com `[DisallowConcurrentExecution]` e a trava `job:scheduler-refresh`.
+
+Conferido num banco de teste do Docker (apagado no fim), com o 9002 a cada minuto, as `BaseUrl` dos módulos apontadas
+para uma porta local fechada (nenhum job chamou API externa, depois do incidente nos achados) e a lentidão provocada
+segurando `auditing.Logs` com `TABLOCKX`, onde o job grava o log no fim:
+
+1. **Execução mais longa que o intervalo:** a das 21:26 levou 71 s; a das 21:27 pulou ("still running at 21:27:00"); a
+   das 21:28 rodou.
+2. **Trava do grupo do DW presa por outra sessão (5 min e meio):** cinco pulos pela trava, com o aviso no quinto; solta, o
+   job voltou a rodar e o contador zerou.
+3. **Uma thread só, dois jobs por minuto (9002 e 3000):** o 3000 das 21:44 ocupou a thread por 70 s; o 9002 das 21:44
+   esperou e **rodou atrasado, sem pular**; o 3000 das 21:45 pulou (com a anterior rodando); o 9002 das 21:45 rodou.
+4. **O mesmo com o limiar de misfire em 1 minuto:** o 9002 que esperou 70 s foi descartado, e o `MisfireListener`
+   registrou ("Misfired: waited more than 1 minute(s)"), com o `AdoJobStore` em cluster.
+5. **Worker fora por mais que o limiar:** na volta, os disparos perdidos foram descartados pelo misfire. **Fora por menos
+   (3 minutos, limiar de 15):** os disparos das 21:54 e 21:55 foram dispensados e só o das 21:56 rodou.
+6. **Dois Workers e troca de versão:** com o 9002 V1.0.0 rodando no Worker A, um Worker B com o 9002 em V1.0.1 subiu,
+   trocou o job pela V1.0.1, e o disparo seguinte **pulou pela trava** do grupo do DW; depois, cada disparo rodou num
+   Worker só.
+7. **Derrubar o Worker que executava:** a trava foi solta na hora (nenhuma `APPLICATION` em `sys.dm_tran_locks`), o
+   cluster tirou o Worker caído da lista e o outro seguiu a agenda, sem disparo preso em `QRTZ_FIRED_TRIGGERS`.
+
+Fica para a fase 4: a parada do serviço esperando o job em andamento (precisa do serviço do Windows).
+
+Achados:
+
+* **Dois Workers com versões diferentes alternam a agenda:** cada um, na sua releitura, troca o job pela versão do seu
+  mapa (V1.0.0 e V1.0.1, de um lado para o outro). A trava impede que rodem juntas, mas o nome no log alterna. Numa
+  atualização com dois Workers, atualizar os dois em seguida.
+* **Job desligado pode rodar uma vez na subida:** o scheduler começa a disparar o que está no store antes de a releitura
+  da subida terminar; um job desligado com o Worker parado pode rodar uma vez ao voltar.
+* **Banco de teste e APIs reais:** os scripts de parâmetros dos módulos trazem credenciais reais. No primeiro teste do
+  cenário 3, o 3000 (Movidesk) ativo fez 27 GETs na API real do Movidesk antes de ser parado (só leitura; nada gravado
+  fora do banco de teste). Nos testes, as `BaseUrl` dos módulos vão para uma porta local fechada.
+* O console grava os acentos do log em outra codificação; só afeta a leitura do arquivo de log.
 
 # Fase 4 — Publicação
 

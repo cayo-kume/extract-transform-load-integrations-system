@@ -9,6 +9,7 @@ using Infrastructure.Shared;
 using Infrastructure.Totvs.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Quartz;
+using Quartz.Impl.Matchers;
 using Worker.Scheduling;
 
 namespace Worker.Extensions
@@ -57,6 +58,8 @@ namespace Worker.Extensions
             QuartzSettingsValidator.TryFindTimeZone(settings.TimeZone, out var timeZone);
             var connectionString = builder.Configuration.GetConnectionString(settings.Storage.ConnectionStringName) ?? "";
 
+            builder.Services.AddSingleton<JobSkipCounter>();
+
             builder.Services.AddQuartz(q =>
             {
                 q.SchedulerName = settings.SchedulerName;
@@ -79,6 +82,9 @@ namespace Worker.Extensions
                     if (settings.Storage.Clustered)
                         store.UseClustering(cluster => cluster.CheckinInterval = TimeSpan.FromSeconds(settings.Storage.ClusterCheckinIntervalInSeconds));
                 });
+
+                // descartes pelo misfire, no mesmo contador dos pulos (§5.3, item 2)
+                q.AddTriggerListener<MisfireListener>(GroupMatcher<TriggerKey>.GroupEquals(QuartzJobRunner.Group));
 
                 // agenda a partir de auditing.Jobs (§4.4): a cada RefreshIntervalInMinutes e, já na subida, uma vez
                 q.AddJob<SchedulerRefreshJob>(SchedulerRefreshJob.Key, job => job.StoreDurably().WithDescription("Agenda: releitura de auditing.Jobs"));

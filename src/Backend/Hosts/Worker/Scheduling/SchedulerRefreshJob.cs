@@ -1,3 +1,4 @@
+using Application.Shared.Abstractions.Services;
 using Domain.Shared.Abstractions.Repositorys;
 using Hosts.Scheduling;
 using Hosts.Scheduling.RecurringJobs;
@@ -11,21 +12,33 @@ namespace Worker.Scheduling
     /// monta a agenda do Quartz a partir de auditing.Jobs (src/Backend/Hosts/Worker/docs/PLANO-HOST-WORKER.md §4.4), como o
     /// SchedulerRefresh do Hangfire: roda na subida e a cada Quartz:Schedule:RefreshIntervalInMinutes, e um UPDATE na tabela vale,
     /// no máximo, no ciclo seguinte. Entra o job de integração ativo, com método no mapa e agenda que vira cron; sai o que ficou
-    /// inativo, sem intervalo ou saiu do mapa. Só mexe no grupo integrations
+    /// inativo, sem intervalo ou saiu do mapa. Só mexe no grupo integrations. Com dois Workers, uma releitura por vez: o
+    /// [DisallowConcurrentExecution] e a trava job:scheduler-refresh, como no Hangfire (§5.3, item 4)
     /// </summary>
+    [DisallowConcurrentExecution]
     public class SchedulerRefreshJob : IJob
     {
         public static readonly JobKey Key = new("SchedulerRefresh", "host");
+        public const string ConcurrencyKey = "job:scheduler-refresh";
 
         private readonly IJobScheduleRepository _jobScheduleRepository;
+        private readonly IJobLock _jobLock;
         private readonly IOptions<QuartzSettings> _settings;
         private readonly ILogger<SchedulerRefreshJob> _logger;
 
-        public SchedulerRefreshJob(IJobScheduleRepository jobScheduleRepository, IOptions<QuartzSettings> settings, ILogger<SchedulerRefreshJob> logger) =>
-            (_jobScheduleRepository, _settings, _logger) = (jobScheduleRepository, settings, logger);
+        public SchedulerRefreshJob(IJobScheduleRepository jobScheduleRepository, IJobLock jobLock, IOptions<QuartzSettings> settings, ILogger<SchedulerRefreshJob> logger) =>
+            (_jobScheduleRepository, _jobLock, _settings, _logger) = (jobScheduleRepository, jobLock, settings, logger);
 
         public async Task Execute(IJobExecutionContext context)
         {
+            using var jobLock = _jobLock.TryAcquire(ConcurrencyKey);
+
+            if (jobLock is null)
+            {
+                _logger.LogInformation("Agenda: outra releitura de auditing.Jobs está rodando; esta foi pulada.");
+                return;
+            }
+
             try
             {
                 context.Result = await Refresh(context.Scheduler, context.CancellationToken);
