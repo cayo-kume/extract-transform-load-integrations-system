@@ -56,8 +56,8 @@ extract-transform-load-integrations-system/
 │   ├── Backend/
 │   │   ├── Hosts/
 │   │   │   ├── WebApi/                   host web: controllers, Swagger, registro dos módulos (o único em uso)
-│   │   │   ├── Quartz/                   worker alternativo (não usado)
-│   │   │   └── WebJob/                   host dos WebJobs na Azure: um WebJob por job (ver o README do host)
+│   │   │   ├── WebJob/                   host dos WebJobs na Azure: um WebJob por job (ver o README do host)
+│   │   │   └── Worker/                   serviço do Windows com o Quartz.NET (em construção, ver o PLANO-HOST-WORKER.md)
 │   │   ├── Shared/                       auditoria, cliente HTTP, repositório comum, middlewares e scripts base
 │   │   └── Modules/
 │   │       ├── Totvs/
@@ -321,9 +321,10 @@ O cache segue [docs/PADRAO-CACHE-INTEGRACOES.md](docs/PADRAO-CACHE-INTEGRACOES.m
   storage, o servidor, o dashboard com usuário e senha e a agenda montada a partir de `auditing.Jobs` (só os jobs com
   `IsActive = 1`, que nascem 0), com uma trava que pula a execução quando a anterior do mesmo job ainda está rodando
   (`src/Backend/Hosts/WebApi/docs/PLANO-HOST-WEBAPI.md`, passos 3 e 4). Hoje o Hangfire está desligado e os jobs rodam
-  pelas rotas, chamadas por um agendador externo. O host `Quartz` não é usado. O host `WebJob`
-  (`src/Backend/Hosts/WebJob/README.md`) roda cada job como um WebJob na Azure, com a mesma agenda e a mesma trava, e
-  ainda não foi publicado; um host de agenda por vez: ou o Hangfire, ou os WebJobs.
+  pelas rotas, chamadas por um agendador externo. O host `WebJob` (`src/Backend/Hosts/WebJob/README.md`) roda cada job
+  como um WebJob na Azure, com a mesma agenda e a mesma trava, e ainda não foi publicado. O host `Worker` (antes
+  `Quartz`) está em construção como a terceira opção, um serviço do Windows com o Quartz.NET
+  (`src/Backend/Hosts/Worker/docs/PLANO-HOST-WORKER.md`). Um host de agenda por vez: o Hangfire, os WebJobs ou o Worker.
 * **Autenticação:** o `[Authorize]` dos controllers está comentado.
 * **Testes:** a pasta `tests` está vazia.
 

@@ -89,10 +89,22 @@ Worker para a agenda.
    projeto) e a proposta do Linx Microvix Outbound.
 5. `bin/` e `obj/` da pasta antiga apagados.
 
+**Feito em 01/11/2026.** `git mv` da pasta (histórico preservado) e do `.csproj` (`Worker.csproj`); o `.slnx` com
+`Hosts.Scheduling`, `WebApi`, `WebJob` e `Worker`; o perfil `Worker` no `launchSettings.json`; o `UserSecretsId` mantido.
+Referências: a árvore e o texto de agendamento do `README.md` da raiz, o §4.7 do PLANO-HOST-WEBAPI.md (opções A e G e a
+trava), o comentário do `Hosts.Scheduling.csproj` e a proposta do Linx Microvix Outbound. Os registros históricos dos
+outros planos (o que foi feito no passo 1 do WebApi e do WebJob, quando o host ainda se chamava Quartz) ficaram como
+estavam. `bin/` e `obj/` da pasta antiga apagados.
+
 ## Passo 2 — Limpar o modelo
 
 1. Sai o `Worker.cs` do modelo (a classe `Worker` no namespace `Worker` também colidiria).
 2. O `Program.cs` fica só com o `Host.CreateApplicationBuilder`, pronto para o passo 3.
+
+**Feito em 01/11/2026.** `Worker.cs` apagado e `Program.cs` só com o `CreateApplicationBuilder`, o `Build` e o `Run`.
+Build do Worker sem erros e sem avisos; WebApi e WebJob sem erros e com os mesmos avisos. O build da solution inteira
+falha nos módulos legados fora dos hosts (Dootax, Oto, Stone e TotalExpress: `PackageReference` sem versão), como antes
+desta fase.
 
 ---
 
