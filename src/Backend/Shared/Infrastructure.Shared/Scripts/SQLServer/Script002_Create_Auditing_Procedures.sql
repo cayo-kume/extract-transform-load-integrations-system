@@ -142,3 +142,62 @@ BEGIN
         THROW;
     END CATCH
 END
+GO
+
+-- contrata um módulo para a empresa: copia os jobs do módulo de auditing.JobCatalog para auditing.Jobs, inativos e sem
+-- duplicar (rodar de novo não muda nada). Ativar é UPDATE em auditing.Jobs.IsActive, pela tela.
+-- (docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.1)
+CREATE OR ALTER PROCEDURE [auditing].[sp_Add_Company_App] (
+    @company VARCHAR(20),
+    @idParent INT
+) AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM [monitor].[Company] WHERE Company = @company)
+    BEGIN
+        DECLARE @msg NVARCHAR(400) = CONCAT('Empresa ', @company, ' não cadastrada em monitor.Company.');
+        THROW 50002, @msg, 1;
+    END
+
+    INSERT INTO [auditing].[Jobs] (IdParent, IdJob, Title, [Description], IntervalTimeInMinutes, RunningDailyAt, Queue, IsActive, IdType, Company)
+    SELECT
+        c.IdParent,
+        c.IdJob,
+        c.Title,
+        c.[Description],
+        c.IntervalTimeInMinutes,
+        c.RunningDailyAt,
+        c.Queue,
+        0,
+        c.IdType,
+        @company
+    FROM
+        [auditing].[JobCatalog] c
+    WHERE
+        c.IdParent = @idParent
+        AND NOT EXISTS (
+            SELECT 1
+            FROM [auditing].[Jobs] j
+            WHERE j.IdJob = c.IdJob AND j.IdType = c.IdType AND j.Company = @company
+        );
+
+    SELECT @@ROWCOUNT AS JobsCreated;
+END
+GO
+
+-- remove o módulo da empresa: desativa os jobs dela. Não apaga, porque auditing.Logs referencia auditing.Jobs.
+CREATE OR ALTER PROCEDURE [auditing].[sp_Remove_Company_App] (
+    @company VARCHAR(20),
+    @idParent INT
+) AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE [auditing].[Jobs] SET
+        IsActive = 0
+    WHERE
+        Company = @company
+        AND IdParent = @idParent;
+END
+GO

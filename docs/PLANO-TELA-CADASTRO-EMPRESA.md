@@ -1,7 +1,6 @@
 # Plano: cadastro de empresas e integrações pela tela (fora do DbUp)
 
-Branch: `implementacao-tela-cadastro`. Status: **plano aprovado nas decisões**; no código só estão os dois primeiros itens
-de 4.1 (chaves de `auditing` e schema `monitor`).
+Branch: `implementacao-tela-cadastro`. Status: **4.1 feita**; as fases seguintes ainda não começaram.
 
 Base: [PROPOSTA-DOC-COMPANY-AUDITING.md](../src/Backend/Shared/docs/PROPOSTA-DOC-COMPANY-AUDITING.md). Este plano
 substitui a fase F2 (seed por procedure a partir das tabelas `*Parameters`) daquela proposta e muda o nome da coluna.
@@ -37,30 +36,35 @@ O DbUp passa a criar **estrutura e catálogo do produto**. Tudo o que depende de
 | `auditing.JobCatalog`: catálogo de jobs, sem empresa (4.1), inclusive o 14000 dos hosts | |
 | tabelas de referência do DataWarehouse (`Script006_Insert_DataWarehouse_Reference.sql`) | |
 
-### 2.1 Scripts que saem do DbUp
+### 2.1 Scripts de parâmetros (saem do DbUp) e de jobs (ficam, no catálogo)
 
-| Módulo | Parâmetros (credenciais) | Jobs |
+Feito em 4.1. Os scripts de parâmetros foram para `Seeds/SQLServer`. Os de jobs ficaram onde estavam e passaram a inserir
+em `auditing.JobCatalog`; os nomes dos arquivos (`..._Into_Jobs_Table.sql`) não mudaram.
+
+| Módulo | Parâmetros (credenciais) → `Seeds/SQLServer` | Jobs → `auditing.JobCatalog` (no DbUp) |
 |---|---|---|
-| Shared | — | `Script007_Insert_Hosts_Jobs_Into_Jobs_Table.sql`: o 14000 passa a ser inserido no catálogo (continua no DbUp) |
-| Totvs | `Parameters/Script003_Insert_Values_Into_Totvs_Parameters_Table.sql` | 12 scripts `Insert_Totvs_*_Jobs` |
-| LinxMicrovix | `Parameters/Script003_Insert_Values_Into_LinxMicrovix_Parameters_Table.sql` (fora do git; há `.example`) | 29 scripts (`Erp/*` e `B2C/*`) |
-| LinxCommerce | `Parameters/Script003_Insert_Values_Into_LinxCommerce_Parameters_Table.sql` (fora do git; há `.example`) | 4 scripts |
-| Movidesk | `Parameters/Script003_Insert_Values_Into_Movidesk_Parameters_Table.sql` | 3 scripts |
-| AfterSale | `Parameters/Script005_Insert_Values_Into_AfterSale_Parameters_Table.sql` | 4 scripts |
+| Shared | — | `Script007_Insert_Hosts_Jobs_Into_Jobs_Table.sql` (o 14000) |
+| Totvs | `Script003_Insert_Values_Into_Totvs_Parameters_Table.sql` | 12 scripts `Insert_Totvs_*_Jobs` |
+| LinxMicrovix | `Script003_Insert_Values_Into_LinxMicrovix_Parameters_Table.sql` (fora do git; o `.example` foi junto) | 29 scripts (`Erp/*` e `B2C/*`) |
+| LinxCommerce | `Script003_Insert_Values_Into_LinxCommerce_Parameters_Table.sql` (fora do git; o `.example` foi junto) | 4 scripts |
+| Movidesk | `Script003_Insert_Values_Into_Movidesk_Parameters_Table.sql` | 3 scripts |
+| AfterSale | `Script005_Insert_Values_Into_AfterSale_Parameters_Table.sql` | 4 scripts |
 | DataWarehouse | — | `Parameters/Script007_Insert_DataWarehouse_Jobs_Into_Jobs_Table.sql` |
-| Dootax, Mobsim, Oto, Pagarme, FlashCourier, Jadlog, Stone, TotalExpress | — | `Script002_Insert_*_Values_Into_Jobs_Table.sql` (hoje só comentários) |
+| Dootax, Mobsim, Oto, Pagarme, FlashCourier, Jadlog, Stone, TotalExpress | — | `Script002_Insert_*_Values_Into_Jobs_Table.sql` (só comentários) |
 
-**Para onde vão:** os migrators leem `Scripts/SQLServer` com subpastas (`IncludeSubDirectories = true`), então mover para
-uma subpasta não basta. Os scripts vão para uma pasta irmã, fora do alcance do DbUp:
+**Para onde foram:** os migrators leem `Scripts/SQLServer` com subpastas (`IncludeSubDirectories = true`), então mover
+para uma subpasta não bastava. Os scripts de parâmetros ficam numa pasta irmã, fora do alcance do DbUp:
 
 ```
 Infrastructure.<Módulo>/
-  Scripts/SQLServer/   ← DbUp (estrutura e catálogo)
-  Seeds/SQLServer/     ← só o .ps1 de teste lê (parâmetros e jobs de uma empresa)
+  Scripts/SQLServer/   ← DbUp (estrutura e catálogo, inclusive os jobs)
+  Seeds/SQLServer/     ← só o .ps1 de teste lê (parâmetros de uma empresa)
 ```
 
-O `.gitignore` acompanha a mudança de caminho dos dois scripts de credenciais que já ficam fora do git (LinxMicrovix e
-LinxCommerce). Os que estão no git por decisão do usuário (Totvs, Movidesk, AfterSale) continuam no git, só mudam de pasta.
+O `.gitignore` ignora os dois scripts de credenciais que ficam fora do git (LinxMicrovix e LinxCommerce) no caminho novo e
+**continua ignorando o caminho antigo**: uma cópia local que ficou em `Scripts/SQLServer/Parameters` não vai para o git,
+mas **o DbUp ainda a executa**. Quem tem essa cópia precisa movê-la para `Seeds/SQLServer`. Os scripts que estão no git
+por decisão do usuário (Totvs, Movidesk, AfterSale) continuam no git, só mudaram de pasta.
 
 ## 3. Script `.ps1` de dados de teste
 
@@ -107,23 +111,29 @@ Regras:
 
 ## 4. Fases
 
-### 4.1 Banco (Shared)
+### 4.1 Banco (Shared) — feito
 
 - [x] `Script001`: `Company VARCHAR(20) NOT NULL` em `Jobs`, `Logs`, `Messages` e `Records`, na PK das quatro e nas FKs
       (`Logs` → `Jobs`; `Messages` e `Records` → `Logs`).
-- [x] `Script008_Create_Monitor_Schema.sql`: `monitor.AppImage` e `monitor.AppSetting`, com `Company`.
-- [ ] `monitor.Company`: `Company VARCHAR(20)` (PK, CNPJ), `Name`, `TradeName`, `IsActive`, `CreatedAt`, `UpdatedAt`.
-      É a lista de empresas do seletor e do login. Não guarda credencial.
-- [ ] Catálogo de jobs: `auditing.JobCatalog` com as colunas de `auditing.Jobs` sem `Company` e sem `IsActive`. Os
-      scripts `Insert_*_Jobs` atuais viram inserts nesse catálogo e **ficam no DbUp** (são produto, ligados ao
-      `EnumJob` do código). O Script007 do Shared passa a inserir o 14000 no catálogo, não em `auditing.Jobs`.
-- [ ] `auditing.sp_Add_Company_App @company, @idParent`: copia os jobs do catálogo do módulo para `auditing.Jobs`, com
-      `IsActive = 0`, sem duplicar. `auditing.sp_Remove_Company_App` desativa (não apaga, por causa das FKs de `Logs`).
-- [ ] `auditing.sp_Add_Company @company, @name, @tradeName`: insere em `monitor.Company` e chama
-      `sp_Add_Company_App @company, 140` (Hosts). Assim toda empresa nasce com o seu 14000. A ativação dele segue a mesma
-      regra dos outros jobs (`IsActive`).
-- [ ] Mover os scripts da seção 2.1 para `Seeds/SQLServer` e atualizar o `.gitignore`.
-- [ ] Teste: banco zerado no Docker, migrators de todos os módulos sem erro, `auditing.Jobs` vazio.
+- [x] `Script001`: `auditing.JobCatalog` (PK `(IdJob, IdType)`, os mesmos `CHECK` de `Jobs`), com FK para `Types` e
+      `FK_Jobs_JobCatalog`: todo job de uma empresa vem do catálogo.
+- [x] `Script008`: `monitor.Company` (PK `Company`, só dígitos), `FK_Jobs_Company` (todo job é de uma empresa
+      cadastrada), `monitor.AppImage` e `monitor.AppSetting` com `Company`.
+- [x] Scripts `Insert_*_Jobs` de todos os módulos e o Script007 do Shared inserem em `auditing.JobCatalog`.
+- [x] `Script002`: `auditing.sp_Add_Company_App @company, @idParent` copia os jobs do módulo do catálogo para
+      `auditing.Jobs`, inativos e sem duplicar, e devolve `JobsCreated`; recusa empresa não cadastrada (erro 50002).
+      `auditing.sp_Remove_Company_App` desativa, sem apagar.
+- [x] `Script008`: `auditing.sp_Add_Company @company, @name, @tradeName` insere em `monitor.Company` (se não existir) e
+      chama `sp_Add_Company_App @company, 140`. Toda empresa nasce com o seu 14000.
+- [x] Scripts de parâmetros movidos para `Seeds/SQLServer`; `.gitignore` atualizado (2.1).
+- [x] Teste no Docker, em banco zerado e apagado no fim: migrators do Shared, Totvs, LinxMicrovix, LinxCommerce, Movidesk,
+      AfterSale e DataWarehouse sem erro; 961 jobs no catálogo; `auditing.Jobs`, `monitor.Company` e todas as
+      `*Parameters` vazias. Procedures: `sp_Add_Company` cria o 14000 da empresa; `sp_Add_Company_App` da Totvs cria 122
+      jobs inativos e, rodada de novo, 0; `sp_Remove_Company_App` desativa; empresa não cadastrada dá 50002.
+
+Ficam para as próximas fases: as procedures de log (`sp_Log_*`) e a `vw_JobsHeartbeat` ainda não conhecem `Company`
+(4.3), e os agendadores ainda leem `auditing.Jobs` sem empresa (4.4). Até lá, um job que roda em um banco com empresa
+cadastrada falha ao gravar o log.
 
 ### 4.2 Script de teste (`tools/seeds/Import-TestSeeds.ps1`)
 
@@ -205,6 +215,3 @@ teste fica no próprio WebApp:
 | De quem são os jobs dos hosts (14000)? | De todas as empresas: cada uma tem o seu, criado por `sp_Add_Company` (decisão 7) |
 | Criptografar as credenciais? | Não nesta fase: texto puro (decisão 8) |
 | Botão para testar a conexão do módulo? | Sim, no próprio WebApp (decisão 9, passo 4.6.1) |
-
-Até a fase 4.1 trocar o Script007 para o catálogo, o 14000 continua sendo inserido em `auditing.Jobs` com
-`Company = ' '`, só para o banco zerado subir.

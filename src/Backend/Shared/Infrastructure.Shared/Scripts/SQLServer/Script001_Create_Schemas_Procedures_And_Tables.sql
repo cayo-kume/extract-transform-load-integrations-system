@@ -45,6 +45,28 @@ CREATE TABLE [auditing].[Apps](
 ) ON [PRIMARY]
 GO
 
+-- catálogo de jobs do produto, sem empresa: os scripts Insert_*_Jobs dos módulos inserem aqui (ficam no DbUp) e
+-- auditing.sp_Add_Company_App copia os jobs de um módulo para auditing.Jobs, com a empresa
+-- (docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.1)
+CREATE TABLE [auditing].[JobCatalog](
+	[IdParent] [int] NULL,
+	[IdJob] [int] NOT NULL,
+	[Title] [nvarchar](80) NULL,
+	[Description] [nvarchar](800) NULL,
+	[IntervalTimeInMinutes] [int] NOT NULL,
+	[RunningDailyAt] [time](0) NULL,
+	[Queue] [nvarchar](50) NOT NULL,
+	[IdType] [int] NOT NULL,
+	CONSTRAINT [CK_JobCatalog_RunningDailyAt] CHECK ([RunningDailyAt] IS NULL OR [IntervalTimeInMinutes] = 1440),
+	CONSTRAINT [CK_JobCatalog_Queue] CHECK (LEN([Queue]) > 0 AND [Queue] COLLATE Latin1_General_BIN NOT LIKE '%[^a-z0-9_-]%'),
+ CONSTRAINT [PK_JobCatalog] PRIMARY KEY CLUSTERED 
+(
+	[IdJob] ASC,
+	[IdType] ASC
+)WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, FILLFACTOR = 90, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+
 CREATE TABLE [auditing].[Jobs](
 	[IdParent] [int] NULL,
 	[IdJob] [int] NOT NULL,
@@ -163,4 +185,13 @@ GO
 
 ALTER TABLE [auditing].[Jobs] ADD  CONSTRAINT [FK_Jobs] FOREIGN KEY([IdType])
 REFERENCES [auditing].[Types] ([IdType])
+GO
+
+ALTER TABLE [auditing].[JobCatalog] ADD  CONSTRAINT [FK_JobCatalog] FOREIGN KEY([IdType])
+REFERENCES [auditing].[Types] ([IdType])
+GO
+
+-- todo job de uma empresa vem do catálogo
+ALTER TABLE [auditing].[Jobs] ADD  CONSTRAINT [FK_Jobs_JobCatalog] FOREIGN KEY([IdJob], [IdType])
+REFERENCES [auditing].[JobCatalog] ([IdJob], [IdType])
 GO
