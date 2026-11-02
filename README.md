@@ -1,19 +1,16 @@
-<p align="center">
-  <img src="docs/images/banner.png" alt="NEWBLOOMERS · Sistema de Integrações · ETL" width="100%">
-</p>
+<div align="center">
 
-<p align="center">
-  <img alt=".NET 10" src="https://img.shields.io/badge/.NET-10-7c5cff?style=for-the-badge&logo=dotnet&logoColor=white">
-  <img alt="C#" src="https://img.shields.io/badge/C%23-ASP.NET_Core-7c5cff?style=for-the-badge&logo=sharp&logoColor=white">
-  <img alt="SQL Server" src="https://img.shields.io/badge/SQL_Server-Dapper_·_DbUp-f5a524?style=for-the-badge&logo=microsoftsqlserver&logoColor=white">
-  <img alt="Blazor" src="https://img.shields.io/badge/Blazor-MudBlazor_9-7c5cff?style=for-the-badge&logo=blazor&logoColor=white">
-  <br>
-  <img alt="Hangfire" src="https://img.shields.io/badge/Hangfire-1.8-1e1b2e?style=flat-square">
-  <img alt="Quartz.NET" src="https://img.shields.io/badge/Quartz.NET-3.19-1e1b2e?style=flat-square">
-  <img alt="Azure WebJobs" src="https://img.shields.io/badge/Azure-WebJobs-1e1b2e?style=flat-square&logo=microsoftazure&logoColor=white">
-  <img alt="FluentValidation" src="https://img.shields.io/badge/FluentValidation-validadores-1e1b2e?style=flat-square">
-  <img alt="Claude" src="https://img.shields.io/badge/Assistente-Claude-f5a524?style=flat-square&logo=anthropic&logoColor=white">
-</p>
+![NEWBLOOMERS · Sistema de Integrações · ETL](docs/images/banner.png)
+
+</div>
+
+<div align="center">
+
+![.NET 10](docs/images/badges/net-10.svg) ![C#](docs/images/badges/c-asp-net-core.svg) ![SQL Server](docs/images/badges/sql-server-dapper-dbup.svg) ![Blazor](docs/images/badges/blazor-mudblazor-9.svg)
+
+![Hangfire](docs/images/badges/hangfire-1-8-sq.svg) ![Quartz.NET](docs/images/badges/quartz-net-3-19-sq.svg) ![Azure WebJobs](docs/images/badges/azure-webjobs-sq.svg) ![FluentValidation](docs/images/badges/fluentvalidation-validadores-sq.svg) ![Claude](docs/images/badges/assistente-claude-sq.svg)
+
+</div>
 
 <p align="center">
   <b>Lê os ERPs e SaaS das marcas, grava tudo no SQL Server com auditoria e alimenta o data warehouse.</b><br>
@@ -23,6 +20,7 @@
 <p align="center">
   <a href="#-visão-geral">Visão geral</a> ·
   <a href="#️-como-executar">Como executar</a> ·
+  <a href="GUIA-DE-USO.md">Guia de uso</a> ·
   <a href="#-empresas-multiempresa">Empresas</a> ·
   <a href="#️-agendamento-dos-jobs">Agendamento</a> ·
   <a href="#️-painel-webapp">Painel</a> ·
@@ -113,7 +111,7 @@ flowchart TB
 | 🗃️ **Acesso a dados** | **Dapper** e bulk insert (`ISharedRepository`), SQL montado nos *command handlers* |
 | 🗄️ **Banco** | **SQL Server** (dados, auditoria e DW); scripts para MySQL e PostgreSQL existem só como `migrator.csx` |
 | 🔁 **Migrações** | **DbUp** executado por `dotnet-script` (`migrator.csx` em cada módulo): só estrutura e catálogo do produto |
-| 🧰 **Dados de teste** | `tools/seeds/Import-TestSeeds.ps1` (PowerShell 7 + `sqlcmd`): empresa, parâmetros e jobs num banco de teste |
+| 🧰 **Ferramentas** | `tools/migrators/Invoke-Migrators.ps1` (tela Windows Forms ou console) sobe as tabelas de todas as aplicações; `tools/seeds/Import-TestSeeds.ps1` (PowerShell 7 + `sqlcmd`) carrega empresa, parâmetros e jobs num banco de teste |
 | ✅ **Validação** | **FluentValidation** (um validador por DTO) |
 | 🔌 **HTTP e JSON** | `IHttpClientFactory` (`IApiClient` nomeado por módulo), **Newtonsoft.Json**, XML (`System.Xml.Linq`) no Linx Microvix |
 | ⚡ **Cache** | `IMemoryCache` ([padrão](docs/PADRAO-CACHE-INTEGRACOES.md)) |
@@ -145,7 +143,9 @@ extract-transform-load-integrations-system/
 │   │       └── DataWarehouse/
 │   ├── Frontend/WebApp/                  painel Blazor (visão geral, aplicações, integrações, erros, sob demanda e consultas)
 │   └── Mobile/MobileApp/                 app MAUI
-├── 🧰 tools/seeds/                          Import-TestSeeds.ps1: carrega uma empresa de teste (parâmetros e jobs)
+├── 🧰 tools/
+│   ├── migrators/                        Invoke-Migrators.ps1: tela para rodar os migrators na ordem certa
+│   └── seeds/                            Import-TestSeeds.ps1: carrega uma empresa de teste (parâmetros e jobs)
 └── 🧪 tests/                                (vazio)
 ```
 
@@ -194,10 +194,13 @@ Registrados no host (`src/Backend/Hosts/WebApi/Extensions/ServicesExtensions.cs`
 
 <sub>**App** = `IdParent` em `auditing.Apps`. Rotas contadas no Swagger do host.</sub>
 
-<p align="center">
-  <img src="docs/images/swagger/visao-geral.png" alt="Swagger do WebApi com as tags de cada módulo" width="85%">
-  <br><sub><b>Swagger do WebApi</b> — uma tag por service de cada módulo (<code>http://localhost:5252/swagger</code>)</sub>
-</p>
+<div align="center">
+
+![Swagger do WebApi com as tags de cada módulo](docs/images/swagger/visao-geral.png)
+
+<sub><b>Swagger do WebApi</b> — uma tag por service de cada módulo (<code>http://localhost:5252/swagger</code>)</sub>
+
+</div>
 
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'pie1':'#7c5cff','pie2':'#f5a524','pie3':'#a78bfa','pie4':'#fbbf24','pie5':'#c4b5fd','pie6':'#fde68a','pieTitleTextSize':'18px','pieSectionTextColor':'#1e1b2e','pieStrokeColor':'#1e1b2e'}}}%%
@@ -648,21 +651,46 @@ cada cliente, na tabela de parâmetros.
 
 ## ▶️ Como executar
 
-**Pré-requisitos:** ✅ .NET 10 SDK · ✅ SQL Server · ✅ `dotnet-script` (`dotnet tool install -g dotnet-script`)
+> [!TIP]
+> O passo a passo completo, com cada projeto, está no **[Guia de uso](GUIA-DE-USO.md)**.
 
-**1. 🗄️ Banco** — rode os migrators na ordem (Shared, módulos, DataWarehouse), de dentro da pasta `Scripts/SQLServer` de
-cada um, passando a connection string:
+**Pré-requisitos:** ✅ .NET 10 SDK · ✅ SQL Server · ✅ PowerShell 7 · ✅ `dotnet-script`
+(`dotnet tool install -g dotnet-script`) · ✅ `sqlcmd` (só para o banco de teste)
+
+**1. 🗄️ Banco** — a tela [`tools/migrators/Invoke-Migrators.ps1`](tools/migrators/Invoke-Migrators.ps1) roda os
+migrators das aplicações marcadas na ordem certa (Shared, integrações, DataWarehouse e o host de agenda escolhido), cada
+um a partir de uma unidade `subst` (sem o limite de 260 caracteres do Windows), para no primeiro erro e mostra a senha
+como `****` no log:
+
+```powershell
+./tools/migrators/Invoke-Migrators.ps1
+./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -SchedulingHost Worker -TestSeeds
+```
+
+<div align="center">
+
+![Tela do Invoke-Migrators](docs/images/tools/invoke-migrators.png)
+
+<sub><b>Invoke-Migrators</b> — banco, host de agenda, banco de teste e o catálogo das aplicações</sub>
+
+</div>
+
+<details>
+<summary><b>🔧 Rodar um migrator à mão</b></summary>
+
+De dentro da pasta `Scripts/SQLServer` de cada aplicação, na mesma ordem, passando a connection string:
 
 ```bash
 dotnet script migrator.csx -- "Server=localhost;Database=NEWBLOOMERS;User Id=sa;Password=...;TrustServerCertificate=True;"
 ```
 
-> [!TIP]
-> No Windows, o caminho dos módulos passa de 260 caracteres: mapeie a pasta com `subst X: "<pasta SQLServer>"` e rode o
-> migrator a partir de `X:` ([MIGRATOR-CSX.md](docs/MIGRATOR-CSX.md)). O migrator do DW exige a connection string como
-> argumento e não imprime usuário nem senha.
+No Windows, o caminho dos módulos passa de 260 caracteres: mapeie a pasta com `subst X: "<pasta SQLServer>"` e rode o
+migrator a partir de `X:` ([MIGRATOR-CSX.md](docs/MIGRATOR-CSX.md)). O migrator do DW exige a connection string como
+argumento e não imprime usuário nem senha.
 
-**2. 🏢 Empresa de teste** — cadastra a empresa, liga os CNPJs dos parâmetros, carrega os parâmetros de
+</details>
+
+**2. 🏢 Empresa de teste** — a opção **Banco de teste** da tela (ou `-TestSeeds`) já faz este passo. Sozinho, ele cadastra a empresa, liga os CNPJs dos parâmetros, carrega os parâmetros de
 `Seeds/SQLServer` e cria os jobs (inativos, salvo `-ActivateJobs`). Só aceita banco com `Test`/`Teste` no nome (ou
 `-Force`):
 
@@ -686,10 +714,13 @@ connection string vai por user-secrets ou variável de ambiente; detalhes no REA
 dotnet run --project src/Backend/Hosts/WebJob -- --job 9002
 ```
 
-<p align="center">
-  <img src="docs/images/hosts/webjob-list-jobs.png" alt="Saída do WebJob --list-jobs" width="70%">
-  <br><sub><code>--list-jobs</code> lista os jobs que o host conhece, sem subir o host nem acessar o banco</sub>
-</p>
+<div align="center">
+
+![Saída do WebJob --list-jobs](docs/images/hosts/webjob-list-jobs.png)
+
+<sub><code>--list-jobs</code> lista os jobs que o host conhece, sem subir o host nem acessar o banco</sub>
+
+</div>
 
 ```bash
 dotnet run --project src/Backend/Hosts/Worker
@@ -747,63 +778,45 @@ O **Monitor de Integrações** ([README](src/Frontend/WebApp/README.md) · [plan
 (`MockMonitorRepository` e `MockQueryRunner`), sem autenticação, com o visual aprovado por mockup, **tema escuro e claro**
 e telas responsivas para celular e tablet.
 
-<p align="center">
-  <img src="docs/images/webapp/visao-geral.png" alt="Visão geral do Monitor de Integrações" width="100%">
-  <br><sub><b>Visão Geral</b> — cards das aplicações com integrações, execuções, erros e avisos</sub>
-</p>
+<div align="center">
 
-<table>
-  <tr>
-    <td width="50%" align="center">
-      <img src="docs/images/webapp/visao-geral-saude.png" alt="Métricas e painel de saúde"><br>
-      <sub><b>Métricas e painel de saúde</b> — taxa de sucesso, registros por dia e falhas ativas</sub>
-    </td>
-    <td width="50%" align="center">
-      <img src="docs/images/webapp/integracoes.png" alt="Tela Integrações"><br>
-      <sub><b>Integrações</b> — jobs por aplicação, procedures, saúde, Executar agora e Agenda</sub>
-    </td>
-  </tr>
-  <tr>
-    <td align="center">
-      <img src="docs/images/webapp/logs-de-erros.png" alt="Tela Logs de Erros"><br>
-      <sub><b>Logs de Erros</b> — mensagens por aplicação, integração e causa</sub>
-    </td>
-    <td align="center">
-      <img src="docs/images/webapp/sob-demanda.png" alt="Tela Sob Demanda"><br>
-      <sub><b>Sob Demanda</b> — integrações sem agenda, no estilo do Swagger</sub>
-    </td>
-  </tr>
-  <tr>
-    <td align="center">
-      <img src="docs/images/webapp/executar-querys.png" alt="Tela Executar Querys"><br>
-      <sub><b>Executar Querys</b> — SQL com favoritas e querys prontas</sub>
-    </td>
-    <td align="center">
-      <img src="docs/images/webapp/assistente.png" alt="Assistente de IA"><br>
-      <sub><b>Assistente de IA</b> — chat com o Claude, só leitura</sub>
-    </td>
-  </tr>
-</table>
+![Visão geral do Monitor de Integrações](docs/images/webapp/visao-geral.png)
+
+<sub><b>Visão Geral</b> — cards das aplicações com integrações, execuções, erros e avisos</sub>
+
+</div>
+
+| ![Métricas e painel de saúde](docs/images/webapp/visao-geral-saude.png)<br> <sub><b>Métricas e painel de saúde</b> — taxa de sucesso, registros por dia e falhas ativas</sub> | ![Tela Integrações](docs/images/webapp/integracoes.png)<br> <sub><b>Integrações</b> — jobs por aplicação, procedures, saúde, Executar agora e Agenda</sub> |
+|:---:|:---:|
+| ![Tela Logs de Erros](docs/images/webapp/logs-de-erros.png)<br> <sub><b>Logs de Erros</b> — mensagens por aplicação, integração e causa</sub> | ![Tela Sob Demanda](docs/images/webapp/sob-demanda.png)<br> <sub><b>Sob Demanda</b> — integrações sem agenda, no estilo do Swagger</sub> |
+| ![Tela Executar Querys](docs/images/webapp/executar-querys.png)<br> <sub><b>Executar Querys</b> — SQL com favoritas e querys prontas</sub> | ![Assistente de IA](docs/images/webapp/assistente.png)<br> <sub><b>Assistente de IA</b> — chat com o Claude, só leitura</sub> |
 
 <details>
 <summary><b>🌗 Tema claro, 📱 celular e Aplicações</b></summary>
 
-<p align="center">
-  <img src="docs/images/webapp/visao-geral-claro.png" alt="Visão geral no tema claro" width="100%">
-  <br><sub><b>Tema claro</b> — a escolha fica salva no navegador</sub>
-</p>
+<div align="center">
 
-<p align="center">
-  <img src="docs/images/webapp/aplicacoes.png" alt="Tela Aplicações" width="100%">
-  <br><sub><b>Aplicações</b> — imagem da empresa e o chip que liga ou desliga o módulo</sub>
-</p>
+![Visão geral no tema claro](docs/images/webapp/visao-geral-claro.png)
 
-<p align="center">
-  <img src="docs/images/webapp/celular-visao-geral.png" alt="Visão geral no celular" width="260">
-  &nbsp;&nbsp;
-  <img src="docs/images/webapp/celular-integracoes.png" alt="Integrações no celular" width="260">
-  <br><sub><b>Celular</b> — abaixo de 600px as tabelas viram blocos e os diálogos ocupam a tela toda</sub>
-</p>
+<sub><b>Tema claro</b> — a escolha fica salva no navegador</sub>
+
+</div>
+
+<div align="center">
+
+![Tela Aplicações](docs/images/webapp/aplicacoes.png)
+
+<sub><b>Aplicações</b> — imagem da empresa e o chip que liga ou desliga o módulo</sub>
+
+</div>
+
+<div align="center">
+
+![Visão geral no celular](docs/images/webapp/celular-visao-geral.png) ![Integrações no celular](docs/images/webapp/celular-integracoes.png)
+
+<sub><b>Celular</b> — abaixo de 600px as tabelas viram blocos e os diálogos ocupam a tela toda</sub>
+
+</div>
 
 </details>
 
@@ -913,13 +926,17 @@ As regras de organização valem para todos os módulos e estão em
 | 🏛️ [src/Backend/Modules/DataWarehouse/docs](src/Backend/Modules/DataWarehouse/docs/00-ordem-de-leitura.md) | Guia do data warehouse |
 | 📐 [PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md](docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md) | Padrão de código e scripts |
 | ⚡ [PADRAO-CACHE-INTEGRACOES.md](docs/PADRAO-CACHE-INTEGRACOES.md) | Padrão de cache |
-| 🔁 [MIGRATOR-CSX.md](docs/MIGRATOR-CSX.md) | Como rodar o `migrator.csx` |
+| 🚀 [GUIA-DE-USO.md](GUIA-DE-USO.md) | Passo a passo para subir o banco, carregar uma empresa e usar cada projeto |
+| 🔁 [MIGRATOR-CSX.md](docs/MIGRATOR-CSX.md) | Como rodar o `migrator.csx` e a tela `Invoke-Migrators.ps1` |
 | 🔍 [REVISAO-PADRAO-CODIGO-E-SCRIPTS.md](docs/REVISAO-PADRAO-CODIGO-E-SCRIPTS.md) | Revisão dos módulos contra o padrão (todos os módulos do host e o Shared já seguem) |
 | 📂 `docs/` de cada módulo | Propostas, planos, implementações e modelagens do módulo (ex.: `src/Backend/Modules/Totvs/docs`); os do Shared ficam em `src/Backend/Shared/docs` (merge e auditoria, conversores dos validadores e as propostas de `auditing`) |
 
 ---
 
-<p align="center">
-  <img src="docs/newbloomers.png" alt="NEWBLOOMERS" width="180"><br>
-  <sub>Sistema de integrações · feito com .NET 10</sub>
-</p>
+<div align="center">
+
+![NEWBLOOMERS](docs/newbloomers.png)
+
+<sub>Sistema de integrações · feito com .NET 10</sub>
+
+</div>

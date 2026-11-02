@@ -1,20 +1,18 @@
-<p align="center">
-  <img src="../../../../docs/images/banner.png" alt="NEWBLOOMERS · Sistema de Integrações · ETL" width="100%">
-</p>
+<div align="center">
+
+![NEWBLOOMERS · Sistema de Integrações · ETL](../../../../docs/images/banner.png)
+
+</div>
 
 # 🟣 Totvs Moda
 
-<p align="center">
-  <img alt="App 130" src="https://img.shields.io/badge/App-130-7c5cff?style=for-the-badge">
-  <img alt="Schema totvs" src="https://img.shields.io/badge/schema-totvs-7c5cff?style=for-the-badge&logo=microsoftsqlserver&logoColor=white">
-  <img alt="123 rotas" src="https://img.shields.io/badge/rotas-123-f5a524?style=for-the-badge">
-  <img alt="122 jobs" src="https://img.shields.io/badge/jobs-122_+_151_procedures-f5a524?style=for-the-badge">
-  <br>
-  <img alt=".NET 10" src="https://img.shields.io/badge/.NET-10-1e1b2e?style=flat-square&logo=dotnet&logoColor=white">
-  <img alt="OAuth2" src="https://img.shields.io/badge/OAuth2-password-1e1b2e?style=flat-square">
-  <img alt="JSON" src="https://img.shields.io/badge/API-REST_·_JSON-1e1b2e?style=flat-square">
-  <img alt="Escritas por grupo" src="https://img.shields.io/badge/escritas-Totvs:Writes-1e1b2e?style=flat-square">
-</p>
+<div align="center">
+
+![App 130](../../../../docs/images/badges/app-130.svg) ![Schema totvs](../../../../docs/images/badges/schema-totvs.svg) ![123 rotas](../../../../docs/images/badges/rotas-123.svg) ![122 jobs](../../../../docs/images/badges/jobs-122-151-procedures.svg)
+
+![.NET 10](../../../../docs/images/badges/net-10-sq.svg) ![OAuth2](../../../../docs/images/badges/oauth2-password-sq.svg) ![JSON](../../../../docs/images/badges/api-rest-json-sq.svg) ![Escritas por grupo](../../../../docs/images/badges/escritas-totvs-writes-sq.svg)
+
+</div>
 
 <p align="center">
   <b>Lê e escreve na Totvs Moda: pessoas, produtos, preços, saldos, pedidos, notas e financeiro.</b><br>
@@ -488,6 +486,11 @@ O host chama o método em `Hosts/WebApi/Extensions/ServicesExtensions.cs`.
 
 ### Scripts de banco (SQL Server)
 
+> [!TIP]
+> Para subir as tabelas, use a tela [`Invoke-Migrators.ps1`](../../../../tools/migrators/Invoke-Migrators.ps1) com o **Totvs** marcado: ela roda o Shared antes do
+> módulo, sem o problema do limite de 260 caracteres. Em linha de comando:
+> `./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -Apps Totvs -SchedulingHost WebApi`.
+
 O DbUp executa cada script uma única vez. Os scripts gerais do módulo ficam em `Parameters/` e cada service tem a sua pasta, com um trio de scripts: tabelas, procedures e jobs (os recorrentes, os sob demanda e as escritas do service). O `migrator.csx` lê as subpastas e executa na ordem do número do arquivo, não na da pasta.
 
 > [!NOTE]
@@ -543,10 +546,13 @@ flowchart LR
 
 Rota base: `TotvsJobs/Totvs`. O verbo segue a documentação oficial: `POST` nas buscas, `GET` nas filiais e nas leituras sob demanda.
 
-<p align="center">
-  <img src="../../../../docs/images/swagger/totvs.png" alt="Rotas da Totvs no Swagger do WebApi" width="100%">
-  <br><sub><b>Swagger do WebApi</b> — as rotas da Totvs agrupadas pela tag de cada service (<code>http://localhost:5252/swagger</code>)</sub>
-</p>
+<div align="center">
+
+![Rotas da Totvs no Swagger do WebApi](../../../../docs/images/swagger/totvs.png)
+
+<sub><b>Swagger do WebApi</b> — as rotas da Totvs agrupadas pela tag de cada service (<code>http://localhost:5252/swagger</code>)</sub>
+
+</div>
 
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'pie1':'#7c5cff','pie2':'#f5a524','pie3':'#a78bfa','pie4':'#fbbf24','pie5':'#c4b5fd','pie6':'#fde68a','pie7':'#6d28d9','pie8':'#d97706','pie9':'#ddd6fe','pie10':'#fef3c7','pie11':'#4c1d95','pie12':'#92400e','pieTitleTextSize':'18px','pieSectionTextColor':'#1e1b2e','pieStrokeColor':'#1e1b2e'}}}%%
@@ -892,10 +898,13 @@ Toda execução grava `auditing.Logs` (com a empresa) e, conforme o caso:
 * `auditing.Messages`, com mensagens e erros de validação;
 * `auditing.Records`, com os registros integrados e o JSON recebido.
 
-<p align="center">
-  <img src="../../../../docs/images/webapp/integracoes.png" alt="Tela Integrações do Monitor" width="100%">
-  <br><sub><b>Onde ver no painel</b> — a tela Integrações do Monitor mostra os jobs, as procedures e a saúde de cada um (dados mockados)</sub>
-</p>
+<div align="center">
+
+![Tela Integrações do Monitor](../../../../docs/images/webapp/integracoes.png)
+
+<sub><b>Onde ver no painel</b> — a tela Integrações do Monitor mostra os jobs, as procedures e a saúde de cada um (dados mockados)</sub>
+
+</div>
 
 ---
 
@@ -1014,7 +1023,10 @@ cada fase ("Não verificado"). Em resumo:
 
 ---
 
-<p align="center">
-  <img src="../../../../docs/newbloomers.png" alt="NEWBLOOMERS" width="180"><br>
-  <sub>Módulo Totvs · sistema de integrações · .NET 10</sub>
-</p>
+<div align="center">
+
+![NEWBLOOMERS](../../../../docs/newbloomers.png)
+
+<sub>Módulo Totvs · sistema de integrações · .NET 10</sub>
+
+</div>

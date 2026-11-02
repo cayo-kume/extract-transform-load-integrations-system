@@ -1,18 +1,18 @@
-<p align="center">
-  <img src="../../../docs/images/banner.png" alt="NEWBLOOMERS · Sistema de Integrações · ETL" width="100%">
-</p>
+<div align="center">
+
+![NEWBLOOMERS · Sistema de Integrações · ETL](../../../docs/images/banner.png)
+
+</div>
 
 # 🖥️ WebApp · Monitor de Integrações
 
-<p align="center">
-  <img alt=".NET 10" src="https://img.shields.io/badge/.NET-10-7c5cff?style=for-the-badge&logo=dotnet&logoColor=white">
-  <img alt="Blazor" src="https://img.shields.io/badge/Blazor-Server_interativo-7c5cff?style=for-the-badge&logo=blazor&logoColor=white">
-  <img alt="MudBlazor 9" src="https://img.shields.io/badge/MudBlazor-9-f5a524?style=for-the-badge">
-  <br>
-  <img alt="Dados mockados" src="https://img.shields.io/badge/dados-mockados-1e1b2e?style=flat-square">
-  <img alt="Assistente Claude" src="https://img.shields.io/badge/assistente-Claude-f5a524?style=flat-square&logo=anthropic&logoColor=white">
-  <img alt="Porta 5067" src="https://img.shields.io/badge/porta-5067-1e1b2e?style=flat-square">
-</p>
+<div align="center">
+
+![.NET 10](../../../docs/images/badges/net-10.svg) ![Blazor](../../../docs/images/badges/blazor-server-interativo.svg) ![MudBlazor 9](../../../docs/images/badges/mudblazor-9.svg)
+
+![Dados mockados](../../../docs/images/badges/dados-mockados-sq.svg) ![Assistente Claude](../../../docs/images/badges/assistente-claude-sq-2.svg) ![Porta 5067](../../../docs/images/badges/porta-5067-sq.svg)
+
+</div>
 
 <p align="center">
   <b>O painel que mostra as aplicações, os jobs, as execuções, as mensagens e os registros gravados em <code>auditing.*</code>.</b>
@@ -100,10 +100,13 @@ Não precisa de **banco**, de **API** nem de **configuração**: o painel sobe c
 
 ## 🗺️ Telas
 
-<p align="center">
-  <img src="../../../docs/images/webapp/visao-geral.png" alt="Visão geral do Monitor de Integrações" width="100%">
-  <br><sub><b>Visão Geral</b> — cards das aplicações com integrações, execuções, erros e avisos</sub>
-</p>
+<div align="center">
+
+![Visão geral do Monitor de Integrações](../../../docs/images/webapp/visao-geral.png)
+
+<sub><b>Visão Geral</b> — cards das aplicações com integrações, execuções, erros e avisos</sub>
+
+</div>
 
 | | Rota | Tela |
 |:---:|---|---|
@@ -115,38 +118,10 @@ Não precisa de **banco**, de **API** nem de **configuração**: o painel sobe c
 | ▶️ | `/on-demand` | **Sob Demanda**: as integrações sem agenda, no estilo do Swagger (método, parâmetros, corpo JSON, Executar e resposta), com filtro por verbo nos contadores do topo, só com a chave `Admin:Enabled` ([abaixo](#-telas-de-administrador)) |
 | 💻 | `/queries` | **Executar Querys**, com favoritas e querys prontas na barra lateral; o chip do banco no topo é o próprio seletor. Só com a chave `Admin:Enabled` ([abaixo](#-telas-de-administrador)) |
 
-<table>
-  <tr>
-    <td width="50%" align="center">
-      <img src="../../../docs/images/webapp/visao-geral-saude.png" alt="Métricas e painel de saúde"><br>
-      <sub><b>🏠 Visão Geral</b> — métricas, registros por dia, falhas ativas e painel de saúde</sub>
-    </td>
-    <td width="50%" align="center">
-      <img src="../../../docs/images/webapp/aplicacoes.png" alt="Tela Aplicações"><br>
-      <sub><b>🧩 Aplicações</b> — imagem da empresa e o chip que liga ou desliga o módulo</sub>
-    </td>
-  </tr>
-  <tr>
-    <td align="center">
-      <img src="../../../docs/images/webapp/integracoes.png" alt="Tela Integrações"><br>
-      <sub><b>🔀 Integrações</b> — procedures dentro da integração, saúde, Executar agora e Agenda</sub>
-    </td>
-    <td align="center">
-      <img src="../../../docs/images/webapp/logs-de-erros.png" alt="Tela Logs de Erros"><br>
-      <sub><b>⚠️ Logs de Erros</b> — mensagens por aplicação, integração e causa</sub>
-    </td>
-  </tr>
-  <tr>
-    <td align="center">
-      <img src="../../../docs/images/webapp/sob-demanda.png" alt="Tela Sob Demanda"><br>
-      <sub><b>▶️ Sob Demanda</b> — integrações sem agenda, no estilo do Swagger</sub>
-    </td>
-    <td align="center">
-      <img src="../../../docs/images/webapp/executar-querys.png" alt="Tela Executar Querys"><br>
-      <sub><b>💻 Executar Querys</b> — SQL com favoritas e querys prontas</sub>
-    </td>
-  </tr>
-</table>
+| ![Métricas e painel de saúde](../../../docs/images/webapp/visao-geral-saude.png)<br> <sub><b>🏠 Visão Geral</b> — métricas, registros por dia, falhas ativas e painel de saúde</sub> | ![Tela Aplicações](../../../docs/images/webapp/aplicacoes.png)<br> <sub><b>🧩 Aplicações</b> — imagem da empresa e o chip que liga ou desliga o módulo</sub> |
+|:---:|:---:|
+| ![Tela Integrações](../../../docs/images/webapp/integracoes.png)<br> <sub><b>🔀 Integrações</b> — procedures dentro da integração, saúde, Executar agora e Agenda</sub> | ![Tela Logs de Erros](../../../docs/images/webapp/logs-de-erros.png)<br> <sub><b>⚠️ Logs de Erros</b> — mensagens por aplicação, integração e causa</sub> |
+| ![Tela Sob Demanda](../../../docs/images/webapp/sob-demanda.png)<br> <sub><b>▶️ Sob Demanda</b> — integrações sem agenda, no estilo do Swagger</sub> | ![Tela Executar Querys](../../../docs/images/webapp/executar-querys.png)<br> <sub><b>💻 Executar Querys</b> — SQL com favoritas e querys prontas</sub> |
 
 O **menu lateral** tem Visão Geral, Aplicações, Integrações, Logs de Erros e, para quem tem acesso, Sob Demanda e Executar
 Querys. As integrações sob demanda (sem agenda) **não aparecem** em Integrações nem no painel de saúde: ficam na tela Sob
@@ -189,17 +164,21 @@ diálogos ocupam a tela toda. As regras ficam no fim do `wwwroot/css/app.css`.
 <details>
 <summary><b>🌗 Tema claro e 📱 celular</b></summary>
 
-<p align="center">
-  <img src="../../../docs/images/webapp/visao-geral-claro.png" alt="Visão geral no tema claro" width="100%">
-  <br><sub><b>Tema claro</b> — a escolha fica salva no navegador</sub>
-</p>
+<div align="center">
 
-<p align="center">
-  <img src="../../../docs/images/webapp/celular-visao-geral.png" alt="Visão geral no celular" width="260">
-  &nbsp;&nbsp;
-  <img src="../../../docs/images/webapp/celular-integracoes.png" alt="Integrações no celular" width="260">
-  <br><sub><b>Celular</b> — tabelas em blocos e diálogos em tela cheia</sub>
-</p>
+![Visão geral no tema claro](../../../docs/images/webapp/visao-geral-claro.png)
+
+<sub><b>Tema claro</b> — a escolha fica salva no navegador</sub>
+
+</div>
+
+<div align="center">
+
+![Visão geral no celular](../../../docs/images/webapp/celular-visao-geral.png) ![Integrações no celular](../../../docs/images/webapp/celular-integracoes.png)
+
+<sub><b>Celular</b> — tabelas em blocos e diálogos em tela cheia</sub>
+
+</div>
 
 </details>
 
@@ -354,10 +333,13 @@ dotnet user-secrets set "Admin:Enabled" "true" --project src/Frontend/WebApp
 
 ## ✨ Assistente de IA
 
-<p align="center">
-  <img src="../../../docs/images/webapp/assistente.png" alt="Assistente de IA aberto sobre a Visão geral" width="100%">
-  <br><sub><b>Assistente</b> — sem a chave, o chat avisa que não está configurado</sub>
-</p>
+<div align="center">
+
+![Assistente de IA aberto sobre a Visão geral](../../../docs/images/webapp/assistente.png)
+
+<sub><b>Assistente</b> — sem a chave, o chat avisa que não está configurado</sub>
+
+</div>
 
 O **botão roxo** no canto inferior direito (todas as telas, menos o login) abre um chat com o Claude (`claude-opus-5-5`, API
 da Anthropic, pacote NuGet `Anthropic`). Ele responde sobre integrações, erros e execuções da empresa logada consultando
@@ -520,7 +502,10 @@ flowchart LR
 
 ---
 
-<p align="center">
-  <img src="../../../docs/newbloomers.png" alt="NEWBLOOMERS" width="180"><br>
-  <sub>Monitor de Integrações · Blazor + MudBlazor · .NET 10</sub>
-</p>
+<div align="center">
+
+![NEWBLOOMERS](../../../docs/newbloomers.png)
+
+<sub>Monitor de Integrações · Blazor + MudBlazor · .NET 10</sub>
+
+</div>

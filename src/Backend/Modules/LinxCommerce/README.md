@@ -1,21 +1,18 @@
-<p align="center">
-  <img src="../../../../docs/images/banner.png" alt="NEWBLOOMERS · Sistema de Integrações · ETL" width="100%">
-</p>
+<div align="center">
+
+![NEWBLOOMERS · Sistema de Integrações · ETL](../../../../docs/images/banner.png)
+
+</div>
 
 # 🛒 Linx Commerce
 
-<p align="center">
-  <img alt="App" src="https://img.shields.io/badge/App-70-7c5cff?style=for-the-badge">
-  <img alt="Schema" src="https://img.shields.io/badge/Schema-linxcommerce-f5a524?style=for-the-badge">
-  <img alt="Rotas" src="https://img.shields.io/badge/Rotas-12-1e1b2e?style=for-the-badge">
-  <img alt="Jobs" src="https://img.shields.io/badge/Jobs-7000–7999-7c5cff?style=for-the-badge">
-  <br>
-  <img alt=".NET" src="https://img.shields.io/badge/.NET-10-1e1b2e?style=flat-square&logo=dotnet&logoColor=white">
-  <img alt="API" src="https://img.shields.io/badge/API-endereço_por_cliente-1e1b2e?style=flat-square">
-  <img alt="Auth" src="https://img.shields.io/badge/Auth-Basic-1e1b2e?style=flat-square">
-  <img alt="Escritas" src="https://img.shields.io/badge/Escritas-não-1e1b2e?style=flat-square">
-  <img alt="API real" src="https://img.shields.io/badge/API_real-não_conferida-f5a524?style=flat-square">
-</p>
+<div align="center">
+
+![App](../../../../docs/images/badges/app-70.svg) ![Schema](../../../../docs/images/badges/schema-linxcommerce.svg) ![Rotas](../../../../docs/images/badges/rotas-12.svg) ![Jobs](../../../../docs/images/badges/jobs-70007999.svg)
+
+![.NET](../../../../docs/images/badges/net-10-sq.svg) ![API](../../../../docs/images/badges/api-endereo-por-cliente-sq.svg) ![Auth](../../../../docs/images/badges/auth-basic-sq.svg) ![Escritas](../../../../docs/images/badges/escritas-no-sq.svg) ![API real](../../../../docs/images/badges/api-real-no-conferida-sq.svg)
+
+</div>
 
 <p align="center">
   <b>Pacote de DLLs para integração com o Linx Commerce: pedidos, clientes, catálogo e vendedores, só leitura.</b>
@@ -324,8 +321,12 @@ O host chama o método em `Hosts/WebApi/Extensions/ServicesExtensions.cs`.
 
 ### Scripts de banco (SQL Server)
 
-O DbUp executa cada script uma única vez, na ordem do número do arquivo. Alterar um script que já rodou não muda um banco existente:
-para isso é preciso um script novo. Os scripts gerais ficam em `Parameters/` e cada service tem a sua pasta, com o trio tabelas,
+> [!TIP]
+> Para subir as tabelas, use a tela [`Invoke-Migrators.ps1`](../../../../tools/migrators/Invoke-Migrators.ps1) com o **LinxCommerce** marcado: ela roda o Shared antes do
+> módulo, sem o problema do limite de 260 caracteres. Em linha de comando:
+> `./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -Apps LinxCommerce -SchedulingHost WebApi`.
+
+O DbUp executa cada script uma única vez, na ordem do número do arquivo. Uma correção de tabela, procedure ou view vai **no script de criação original**, não num `ALTER` novo ([padrão, §3.3](../../../../docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md)); num banco que já rodou o script, a correção é aplicada à parte. Os scripts gerais ficam em `Parameters/` e cada service tem a sua pasta, com o trio tabelas,
 procedures e jobs (os recorrentes e os sob demanda do service, inseridos no catálogo `auditing.JobCatalog`); o `migrator.csx` lê as
 subpastas.
 
@@ -360,10 +361,13 @@ Os nomes completos das filhas levam o nome do pai (`LinxCommerceOrdersItems`, `L
 
 Rota base: `LinxCommerceJobs/LinxCommerce`. `POST` nas leituras recorrentes, `GET` nas leituras sob demanda.
 
-<p align="center">
-  <img src="../../../../docs/images/swagger/linxcommerce.png" alt="Swagger do Linx Commerce" width="100%">
-  <br><sub><b>Swagger</b> do WebApi — tag <code>LinxCommerceOrders</code> aberta</sub>
-</p>
+<div align="center">
+
+![Swagger do Linx Commerce](../../../../docs/images/swagger/linxcommerce.png)
+
+<sub><b>Swagger</b> do WebApi — tag <code>LinxCommerceOrders</code> aberta</sub>
+
+</div>
 
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'pie1':'#7c5cff','pie2':'#f5a524','pie3':'#a78bfa','pie4':'#fbbf24','pie5':'#c4b5fd','pie6':'#fde68a','pieTitleTextSize':'18px','pieSectionTextColor':'#1e1b2e','pieStrokeColor':'#1e1b2e'}}}%%
@@ -411,10 +415,13 @@ O cabeçalho opcional **`X-Company`** informa a holding; sem ele, vale a holding
 | 404 | Não existe no Linx Commerce (ou id zero, que não casa com a rota) |
 | 422 | Cliente não cadastrado em `LinxCommerceParameters` ou resposta inválida do Linx Commerce (detalhe no log da execução) |
 
-<p align="center">
-  <img src="../../../../docs/images/webapp/sob-demanda.png" alt="Tela Sob Demanda do painel" width="100%">
-  <br><sub><b>Sob Demanda</b> no Monitor de Integrações — as leituras por chave do Linx Commerce ficam no grupo do módulo</sub>
-</p>
+<div align="center">
+
+![Tela Sob Demanda do painel](../../../../docs/images/webapp/sob-demanda.png)
+
+<sub><b>Sob Demanda</b> no Monitor de Integrações — as leituras por chave do Linx Commerce ficam no grupo do módulo</sub>
+
+</div>
 
 ---
 
@@ -507,7 +514,10 @@ Na pasta [`docs/`](docs) do módulo e no `docs/` da raiz do repositório:
 
 ---
 
-<p align="center">
-  <img src="../../../../docs/newbloomers.png" alt="NEWBLOOMERS" width="180"><br>
-  <sub>Sistema de integrações · feito com .NET 10</sub>
-</p>
+<div align="center">
+
+![NEWBLOOMERS](../../../../docs/newbloomers.png)
+
+<sub>Sistema de integrações · feito com .NET 10</sub>
+
+</div>

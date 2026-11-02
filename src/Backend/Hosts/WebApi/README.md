@@ -1,19 +1,18 @@
-<p align="center">
-  <img src="../../../../docs/images/banner.png" alt="NEWBLOOMERS · Sistema de Integrações · ETL" width="100%">
-</p>
+<div align="center">
+
+![NEWBLOOMERS · Sistema de Integrações · ETL](../../../../docs/images/banner.png)
+
+</div>
 
 # 🌐 Host WebApi
 
-<p align="center">
-  <img alt=".NET 10" src="https://img.shields.io/badge/.NET-10-7c5cff?style=for-the-badge&logo=dotnet&logoColor=white">
-  <img alt="ASP.NET Core" src="https://img.shields.io/badge/ASP.NET_Core-Swagger-7c5cff?style=for-the-badge&logo=swagger&logoColor=white">
-  <img alt="Hangfire" src="https://img.shields.io/badge/Hangfire-1.8_·_opcional-f5a524?style=for-the-badge">
-  <br>
-  <img alt="Rotas" src="https://img.shields.io/badge/rotas-464-1e1b2e?style=flat-square">
-  <img alt="Porta" src="https://img.shields.io/badge/localhost-5252-1e1b2e?style=flat-square">
-  <img alt="Empresa" src="https://img.shields.io/badge/empresa-X--Company-1e1b2e?style=flat-square">
-  <img alt="Autenticação" src="https://img.shields.io/badge/autenticação-desligada-1e1b2e?style=flat-square">
-</p>
+<div align="center">
+
+![.NET 10](../../../../docs/images/badges/net-10.svg) ![ASP.NET Core](../../../../docs/images/badges/asp-net-core-swagger.svg) ![Hangfire](../../../../docs/images/badges/hangfire-1-8-opcional.svg)
+
+![Rotas](../../../../docs/images/badges/rotas-464-sq.svg) ![Porta](../../../../docs/images/badges/localhost-5252-sq.svg) ![Empresa](../../../../docs/images/badges/empresa-x-company-sq.svg) ![Autenticação](../../../../docs/images/badges/autenticao-desligada-sq.svg)
+
+</div>
 
 <p align="center">
   <b>Registra os módulos, expõe as rotas de cada leitura e escrita e, quando ligado, agenda os jobs com o Hangfire.</b>
@@ -43,10 +42,13 @@ chamava `Hangfire`; as decisões e o histórico de cada passo estão em [docs/PL
 | 🏢 | **Empresa** | por (job, empresa) na agenda; nas rotas, `X-Company` ou a holding do `{docCompany}` |
 | 🔐 | **Autenticação da API** | desligada por enquanto: o `[Authorize]` dos controllers está comentado |
 
-<p align="center">
-  <img src="../../../../docs/images/swagger/visao-geral.png" alt="Swagger do WebApi" width="100%">
-  <br><sub><b>Swagger</b> — uma tag por service, agrupadas por módulo</sub>
-</p>
+<div align="center">
+
+![Swagger do WebApi](../../../../docs/images/swagger/visao-geral.png)
+
+<sub><b>Swagger</b> — uma tag por service, agrupadas por módulo</sub>
+
+</div>
 
 ---
 
@@ -114,6 +116,10 @@ Hangfire__Enabled=true Hangfire__Dashboard__UserName="<usuário>" Hangfire__Dash
 > contratados (`auditing.sp_Add_Company` e `auditing.sp_Add_Company_App`, ou o
 > [`tools/seeds/Import-TestSeeds.ps1`](../../../../tools/seeds/Import-TestSeeds.ps1) num banco de teste). Sem empresa, a
 > agenda fica vazia. Um banco que rodou os scripts antes de 30/10/2026 precisa do ajuste descrito no plano, §4.8.
+>
+> A tela [`tools/migrators/Invoke-Migrators.ps1`](../../../../tools/migrators/Invoke-Migrators.ps1) com o host
+> **WebApi (Hangfire)** marcado sobe as tabelas na ordem certa e, com a opção **Banco de teste**, já carrega a empresa; no
+> fim, o log lembra de ligar `Hangfire:Enabled` aqui e parar os outros hosts.
 
 > [!CAUTION]
 > O [WebApi.http](WebApi.http) tem exemplos de rotas de cada módulo. Cada chamada roda a integração **de verdade** contra
@@ -202,9 +208,11 @@ parâmetro; as sob demanda e as escritas pedem o CNPJ da empresa (`{docCompany}`
 <details>
 <summary><b>🖼️ Exemplo: rotas do AfterSale no Swagger</b></summary>
 
-<p align="center">
-  <img src="../../../../docs/images/swagger/aftersale.png" alt="Rotas do AfterSale no Swagger" width="100%">
-</p>
+<div align="center">
+
+![Rotas do AfterSale no Swagger](../../../../docs/images/swagger/aftersale.png)
+
+</div>
 
 </details>
 
@@ -400,7 +408,10 @@ da mesma empresa; as duas rodam em sequência (a trava da empresa impede rodarem
 
 ---
 
-<p align="center">
-  <img src="../../../../docs/newbloomers.png" alt="NEWBLOOMERS" width="180"><br>
-  <sub>Host WebApi · <a href="../../../../README.md">voltar ao README do repositório</a></sub>
-</p>
+<div align="center">
+
+![NEWBLOOMERS](../../../../docs/newbloomers.png)
+
+<sub>Host WebApi · <a href="../../../../README.md">voltar ao README do repositório</a></sub>
+
+</div>

@@ -1,20 +1,18 @@
-<p align="center">
-  <img src="../../../../../docs/images/banner.png" alt="NEWBLOOMERS · Sistema de Integrações · ETL" width="100%">
-</p>
+<div align="center">
+
+![NEWBLOOMERS · Sistema de Integrações · ETL](../../../../../docs/images/banner.png)
+
+</div>
 
 # 🔁 AfterSale
 
-<p align="center">
-  <img alt="App" src="https://img.shields.io/badge/App-50-7c5cff?style=for-the-badge">
-  <img alt="Schema" src="https://img.shields.io/badge/Schema-aftersale-f5a524?style=for-the-badge">
-  <img alt="Rotas" src="https://img.shields.io/badge/Rotas-24-1e1b2e?style=for-the-badge">
-  <img alt="Jobs" src="https://img.shields.io/badge/Jobs-5000–5999-7c5cff?style=for-the-badge">
-  <br>
-  <img alt=".NET" src="https://img.shields.io/badge/.NET-10-1e1b2e?style=flat-square&logo=dotnet&logoColor=white">
-  <img alt="API" src="https://img.shields.io/badge/API-Send4_·_Public_API_1.0.8-1e1b2e?style=flat-square">
-  <img alt="Leituras" src="https://img.shields.io/badge/Leituras-e--commerce_·_reversas_·_reembolsos-1e1b2e?style=flat-square">
-  <img alt="Ações" src="https://img.shields.io/badge/Ações-10-f5a524?style=flat-square">
-</p>
+<div align="center">
+
+![App](../../../../../docs/images/badges/app-50.svg) ![Schema](../../../../../docs/images/badges/schema-aftersale.svg) ![Rotas](../../../../../docs/images/badges/rotas-24.svg) ![Jobs](../../../../../docs/images/badges/jobs-50005999.svg)
+
+![.NET](../../../../../docs/images/badges/net-10-sq.svg) ![API](../../../../../docs/images/badges/api-send4-public-api-1-0-8-sq.svg) ![Leituras](../../../../../docs/images/badges/leituras-e-commerce-reversas-reembolsos-sq.svg) ![Ações](../../../../../docs/images/badges/aes-10-sq.svg)
+
+</div>
 
 <p align="center">
   <b>Pacote de DLLs para integração com a AfterSale (Troque Fácil): pós-venda, reversas e reembolsos.</b>
@@ -360,7 +358,12 @@ O host chama o método em `Hosts/WebApi/Extensions/ServicesExtensions.cs`.
 
 ### Scripts de banco (SQL Server)
 
-Executados uma única vez cada pelo DbUp (`Scripts/SQLServer/migrator.csx`), na ordem do número do arquivo. Alterar um script já executado não muda um banco existente: para isso é preciso um script novo. Os scripts gerais ficam em `Parameters/` e cada service tem a sua pasta, com o trio tabelas, procedures e jobs.
+> [!TIP]
+> Para subir as tabelas, use a tela [`Invoke-Migrators.ps1`](../../../../../tools/migrators/Invoke-Migrators.ps1) com o **AfterSale** marcado: ela roda o Shared antes do
+> módulo, sem o problema do limite de 260 caracteres. Em linha de comando:
+> `./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -Apps AfterSale -SchedulingHost WebApi`.
+
+Executados uma única vez cada pelo DbUp (`Scripts/SQLServer/migrator.csx`), na ordem do número do arquivo. Uma correção de tabela, procedure ou view vai **no script de criação original**, não num `ALTER` novo ([padrão, §3.3](../../../../../docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md)); num banco que já rodou o script, a correção é aplicada à parte. Os scripts gerais ficam em `Parameters/` e cada service tem a sua pasta, com o trio tabelas, procedures e jobs.
 
 | Pasta | Script | Conteúdo |
 |---|---|---|
@@ -384,10 +387,13 @@ exceção é `aftersale.AfterSaleRequests`, que só recebe inserts e é gravada 
 
 Rota base: `AfterSaleJobs/AfterSale`.
 
-<p align="center">
-  <img src="../../../../../docs/images/swagger/aftersale.png" alt="Swagger do AfterSale" width="100%">
-  <br><sub><b>Swagger</b> do WebApi — tag <code>AfterSaleReverses</code> aberta</sub>
-</p>
+<div align="center">
+
+![Swagger do AfterSale](../../../../../docs/images/swagger/aftersale.png)
+
+<sub><b>Swagger</b> do WebApi — tag <code>AfterSaleReverses</code> aberta</sub>
+
+</div>
 
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'pie1':'#7c5cff','pie2':'#f5a524','pie3':'#a78bfa','pie4':'#fbbf24','pie5':'#c4b5fd','pie6':'#fde68a','pieTitleTextSize':'18px','pieSectionTextColor':'#1e1b2e','pieStrokeColor':'#1e1b2e'}}}%%
@@ -443,10 +449,13 @@ Resposta: **200** quando a AfterSale devolve `success = true`, **422** quando n�
 > As ações `approve`, `cancel` e `pay` alteram o estado na AfterSale (o `pay` registra o pagamento
 > ao cliente). Teste com registros de teste antes de usar em produção.
 
-<p align="center">
-  <img src="../../../../../docs/images/webapp/sob-demanda.png" alt="Tela Sob Demanda do painel" width="100%">
-  <br><sub><b>Sob Demanda</b> no Monitor de Integrações — as ações e leituras por id do AfterSale ficam no grupo do módulo</sub>
-</p>
+<div align="center">
+
+![Tela Sob Demanda do painel](../../../../../docs/images/webapp/sob-demanda.png)
+
+<sub><b>Sob Demanda</b> no Monitor de Integrações — as ações e leituras por id do AfterSale ficam no grupo do módulo</sub>
+
+</div>
 
 ---
 
@@ -549,7 +558,10 @@ Guias de alteração e decisões tomadas durante o desenvolvimento, na pasta [`d
 
 ---
 
-<p align="center">
-  <img src="../../../../../docs/newbloomers.png" alt="NEWBLOOMERS" width="180"><br>
-  <sub>Sistema de integrações · feito com .NET 10</sub>
-</p>
+<div align="center">
+
+![NEWBLOOMERS](../../../../../docs/newbloomers.png)
+
+<sub>Sistema de integrações · feito com .NET 10</sub>
+
+</div>

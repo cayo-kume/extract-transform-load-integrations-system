@@ -1,18 +1,18 @@
-<p align="center">
-  <img src="../../../../docs/images/banner.png" alt="NEWBLOOMERS · Sistema de Integrações · ETL" width="100%">
-</p>
+<div align="center">
+
+![NEWBLOOMERS · Sistema de Integrações · ETL](../../../../docs/images/banner.png)
+
+</div>
 
 # ☁️ Host WebJob
 
-<p align="center">
-  <img alt=".NET 10" src="https://img.shields.io/badge/.NET-10-7c5cff?style=for-the-badge&logo=dotnet&logoColor=white">
-  <img alt="Azure WebJobs" src="https://img.shields.io/badge/Azure-WebJobs_contínuos-7c5cff?style=for-the-badge&logo=microsoftazure&logoColor=white">
-  <img alt="Um job por processo" src="https://img.shields.io/badge/um_job-por_processo-f5a524?style=for-the-badge">
-  <br>
-  <img alt="Worker SDK" src="https://img.shields.io/badge/Microsoft.NET.Sdk.Worker-sem_WebJobs_SDK-1e1b2e?style=flat-square">
-  <img alt="PowerShell" src="https://img.shields.io/badge/publicação-PowerShell_7_·_az_CLI-1e1b2e?style=flat-square&logo=powershell&logoColor=white">
-  <img alt="Recuperação" src="https://img.shields.io/badge/recuperação-14000_por_empresa-1e1b2e?style=flat-square">
-</p>
+<div align="center">
+
+![.NET 10](../../../../docs/images/badges/net-10.svg) ![Azure WebJobs](../../../../docs/images/badges/azure-webjobs-contnuos.svg) ![Um job por processo](../../../../docs/images/badges/um-job-por-processo.svg)
+
+![Worker SDK](../../../../docs/images/badges/microsoft-net-sdk-worker-sem-webjobs-sdk-sq.svg) ![PowerShell](../../../../docs/images/badges/publicao-powershell-7-az-cli-sq.svg) ![Recuperação](../../../../docs/images/badges/recuperao-14000-por-empresa-sq.svg)
+
+</div>
 
 <p align="center">
   <b>Roda cada job recorrente como um WebJob contínuo na Azure, para todas as empresas ativas, com a agenda lida de <code>auditing.Jobs</code>.</b>
@@ -63,6 +63,11 @@ WebApi, os WebJobs publicados ou o serviço do Worker.
 
 ## ▶️ Como rodar no local
 
+> [!TIP]
+> O banco precisa das tabelas (Shared e módulos) e de uma empresa ativa com os módulos contratados. A tela
+> [`tools/migrators/Invoke-Migrators.ps1`](../../../../tools/migrators/Invoke-Migrators.ps1) com o host **WebJob (Azure)**
+> marcado faz as duas coisas num banco de teste (opção **Banco de teste**); o WebJob não tem tabelas próprias.
+
 O job vem da linha de comando. A connection string fica fora do `appsettings.json`: user-secrets (o projeto já tem o
 `UserSecretsId`) ou variável de ambiente.
 
@@ -81,10 +86,13 @@ banco**:
 dotnet run --project src/Backend/Hosts/WebJob -- --list-jobs
 ```
 
-<p align="center">
-  <img src="../../../../docs/images/hosts/webjob-list-jobs.png" alt="Saída do --list-jobs" width="720">
-  <br><sub><b>--list-jobs</b> — trecho da saída (o script de publicação lê o título e a versão daqui)</sub>
-</p>
+<div align="center">
+
+![Saída do --list-jobs](../../../../docs/images/hosts/webjob-list-jobs.png)
+
+<sub><b>--list-jobs</b> — trecho da saída (o script de publicação lê o título e a versão daqui)</sub>
+
+</div>
 
 Sem `--job`, ou com um `TimeZone` inválido, o processo encerra com código 1. Com um job que não está nos mapas, ele avisa
 no log e fica parado (na Azure, um WebJob contínuo que termina é reiniciado em laço).
@@ -422,7 +430,10 @@ local, o `az login`. Um service principal, se um dia precisar, entra pelas vari�
 
 ---
 
-<p align="center">
-  <img src="../../../../docs/newbloomers.png" alt="NEWBLOOMERS" width="180"><br>
-  <sub>Host WebJob · <a href="../../../../README.md">voltar ao README do repositório</a></sub>
-</p>
+<div align="center">
+
+![NEWBLOOMERS](../../../../docs/newbloomers.png)
+
+<sub>Host WebJob · <a href="../../../../README.md">voltar ao README do repositório</a></sub>
+
+</div>

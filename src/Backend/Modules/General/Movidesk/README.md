@@ -1,21 +1,18 @@
-<p align="center">
-  <img src="../../../../../docs/images/banner.png" alt="NEWBLOOMERS · Sistema de Integrações · ETL" width="100%">
-</p>
+<div align="center">
+
+![NEWBLOOMERS · Sistema de Integrações · ETL](../../../../../docs/images/banner.png)
+
+</div>
 
 # 🎧 Movidesk
 
-<p align="center">
-  <img alt="App" src="https://img.shields.io/badge/App-30-7c5cff?style=for-the-badge">
-  <img alt="Schema" src="https://img.shields.io/badge/Schema-movidesk-f5a524?style=for-the-badge">
-  <img alt="Rotas" src="https://img.shields.io/badge/Rotas-16-1e1b2e?style=for-the-badge">
-  <img alt="Jobs" src="https://img.shields.io/badge/Jobs-3000–3999-7c5cff?style=for-the-badge">
-  <br>
-  <img alt=".NET" src="https://img.shields.io/badge/.NET-10-1e1b2e?style=flat-square&logo=dotnet&logoColor=white">
-  <img alt="API" src="https://img.shields.io/badge/API-pública_v1-1e1b2e?style=flat-square">
-  <img alt="Leituras" src="https://img.shields.io/badge/Leituras-tickets_·_pessoas_·_serviços-1e1b2e?style=flat-square">
-  <img alt="Escritas" src="https://img.shields.io/badge/Escritas-sim-f5a524?style=flat-square">
-  <img alt="Limite" src="https://img.shields.io/badge/Limite-10_req%2Fmin-1e1b2e?style=flat-square">
-</p>
+<div align="center">
+
+![App](../../../../../docs/images/badges/app-30.svg) ![Schema](../../../../../docs/images/badges/schema-movidesk.svg) ![Rotas](../../../../../docs/images/badges/rotas-16.svg) ![Jobs](../../../../../docs/images/badges/jobs-30003999.svg)
+
+![.NET](../../../../../docs/images/badges/net-10-sq.svg) ![API](../../../../../docs/images/badges/api-pblica-v1-sq.svg) ![Leituras](../../../../../docs/images/badges/leituras-tickets-pessoas-servios-sq.svg) ![Escritas](../../../../../docs/images/badges/escritas-sim-sq.svg) ![Limite](../../../../../docs/images/badges/limite-10-req-min-sq.svg)
+
+</div>
 
 <p align="center">
   <b>Pacote de DLLs para integração com a Movidesk: tickets, pessoas e serviços, lidos e escritos pela API pública v1.</b>
@@ -362,7 +359,12 @@ O host chama o método em `Hosts/WebApi/Extensions/ServicesExtensions.cs`.
 
 ### Scripts de banco (SQL Server)
 
-O DbUp (`Scripts/SQLServer/migrator.csx`) executa cada script uma única vez, na ordem do número do arquivo. Alterar um script que já rodou não muda um banco existente: para isso é preciso um script novo. Os scripts gerais ficam em `Parameters/` e cada service tem a sua pasta, com o trio tabelas, procedures e jobs.
+> [!TIP]
+> Para subir as tabelas, use a tela [`Invoke-Migrators.ps1`](../../../../../tools/migrators/Invoke-Migrators.ps1) com o **Movidesk** marcado: ela roda o Shared antes do
+> módulo, sem o problema do limite de 260 caracteres. Em linha de comando:
+> `./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -Apps Movidesk -SchedulingHost WebApi`.
+
+O DbUp (`Scripts/SQLServer/migrator.csx`) executa cada script uma única vez, na ordem do número do arquivo. Uma correção de tabela, procedure ou view vai **no script de criação original**, não num `ALTER` novo ([padrão, §3.3](../../../../../docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md)); num banco que já rodou o script, a correção é aplicada à parte. Os scripts gerais ficam em `Parameters/` e cada service tem a sua pasta, com o trio tabelas, procedures e jobs.
 
 | Pasta | Script | Conteúdo |
 |---|---|---|
@@ -389,10 +391,13 @@ Os scripts `*_Jobs_Into_Jobs_Table.sql` inserem no **catálogo** `auditing.JobCa
 
 Rota base: `MovideskJobs/Movidesk`.
 
-<p align="center">
-  <img src="../../../../../docs/images/swagger/movidesk.png" alt="Swagger do Movidesk" width="100%">
-  <br><sub><b>Swagger</b> do WebApi — tag <code>MovideskTickets</code> aberta</sub>
-</p>
+<div align="center">
+
+![Swagger do Movidesk](../../../../../docs/images/swagger/movidesk.png)
+
+<sub><b>Swagger</b> do WebApi — tag <code>MovideskTickets</code> aberta</sub>
+
+</div>
 
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'pie1':'#7c5cff','pie2':'#f5a524','pie3':'#a78bfa','pie4':'#fbbf24','pie5':'#c4b5fd','pie6':'#fde68a','pieTitleTextSize':'18px','pieSectionTextColor':'#1e1b2e','pieStrokeColor':'#1e1b2e'}}}%%
@@ -459,10 +464,13 @@ Mesmas exigências das leituras sob demanda (`X-User-Name` e `{docCompany}`), co
 > [!CAUTION]
 > O `[Authorize]` do controller está comentado, como no AfterSale, porque o host ainda não tem um esquema de autenticação configurado.
 
-<p align="center">
-  <img src="../../../../../docs/images/webapp/sob-demanda.png" alt="Tela Sob Demanda do painel" width="100%">
-  <br><sub><b>Sob Demanda</b> no Monitor de Integrações — as rotas sem agenda do Movidesk ficam no grupo do módulo</sub>
-</p>
+<div align="center">
+
+![Tela Sob Demanda do painel](../../../../../docs/images/webapp/sob-demanda.png)
+
+<sub><b>Sob Demanda</b> no Monitor de Integrações — as rotas sem agenda do Movidesk ficam no grupo do módulo</sub>
+
+</div>
 
 ---
 
@@ -561,7 +569,10 @@ Guias de modelagem, implementação e decisões tomadas, na pasta [`docs/`](docs
 
 ---
 
-<p align="center">
-  <img src="../../../../../docs/newbloomers.png" alt="NEWBLOOMERS" width="180"><br>
-  <sub>Sistema de integrações · feito com .NET 10</sub>
-</p>
+<div align="center">
+
+![NEWBLOOMERS](../../../../../docs/newbloomers.png)
+
+<sub>Sistema de integrações · feito com .NET 10</sub>
+
+</div>

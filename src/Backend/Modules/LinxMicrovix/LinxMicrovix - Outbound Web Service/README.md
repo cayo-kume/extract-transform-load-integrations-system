@@ -1,21 +1,18 @@
-<p align="center">
-  <img src="../../../../../docs/images/banner.png" alt="NEWBLOOMERS · Sistema de Integrações · ETL" width="100%">
-</p>
+<div align="center">
+
+![NEWBLOOMERS · Sistema de Integrações · ETL](../../../../../docs/images/banner.png)
+
+</div>
 
 # 🟣 Linx Microvix (Outbound)
 
-<p align="center">
-  <img alt="App 80" src="https://img.shields.io/badge/App-80-7c5cff?style=for-the-badge">
-  <img alt="Schema linxmicrovix" src="https://img.shields.io/badge/schema-linxmicrovix-7c5cff?style=for-the-badge&logo=microsoftsqlserver&logoColor=white">
-  <img alt="284 rotas" src="https://img.shields.io/badge/rotas-284-f5a524?style=for-the-badge">
-  <img alt="284 jobs" src="https://img.shields.io/badge/jobs-284_+_260_procedures-f5a524?style=for-the-badge">
-  <br>
-  <img alt=".NET 10" src="https://img.shields.io/badge/.NET-10-1e1b2e?style=flat-square&logo=dotnet&logoColor=white">
-  <img alt="XML" src="https://img.shields.io/badge/API-XML-1e1b2e?style=flat-square">
-  <img alt="ERP v274" src="https://img.shields.io/badge/ERP-v274_·_191_métodos-1e1b2e?style=flat-square">
-  <img alt="B2C V64" src="https://img.shields.io/badge/B2C-V64_·_69_métodos-1e1b2e?style=flat-square">
-  <img alt="Só leitura" src="https://img.shields.io/badge/escritas-nenhuma-1e1b2e?style=flat-square">
-</p>
+<div align="center">
+
+![App 80](../../../../../docs/images/badges/app-80.svg) ![Schema linxmicrovix](../../../../../docs/images/badges/schema-linxmicrovix.svg) ![284 rotas](../../../../../docs/images/badges/rotas-284.svg) ![284 jobs](../../../../../docs/images/badges/jobs-284-260-procedures.svg)
+
+![.NET 10](../../../../../docs/images/badges/net-10-sq.svg) ![XML](../../../../../docs/images/badges/api-xml-sq.svg) ![ERP v274](../../../../../docs/images/badges/erp-v274-191-mtodos-sq.svg) ![B2C V64](../../../../../docs/images/badges/b2c-v64-69-mtodos-sq.svg) ![Só leitura](../../../../../docs/images/badges/escritas-nenhuma-sq.svg)
+
+</div>
 
 <p align="center">
   <b>Lê os dois web services XML do Linx Microvix (ERP e B2C) com leitura incremental pelo timestamp.</b><br>
@@ -978,6 +975,11 @@ O host chama o método em `Hosts/WebApi/Extensions/ServicesExtensions.cs`.
 
 ### Scripts de banco (SQL Server)
 
+> [!TIP]
+> Para subir as tabelas, use a tela [`Invoke-Migrators.ps1`](../../../../../tools/migrators/Invoke-Migrators.ps1) com o **LinxMicrovix** marcado: ela roda o Shared antes do
+> módulo, sem o problema do limite de 260 caracteres. Em linha de comando:
+> `./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -Apps LinxMicrovix -SchedulingHost WebApi`.
+
 > [!NOTE]
 > Desde o cadastro de empresas, o DbUp cria só **estrutura e catálogo do produto**. Os scripts de jobs inserem em
 > **`auditing.JobCatalog`** (sem empresa); os jobs de uma empresa nascem em `auditing.Jobs`, inativos, quando ela contrata o
@@ -1068,10 +1070,13 @@ Rota base: `LinxMicrovixJobs/LinxMicrovix`. A classe é `partial`: um arquivo po
 `POST <Método>` para cada um dos 260 métodos (ex.: `POST LinxMicrovixJobs/LinxMicrovix/LinxProdutos`), agrupados no
 Swagger pela tag do service.
 
-<p align="center">
-  <img src="../../../../../docs/images/swagger/linxmicrovix.png" alt="Rotas do Linx Microvix no Swagger do WebApi" width="100%">
-  <br><sub><b>Swagger do WebApi</b> — as rotas do Microvix agrupadas pela tag de cada service (<code>http://localhost:5252/swagger</code>)</sub>
-</p>
+<div align="center">
+
+![Rotas do Linx Microvix no Swagger do WebApi](../../../../../docs/images/swagger/linxmicrovix.png)
+
+<sub><b>Swagger do WebApi</b> — as rotas do Microvix agrupadas pela tag de cada service (<code>http://localhost:5252/swagger</code>)</sub>
+
+</div>
 
 ### Leituras sob demanda (chamadas por sistema externo)
 
@@ -1125,10 +1130,13 @@ Toda execução grava `auditing.Logs` e, conforme o caso:
 * `auditing.Messages`, com mensagens e erros de validação;
 * `auditing.Records`, com os registros integrados e o XML da linha recebida.
 
-<p align="center">
-  <img src="../../../../../docs/images/webapp/logs-de-erros.png" alt="Tela Logs de Erros do Monitor" width="100%">
-  <br><sub><b>Onde ver no painel</b> — os erros de cada execução, por aplicação e integração, na tela Logs de Erros do Monitor (dados mockados)</sub>
-</p>
+<div align="center">
+
+![Tela Logs de Erros do Monitor](../../../../../docs/images/webapp/logs-de-erros.png)
+
+<sub><b>Onde ver no painel</b> — os erros de cada execução, por aplicação e integração, na tela Logs de Erros do Monitor (dados mockados)</sub>
+
+</div>
 
 ---
 
@@ -1207,7 +1215,10 @@ As leituras sob demanda usam os mesmos comandos, com o parâmetro da busca; a re
 
 ---
 
-<p align="center">
-  <img src="../../../../../docs/newbloomers.png" alt="NEWBLOOMERS" width="180"><br>
-  <sub>Módulo Linx Microvix · sistema de integrações · .NET 10</sub>
-</p>
+<div align="center">
+
+![NEWBLOOMERS](../../../../../docs/newbloomers.png)
+
+<sub>Módulo Linx Microvix · sistema de integrações · .NET 10</sub>
+
+</div>

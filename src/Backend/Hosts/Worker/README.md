@@ -1,19 +1,18 @@
-<p align="center">
-  <img src="../../../../docs/images/banner.png" alt="NEWBLOOMERS · Sistema de Integrações · ETL" width="100%">
-</p>
+<div align="center">
+
+![NEWBLOOMERS · Sistema de Integrações · ETL](../../../../docs/images/banner.png)
+
+</div>
 
 # 🪟 Host Worker
 
-<p align="center">
-  <img alt=".NET 10" src="https://img.shields.io/badge/.NET-10-7c5cff?style=for-the-badge&logo=dotnet&logoColor=white">
-  <img alt="Quartz.NET" src="https://img.shields.io/badge/Quartz.NET-3.19.1-7c5cff?style=for-the-badge">
-  <img alt="Serviço do Windows" src="https://img.shields.io/badge/serviço_do_Windows-EtlWorker-f5a524?style=for-the-badge&logo=windows&logoColor=white">
-  <br>
-  <img alt="AdoJobStore" src="https://img.shields.io/badge/AdoJobStore-cluster-1e1b2e?style=flat-square">
-  <img alt="Schema" src="https://img.shields.io/badge/schema-quartz-1e1b2e?style=flat-square">
-  <img alt="Concorrência" src="https://img.shields.io/badge/concorrência-duas_camadas-1e1b2e?style=flat-square">
-  <img alt="Painel" src="https://img.shields.io/badge/painel-WebApp-1e1b2e?style=flat-square">
-</p>
+<div align="center">
+
+![.NET 10](../../../../docs/images/badges/net-10.svg) ![Quartz.NET](../../../../docs/images/badges/quartz-net-3-19-1.svg) ![Serviço do Windows](../../../../docs/images/badges/servio-do-windows-etlworker.svg)
+
+![AdoJobStore](../../../../docs/images/badges/adojobstore-cluster-sq.svg) ![Schema](../../../../docs/images/badges/schema-quartz-sq.svg) ![Concorrência](../../../../docs/images/badges/concorrncia-duas-camadas-sq.svg) ![Painel](../../../../docs/images/badges/painel-webapp-sq.svg)
+
+</div>
 
 <p align="center">
   <b>Um processo só, como serviço do Windows, para todos os jobs ativos de todas as empresas, com o Quartz.NET em cluster.</b>
@@ -94,7 +93,15 @@ dotnet user-secrets set "ConnectionStrings:Connection" "<connection string>" --p
 ```
 
 O banco precisa das tabelas do Quartz. O migrator do host roda **depois do migrator do Shared** (ver
-[MIGRATOR-CSX.md](../../../../docs/MIGRATOR-CSX.md)):
+[MIGRATOR-CSX.md](../../../../docs/MIGRATOR-CSX.md)). O jeito mais simples é a tela
+[`Invoke-Migrators.ps1`](../../../../tools/migrators/Invoke-Migrators.ps1) com o host **Worker (Quartz.NET)** marcado: ela
+roda o Shared, as integrações e, por último, o migrator do Quartz, e no fim lista o que desligar nos outros hosts.
+
+```powershell
+./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -SchedulingHost Worker
+```
+
+Ou só o migrator do host, à mão:
 
 ```bash
 cd src/Backend/Hosts/Worker/Scripts/SQLServer && dotnet script migrator.csx -- "<connection string>"
@@ -427,7 +434,10 @@ flowchart LR
 
 ---
 
-<p align="center">
-  <img src="../../../../docs/newbloomers.png" alt="NEWBLOOMERS" width="180"><br>
-  <sub>Host Worker · <a href="../../../../README.md">voltar ao README do repositório</a></sub>
-</p>
+<div align="center">
+
+![NEWBLOOMERS](../../../../docs/newbloomers.png)
+
+<sub>Host Worker · <a href="../../../../README.md">voltar ao README do repositório</a></sub>
+
+</div>
