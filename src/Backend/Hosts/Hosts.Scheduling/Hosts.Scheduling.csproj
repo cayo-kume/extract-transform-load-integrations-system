@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    o que os hosts de agenda (WebApi com o Hangfire, WebJob e Worker) dividem: os mapas IdJob → método, o JobCron e o executor de
+    o que os hosts de agenda (WebApi com o Hangfire, WebJob e Worker com o Quartz) dividem: os mapas IdJob → método, o JobCron e o executor de
     jobs (src/Backend/Hosts/WebJob/docs/PLANO-HOST-WEBJOB.md, passo 2). Não pode ir para o Shared: os mapas referenciam os
     services dos módulos, e os módulos referenciam o Shared. Sem Hangfire: o que é do Hangfire fica no WebApi
   -->

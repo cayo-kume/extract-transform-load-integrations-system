@@ -16,6 +16,7 @@ padrão de organização dos scripts está em [PADRAO-CODIGO-E-SCRIPTS-INTEGRACO
 | Movidesk | `Modules/General/Movidesk/Infrastructure.Movidesk/Scripts/SQLServer` | `Parameters/` e uma pasta por service |
 | AfterSale | `Modules/General/AfterSale/Infrastructure.AfterSale/Scripts/SQLServer` | `Parameters/` e uma pasta por service |
 | DataWarehouse | `Modules/DataWarehouse/Infrastructure.DataWarehouse/Scripts/SQLServer` | Uma pasta por camada (`Parameters/`, `Landing/`, `History/`...) |
+| Host Worker | `Hosts/Worker/Scripts/SQLServer` | Direto na pasta: as tabelas do Quartz.NET no schema `quartz`, só para quem usa o Worker |
 
 Os módulos fora do host (Dootax, Mobsim, Oto, Pagarme, FlashCourier, Jadlog, Stone e TotalExpress) também têm um
 `migrator.csx` em `Scripts/SQLServer`, com os scripts direto na pasta, como no sistema antigo.
@@ -31,6 +32,7 @@ Todos os módulos usam o **mesmo banco** e a mesma tabela de controle do DbUp. R
    que os scripts de procedures dos módulos usam para gerar os merges.
 2. **Módulos** (Totvs, LinxMicrovix, LinxCommerce, Movidesk, AfterSale), em qualquer ordem entre eles.
 3. **DataWarehouse**, por último: ele lê as tabelas dos módulos.
+4. **Host Worker**, só se o Worker (Quartz.NET) for o orquestrador: depende só do Shared.
 
 ## O que o script faz
 

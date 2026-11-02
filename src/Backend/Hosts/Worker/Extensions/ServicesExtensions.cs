@@ -1,0 +1,104 @@
+using Hosts.Scheduling;
+using Hosts.Scheduling.RecurringJobs;
+using Infrastructure.AfterSale.DependencyInjection;
+using Infrastructure.DataWarehouse.DependencyInjection;
+using Infrastructure.LinxCommerce.DependencyInjection;
+using Infrastructure.LinxMicrovix.Outbound.DependencyInjection;
+using Infrastructure.Movidesk.DependencyInjection;
+using Infrastructure.Shared;
+using Infrastructure.Totvs.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Quartz;
+using Worker.Scheduling;
+
+namespace Worker.Extensions
+{
+    public static class ServicesExtensions
+    {
+        /// <summary>
+        /// os mesmos módulos dos hosts WebApi e WebJob (src/Backend/Hosts/Worker/docs/PLANO-HOST-WORKER.md, passo 3) e o executor de
+        /// jobs. Um módulo novo entra aqui e nos outros dois hosts, junto com o mapa em Hosts.Scheduling
+        /// </summary>
+        public static HostApplicationBuilder AddServices(this HostApplicationBuilder builder)
+        {
+            builder.Services.AddScopedSharedServices();
+
+            builder.Services.AddScopedLinxCommerceServices(builder.Configuration);
+            builder.Services.AddScopedLinxMicrovixServices(builder.Configuration);
+            builder.Services.AddScopedAfterSaleServices(builder.Configuration);
+            builder.Services.AddScopedMovideskServices(builder.Configuration);
+            builder.Services.AddScopedTotvsServices(builder.Configuration);
+            builder.Services.AddScopedDataWarehouseServices(builder.Configuration);
+
+            builder.Services.AddScheduledJobRunner();
+
+            return builder;
+        }
+
+        /// <summary>
+        /// o Quartz (passo 3): AdoJobStore em cluster no banco das integrações, pool de threads, limiar de misfire e o
+        /// SchedulerRefreshJob, que monta a agenda a partir de auditing.Jobs na subida e a cada RefreshIntervalInMinutes. Com
+        /// Quartz:Enabled = false, nada do Quartz é registrado e o host sobe sem agendar nada
+        /// </summary>
+        public static HostApplicationBuilder AddQuartzService(this HostApplicationBuilder builder)
+        {
+            var section = builder.Configuration.GetSection(QuartzSettings.SectionName);
+            var settings = section.Get<QuartzSettings>() ?? new QuartzSettings();
+
+            builder.Services.AddOptions<QuartzSettings>().Bind(section).ValidateOnStart();
+            builder.Services.AddSingleton<IValidateOptions<QuartzSettings>, QuartzSettingsValidator>();
+
+            if (!settings.Enabled)
+                return builder;
+
+            // monta os mapas já na subida: IdJob repetido ou método sem [JobVersion] (§4.5) impedem o host de subir
+            _ = RecurringJobMap.Definitions;
+
+            QuartzSettingsValidator.TryFindTimeZone(settings.TimeZone, out var timeZone);
+            var connectionString = builder.Configuration.GetConnectionString(settings.Storage.ConnectionStringName) ?? "";
+
+            builder.Services.AddQuartz(q =>
+            {
+                q.SchedulerName = settings.SchedulerName;
+                q.SchedulerId = "AUTO";
+                q.MisfireThreshold = TimeSpan.FromMinutes(settings.Misfire.ThresholdInMinutes);
+                q.UseDefaultThreadPool(pool => pool.MaxConcurrency = settings.Threads.MaxConcurrency);
+
+                q.UsePersistentStore(store =>
+                {
+                    // o JobDataMap só com texto (§3.3)
+                    store.UseProperties = true;
+                    store.PerformSchemaValidation = true;
+                    store.UseSqlServer(sql =>
+                    {
+                        sql.ConnectionString = connectionString;
+                        sql.TablePrefix = settings.Storage.TablePrefix;
+                    });
+                    store.UseSystemTextJsonSerializer();
+
+                    if (settings.Storage.Clustered)
+                        store.UseClustering(cluster => cluster.CheckinInterval = TimeSpan.FromSeconds(settings.Storage.ClusterCheckinIntervalInSeconds));
+                });
+
+                // agenda a partir de auditing.Jobs (§4.4): a cada RefreshIntervalInMinutes e, já na subida, uma vez
+                q.AddJob<SchedulerRefreshJob>(SchedulerRefreshJob.Key, job => job.StoreDurably().WithDescription("Agenda: releitura de auditing.Jobs"));
+
+                q.AddTrigger(trigger => trigger
+                    .ForJob(SchedulerRefreshJob.Key)
+                    .WithIdentity("SchedulerRefresh", SchedulerRefreshJob.Key.Group)
+                    .WithCronSchedule(JobCron.ToQuartz(JobCron.FromInterval(settings.Schedule.RefreshIntervalInMinutes)!), c => c.InTimeZone(timeZone).WithMisfireHandlingInstructionDoNothing()));
+
+                q.AddTrigger(trigger => trigger
+                    .ForJob(SchedulerRefreshJob.Key)
+                    .WithIdentity("SchedulerRefresh-Startup", SchedulerRefreshJob.Key.Group)
+                    .StartNow());
+            });
+
+            // na parada, espera as execuções em andamento terminarem, até Shutdown:TimeoutInMinutes
+            builder.Services.AddQuartzHostedService(options => options.WaitForJobsToComplete = true);
+            builder.Services.Configure<HostOptions>(options => options.ShutdownTimeout = TimeSpan.FromMinutes(settings.Shutdown.TimeoutInMinutes));
+
+            return builder;
+        }
+    }
+}

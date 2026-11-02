@@ -135,12 +135,12 @@ WebApi: com um parâmetro obrigatório faltando, o host não sobe e o log diz qu
 ```json
 "Quartz": {
   "Enabled": true,
-  "SchedulerName": "",
+  "SchedulerName": "Worker",
   "TimeZone": "America/Sao_Paulo",
 
   "Storage": {
     "ConnectionStringName": "Connection",
-    "TablePrefix": "[quartz].[QRTZ_",
+    "TablePrefix": "quartz.QRTZ_",
     "Clustered": true,
     "ClusterCheckinIntervalInSeconds": 20
   },
@@ -170,10 +170,10 @@ WebApi: com um parâmetro obrigatório faltando, o host não sobe e o log diz qu
 | Parâmetro | Uso |
 |---|---|
 | `Enabled` | `false`: o host sobe sem o Quartz (útil para conferir configuração e conexão sem agendar nada). Diferente do WebApi, o padrão é `true`: o Worker só existe para agendar |
-| `SchedulerName` | nome do scheduler nos logs (e no cluster); vazio usa o nome da máquina |
+| `SchedulerName` | nome do scheduler: **o mesmo em todos os Workers do cluster** (`Worker`); cada processo tem o seu `instanceId` (`AUTO`) |
 | `TimeZone` | fuso de todos os triggers (4.3) |
 | `Storage:ConnectionStringName` | a entrada de `ConnectionStrings` do store: **`Connection`, o mesmo banco das integrações**, como o storage do Hangfire (3.3). Para mudar, outra entrada e apontar para ela |
-| `Storage:TablePrefix` | schema e prefixo das tabelas do Quartz (`[quartz].[QRTZ_`) |
+| `Storage:TablePrefix` | schema e prefixo das tabelas do Quartz (`quartz.QRTZ_`: o Quartz concatena o nome da tabela depois dele, então não há colchetes) |
 | `Storage:Clustered` | **`true` desde o início**, mesmo com um Worker só (3.3) |
 | `Storage:ClusterCheckinIntervalInSeconds` | de quanto em quanto tempo cada Worker avisa que está vivo: **20**, o padrão do Quartz |
 | `Threads:MaxConcurrency` | execuções ao mesmo tempo: **20**, como o `WorkerCount` do Hangfire (o padrão do Quartz é 10) |
@@ -232,6 +232,26 @@ Mesmo no banco, o Quartz pesa menos que o Hangfire: ele não guarda execuções 
    agenda continua vindo de `auditing.Jobs`: o store guarda a cópia que o `SchedulerRefreshJob` (4.4) mantém em dia.
 5. Os bancos que já existem recebem o script pelo migrator, como qualquer script novo.
 
+**Feito em 01/11/2026 (passo 3).**
+
+* **Pacotes:** `Quartz.Extensions.Hosting` e `Quartz.Serialization.SystemTextJson` na **3.19.1** (26/07/2026), a última da
+  linha 3. A linha 4 saiu em 03/09/2026 e teve 20 versões em dois meses (até a 4.6.2, de 26/10/2026): fica para quando
+  estabilizar. O `WindowsServices` entra no passo 6.
+* **Tabelas:** `Scripts/SQLServer/Script001_Create_Quartz_Tables.sql`, o script oficial da tag `v3.19.1`
+  (`database/tables/tables_sqlServer.sql`) sem o `USE` e o bloco de `DROP`, com o `CREATE SCHEMA [quartz]` e as tabelas
+  no schema `quartz`; e o `migrator.csx` do host, igual ao do Shared. Roda depois do migrator do Shared.
+* **Host:** os módulos e o `AddScheduledJobRunner` (`Extensions/ServicesExtensions.AddServices`, os mesmos do WebJob) e o
+  `AddQuartzService`: `QuartzSettings` com `ValidateOnStart` e o `QuartzSettingsValidator`; `AdoJobStore` no SQL Server com
+  `UseProperties`, validação do schema, serializador `SystemTextJson` e cluster (check-in de 20 s); `SchedulerName`
+  `Worker` e `SchedulerId` `AUTO`; pool de 20; limiar de misfire de 15 minutos; `AddQuartzHostedService` com
+  `WaitForJobsToComplete` e o `HostOptions.ShutdownTimeout` de `Shutdown:TimeoutInMinutes`. Com `Quartz:Enabled = false`,
+  nada do Quartz é registrado. `"Quartz": "Warning"` no `Logging`.
+* **Correções no texto deste plano:** o `TablePrefix` é `quartz.QRTZ_` (com colchetes, o nome da tabela ficaria sem o `]`
+  final); o `SchedulerName` é fixo (`Worker`), porque o cluster junta os Workers pelo nome; o `Storage:Type` saiu (é sempre
+  o `AdoJobStore`).
+* **Aviso na subida:** com o `instanceId` `AUTO`, o Quartz avisa que a afinidade de nó (*preferred node*) precisa de um id
+  fixo. A afinidade não é usada; o aviso pode ser ignorado.
+
 ### 3.4 Falhas
 
 Com `AutomaticRetry = 0`, o Hangfire guardava cada falha na tela de `Failed`, e foi preciso um job para limpá-la. No
@@ -289,6 +309,34 @@ host de subir (validação do 3.1).
    WebJob).
 5. Remover um job que está rodando não interrompe a execução: o `DeleteJob` tira o job e o trigger, e a execução em
    andamento termina normalmente.
+
+**Feito em 01/11/2026 (4.2 a 4.4).**
+
+* **`JobCron.ToQuartz`** (Hosts.Scheduling): o cron de 5 campos com os segundos na frente e o `?` no dia da semana.
+* **`QuartzJobRunner`** (`IJob`): lê o `IdJob` do `JobDataMap`, acha a definição no `RecurringJobMap` e roda pelo
+  `ScheduledJobRunner`, sem deixar exceção subir. As duas camadas de concorrência entram no passo 5.
+* **`SchedulerRefreshJob`** (`IJob`, grupo `host`): um trigger com o cron de `Schedule:RefreshIntervalInMinutes` e outro
+  `StartNow` para a subida. Lê `auditing.Jobs` e, no grupo `integrations`, agenda os novos (`JobKey` e `TriggerKey`
+  `<IdJob>-<Title> - V<versão>`, descrição com o método), troca o trigger dos que mudaram de cron ou de fuso e apaga os
+  que saíram. Trigger com `InTimeZone` e `WithMisfireHandlingInstructionDoNothing`. Uma falha na releitura (banco fora)
+  deixa a agenda como estava.
+
+Conferido num banco de teste do Docker (apagado no fim), com os migrators da versão commitada:
+
+* as 11 tabelas `quartz.QRTZ_*` criadas pelo migrator do host; o Worker subiu em cluster (uma linha em
+  `QRTZ_SCHEDULER_STATE`, check-in de 20 s);
+* com 9002 (1 minuto, só no teste), 8000 (120), 8034 (diário às 23:00), 8001 (7) e 14000 ativos, a subida agendou
+  `0 * * * * ?`, `0 0 */2 * * ?` e `0 0 23 * * ?`, em `America/Sao_Paulo` e com `MISFIRE_INSTR = 2` (`DoNothing`), e
+  deixou o 8001 (não vira cron) e o 14000 (só no WebJob) fora, com aviso; o 9002 rodou a cada minuto, com o log em
+  `auditing.Logs`;
+* com o 9002 passado para 3 minutos, o 8034 para 02:30 e o 8000 desligado, a releitura seguinte trocou os dois triggers
+  (`0 */3 * * * ?`, `0 30 2 * * ?`) e apagou o 8000;
+* parado e subido de novo, o Worker achou a agenda no banco ("2 sem mudança");
+* `Quartz:TimeZone` inválido: o host não sobe e a mensagem diz o parâmetro; `Quartz:Enabled = false`: sobe sem agenda.
+
+Achado: o `Script001` do Shared tem hoje uma alteração não commitada de outra frente de trabalho (`DocCompany` obrigatório
+em `auditing.Jobs`) que faz os scripts de jobs falharem num banco novo; por isso o teste usou os scripts da versão
+commitada.
 
 ### 4.5 Versão dos jobs
 

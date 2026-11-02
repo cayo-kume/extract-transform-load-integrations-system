@@ -29,6 +29,22 @@ namespace Hosts.Scheduling
             };
 
         /// <summary>
+        /// o cron de 5 campos acima no formato do Quartz.NET (src/Backend/Hosts/Worker/docs/PLANO-HOST-WORKER.md §4.2): segundos na
+        /// frente e '?' num dos campos de dia (ex.: "*/3 * * * *" → "0 */3 * * * ?", "0 23 * * *" → "0 0 23 * * ?")
+        /// </summary>
+        public static string ToQuartz(string cron)
+        {
+            var fields = cron.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+            if (fields.Length != 5)
+                throw new ArgumentException($"Cron '{cron}' não tem 5 campos.", nameof(cron));
+
+            var (dayOfMonth, dayOfWeek) = fields[4] == "*" ? (fields[2], "?") : ("?", fields[4]);
+
+            return $"0 {fields[0]} {fields[1]} {dayOfMonth} {fields[3]} {dayOfWeek}";
+        }
+
+        /// <summary>
         /// próximo horário, estritamente depois de <paramref name="after"/>, pelas mesmas regras do cron acima, no fuso da agenda:
         /// diário na hora de RunningDailyAt; N minutos que dividem a hora, contados a partir da hora cheia; N horas que dividem o
         /// dia, no minuto 0. O WebJob usa isto no lugar de um parser de cron. Null quando a agenda não vira cron
