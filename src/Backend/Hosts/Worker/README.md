@@ -128,13 +128,15 @@ aviso no log.
 
 **O `SchedulerRefreshJob`** roda na subida e a cada `Schedule:RefreshIntervalInMinutes`: lê `auditing.Jobs` e, no grupo
 `integrations` do Quartz, agenda os jobs novos, troca o trigger dos que mudaram e apaga os que ficaram inativos, sem
-intervalo ou saíram do mapa (uma execução em andamento termina normalmente). Cada job do Quartz se chama
-`<IdJob>-<Title> - V<versão>`. Um `UPDATE` na tabela vale, no máximo, na releitura seguinte; o resumo de cada releitura
+intervalo ou saíram do mapa (uma execução em andamento termina normalmente). Há um job do Quartz por (job, empresa
+ativa em `monitor.Company`), chamado `<IdJob>-<Title> - V<versão> - <empresa>`, com o `IdJob` e a empresa no
+`JobDataMap`; a execução roda com essa empresa (`ScheduledJobRunner.Run(definição, empresa)`). Uma empresa desativada sai
+da agenda na releitura seguinte. Um `UPDATE` na tabela vale, no máximo, na releitura seguinte; o resumo de cada releitura
 vai para o log (`Agenda: N job(s) na agenda...`).
 
 ```sql
--- liga um job
-UPDATE [auditing].[Jobs] SET IsActive = 1 WHERE IdType = 2 AND IdJob = 3000;
+-- liga um job de uma empresa
+UPDATE [auditing].[Jobs] SET IsActive = 1 WHERE IdType = 2 AND IdJob = 3000 AND Company = '<CNPJ da holding>';
 
 -- liga um módulo inteiro, pela faixa de IdJob (ex.: Movidesk, 3000 a 3499)
 UPDATE [auditing].[Jobs] SET IsActive = 1 WHERE IdType = 2 AND IdJob BETWEEN 3000 AND 3499 AND IntervalTimeInMinutes > 0;
@@ -146,7 +148,8 @@ UPDATE [auditing].[Jobs] SET RunningDailyAt = '02:30' WHERE IdType = 2 AND IdJob
 UPDATE [auditing].[Jobs] SET IsActive = 0 WHERE IdType = 2 AND IdJob = 3000;
 ```
 
-O 14000 (`StuckJobsRecovery`) só existe no WebJob: ativo, o Worker avisa que ele não tem método. Um job desligado com o
+Sem filtro de `Company`, os outros exemplos valem para todas as empresas. O 14000 (`StuckJobsRecovery`) só existe no
+WebJob: ativo, o Worker avisa que ele não tem método. Um job desligado com o
 Worker parado pode rodar uma vez quando o Worker volta, antes de a primeira releitura terminar.
 
 ## Concorrência
@@ -159,6 +162,14 @@ Duas execuções do mesmo job nunca rodam juntas, nem entre Workers, nem entre o
    WebApi e do WebJob (`job:<IdJob>`, e `group:datawarehouse` para os jobs do DW). Cobre o que o Quartz não vê: os jobs do
    DW, que são jobs diferentes escrevendo nas mesmas tabelas; a troca de versão, em que o job antigo e o novo têm nomes
    diferentes; e outro host agendando.
+
+**Por empresa** ([cadastro de empresas](../../../../docs/PLANO-TELA-CADASTRO-EMPRESA.md), 4.4): são duas chaves, como no
+WebApi. A da empresa (`<chave do job>:<empresa>`, ex.: `job:3000:<CNPJ>` ou
+`group:datawarehouse:<CNPJ>`) ocupada quer dizer que a execução anterior da mesma empresa ainda roda
+(em outro host ou na versão antiga), ou outro job do DW da mesma empresa: pula. A do job (`job:<IdJob>`) vale entre empresas, porque todas escrevem nas mesmas
+tabelas (untreated e a `sp_*_Sync`); ocupada por outra empresa, a execução não se perde: um trigger avulso
+(`<nome do job> - adiado`) dispara o mesmo job **1 minuto depois** (`Rescheduled: job:<IdJob> running for another
+company`). Um adiamento pendente por job de cada vez.
 
 **Quando um disparo pula (como no Hangfire):** cada job guarda no Quartz o início e o fim da última execução. Um disparo
 agendado **entre o início e o fim** da execução anterior aconteceu com ela rodando e é pulado
@@ -174,6 +185,7 @@ sem pular. Com a trava ocupada por outro job do grupo ou outro host, o pulo é
 | o Worker ficou parado 10 minutos | na volta, os disparos perdidos viram uma execução só |
 | o Worker ficou parado 1 hora | os disparos perdidos são descartados; o job volta no horário seguinte |
 | dois jobs do DW no mesmo minuto | o primeiro pega `group:datawarehouse`; o segundo pula pela trava |
+| o mesmo job de duas empresas no mesmo minuto | a primeira roda; a segunda é adiada 1 minuto e roda em seguida |
 | o Worker cai no meio de um job | a trava é solta junto com a conexão; o cluster libera o job, sem reexecutar |
 
 Depois de `Concurrency:MaxConsecutiveSkips` pulos seguidos de um job, sai um aviso (`warn`) no log: o job está lento

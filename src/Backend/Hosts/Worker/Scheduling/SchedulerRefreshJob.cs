@@ -13,7 +13,8 @@ namespace Worker.Scheduling
     /// SchedulerRefresh do Hangfire: roda na subida e a cada Quartz:Schedule:RefreshIntervalInMinutes, e um UPDATE na tabela vale,
     /// no máximo, no ciclo seguinte. Entra o job de integração ativo, com método no mapa e agenda que vira cron; sai o que ficou
     /// inativo, sem intervalo ou saiu do mapa. Só mexe no grupo integrations. Com dois Workers, uma releitura por vez: o
-    /// [DisallowConcurrentExecution] e a trava job:scheduler-refresh, como no Hangfire (§5.3, item 4)
+    /// [DisallowConcurrentExecution] e a trava job:scheduler-refresh, como no Hangfire (§5.3, item 4).
+    /// Um job do Quartz por (job, empresa ativa) (docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.4), com a empresa no nome e no JobDataMap
     /// </summary>
     [DisallowConcurrentExecution]
     public class SchedulerRefreshJob : IJob
@@ -55,7 +56,7 @@ namespace Worker.Scheduling
             QuartzSettingsValidator.TryFindTimeZone(_settings.Value.TimeZone, out var timeZone);
 
             var warnings = new List<string>();
-            var desired = new Dictionary<string, (RecurringJobDefinition Definition, string Cron)>();
+            var desired = new Dictionary<string, (RecurringJobDefinition Definition, string Company, string Cron)>();
 
             foreach (var job in await _jobScheduleRepository.GetIntegrationJobs())
             {
@@ -64,7 +65,7 @@ namespace Worker.Scheduling
 
                 if (!RecurringJobMap.Definitions.TryGetValue(job.IdJob, out var definition))
                 {
-                    warnings.Add($"{job.IdJob} {job.Title}: ativo em auditing.Jobs, mas sem método no host; fica fora da agenda.");
+                    warnings.Add($"{job.IdJob} {job.Title} ({job.Company}): ativo em auditing.Jobs, mas sem método no host; fica fora da agenda.");
                     continue;
                 }
 
@@ -72,11 +73,11 @@ namespace Worker.Scheduling
 
                 if (cron is null)
                 {
-                    warnings.Add($"{job.IdJob} {job.Title}: intervalo de {job.IntervalTimeInMinutes} minutos não vira cron (precisa dividir a hora ou o dia, ou ter RunningDailyAt); fica fora da agenda.");
+                    warnings.Add($"{job.IdJob} {job.Title} ({job.Company}): intervalo de {job.IntervalTimeInMinutes} minutos não vira cron (precisa dividir a hora ou o dia, ou ter RunningDailyAt); fica fora da agenda.");
                     continue;
                 }
 
-                desired[RecurringJobMap.RecurringJobId(job.IdJob, job.Title, definition.Version!)] = (definition, JobCron.ToQuartz(cron));
+                desired[RecurringJobMap.RecurringJobId(job.IdJob, job.Title, definition.Version!, job.Company)] = (definition, job.Company, JobCron.ToQuartz(cron));
             }
 
             var current = (await scheduler.GetJobKeys(GroupMatcher<JobKey>.GroupEquals(QuartzJobRunner.Group), cancellationToken))
@@ -95,6 +96,7 @@ namespace Worker.Scheduling
                         .WithIdentity(name, QuartzJobRunner.Group)
                         .WithDescription(job.Definition.Target)
                         .UsingJobData(QuartzJobRunner.IdJobKey, job.Definition.IdJob.ToString())
+                        .UsingJobData(QuartzJobRunner.CompanyKey, job.Company)
                         .Build();
 
                     await scheduler.ScheduleJob(jobDetail, [trigger], replace: true, cancellationToken);
@@ -115,7 +117,8 @@ namespace Worker.Scheduling
                 }
             }
 
-            // inativos, sem intervalo, fora do mapa ou com a versão antiga: a execução em andamento termina normalmente
+            // inativos, sem intervalo, fora do mapa, com a versão antiga ou de empresa desativada: a execução em andamento termina
+            // normalmente
             var removed = current.Keys.Except(desired.Keys).ToList();
 
             foreach (var name in removed)

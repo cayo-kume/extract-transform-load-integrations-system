@@ -15,7 +15,12 @@ namespace Worker.Scheduling
     /// Concorrência em duas camadas (§5.3): o [DisallowConcurrentExecution] não dispara o mesmo JobKey por cima da execução
     /// anterior (vale entre os Workers do cluster), e o IJobLock, com as chaves dos outros hosts, cobre o resto (o grupo do DW, a
     /// troca de versão, outro host agendando). Um disparo que aconteceu com a execução anterior rodando é pulado, como no
-    /// Hangfire (§5.2), pelo início e o fim da última execução guardados no JobDataMap
+    /// Hangfire (§5.2), pelo início e o fim da última execução guardados no JobDataMap.
+    /// Com um job do Quartz por (job, empresa) (docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.4), a empresa também vai no JobDataMap e
+    /// são duas travas, como no WebApi: a da empresa (a execução anterior da mesma empresa ainda roda, em outro host: pula) e a do
+    /// job, que vale entre empresas porque todas escrevem nas mesmas tabelas (untreated e a sp_*_Sync). Com a do job ocupada por
+    /// outra empresa, a execução não é perdida: um trigger avulso dispara o mesmo job daqui a RescheduleDelay, senão as empresas
+    /// disparadas no mesmo minuto pulariam sempre umas às outras
     /// </summary>
     [DisallowConcurrentExecution]
     [PersistJobDataAfterExecution]
@@ -23,8 +28,11 @@ namespace Worker.Scheduling
     {
         public const string Group = "integrations";
         public const string IdJobKey = "IdJob";
+        public const string CompanyKey = "Company";
         public const string LastStartUtcKey = "LastStartUtc";
         public const string LastEndUtcKey = "LastEndUtc";
+
+        private static readonly TimeSpan RescheduleDelay = TimeSpan.FromMinutes(1);
 
         private readonly ScheduledJobRunner _runner;
         private readonly IJobLock _jobLock;
@@ -41,9 +49,10 @@ namespace Worker.Scheduling
 
             // UseProperties: o JobDataMap só guarda texto (§3.3)
             if (!int.TryParse(data.GetString(IdJobKey), out var idJob)
-                || !RecurringJobMap.Definitions.TryGetValue(idJob, out var definition))
+                || !RecurringJobMap.Definitions.TryGetValue(idJob, out var definition)
+                || data.GetString(CompanyKey) is not { Length: > 0 } company)
             {
-                _logger.LogError("{Name}: sem IdJob no JobDataMap ou sem método nos mapas de jobs recorrentes; nada executado.", name);
+                _logger.LogError("{Name}: sem IdJob ou empresa no JobDataMap, ou sem método nos mapas de jobs recorrentes; nada executado.", name);
                 return;
             }
 
@@ -69,15 +78,25 @@ namespace Worker.Scheduling
                 return;
             }
 
-            // a mesma trava do WebApi e do WebJob: ocupada, a execução que a segura é de outro JobKey (o grupo do DW, a versão
-            // anterior do job) ou de outro host
+            // as mesmas travas do WebApi e do WebJob. A da empresa ocupada: a execução anterior desta empresa roda em outro host
+            // ou com outro JobKey (a versão anterior do job): pula
+            var companyKey = definition.CompanyConcurrencyKey(company);
+            using var companyLock = _jobLock.TryAcquire(companyKey);
+
+            if (companyLock is null)
+            {
+                var reason = $"Skipped: previous execution of {companyKey} still running";
+                context.Result = reason;
+                _skips.Skipped(name, reason);
+                return;
+            }
+
+            // a do job ocupada: o mesmo job (ou o grupo do DW) roda para outra empresa; esta execução é adiada
             using var jobLock = _jobLock.TryAcquire(definition.ConcurrencyKey);
 
             if (jobLock is null)
             {
-                var reason = $"Skipped: previous execution of {definition.ConcurrencyKey} still running";
-                context.Result = reason;
-                _skips.Skipped(name, reason);
+                context.Result = await Reschedule(context, $"Rescheduled: {definition.ConcurrencyKey} running for another company");
                 return;
             }
 
@@ -87,7 +106,7 @@ namespace Worker.Scheduling
 
             try
             {
-                await _runner.Run(definition);
+                await _runner.Run(definition, company);
 
                 _logger.LogInformation("{Name}: execução concluída em {Duration:hh\\:mm\\:ss}.", name, DateTimeOffset.Now - started);
             }
@@ -101,6 +120,36 @@ namespace Worker.Scheduling
                 // gravado no store pelo [PersistJobDataAfterExecution]: vale em qualquer Worker do cluster
                 data.Put(LastEndUtcKey, DateTimeOffset.UtcNow.UtcDateTime.ToString("O", CultureInfo.InvariantCulture));
             }
+        }
+
+        /// <summary>
+        /// dispara o mesmo job uma vez daqui a RescheduleDelay, por um trigger avulso no grupo integrations (o SchedulerRefreshJob
+        /// só compara o trigger do cron, que tem o nome do job). Um adiamento por job de cada vez: se já houver um pendente, este
+        /// horário vai junto com ele. O trigger avulso some ao disparar, e some com o job quando a releitura o tira da agenda
+        /// </summary>
+        private async Task<string> Reschedule(IJobExecutionContext context, string reason)
+        {
+            var name = context.JobDetail.Key.Name;
+            var triggerKey = new TriggerKey($"{name} - adiado", Group);
+
+            if (await context.Scheduler.CheckExists(triggerKey, context.CancellationToken))
+            {
+                _logger.LogInformation("{Name}: {Reason}; já há uma execução adiada pendente.", name, reason);
+                return reason;
+            }
+
+            var trigger = TriggerBuilder.Create()
+                .WithIdentity(triggerKey)
+                .ForJob(context.JobDetail.Key)
+                .StartAt(DateTimeOffset.UtcNow.Add(RescheduleDelay))
+                // adiada que ainda esperou mais que o limiar de misfire é descartada, como os disparos do cron (§5.2)
+                .WithSimpleSchedule(s => s.WithMisfireHandlingInstructionNextWithRemainingCount())
+                .Build();
+
+            await context.Scheduler.ScheduleJob(trigger, context.CancellationToken);
+            _logger.LogInformation("{Name}: {Reason}; adiado {Delay}.", name, reason, RescheduleDelay);
+
+            return reason;
         }
 
         private static DateTimeOffset? Utc(JobDataMap data, string key) =>

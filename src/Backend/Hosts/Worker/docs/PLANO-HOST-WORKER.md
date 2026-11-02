@@ -462,6 +462,18 @@ integrações). O Quartz entra como primeira camada, mais barata:
    vez por execução, como no Hangfire (cerca de 40 por minuto). O PLANO-HOST-WEBAPI.md §4.7 já mostrou que a trava não encosta nas
    tabelas, não entra em deadlock (espera zero) e não segura transação; vale igual aqui.
 
+**Por empresa (02/11/2026, [cadastro de empresas](../../../../../docs/PLANO-TELA-CADASTRO-EMPRESA.md), 4.4).** A agenda
+passou a ter um job do Quartz por (job, empresa ativa), como o Hangfire e o WebJob:
+
+* nome `<IdJob>-<Title> - V<versão> - <empresa>` (`RecurringJobMap.RecurringJobId` com a empresa) e a empresa no
+  `JobDataMap` (`Company`), ao lado do `IdJob`; o `QuartzJobRunner` roda pelo `ScheduledJobRunner.Run(definição, empresa)`;
+* o item 1.3 vira duas travas: primeiro a da empresa (`RecurringJobDefinition.CompanyConcurrencyKey`,
+  `<chave do job>:<empresa>`), que ocupada pula como antes (inclusive dois jobs do DW da mesma empresa); depois a do job, que vale entre empresas. Esta ocupada não pula:
+  agenda um trigger avulso `<nome> - adiado` para 1 minuto depois (`Rescheduled: <chave> running for another company`),
+  como o `ScheduledState` do Hangfire. Um adiamento pendente por job; o avulso some ao disparar ou junto com o job;
+* o `SchedulerRefreshJob` só compara o trigger do cron (o de mesmo nome do job), então o avulso não conta como mudança;
+  os jobs com o nome antigo, sem empresa, saem da agenda na primeira releitura.
+
 ### 5.4 Cenários
 
 | Cenário | O que acontece |
@@ -469,7 +481,8 @@ integrações). O Quartz entra como primeira camada, mais barata:
 | Job de 3 min leva 4 min | o disparo seguinte é bloqueado pelo Quartz, liberado no fim e pulado pela regra do 5.2 (agendado com a anterior rodando); o job volta no horário seguinte |
 | Job de 3 min leva 3 min e 20 s | o mesmo: o disparo aconteceu com a anterior rodando, então pula, como no Hangfire |
 | Rajada dos minutos cheios (154 jobs de 120 min, pool de 20) | os disparos esperam thread e rodam atrasados, sem pular (fora da janela da execução anterior); só os que esperam mais de 15 minutos são descartados, com registro no log |
-| Dois jobs do DW no mesmo minuto | o Quartz dispara os dois (são `JobKey`s diferentes); o primeiro pega `group:datawarehouse`, o segundo pula pela trava |
+| Dois jobs do DW no mesmo minuto | o Quartz dispara os dois (são `JobKey`s diferentes); o primeiro pega `group:datawarehouse`, o segundo pula pela trava (a da empresa, `group:datawarehouse:<empresa>`) |
+| O mesmo job de duas empresas no mesmo minuto | a primeira pega `job:<IdJob>`; a segunda é adiada 1 minuto e roda em seguida |
 | Troca de versão com o job rodando | o `...V1.0.1` dispara enquanto o `...V1.0.0` roda (o `LastEndUtc` do novo está vazio); a trava `job:<IdJob>` pula o novo |
 | Segundo Worker no mesmo banco | o cluster entrega cada disparo a um Worker só, e o `[DisallowConcurrentExecution]` e o `LastEndUtc` valem entre eles; a trava sobra como garantia |
 | Worker e Hangfire (ou WebJob) ligados juntos numa troca de host | a regra é um host por vez; se acontecer, a mesma chave nos três hosts impede que um job rode junto |
