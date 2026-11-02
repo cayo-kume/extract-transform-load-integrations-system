@@ -57,7 +57,7 @@ extract-transform-load-integrations-system/
 │   │   ├── Hosts/
 │   │   │   ├── WebApi/                   host web: controllers, Swagger, registro dos módulos (o único em uso)
 │   │   │   ├── WebJob/                   host dos WebJobs na Azure: um WebJob por job (ver o README do host)
-│   │   │   └── Worker/                   serviço do Windows com o Quartz.NET (em construção, ver o PLANO-HOST-WORKER.md)
+│   │   │   └── Worker/                   serviço do Windows com o Quartz.NET: todos os jobs num processo (ver o README do host)
 │   │   ├── Shared/                       auditoria, cliente HTTP, repositório comum, middlewares e scripts base
 │   │   └── Modules/
 │   │       ├── Totvs/
@@ -323,8 +323,8 @@ O cache segue [docs/PADRAO-CACHE-INTEGRACOES.md](docs/PADRAO-CACHE-INTEGRACOES.m
   (`src/Backend/Hosts/WebApi/docs/PLANO-HOST-WEBAPI.md`, passos 3 e 4). Hoje o Hangfire está desligado e os jobs rodam
   pelas rotas, chamadas por um agendador externo. O host `WebJob` (`src/Backend/Hosts/WebJob/README.md`) roda cada job
   como um WebJob na Azure, com a mesma agenda e a mesma trava, e ainda não foi publicado. O host `Worker` (antes
-  `Quartz`) está em construção como a terceira opção, um serviço do Windows com o Quartz.NET
-  (`src/Backend/Hosts/Worker/docs/PLANO-HOST-WORKER.md`). Um host de agenda por vez: o Hangfire, os WebJobs ou o Worker.
+  `Quartz`, `src/Backend/Hosts/Worker/README.md`) é a terceira opção: um serviço do Windows com o Quartz.NET, com a mesma
+  agenda e a mesma trava, ainda não instalado numa máquina. Um host de agenda por vez: o Hangfire, os WebJobs ou o Worker.
 * **Autenticação:** o `[Authorize]` dos controllers está comentado.
 * **Testes:** a pasta `tests` está vazia.
 

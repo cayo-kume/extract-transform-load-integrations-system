@@ -17,15 +17,16 @@ Host que roda os jobs recorrentes como **WebJobs contínuos na Azure**, no lugar
 
 ## Um host de agenda por vez
 
-O WebApi (com o Hangfire) e o WebJob ficam na mesma solution para a equipe escolher como orquestrar os jobs, mas **nunca
-agendam ao mesmo tempo** no mesmo banco: ou o Hangfire do WebApi, ou os WebJobs publicados.
+O WebApi (com o Hangfire), o WebJob e o [Worker](../Worker/README.md) (serviço do Windows com o Quartz.NET) ficam na
+mesma solution para a equipe escolher como orquestrar os jobs, mas **só um agenda por vez** no mesmo banco: o Hangfire do
+WebApi, os WebJobs publicados ou o serviço do Worker.
 
-* **Do WebApi para o WebJob:** `Hangfire:Enabled = false` no WebApi (as rotas continuam disponíveis para disparo manual)
-  e só então publicar ou iniciar os WebJobs.
-* **Do WebJob para o WebApi:** parar os WebJobs no App Service (ou tirá-los do perfil e publicar com `-RemoveMissing`) e
-  só então ligar o Hangfire.
+* **Para o WebJob:** `Hangfire:Enabled = false` no WebApi (as rotas continuam disponíveis para disparo manual) e o
+  serviço do Worker parado, e só então publicar ou iniciar os WebJobs.
+* **Do WebJob para outro host:** parar os WebJobs no App Service (ou tirá-los do perfil e publicar com `-RemoveMissing`)
+  e só então ligar o Hangfire ou iniciar o Worker.
 
-Se, numa troca, os dois ficarem ligados por um tempo, a trava (abaixo) ainda impede que um mesmo job rode junto nos dois.
+Se, numa troca, dois ficarem ligados por um tempo, a trava (abaixo) ainda impede que um mesmo job rode junto nos dois.
 A coluna `Queue` é só a fila do Hangfire: não divide jobs entre os hosts.
 
 ## Como rodar no local

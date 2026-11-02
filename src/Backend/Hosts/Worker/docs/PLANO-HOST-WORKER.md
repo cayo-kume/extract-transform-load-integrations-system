@@ -645,6 +645,12 @@ desligar um job, as duas camadas de concorrência com os cenários do 5.4, a ver
 dashboard) e a regra de um host por vez. Os READMEs do WebApi, do WebJob e da raiz passam a citar o Worker como a
 terceira opção.
 
+**Feito em 01/11/2026.** [README.md](../README.md) do host com tudo isso, mais a estrutura, a configuração inteira
+(seções `Quartz`, `Service` e `Logging:EventLog`), a publicação com os perfis e o que fazer num job ou módulo novo; o
+aviso de que um banco de teste criado pelos migrators tem as credenciais reais dos módulos. Os READMEs do WebApi e do
+WebJob passaram a tratar dos três hosts na regra de um host por vez, e o da raiz cita o Worker como a terceira opção.
+O passo 7 (módulos que ainda não estão no host) segue contínuo, junto com o passo 6 do WebApi e o passo 9 do WebJob.
+
 ---
 
 ## Decisões

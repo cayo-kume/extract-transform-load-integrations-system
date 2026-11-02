@@ -25,11 +25,12 @@ O mesmo projeto sobe de dois jeitos, escolhidos por `Hangfire:Enabled`:
 Com o Hangfire ligado, a seção `Hangfire` é validada na subida: faltando um parâmetro obrigatório (a connection string do
 storage, o usuário e a senha do dashboard...), o host não sobe e a mensagem lista o que falta.
 
-**Um host de agenda por vez:** o Hangfire deste host e os WebJobs do host [WebJob](../WebJob/README.md) leem a mesma
-agenda de `auditing.Jobs` e nunca agendam ao mesmo tempo no mesmo banco. Antes de ligar o Hangfire, parar os WebJobs no
-App Service; antes de publicar ou iniciar os WebJobs, `Hangfire:Enabled = false` aqui (as rotas continuam para disparo
-manual). Se os dois ficarem ligados por um tempo numa troca, a trava de concorrência (abaixo) ainda impede que um mesmo
-job rode junto nos dois.
+**Um host de agenda por vez:** o Hangfire deste host, os WebJobs do host [WebJob](../WebJob/README.md) e o serviço do
+host [Worker](../Worker/README.md) (Quartz.NET) leem a mesma agenda de `auditing.Jobs` e só um agenda por vez no mesmo
+banco. Antes de ligar o Hangfire, parar os WebJobs no App Service e o serviço do Worker; antes de usar um dos outros dois,
+`Hangfire:Enabled = false` aqui (as rotas continuam para disparo manual: o modo só API combina com qualquer um deles). Se
+dois ficarem ligados por um tempo numa troca, a trava de concorrência (abaixo) ainda impede que um mesmo job rode junto
+nos dois.
 
 ## Como rodar
 
