@@ -28,15 +28,13 @@
             <MudText Class="pa-4">Nenhuma aplicação encontrada.</MudText>
         }
 
-        @for (int i = 0; i < FilteredApps.Count; i += 4)
-        {
-            <div class="d-flex flex-row flex-wrap align-center gap-4 pa-4">
-                @foreach (var summarizedApp in FilteredApps.Skip(i).Take(4))
-                {
-                    <AppCard @key="summarizedApp.IdParent" Summary="summarizedApp" ShowLogo="true" Period="_filter.Period" OnChanged="Load" />
-                }
-            </div>
-        }
+        @* numa grade só, com quantas colunas couberem: os cards ficam alinhados em qualquer largura *@
+        <div class="card-grid pa-4">
+            @foreach (var summarizedApp in FilteredApps)
+            {
+                <AppCard @key="summarizedApp.IdParent" Summary="summarizedApp" ShowLogo="true" Period="_filter.Period" OnChanged="Load" />
+            }
+        </div>
     </MudItem>
 </MudGrid>
 

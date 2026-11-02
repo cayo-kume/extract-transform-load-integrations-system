@@ -135,9 +135,21 @@ code {
    Aqui no app.css (global) não é necessário o ::deep usado no CSS scoped das páginas. */
 
 /* Wrapper dos cartões */
+/* Visão geral e Aplicações: os cards numa grade com quantas colunas de pelo menos 260px couberem; todos da linha com
+   a mesma altura. auto-fill mantém a largura da coluna mesmo quando há menos cards que colunas */
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+    align-items: stretch;
+}
+
 .app-card-wrapper {
-    flex-basis: 260px;
     min-width: 0;
+}
+
+.card-grid .app-card {
+    height: 100%;
 }
 
 /* Cartões (MudCard) das seções de aplicações e métricas */
@@ -362,14 +374,13 @@ code {
     font-size: 0.75rem;
 }
 
-/* Visão geral: os três cards de métricas com a mesma altura, e as linhas dentro deles */
-.metric-card {
-    min-width: 260px;
-    flex-basis: 0;
+/* Visão geral: os três cards de métricas, lado a lado quando cabem (auto-fit: com espaço sobrando, os três esticam) */
+.metric-grid {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 }
 
-.metric-card .app-card {
-    height: 100%;
+.metric-card {
+    min-width: 0;
 }
 
 .success-row {

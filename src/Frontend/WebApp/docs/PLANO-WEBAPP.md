@@ -498,6 +498,10 @@ mockup para aprovação):
     - **Executar Querys:** a barra de favoritas e querys prontas vira um bloco recolhível acima do editor, fechado ao
       abrir a tela (o mesmo `ReadyQueriesList` da barra do desktop); o chip do banco à esquerda; no histórico, o SQL
       numa linha só dele; o resultado rola para o lado dentro da caixa.
+    - **Cards (Visão geral e Aplicações):** em vez de linhas fixas de 4 cards (que em larguras intermediárias quebravam em
+      3 + 1, com o último esticado e as linhas desalinhadas), uma grade só (`card-grid`) com quantas colunas de 260px
+      couberem, todos os cards da linha com a mesma altura; os três cards de métricas usam a mesma grade. Conferido de
+      375px a 1920px.
 
 # Fase 5 — Banco de dados (não implementar agora)
 

@@ -24,23 +24,21 @@
             <MudLink Href="@WithPeriod("/applications")" Typo="Typo.body2">Ver em Aplicações</MudLink>
         </div>
 
-        <!-- Cards na ordem da gravidade: com erro, atrasadas e inativas primeiro -->
-        @for(int i = 0; i < _apps.Count; i += 4)
-        {
-            <div class="d-flex flex-row flex-wrap align-center gap-4 pa-4">
-                @foreach (var summarizedApp in _apps.Skip(i).Take(4))
-                {
-                    <AppCard @key="summarizedApp.IdParent" Summary="summarizedApp" Period="_filter.Period" OnChanged="ReloadAsync" />
-                }
-            </div>
-        }
+        <!-- Cards na ordem da gravidade: com erro, atrasadas e inativas primeiro; numa grade só, com quantas colunas
+             couberem, para os cards ficarem alinhados em qualquer largura -->
+        <div class="card-grid pa-4">
+            @foreach (var summarizedApp in _apps)
+            {
+                <AppCard @key="summarizedApp.IdParent" Summary="summarizedApp" Period="_filter.Period" OnChanged="ReloadAsync" />
+            }
+        </div>
 
         <div class="d-flex align-center pa-4">
             <h3 class="ma-0 text-center">MÉTRICAS CONSOLIDADAS</h3>
         </div>
 
-        <div class="d-flex flex-row align-stretch gap-4 pa-4 flex-wrap">
-            <div class="flex-grow-1 metric-card">
+        <div class="card-grid metric-grid pa-4">
+            <div class="metric-card">
                 <MudCard Class="app-card">
                     <MudCardHeader>
                         <CardHeaderContent>
@@ -93,7 +91,7 @@
                     </MudCardContent>
                 </MudCard>
             </div>
-            <div class="flex-grow-1 metric-card">
+            <div class="metric-card">
                 <MudCard Class="app-card">
                     <MudCardHeader>
                         <CardHeaderContent>
@@ -116,7 +114,7 @@
                     </MudCardContent>
                 </MudCard>
             </div>
-            <div class="flex-grow-1 metric-card">
+            <div class="metric-card">
                 <MudCard Class="app-card">
                     <MudCardHeader>
                         <CardHeaderContent>
