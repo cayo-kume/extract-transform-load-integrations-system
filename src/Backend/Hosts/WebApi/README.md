@@ -151,8 +151,10 @@ fica fora da agenda, com aviso no log.
 **O `SchedulerRefresh`** monta a agenda: roda na subida e a cada `Schedule:RefreshIntervalInMinutes`. Ele lê
 `auditing.Jobs`, inclui na agenda os jobs ativos que têm método no mapa, altera os que mudaram e remove os que ficaram
 inativos, sem intervalo ou saíram do mapa. Um `UPDATE` na tabela vale, no máximo, no ciclo seguinte. Os recurring jobs
-da agenda se chamam `<IdJob>-<Title> - V<versão>` (ex.: `9002-DataWarehouseShortCycle - V1.0.0`), com a versão do
-`[JobVersion]` do método (abaixo); o resultado de cada releitura aparece no
+da agenda são um por (job, empresa ativa) e se chamam `<IdJob>-<Title> - V<versão> - <empresa>` (ex.:
+`9002-DataWarehouseShortCycle - V1.0.0 - 44065634000106`), com a versão do `[JobVersion]` do método (abaixo). Jobs de
+empresas diferentes não rodam juntos: com o job ocupado por outra empresa, a execução volta para a fila em 1 minuto
+(docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.4); o resultado de cada releitura aparece no
 dashboard e no log (`Agenda: N job(s) na agenda...`), com os avisos.
 
 Ligar e desligar jobs:

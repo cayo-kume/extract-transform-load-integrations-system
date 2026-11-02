@@ -4,7 +4,7 @@ namespace Application.LinxMicrovix.Outbound.Abstractions.Handlers.Commands
 {
     public interface ILinxMicrovixCommandHandler
     {
-        public string CreateGetCompanysQuery();
+        public string CreateGetCompanysQuery(string company);
         public string CreateGetStoresQuery(string doc_company, EnumApi api);
         public string CreateGetLastTimestampQuery(string doc_company, string tableName, string? cnpj_emp);
         public string CreateGetLastTimestampQuery(string doc_company, string tableName, string? cnpj_emp, string filterColumn, string filterValue);

@@ -9,7 +9,7 @@ padrão de organização dos scripts está em [PADRAO-CODIGO-E-SCRIPTS-INTEGRACO
 
 | Módulo | Pasta (a partir de `src/Backend/`) | Estrutura dos scripts |
 |---|---|---|
-| Shared | `Shared/Infrastructure.Shared/Scripts/SQLServer` | Direto na pasta (7 scripts) |
+| Shared | `Shared/Infrastructure.Shared/Scripts/SQLServer` | Direto na pasta (8 scripts) |
 | Totvs | `Modules/Totvs/Infrastructure.Totvs/Scripts/SQLServer` | `Parameters/` e uma pasta por service |
 | LinxMicrovix | `Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/Infrastructure.LinxMicrovix.Outbound/Scripts/SQLServer` | `Parameters/`, `Erp/<Service>` e `B2C/<Service>` |
 | LinxCommerce | `Modules/LinxCommerce/Infrastructure.LinxCommerce/Scripts/SQLServer` | `Parameters/` e uma pasta por service |
@@ -33,6 +33,15 @@ Todos os módulos usam o **mesmo banco** e a mesma tabela de controle do DbUp. R
 2. **Módulos** (Totvs, LinxMicrovix, LinxCommerce, Movidesk, AfterSale), em qualquer ordem entre eles.
 3. **DataWarehouse**, por último: ele lê as tabelas dos módulos.
 4. **Host Worker**, só se o Worker (Quartz.NET) for o orquestrador: depende só do Shared.
+
+Os migrators não inserem dados de cliente: o banco sobe sem empresa, sem parâmetros (credenciais) e com `auditing.Jobs`
+vazio; os jobs ficam no catálogo `auditing.JobCatalog`. Os scripts de parâmetros ficam em `Infrastructure.<Módulo>/Seeds/SQLServer`,
+fora do alcance do DbUp, e a empresa é cadastrada pela tela do WebApp ou, em teste, pelo `.ps1` de seeds
+([PLANO-TELA-CADASTRO-EMPRESA.md](PLANO-TELA-CADASTRO-EMPRESA.md), seção 3). Num banco de teste, depois dos migrators:
+
+```powershell
+./tools/seeds/Import-TestSeeds.ps1 -Database EtlTeste
+```
 
 ## O que o script faz
 

@@ -1,4 +1,5 @@
 ﻿using Application.Totvs.Abstractions.Handlers.Commands;
+using Application.Shared.Abstractions.Services;
 using Domain.Shared.Abstractions.Repositorys;
 using Domain.Totvs.Abstractions.Repositorys;
 using Domain.Totvs.Entities.Parameters;
@@ -9,13 +10,15 @@ namespace Infrastructure.Totvs.Repositorys
     {
         private readonly ITotvsCommandHandler _totvsCommandHandler;
         private readonly ISharedRepository _coreRepository;
+        private readonly ICompanyContext _companyContext;
 
-        public TotvsRepository(ITotvsCommandHandler totvsCommandHandler, ISharedRepository coreRepository) =>
-            (_totvsCommandHandler, _coreRepository) = (totvsCommandHandler, coreRepository);
+        public TotvsRepository(ITotvsCommandHandler totvsCommandHandler, ISharedRepository coreRepository, ICompanyContext companyContext) =>
+            (_totvsCommandHandler, _coreRepository, _companyContext) = (totvsCommandHandler, coreRepository, companyContext);
 
         public async Task<IEnumerable<Company?>> GetCompanys()
         {
-            string sql = _totvsCommandHandler.CreateGetCompanysQuery();
+            string sql = _totvsCommandHandler.CreateGetCompanysQuery(
+                _companyContext.Company ?? throw new InvalidOperationException("Parâmetros do módulo sem a empresa da execução: informe ICompanyContext.SetCompany."));
 
             return await _coreRepository.GetRecords<Company>(sql);
         }

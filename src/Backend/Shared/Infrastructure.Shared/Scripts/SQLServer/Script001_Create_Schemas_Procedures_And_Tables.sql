@@ -45,6 +45,28 @@ CREATE TABLE [auditing].[Apps](
 ) ON [PRIMARY]
 GO
 
+-- catálogo de jobs do produto, sem empresa: os scripts Insert_*_Jobs dos módulos inserem aqui (ficam no DbUp) e
+-- auditing.sp_Add_Company_App copia os jobs de um módulo para auditing.Jobs, com a empresa
+-- (docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.1)
+CREATE TABLE [auditing].[JobCatalog](
+	[IdParent] [int] NULL,
+	[IdJob] [int] NOT NULL,
+	[Title] [nvarchar](80) NULL,
+	[Description] [nvarchar](800) NULL,
+	[IntervalTimeInMinutes] [int] NOT NULL,
+	[RunningDailyAt] [time](0) NULL,
+	[Queue] [nvarchar](50) NOT NULL,
+	[IdType] [int] NOT NULL,
+	CONSTRAINT [CK_JobCatalog_RunningDailyAt] CHECK ([RunningDailyAt] IS NULL OR [IntervalTimeInMinutes] = 1440),
+	CONSTRAINT [CK_JobCatalog_Queue] CHECK (LEN([Queue]) > 0 AND [Queue] COLLATE Latin1_General_BIN NOT LIKE '%[^a-z0-9_-]%'),
+ CONSTRAINT [PK_JobCatalog] PRIMARY KEY CLUSTERED 
+(
+	[IdJob] ASC,
+	[IdType] ASC
+)WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, FILLFACTOR = 90, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+
 CREATE TABLE [auditing].[Jobs](
 	[IdParent] [int] NULL,
 	[IdJob] [int] NOT NULL,
@@ -55,6 +77,8 @@ CREATE TABLE [auditing].[Jobs](
 	[Queue] [nvarchar](50) NOT NULL,
 	[IsActive] [bit] NOT NULL CONSTRAINT [DF_Jobs_IsActive] DEFAULT (0),
 	[IdType] [int] NOT NULL,
+	-- empresa do painel (CNPJ da holding): um job tem uma linha por empresa, com a própria ativação (IsActive)
+	[Company] [varchar](20) NOT NULL,
 	-- RunningDailyAt preenchida: o job roda uma vez por dia nessa hora (src/Backend/Hosts/WebApi/docs/PLANO-HOST-WEBAPI.md §4.1)
 	CONSTRAINT [CK_Jobs_RunningDailyAt] CHECK ([RunningDailyAt] IS NULL OR [IntervalTimeInMinutes] = 1440),
 	-- fila do Hangfire: só minúsculas, dígitos, _ e -
@@ -62,7 +86,8 @@ CREATE TABLE [auditing].[Jobs](
  CONSTRAINT [PK_Jobs] PRIMARY KEY CLUSTERED 
 (
 	[IdJob] ASC,
-	[IdType] ASC
+	[IdType] ASC,
+	[Company] ASC
 )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, FILLFACTOR = 90, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
@@ -71,6 +96,7 @@ CREATE TABLE [auditing].[Logs](
 	[IdExecution] [bigint] IDENTITY(1,1) NOT NULL,
 	[IdJob] [int] NOT NULL,
 	[IdType] [int] NOT NULL,
+	[Company] [varchar](20) NOT NULL,
 	[StartDate] [datetime] NULL,
 	[EndDate] [datetime] NULL,
 	[Execution] [uniqueidentifier] NOT NULL,
@@ -79,6 +105,7 @@ CREATE TABLE [auditing].[Logs](
 (
 	[IdJob] ASC,
 	[IdType] ASC,
+	[Company] ASC,
 	[Execution] ASC
 )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, FILLFACTOR = 90, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF, DATA_COMPRESSION = ROW) ON [PRIMARY]
 ) ON [PRIMARY]
@@ -86,7 +113,7 @@ GO
 
 -- heartbeat dos jobs (auditing.vw_JobsHeartbeat, Script006): a última execução de cada job sem varrer todas as execuções
 -- dele (src/Backend/Hosts/WebJob/docs/PLANO-HOST-WEBJOB.md, passo 7)
-CREATE NONCLUSTERED INDEX [IX_Logs_Heartbeat] ON [auditing].[Logs] ([IdJob] ASC, [IdType] ASC, [EndDate] ASC)
+CREATE NONCLUSTERED INDEX [IX_Logs_Heartbeat] ON [auditing].[Logs] ([Company] ASC, [IdJob] ASC, [IdType] ASC, [EndDate] ASC)
 WITH (STATISTICS_NORECOMPUTE = OFF, FILLFACTOR = 90, DATA_COMPRESSION = ROW) ON [PRIMARY]
 GO
 
@@ -94,6 +121,7 @@ CREATE TABLE [auditing].[Messages](
 	[IdExecutionMessage] [bigint] IDENTITY(1,1) NOT NULL,
 	[IdJob] [int] NOT NULL,
 	[IdType] [int] NOT NULL,
+	[Company] [varchar](20) NOT NULL,
 	[Execution] [uniqueidentifier] NOT NULL,
 	[IsError] [bit] NULL,
 	[Message] [nvarchar](800) NULL,
@@ -105,6 +133,7 @@ CREATE TABLE [auditing].[Messages](
 	[IdExecutionMessage] ASC,
 	[IdJob] ASC,
 	[IdType] ASC,
+	[Company] ASC,
 	[Execution] ASC
 )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, FILLFACTOR = 90, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF, DATA_COMPRESSION = ROW) ON [PRIMARY]
 ) ON [PRIMARY]
@@ -114,6 +143,7 @@ CREATE TABLE [auditing].[Records](
 	[IdRecord] [bigint] IDENTITY(1,1) NOT NULL,
 	[IdJob] [int] NOT NULL,
 	[IdType] [int] NOT NULL,
+	[Company] [varchar](20) NOT NULL,
 	[FieldKeyValue] [nvarchar](400) NULL,
 	[RecordText] [varchar](max) NULL,
 	[Execution] [uniqueidentifier] NOT NULL,
@@ -122,6 +152,7 @@ CREATE TABLE [auditing].[Records](
 	[IdRecord] ASC,
 	[IdJob] ASC,
 	[IdType] ASC,
+	[Company] ASC,
 	[Execution] ASC
 )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
@@ -140,18 +171,27 @@ GO
 
 --NÃO CRIAR RELAÇÃO ENTRE APPS E JOBS, POIS UM JOB PODE SER UM APP PARA UMA PROCEDURE DE SINCRONIZAÇÃO, E SE A RELAÇÃO EXISTIR TODO JOB TERIA QUE SER UM APP E NÃO É ISSO QUE EU DESEJO
 
-ALTER TABLE [auditing].[Records] ADD  CONSTRAINT [FK_Records] FOREIGN KEY([IdJob], [IdType], [Execution])
-REFERENCES [auditing].[Logs] ([IdJob], [IdType], [Execution])
+ALTER TABLE [auditing].[Records] ADD  CONSTRAINT [FK_Records] FOREIGN KEY([IdJob], [IdType], [Company], [Execution])
+REFERENCES [auditing].[Logs] ([IdJob], [IdType], [Company], [Execution])
 GO
 
-ALTER TABLE [auditing].[Messages] ADD  CONSTRAINT [FK_Messages] FOREIGN KEY([IdJob], [IdType], [Execution])
-REFERENCES [auditing].[Logs] ([IdJob], [IdType], [Execution])
+ALTER TABLE [auditing].[Messages] ADD  CONSTRAINT [FK_Messages] FOREIGN KEY([IdJob], [IdType], [Company], [Execution])
+REFERENCES [auditing].[Logs] ([IdJob], [IdType], [Company], [Execution])
 GO
 
-ALTER TABLE [auditing].[Logs] ADD  CONSTRAINT [FK_Logs] FOREIGN KEY([IdJob],[IdType])
-REFERENCES [auditing].[Jobs] ([IdJob],[IdType])
+ALTER TABLE [auditing].[Logs] ADD  CONSTRAINT [FK_Logs] FOREIGN KEY([IdJob], [IdType], [Company])
+REFERENCES [auditing].[Jobs] ([IdJob], [IdType], [Company])
 GO
 
 ALTER TABLE [auditing].[Jobs] ADD  CONSTRAINT [FK_Jobs] FOREIGN KEY([IdType])
 REFERENCES [auditing].[Types] ([IdType])
+GO
+
+ALTER TABLE [auditing].[JobCatalog] ADD  CONSTRAINT [FK_JobCatalog] FOREIGN KEY([IdType])
+REFERENCES [auditing].[Types] ([IdType])
+GO
+
+-- todo job de uma empresa vem do catálogo
+ALTER TABLE [auditing].[Jobs] ADD  CONSTRAINT [FK_Jobs_JobCatalog] FOREIGN KEY([IdJob], [IdType])
+REFERENCES [auditing].[JobCatalog] ([IdJob], [IdType])
 GO

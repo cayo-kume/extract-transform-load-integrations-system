@@ -1,4 +1,4 @@
-INSERT INTO [auditing].[Jobs] (IdParent, IdJob, Title, [Description], IntervalTimeInMinutes, RunningDailyAt, Queue, IdType)
+INSERT INTO [auditing].[JobCatalog] (IdParent, IdJob, Title, [Description], IntervalTimeInMinutes, RunningDailyAt, Queue, IdType)
 VALUES
 /*Procedures de Sincronizações*/
 /*Range 7500 - 7999 (produtos: 7515 - 7518; SKUs: 7519 - 7521)*/

@@ -2,6 +2,6 @@
 {
     public interface ILinxCommerceCommandHandler
     {
-        public string CreateGetCompanysQuery();
+        public string CreateGetCompanysQuery(string company);
     }
 }

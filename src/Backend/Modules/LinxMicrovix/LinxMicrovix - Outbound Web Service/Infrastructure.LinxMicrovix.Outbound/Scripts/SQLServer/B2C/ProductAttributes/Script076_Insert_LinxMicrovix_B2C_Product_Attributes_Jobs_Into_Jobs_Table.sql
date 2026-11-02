@@ -1,4 +1,4 @@
-INSERT INTO [auditing].[Jobs] (IdParent, IdJob, Title, [Description], IntervalTimeInMinutes, RunningDailyAt, Queue, IdType)
+INSERT INTO [auditing].[JobCatalog] (IdParent, IdJob, Title, [Description], IntervalTimeInMinutes, RunningDailyAt, Queue, IdType)
 VALUES
 /*Procedures de Sincronizações*/
 /*Range 8500 - 8999 (atributos de produto do b2c: 8729 - 8742)*/

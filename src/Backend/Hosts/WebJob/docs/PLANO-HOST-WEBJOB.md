@@ -123,8 +123,9 @@ Conferência: um job que lança exceção no meio grava uma linha em `auditing.L
   método compilado e o chama no escopo da execução (`Invoke`).
 * **`ScheduledJobRunner`** (scoped): chama o método do mapa e, numa exceção, grava a mensagem, fecha e grava o log, e
   relança. Ele não cria escopo: o host cria um por execução (o Hangfire já faz isso), e o service e o `ILoggerService`
-  vêm do mesmo escopo. Só grava com log aberto e ainda não gravado (`ILoggerService.HasUncommittedLog`, novo): um service
-  que já gravou o log antes de relançar não ganha uma segunda linha, que a chave de `auditing.Logs` recusaria.
+  vêm do mesmo escopo. Só grava com log aberto: num service que já gravou o log antes de relançar, o `LoggerService`
+  grava só a mensagem do erro na mesma execução, sem uma segunda linha em `auditing.Logs` (docs/PLANO-TELA-CADASTRO-EMPRESA.md,
+  4.4).
 * **WebApi:** o Hangfire executa `WebApi.Scheduling.HangfireJobRunner.Run(idJob, nome)`, que repassa para o
   `ScheduledJobRunner`; o nome do recurring job aparece no dashboard (`[JobDisplayName("{1}")]`). Na subida, o log diz
   quantos jobs os mapas têm.

@@ -22,13 +22,15 @@ namespace WebJob.Recovery
     /// recuperação dos WebJobs travados (src/Backend/Hosts/WebJob/docs/PLANO-HOST-WEBJOB.md, passo 7), no lugar do
     /// AzureService.RecoveryTotvsJobs() do sistema antigo: vale para todos os jobs, e a API da Azure (listar e reiniciar WebJobs)
     /// só é chamada quando o heartbeat de algum job está off. É o job 14000 (StuckJobsRecovery) de auditing.Jobs, com o seu
-    /// próprio WebJob; roda só neste host
+    /// próprio WebJob; roda só neste host. Cada empresa tem o seu 14000 e lê o heartbeat só dos jobs dela
+    /// (docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.4); o WebJob reiniciado é o do job, que atende todas as empresas
     /// </summary>
     public class StuckJobsRecovery : IStuckJobsRecovery
     {
         private readonly IJobScheduleRepository _jobScheduleRepository;
         private readonly IAzureWebJobsClient _azureWebJobsClient;
         private readonly ILoggerService _jobLog;
+        private readonly ICompanyContext _companyContext;
         private readonly IMemoryCache _cache;
         private readonly RecoverySettings _settings;
         private readonly WebJobSettings _webJobSettings;
@@ -37,12 +39,13 @@ namespace WebJob.Recovery
             IJobScheduleRepository jobScheduleRepository,
             IAzureWebJobsClient azureWebJobsClient,
             ILoggerService jobLog,
+            ICompanyContext companyContext,
             IMemoryCache cache,
             IOptions<RecoverySettings> settings,
             IOptions<WebJobSettings> webJobSettings
         ) =>
-            (_jobScheduleRepository, _azureWebJobsClient, _jobLog, _cache, _settings, _webJobSettings) =
-            (jobScheduleRepository, azureWebJobsClient, jobLog, cache, settings.Value, webJobSettings.Value);
+            (_jobScheduleRepository, _azureWebJobsClient, _jobLog, _companyContext, _cache, _settings, _webJobSettings) =
+            (jobScheduleRepository, azureWebJobsClient, jobLog, companyContext, cache, settings.Value, webJobSettings.Value);
 
         [JobVersion("1.0.0")]
         public async Task<bool> RecoverStuckJobs()
@@ -53,7 +56,7 @@ namespace WebJob.Recovery
             var timeZone = TimeZoneInfo.FindSystemTimeZoneById(_webJobSettings.TimeZone);
             var now = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, timeZone).DateTime;
 
-            var heartbeats = (await _jobScheduleRepository.GetActiveJobsHeartbeat()).ToList();
+            var heartbeats = (await _jobScheduleRepository.GetActiveJobsHeartbeat(_companyContext.Company!)).ToList();
             var off = new List<(JobHeartbeat Job, string Reason)>();
 
             foreach (var job in heartbeats)

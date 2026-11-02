@@ -85,6 +85,14 @@ namespace Hosts.Scheduling.RecurringJobs
             $"job:{idJob}";
 
         /// <summary>
+        /// trava da execução de uma empresa (docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.4): com ela ocupada, a execução anterior da
+        /// mesma empresa ainda roda. A ConcurrencyKey continua valendo entre empresas, porque o job escreve nas mesmas tabelas
+        /// (untreated e a sp_*_Sync) para todas
+        /// </summary>
+        public string CompanyConcurrencyKey(string company) =>
+            $"{ConcurrencyKey}:{company}";
+
+        /// <summary>
         /// chama o método do service, resolvido no escopo da execução (o mesmo do ILoggerService que o executor usa)
         /// </summary>
         public Task Invoke(IServiceProvider services) =>

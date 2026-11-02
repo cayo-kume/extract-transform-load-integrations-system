@@ -1,6 +1,7 @@
 ﻿using Application.Movidesk.Abstractions.Handlers.Commands;
 using Domain.Movidesk.Abstractions.Repositorys;
 using Domain.Movidesk.Entities.Parameters;
+using Application.Shared.Abstractions.Services;
 using Domain.Shared.Abstractions.Repositorys;
 
 namespace Infrastructure.Movidesk.Repositorys
@@ -9,13 +10,15 @@ namespace Infrastructure.Movidesk.Repositorys
     {
         private readonly IMovideskCommandHandler _movideskCommandHandler;
         private readonly ISharedRepository _coreRepository;
+        private readonly ICompanyContext _companyContext;
 
-        public MovideskRepository(IMovideskCommandHandler movideskCommandHandler, ISharedRepository coreRepository) =>
-            (_movideskCommandHandler, _coreRepository) = (movideskCommandHandler, coreRepository);
+        public MovideskRepository(IMovideskCommandHandler movideskCommandHandler, ISharedRepository coreRepository, ICompanyContext companyContext) =>
+            (_movideskCommandHandler, _coreRepository, _companyContext) = (movideskCommandHandler, coreRepository, companyContext);
 
         public async Task<IEnumerable<Company?>> GetCompanys()
         {
-            string sql = _movideskCommandHandler.CreateGetCompanysQuery();
+            string sql = _movideskCommandHandler.CreateGetCompanysQuery(
+                _companyContext.Company ?? throw new InvalidOperationException("Parâmetros do módulo sem a empresa da execução: informe ICompanyContext.SetCompany."));
 
             return await _coreRepository.GetRecords<Company>(sql);
         }

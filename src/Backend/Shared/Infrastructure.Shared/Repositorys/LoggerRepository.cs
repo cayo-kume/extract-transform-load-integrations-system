@@ -22,6 +22,7 @@ namespace Infrastructure.Shared.Repositorys
             {
                 IdJob = (Int32)(object)log.Job,
                 IdType = (Int32)(object)log.IdType,
+                Company = log.Company,
                 StartDate = log.StartDate.ToString("s"),
                 EndDate = log.EndDate.ToString("s"),
                 Execution = log.Execution
@@ -37,6 +38,23 @@ namespace Infrastructure.Shared.Repositorys
             _coreRepository.BulkInsertIntoAuditingTableRaw(messagesTable, "auditing");
 
             return true;
+        }
+
+        public Task<bool> LogAppend(IEnumerable<Message> messages, IEnumerable<Record> records)
+        {
+            var recordsTable = _coreRepository.CreateSystemDataTable("Records", new Record());
+            var messagesTable = _coreRepository.CreateSystemDataTable("Messages", new Message());
+
+            _coreRepository.FillSystemDataTable(recordsTable, records.ToList());
+            _coreRepository.FillSystemDataTable(messagesTable, messages.Where(y => y.Msg != null).ToList());
+
+            if (recordsTable.Rows.Count > 0)
+                _coreRepository.BulkInsertIntoAuditingTableRaw(recordsTable, "auditing");
+
+            if (messagesTable.Rows.Count > 0)
+                _coreRepository.BulkInsertIntoAuditingTableRaw(messagesTable, "auditing");
+
+            return Task.FromResult(true);
         }
     }
 }

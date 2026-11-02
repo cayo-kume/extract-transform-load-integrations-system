@@ -29,10 +29,13 @@ namespace Infrastructure.Shared
             services.AddScoped<IConnectionAccessor>(sp => sp.GetRequiredService<ISharedRepository>());
             services.AddScoped<ILoggerRepository, LoggerRepository>();
             services.AddScoped<IJobScheduleRepository, JobScheduleRepository>();
+            services.AddScoped<IHoldingCompanyRepository, HoldingCompanyRepository>();
 
             // a trava abre a própria conexão a cada pedido: não guarda estado entre execuções
             services.AddSingleton<IJobLock, SqlServerJobLock>();
 
+            // empresa da execução: uma por escopo (execução agendada ou requisição)
+            services.AddScoped<ICompanyContext, CompanyContext>();
             services.AddScoped<ILoggerService, LoggerService>();
 
             services.AddScoped<IExceptionHandler, ExceptionHandler>();

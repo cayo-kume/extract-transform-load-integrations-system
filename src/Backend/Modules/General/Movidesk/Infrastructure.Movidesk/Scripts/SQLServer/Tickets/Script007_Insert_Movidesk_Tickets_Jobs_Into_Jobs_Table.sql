@@ -1,4 +1,4 @@
-INSERT INTO [auditing].[Jobs] (IdParent, IdJob, Title, [Description], IntervalTimeInMinutes, RunningDailyAt, Queue, IdType)
+INSERT INTO [auditing].[JobCatalog] (IdParent, IdJob, Title, [Description], IntervalTimeInMinutes, RunningDailyAt, Queue, IdType)
 VALUES
 /*Procedures de Sincronizações*/
 /*Range 3500 - 3999 (tickets: 3500 - 3515)*/

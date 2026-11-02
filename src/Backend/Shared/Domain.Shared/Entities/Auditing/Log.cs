@@ -13,6 +13,11 @@ namespace Domain.Shared.Entities.Auditing
 
         public Enum IdType { get; private set; }
 
+        /// <summary>
+        /// empresa do painel (CNPJ da holding) da execução
+        /// </summary>
+        public string Company { get; private set; } = string.Empty;
+
         public DateTime StartDate { get; private set; }
 
         public DateTime EndDate { get; private set; }
@@ -43,8 +48,13 @@ namespace Domain.Shared.Entities.Auditing
         /// Create a new log
         /// </summary>
         /// <param name="job"></param>
-        public Log(Enum job)
+        /// <param name="company">empresa do painel; sem ela nenhuma execução é gravada</param>
+        public Log(Enum job, string company)
         {
+            if (string.IsNullOrWhiteSpace(company))
+                throw new ArgumentException("A execução precisa de uma empresa (CNPJ da holding).", nameof(company));
+
+            Company = company;
             Execution = Guid.NewGuid();
             Job = job;
             this.IdType = EnumType.Integracao;

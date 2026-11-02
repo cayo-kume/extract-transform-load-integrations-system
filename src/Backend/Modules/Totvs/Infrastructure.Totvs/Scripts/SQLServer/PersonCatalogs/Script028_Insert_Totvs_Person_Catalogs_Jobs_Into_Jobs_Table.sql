@@ -1,4 +1,4 @@
-INSERT INTO [auditing].[Jobs] (IdParent, IdJob, Title, [Description], IntervalTimeInMinutes, RunningDailyAt, Queue, IdType)
+INSERT INTO [auditing].[JobCatalog] (IdParent, IdJob, Title, [Description], IntervalTimeInMinutes, RunningDailyAt, Queue, IdType)
 VALUES
 /*Procedures de Sincronizações*/
 /*Range 13500 - 13999 (catálogos da API Person: 13585 - 13588)*/

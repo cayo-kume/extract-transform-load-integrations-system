@@ -5,11 +5,19 @@ namespace Application.Shared.Abstractions.Services
     public interface ILoggerService
     {
         /// <summary>
-        /// Create a new log
+        /// Create a new log, for the company of the execution (ICompanyContext). Without a company, throws
         /// </summary>
         /// <param name="job"></param>
         /// <returns>ILoggerService</returns>
         public ILoggerService AddLog(Enum job);
+
+        /// <summary>
+        /// Create a new log for the company (CNPJ da holding), and set it as the company of the execution (ICompanyContext)
+        /// </summary>
+        /// <param name="job"></param>
+        /// <param name="company"></param>
+        /// <returns>ILoggerService</returns>
+        public ILoggerService AddLog(Enum job, string company);
 
         /// <summary>
         /// Build an ERROR exception message with exception details occurred
@@ -48,16 +56,11 @@ namespace Application.Shared.Abstractions.Services
         public ILoggerService SetLogEndDate();
 
         /// <summary>
-        /// Persists generated logs in the database
+        /// Persists generated logs in the database. Called again after that, persists only the messages and records added since,
+        /// in the same execution (auditing.Logs is not inserted twice)
         /// </summary>
         /// <returns></returns>
         public Task CommitAllChanges();
-
-        /// <summary>
-        /// há um log aberto (AddLog) que ainda não foi gravado (CommitAllChanges). O executor de jobs dos hosts de agenda usa para
-        /// gravar o erro de uma execução que caiu no meio sem gravar o log duas vezes (a chave de auditing.Logs não aceita)
-        /// </summary>
-        public bool HasUncommittedLog { get; }
 
         /// <summary>
         /// Clear records list and messages list

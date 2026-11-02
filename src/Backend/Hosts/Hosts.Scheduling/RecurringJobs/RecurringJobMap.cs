@@ -10,10 +10,13 @@ namespace Hosts.Scheduling.RecurringJobs
     {
         public static IReadOnlyDictionary<int, RecurringJobDefinition> Definitions { get; } = Build();
 
-        // os recurring jobs da agenda se chamam <IdJob>-<Title> - V<versão>; os de manutenção do host (SchedulerRefresh,
-        // FailedJobsCleanup) não
+        // os recurring jobs da agenda se chamam <IdJob>-<Title> - V<versão> - <empresa>; os de manutenção do host
+        // (SchedulerRefresh, FailedJobsCleanup) não
         [GeneratedRegex(@"^(\d+)-")]
         private static partial Regex RecurringJobIdRegex();
+
+        [GeneratedRegex(@" - (\d+)$")]
+        private static partial Regex CompanyRegex();
 
         /// <summary>
         /// nome do recurring job, com a versão do método (§4.10): ex.: "8006-LinxClientesFornec - V1.0.0". Uma versão nova muda o
@@ -21,6 +24,26 @@ namespace Hosts.Scheduling.RecurringJobs
         /// </summary>
         public static string RecurringJobId(int idJob, string? title, string version) =>
             $"{idJob}-{title} - V{version}";
+
+        /// <summary>
+        /// nome do recurring job de uma empresa (docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.4): ex.:
+        /// "8006-LinxClientesFornec - V1.0.0 - 44065634000106". Um por (job, empresa)
+        /// </summary>
+        public static string RecurringJobId(int idJob, string? title, string version, string company) =>
+            $"{RecurringJobId(idJob, title, version)} - {company}";
+
+        /// <summary>
+        /// empresa de um recurring job da agenda; null nos jobs de manutenção do host e nos nomes sem empresa
+        /// </summary>
+        public static string? CompanyOf(string? recurringJobId)
+        {
+            if (IdJobOf(recurringJobId) is null)
+                return null;
+
+            var match = CompanyRegex().Match(recurringJobId!);
+
+            return match.Success ? match.Groups[1].Value : null;
+        }
 
         /// <summary>
         /// IdJob de um recurring job da agenda; null nos jobs de manutenção do host

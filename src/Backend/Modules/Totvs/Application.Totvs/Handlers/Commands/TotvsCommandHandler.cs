@@ -4,15 +4,19 @@ namespace Application.Totvs.Handlers.Commands
 {
     public class TotvsCommandHandler : ITotvsCommandHandler
     {
-        public string CreateGetCompanysQuery()
+        public string CreateGetCompanysQuery(string company)
         {
+            // só os CNPJs da holding da execução (monitor.HoldingCompanies, docs/PLANO-TELA-CADASTRO-EMPRESA.md 4.4); company é só
+            // dígitos (ICompanyContext)
             return @$"SELECT DISTINCT
                      DOC_COMPANY AS DOC_COMPANY,
                      CLIENT_ID AS CLIENT_ID,
                      CLIENT_SECRET AS CLIENT_SECRET,
                      USERNAME AS USERNAME,
                      [PASSWORD] AS [PASSWORD]
-                     FROM TOTVS.TOTVSPARAMETERS";
+                     FROM TOTVS.TOTVSPARAMETERS P
+                     JOIN MONITOR.HOLDINGCOMPANIES HC ON HC.COMPANY = P.DOC_COMPANY
+                     WHERE HC.HOLDING = '{company}'";
         }
 
         public string CreateGetBranchCodesQuery(string doc_company)
