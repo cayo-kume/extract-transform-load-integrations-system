@@ -1,6 +1,40 @@
-# Pacote de DLLs para Integração com a Totvs Moda
+<p align="center">
+  <img src="../../../../docs/images/banner.png" alt="NEWBLOOMERS · Sistema de Integrações · ETL" width="100%">
+</p>
 
-## O que é a Totvs Moda?
+# 🟣 Totvs Moda
+
+<p align="center">
+  <img alt="App 130" src="https://img.shields.io/badge/App-130-7c5cff?style=for-the-badge">
+  <img alt="Schema totvs" src="https://img.shields.io/badge/schema-totvs-7c5cff?style=for-the-badge&logo=microsoftsqlserver&logoColor=white">
+  <img alt="123 rotas" src="https://img.shields.io/badge/rotas-123-f5a524?style=for-the-badge">
+  <img alt="122 jobs" src="https://img.shields.io/badge/jobs-122_+_151_procedures-f5a524?style=for-the-badge">
+  <br>
+  <img alt=".NET 10" src="https://img.shields.io/badge/.NET-10-1e1b2e?style=flat-square&logo=dotnet&logoColor=white">
+  <img alt="OAuth2" src="https://img.shields.io/badge/OAuth2-password-1e1b2e?style=flat-square">
+  <img alt="JSON" src="https://img.shields.io/badge/API-REST_·_JSON-1e1b2e?style=flat-square">
+  <img alt="Escritas por grupo" src="https://img.shields.io/badge/escritas-Totvs:Writes-1e1b2e?style=flat-square">
+</p>
+
+<p align="center">
+  <b>Lê e escreve na Totvs Moda: pessoas, produtos, preços, saldos, pedidos, notas e financeiro.</b><br>
+  <sub>Pacote de DLLs para Integração com a Totvs Moda</sub>
+</p>
+
+<p align="center">
+  <a href="#-o-que-é-a-totvs-moda">Totvs Moda</a> ·
+  <a href="#-sobre-o-pacote">Sobre</a> ·
+  <a href="#-application-totvs">Services</a> ·
+  <a href="#-endpoints-expostos-totvscontroller">Endpoints</a> ·
+  <a href="#-auditoria-jobs">Jobs</a> ·
+  <a href="#-configuração">Configuração</a> ·
+  <a href="#-pendências">Pendências</a>
+</p>
+
+---
+
+
+## 🏬 O que é a Totvs Moda?
 A **Totvs Moda** é o ERP da Totvs para o varejo de moda: cadastro de pessoas e lojas, produtos (referências, cores e tamanhos), pedidos de compra e de venda, notas fiscais e financeiro. A Newbloomers usa o ERP para as marcas **Misha** e **Open Era**, com todas as lojas sob a holding.
 
 ### Conceitos usados pela integração
@@ -12,14 +46,20 @@ A **Totvs Moda** é o ERP da Totvs para o varejo de moda: cadastro de pessoas e 
 
 ---
 
-## Sobre o pacote
+## 📦 Sobre o pacote
 
 Módulo do sistema de integrações (ETL) responsável por **ler** os dados da API da Totvs Moda e gravá-los no banco SQL Server:
 
-* de forma **recorrente**, pelos jobs do Hangfire, com leitura incremental por data de alteração;
+* de forma **recorrente**, pelos jobs do agendador (Hangfire, WebJob ou Worker: uma execução por **job e empresa**), com
+  leitura incremental por data de alteração;
 * **sob demanda**, a partir de um sistema externo, buscando um único registro por chave e registrando quem pediu cada chamada.
 
-O módulo começou a **escrever** na Totvs (plano em [`src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md`](docs/PLANO-TOTVS-METODOS-FALTANTES.md)): por enquanto, só a troca de estágio de uma parcela a pagar. Toda escrita é validada antes de chamar a API, fica registrada em `totvs.TotvsRequests` e só roda com a chave de configuração do seu grupo ligada.
+O módulo também **escreve** na Totvs (**54 rotas** de escrita, plano em [`PLANO-TOTVS-METODOS-FALTANTES.md`](docs/PLANO-TOTVS-METODOS-FALTANTES.md)). Toda escrita é **validada antes** de chamar a API, fica registrada em `totvs.TotvsRequests` e só roda com a chave de configuração do seu grupo ligada.
+
+> [!IMPORTANT]
+> Cada grupo de escrita só roda com `Totvs:Writes:<grupo>:Enabled = true` (`AccountsPayable`, `Bonus`, `Invoices`,
+> `People`, `Products`, `PurchaseOrders`, `SalesOrders`); sem a chave, a rota devolve **422** sem chamar a Totvs. Nos
+> testes, a **produção é só leitura**: escrita se testa na homologação.
 
 | Item | Valor |
 |---|---|
@@ -28,8 +68,32 @@ O módulo começou a **escrever** na Totvs (plano em [`src/Backend/Modules/Totvs
 | API consumida | Totvs Moda — `https://www30.bhan.com.br:9443/api/totvsmoda/` (autenticação OAuth2, fluxo `password`) |
 | Documentação da API | Swagger de cada API em `.../api/totvsmoda/<api>/v2/swagger/index.html` (`person`, `seller`, `product`, `purchase-order`, `sales-order`, `accounts-payable`, `fiscal`) |
 | Banco de dados | SQL Server (schemas `untreated`, `totvs` e `auditing`; o `Script001` cria `totvs` quando não existe) |
-| Multiempresa | Sim: cada CNPJ de `totvs.TotvsParameters` tem as suas credenciais, e as buscas usam **todas as lojas** dele gravadas em `totvs.TotvsBranches`. O CNPJ (`doc_company`) é a primeira coluna da chave de todas as tabelas |
+| Multiempresa | Sim: cada CNPJ de `totvs.TotvsParameters` tem as suas credenciais, e as buscas usam **todas as lojas** dele gravadas em `totvs.TotvsBranches`. O CNPJ (`doc_company`) é a primeira coluna da chave de todas as tabelas. Cada execução é de **uma empresa do painel** (holding, `ICompanyContext`) e lê só os CNPJs ligados a ela em `monitor.HoldingCompanies` |
 | Host | `src/Backend/Hosts/WebApi` (controller `TotvsController`) |
+
+### 🏢 Empresa da execução
+
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
+flowchart LR
+    AG["⏱️ Agendador<br/>job + empresa"] --> CTX["ICompanyContext<br/>holding da execução"]
+    ROTA["🌐 Rota<br/>X-Company ou docCompany"] --> CTX
+    CTX --> HC[("monitor.HoldingCompanies<br/>holding → CNPJs")]
+    HC --> PAR[("totvs.TotvsParameters<br/>credenciais por CNPJ")]
+    PAR --> TOKEN["🔑 token OAuth2<br/>por CNPJ"]
+    PAR --> BR[("totvs.TotvsBranches<br/>lojas do CNPJ")]
+    TOKEN --> API["Totvs Moda API"]
+    BR --> API
+
+    classDef accent fill:#7c5cff,stroke:#7c5cff,color:#ffffff
+    classDef warm fill:#f5a524,stroke:#f5a524,color:#1e1b2e
+    class CTX accent
+    class API warm
+```
+
+`CreateGetCompanysQuery(company)` lê os parâmetros pelo join com `monitor.HoldingCompanies`: os services continuam
+percorrendo `GetCompanys()`, agora só com os CNPJs da holding da execução
+([plano do cadastro](../../../../docs/PLANO-TELA-CADASTRO-EMPRESA.md), 4.4).
 
 ### Comportamentos da API que a integração trata
 A documentação não descreve tudo; o que segue foi conferido com chamadas reais (detalhes em [`src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md`](docs/PROPOSTA-PADRONIZACAO-TOTVS.md), §5.2):
@@ -42,11 +106,11 @@ A documentação não descreve tudo; o que segue foi conferido com chamadas reai
 * **Notas com `referencedInvoices`:** para algumas devoluções de venda a busca responde `400` (`InvoiceDomainService.GetReferencedInvoices`). O campo está **comentado** no `expand` das notas; o contorno (reler a página em partes) continua no método para quando for religado.
 * **`branchCodeList` é obrigatório** nas buscas de documentos.
 
-Os JSONs usados para conferir a modelagem estão na pasta [`Responsed Jsons`](#pasta-docsresponsed-jsons), com os dados reais trocados por dados fictícios.
+Os JSONs usados para conferir a modelagem estão na pasta [`Responsed Jsons`](#-pasta-docsresponsed-jsons), com os dados reais trocados por dados fictícios.
 
 ---
 
-## Arquitetura
+## 🧩 Arquitetura
 
 ```
 Totvs/
@@ -59,11 +123,26 @@ Totvs/
 
 ### Referências entre projetos
 
-```
-Infrastructure.Totvs ──► Application.Totvs ──► Domain.Totvs
-        │                        │                    │
-        ▼                        ▼                    ▼
-Infrastructure.Shared    Application.Shared     Domain.Shared
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
+flowchart LR
+    subgraph TOTVS["🟣 Totvs"]
+        direction LR
+        INF["Infrastructure.Totvs"] --> APP["Application.Totvs"] --> DOM["Domain.Totvs"]
+    end
+    subgraph SHARED["⚫ Shared"]
+        direction LR
+        INFS["Infrastructure.Shared"]
+        APPS["Application.Shared"]
+        DOMS["Domain.Shared"]
+    end
+    INF --> INFS
+    APP --> APPS
+    DOM --> DOMS
+
+    classDef accent fill:#7c5cff,stroke:#7c5cff,color:#ffffff
+    classDef warm fill:#f5a524,stroke:#f5a524,color:#1e1b2e
+    class INF,APP,DOM accent
 ```
 
 | Assembly | Pacotes NuGet | Referências |
@@ -80,7 +159,7 @@ Do projeto Shared o módulo usa:
 
 ---
 
-## Domain.Totvs
+## 🧱 Domain.Totvs
 
 ```
 Domain.Totvs/
@@ -130,7 +209,7 @@ Domain.Totvs/
 
 ---
 
-## Application.Totvs
+## 🔄 Application.Totvs
 
 ```
 Application.Totvs/
@@ -158,6 +237,9 @@ Os nomes dos métodos são os da **documentação oficial** (`PostSearch*`, `Get
 | `SaveRequest` | Grava uma chamada sob demanda em `totvs.TotvsRequests`, ligada ao `Execution` do log aberto por quem chama. A rota é gravada sem o token, e o filtro enviado vai em `request_body`. Documentos da pessoa física, conta bancária e chave PIX são mascarados nos dois corpos (T6, `TotvsMasking`): ficam os 2 últimos caracteres, e campo de CPF ou CNPJ só é mascarado quando traz CPF. A rota e o `field_key_value` ficam inteiros, para a busca e a trava de repetição |
 
 **Leituras recorrentes**
+
+<details>
+<summary><b>📖 43 leituras recorrentes</b> (service, rota da API, tabelas, job e intervalo)</summary>
 
 | Service | Método | Rota da API | Tabelas | Job | Intervalo |
 |---|---|---|---|---|---|
@@ -205,7 +287,12 @@ Os nomes dos métodos são os da **documentação oficial** (`PostSearch*`, `Get
 | `TotvsProductCatalogsService` | `GetPriceTablesHeaders` | `GET product/v2/price-tables-headers` | `TotvsPriceTables` e 5 filhas | 13090 | 120 min |
 | `TotvsProductCatalogsService` | `GetPriceTableScales` | `GET product/v2/price-table-scales` | `TotvsPriceTableScales` e 1 filha | 13091 | 120 min |
 
+</details>
+
 **Escritas** (sistema externo, com `X-User-Name`)
+
+<details>
+<summary><b>✍️ 54 escritas</b> (service, rota da API, job e chave de configuração)</summary>
 
 | Service | Método | Rota da API | Job | Chave de configuração |
 |---|---|---|---|---|
@@ -264,7 +351,12 @@ Os nomes dos métodos são os da **documentação oficial** (`PostSearch*`, `Get
 | `TotvsSalesOrdersService` | `PostCancelItems` | `POST sales-order/v2/cancel-items` (com a trava de repetição; pedido do e-commerce, inclusive o B2C: 400 `CannotChangedOrderEcommerce`) | 13210 | `Totvs:Writes:SalesOrders:Enabled` |
 | `TotvsInvoicesService` | `PostInvoicesManifestations` | `POST fiscal/v2/invoices/manifestations` (efeito fiscal a confirmar; XML fora do log) | 13258 | `Totvs:Writes:Invoices:Enabled` |
 
+</details>
+
 **Leituras sob demanda** (um registro por chave)
+
+<details>
+<summary><b>🎯 Leituras sob demanda</b> (service, busca na API e job)</summary>
 
 | Service | Método | Busca na API | Job |
 |---|---|---|---|
@@ -286,12 +378,14 @@ Os nomes dos métodos são os da **documentação oficial** (`PostSearch*`, `Get
 | `TotvsRepresentativesService` | `GetRepresentativeByCode` | `representatives/search` com `representativeCodeList` | 13039 |
 | `TotvsProductsService` | `GetProductByCode` | `references/search` com `productCodeList` (acha a referência) e `referenceCodeList` (lê a referência inteira) | 13014 |
 
+</details>
+
 ### Fluxo das leituras recorrentes
 
 Seguem o padrão de [`docs/PADRAO-CACHE-INTEGRACOES.md`](../../../../docs/PADRAO-CACHE-INTEGRACOES.md):
 
 1. abre um log em `auditing.Logs` com o job do método;
-2. para cada empresa de `TotvsParameters`, obtém o token e as lojas de `TotvsBranches`. Sem lojas, registra a mensagem e segue para a próxima empresa (por isso o `GetBranchesList` roda primeiro);
+2. para cada CNPJ da holding da execução (`TotvsParameters` com o join em `monitor.HoldingCompanies`), obtém o token e as lojas de `TotvsBranches`. Sem lojas, registra a mensagem e segue para a próxima empresa (por isso o `GetBranchesList` roda primeiro);
 3. calcula a janela: desde o maior `maxChangeFilterDate` gravado, menos 1 hora de folga. Com o banco vazio, a carga inicial é:
 
    | Recurso | Carga inicial |
@@ -308,6 +402,42 @@ Seguem o padrão de [`docs/PADRAO-CACHE-INTEGRACOES.md`](../../../../docs/PADRAO
 7. valida os DTOs (FluentValidation) e registra as inconsistências em `auditing.Messages`, sem barrar a gravação;
 8. converte para entidades, faz o bulk insert em `untreated` e chama as procedures `totvs.sp_<Tabela>_Sync`, do pai para os filhos;
 9. grava cada registro integrado (com o JSON recebido) em `auditing.Records` e fecha o log num `finally`.
+
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','actorBkg':'#7c5cff','actorTextColor':'#ffffff','actorBorder':'#7c5cff','signalColor':'#f5a524','signalTextColor':'#7c5cff','noteBkgColor':'#fff4dd','noteTextColor':'#1e1b2e','noteBorderColor':'#f5a524','activationBkgColor':'#ede9fe','activationBorderColor':'#7c5cff','labelBoxBkgColor':'#7c5cff','labelBoxBorderColor':'#7c5cff','labelTextColor':'#ffffff','loopTextColor':'#1e1b2e'}}}%%
+sequenceDiagram
+    autonumber
+    participant J as Job (empresa X)
+    participant S as Service Totvs
+    participant C as Cache (IMemoryCache)
+    participant T as Totvs Moda API
+    participant B as SQL Server
+
+    J->>S: PostSearch* (holding no ICompanyContext)
+    S->>B: auditing.sp_Log_Start (job, empresa)
+    S->>B: CNPJs da holding (TotvsParameters + HoldingCompanies)
+    loop cada CNPJ
+        S->>C: token do CNPJ
+        alt sem token em cache
+            S->>T: POST authorization/v2/token
+            T-->>S: access_token (expires_in)
+        end
+        S->>B: lojas (TotvsBranches) e MAX(maxChangeFilterDate)
+        loop cada fatia de 7 ou 30 dias, cada página
+            S->>T: POST .../search (change, branchCodeList)
+            alt 401
+                S->>C: RemoveToken e tenta de novo
+            else 429 ou 502/503/504
+                Note over S,T: espera Retry-After ou 10 s
+            end
+            T-->>S: página (items, hasNext)
+        end
+        Note over S,C: descarta o que não mudou · valida (FluentValidation)
+        S->>B: bulk insert em untreated + totvs.sp_Tabela_Sync (pai → filhas)
+        S->>B: auditing.Records e auditing.Messages
+    end
+    S->>B: auditing.sp_Log_End
+```
 
 | Chave de cache | Conteúdo |
 |---|---|
@@ -332,16 +462,18 @@ Particularidades:
 
 ---
 
-## Infrastructure.Totvs
+## 💾 Infrastructure.Totvs
 
 ```
 Infrastructure.Totvs/
 ├── DependencyInjection.cs      (AddScopedTotvsServices)
 ├── Repositorys/                (TotvsRepository e um por recurso)
-└── Scripts/
-    ├── SQLServer/              (migrator.csx, Parameters/ com os scripts gerais e uma pasta por service)
-    ├── MySQL/                  (migrator.csx)
-    └── PostgreSQL/             (migrator.csx)
+├── Scripts/
+│   ├── SQLServer/              (migrator.csx, Parameters/ com os scripts gerais e uma pasta por service)
+│   ├── MySQL/                  (migrator.csx)
+│   └── PostgreSQL/             (migrator.csx)
+└── Seeds/
+    └── SQLServer/              (Script003: parâmetros de uma empresa; fora do DbUp, lido só por tools/seeds/Import-TestSeeds.ps1)
 ```
 
 ### Injeção de dependência
@@ -356,13 +488,18 @@ O host chama o método em `Hosts/WebApi/Extensions/ServicesExtensions.cs`.
 
 ### Scripts de banco (SQL Server)
 
-O DbUp executa cada script uma única vez. Alterar um script que já rodou não muda um banco existente: para isso é preciso um script novo. Os scripts gerais do módulo ficam em `Parameters/` e cada service tem a sua pasta, com um trio de scripts: tabelas, procedures e jobs (os recorrentes, os sob demanda e as escritas do service). O `migrator.csx` lê as subpastas e executa na ordem do número do arquivo, não na da pasta.
+O DbUp executa cada script uma única vez. Os scripts gerais do módulo ficam em `Parameters/` e cada service tem a sua pasta, com um trio de scripts: tabelas, procedures e jobs (os recorrentes, os sob demanda e as escritas do service). O `migrator.csx` lê as subpastas e executa na ordem do número do arquivo, não na da pasta.
+
+> [!NOTE]
+> Desde o cadastro de empresas, o DbUp cria só **estrutura e catálogo do produto**. Os scripts de jobs inserem em
+> **`auditing.JobCatalog`** (sem empresa); os jobs de uma empresa nascem em `auditing.Jobs`, inativos, quando ela contrata o
+> módulo (`auditing.sp_Add_Company_App`). Os **parâmetros** (credenciais) saíram do DbUp para `Seeds/SQLServer`.
 
 | Pasta | Script | Conteúdo |
 |---|---|---|
 | `Parameters/` | `Script001` | Schema `totvs` e `totvs.TotvsParameters` |
 | `Parameters/` | `Script002` | App `130 - Totvs` em `auditing.Apps` |
-| `Parameters/` | `Script003` | A holding em `TotvsParameters`, com as credenciais de produção, como o AfterSale e o Movidesk. As de homologação ficam no mesmo arquivo, **comentadas**: no banco de homologação ou local, rodar à mão no lugar do insert de produção (duas linhas da mesma empresa fariam o host usar a credencial errada) |
+| `../../Seeds/SQLServer/` | `Script003` | **Fora do DbUp.** A holding em `TotvsParameters`, com as credenciais de produção, como o AfterSale e o Movidesk. As de homologação ficam no mesmo arquivo, **comentadas**: no banco de homologação ou local, rodar à mão no lugar do insert de produção (duas linhas da mesma empresa fariam o host usar a credencial errada). Num banco de teste, quem roda é o `tools/seeds/Import-TestSeeds.ps1` |
 | `Parameters/` | `Script004` | `totvs.TotvsRequests` (log das chamadas sob demanda e das escritas, com `status_code` e `integrated_or_updated_at`) |
 | `People/` | `Script005`–`007` | Filiais e pessoas físicas e jurídicas (leituras, escritas e sob demanda) |
 | `Sellers/` | `Script008`–`010` | Vendedores e regiões de atuação |
@@ -384,13 +521,55 @@ O DbUp executa cada script uma única vez. Alterar um script que já rodou não 
 * **Exceção:** `TotvsSkusColors` e `TotvsSkusColorsProducts` não apagam, porque a API devolve a referência só com os produtos alterados na janela. Um produto excluído na Totvs fica no banco.
 * Os registros principais **nunca são apagados**: uma nota excluída fica com `invoiceStatus = 'Deleted'`.
 
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
+flowchart LR
+    API["Totvs Moda API"] --> DTO["DTO<br/>validado"] --> ENT["Entidade<br/>horário de lote"]
+    ENT --> UNT[("untreated.Tabela<br/>bulk insert, sem chave")]
+    UNT -- "totvs.sp_Tabela_Sync" --> PAI[("totvs.Tabela<br/>pai, com PK")]
+    PAI -- "filhas do pai regravado" --> FIL[("totvs.Filhas<br/>apaga o que não veio")]
+    FIL -- "on delete cascade" --> NET[("netas")]
+    ENT -. "JSON recebido" .-> REC[("auditing.Records")]
+
+    classDef accent fill:#7c5cff,stroke:#7c5cff,color:#ffffff
+    classDef warm fill:#f5a524,stroke:#f5a524,color:#1e1b2e
+    class PAI,FIL accent
+    class UNT warm
+```
+
 ---
 
-## Endpoints expostos (`TotvsController`)
+## 🌐 Endpoints expostos (`TotvsController`)
 
 Rota base: `TotvsJobs/Totvs`. O verbo segue a documentação oficial: `POST` nas buscas, `GET` nas filiais e nas leituras sob demanda.
 
-### Leituras recorrentes (disparam a integração de todas as empresas)
+<p align="center">
+  <img src="../../../../docs/images/swagger/totvs.png" alt="Rotas da Totvs no Swagger do WebApi" width="100%">
+  <br><sub><b>Swagger do WebApi</b> — as rotas da Totvs agrupadas pela tag de cada service (<code>http://localhost:5252/swagger</code>)</sub>
+</p>
+
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'pie1':'#7c5cff','pie2':'#f5a524','pie3':'#a78bfa','pie4':'#fbbf24','pie5':'#c4b5fd','pie6':'#fde68a','pie7':'#6d28d9','pie8':'#d97706','pie9':'#ddd6fe','pie10':'#fef3c7','pie11':'#4c1d95','pie12':'#92400e','pieTitleTextSize':'18px','pieSectionTextColor':'#1e1b2e','pieStrokeColor':'#1e1b2e'}}}%%
+pie showData
+    title Rotas da Totvs por service (123)
+    "Products" : 27
+    "SalesOrders" : 27
+    "People" : 16
+    "ProductCatalogs" : 15
+    "Invoices" : 12
+    "PurchaseOrders" : 7
+    "AccountsPayable" : 5
+    "PersonCatalogs" : 4
+    "ProductPrices" : 4
+    "Representatives" : 3
+    "Sellers" : 2
+    "Bonus" : 1
+```
+
+### Leituras recorrentes (disparam a integração dos CNPJs da holding)
+
+<details>
+<summary><b>📖 Rotas das leituras recorrentes</b></summary>
 
 | Método | Rota | Service |
 |---|---|---|
@@ -438,12 +617,18 @@ Rota base: `TotvsJobs/Totvs`. O verbo segue a documentação oficial: `POST` nas
 | GET | `Products/PriceTablesHeaders` | `TotvsProductCatalogsService.GetPriceTablesHeaders` |
 | GET | `Products/PriceTableScales` | `TotvsProductCatalogsService.GetPriceTableScales` |
 
+</details>
+
 ### Leituras sob demanda (chamadas por sistema externo)
 
 Todas exigem:
 * o cabeçalho **`X-User-Name`** (até 100 caracteres);
 * o CNPJ da empresa na rota (`{docCompany}`, 14 dígitos);
 * códigos numéricos maiores que zero.
+
+A empresa da execução vem do cabeçalho opcional **`X-Company`** (CNPJ da holding) ou, sem ele, da holding do
+`{docCompany}` em `monitor.HoldingCompanies` (`CompanyContextFilter` do WebApi). CNPJ sem holding, `X-Company` que não é a
+holding do `{docCompany}` ou com algo além de dígitos dão **400**.
 
 | Método | Rota | Service |
 |---|---|---|
@@ -463,6 +648,9 @@ Todas exigem:
 
 **Leituras sem persistência** (onda 2 do plano, base T11): devolvem o conteúdo da Totvs (JSON no `data` do `Result`, ou o arquivo)
 sem gravar tabela; a chamada fica em `totvs.TotvsRequests` (nas de arquivo, só um resumo, nunca o XML ou o PDF).
+
+<details>
+<summary><b>📄 Rotas das leituras sem persistência</b></summary>
 
 | Método | Rota | Service |
 |---|---|---|
@@ -485,6 +673,8 @@ sem gravar tabela; a chamada fica em `totvs.TotvsRequests` (nas de arquivo, só 
 | GET | `SalesOrders/{docCompany}/{branchCode}/{orderCode}/PendingItems` | `GetPendingItems` (200 mesmo sem pendência) |
 | GET | `SalesOrders/{docCompany}/{branchCode}/{orderCode}/ChangedBatchItems?startDate&endDate&batchCode` | `GetChangedBatchItems` |
 
+</details>
+
 | Código | Quando |
 |---|---|
 | **200** | O JSON (`Result.data`) ou o arquivo |
@@ -495,8 +685,38 @@ sem gravar tabela; a chamada fica em `totvs.TotvsRequests` (nas de arquivo, só 
 
 ### Escritas (chamadas por sistema externo)
 
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
+flowchart TB
+    REQ["POST / PUT / DELETE<br/>X-User-Name · docCompany"] --> ON{"Totvs:Writes:grupo<br/>:Enabled?"}
+    ON -- não --> E422["422<br/>desligada, sem empresa ou recusada"]
+    ON -- sim --> VAL{"corpo<br/>válido?"}
+    VAL -- não --> E400["400<br/>campos e mensagens"]
+    VAL -- sim --> EMP{"empresa e loja<br/>cadastradas?"}
+    EMP -- não --> E422
+    EMP -- sim --> REP{"mesmo corpo<br/>nos últimos 10 min?"}
+    REP -- sim --> E409["409<br/>trava de repetição"]
+    REP -- não --> API["Totvs Moda API"]
+    API -- aceita --> OK["200<br/>chave e resposta"]
+    API -- recusa --> E422
+    API -- "5xx ou sem resposta" --> E502["502<br/>confira antes de repetir"]
+    OK --> LOG[("totvs.TotvsRequests")]
+    E409 --> LOG
+    E502 --> LOG
+
+    classDef ok fill:#16a34a,stroke:#16a34a,color:#ffffff
+    classDef warn fill:#f5a524,stroke:#f5a524,color:#1e1b2e
+    classDef err fill:#dc2626,stroke:#dc2626,color:#ffffff
+    class OK ok
+    class E409,E502 warn
+    class E400,E422 err
+```
+
 Mesmas exigências das leituras sob demanda (`X-User-Name` e `{docCompany}`), com o corpo validado **antes** de chamar a Totvs. Nas
 escritas de pedido de venda, a **chave do pedido** é `branchCode` + `orderCode` (loja da empresa) **ou** `orderId`, um ou outro.
+
+<details>
+<summary><b>✍️ Rotas das 54 escritas</b> (método, rota, corpo e service)</summary>
 
 | Método | Rota | Corpo | Service |
 |---|---|---|---|
@@ -555,6 +775,8 @@ escritas de pedido de venda, a **chave do pedido** é `branchCode` + `orderCode`
 | POST | `SalesOrders/{docCompany}/PdvTransactions` | chave do pedido; `transactionId`, loja, código e data da transação | `PostPdvTransactions` |
 | POST | `InvoicesManifestations/{docCompany}` | `items` (até 8): `accessKey` (44 dígitos), `branchCnpj` (loja da empresa), emissor, número, emissão, série, `nsu`, `operationType` e `invoiceStatus` pelo nome, total, `invoiceXml`, `documentType` (55, 57, 59, 81) | `PostInvoicesManifestations` (o XML vai à Totvs, mas só o tamanho fica em `TotvsRequests`) |
 
+</details>
+
 | Código | Quando |
 |---|---|
 | **200** | Escrita aceita pela Totvs (chave e resposta da Totvs no corpo) |
@@ -565,20 +787,29 @@ escritas de pedido de venda, a **chave do pedido** é `branchCode` + `orderCode`
 | **429** | A Totvs limitou as chamadas também na nova tentativa (`Retry-After`) |
 | **502** | A Totvs foi chamada e não respondeu ou respondeu 5xx: **a escrita pode ter sido feita**, confira antes de repetir |
 
-Diferente das leituras, uma escrita só tenta de novo em 401 (renova o token) e 429; em 502/503/504 não, porque a Totvs pode ter gravado antes de o gateway cair.
+> [!WARNING]
+> Diferente das leituras, uma escrita só tenta de novo em 401 (renova o token) e 429; em 502/503/504 não, porque a Totvs
+> pode ter gravado antes de o gateway cair. **Um 502 numa escrita pode ter sido gravado**: confira antes de repetir.
 
-> O `[Authorize]` do controller está comentado, como no Movidesk e no AfterSale. A autenticação dos endpoints de inbound vai ser outro mecanismo, ainda a definir; até lá, as escritas ficam desligadas por configuração em produção.
+> [!CAUTION]
+> O `[Authorize]` do controller está comentado, como no Movidesk e no AfterSale. A autenticação dos endpoints de inbound
+> vai ser outro mecanismo, ainda a definir; até lá, as escritas ficam desligadas por configuração em produção.
 
 ---
 
-## Auditoria (jobs)
+## 📝 Auditoria (jobs)
 
-Os jobs ficam em `auditing.Jobs`, com os mesmos ids em `EnumJob`.
+Os jobs ficam no catálogo **`auditing.JobCatalog`** (scripts `..._Jobs_Into_Jobs_Table.sql`, no DbUp), com os mesmos ids
+em `EnumJob`. Cada empresa que contrata o módulo recebe a sua cópia em **`auditing.Jobs`** (`Company` na chave),
+inativa até alguém ligar.
 
 | Faixa | Tipo (`IdType`) | Conteúdo |
 |---|---|---|
 | 13000–13499 | 2 (Integração) | Leituras, com `IdParent = 130` (app Totvs) |
 | 13500–13999 | 1 (Procedure) | Procedures `sp_<Tabela>_Sync` (13500–13650), com `IdParent` = job da leitura e o mesmo intervalo |
+
+<details>
+<summary><b>📋 Todos os jobs</b> (id, job e intervalo)</summary>
 
 | Id | Job | Intervalo |
 |---|---|---|
@@ -655,13 +886,20 @@ Os jobs ficam em `auditing.Jobs`, com os mesmos ids em `EnumJob`.
 | 13197, 13198, 13204, 13209, 13210 | `TotvsPostSalesOrderB2COrders`, `TotvsPostSalesOrderOrdersCancel`, `TotvsPostSalesOrderPdvTransactions`, `TotvsPostSalesOrderPriceItems`, `TotvsPostSalesOrderCancelItems` | escrita |
 | 13211–13214 | `TotvsPostSalesOrderRelationshipCounts`, `TotvsPostSalesOrderRelationshipBatchItems`, `TotvsDeleteSalesOrderBatchItems`, `TotvsPostSalesOrderSuggestBatchItemsNuance` | escrita |
 
-Toda execução grava `auditing.Logs` e, conforme o caso:
+</details>
+
+Toda execução grava `auditing.Logs` (com a empresa) e, conforme o caso:
 * `auditing.Messages`, com mensagens e erros de validação;
 * `auditing.Records`, com os registros integrados e o JSON recebido.
 
+<p align="center">
+  <img src="../../../../docs/images/webapp/integracoes.png" alt="Tela Integrações do Monitor" width="100%">
+  <br><sub><b>Onde ver no painel</b> — a tela Integrações do Monitor mostra os jobs, as procedures e a saúde de cada um (dados mockados)</sub>
+</p>
+
 ---
 
-## Configuração
+## 🔧 Configuração
 
 | Onde | Chave | Uso |
 |---|---|---|
@@ -670,12 +908,19 @@ Toda execução grava `auditing.Logs` e, conforme o caso:
 | `appsettings.json` do host | `Totvs:Writes:Products:AllowedValueCodes`, `AllowedValueBranches`, `MaxValueVariationPercent` | Escrita de preço e custo (PR7): tipos e códigos permitidos (`P1,C1`: P preço, C custo), lojas permitidas (`1,101`) e a variação máxima contra o valor gravado (padrão 20). Lista vazia recusa toda escrita de valor |
 | `appsettings.json` do host | `ConnectionStrings` | Conexão com o SQL Server (dados e auditoria) |
 | Banco | `totvs.TotvsParameters` | CNPJ (`doc_company`) e credenciais (`client_id`, `client_secret`, `username`, `password`) de cada empresa |
+| Banco | `monitor.HoldingCompanies` | De/para holding → CNPJ: quais CNPJs de `TotvsParameters` cada empresa do painel lê |
 
-As credenciais vão para o banco pelo `Script003` (e pelo de homologação, à mão) e nunca são gravadas em logs.
+As credenciais vão para o banco pela tela de cadastro do WebApp (em construção) ou, num banco de teste, pelo
+`Seeds/SQLServer/Script003` via `tools/seeds/Import-TestSeeds.ps1`; nunca são gravadas em logs.
+
+> [!CAUTION]
+> O `Seeds/SQLServer/Script003` tem as **credenciais reais de produção** (as de homologação ficam comentadas). A produção
+> é **só leitura** nos testes: escritas se testam na homologação, e num banco de teste as `BaseUrl` dos módulos que não
+> estão sendo testados apontam para `http://127.0.0.1:9/`.
 
 ---
 
-## Pasta `docs/Responsed Jsons`
+## 📁 Pasta `docs/Responsed Jsons`
 
 Uma resposta real de cada rota, com os dados trocados por **dados fictícios** para não expor informações no histórico do git:
 
@@ -732,7 +977,7 @@ corpo de verdade leva só um, como o validador da rota exige.
 
 ---
 
-## Pendências
+## 🚧 Pendências
 
 O plano de métodos faltantes (`src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md`) está implementado em todas as ondas; o que falta está no fim da §10 de
 cada fase ("Não verificado"). Em resumo:
@@ -750,19 +995,26 @@ cada fase ("Não verificado"). Em resumo:
 * **Produção:** espera a autenticação dos endpoints de inbound (T2) e a liberação de cada grupo de escrita pelo negócio, inclusive as listas
   de códigos e lojas de preço (PR7).
 * **Preços, custos e saldos** (jobs 13015–13017): a carga inicial dos saldos leva horas (~27 min por loja, estimado) e precisa de proteção
-  contra execução simultânea quando os jobs da Totvs forem registrados no Hangfire.
+  contra execução simultânea: a trava dos hosts de agenda (`IJobLock`) pula o disparo enquanto o anterior roda.
 * **`referencedInvoices`:** comentado no `expand` das notas até a Totvs corrigir o erro 400. O `item-detail-search` não serve de contorno
   (F3, plano §10.35 e §10.42): para a devolução que falha, ele responde 200, mas com `referencedInvoices` vazio. Acontece também em
   produção. Para a Totvs: o 400 do `invoices/search` com a nota 2/31392 de 28/09/2026 da homologação e a 6/41422 de 18/10/2026 da
   produção (devoluções de venda, CFOP 1202).
 ---
 
-## Documentação complementar
-
-Na pasta `docs/` da raiz do repositório:
+## 📚 Documentação complementar
 
 | Documento | Assunto |
 |---|---|
-| `PROPOSTA-PADRONIZACAO-TOTVS.md` | Proposta, decisões e plano em fases da padronização do módulo, com o que foi conferido em cada API |
-| `PADRAO-CACHE-INTEGRACOES.md` | Padrão de cache das leituras |
-| `ALTERACOES-MERGE-PROCEDURE-AUDITORIA.md` | Procedure de merge e auditoria |
+| 🟣 [PROPOSTA-PADRONIZACAO-TOTVS.md](docs/PROPOSTA-PADRONIZACAO-TOTVS.md) | Proposta, decisões e plano em fases da padronização do módulo, com o que foi conferido em cada API |
+| 🟣 [PLANO-TOTVS-METODOS-FALTANTES.md](docs/PLANO-TOTVS-METODOS-FALTANTES.md) | Plano dos métodos faltantes (leituras, catálogos e escritas) |
+| 🏢 [PLANO-TELA-CADASTRO-EMPRESA.md](../../../../docs/PLANO-TELA-CADASTRO-EMPRESA.md) | Cadastro de empresas: parâmetros fora do DbUp, `monitor.HoldingCompanies` e execução por empresa |
+| ⚡ [PADRAO-CACHE-INTEGRACOES.md](../../../../docs/PADRAO-CACHE-INTEGRACOES.md) | Padrão de cache das leituras |
+| 🔁 [ALTERACOES-MERGE-PROCEDURE-AUDITORIA.md](../../../../src/Backend/Shared/docs/ALTERACOES-MERGE-PROCEDURE-AUDITORIA.md) | Procedure de merge e auditoria |
+
+---
+
+<p align="center">
+  <img src="../../../../docs/newbloomers.png" alt="NEWBLOOMERS" width="180"><br>
+  <sub>Módulo Totvs · sistema de integrações · .NET 10</sub>
+</p>

@@ -1,6 +1,41 @@
-# Pacote de DLLs para Integração com o Linx Microvix (Outbound)
+<p align="center">
+  <img src="../../../../../docs/images/banner.png" alt="NEWBLOOMERS · Sistema de Integrações · ETL" width="100%">
+</p>
 
-## O que é o Linx Microvix?
+# 🟣 Linx Microvix (Outbound)
+
+<p align="center">
+  <img alt="App 80" src="https://img.shields.io/badge/App-80-7c5cff?style=for-the-badge">
+  <img alt="Schema linxmicrovix" src="https://img.shields.io/badge/schema-linxmicrovix-7c5cff?style=for-the-badge&logo=microsoftsqlserver&logoColor=white">
+  <img alt="284 rotas" src="https://img.shields.io/badge/rotas-284-f5a524?style=for-the-badge">
+  <img alt="284 jobs" src="https://img.shields.io/badge/jobs-284_+_260_procedures-f5a524?style=for-the-badge">
+  <br>
+  <img alt=".NET 10" src="https://img.shields.io/badge/.NET-10-1e1b2e?style=flat-square&logo=dotnet&logoColor=white">
+  <img alt="XML" src="https://img.shields.io/badge/API-XML-1e1b2e?style=flat-square">
+  <img alt="ERP v274" src="https://img.shields.io/badge/ERP-v274_·_191_métodos-1e1b2e?style=flat-square">
+  <img alt="B2C V64" src="https://img.shields.io/badge/B2C-V64_·_69_métodos-1e1b2e?style=flat-square">
+  <img alt="Só leitura" src="https://img.shields.io/badge/escritas-nenhuma-1e1b2e?style=flat-square">
+</p>
+
+<p align="center">
+  <b>Lê os dois web services XML do Linx Microvix (ERP e B2C) com leitura incremental pelo timestamp.</b><br>
+  <sub>Pacote de DLLs para Integração com o Linx Microvix (Outbound)</sub>
+</p>
+
+<p align="center">
+  <a href="#-o-que-é-o-linx-microvix">Linx Microvix</a> ·
+  <a href="#-sobre-o-pacote">Sobre</a> ·
+  <a href="#services-e-métodos-leituras-recorrentes">Métodos</a> ·
+  <a href="#-endpoints-expostos-linxmicrovixcontroller">Endpoints</a> ·
+  <a href="#-auditoria-jobs">Jobs</a> ·
+  <a href="#-configuração">Configuração</a> ·
+  <a href="#-pendências">Pendências</a>
+</p>
+
+---
+
+
+## 🏬 O que é o Linx Microvix?
 O **Linx Microvix** é o ERP da Linx para o varejo (lojas, estoque, vendas, fiscal e financeiro), com um e-commerce
 próprio, o **B2C**. Ele expõe os dados por dois web services de leitura, os dois em XML:
 
@@ -17,14 +52,35 @@ próprio, o **B2C**. Ele expõe os dados por dois web services de leitura, os do
 * **Timestamp**: versão do registro no Microvix. Cada chamada pede só os registros com timestamp maior que o
   informado; a leitura incremental parte do maior timestamp gravado.
 
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
+flowchart LR
+    subgraph MICROVIX["🏬 Linx Microvix"]
+        direction TB
+        ERP["Web Service de Saída Padrão<br/>ERP · v274 · 191 métodos Linx*"]
+        B2C["WS B2C<br/>V64 · 69 métodos B2CConsulta*"]
+        INB["Escritas do B2C<br/>(projeto Inbound)"]
+    end
+    ERP -- "XML · chave erp" --> MOD["📦 LinxMicrovix Outbound"]
+    B2C -- "XML · chave b2c" --> MOD
+    INB -. "fora deste módulo" .-> X["LinxMicrovix Inbound<br/>(vazio)"]
+    MOD --> DB[("linxmicrovix.*")]
+
+    classDef accent fill:#7c5cff,stroke:#7c5cff,color:#ffffff
+    classDef warm fill:#f5a524,stroke:#f5a524,color:#1e1b2e
+    class MOD accent
+    class DB warm
+```
+
 ---
 
-## Sobre o pacote
+## 📦 Sobre o pacote
 
 Módulo do sistema de integrações (ETL) responsável por **ler** os dados dos dois web services do Microvix e gravá-los
 no banco SQL Server:
 
-* de forma **recorrente**, pelos jobs do Hangfire, com leitura incremental pelo timestamp. A primeira execução de cada
+* de forma **recorrente**, pelos jobs do agendador (Hangfire, WebJob ou Worker: uma execução por **job e empresa**),
+  com leitura incremental pelo timestamp. A primeira execução de cada
   método (`timestamp = 0`) traz o histórico inteiro;
 * **sob demanda**, a partir de um sistema externo, buscando um registro por chave e registrando quem pediu cada
   chamada.
@@ -38,14 +94,39 @@ O módulo **não escreve** no Microvix.
 | API consumida | `POST https://webapi.microvix.com.br/1.0/api/integracao/<Comando>`, corpo XML (`application/xml`, UTF-8) com usuário, senha, comando e parâmetros |
 | Documentação da API | Web Service de Saída Padrão v274 e WS B2C V64 (PDFs da Linx); o método `LinxMetodos` devolve o catálogo de comandos e parâmetros aceitos hoje |
 | Banco de dados | SQL Server (schemas `untreated`, `linxmicrovix` e `auditing`; o `Script001` cria `linxmicrovix` quando não existe) |
-| Multiempresa | Sim: cada CNPJ de `linxmicrovix.LinxMicrovixParameters` tem as chaves e credenciais de cada API. O CNPJ (`doc_company`) é a primeira coluna da chave de todas as tabelas |
+| Multiempresa | Sim: cada CNPJ de `linxmicrovix.LinxMicrovixParameters` tem as chaves e credenciais de cada API. O CNPJ (`doc_company`) é a primeira coluna da chave de todas as tabelas. Cada execução é de **uma empresa do painel** (holding, `ICompanyContext`) e lê só os CNPJs ligados a ela em `monitor.HoldingCompanies` |
 | Host | `src/Backend/Hosts/WebApi` (controller `LinxMicrovixController`, `partial` por service) |
+
+### 🏢 Empresa da execução
+
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
+flowchart LR
+    AG["⏱️ Agendador<br/>job + empresa"] --> CTX["ICompanyContext<br/>holding da execução"]
+    ROTA["🌐 Rota<br/>X-Company ou docCompany"] --> CTX
+    CTX --> HC[("monitor.HoldingCompanies<br/>holding → CNPJs")]
+    HC --> PAR[("LinxMicrovixParameters<br/>chaves erp_* e b2c_*")]
+    PAR --> LJ["🏪 lojas do cliente<br/>LinxGrupoLojas · B2CConsultaEmpresas"]
+    LJ --> API["Linx Microvix<br/>ERP e B2C"]
+
+    classDef accent fill:#7c5cff,stroke:#7c5cff,color:#ffffff
+    classDef warm fill:#f5a524,stroke:#f5a524,color:#1e1b2e
+    class CTX accent
+    class API warm
+```
+
+`CreateGetCompanysQuery(company)` lê os parâmetros pelo join com `monitor.HoldingCompanies`: os services continuam
+percorrendo `GetCompanys()`, agora só com os CNPJs da holding da execução
+([plano do cadastro](../../../../../docs/PLANO-TELA-CADASTRO-EMPRESA.md), 4.4).
 
 ### Comportamentos da API que a integração trata
 A documentação não descreve tudo; o que segue foi conferido com chamadas reais (detalhes em
-[`src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md`](src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md), §4.2 e §9):
+[`PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md`](docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md), §4.2 e §9):
 
-* **Os erros chegam com HTTP 200**, com `ResponseSuccess = False` e a mensagem em `<Message>`.
+> [!WARNING]
+> **Os erros chegam com HTTP 200**, com `ResponseSuccess = False` e a mensagem em `<Message>`: o status HTTP sozinho não
+> diz se a leitura deu certo.
+
 * **Erro de parâmetro também vem com `ResponseSuccess = True`**: `<C />` vazio e a mensagem numa linha (visto no
   `LinxFaturas`). Os métodos tratam isso como erro.
 * **A resposta vem com BOM** e em ordem crescente de timestamp. A próxima página começa no maior timestamp da página
@@ -63,12 +144,12 @@ A documentação não descreve tudo; o que segue foi conferido com chamadas reai
 * **Parte da chave vazia** vira o valor padrão (0, texto vazio ou 1900-01-01); só o registro sem nenhuma parte da
   chave é descartado.
 
-Os XMLs usados para conferir a modelagem estão na pasta [`Responsed XMLs`](#pasta-docsresponsed-xmls), com os dados reais
+Os XMLs usados para conferir a modelagem estão na pasta [`Responsed XMLs`](#-pasta-docsresponsed-xmls), com os dados reais
 trocados por dados fictícios.
 
 ---
 
-## Arquitetura
+## 🧩 Arquitetura
 
 ```
 LinxMicrovix - Outbound Web Service/
@@ -81,11 +162,26 @@ LinxMicrovix - Outbound Web Service/
 
 ### Referências entre projetos
 
-```
-Infrastructure.LinxMicrovix.Outbound ──► Application.LinxMicrovix.Outbound ──► Domain.LinxMicrovix.Outbound
-        │                                         │                                    │
-        ▼                                         ▼                                    ▼
-Infrastructure.Shared                     Application.Shared                     Domain.Shared
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
+flowchart LR
+    subgraph MV["🟣 LinxMicrovix Outbound"]
+        direction LR
+        INF["Infrastructure"] --> APP["Application"] --> DOM["Domain"]
+    end
+    subgraph SHARED["⚫ Shared"]
+        direction LR
+        INFS["Infrastructure.Shared"]
+        APPS["Application.Shared"]
+        DOMS["Domain.Shared"]
+    end
+    INF --> INFS
+    APP --> APPS
+    DOM --> DOMS
+
+    classDef accent fill:#7c5cff,stroke:#7c5cff,color:#ffffff
+    classDef warm fill:#f5a524,stroke:#f5a524,color:#1e1b2e
+    class INF,APP,DOM accent
 ```
 
 | Assembly | Pacotes NuGet | Referências |
@@ -101,7 +197,7 @@ Do projeto Shared o módulo usa:
 
 ---
 
-## Domain.LinxMicrovix.Outbound
+## 🧱 Domain.LinxMicrovix.Outbound
 
 ```
 Domain.LinxMicrovix.Outbound/
@@ -133,7 +229,7 @@ Domain.LinxMicrovix.Outbound/
 
 ---
 
-## Application.LinxMicrovix.Outbound
+## 🔄 Application.LinxMicrovix.Outbound
 
 ```
 Application.LinxMicrovix.Outbound/
@@ -161,11 +257,24 @@ validação e gravação), como no Totvs; não há classe base nem transporte ce
 
 ### Services e métodos (leituras recorrentes)
 
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'pie1':'#7c5cff','pie2':'#f5a524','pie3':'#a78bfa','pie4':'#fbbf24','pie5':'#c4b5fd','pie6':'#fde68a','pie7':'#6d28d9','pie8':'#d97706','pie9':'#ddd6fe','pie10':'#fef3c7','pie11':'#4c1d95','pie12':'#92400e','pieTitleTextSize':'18px','pieSectionTextColor':'#1e1b2e','pieStrokeColor':'#1e1b2e'}}}%%
+pie showData
+    title Rotas do módulo (284)
+    "ERP · recorrentes" : 191
+    "B2C · recorrentes" : 69
+    "ERP · sob demanda" : 19
+    "B2C · sob demanda" : 5
+```
+
 Escopo: **loja** = uma chamada por loja, com `cnpj_emp` na chave; **portal (1ª loja)** = dado do portal, lido pela
 primeira loja; **portal** = sem `cnpjEmp`. Parâmetros: além de `chave`, `cnpjEmp` e `timestamp`. Chave: PK da tabela,
 sem `doc_company`.
 
 #### `LinxMicrovixStoresService` (ERP, lojas, a cada 120 min)
+
+<details>
+<summary>🏬 <b>6 método(s)</b>: escopo, parâmetros, chave, job e procedure</summary>
 
 | Método | Escopo | Parâmetros | Chave | Job | Procedure |
 |---|---|---|---|---|---|
@@ -176,7 +285,12 @@ sem `doc_company`.
 | `LinxMetodos` | catálogo | — | `metodo` | 8004 | 8504 |
 | `LinxEntrantes` | portal | — | `portal`, `id_entrantes` | 8005 | 8505 |
 
+</details>
+
 #### `LinxMicrovixB2CStoresService` (B2C, empresas, vendedores, transportadores e planos do B2C, a cada 120 min)
+
+<details>
+<summary>🛒 <b>9 método(s)</b>: escopo, parâmetros, chave, job e procedure</summary>
 
 | Método | Escopo | Parâmetros | Chave | Job | Procedure |
 |---|---|---|---|---|---|
@@ -190,7 +304,12 @@ sem `doc_company`.
 | `B2CConsultaTiposCobrancaFrete` | portal (1ª loja) | — | `portal`, `codigo_tipo_cobranca_frete` | 8257 | 8698 |
 | `B2CConsultaTipoEncomenda` | portal (1ª loja) | — | `portal`, `id_tipo_encomenda` | 8258 | 8699 |
 
+</details>
+
 #### `LinxMicrovixProductAttributesService` (ERP, atributos de produto, a cada 1 dia)
+
+<details>
+<summary>🏬 <b>10 método(s)</b>: escopo, parâmetros, chave, job e procedure</summary>
 
 | Método | Escopo | Parâmetros | Chave | Job | Procedure |
 |---|---|---|---|---|---|
@@ -205,7 +324,12 @@ sem `doc_company`.
 | `LinxClassificacoes` | portal (1ª loja) | — | `portal`, `id_classificacao` | 8042 | 8542 |
 | `LinxSubClasses` | loja | — | `cnpj_emp`, `id_subclasses` | 8043 | 8543 |
 
+</details>
+
 #### `LinxMicrovixTaxesService` (ERP, tabelas fiscais, a cada 1 dia)
+
+<details>
+<summary>🏬 <b>16 método(s)</b>: escopo, parâmetros, chave, job e procedure</summary>
 
 | Método | Escopo | Parâmetros | Chave | Job | Procedure |
 |---|---|---|---|---|---|
@@ -226,7 +350,12 @@ sem `doc_company`.
 | `LinxRotinaOrigem` | portal (1ª loja) | — | `portal`, `codigo_rotina` | 8077 | 8577 |
 | `LinxNfeIbgeMunicipio` | portal (1ª loja) | — | `portal`, `id_nfe_ibge_municipio` | 8078 | 8578 |
 
+</details>
+
 #### `LinxMicrovixTaxSettingsService` (ERP, configurações tributárias, a cada 1 dia)
+
+<details>
+<summary>🏬 <b>4 método(s)</b>: escopo, parâmetros, chave, job e procedure</summary>
 
 | Método | Escopo | Parâmetros | Chave | Job | Procedure |
 |---|---|---|---|---|---|
@@ -235,7 +364,12 @@ sem `doc_company`.
 | `LinxConfiguracoesTributariasDetalhesSimplificado` | portal (1ª loja) | — | `portal`, `id_config_tributaria_detalhe` | 8081 | 8581 |
 | `LinxConfiguracoesTributariasEmpresas` | loja | — | `cnpj_emp`, `id_config_tributaria`, `empresa` | 8082 | 8582 |
 
+</details>
+
 #### `LinxMicrovixProductsService` (ERP, produtos, a cada 120 min)
+
+<details>
+<summary>🏬 <b>10 método(s)</b>: escopo, parâmetros, chave, job e procedure</summary>
 
 | Método | Escopo | Parâmetros | Chave | Job | Procedure |
 |---|---|---|---|---|---|
@@ -250,7 +384,12 @@ sem `doc_company`.
 | `LinxLotesProdutos` | loja | — | `cnpj_emp`, `id_lote` | 8032 | 8532 |
 | `LinxProdutosSerial` | loja | — | `cnpj_emp`, `codigoproduto`, `empresa`, `serial`, `id_deposito` | 8033 | 8533 |
 
+</details>
+
 #### `LinxMicrovixStocksService` (ERP, estoque e balanços, a cada 120 min)
+
+<details>
+<summary>🏬 <b>9 método(s)</b>: escopo, parâmetros, chave, job e procedure</summary>
 
 | Método | Escopo | Parâmetros | Chave | Job | Procedure |
 |---|---|---|---|---|---|
@@ -264,7 +403,12 @@ sem `doc_company`.
 | `LinxBalancosArquivos` | loja | — | `cnpj_emp`, `id_balancos_arquivos` | 8051 | 8551 |
 | `LinxBalancosSecoes` | portal (1ª loja) | — | `portal`, `id_balancos_secoes` | 8052 | 8552 |
 
+</details>
+
 #### `LinxMicrovixPricesService` (ERP, preços, promoções e cupons, a cada 120 min)
+
+<details>
+<summary>🏬 <b>10 método(s)</b>: escopo, parâmetros, chave, job e procedure</summary>
 
 | Método | Escopo | Parâmetros | Chave | Job | Procedure |
 |---|---|---|---|---|---|
@@ -279,7 +423,12 @@ sem `doc_company`.
 | `LinxCupomDescontoVendas` | loja | — | `cnpj_emp`, `identificador` | 8061 | 8561 |
 | `LinxMotivoDesconto` | portal (1ª loja) | — | `portal`, `id_motivo_desconto` | 8062 | 8562 |
 
+</details>
+
 #### `LinxMicrovixCustomersService` (ERP, clientes e fornecedores, a cada 120 min)
+
+<details>
+<summary>🏬 <b>10 método(s)</b>: escopo, parâmetros, chave, job e procedure</summary>
 
 | Método | Escopo | Parâmetros | Chave | Job | Procedure |
 |---|---|---|---|---|---|
@@ -294,7 +443,12 @@ sem `doc_company`.
 | `LinxClientesRede` | loja | — | `cnpj_emp`, `id_clientes_rede` | 8014 | 8514 |
 | `LinxRamosAtividade` | loja | — | `cnpj_emp`, `id_ramo_atividade` | 8015 | 8515 |
 
+</details>
+
 #### `LinxMicrovixSellersService` (ERP, vendedores e funcionários, a cada 120 min)
+
+<details>
+<summary>🏬 <b>8 método(s)</b>: escopo, parâmetros, chave, job e procedure</summary>
 
 | Método | Escopo | Parâmetros | Chave | Job | Procedure |
 |---|---|---|---|---|---|
@@ -307,7 +461,12 @@ sem `doc_company`.
 | `LinxFuncionariosFuncoes` | portal (1ª loja) | — | `portal`, `id_funcionarios_funcao` | 8022 | 8522 |
 | `LinxRegistroProfissional` | loja | — | `cnpj_emp`, `id_tipo_registro_profissional` | 8023 | 8523 |
 
+</details>
+
 #### `LinxMicrovixPaymentsService` (ERP, pagamentos e caixa, a cada 3 min)
+
+<details>
+<summary>🏬 <b>9 método(s)</b>: escopo, parâmetros, chave, job e procedure</summary>
 
 | Método | Escopo | Parâmetros | Chave | Job | Procedure |
 |---|---|---|---|---|---|
@@ -321,7 +480,12 @@ sem `doc_company`.
 | `LinxSangriaSuprimentos` | loja | `data_inicial` = 2000-01-01; `data_fim` = hoje; `filtra_somente_timestamp` = 1 | `cnpj_emp`, `id_sangria_suprimentos` | 8117 | 8617 |
 | `LinxFechamentoCaixa` | loja | — | `cnpj_emp`, `empresa`, `data`, `usuario` | 8118 | 8618 |
 
+</details>
+
 #### `LinxMicrovixLoyaltyService` (ERP, fidelidade, a cada 3 min)
+
+<details>
+<summary>🏬 <b>3 método(s)</b>: escopo, parâmetros, chave, job e procedure</summary>
 
 | Método | Escopo | Parâmetros | Chave | Job | Procedure |
 |---|---|---|---|---|---|
@@ -329,7 +493,12 @@ sem `doc_company`.
 | `LinxMovimentoReshop` | portal (1ª loja) | — | `portal`, `id_movimento_campanha_reshop` | 8120 | 8620 |
 | `LinxMovimentoReshopItens` | portal (1ª loja) | — | `portal`, `id_movimento_campanha_reshop_item` | 8121 | 8621 |
 
+</details>
+
 #### `LinxMicrovixMovementsService` (ERP, movimento, a cada 3 min)
+
+<details>
+<summary>🏬 <b>12 método(s)</b>: escopo, parâmetros, chave, job e procedure</summary>
 
 | Método | Escopo | Parâmetros | Chave | Job | Procedure |
 |---|---|---|---|---|---|
@@ -346,7 +515,12 @@ sem `doc_company`.
 | `LinxPerguntaVenda` | loja | — | `cnpj_emp`, `id_pergunta_venda` | 8105 | 8605 |
 | `LinxRespostaVenda` | loja | — | `cnpj_emp`, `id_resposta_venda` | 8106 | 8606 |
 
+</details>
+
 #### `LinxMicrovixPosSalesService` (ERP, vendas POS temporárias, a cada 3 min)
+
+<details>
+<summary>🏬 <b>3 método(s)</b>: escopo, parâmetros, chave, job e procedure</summary>
 
 | Método | Escopo | Parâmetros | Chave | Job | Procedure |
 |---|---|---|---|---|---|
@@ -354,7 +528,12 @@ sem `doc_company`.
 | `LinxVendasPosProdutosTmp` | loja | — | `cnpj_emp`, `id_vendas_pos_produtos` | 8108 | 8608 |
 | `LinxVendasPosAgrupamentoTmp` | portal (1ª loja) | — | `portal`, `id_vendas_pos_agrupamento_tmp` | 8109 | 8609 |
 
+</details>
+
 #### `LinxMicrovixReturnsService` (ERP, trocas e devoluções, a cada 3 min)
+
+<details>
+<summary>🏬 <b>13 método(s)</b>: escopo, parâmetros, chave, job e procedure</summary>
 
 | Método | Escopo | Parâmetros | Chave | Job | Procedure |
 |---|---|---|---|---|---|
@@ -372,7 +551,12 @@ sem `doc_company`.
 | `LinxDevolucaoRemanejoFabricaStatus` | portal (1ª loja) | — | `portal`, `id_devolucao_remanejo_fabrica_status` | 8133 | 8633 |
 | `LinxDevolucaoRemanejoFabricaTipo` | portal (1ª loja) | — | `portal`, `id_devolucao_remanejo_fabrica_tipo` | 8134 | 8634 |
 
+</details>
+
 #### `LinxMicrovixConsignmentsService` (ERP, remessas, a cada 3 min)
+
+<details>
+<summary>🏬 <b>7 método(s)</b>: escopo, parâmetros, chave, job e procedure</summary>
 
 | Método | Escopo | Parâmetros | Chave | Job | Procedure |
 |---|---|---|---|---|---|
@@ -384,7 +568,12 @@ sem `doc_company`.
 | `LinxRemessasOperacoes` | portal (1ª loja) | — | `portal`, `id_remessa_operacoes` | 8140 | 8640 |
 | `LinxRemessasRetornoTipos` | portal (1ª loja) | — | `portal`, `id_remessa_retorno_tipos` | 8141 | 8641 |
 
+</details>
+
 #### `LinxMicrovixOrdersService` (ERP, pedidos de venda, a cada 3 min)
+
+<details>
+<summary>🏬 <b>10 método(s)</b>: escopo, parâmetros, chave, job e procedure</summary>
 
 | Método | Escopo | Parâmetros | Chave | Job | Procedure |
 |---|---|---|---|---|---|
@@ -399,7 +588,12 @@ sem `doc_company`.
 | `LinxB2CPedidosStatus` | portal (1ª loja) | — | `portal`, `id` | 8150 | 8650 |
 | `LinxB2CStatus` | portal (1ª loja) | — | `portal`, `id_status` | 8151 | 8651 |
 
+</details>
+
 #### `LinxMicrovixPurchaseOrdersService` (ERP, pedidos de compra, a cada 3 min)
+
+<details>
+<summary>🏬 <b>3 método(s)</b>: escopo, parâmetros, chave, job e procedure</summary>
 
 | Método | Escopo | Parâmetros | Chave | Job | Procedure |
 |---|---|---|---|---|---|
@@ -407,7 +601,12 @@ sem `doc_company`.
 | `LinxPedidosCompraStatus` | portal (1ª loja) | — | `portal`, `id_compras_pedido_status` | 8153 | 8653 |
 | `LinxPedidosCompraNumeroFornecedor` | portal (1ª loja) | — | `portal`, `id_pedido_fornecedor` | 8154 | 8654 |
 
+</details>
+
 #### `LinxMicrovixFiscalDocumentsService` (ERP, documentos fiscais, a cada 3 min)
+
+<details>
+<summary>🏬 <b>12 método(s)</b>: escopo, parâmetros, chave, job e procedure</summary>
 
 | Método | Escopo | Parâmetros | Chave | Job | Procedure |
 |---|---|---|---|---|---|
@@ -424,7 +623,12 @@ sem `doc_company`.
 | `LinxNfceEstacao` | loja | — | `cnpj_emp`, `id_nfce_estacao` | 8093 | 8593 |
 | `LinxSeries` | loja | — | `cnpj_emp`, `serie`, `id_modelo_nf` | 8094 | 8594 |
 
+</details>
+
 #### `LinxMicrovixFinancialService` (ERP, financeiro, a cada 120 min)
+
+<details>
+<summary>🏬 <b>15 método(s)</b>: escopo, parâmetros, chave, job e procedure</summary>
 
 | Método | Escopo | Parâmetros | Chave | Job | Procedure |
 |---|---|---|---|---|---|
@@ -444,7 +648,12 @@ sem `doc_company`.
 | `LinxExtratoBancarioLancamentos` | portal (1ª loja) | — | `portal`, `id_extrato_bancario_lancamentos` | 8189 | 8689 |
 | `LinxExtratoBancarioConciliacoes` | portal (1ª loja) | — | `portal`, `id_extrato_bancario_conciliacoes` | 8190 | 8690 |
 
+</details>
+
 #### `LinxMicrovixServiceOrdersService` (ERP, ordens de serviço, a cada 3 min)
+
+<details>
+<summary>🏬 <b>11 método(s)</b>: escopo, parâmetros, chave, job e procedure</summary>
 
 | Método | Escopo | Parâmetros | Chave | Job | Procedure |
 |---|---|---|---|---|---|
@@ -460,7 +669,12 @@ sem `doc_company`.
 | `LinxValeOrdemServicoExterna` | loja | — | `cnpj_emp`, `id_vale_ordem_servico_externa` | 8164 | 8664 |
 | `LinxPagamentoParcialDav` | portal (1ª loja) | — | `portal`, `id_pagamento_parcial_tmp` | 8165 | 8665 |
 
+</details>
+
 #### `LinxMicrovixOpticsService` (ERP, ótica, a cada 120 min)
+
+<details>
+<summary>🏬 <b>10 método(s)</b>: escopo, parâmetros, chave, job e procedure</summary>
 
 | Método | Escopo | Parâmetros | Chave | Job | Procedure |
 |---|---|---|---|---|---|
@@ -475,7 +689,12 @@ sem `doc_company`.
 | `LinxOrcamentoComponenteFormula` | loja | — | `cnpj_emp`, `id_orcamento_componente_formula` | 8174 | 8674 |
 | `LinxComponenteFormulaDav` | loja | — | `cnpj_emp`, `id_componente_formula_dav` | 8175 | 8675 |
 
+</details>
+
 #### `LinxMicrovixB2CCustomersService` (B2C, clientes do B2C, a cada 120 min)
+
+<details>
+<summary>🛒 <b>7 método(s)</b>: escopo, parâmetros, chave, job e procedure</summary>
 
 | Método | Escopo | Parâmetros | Chave | Job | Procedure |
 |---|---|---|---|---|---|
@@ -487,7 +706,12 @@ sem `doc_company`.
 | `B2CConsultaClientesSaldo` | loja | — | `cnpj_emp`, `cod_cliente_erp`, `empresa` | 8264 | 8705 |
 | `B2CConsultaClientesSaldoLinx` | loja | — | `cnpj_emp`, `cod_cliente_erp`, `empresa` | 8265 | 8706 |
 
+</details>
+
 #### `LinxMicrovixB2CProductAttributesService` (B2C, atributos de produto do B2C, a cada 1 dia)
+
+<details>
+<summary>🛒 <b>14 método(s)</b>: escopo, parâmetros, chave, job e procedure</summary>
 
 | Método | Escopo | Parâmetros | Chave | Job | Procedure |
 |---|---|---|---|---|---|
@@ -506,7 +730,12 @@ sem `doc_company`.
 | `B2CConsultaPalavrasChavePesquisa` | loja | — | `cnpj_emp`, `id_b2c_palavras_chave_pesquisa` | 8300 | 8741 |
 | `B2CConsultaLegendasCadastrosAuxiliares` | loja | — | `cnpj_emp`, `empresa` | 8301 | 8742 |
 
+</details>
+
 #### `LinxMicrovixB2CProductsService` (B2C, produtos do B2C, a cada 120 min)
+
+<details>
+<summary>🛒 <b>10 método(s)</b>: escopo, parâmetros, chave, job e procedure</summary>
 
 | Método | Escopo | Parâmetros | Chave | Job | Procedure |
 |---|---|---|---|---|---|
@@ -521,7 +750,12 @@ sem `doc_company`.
 | `B2CConsultaProdutosTags` | loja | — | `cnpj_emp`, `id_b2c_tags_produtos` | 8274 | 8715 |
 | `B2CConsultaProdutosPalavrasChavePesquisa` | loja | — | `cnpj_emp`, `id_b2c_palavras_chave_pesquisa_produtos` | 8275 | 8716 |
 
+</details>
+
 #### `LinxMicrovixB2CProductImagesService` (B2C, imagens de produto do B2C, a cada 120 min)
+
+<details>
+<summary>🛒 <b>4 método(s)</b>: escopo, parâmetros, chave, job e procedure</summary>
 
 | Método | Escopo | Parâmetros | Chave | Job | Procedure |
 |---|---|---|---|---|---|
@@ -530,7 +764,12 @@ sem `doc_company`.
 | `B2CConsultaImagens` | loja | — | `cnpj_emp`, `id_imagem` | 8278 | 8719 |
 | `B2CConsultaImagensHD` | loja | `codigoproduto` de `B2CConsultaProdutos` (só os novos) | `cnpj_emp`, `codigoproduto`, `identificador_imagem` | 8279 | 8720 |
 
+</details>
+
 #### `LinxMicrovixB2CProductFieldsService` (B2C, campos adicionais de produto do B2C, a cada 120 min)
+
+<details>
+<summary>🛒 <b>8 método(s)</b>: escopo, parâmetros, chave, job e procedure</summary>
 
 | Método | Escopo | Parâmetros | Chave | Job | Procedure |
 |---|---|---|---|---|---|
@@ -543,7 +782,12 @@ sem `doc_company`.
 | `B2CConsultaB2CProdutosCamposAdicionaisMediaDados` | loja | — | `cnpj_emp`, `id_b2c_produtos_campos_adicionais_media_dados` | 8286 | 8727 |
 | `B2CConsultaB2CProdutosCamposAdicionaisOpcoes` | loja | — | `cnpj_emp`, `id_b2c_produtos_campos_adicionais_opcoes` | 8287 | 8728 |
 
+</details>
+
 #### `LinxMicrovixB2CStocksAndPricesService` (B2C, estoque, custos e preços do B2C, a cada 120 min)
+
+<details>
+<summary>🛒 <b>7 método(s)</b>: escopo, parâmetros, chave, job e procedure</summary>
 
 | Método | Escopo | Parâmetros | Chave | Job | Procedure |
 |---|---|---|---|---|---|
@@ -555,7 +799,12 @@ sem `doc_company`.
 | `B2CConsultaProdutosTabelas` | portal (1ª loja) | — | `portal`, `id_tabela` | 8307 | 8748 |
 | `B2CConsultaProdutosTabelasPrecos` | portal (1ª loja) | — | `portal`, `id_tabela`, `codigoproduto` | 8308 | 8749 |
 
+</details>
+
 #### `LinxMicrovixB2COrdersService` (B2C, pedidos e notas do B2C, a cada 3 min)
+
+<details>
+<summary>🛒 <b>10 método(s)</b>: escopo, parâmetros, chave, job e procedure</summary>
 
 | Método | Escopo | Parâmetros | Chave | Job | Procedure |
 |---|---|---|---|---|---|
@@ -569,6 +818,8 @@ sem `doc_company`.
 | `B2CConsultaCodigoRastreio` | portal (1ª loja) | — | `portal`, `id_pedido`, `codigo_rastreio` | 8316 | 8757 |
 | `B2CConsultaNFe` | loja | `data_inicial` = 2000-01-01; `data_fim` = hoje | `cnpj_emp`, `id_nfe` | 8317 | 8758 |
 | `B2CConsultaNFeSituacao` | portal (1ª loja) | — | `portal`, `id_nfe_situacao` | 8318 | 8759 |
+
+</details>
 
 ### Ordem de dependência
 
@@ -584,11 +835,28 @@ sem `doc_company`.
   * `LinxPlanosPedidoVenda` ← `cod_pedido` de `LinxPedidosVenda` (incremental: só os valores gravados depois da última leitura; na primeira execução, uma chamada por valor)
   * `B2CConsultaImagensHD` ← `codigoproduto` de `B2CConsultaProdutos` (incremental: só os valores gravados depois da última leitura; na primeira execução, uma chamada por valor)
 
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
+flowchart LR
+    GL["LinxGrupoLojas<br/>8000"] --> ERPL["métodos de loja<br/>do ERP"]
+    BE["B2CConsultaEmpresas<br/>8250"] --> B2CL["métodos de loja<br/>do B2C"]
+    CT["LinxConfiguracoesTributarias"] -- "id_config_tributaria" --> CTD["LinxConfiguracoesTributariasDetalhes"]
+    PD["LinxProdutosDepositos"] -- "cod_deposito" --> PDD["LinxProdutosDetalhesDepositos"]
+    PT["LinxProdutosTabelas"] -- "id_tabela" --> PTP["LinxProdutosTabelasPrecos"]
+    MR["LinxMovimentoRemessas"] -- "identificador_remessa" --> RI["LinxRemessasIdentificadores"]
+    PV["LinxPedidosVenda"] -- "cod_pedido" --> PPV["LinxPlanosPedidoVenda"]
+    BP["B2CConsultaProdutos"] -- "codigoproduto" --> BI["B2CConsultaImagensHD"]
+
+    classDef accent fill:#7c5cff,stroke:#7c5cff,color:#ffffff
+    classDef warm fill:#f5a524,stroke:#f5a524,color:#1e1b2e
+    class GL,BE accent
+```
+
 ### Fluxo das leituras recorrentes
 
 1. abre um log em `auditing.Logs` com o job do método;
-2. para cada cliente de `LinxMicrovixParameters` com a chave daquela API, e para cada loja (métodos de loja), lê o
-   maior timestamp gravado;
+2. para cada CNPJ da holding da execução (`LinxMicrovixParameters` com o join em `monitor.HoldingCompanies`) que tem a
+   chave daquela API, e para cada loja (métodos de loja), lê o maior timestamp gravado;
 3. monta o envelope XML (`Authentication`, `ResponseFormat`, `Command` com os parâmetros) e chama a API. Um
    502/503/504 espera 10 s e tenta de novo uma vez;
 4. trata as respostas de erro (`ResponseSuccess = False`, `<C />` vazio com mensagem) como falha da leitura daquela
@@ -601,9 +869,44 @@ sem `doc_company`.
    procedure `linxmicrovix.sp_<Método>_Sync`;
 8. grava cada registro integrado (com o XML da linha) em `auditing.Records` e fecha o log num `finally`.
 
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','actorBkg':'#7c5cff','actorTextColor':'#ffffff','actorBorder':'#7c5cff','signalColor':'#f5a524','signalTextColor':'#7c5cff','noteBkgColor':'#fff4dd','noteTextColor':'#1e1b2e','noteBorderColor':'#f5a524','activationBkgColor':'#ede9fe','activationBorderColor':'#7c5cff','labelBoxBkgColor':'#7c5cff','labelBoxBorderColor':'#7c5cff','labelTextColor':'#ffffff','loopTextColor':'#1e1b2e'}}}%%
+sequenceDiagram
+    autonumber
+    participant J as Job (empresa X)
+    participant S as Service Microvix
+    participant M as Linx Microvix (XML)
+    participant B as SQL Server
+
+    J->>S: Linx* ou B2CConsulta* (holding no ICompanyContext)
+    S->>B: auditing.sp_Log_Start (job, empresa)
+    S->>B: CNPJs da holding com a chave da API
+    loop cada cliente e cada loja
+        S->>B: MAX(timestamp) gravado
+        loop até a resposta vir vazia
+            S->>M: POST Comando (Authentication, chave, cnpjEmp, timestamp)
+            alt 502/503/504
+                Note over S,M: espera 10 s e tenta uma vez
+            end
+            M-->>S: C (colunas) e R (linhas), HTTP 200
+            alt ResponseSuccess = False ou C vazio com mensagem
+                Note over S,B: leitura incompleta não é gravada
+            end
+            Note over S: próxima página = maior timestamp da página
+        end
+        Note over S: valida · fica a linha de maior timestamp por chave
+        S->>B: bulk insert em untreated + linxmicrovix.sp_Metodo_Sync
+        S->>B: auditing.Records (XML da linha) e auditing.Messages
+    end
+    S->>B: auditing.sp_Log_End
+```
+
 ### Leituras sob demanda (um registro por chave)
 
 Ficam no service do método recorrente, com o nome `<Método>By<Parâmetro>`.
+
+<details>
+<summary>🎯 <b>24 leituras sob demanda</b> (método, rota, parâmetro e job)</summary>
 
 | Método | Rota (`GET LinxMicrovixJobs/LinxMicrovix/...`) | Parâmetro enviado à API | Job |
 |---|---|---|---|
@@ -632,6 +935,8 @@ Ficam no service do método recorrente, com o nome `<Método>By<Parâmetro>`.
 | `B2CConsultaPedidosItensByIdPedido` | `B2CConsultaPedidosItens/{docCompany}/{idPedido}` | `id_pedido` | 8322 |
 | `B2CConsultaPedidosStatusByIdPedido` | `B2CConsultaPedidosStatus/{docCompany}/{idPedido}` | `id_pedido` | 8323 |
 
+</details>
+
 Fluxo:
 
 1. abre um log em `auditing.Logs` com o job do método;
@@ -647,16 +952,18 @@ Fluxo:
 
 ---
 
-## Infrastructure.LinxMicrovix.Outbound
+## 💾 Infrastructure.LinxMicrovix.Outbound
 
 ```
 Infrastructure.LinxMicrovix.Outbound/
 ├── DependencyInjection.cs      (AddScopedLinxMicrovixServices)
 ├── Repositorys/                (LinxMicrovixRepository e um por service)
-└── Scripts/
-    ├── SQLServer/              (migrator.csx, Parameters/ com os scripts gerais e uma pasta por service em Erp/ e B2C/)
-    ├── MySQL/                  (migrator.csx)
-    └── PostgreSQL/             (migrator.csx)
+├── Scripts/
+│   ├── SQLServer/              (migrator.csx, Parameters/ com os scripts gerais e uma pasta por service em Erp/ e B2C/)
+│   ├── MySQL/                  (migrator.csx)
+│   └── PostgreSQL/             (migrator.csx)
+└── Seeds/
+    └── SQLServer/              (Script003: parâmetros de um cliente, fora do git; o .example vai no git. Fora do DbUp)
 ```
 
 ### Injeção de dependência
@@ -671,16 +978,23 @@ O host chama o método em `Hosts/WebApi/Extensions/ServicesExtensions.cs`.
 
 ### Scripts de banco (SQL Server)
 
-O DbUp executa cada script uma única vez. Alterar um script que já rodou não muda um banco existente: para isso é
-preciso um script novo. Os scripts gerais do módulo ficam em `Parameters/` e cada service tem a sua pasta (`Erp/<Service>` ou `B2C/<Service>`) com um trio de scripts:
+> [!NOTE]
+> Desde o cadastro de empresas, o DbUp cria só **estrutura e catálogo do produto**. Os scripts de jobs inserem em
+> **`auditing.JobCatalog`** (sem empresa); os jobs de uma empresa nascem em `auditing.Jobs`, inativos, quando ela contrata o
+> módulo (`auditing.sp_Add_Company_App`). Os **parâmetros** (chaves) saíram do DbUp para `Seeds/SQLServer`.
+
+O DbUp executa cada script uma única vez. Os scripts gerais do módulo ficam em `Parameters/` e cada service tem a sua pasta (`Erp/<Service>` ou `B2C/<Service>`) com um trio de scripts:
 tabelas, procedures e jobs (os recorrentes e os sob demanda do service). O `migrator.csx` lê as subpastas e executa
 na ordem do número do arquivo, não na da pasta.
+
+<details>
+<summary>📜 <b>Scripts por pasta</b> (Parameters, 21 services do ERP e 8 do B2C)</summary>
 
 | Pasta | Script | Conteúdo |
 |---|---|---|
 | `Parameters/` | `Script001` | Schema `linxmicrovix` e `linxmicrovix.LinxMicrovixParameters` |
 | `Parameters/` | `Script002` | App `80 - LinxMicrovix` em `auditing.Apps` (um app para o ERP e o B2C) |
-| `Parameters/` | `Script003` | Os clientes em `LinxMicrovixParameters`, com as chaves. **Fica fora do git** (`.gitignore`); o modelo é o `Script003_...sql.example` |
+| `../../Seeds/SQLServer/` | `Script003` | **Fora do DbUp e fora do git** (`.gitignore`). Os clientes em `LinxMicrovixParameters`, com as chaves; o modelo é o `Script003_...sql.example`, na mesma pasta. Num banco de teste, quem roda é o `tools/seeds/Import-TestSeeds.ps1` |
 | `Parameters/` | `Script004` | `linxmicrovix.LinxMicrovixRequests` (log das chamadas sob demanda) |
 | `Erp/Stores/` | `Script005`–`007` | Stores |
 | `Erp/ProductAttributes/` | `Script008`–`010` | Product Attributes |
@@ -712,6 +1026,12 @@ na ordem do número do arquivo, não na da pasta.
 | `B2C/StocksAndPrices/` | `Script086`–`088` | B2C Stocks And Prices |
 | `B2C/Orders/` | `Script089`–`091` | B2C Orders |
 
+</details>
+
+> [!WARNING]
+> Uma cópia local antiga em `Scripts/SQLServer/Parameters/Script003_...sql` continua **ignorada pelo git, mas o DbUp ainda
+> a executa**. Quem tem essa cópia precisa movê-la para `Seeds/SQLServer`.
+
 **Regras gerais das tabelas e dos merges:**
 * Toda tabela de dados existe em dois schemas: `untreated` (recebe o bulk insert, sem chave) e `linxmicrovix` (tabela
   final, com PK). A exceção é `linxmicrovix.LinxMicrovixRequests`, que só recebe inserts.
@@ -720,17 +1040,38 @@ na ordem do número do arquivo, não na da pasta.
 * As respostas são planas, sem filhas: os merges **não têm condição de exclusão** e nada é apagado do banco. Nos
   métodos que trazem uma coluna de exclusão (como `excluido`), ela é gravada como os outros campos.
 
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
+flowchart LR
+    XML["resposta XML<br/>C + R"] --> DTO["DTO validado"] --> TOP["fica a linha de<br/>maior timestamp por chave"]
+    TOP --> ENT["Entidade<br/>horário de lote"]
+    ENT --> UNT[("untreated.Metodo<br/>bulk insert")]
+    UNT -- "linxmicrovix.sp_Metodo_Sync" --> FIN[("linxmicrovix.Metodo<br/>com PK")]
+    FIN -. "timestamp recebido ≥ gravado" .-> FIN
+    ENT -. "XML da linha" .-> REC[("auditing.Records")]
+
+    classDef accent fill:#7c5cff,stroke:#7c5cff,color:#ffffff
+    classDef warm fill:#f5a524,stroke:#f5a524,color:#1e1b2e
+    class FIN accent
+    class UNT warm
+```
+
 ---
 
-## Endpoints expostos (`LinxMicrovixController`)
+## 🌐 Endpoints expostos (`LinxMicrovixController`)
 
 Rota base: `LinxMicrovixJobs/LinxMicrovix`. A classe é `partial`: um arquivo por service
 (`LinxMicrovixController.<Service>.cs`), cada um injetando só o seu service na ação (`[FromServices]`).
 
-### Leituras recorrentes (disparam a integração de todos os clientes)
+### Leituras recorrentes (disparam a integração dos CNPJs da holding)
 
 `POST <Método>` para cada um dos 260 métodos (ex.: `POST LinxMicrovixJobs/LinxMicrovix/LinxProdutos`), agrupados no
 Swagger pela tag do service.
+
+<p align="center">
+  <img src="../../../../../docs/images/swagger/linxmicrovix.png" alt="Rotas do Linx Microvix no Swagger do WebApi" width="100%">
+  <br><sub><b>Swagger do WebApi</b> — as rotas do Microvix agrupadas pela tag de cada service (<code>http://localhost:5252/swagger</code>)</sub>
+</p>
 
 ### Leituras sob demanda (chamadas por sistema externo)
 
@@ -739,20 +1080,27 @@ Todas exigem:
 * o CNPJ do cliente na rota (`{docCompany}`, 14 dígitos) e, nos métodos de loja, o da loja (`{cnpjEmp}`);
 * o valor da busca (até 100 caracteres). As rotas estão na tabela das leituras sob demanda.
 
+A empresa da execução vem do cabeçalho opcional **`X-Company`** (CNPJ da holding) ou, sem ele, da holding do
+`{docCompany}` em `monitor.HoldingCompanies` (`CompanyContextFilter` do WebApi). CNPJ sem holding, `X-Company` que não é a
+holding do `{docCompany}` ou com algo além de dígitos dão **400**.
+
 | Código | Quando |
 |---|---|
 | **200** | Registro gravado |
 | **404** | A API respondeu sem linhas para a chave |
 | **422** | Cliente não cadastrado ou sem a chave da API, loja de outro cliente ou resposta de erro da API (detalhes no log da execução) |
 
+> [!CAUTION]
 > O `[Authorize]` do controller está comentado, como no Movidesk, no AfterSale e no Totvs, porque o host ainda não tem
 > um esquema de autenticação configurado.
 
 ---
 
-## Auditoria (jobs)
+## 📝 Auditoria (jobs)
 
-Os jobs ficam em `auditing.Jobs`, com os mesmos ids em `EnumJob`. Os ids de cada método estão nas tabelas dos services.
+Os jobs ficam no catálogo **`auditing.JobCatalog`** (scripts `..._Jobs_Into_Jobs_Table.sql`, no DbUp), com os mesmos ids
+em `EnumJob`; cada empresa que contrata o módulo recebe a sua cópia em **`auditing.Jobs`** (`Company` na chave), inativa
+até alguém ligar. Os ids de cada método estão nas tabelas dos services.
 
 | Faixa | Tipo (`IdType`) | Conteúdo |
 |---|---|---|
@@ -767,16 +1115,24 @@ Os jobs ficam em `auditing.Jobs`, com os mesmos ids em `EnumJob`. Os ids de cada
 | 1 dia | `ProductAttributes`, `Taxes`, `TaxSettings`, `B2CProductAttributes` |
 | sob demanda (0) | as 24 leituras por chave |
 
-Os intervalos são ajustáveis por um `update` em `auditing.Jobs`, sem mudar o código. A especificação avisa que o
-consumo excessivo leva à desativação da chave; por isso o intervalo segue o quanto o dado muda.
+Os intervalos são ajustáveis por um `update` em `auditing.Jobs`, sem mudar o código.
+
+> [!WARNING]
+> A especificação avisa que o **consumo excessivo leva à desativação da chave**; por isso o intervalo segue o quanto o
+> dado muda.
 
 Toda execução grava `auditing.Logs` e, conforme o caso:
 * `auditing.Messages`, com mensagens e erros de validação;
 * `auditing.Records`, com os registros integrados e o XML da linha recebida.
 
+<p align="center">
+  <img src="../../../../../docs/images/webapp/logs-de-erros.png" alt="Tela Logs de Erros do Monitor" width="100%">
+  <br><sub><b>Onde ver no painel</b> — os erros de cada execução, por aplicação e integração, na tela Logs de Erros do Monitor (dados mockados)</sub>
+</p>
+
 ---
 
-## Configuração
+## 🔧 Configuração
 
 | Onde | Chave | Uso |
 |---|---|---|
@@ -784,12 +1140,18 @@ Toda execução grava `auditing.Logs` e, conforme o caso:
 | `appsettings.json` do host | `ConnectionStrings` | Conexão com o SQL Server (dados e auditoria) |
 | Banco | `linxmicrovix.LinxMicrovixParameters` | Por cliente: CNPJ (`doc_company`), `grupo` (opcional, filtro do `LinxGrupoLojas`) e, para cada API (`erp_*`, `b2c_*`), chave, usuário e senha. Um cliente só com uma das APIs deixa as colunas da outra nulas |
 
-As chaves ficam só no banco (via `Script003`, fora do git) e nunca são gravadas em logs: o corpo das chamadas sob
-demanda é registrado com a chave trocada por `(oculta)`.
+| Banco | `monitor.HoldingCompanies` | De/para holding → CNPJ: quais clientes de `LinxMicrovixParameters` cada empresa do painel lê |
+
+As chaves ficam só no banco: pela tela de cadastro do WebApp (em construção) ou, num banco de teste, pelo
+`Seeds/SQLServer/Script003` (fora do git) via `tools/seeds/Import-TestSeeds.ps1`.
+
+> [!CAUTION]
+> A **chave** de cada web service vale como senha e nunca é gravada em logs: o corpo das chamadas sob demanda é
+> registrado com a chave trocada por `(oculta)`.
 
 ---
 
-## Pasta `docs/Responsed XMLs`
+## 📁 Pasta `docs/Responsed XMLs`
 
 A primeira página real de cada método (`docs/Responsed XMLs/<Service>/<Método>/xml-returned-by-api-end-point.xml`), com
 os dados trocados por **dados fictícios** para não expor informações no histórico do git:
@@ -821,7 +1183,7 @@ As leituras sob demanda usam os mesmos comandos, com o parâmetro da busca; a re
 
 ---
 
-## Pendências
+## 🚧 Pendências
 
 * **Execução em banco:** os scripts, os merges e as rotas ainda não rodaram pelo host; a modelagem foi conferida com
   chamadas reais à API, sem banco.
@@ -834,12 +1196,18 @@ As leituras sob demanda usam os mesmos comandos, com o parâmetro da busca; a re
 
 ---
 
-## Documentação complementar
-
-Na pasta `docs/` da raiz do repositório:
+## 📚 Documentação complementar
 
 | Documento | Assunto |
 |---|---|
-| `PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md` | Proposta, decisões e plano em fases da padronização do módulo, com o que foi conferido na API |
-| `PADRAO-CACHE-INTEGRACOES.md` | Padrão de cache das leituras |
-| `ALTERACOES-MERGE-PROCEDURE-AUDITORIA.md` | Procedure de merge e auditoria |
+| 🟣 [PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md](docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md) | Proposta, decisões e plano em fases da padronização do módulo, com o que foi conferido na API |
+| 🏢 [PLANO-TELA-CADASTRO-EMPRESA.md](../../../../../docs/PLANO-TELA-CADASTRO-EMPRESA.md) | Cadastro de empresas: parâmetros fora do DbUp, `monitor.HoldingCompanies` e execução por empresa |
+| ⚡ [PADRAO-CACHE-INTEGRACOES.md](../../../../../docs/PADRAO-CACHE-INTEGRACOES.md) | Padrão de cache das leituras |
+| 🔁 [ALTERACOES-MERGE-PROCEDURE-AUDITORIA.md](../../../../../src/Backend/Shared/docs/ALTERACOES-MERGE-PROCEDURE-AUDITORIA.md) | Procedure de merge e auditoria |
+
+---
+
+<p align="center">
+  <img src="../../../../../docs/newbloomers.png" alt="NEWBLOOMERS" width="180"><br>
+  <sub>Módulo Linx Microvix · sistema de integrações · .NET 10</sub>
+</p>

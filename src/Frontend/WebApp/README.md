@@ -1,117 +1,340 @@
-# WebApp (Monitor de Integrações)
+<p align="center">
+  <img src="../../../docs/images/banner.png" alt="NEWBLOOMERS · Sistema de Integrações · ETL" width="100%">
+</p>
 
-Painel "Monitor de Integrações (ETL)": mostra as aplicações, os jobs, as execuções, as mensagens e os registros que o
-sistema de integrações grava nas tabelas `auditing.*`, e tem uma tela de consultas SQL de uso restrito. As decisões e o
-histórico de cada fase estão em [docs/PLANO-WEBAPP.md](docs/PLANO-WEBAPP.md).
+# 🖥️ WebApp · Monitor de Integrações
 
-| Item | Valor |
-|---|---|
-| Plataforma | .NET 10 (`net10.0`), Blazor Web App com renderização interativa no servidor |
-| Componentes | MudBlazor 9 |
-| Endereço local | `http://localhost:5067` (perfil `http`) e `https://localhost:7236` (perfil `https`) |
-| Dados | **mockados** (`MockMonitorRepository` e `MockQueryRunner`): nada é lido nem gravado em banco até a fase 5 do plano |
-| Autenticação | nenhuma até a fase 6: o botão "Entrar" só leva para `/home` |
+<p align="center">
+  <img alt=".NET 10" src="https://img.shields.io/badge/.NET-10-7c5cff?style=for-the-badge&logo=dotnet&logoColor=white">
+  <img alt="Blazor" src="https://img.shields.io/badge/Blazor-Server_interativo-7c5cff?style=for-the-badge&logo=blazor&logoColor=white">
+  <img alt="MudBlazor 9" src="https://img.shields.io/badge/MudBlazor-9-f5a524?style=for-the-badge">
+  <br>
+  <img alt="Dados mockados" src="https://img.shields.io/badge/dados-mockados-1e1b2e?style=flat-square">
+  <img alt="Assistente Claude" src="https://img.shields.io/badge/assistente-Claude-f5a524?style=flat-square&logo=anthropic&logoColor=white">
+  <img alt="Porta 5067" src="https://img.shields.io/badge/porta-5067-1e1b2e?style=flat-square">
+</p>
+
+<p align="center">
+  <b>O painel que mostra as aplicações, os jobs, as execuções, as mensagens e os registros gravados em <code>auditing.*</code>.</b>
+</p>
+
+<p align="center">
+  <a href="#️-como-rodar">Como rodar</a> ·
+  <a href="#-telas">Telas</a> ·
+  <a href="#-de-onde-vem-cada-número">Números</a> ·
+  <a href="#-dados-mockados">Mock</a> ·
+  <a href="#-cadastro-de-empresas-repositórios">Cadastro</a> ·
+  <a href="#-assistente-de-ia">Assistente</a> ·
+  <a href="#️-estrutura">Estrutura</a>
+</p>
 
 ---
 
-## Como rodar
+## 🧭 Visão geral
+
+Painel **"Monitor de Integrações (ETL)"**: mostra as aplicações, os jobs, as execuções, as mensagens e os registros que o
+sistema de integrações grava nas tabelas `auditing.*`, e tem uma tela de consultas SQL de uso restrito. As decisões e o
+histórico de cada fase estão em [docs/PLANO-WEBAPP.md](docs/PLANO-WEBAPP.md).
+
+| | Item | Valor |
+|:---:|---|---|
+| 💻 | **Plataforma** | .NET 10 (`net10.0`), Blazor Web App com renderização interativa no servidor |
+| 🧱 | **Componentes** | MudBlazor 9 |
+| 🌐 | **Endereço local** | `http://localhost:5067` (perfil `http`) e `https://localhost:7236` (perfil `https`) |
+| 🧪 | **Dados** | **mockados** (`MockMonitorRepository` e `MockQueryRunner`): nada é lido nem gravado em banco até a fase 5 do plano |
+| 🏢 | **Cadastro de empresas** | repositórios prontos (mock por padrão; Dapper com `Cadastro:UseDatabase`), sem tela ainda |
+| 🔐 | **Autenticação** | nenhuma até a fase 6: o botão "Entrar" só leva para `/home` |
+
+> [!NOTE]
+> Os dados do painel são **mockados**: tudo o que você ativa, desativa, reconhece ou agenda some ao reiniciar o app.
+
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
+flowchart LR
+    subgraph UI["🖥️ Blazor Server (WebApp)"]
+        direction TB
+        PAGES["Páginas e componentes<br/>MudBlazor"]
+        ASSIST["Assistente de IA<br/>ferramentas só leitura"]
+    end
+
+    subgraph DATA["📂 Data"]
+        direction TB
+        MON["IMonitorRepository<br/>IQueryRunner · IOnDemandRunner"]
+        CAD["ICompanyRepository<br/>IModuleParametersRepository"]
+    end
+
+    MOCK["🧪 Mocks<br/>MockTimeline · MockCatalog"]
+    DAPPER["🗃️ Dapper<br/>Data/Sql"]
+    DB[("SQL Server<br/>auditing · monitor · *Parameters")]
+    CLAUDE["☁️ API da Anthropic"]
+
+    PAGES --> MON
+    PAGES --> CAD
+    ASSIST --> MON
+    ASSIST -. "perguntas e dados" .-> CLAUDE
+    MON -- "hoje" --> MOCK
+    MON -. "fase 5" .-> DB
+    CAD -- "padrão" --> MOCK
+    CAD -- "Cadastro:UseDatabase" --> DAPPER --> DB
+
+    classDef accent fill:#7c5cff,stroke:#7c5cff,color:#ffffff
+    classDef warm fill:#f5a524,stroke:#f5a524,color:#1e1b2e
+    class MOCK accent
+    class CLAUDE warm
+```
+
+<sub>Sem API do host e sem o `Shared`: o painel lê o banco direto (ou o mock).</sub>
+
+---
+
+## ▶️ Como rodar
 
 ```bash
 dotnet run --project src/Frontend/WebApp --launch-profile http
 ```
 
-Não precisa de banco, de API nem de configuração: o painel sobe com os dados do mock. Os perfis do `launchSettings.json`
-usam o ambiente `Development`.
+Não precisa de **banco**, de **API** nem de **configuração**: o painel sobe com os dados do mock. Os perfis do
+`launchSettings.json` usam o ambiente `Development`.
 
-## Telas
+---
 
-| Rota | Tela |
-|---|---|
-| `/` | login (sem autenticação por enquanto) |
-| `/home` | visão geral: cards das aplicações (os com problema primeiro), métricas com a taxa de sucesso por aplicação e o delta contra a janela anterior, "Falhas Ativas" com os jobs, registros por dia nos 7 últimos dias dentro do card de registros, painel de saúde com um grupo recolhível por aplicação (as com erro ou atraso primeiro e já abertas, até 10 integrações cada e o link para o resto em Integrações), atualizados a cada minuto |
-| `/applications` | cards das aplicações, com a imagem da empresa; o chip "Ativa" liga ou desliga o módulo (desligar pede confirmação) |
-| `/integrations` | Integrações (era Jobs e Integrações): todos os jobs, num grupo recolhível por aplicação, com o filtro **Situação** (Ativos, Inativos e Todos; abre em Ativos), o de tipo (Todos, Integrações e Procedures), o de saúde (os contadores do topo são botões de filtro, com mais de um ao mesmo tempo; `?health=error,late`) e a busca. Na ordem do `IdJob`, cada integração com as procedures que chama dentro dela, o chip que liga ou desliga cada job (com "Desfazer"), duração e registros da última execução, e os botões Execuções, Executar agora e Reconhecer; cada job abre as execuções, mensagens e registros. O botão **Agenda** de cada aplicação põe a tabela em modo de edição da agenda. Os grupos começam fechados e abrem com uma aplicação só (`?app=70`), com o link de um job (`?job=3001&type=2`, em qualquer situação), com busca ou com filtro de saúde. As rotas `/jobs`, `/applications/jobs` e `/applications/{IdApp}/jobs` caem aqui; as `/applications/...` abrem em Todos |
-| `/errors` | Logs de Erros: mensagens de erro (e, se marcado, de aviso) do período, por aplicação, integração, procedure e causa, com busca pelo job e pelo texto; `?app=30&job=3001` abre o grupo |
-| `/on-demand` | Sob Demanda: as integrações sem agenda, no estilo do Swagger (método, parâmetros, corpo JSON, Executar e resposta), com filtro por verbo nos contadores do topo, só com a chave `Admin:Enabled` (abaixo) |
-| `/queries` | Executar Querys, com favoritas e querys prontas na barra lateral; o chip do banco no topo é o próprio seletor. Só com a chave `Admin:Enabled` (abaixo) |
+## 🗺️ Telas
 
-O menu lateral tem Visão Geral, Aplicações, Integrações, Logs de Erros e, para quem tem acesso, Sob Demanda e Executar
-Querys. As integrações sob demanda (sem agenda) não aparecem em Integrações nem no painel de saúde:
-ficam na tela Sob Demanda.
+<p align="center">
+  <img src="../../../docs/images/webapp/visao-geral.png" alt="Visão geral do Monitor de Integrações" width="100%">
+  <br><sub><b>Visão Geral</b> — cards das aplicações com integrações, execuções, erros e avisos</sub>
+</p>
 
-As telas funcionam no celular e no tablet. Abaixo de 960px, o cabeçalho e os filtros ficam um embaixo do outro, os
+| | Rota | Tela |
+|:---:|---|---|
+| 🔑 | `/` | **login** (sem autenticação por enquanto) |
+| 🏠 | `/home` | **visão geral**: cards das aplicações (os com problema primeiro), métricas com a taxa de sucesso por aplicação e o delta contra a janela anterior, "Falhas Ativas" com os jobs, registros por dia nos 7 últimos dias dentro do card de registros, painel de saúde com um grupo recolhível por aplicação (as com erro ou atraso primeiro e já abertas, até 10 integrações cada e o link para o resto em Integrações), atualizados a cada minuto |
+| 🧩 | `/applications` | **cards das aplicações**, com a imagem da empresa; o chip "Ativa" liga ou desliga o módulo (desligar pede confirmação) |
+| 🔀 | `/integrations` | **Integrações** (era Jobs e Integrações): todos os jobs, num grupo recolhível por aplicação, com o filtro **Situação** (Ativos, Inativos e Todos; abre em Ativos), o de tipo (Todos, Integrações e Procedures), o de saúde (os contadores do topo são botões de filtro, com mais de um ao mesmo tempo; `?health=error,late`) e a busca. Na ordem do `IdJob`, cada integração com as procedures que chama dentro dela, o chip que liga ou desliga cada job (com "Desfazer"), duração e registros da última execução, e os botões Execuções, Executar agora e Reconhecer; cada job abre as execuções, mensagens e registros. O botão **Agenda** de cada aplicação põe a tabela em modo de edição da agenda. Os grupos começam fechados e abrem com uma aplicação só (`?app=70`), com o link de um job (`?job=3001&type=2`, em qualquer situação), com busca ou com filtro de saúde. As rotas `/jobs`, `/applications/jobs` e `/applications/{IdApp}/jobs` caem aqui; as `/applications/...` abrem em Todos |
+| ⚠️ | `/errors` | **Logs de Erros**: mensagens de erro (e, se marcado, de aviso) do período, por aplicação, integração, procedure e causa, com busca pelo job e pelo texto; `?app=30&job=3001` abre o grupo |
+| ▶️ | `/on-demand` | **Sob Demanda**: as integrações sem agenda, no estilo do Swagger (método, parâmetros, corpo JSON, Executar e resposta), com filtro por verbo nos contadores do topo, só com a chave `Admin:Enabled` ([abaixo](#-telas-de-administrador)) |
+| 💻 | `/queries` | **Executar Querys**, com favoritas e querys prontas na barra lateral; o chip do banco no topo é o próprio seletor. Só com a chave `Admin:Enabled` ([abaixo](#-telas-de-administrador)) |
+
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <img src="../../../docs/images/webapp/visao-geral-saude.png" alt="Métricas e painel de saúde"><br>
+      <sub><b>🏠 Visão Geral</b> — métricas, registros por dia, falhas ativas e painel de saúde</sub>
+    </td>
+    <td width="50%" align="center">
+      <img src="../../../docs/images/webapp/aplicacoes.png" alt="Tela Aplicações"><br>
+      <sub><b>🧩 Aplicações</b> — imagem da empresa e o chip que liga ou desliga o módulo</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="../../../docs/images/webapp/integracoes.png" alt="Tela Integrações"><br>
+      <sub><b>🔀 Integrações</b> — procedures dentro da integração, saúde, Executar agora e Agenda</sub>
+    </td>
+    <td align="center">
+      <img src="../../../docs/images/webapp/logs-de-erros.png" alt="Tela Logs de Erros"><br>
+      <sub><b>⚠️ Logs de Erros</b> — mensagens por aplicação, integração e causa</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="../../../docs/images/webapp/sob-demanda.png" alt="Tela Sob Demanda"><br>
+      <sub><b>▶️ Sob Demanda</b> — integrações sem agenda, no estilo do Swagger</sub>
+    </td>
+    <td align="center">
+      <img src="../../../docs/images/webapp/executar-querys.png" alt="Tela Executar Querys"><br>
+      <sub><b>💻 Executar Querys</b> — SQL com favoritas e querys prontas</sub>
+    </td>
+  </tr>
+</table>
+
+O **menu lateral** tem Visão Geral, Aplicações, Integrações, Logs de Erros e, para quem tem acesso, Sob Demanda e Executar
+Querys. As integrações sob demanda (sem agenda) **não aparecem** em Integrações nem no painel de saúde: ficam na tela Sob
+Demanda.
+
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
+flowchart LR
+    LOGIN["🔑 Login<br/>/"] -- "Entrar" --> HOME["🏠 Visão Geral<br/>/home"]
+    HOME -- "Ver em Aplicações" --> APPS["🧩 Aplicações<br/>/applications"]
+    HOME -- "falhas e saúde" --> INT["🔀 Integrações<br/>/integrations"]
+    APPS -- "Ver jobs" --> INT
+    INT -- "Execuções" --> EXEC["Execuções, mensagens<br/>e registros"]
+    ERR["⚠️ Logs de Erros<br/>/errors"] -- "Execução" --> EXEC
+    HOME --> ERR
+
+    subgraph ADMIN["🔒 Admin:Enabled + Development"]
+        direction TB
+        OND["▶️ Sob Demanda<br/>/on-demand"]
+        QRY["💻 Executar Querys<br/>/queries"]
+    end
+
+    HOME -.-> OND
+    HOME -.-> QRY
+    OND -- "Ver execução" --> EXEC
+
+    classDef accent fill:#7c5cff,stroke:#7c5cff,color:#ffffff
+    classDef warm fill:#f5a524,stroke:#f5a524,color:#1e1b2e
+    class HOME,INT accent
+    class OND,QRY warm
+```
+
+### 📱 Celular, tablet e tema
+
+As telas funcionam **no celular e no tablet**. Abaixo de **960px**, o cabeçalho e os filtros ficam um embaixo do outro, os
 cabeçalhos dos grupos quebram em duas linhas e, em Executar Querys, a barra de querys prontas vira um bloco recolhível
-acima do editor. Abaixo de 600px, as tabelas viram blocos (com menos colunas na Visão geral e em Integrações) e os
+acima do editor. Abaixo de **600px**, as tabelas viram blocos (com menos colunas na Visão geral e em Integrações) e os
 diálogos ocupam a tela toda. As regras ficam no fim do `wwwroot/css/app.css`.
-Período, aplicação, tipo e saúde ficam na URL (`?period=7d&app=30`), então o link de uma tela abre do mesmo jeito para
-outra pessoa; sem `period` na URL, vale o último período escolhido na aba. A busca fica só na tela. Na barra superior
-ficam o botão que esconde o menu, a empresa logada (`LoggedCompany`, fixa em `NEWBLOOMERS - 35899805838` até a
-autenticação) e o botão que troca entre o tema escuro e o claro; a escolha do tema fica salva no navegador. Paginação
-padrão: 50 linhas nas grids de jobs, 5 nas execuções e 25 nas mensagens de erro.
 
-O chip de saúde diz há quanto tempo: "Atrasado 1h40", "Rodando 2h13" (laranja quando passa de 1 × o intervalo), com o
-detalhe no tooltip. Na tela Integrações, cada linha tem os botões **Executar agora** (pede ao host uma execução fora da
-agenda; ao passar o mouse, diz quando sai a próxima pela agenda e por que o botão está desligado, quando estiver) e
-**Reconhecer** (com Erro ou Atrasado: o job sai de "Falhas Ativas" até a próxima execução ou 24 h, com uma nota para o
-próximo turno); no painel de saúde da Visão geral, as mesmas ações ficam no menu ⋮ da linha. Nos Logs de
-Erros, o botão **Execução** abre a execução da mensagem num diálogo, com o Guid, os registros e os links para o job e
-para a query pronta; os blocos de exceção, pilha e SQL têm botão de copiar, e "Copiar tudo" junta o contexto para um
-chamado. Aplicações, Integrações e Logs de Erros têm "Atualizado às" e o botão de recarregar.
+<details>
+<summary><b>🌗 Tema claro e 📱 celular</b></summary>
 
-As procedures aparecem dentro da integração que as chama (o `IdParent` delas), com a setinha na linha da integração e o
-resumo "11 procedures · 1 com erro". O intervalo, a hora diária e a fila das integrações são editáveis e só gravam em
-"Salvar alterações", com confirmação, só na tela Integrações, pelo botão **Agenda** no cabeçalho de cada aplicação, que
-põe a tabela dela em modo de edição da agenda. A engrenagem dos cards (Visão geral e Aplicações) abre o diálogo com
-Imagem, Credenciais e Parâmetros.
+<p align="center">
+  <img src="../../../docs/images/webapp/visao-geral-claro.png" alt="Visão geral no tema claro" width="100%">
+  <br><sub><b>Tema claro</b> — a escolha fica salva no navegador</sub>
+</p>
 
-Ativar ou desativar um job ou um módulo, mudar a agenda, reconhecer uma falha, pedir uma execução e trocar a imagem de uma aplicação só
-mudam o mock e somem ao reiniciar o app. Com o banco, viram `UPDATE` em `auditing.Jobs.IsActive`, gravação em
-`monitor.JobAcknowledgement` e `monitor.AppImage` e o pedido lido pelo host, por empresa
-(`src/Backend/Shared/docs/PROPOSTA-DOC-COMPANY-AUDITING.md` e o passo 11.5 do plano).
+<p align="center">
+  <img src="../../../docs/images/webapp/celular-visao-geral.png" alt="Visão geral no celular" width="260">
+  &nbsp;&nbsp;
+  <img src="../../../docs/images/webapp/celular-integracoes.png" alt="Integrações no celular" width="260">
+  <br><sub><b>Celular</b> — tabelas em blocos e diálogos em tela cheia</sub>
+</p>
 
-Erro do repositório vira um aviso (Snackbar) e a tela continua com os dados que já tinha; uma exceção numa tela mostra
-o cartão "Algo deu errado nesta tela", com "Tentar de novo", sem derrubar o painel.
+</details>
 
-## De onde vem cada número
+* 🔗 **Período, aplicação, tipo e saúde ficam na URL** (`?period=7d&app=30`), então o link de uma tela abre do mesmo jeito
+  para outra pessoa; sem `period` na URL, vale o último período escolhido na aba. A busca fica só na tela.
+* 🧭 **Barra superior:** o botão que esconde o menu, a empresa logada (`LoggedCompany`, fixa em
+  `NEWBLOOMERS - 35899805838` até a autenticação) e o botão que troca entre o tema escuro e o claro; a escolha do tema
+  fica salva no navegador.
+* 📄 **Paginação padrão:** 50 linhas nas grids de jobs, 5 nas execuções e 25 nas mensagens de erro.
+
+### 🩺 Saúde, ações e agenda
+
+O **chip de saúde** diz há quanto tempo: "Atrasado 1h40", "Rodando 2h13" (laranja quando passa de 1 × o intervalo), com o
+detalhe no tooltip.
+
+| | Ação | Onde | O que faz |
+|:---:|---|---|---|
+| ▶️ | **Executar agora** | linha da tela Integrações; menu ⋮ do painel de saúde | pede ao host uma execução fora da agenda; ao passar o mouse, diz quando sai a próxima pela agenda e por que o botão está desligado, quando estiver |
+| ✅ | **Reconhecer** | idem, com Erro ou Atrasado | o job sai de "Falhas Ativas" até a próxima execução ou 24 h, com uma nota para o próximo turno |
+| 🔎 | **Execução** | Logs de Erros | abre a execução da mensagem num diálogo, com o Guid, os registros e os links para o job e para a query pronta; os blocos de exceção, pilha e SQL têm botão de copiar, e **"Copiar tudo"** junta o contexto para um chamado |
+| 🕒 | **Agenda** | cabeçalho de cada aplicação, só na tela Integrações | põe a tabela em modo de edição: intervalo, hora diária e fila das integrações só gravam em **"Salvar alterações"**, com confirmação |
+| ⚙️ | **Engrenagem** | cards da Visão geral e de Aplicações | abre o diálogo com **Imagem**, **Credenciais** e **Parâmetros** |
+| 🔄 | **Atualizado às** | Aplicações, Integrações e Logs de Erros | hora da última leitura e o botão de recarregar |
+
+As **procedures** aparecem dentro da integração que as chama (o `IdParent` delas), com a setinha na linha da integração e o
+resumo "11 procedures · 1 com erro".
+
+> [!IMPORTANT]
+> Ativar ou desativar um job ou um módulo, mudar a agenda, reconhecer uma falha, pedir uma execução e trocar a imagem de
+> uma aplicação **só mudam o mock** e somem ao reiniciar o app. Com o banco, viram `UPDATE` em `auditing.Jobs.IsActive`,
+> gravação em `monitor.JobAcknowledgement` e `monitor.AppImage` e o pedido lido pelo host, por empresa
+> ([PROPOSTA-DOC-COMPANY-AUDITING.md](../../Backend/Shared/docs/PROPOSTA-DOC-COMPANY-AUDITING.md) e o passo 11.5 do plano).
+
+🛟 **Erro do repositório** vira um aviso (Snackbar) e a tela continua com os dados que já tinha; uma exceção numa tela
+mostra o cartão "Algo deu errado nesta tela", com "Tentar de novo", sem derrubar o painel.
+
+---
+
+## 🔢 De onde vem cada número
 
 | Número | Origem |
 |---|---|
-| Integrações e procedures do card | jobs da aplicação em `auditing.Jobs`, por `IdType` (2 e 1) |
-| Ativas | jobs com `IsActive = 1` |
-| Execuções, registros, erros e avisos | linhas de `auditing.Logs` no período, com os registros (`auditing.Records`) e as mensagens de nível 3 e 2 (`auditing.Messages`) de cada uma |
-| Taxa de sucesso | execuções sem mensagem de erro ÷ execuções, no período; o delta compara com a janela anterior de mesmo tamanho |
-| Falhas ativas | jobs ativos com saúde **Erro** ou **Atrasado** agora, sem as falhas reconhecidas (contadas à parte) |
-| Registros por dia | registros das execuções de cada um dos 7 últimos dias, com o filtro de aplicação (o período não muda o gráfico); hoje conta até agora |
-| Causa (Logs de Erros) | mensagens do job com o mesmo texto, trocando números e Guids por marcadores (`Data/MessageGrouping.cs`) |
-| Saúde | pela última execução do job: **Rodando** (sem fim), **Erro** (tem mensagem de erro), **Atrasado** (não começou nenhuma em 1 × o intervalo) ou **Ok**. Job sob demanda nunca fica atrasado, e job inativo não tem saúde |
+| 🧩 **Integrações e procedures do card** | jobs da aplicação em `auditing.Jobs`, por `IdType` (2 e 1) |
+| ✅ **Ativas** | jobs com `IsActive = 1` |
+| 📊 **Execuções, registros, erros e avisos** | linhas de `auditing.Logs` no período, com os registros (`auditing.Records`) e as mensagens de nível 3 e 2 (`auditing.Messages`) de cada uma |
+| 📈 **Taxa de sucesso** | execuções sem mensagem de erro ÷ execuções, no período; o delta compara com a janela anterior de mesmo tamanho |
+| 🚨 **Falhas ativas** | jobs ativos com saúde **Erro** ou **Atrasado** agora, sem as falhas reconhecidas (contadas à parte) |
+| 📅 **Registros por dia** | registros das execuções de cada um dos 7 últimos dias, com o filtro de aplicação (o período não muda o gráfico); hoje conta até agora |
+| 🧠 **Causa (Logs de Erros)** | mensagens do job com o mesmo texto, trocando números e Guids por marcadores (`Data/MessageGrouping.cs`) |
+| 🩺 **Saúde** | pela última execução do job: **Rodando** (sem fim), **Erro** (tem mensagem de erro), **Atrasado** (não começou nenhuma em 1 × o intervalo) ou **Ok**. Job sob demanda nunca fica atrasado, e job inativo não tem saúde |
+
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
+flowchart TB
+    JOB["Job em auditing.Jobs"] --> ATIVO{"IsActive = 1?"}
+    ATIVO -- "não" --> INATIVO["⏸️ Inativo<br/>sem saúde"]
+    ATIVO -- "sim" --> FIM{"Última execução<br/>terminou?"}
+    FIM -- "não" --> RODANDO["🔄 Rodando<br/>laranja após 1 × o intervalo"]
+    FIM -- "sim" --> ERRO{"Tem mensagem<br/>de erro?"}
+    ERRO -- "sim" --> E["❗ Erro"]
+    ERRO -- "não" --> ATRASO{"Nenhuma começou<br/>em 1 × o intervalo?"}
+    ATRASO -- "sim, e tem agenda" --> A["🕒 Atrasado"]
+    ATRASO -- "não, ou sob demanda" --> OK["✅ Ok"]
+    E --> REC["Reconhecer<br/>sai de Falhas Ativas<br/>até a próxima execução ou 24 h"]
+    A --> REC
+
+    classDef ok fill:#16a34a,stroke:#16a34a,color:#ffffff
+    classDef warn fill:#f5a524,stroke:#f5a524,color:#1e1b2e
+    classDef err fill:#dc2626,stroke:#dc2626,color:#ffffff
+    classDef run fill:#2563eb,stroke:#2563eb,color:#ffffff
+    class OK ok
+    class A warn
+    class E err
+    class RODANDO run
+```
 
 Nas procedures, o `IdParent` de `auditing.Jobs` é o job de integração que as chama, não a aplicação; o painel resolve a
 aplicação pelo job pai (`JobModel.IdApp`). O nível das mensagens (informação, aviso e erro) segue a proposta
 [PROPOSTA-NIVEL-MENSAGEM-AUDITING.md](../../Backend/Shared/docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md); enquanto ela não for
 implementada no back-end, o banco só tem `IsError`.
 
-## Dados mockados
+---
+
+## 🧪 Dados mockados
 
 | Arquivo | O que faz |
 |---|---|
-| `Data/Mocks/MockCatalog.cs` | as 6 aplicações e os 960 jobs dos módulos do host, copiados dos scripts de insert em `auditing.Apps` e `auditing.Jobs`. Job novo nos scripts entra aqui na mesma ordem |
-| `Data/Mocks/MockTimeline.cs` | gera as execuções a partir da agenda de cada job, sem guardar nada: os dados são os mesmos a cada carga, e as execuções novas aparecem conforme o relógio anda. Uma parte dos jobs tem um perfil fixo (inativo, atrasado, falhando, com muitos avisos, sempre rodando ou travado além do intervalo), para todos os estados aparecerem; às 3h as integrações falham mais; "Executar agora" cria uma execução 1 minuto depois, sempre sem erro |
-| `Data/Mocks/MockTexts.cs` | mensagens e registros, com os textos que os services gravam hoje |
-| `Data/Mocks/MockQueryRunner.cs` | executor falso da tela de consultas (abaixo) |
+| 📚 `Data/Mocks/MockCatalog.cs` | as 6 aplicações e os 960 jobs dos módulos do host, copiados dos scripts de insert em `auditing.Apps` e `auditing.Jobs`. Job novo nos scripts entra aqui na mesma ordem |
+| ⏱️ `Data/Mocks/MockTimeline.cs` | gera as execuções a partir da agenda de cada job, sem guardar nada: os dados são os mesmos a cada carga, e as execuções novas aparecem conforme o relógio anda. Uma parte dos jobs tem um perfil fixo (inativo, atrasado, falhando, com muitos avisos, sempre rodando ou travado além do intervalo), para todos os estados aparecerem; às 3h as integrações falham mais; "Executar agora" cria uma execução 1 minuto depois, sempre sem erro |
+| 💬 `Data/Mocks/MockTexts.cs` | mensagens e registros, com os textos que os services gravam hoje |
+| 💻 `Data/Mocks/MockQueryRunner.cs` | executor falso da tela de consultas ([abaixo](#-executar-querys)) |
+| ▶️ `Data/Mocks/MockOnDemandRunner.cs` | executor falso da tela Sob Demanda ([abaixo](#️-sob-demanda)) |
+| 🏢 `Data/Mocks/MockCompanyRepository.cs` | cadastro de empresas em memória ([abaixo](#-cadastro-de-empresas-repositórios)) |
 
-As telas só conhecem as interfaces `IMonitorRepository` e `IQueryRunner`. Na fase 5, trocar o registro do mock no
-`Program.cs` pela implementação com o banco é o único ponto a mudar.
+As telas só conhecem as interfaces `IMonitorRepository` e `IQueryRunner`. Na **fase 5**, trocar o registro do mock no
+`Program.cs` pela implementação com o banco é o **único ponto a mudar**.
 
-Para ver o tratamento de erro sem banco, `MockMonitorRepository:FailureRate` (de 0 a 1, `0` por padrão) faz essa
-proporção das chamadas do mock falhar:
+> [!TIP]
+> Para ver o tratamento de erro sem banco, `MockMonitorRepository:FailureRate` (de 0 a 1, `0` por padrão) faz essa
+> proporção das chamadas do mock falhar:
+>
+> ```bash
+> dotnet user-secrets set "MockMonitorRepository:FailureRate" "0.3" --project src/Frontend/WebApp
+> ```
 
-```bash
-dotnet user-secrets set "MockMonitorRepository:FailureRate" "0.3" --project src/Frontend/WebApp
-```
+---
 
-## Telas de administrador
+## 🏢 Cadastro de empresas (repositórios)
 
-Executar Querys altera qualquer banco do servidor, e Sob Demanda escreve nos sistemas de origem (Movidesk, Totvs,
+Fase **4.5** do [plano do cadastro](../../../docs/PLANO-TELA-CADASTRO-EMPRESA.md): o acesso a dados do cadastro de empresas
+e das credenciais de cada integração já existe, **sem tela**. A tela (fase 4.6) só entra depois de um **mockup aprovado**.
+
+| | Peça | O que faz |
+|:---:|---|---|
+| 🏢 | `ICompanyRepository` (`Data/ICompanyRepository.cs`) | lista, cria (`auditing.sp_Add_Company`), edita razão social e nome fantasia e ativa ou desativa empresas em `monitor.Company`. O CNPJ não muda (é a chave dos jobs e dos logs); aceita o CNPJ formatado e grava só os dígitos (11 ou 14). Lista os CNPJs da holding (`monitor.HoldingCompanies`) e as integrações do catálogo, e contrata (`sp_Add_Company_App`, jobs nascem inativos) ou remove (`sp_Remove_Company_App`) uma integração |
+| 🔑 | `IModuleParametersRepository` | lê e grava a linha de `*Parameters` do módulo por CNPJ. Ao gravar, numa transação: valida, chama `auditing.sp_Add_Holding_Company` e faz o INSERT ou o UPDATE. **Segredos nunca voltam** (a leitura diz só se estão definidos) e segredo vazio mantém o gravado |
+| 📋 | `Data/ModuleDefinitions.cs` | os campos de cada módulo (Movidesk, AfterSale, LinxCommerce, LinxMicrovix e Totvs; DataWarehouse não tem parâmetros), com rótulo, obrigatório, segredo, tipo (texto, `https://` ou GUID) e tamanho. Tabela e colunas do SQL só vêm daqui |
+| 🧪 | `Data/Mocks/MockCompanyRepository.cs` | o mesmo contrato em memória, com as regras dos erros 50002, 50003 e 50004 das procedures |
+| 🗃️ | `Data/Sql/SqlCompanyRepository.cs`, `SqlModuleParametersRepository.cs` | Dapper sobre `ConnectionStrings:Connection` |
+
+Os erros de regra chegam à tela como `CompanyRegistrationException`, com o número da procedure em `Code`.
+
+> [!WARNING]
+> O mock é o padrão. `Cadastro:UseDatabase = true` (User Secrets) liga o **Dapper**, que compila mas **ainda não rodou
+> contra o banco**: o teste é no banco do Docker, carregado com `tools/seeds/Import-TestSeeds.ps1`.
+>
+> ```bash
+> dotnet user-secrets set "Cadastro:UseDatabase" "true" --project src/Frontend/WebApp
+> ```
+
+---
+
+## 🔒 Telas de administrador
+
+Executar Querys **altera qualquer banco do servidor**, e Sob Demanda **escreve nos sistemas de origem** (Movidesk, Totvs,
 AfterSale), por isso as duas são restritas ao administrador. Até a autenticação, elas só abrem com as duas condições:
 
 1. o ambiente `Development`;
@@ -122,62 +345,129 @@ AfterSale), por isso as duas são restritas ao administrador. Até a autenticaç
 dotnet user-secrets set "Admin:Enabled" "true" --project src/Frontend/WebApp
 ```
 
-Para esconder as duas de novo, `dotnet user-secrets remove "Admin:Enabled" --project src/Frontend/WebApp`; depois de mudar
-a chave, reinicie o app. Fora disso, `/queries` e `/on-demand` caem na página de não encontrado e os itens somem do menu.
+> [!CAUTION]
+> Para esconder as duas de novo, `dotnet user-secrets remove "Admin:Enabled" --project src/Frontend/WebApp`; depois de
+> mudar a chave, reinicie o app. Fora disso, `/queries` e `/on-demand` caem na página de não encontrado e os itens somem
+> do menu.
 
-## Assistente de IA
+---
 
-O botão roxo no canto inferior direito (todas as telas, menos o login) abre um chat com o Claude (`claude-opus-5-5`, API
+## ✨ Assistente de IA
+
+<p align="center">
+  <img src="../../../docs/images/webapp/assistente.png" alt="Assistente de IA aberto sobre a Visão geral" width="100%">
+  <br><sub><b>Assistente</b> — sem a chave, o chat avisa que não está configurado</sub>
+</p>
+
+O **botão roxo** no canto inferior direito (todas as telas, menos o login) abre um chat com o Claude (`claude-opus-5-5`, API
 da Anthropic, pacote NuGet `Anthropic`). Ele responde sobre integrações, erros e execuções da empresa logada consultando
 ferramentas **só de leitura** em cima do `IMonitorRepository` (`Data/AssistantTools.cs`): saúde das integrações, resumo do
-período, busca de jobs, execuções de um job e causas de erro. Não executa, não reconhece, não liga nem desliga nada, não
-roda querys e não vê credenciais nem parâmetros dos módulos. As respostas chegam aos poucos (streaming) e trazem links
+período, busca de jobs, execuções de um job e causas de erro. **Não executa, não reconhece, não liga nem desliga nada, não
+roda querys e não vê credenciais nem parâmetros dos módulos.** As respostas chegam aos poucos (streaming) e trazem links
 para as telas do painel; se o filtro de segurança recusar uma pergunta, o servidor tenta com o `claude-opus-4-8` na mesma
 chamada (fallback do lado do servidor).
 
-A chave fica nos User Secrets, nunca no `appsettings.json`; sem ela, o chat avisa que não está configurado:
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','actorBkg':'#7c5cff','actorTextColor':'#ffffff','actorBorder':'#7c5cff','signalColor':'#f5a524','signalTextColor':'#7c5cff','noteBkgColor':'#fff4dd','noteTextColor':'#1e1b2e','noteBorderColor':'#f5a524','activationBkgColor':'#ede9fe','activationBorderColor':'#7c5cff','labelBoxBkgColor':'#7c5cff','labelBoxBorderColor':'#7c5cff','labelTextColor':'#ffffff','loopTextColor':'#1e1b2e'}}}%%
+sequenceDiagram
+    autonumber
+    participant U as Usuário
+    participant C as AssistantChat
+    participant A as ClaudeAssistant
+    participant API as API da Anthropic
+    participant T as AssistantTools
+    participant R as IMonitorRepository
+
+    U->>C: pergunta
+    C->>A: histórico da aba
+    A->>API: mensagens e ferramentas (claude-opus-5-5)
+    loop enquanto o Claude pedir ferramentas
+        API-->>A: chamada de ferramenta
+        A->>T: saúde, resumo, jobs, execuções, causas
+        T->>R: leitura
+        R-->>T: dados da empresa logada
+        T-->>A: resultado
+        A->>API: resultado da ferramenta
+    end
+    Note over API: filtro recusou: fallback para claude-opus-4-8 na mesma chamada
+    API-->>A: resposta em streaming
+    A-->>C: texto com links internos
+    C-->>U: resposta aos poucos
+```
+
+A chave fica nos **User Secrets**, nunca no `appsettings.json`; sem ela, o chat avisa que não está configurado:
 
 ```bash
 dotnet user-secrets set "Assistant:ApiKey" "<chave da Anthropic>" --project src/Frontend/WebApp
 ```
 
-As perguntas e os dados que as ferramentas consultam (nomes de jobs, mensagens de erro) vão para a API da Anthropic, e cada
-pergunta tem custo de uso. A conversa fica só na aba aberta, em memória: some ao recarregar a página ou em "Nova conversa".
-Código: `Components/Assistant/AssistantChat.razor` (botão e painel, no `MainLayout`), `Data/ClaudeAssistant.cs` (laço de
-ferramentas com streaming) e `Components/Assistant/AssistantMarkdown.cs` (negrito, listas e links internos; o resto vira
-texto).
+> [!WARNING]
+> As perguntas e os dados que as ferramentas consultam (nomes de jobs, mensagens de erro) **vão para a API da Anthropic**,
+> e cada pergunta tem custo de uso. A conversa fica só na aba aberta, em memória: some ao recarregar a página ou em
+> "Nova conversa".
 
-## Executar Querys
+**Código:** `Components/Assistant/AssistantChat.razor` (botão e painel, no `MainLayout`), `Data/ClaudeAssistant.cs` (laço
+de ferramentas com streaming) e `Components/Assistant/AssistantMarkdown.cs` (negrito, listas e links internos; o resto
+vira texto).
+
+---
+
+## 💻 Executar Querys
 
 O que a tela faz:
 
-- seletor de banco, com o banco escolhido sempre em destaque;
-- editor de SQL, com `Ctrl+Enter` para executar e botão para cancelar;
-- resultado paginado, cortado em 1.000 linhas (com aviso), com filtro por qualquer célula e ordenação pelas colunas, e
-  exportação para CSV no formato do Excel em português ("Exportar filtrado" exporta só o que a grade mostra);
-- `INSERT`, `UPDATE`, `DELETE`, `MERGE`, `CREATE`, `ALTER`, `DROP`, `TRUNCATE` e `EXEC` pedem confirmação; `UPDATE` ou
+- 🗄️ seletor de banco, com o banco escolhido sempre em destaque;
+- ⌨️ editor de SQL, com `Ctrl+Enter` para executar e botão para cancelar;
+- 📄 resultado paginado, cortado em **1.000 linhas** (com aviso), com filtro por qualquer célula e ordenação pelas colunas,
+  e exportação para CSV no formato do Excel em português ("Exportar filtrado" exporta só o que a grade mostra);
+- ⚠️ `INSERT`, `UPDATE`, `DELETE`, `MERGE`, `CREATE`, `ALTER`, `DROP`, `TRUNCATE` e `EXEC` pedem confirmação; `UPDATE` ou
   `DELETE` sem `WHERE`, `DROP` e `TRUNCATE` ganham um segundo aviso. Comentários e texto entre aspas não contam;
-- a alteração fica numa transação, com **Confirmar** e **Desfazer**; sem resposta em 60 s, ou saindo da tela, ela é
+- ↩️ a alteração fica numa transação, com **Confirmar** e **Desfazer**; sem resposta em **60 s**, ou saindo da tela, ela é
   desfeita;
-- histórico das 20 últimas consultas e até 30 favoritas com nome (a estrela no histórico), guardados no navegador; as
+- ⭐ histórico das 20 últimas consultas e até 30 favoritas com nome (a estrela no histórico), guardados no navegador; as
   favoritas ficam em "Minhas querys", acima das querys prontas.
 
-No mock, nada chega a um banco: os bancos são `NEWBLOOMERS`, `AUDITING` e `Company`, o `SELECT` devolve colunas tiradas do
-próprio SQL e linhas geradas, SQL com a palavra `erro` isolada (por exemplo `dbo.erro`; `IsError` não conta) simula um erro do SQL
-Server e `WAITFOR` demora 8 s, para testar o cancelamento.
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
+flowchart LR
+    SQL["SQL no editor<br/>Ctrl+Enter"] --> INS{"SqlInspector:<br/>altera dados?"}
+    INS -- "não (SELECT)" --> RUN["Executa"] --> GRID["Grade paginada<br/>até 1.000 linhas · CSV"]
+    INS -- "sim" --> CONF{"Confirmação"}
+    CONF -- "UPDATE/DELETE sem WHERE,<br/>DROP, TRUNCATE" --> CONF2{"Segundo aviso"}
+    CONF2 -- "ok" --> TX["Transação aberta"]
+    CONF -- "ok" --> TX
+    TX --> DEC{"Confirmar?"}
+    DEC -- "Confirmar" --> COMMIT["✅ commit"]
+    DEC -- "Desfazer, 60 s sem resposta<br/>ou saiu da tela" --> RB["↩️ rollback"]
 
-## Sob Demanda
+    classDef ok fill:#16a34a,stroke:#16a34a,color:#ffffff
+    classDef warm fill:#f5a524,stroke:#f5a524,color:#1e1b2e
+    class COMMIT ok
+    class RB,CONF2 warm
+```
 
-Restrita ao administrador, com a mesma chave `Admin:Enabled` de Executar Querys (acima).
+> [!NOTE]
+> **No mock, nada chega a um banco:** os bancos são `NEWBLOOMERS`, `AUDITING` e `Company`, o `SELECT` devolve colunas
+> tiradas do próprio SQL e linhas geradas, SQL com a palavra `erro` isolada (por exemplo `dbo.erro`; `IsError` não conta)
+> simula um erro do SQL Server e `WAITFOR` demora 8 s, para testar o cancelamento.
 
-Até a fase 5, o `MockOnDemandRunner` não chama o host: o catálogo sai das descrições dos jobs, a resposta é simulada (um
+---
+
+## ▶️ Sob Demanda
+
+Restrita ao administrador, com a mesma chave `Admin:Enabled` de Executar Querys ([acima](#-telas-de-administrador)).
+
+Até a fase 5, o `MockOnDemandRunner` **não chama o host**: o catálogo sai das descrições dos jobs, a resposta é simulada (um
 em cada seis GETs devolve 404) e a chamada que roda vira uma execução do job, que "Ver execução" abre.
 
-## Estrutura
+---
 
-```
+## 🗂️ Estrutura
+
+```text
 WebApp/
 ├── Components/
+│   ├── Assistant/      AssistantChat (botão e painel) e AssistantMarkdown
 │   ├── Cards/          AppCard e os logos das aplicações
 │   ├── Display/        textos, cores e ícones de saúde e nível, chip de saúde, gráficos, copiar, atualizar, paginador,
 │   │                   tratamento de erro (PageGuard) e traduções do MudBlazor
@@ -186,8 +476,12 @@ WebApp/
 │   ├── Loadings/       SpaceLoading, o carregamento padrão do app
 │   ├── MessageBoxes/   ModuleConfigurations (abas Imagem, Credenciais e Parâmetros), execução de uma mensagem,
 │   │                   nota do reconhecimento e nome da favorita
-│   └── NavMenus/       menu lateral
-├── Data/               IMonitorRepository, IQueryRunner, SqlInspector, acesso à tela de consultas e os mocks
+│   ├── NavMenus/       menu lateral
+│   └── OnDemand/       componentes da tela Sob Demanda
+├── Data/               IMonitorRepository, IQueryRunner, IOnDemandRunner, ICompanyRepository, ModuleDefinitions,
+│   │                   SqlInspector, acesso à tela de consultas, assistente (ClaudeAssistant, AssistantTools)
+│   ├── Mocks/          mocks do painel, das consultas, do Sob Demanda e do cadastro
+│   └── Sql/            Dapper do cadastro de empresas (SqlCompanyRepository, SqlModuleParametersRepository)
 ├── Layout/             MainLayout (barra, menu e tema) e BlankLayout (login)
 ├── Models/             modelos de leitura, sem nada de Blazor (vão para um projeto próprio quando o MAUI chegar)
 ├── Pages/              uma página por rota
@@ -195,12 +489,38 @@ WebApp/
 ```
 
 Os arquivos do `wwwroot` entram no `App.razor` por `@Assets["..."]`, com a versão do conteúdo no endereço: depois de
-uma mudança no CSS ou no JavaScript, o navegador baixa o arquivo novo sem precisar limpar o cache.
+uma mudança no CSS ou no JavaScript, o navegador baixa o arquivo novo **sem precisar limpar o cache**.
 
-## Próximas fases
+---
+
+## 🚀 Próximas fases
 
 | Fase | O que entra |
 |---|---|
-| 5 — Banco de dados | usuários de banco pelo DbUp, `MonitorRepository` com Dapper no banco principal e `QueryRunner` real |
-| 6 — Autenticação | login com Microsoft Entra ID e grupos para Executar Querys e para editar a agenda dos jobs |
-| 7 — App MAUI | os mesmos dados no app, por uma API |
+| 🗄️ **5 — Banco de dados** | usuários de banco pelo DbUp, `MonitorRepository` com Dapper no banco principal e `QueryRunner` real |
+| 🏢 **4.6 do cadastro — Tela de cadastro** | lista e formulário de empresas, integrações contratadas e credenciais, com **Testar conexão** por módulo; só depois de mockup aprovado ([plano](../../../docs/PLANO-TELA-CADASTRO-EMPRESA.md)) |
+| 🔐 **6 — Autenticação** | login com Microsoft Entra ID e grupos para Executar Querys e para editar a agenda dos jobs |
+| 📱 **7 — App MAUI** | os mesmos dados no app, por uma API |
+
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
+flowchart LR
+    F14["✅ Fases 1 a 4<br/>telas sobre o mock"] --> C45["✅ Cadastro 4.5<br/>repositórios"]
+    C45 --> C46["🏢 Cadastro 4.6<br/>tela, após mockup"]
+    F14 --> F5["🗄️ Fase 5<br/>banco de dados"]
+    F5 --> F6["🔐 Fase 6<br/>autenticação"]
+    C46 --> F6
+    F6 --> F7["📱 Fase 7<br/>app MAUI"]
+
+    classDef ok fill:#16a34a,stroke:#16a34a,color:#ffffff
+    classDef warm fill:#f5a524,stroke:#f5a524,color:#1e1b2e
+    class F14,C45 ok
+    class C46,F5 warm
+```
+
+---
+
+<p align="center">
+  <img src="../../../docs/newbloomers.png" alt="NEWBLOOMERS" width="180"><br>
+  <sub>Monitor de Integrações · Blazor + MudBlazor · .NET 10</sub>
+</p>

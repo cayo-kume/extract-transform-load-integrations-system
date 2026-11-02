@@ -1,6 +1,35 @@
-# Pacote de DLLs para Integração com a AfterSale
+<p align="center">
+  <img src="../../../../../docs/images/banner.png" alt="NEWBLOOMERS · Sistema de Integrações · ETL" width="100%">
+</p>
 
-## O que é o Troque Fácil?
+# 🔁 AfterSale
+
+<p align="center">
+  <img alt="App" src="https://img.shields.io/badge/App-50-7c5cff?style=for-the-badge">
+  <img alt="Schema" src="https://img.shields.io/badge/Schema-aftersale-f5a524?style=for-the-badge">
+  <img alt="Rotas" src="https://img.shields.io/badge/Rotas-24-1e1b2e?style=for-the-badge">
+  <img alt="Jobs" src="https://img.shields.io/badge/Jobs-5000–5999-7c5cff?style=for-the-badge">
+  <br>
+  <img alt=".NET" src="https://img.shields.io/badge/.NET-10-1e1b2e?style=flat-square&logo=dotnet&logoColor=white">
+  <img alt="API" src="https://img.shields.io/badge/API-Send4_·_Public_API_1.0.8-1e1b2e?style=flat-square">
+  <img alt="Leituras" src="https://img.shields.io/badge/Leituras-e--commerce_·_reversas_·_reembolsos-1e1b2e?style=flat-square">
+  <img alt="Ações" src="https://img.shields.io/badge/Ações-10-f5a524?style=flat-square">
+</p>
+
+<p align="center">
+  <b>Pacote de DLLs para integração com a AfterSale (Troque Fácil): pós-venda, reversas e reembolsos.</b>
+</p>
+
+<p align="center">
+  <a href="#-sobre-o-pacote">Sobre</a> ·
+  <a href="#-applicationaftersale">Services</a> ·
+  <a href="#-infrastructureaftersale">Scripts</a> ·
+  <a href="#-endpoints-expostos-aftersalecontroller">Endpoints</a> ·
+  <a href="#-auditoria-jobs">Jobs</a> ·
+  <a href="#-pendências-conhecidas">Pendências</a>
+</p>
+
+## 🔁 O que é o Troque Fácil?
 O **Troque Fácil**, desenvolvido pela **Aftersale**, é uma plataforma de automação de pós-venda voltada para lojas virtuais (e-commerce).
 
 O objetivo é simplificar e digitalizar o processo de trocas, devoluções e logística reversa, substituindo a burocracia do atendimento tradicional por um sistema de autoatendimento.
@@ -18,11 +47,11 @@ Para acessar o painel administrativo ou conhecer mais sobre a solução, visite 
 
 ---
 
-## Sobre o pacote
+## 📦 Sobre o pacote
 
 Módulo do sistema de integrações (ETL) responsável por:
 
-* **ler** os dados da API da AfterSale (e-commerce, reversas, reembolsos e tabelas de domínio) e gravá-los no banco SQL Server, empresa por empresa;
+* **ler** os dados da API da AfterSale (e-commerce, reversas, reembolsos e tabelas de domínio) e gravá-los no banco SQL Server, empresa por empresa, pelos hosts de agenda (Hangfire do WebApi, WebJob ou Worker) ou pelas rotas;
 * **executar ações** na AfterSale (aprovar, receber produtos, informar notas, pagar e cancelar reembolsos etc.) sob demanda, a partir de um sistema externo, registrando quem pediu cada alteração.
 
 | Item | Valor |
@@ -32,17 +61,19 @@ Módulo do sistema de integrações (ETL) responsável por:
 | API consumida | Send4 / AfterSale — `https://api.send4.com.br/` |
 | Documentação da API | [AfterSale Public API 1.0.8 (SwaggerHub)](https://app.swaggerhub.com/apis/send42/public-api/1.0.8) |
 | Banco de dados | SQL Server (schemas `untreated`, `aftersale` e `auditing`; o `Script001` cria `aftersale` e `untreated` quando não existem) |
-| Multiempresa | Sim: cada CNPJ cadastrado em `aftersale.AfterSaleParameters` tem o seu token; o CNPJ (`doc_company`) faz parte da chave das tabelas |
-| Host | `src/Backend/Hosts/WebApi` (controller `AfterSaleController`) |
+| Multiempresa | Sim: cada CNPJ cadastrado em `aftersale.AfterSaleParameters` tem o seu token; o CNPJ (`doc_company`) faz parte da chave das tabelas. Cada execução é de uma **empresa do painel** (a holding, em `ICompanyContext`) e lê só os CNPJs ligados a ela em `monitor.HoldingCompanies` |
+| Host | `src/Backend/Hosts/WebApi` (controller `AfterSaleController`); agenda pelos hosts `WebApi` (Hangfire), `WebJob` ou `Worker` |
 
 ### Disclaimer sobre a documentação da API
-A documentação pública da AfterSale está desatualizada em vários pontos. Com um Bearer Token válido, foi feita uma requisição em cada end-point e a resposta real trouxe campos diferentes dos documentados.
 
-Por isso foi feito um de/para entre o JSON da documentação e o JSON retornado pela API. Campos que não aparecem nos dois não foram contemplados, porque não foi possível afirmar o seu tipo. Os JSONs usados estão na pasta [`Responsed Jsons`](#pasta-docsresponsed-jsons).
+> [!NOTE]
+> A documentação pública da AfterSale está desatualizada em vários pontos. Com um Bearer Token válido, foi feita uma requisição em cada end-point e a resposta real trouxe campos diferentes dos documentados.
+
+Por isso foi feito um de/para entre o JSON da documentação e o JSON retornado pela API. Campos que não aparecem nos dois não foram contemplados, porque não foi possível afirmar o seu tipo. Os JSONs usados estão na pasta [`Responsed Jsons`](#-pasta-docsresponsed-jsons).
 
 ---
 
-## Arquitetura
+## 🧱 Arquitetura
 
 ```
 AfterSale/
@@ -55,11 +86,17 @@ AfterSale/
 
 ### Referências entre projetos
 
-```
-Infrastructure.AfterSale ──► Application.AfterSale ──► Domain.AfterSale
-        │                            │                        │
-        ▼                            ▼                        ▼
-Infrastructure.Shared        Application.Shared         Domain.Shared
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
+flowchart LR
+    INF["Infrastructure.AfterSale"] --> APP["Application.AfterSale"] --> DOM["Domain.AfterSale"]
+    INF --> ISH["Infrastructure.Shared"]
+    APP --> ASH["Application.Shared"]
+    DOM --> DSH["Domain.Shared"]
+
+    classDef accent fill:#7c5cff,stroke:#7c5cff,color:#ffffff
+    classDef warm fill:#f5a524,stroke:#f5a524,color:#1e1b2e
+    class INF,APP,DOM accent
 ```
 
 | Assembly | Pacotes NuGet | Referências |
@@ -75,7 +112,7 @@ Do projeto Shared o módulo usa: `IApiClient`/`ApiClient` (cliente HTTP), `ILogg
 
 ---
 
-## Domain.AfterSale
+## 🧬 Domain.AfterSale
 
 ```
 Domain.AfterSale/
@@ -111,7 +148,7 @@ Domain.AfterSale/
   * `date` de `AfterSaleRefundsStatusHistories`, que faz parte da chave primária e por isso mantém o fallback `01/01/1990`.
   
   Guia: [`src/Backend/Modules/General/AfterSale/docs/PROPOSTA-DATAS-NULAS-AFTERSALE.md`](docs/PROPOSTA-DATAS-NULAS-AFTERSALE.md).
-* As entidades de reversas e de reembolsos usadas pelos métodos implementados têm `doc_company` (CNPJ da empresa), que faz parte da chave primária da tabela. Ainda **sem** `doc_company`: `Me` (dados do e-commerce) e `Reverses/History`, cujo método está pendente (ver [Pendências](#pendências-conhecidas)).
+* As entidades de reversas e de reembolsos usadas pelos métodos implementados têm `doc_company` (CNPJ da empresa), que faz parte da chave primária da tabela. Ainda **sem** `doc_company`: `Me` (dados do e-commerce) e `Reverses/History`, cujo método está pendente (ver [Pendências](#-pendências-conhecidas)).
 * Listas filhas usam `[SkipProperty]` para não virarem coluna no bulk insert. O bulk insert mapeia as colunas **pelo nome** da propriedade.
 * `EnumJob` deve ficar em sincronia com os scripts de jobs de cada pasta (`Script0NN_Insert_AfterSale_*_Jobs_Into_Jobs_Table.sql`).
 
@@ -126,7 +163,7 @@ Domain.AfterSale/
 
 ---
 
-## Application.AfterSale
+## 🧠 Application.AfterSale
 
 ```
 Application.AfterSale/
@@ -190,7 +227,7 @@ Application.AfterSale/
 Todas as leituras seguem o mesmo desenho, documentado em [`docs/PADRAO-CACHE-INTEGRACOES.md`](../../../../../docs/PADRAO-CACHE-INTEGRACOES.md):
 
 1. abre um log em `auditing.Logs` com o job do método;
-2. para cada empresa de `AfterSaleParameters`, chama a API com o token da empresa (seguindo `next_page_url` nas rotas paginadas, com pausa para respeitar o limite de requisições da AfterSale);
+2. para cada CNPJ da holding da execução (`AfterSaleParameters` ligado em `monitor.HoldingCompanies`), chama a API com o token da empresa (seguindo `next_page_url` nas rotas paginadas, com pausa para respeitar o limite de requisições da AfterSale);
 3. monta um cache em memória (`IMemoryCache`, 2h absoluto / 30 min deslizante) **por empresa**, com o que já está gravado no banco;
 4. descarta o que não mudou (por `updated_at` nas listas de reversas/reembolsos, ou por comparação dos campos nas tabelas de domínio);
 5. valida os DTOs (FluentValidation) e registra as inconsistências em `auditing.Messages`;
@@ -216,6 +253,30 @@ Todas as leituras seguem o mesmo desenho, documentado em [`docs/PADRAO-CACHE-INT
 tabela de detalhe (`TOP 30`, por causa do limite de requisições da API). Por isso dependem de
 `GetReverses` / `GetRefunds` terem rodado antes.
 
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','actorBkg':'#7c5cff','actorTextColor':'#ffffff','actorBorder':'#7c5cff','signalColor':'#f5a524','signalTextColor':'#7c5cff','noteBkgColor':'#fff4dd','noteTextColor':'#1e1b2e','noteBorderColor':'#f5a524','activationBkgColor':'#ede9fe','activationBorderColor':'#7c5cff','labelBoxBkgColor':'#7c5cff','labelBoxBorderColor':'#7c5cff','labelTextColor':'#ffffff','loopTextColor':'#1e1b2e'}}}%%
+sequenceDiagram
+    autonumber
+    participant L as Job 5002 GetReverses
+    participant D as Job 5001 GetReverse
+    participant A as API AfterSale
+    participant B as SQL Server
+
+    L->>A: GET v3/api/reverses (último mês, next_page_url)
+    A-->>L: reversas resumidas
+    Note over L: cache por CNPJ · descarta pelo updated_at
+    L->>B: AfterSaleSummarizedReverses (bulk + sp_..._Sync)
+    D->>B: TOP 30 resumidas ainda sem detalhe
+    loop cada reversa
+        D->>A: GET v3/api/reverses/{id}
+        A-->>D: reversa completa
+    end
+    D->>B: AfterSaleReverses + 10 filhas
+    D->>B: auditing.Records · AfterSaleErrors se success = false
+```
+
+O mesmo vale para os reembolsos: `GetRefunds` (5012) grava os resumidos e `GetRefund` (5011) busca o detalhe.
+
 `GetReverseById` e `GetRefundById` gravam sempre, sem consultar o cache. Quando o cache de
 `GetReverse` / `GetRefund` da empresa está carregado, eles também o atualizam, para que a próxima
 execução em lote não regrave o registro.
@@ -231,20 +292,59 @@ As ações passam por um fluxo comum em cada service (`SendReverseAction` / `Sen
 5. quando a API não devolve `success = true`, grava um erro em `aftersale.AfterSaleErrors`;
 6. devolve a resposta da API, que o controller transforma em **200** (sucesso) ou **422** (sem sucesso).
 
+**Ações sobre uma reversa** (cada ramo é uma rota; todas passam pelo `SendReverseAction`):
+
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
+flowchart LR
+    R(["Reversa<br/>docCompany · id"]) --> AP["Approve<br/>POST"]
+    R --> RP["ReceiveProducts<br/>PUT"]
+    R --> RI["ReturnedInvoice<br/>PUT"]
+    R --> INV["Invoice · InvoiceXml<br/>POST"]
+    R --> ADM["AdministrativeRecords<br/>POST"]
+    AP & RP & RI & INV & ADM --> LOG[("AfterSaleRequests<br/>200 ou 422")]
+
+    classDef accent fill:#7c5cff,stroke:#7c5cff,color:#ffffff
+    classDef warm fill:#f5a524,stroke:#f5a524,color:#1e1b2e
+    class AP,RP,RI,INV accent
+    class ADM warm
+```
+
+**Ações sobre um reembolso** (cada ramo é uma rota; todas passam pelo `SendRefundAction`):
+
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
+flowchart LR
+    F(["Reembolso<br/>docCompany · id"]) --> APR["Approve"]
+    F --> CAN["Cancel"]
+    F --> CHG["ChangeTotalAmount<br/>total_amount"]
+    F --> PAY["Pay<br/>multipart · comprovante obrigatório"]
+    APR & CAN & CHG --> LOG[("AfterSaleRequests<br/>200 ou 422")]
+    PAY --> LOG2[("AfterSaleRequests<br/>com o arquivo inteiro")]
+
+    classDef accent fill:#7c5cff,stroke:#7c5cff,color:#ffffff
+    classDef warm fill:#f5a524,stroke:#f5a524,color:#1e1b2e
+    classDef err fill:#dc2626,stroke:#dc2626,color:#ffffff
+    class APR,PAY accent
+    class CHG warm
+    class CAN err
+```
+
 Nas rotas com arquivo, o arquivo é gravado inteiro em `request_body`: o XML da nota (`InvoiceXml`) como texto, e o comprovante do `Pay` como texto (XML/texto) ou base64 (binário).
 
 ---
 
-## Infrastructure.AfterSale
+## 🔧 Infrastructure.AfterSale
 
 ```
 Infrastructure.AfterSale/
 ├── DependencyInjection.cs      (AddScopedAfterSaleServices)
 ├── Repositorys/                (AfterSaleRepository, AfterSaleMeRepository, AfterSaleReversesRepository, AfterSaleRefundsRepository)
-└── Scripts/
-    ├── SQLServer/              (scripts DbUp + migrator.csx)
-    ├── MySQL/                  (migrator.csx)
-    └── PostgreSQL/             (migrator.csx)
+├── Scripts/
+│   ├── SQLServer/              (scripts DbUp + migrator.csx)
+│   ├── MySQL/                  (migrator.csx)
+│   └── PostgreSQL/             (migrator.csx)
+└── Seeds/SQLServer/            (parâmetros de uma empresa, fora do DbUp: só o tools/seeds/Import-TestSeeds.ps1 lê)
 ```
 
 ### Injeção de dependência
@@ -268,7 +368,7 @@ Executados uma única vez cada pelo DbUp (`Scripts/SQLServer/migrator.csx`), na 
 | `Parameters/` | `Script002_Create_AfterSale_Errors_Sync_Procedures.sql` | Procedure de merge de `AfterSaleErrors` (comum a reembolsos e reversas) |
 | `Parameters/` | `Script003_Insert_AfterSale_Values_Into_Apps_Table.sql` | App `50 - AfterSale` em `auditing.Apps` |
 | `Parameters/` | `Script004_Insert_AfterSale_Errors_Jobs_Into_Jobs_Table.sql` | Job da procedure de `AfterSaleErrors` (5536) em `auditing.JobCatalog` |
-| `../../Seeds/SQLServer/` | `Script005_Insert_Values_Into_AfterSale_Parameters_Table.sql` | Empresas e tokens em `AfterSaleParameters`. **Fora do DbUp**: só o `.ps1` de seeds de teste roda (`docs/PLANO-TELA-CADASTRO-EMPRESA.md`) |
+| `Seeds/SQLServer/` (irmã de `Scripts/`) | `Script005_Insert_Values_Into_AfterSale_Parameters_Table.sql` | Empresas e tokens em `AfterSaleParameters`. **Fora do DbUp**: só o [`tools/seeds/Import-TestSeeds.ps1`](../../../../../tools/seeds/Import-TestSeeds.ps1) roda ([plano do cadastro](../../../../../docs/PLANO-TELA-CADASTRO-EMPRESA.md)) |
 | `Parameters/` | `Script006_Create_AfterSale_Requests_Table.sql` | `aftersale.AfterSaleRequests` (log das chamadas de escrita), já com `integrated_or_updated_at` |
 | `Me/` | `Script007`–`009` | `AfterSaleEcommerces`, `...MessagesPages`, `...MessagesMails`, `...Reasons`, `...SubReasons`, `...StringValues`; procedures de merge e jobs do e-commerce |
 | `Refunds/` | `Script010`–`012` | `AfterSaleRefunds` e filhas (`CouldChangeStatusFor`, `OrdersPaymentsMethods`, `StatusHistories`, `TotalAmountHistories`, `Products`, `ProductsImages`, `ProductsImagesUrls`), `AfterSaleSummarizedRefunds`, `AfterSaleStatusRefunds`, `AfterSaleActionsRefunds`, `AfterSaleBanksRefunds`, `AfterSaleTypesRefunds`; procedures de merge e jobs dos reembolsos |
@@ -280,10 +380,23 @@ exceção é `aftersale.AfterSaleRequests`, que só recebe inserts e é gravada 
 
 ---
 
-## Endpoints expostos (`AfterSaleController`)
+## 🌐 Endpoints expostos (`AfterSaleController`)
 
 Rota base: `AfterSaleJobs/AfterSale`.
 
+<p align="center">
+  <img src="../../../../../docs/images/swagger/aftersale.png" alt="Swagger do AfterSale" width="100%">
+  <br><sub><b>Swagger</b> do WebApi — tag <code>AfterSaleReverses</code> aberta</sub>
+</p>
+
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'pie1':'#7c5cff','pie2':'#f5a524','pie3':'#a78bfa','pie4':'#fbbf24','pie5':'#c4b5fd','pie6':'#fde68a','pieTitleTextSize':'18px','pieSectionTextColor':'#1e1b2e','pieStrokeColor':'#1e1b2e'}}}%%
+pie showData
+    title Rotas do AfterSale por tag (24)
+    "AfterSaleReverses" : 12
+    "AfterSaleRefunds" : 11
+    "AfterSaleEcommerces" : 1
+```
 ### Leituras (disparam a integração)
 
 | Método | Rota | Service |
@@ -307,7 +420,8 @@ Rota base: `AfterSaleJobs/AfterSale`.
 
 Todas exigem o cabeçalho **`X-User-Name`** (até 100 caracteres) e o CNPJ da empresa na rota
 (`{docCompany}`, 14 dígitos). Sem o cabeçalho ou com dados inválidos, a resposta é **400** antes de
-chamar a API.
+chamar a API. O cabeçalho opcional **`X-Company`** informa a holding; sem ele, vale a holding do `{docCompany}` em
+`monitor.HoldingCompanies` (CNPJ sem holding ou `X-Company` de outra holding também dão **400**).
 
 | Método | Rota | Corpo | Service |
 |---|---|---|---|
@@ -325,15 +439,36 @@ chamar a API.
 Resposta: **200** quando a AfterSale devolve `success = true`, **422** quando não (com `error`,
 `error_code`, `message` e `message_translated`).
 
+> [!CAUTION]
 > As ações `approve`, `cancel` e `pay` alteram o estado na AfterSale (o `pay` registra o pagamento
 > ao cliente). Teste com registros de teste antes de usar em produção.
 
+<p align="center">
+  <img src="../../../../../docs/images/webapp/sob-demanda.png" alt="Tela Sob Demanda do painel" width="100%">
+  <br><sub><b>Sob Demanda</b> no Monitor de Integrações — as ações e leituras por id do AfterSale ficam no grupo do módulo</sub>
+</p>
+
 ---
 
-## Auditoria (jobs)
+## 📝 Auditoria (jobs)
 
-Os jobs ficam em `auditing.Jobs` (scripts de jobs de `Parameters/`, `Me/`, `Refunds/` e `Reverses/`), com `IdParent = 50` (app AfterSale), e os mesmos
-ids em `EnumJob`.
+O catálogo fica em `auditing.JobCatalog` (scripts de jobs de `Parameters/`, `Me/`, `Refunds/` e `Reverses/`), com `IdParent = 50` (app AfterSale), e os mesmos
+ids em `EnumJob`. Cada empresa recebe a sua cópia em `auditing.Jobs` (`Company` na chave) ao contratar o módulo
+(`auditing.sp_Add_Company_App`), com os jobs **inativos** até alguém ligar.
+
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
+flowchart LR
+    CAT[("auditing.JobCatalog<br/>5000–5999")] -- "sp_Add_Company_App" --> JOBS[("auditing.Jobs<br/>uma linha por empresa")]
+    JOBS -- "IsActive = 1" --> HOST["Hangfire · WebJob · Worker<br/>uma execução por empresa"]
+    HOST --> SVC["Me · Reverses · Refunds"]
+    SVC --> LOGS[("auditing.Logs<br/>Messages · Records")]
+
+    classDef accent fill:#7c5cff,stroke:#7c5cff,color:#ffffff
+    classDef warm fill:#f5a524,stroke:#f5a524,color:#1e1b2e
+    class HOST accent
+    class SVC warm
+```
 
 | Faixa | Tipo (`IdType`) | Conteúdo |
 |---|---|---|
@@ -355,22 +490,26 @@ ids em `EnumJob`.
 | 5021 | `AfterSaleAdministrativeRecordsReverse` | 5023 | `AfterSaleGetRefundById` |
 | 5022 | `AfterSaleGetReverseById` | | |
 
-Toda execução grava `auditing.Logs` e, conforme o caso, `auditing.Messages` (mensagens e erros de
+Toda execução grava `auditing.Logs` (com a `Company` da execução) e, conforme o caso, `auditing.Messages` (mensagens e erros de
 validação) e `auditing.Records` (registros integrados).
 
 ---
 
-## Configuração
+## 🔑 Configuração
 
 | Onde | Chave | Uso |
 |---|---|---|
 | `appsettings.json` do host | `AfterSale:BaseUrl` | Endereço da API (`https://api.send4.com.br/`) |
 | `appsettings.json` do host | `ConnectionStrings` | Conexão com o SQL Server (dados e auditoria) |
 | Banco | `aftersale.AfterSaleParameters` | CNPJ (`doc_company`) e token de cada empresa |
+| Banco | `monitor.HoldingCompanies` | De/para CNPJ → holding (empresa do painel); só os CNPJs da holding da execução são lidos |
+
+> [!IMPORTANT]
+> Os tokens ficam só no banco, carregados pela tela de cadastro do WebApp ou, em teste, pelo `tools/seeds/Import-TestSeeds.ps1`.
 
 ---
 
-## Pasta `docs/Responsed Jsons`
+## 📁 Pasta `docs/Responsed Jsons`
 
 JSONs de referência por rota (`Me`, `Refund/*`, `Reverse/*`), usados para montar DTOs e entidades:
 
@@ -383,27 +522,34 @@ JSONs de referência por rota (`Me`, `Refund/*`, `Reverse/*`), usados para monta
 
 ---
 
-## Pendências conhecidas
+## 🚧 Pendências conhecidas
 
 * **Datas legadas `1990-01-01`**: registros gravados antes da mudança para datas anuláveis mantêm `01/01/1990` nas datas que vieram vazias, até serem reintegrados. O script avulso de limpeza está em [`src/Backend/Modules/General/AfterSale/docs/PROPOSTA-DATAS-NULAS-AFTERSALE.md`](docs/PROPOSTA-DATAS-NULAS-AFTERSALE.md) e ainda não foi executado. Consumidores fora do módulo que tratam `1990-01-01` como "sem data" precisam passar a usar `is null`.
 * **Detalhes já gravados não são atualizados pelo lote**: `GetReverse` e `GetRefund` só leem quem ainda não tem detalhe. Alterações posteriores chegam apenas por `GetReverseById` / `GetRefundById`.
 * **Histórico de reversas**: DTOs, entidade, tabela `AfterSaleHistoriesReverses` (já com `doc_company`) e a sua procedure de merge existem, mas não há método nem endpoint, e a entidade ainda não tem `doc_company`. O job 5010 e o da procedure (5516) saíram do `EnumJob` e dos scripts de jobs: voltam quando o método for escrito.
-* **`Me`**: as entidades e tabelas do e-commerce ainda não têm `doc_company`, então os dados das duas empresas não são separados por CNPJ.
+* ⚠️ **`Me`**: as entidades e tabelas do e-commerce ainda não têm `doc_company`, então os dados das duas empresas não são separados por CNPJ.
 * **`AfterSaleErrors` nas tabelas de domínio de reembolsos** (`GetStatus`, `GetActions`, `GetBanks`, `GetTypes`): quando a API devolve `success = false`, nada é gravado. A decisão sobre o que gravar está pendente.
 * **Pausas com `Thread.Sleep`** nas leituras paginadas (`GetReverses`, `GetRefunds`): bloqueiam a thread durante a espera; `await Task.Delay` seria o equivalente não bloqueante.
 
 ---
 
-## Documentação complementar
+## 📚 Documentação complementar
 
-Guias de alteração e decisões tomadas durante o desenvolvimento, na pasta `docs/` da raiz do repositório:
+Guias de alteração e decisões tomadas durante o desenvolvimento, na pasta [`docs/`](docs) do módulo (os padrões comuns ficam no `docs/` da raiz e em `src/Backend/Shared/docs`):
 
 | Documento | Assunto |
 |---|---|
-| `PADRAO-CACHE-INTEGRACOES.md` | Padrão de cache das leituras |
-| `ALTERACOES-GETSTATUS-REVERSES.md`, `ALTERACOES-GETTRANSPORTATIONS-REVERSES.md`, `ALTERACOES-CNPJ-DEMAIS-METODOS-REVERSES.md` | CNPJ (`doc_company`) nas leituras de reversas |
-| `ANALISE-ROTAS-PUT-POST-REVERSAS.md` | Análise das rotas de escrita de reversas |
-| `PROPOSTA-LOG-REQUISICOES-ESCRITA.md` | Log das chamadas de escrita (`AfterSaleRequests`) |
-| `ALTERACOES-MERGE-PROCEDURE-AUDITORIA.md` | Procedure de merge e relacionamentos da auditoria |
-| `IMPLEMENTACAO-GETREFUNDS.md`, `IMPLEMENTACAO-GETREFUND.md`, `IMPLEMENTACAO-REFUNDS-STATUS-ACTIONS-BANKS-TYPES.md`, `IMPLEMENTACAO-REFUNDS-POSTS.md` | Implementação das rotas de reembolsos |
-| `PROPOSTA-DATAS-NULAS-AFTERSALE.md` | Datas anuláveis (`DateTime?`) no padrão do Movidesk |
+| [`PADRAO-CACHE-INTEGRACOES.md`](../../../../../docs/PADRAO-CACHE-INTEGRACOES.md) | Padrão de cache das leituras |
+| [`ALTERACOES-GETSTATUS-REVERSES.md`](docs/ALTERACOES-GETSTATUS-REVERSES.md), [`ALTERACOES-GETTRANSPORTATIONS-REVERSES.md`](docs/ALTERACOES-GETTRANSPORTATIONS-REVERSES.md), [`ALTERACOES-CNPJ-DEMAIS-METODOS-REVERSES.md`](docs/ALTERACOES-CNPJ-DEMAIS-METODOS-REVERSES.md) | CNPJ (`doc_company`) nas leituras de reversas |
+| [`ANALISE-ROTAS-PUT-POST-REVERSAS.md`](docs/ANALISE-ROTAS-PUT-POST-REVERSAS.md) | Análise das rotas de escrita de reversas |
+| [`PROPOSTA-LOG-REQUISICOES-ESCRITA.md`](docs/PROPOSTA-LOG-REQUISICOES-ESCRITA.md) | Log das chamadas de escrita (`AfterSaleRequests`) |
+| [`ALTERACOES-MERGE-PROCEDURE-AUDITORIA.md`](../../../../../src/Backend/Shared/docs/ALTERACOES-MERGE-PROCEDURE-AUDITORIA.md) | Procedure de merge e relacionamentos da auditoria |
+| [`IMPLEMENTACAO-GETREFUNDS.md`](docs/IMPLEMENTACAO-GETREFUNDS.md), [`IMPLEMENTACAO-GETREFUND.md`](docs/IMPLEMENTACAO-GETREFUND.md), [`IMPLEMENTACAO-REFUNDS-STATUS-ACTIONS-BANKS-TYPES.md`](docs/IMPLEMENTACAO-REFUNDS-STATUS-ACTIONS-BANKS-TYPES.md), [`IMPLEMENTACAO-REFUNDS-POSTS.md`](docs/IMPLEMENTACAO-REFUNDS-POSTS.md) | Implementação das rotas de reembolsos |
+| [`PROPOSTA-DATAS-NULAS-AFTERSALE.md`](docs/PROPOSTA-DATAS-NULAS-AFTERSALE.md) | Datas anuláveis (`DateTime?`) no padrão do Movidesk |
+
+---
+
+<p align="center">
+  <img src="../../../../../docs/newbloomers.png" alt="NEWBLOOMERS" width="180"><br>
+  <sub>Sistema de integrações · feito com .NET 10</sub>
+</p>

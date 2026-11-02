@@ -22,10 +22,11 @@
 
 <p align="center">
   <a href="#-visão-geral">Visão geral</a> ·
-  <a href="#-como-executar">Como executar</a> ·
-  <a href="#-agendamento-dos-jobs">Agendamento</a> ·
-  <a href="#-painel-webapp">Painel</a> ·
-  <a href="#-data-warehouse">Data warehouse</a> ·
+  <a href="#️-como-executar">Como executar</a> ·
+  <a href="#-empresas-multiempresa">Empresas</a> ·
+  <a href="#️-agendamento-dos-jobs">Agendamento</a> ·
+  <a href="#️-painel-webapp">Painel</a> ·
+  <a href="#️-data-warehouse">Data warehouse</a> ·
   <a href="#-documentação">Documentação</a>
 </p>
 
@@ -41,6 +42,9 @@ um **data warehouse** com dimensões, fatos e agregados.
 * 🌐 O host web **`WebApi`** ([README](src/Backend/Hosts/WebApi/README.md)) registra todos os módulos e expõe as rotas.
 * ⏱️ A agenda dos jobs recorrentes sai de `auditing.Jobs` e roda em **um de três hosts**: Hangfire no `WebApi`, WebJobs
   na Azure ou o serviço `Worker` com o Quartz.NET.
+* 🏢 **Multiempresa:** cada empresa cliente (a holding) fica em `monitor.Company` e tem os **próprios jobs, logs e
+  parâmetros**. Dados de cliente não ficam no DbUp: entram pela tela de cadastro (em construção) ou, nos testes, pelo
+  [`tools/seeds/Import-TestSeeds.ps1`](tools/seeds/Import-TestSeeds.ps1).
 * 🖥️ O painel **Monitor de Integrações** (`WebApp`) mostra o que os jobs gravam em `auditing`.
 
 > [!TIP]
@@ -51,6 +55,7 @@ um **data warehouse** com dimensões, fatos e agregados.
 flowchart TB
     ORIGENS["🏬 Origens<br/>Totvs Moda · Linx Microvix · Linx Commerce<br/>Movidesk · AfterSale"]
     HOSTS["⏱️ Quem dispara<br/>rotas do WebApi<br/>Hangfire · WebJob · Worker"]
+    EMP["🏢 Empresas<br/>monitor.Company"]
 
     subgraph SISTEMA["📦 Módulos .NET"]
         direction LR
@@ -69,6 +74,7 @@ flowchart TB
     PAINEL["🖥️ Monitor de Integrações"]
     SAIDA["🚚 Logística · BI"]
 
+    EMP -- "uma execução por empresa" --> HOSTS
     HOSTS --> SVC
     ORIGENS -- "API · JSON / XML" --> SVC
     SVC --> REPO --> UNT -- "MERGE" --> FINAL
@@ -79,7 +85,7 @@ flowchart TB
     classDef accent fill:#7c5cff,stroke:#7c5cff,color:#ffffff
     classDef warm fill:#f5a524,stroke:#f5a524,color:#1e1b2e
     class PAINEL,DW accent
-    class SAIDA,ORIGENS warm
+    class SAIDA,ORIGENS,EMP warm
 ```
 
 ---
@@ -89,8 +95,9 @@ flowchart TB
 | | | |
 |---|---|---|
 | 🛠️ [Tecnologias](#️-tecnologias) | 🗂️ [Estrutura do repositório](#️-estrutura-do-repositório) | 🧩 [Módulos](#-módulos) |
-| ⚙️ [Como uma integração funciona](#️-como-uma-integração-funciona) | ⏱️ [Agendamento dos jobs](#️-agendamento-dos-jobs) | 🌐 [Endpoints](#-endpoints) |
-| 🗄️ [Banco de dados e scripts](#️-banco-de-dados-e-scripts) | 🔧 [Configuração](#-configuração) | ▶️ [Como executar](#️-como-executar) |
+| ⚙️ [Como uma integração funciona](#️-como-uma-integração-funciona) | 🏢 [Empresas (multiempresa)](#-empresas-multiempresa) | ⏱️ [Agendamento dos jobs](#️-agendamento-dos-jobs) |
+| 🌐 [Endpoints](#-endpoints) | 🗄️ [Banco de dados e scripts](#️-banco-de-dados-e-scripts) | 🔧 [Configuração](#-configuração) |
+| ▶️ [Como executar](#️-como-executar) | | |
 | 📊 [Auditoria e relatórios](#-auditoria-e-relatórios) | 🖥️ [Painel (WebApp)](#️-painel-webapp) | 🏛️ [Data warehouse](#️-data-warehouse) |
 | 📐 [Padrões do código](#-padrões-do-código) | 🚧 [Fora do host e pendências](#-fora-do-host-e-pendências) | 📚 [Documentação](#-documentação) |
 
@@ -105,7 +112,8 @@ flowchart TB
 | ⏱️ **Agendamento** | Agenda em `auditing.Jobs`, executada por um de três hosts: **Hangfire** 1.8 no `WebApi` (opcional, `Hangfire:Enabled`), **WebJobs** contínuos na Azure (`WebJob`) ou **Quartz.NET** 3.19 como serviço do Windows (`Worker`). O código comum fica em `Hosts.Scheduling` |
 | 🗃️ **Acesso a dados** | **Dapper** e bulk insert (`ISharedRepository`), SQL montado nos *command handlers* |
 | 🗄️ **Banco** | **SQL Server** (dados, auditoria e DW); scripts para MySQL e PostgreSQL existem só como `migrator.csx` |
-| 🔁 **Migrações** | **DbUp** executado por `dotnet-script` (`migrator.csx` em cada módulo) |
+| 🔁 **Migrações** | **DbUp** executado por `dotnet-script` (`migrator.csx` em cada módulo): só estrutura e catálogo do produto |
+| 🧰 **Dados de teste** | `tools/seeds/Import-TestSeeds.ps1` (PowerShell 7 + `sqlcmd`): empresa, parâmetros e jobs num banco de teste |
 | ✅ **Validação** | **FluentValidation** (um validador por DTO) |
 | 🔌 **HTTP e JSON** | `IHttpClientFactory` (`IApiClient` nomeado por módulo), **Newtonsoft.Json**, XML (`System.Xml.Linq`) no Linx Microvix |
 | ⚡ **Cache** | `IMemoryCache` ([padrão](docs/PADRAO-CACHE-INTEGRACOES.md)) |
@@ -119,7 +127,7 @@ flowchart TB
 ```text
 extract-transform-load-integrations-system/
 ├── 📄 etl-integrations-system.slnx          solução
-├── 📚 docs/                                 padrões, migrator, revisão e imagens deste README
+├── 📚 docs/                                 padrões, migrator, plano do cadastro de empresas e imagens dos READMEs
 ├── 📂 src/
 │   ├── Backend/
 │   │   ├── Hosts/
@@ -137,6 +145,7 @@ extract-transform-load-integrations-system/
 │   │       └── DataWarehouse/
 │   ├── Frontend/WebApp/                  painel Blazor (visão geral, aplicações, integrações, erros, sob demanda e consultas)
 │   └── Mobile/MobileApp/                 app MAUI
+├── 🧰 tools/seeds/                          Import-TestSeeds.ps1: carrega uma empresa de teste (parâmetros e jobs)
 └── 🧪 tests/                                (vazio)
 ```
 
@@ -147,7 +156,8 @@ extract-transform-load-integrations-system/
 <Módulo>/
 ├── Domain.<Módulo>/          DTOs (Dtos/Reads e Dtos/Writes), entidades, enums (EnumJob) e interfaces dos repositórios
 ├── Application.<Módulo>/     services (regras de leitura e escrita), command handlers (SQL) e validadores
-├── Infrastructure.<Módulo>/  repositórios, injeção de dependência e Scripts/SQLServer (DbUp)
+├── Infrastructure.<Módulo>/  repositórios, injeção de dependência, Scripts/SQLServer (DbUp: estrutura e catálogo)
+│                             e Seeds/SQLServer (parâmetros de uma empresa, fora do DbUp, lidos só pelo .ps1)
 ├── docs/                     propostas, planos, implementações e modelagens do módulo, e as respostas de
 │                             exemplo da API (Responsed Jsons ou Responsed XMLs, com dados fictícios)
 └── README.md                 documentação do módulo
@@ -173,23 +183,28 @@ Registrados no host (`src/Backend/Hosts/WebApi/Extensions/ServicesExtensions.cs`
 
 | Módulo | Sistema | App | Schema | Rota base | Rotas | README |
 |---|---|:---:|---|---|:---:|:---:|
-| 🟣 **Totvs** | Totvs Moda (ERP: pessoas, produtos, pedidos, notas, financeiro) | `130` | `totvs` | `TotvsJobs/Totvs` | **122** | [📖](src/Backend/Modules/Totvs/README.md) |
+| 🟣 **Totvs** | Totvs Moda (ERP: pessoas, produtos, pedidos, notas, financeiro) | `130` | `totvs` | `TotvsJobs/Totvs` | **123** | [📖](src/Backend/Modules/Totvs/README.md) |
 | 🟣 **LinxMicrovix** (Outbound) | Linx Microvix (ERP e B2C, web services XML) | `80` | `linxmicrovix` | `LinxMicrovixJobs/LinxMicrovix` | **284** | [📖](src/Backend/Modules/LinxMicrovix/LinxMicrovix%20-%20Outbound%20Web%20Service/README.md) |
 | 🟣 **LinxCommerce** | Linx Commerce (e-commerce: pedidos, clientes, catálogo) | `70` | `linxcommerce` | `LinxCommerceJobs/LinxCommerce` | **12** | [📖](src/Backend/Modules/LinxCommerce/README.md) |
 | 🟣 **Movidesk** | Movidesk (help desk: tickets, pessoas, serviços) | `30` | `movidesk` | `MovideskJobs/Movidesk` | **16** | [📖](src/Backend/Modules/General/Movidesk/README.md) |
 | 🟣 **AfterSale** | Troque Fácil (pós-venda: reversas e reembolsos) | `50` | `aftersale` | `AfterSaleJobs/AfterSale` | **24** | [📖](src/Backend/Modules/General/AfterSale/README.md) |
 | 🟠 **DataWarehouse** | DW do NEWBLOOMERS (lê as tabelas dos módulos) | `90` | `dw_*`, `datawarehouse`, `datamart` | `DataWarehouseJobs/DataWarehouse` | **5** | [📖](src/Backend/Modules/DataWarehouse/docs/00-ordem-de-leitura.md) |
-| ⚫ **Hosts** | Jobs dos próprios hosts de agenda (job 14000 `StuckJobsRecovery`, só no WebJob) | `140` | — | — | — | [📖](src/Backend/Hosts/WebJob/README.md) |
-| ⚫ **Shared** | Base comum: auditoria, `IApiClient`, `ISharedRepository`, trava de concorrência (`IJobLock`) | — | `auditing`, `untreated`, `dbo` | — | — | — |
+| ⚫ **Hosts** | Jobs dos próprios hosts de agenda (job 14000 `StuckJobsRecovery`, só no WebJob; um por empresa) | `140` | — | — | — | [📖](src/Backend/Hosts/WebJob/README.md) |
+| ⚫ **Shared** | Base comum: auditoria, `IApiClient`, `ISharedRepository`, trava de concorrência (`IJobLock`), empresa da execução (`ICompanyContext`) | — | `auditing`, `monitor`, `untreated`, `dbo` | — | — | — |
 
-<sub>**App** = `IdParent` em `auditing.Apps`.</sub>
+<sub>**App** = `IdParent` em `auditing.Apps`. Rotas contadas no Swagger do host.</sub>
+
+<p align="center">
+  <img src="docs/images/swagger/visao-geral.png" alt="Swagger do WebApi com as tags de cada módulo" width="85%">
+  <br><sub><b>Swagger do WebApi</b> — uma tag por service de cada módulo (<code>http://localhost:5252/swagger</code>)</sub>
+</p>
 
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'pie1':'#7c5cff','pie2':'#f5a524','pie3':'#a78bfa','pie4':'#fbbf24','pie5':'#c4b5fd','pie6':'#fde68a','pieTitleTextSize':'18px','pieSectionTextColor':'#1e1b2e','pieStrokeColor':'#1e1b2e'}}}%%
 pie showData
-    title Rotas por módulo (463)
+    title Rotas por módulo (464)
     "LinxMicrovix" : 284
-    "Totvs" : 122
+    "Totvs" : 123
     "AfterSale" : 24
     "Movidesk" : 16
     "LinxCommerce" : 12
@@ -202,16 +217,17 @@ pie showData
 
 ### 🔄 Leitura recorrente (carga do banco)
 
-1. Uma rota (`POST` ou `GET` sem parâmetros) ou o agendador dispara o job; ele abre um log em `auditing.Logs` com o
-   `IdJob` do `EnumJob`.
-2. A service lê as empresas cadastradas na tabela de parâmetros do módulo (`<schema>.<Módulo>Parameters`) e, para cada
-   uma, chama a API com **paginação**, **nova tentativa** em 401/429/502/503/504 e a **janela de alteração** (data ou
-   `timestamp`).
+1. Uma rota (`POST` ou `GET` sem parâmetros) ou o agendador dispara o job **para uma empresa** (`ICompanyContext`); ele
+   abre um log em `auditing.Logs` com o `IdJob` do `EnumJob` e a `Company`.
+2. A service lê os CNPJs da empresa na tabela de parâmetros do módulo (`<schema>.<Módulo>Parameters`, pelo join com
+   `monitor.HoldingCompanies`) e, para cada um, chama a API com **paginação**, **nova tentativa** em 401/429/502/503/504
+   e a **janela de alteração** (data ou `timestamp`).
 3. Cada registro é **validado** (FluentValidation; erro vira mensagem no log, não interrompe), convertido em entidade com
    o **mesmo horário de lote** e o CNPJ da empresa (`doc_company`) e filtrado pelo cache/estado já gravado (só novos ou
    alterados).
 4. O repositório faz o **bulk insert** em `untreated.<Tabela>` e a procedure `<schema>.sp_<Tabela>_Sync` (gerada pelo
-   `dbo.sp_Create_Merge_Procedure` do Shared) faz o `MERGE` na tabela final `<schema>.<Tabela>`, com PK.
+   `dbo.sp_Create_Merge_Procedure` do Shared, que recebe `@Company`) faz o `MERGE` na tabela final `<schema>.<Tabela>`,
+   com PK.
 5. O JSON/XML de cada registro vai para `auditing.Records`, as mensagens para `auditing.Messages`, e o log é fechado com
    o total gravado.
 
@@ -226,9 +242,9 @@ sequenceDiagram
     participant B as SQL Server
 
     D->>S: executa o job (IdJob)
-    S->>B: auditing.sp_Log_Start
-    S->>B: lê <Módulo>Parameters (empresas)
-    loop cada empresa
+    S->>B: auditing.sp_Log_Start (job, empresa)
+    S->>B: lê os CNPJs da empresa (Parameters + HoldingCompanies)
+    loop cada CNPJ
         loop cada página
             S->>A: GET/POST com a janela de alteração
             A-->>S: registros (JSON / XML)
@@ -245,7 +261,8 @@ sequenceDiagram
 ### 🎯 Leitura sob demanda (um registro por chave)
 
 Rotas `GET .../{docCompany}/{chave}` chamadas por sistemas externos: exigem o cabeçalho **`X-User-Name`** (até 100
-caracteres) e o CNPJ da empresa na rota; leem só aquele registro, gravam pelo mesmo caminho da leitura recorrente e
+caracteres) e o CNPJ na rota, que precisa estar em `monitor.HoldingCompanies` (a empresa da execução é a holding dele;
+ver [Empresas](#-empresas-multiempresa)); leem só aquele registro, gravam pelo mesmo caminho da leitura recorrente e
 registram a chamada em `<schema>.<Módulo>Requests`.
 
 ```mermaid
@@ -253,7 +270,9 @@ registram a chamada em `<schema>.<Módulo>Requests`.
 flowchart LR
     REQ["GET .../{docCompany}/{chave}<br/>X-User-Name"] --> V{"Parâmetros<br/>válidos?"}
     V -- não --> E400["400<br/>parâmetros inválidos"]
-    V -- sim --> C{"Empresa<br/>cadastrada?"}
+    V -- sim --> H{"CNPJ tem holding<br/>em HoldingCompanies?"}
+    H -- não --> E400
+    H -- sim --> C{"Parâmetros<br/>do CNPJ?"}
     C -- não --> E422["422<br/>empresa ou erro da API"]
     C -- sim --> API{"A API tem<br/>o registro?"}
     API -- erro --> E422
@@ -282,13 +301,85 @@ chamada fica em `<Módulo>Requests` com usuário, rota, corpo, resposta e `statu
 
 ---
 
+## 🏢 Empresas (multiempresa)
+
+O sistema atende mais de um cliente. A **empresa** de tudo é a **holding** cadastrada em `monitor.Company` (CNPJ, só
+dígitos), e ela entra na chave de `auditing.Jobs`, `Logs`, `Messages` e `Records` (coluna **`Company`**). As decisões e
+as fases estão em [PLANO-TELA-CADASTRO-EMPRESA.md](docs/PLANO-TELA-CADASTRO-EMPRESA.md) e na
+[proposta](src/Backend/Shared/docs/PROPOSTA-DOC-COMPANY-AUDITING.md).
+
+| | Peça | Para que serve |
+|:---:|---|---|
+| 🏢 | `monitor.Company` | Empresas clientes (holding): razão social, nome fantasia e `IsActive`. Só as ativas entram na agenda |
+| 🔗 | `monitor.HoldingCompanies` | De/para dos CNPJs que aparecem em `doc_company` nas tabelas `*Parameters` (marcas, filiais) para a holding. Um CNPJ é de uma holding só |
+| 📚 | `auditing.JobCatalog` | Catálogo de jobs do produto, sem empresa, criado pelo DbUp (inclusive o 14000 dos hosts) |
+| 🗓️ | `auditing.Jobs` | Uma linha por **(job, empresa)**, com a `IsActive` daquela empresa: ativar é um `UPDATE` na linha dela |
+| ➕ | `auditing.sp_Add_Company` | Cadastra a empresa e já cria os jobs dos hosts dela |
+| 🧩 | `auditing.sp_Add_Company_App` / `sp_Remove_Company_App` | Contrata (copia o catálogo do módulo para `auditing.Jobs`, inativos) ou remove (desativa) uma integração |
+| 🔑 | `auditing.sp_Add_Holding_Company` | Liga um CNPJ de parâmetro à holding |
+| 🧠 | `ICompanyContext` (Shared) | A empresa da execução, uma por escopo: o log, os repositórios e a `sp_*_Sync` leem dela |
+| 🖼️ | `monitor.AppImage` / `monitor.AppSetting` | Imagem e parâmetros de apresentação do painel por módulo e empresa (`Company = '*'` é o padrão) |
+
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
+flowchart TB
+    subgraph CAD["📝 Cadastro · tela ou .ps1"]
+        direction LR
+        C1["sp_Add_Company"] --> C2["sp_Add_Holding_Company<br/>CNPJs dos parâmetros"]
+        C2 --> C3["sp_Add_Company_App<br/>contrata o módulo"]
+    end
+    CAT[("auditing.JobCatalog<br/>(DbUp)")] --> C3
+    C3 --> JOBS[("auditing.Jobs<br/>job x empresa · inativos")]
+    JOBS -- "UPDATE IsActive = 1" --> AG["⏱️ agenda<br/>só empresas ativas"]
+    AG --> CTX["ICompanyContext<br/>empresa da execução"]
+    CTX --> SVC["service do módulo<br/>CNPJs da holding"]
+    SVC --> LOG[("auditing.Logs<br/>Company")]
+
+    classDef accent fill:#7c5cff,stroke:#7c5cff,color:#ffffff
+    classDef warm fill:#f5a524,stroke:#f5a524,color:#1e1b2e
+    class AG,CTX accent
+    class JOBS warm
+```
+
+**Empresa numa rota** (`CompanyContextFilter`, global no `WebApi`): vem do cabeçalho **`X-Company`** (CNPJ da holding)
+ou, sem ele, da holding do `{docCompany}` da rota.
+
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
+flowchart LR
+    R["Requisição"] --> X{"X-Company<br/>só dígitos?"}
+    X -- não --> B1["400"]
+    X -- "sim ou ausente" --> D{"Rota tem<br/>docCompany?"}
+    D -- não --> N["segue com X-Company<br/>ou sem empresa"]
+    D -- sim --> H{"Holding do CNPJ<br/>em HoldingCompanies?"}
+    H -- não --> B2["400"]
+    H -- sim --> M{"X-Company igual<br/>à holding?"}
+    M -- não --> B3["400"]
+    M -- "sim ou ausente" --> OK["empresa = holding"]
+    N -. "sem empresa, o log recusa" .-> FIM["execução"]
+    OK --> FIM
+
+    classDef ok fill:#16a34a,stroke:#16a34a,color:#ffffff
+    classDef err fill:#dc2626,stroke:#dc2626,color:#ffffff
+    class OK ok
+    class B1,B2,B3 err
+```
+
+> [!IMPORTANT]
+> Num ambiente novo o sistema sobe **sem nenhuma empresa**, e nada roda até alguém cadastrar uma. Os parâmetros
+> (credenciais) ficam em **texto puro** nas tabelas `*Parameters` nesta fase.
+
+---
+
 ## ⏱️ Agendamento dos jobs
 
-A agenda é uma só, em `auditing.Jobs`:
+A agenda é uma só, em `auditing.Jobs`, com **uma linha por (job, empresa)** e só das empresas ativas em
+`monitor.Company`:
 
 | Coluna | Significado |
 |---|---|
-| `IsActive` | só com `1` o job entra na agenda; **todo insert nasce `0`** |
+| `Company` | a empresa (holding) daquela linha; o agendador roda **uma execução por (job, empresa)** |
+| `IsActive` | só com `1` o job entra na agenda para aquela empresa; **todo insert nasce `0`** |
 | `IntervalTimeInMinutes` | intervalo; `0` = sob demanda, fora da agenda |
 | `RunningDailyAt` | preenchida, o job é diário e roda nessa hora (só com intervalo `1440`) |
 | `Queue` | fila do Hangfire (não divide jobs entre os hosts) |
@@ -298,13 +389,13 @@ O `Hosts.Scheduling` liga cada `IdJob` ao método do service e é usado pelos tr
 | Host | Como agenda | Onde roda | README |
 |---|---|---|:---:|
 | 🌐 `WebApi` | Hangfire, com `Hangfire:Enabled = true` (padrão `false`: só API) e dashboard em `/hangfire` | junto das rotas | [📖](src/Backend/Hosts/WebApi/README.md) |
-| ☁️ `WebJob` | um processo por job (`--job <IdJob>`), lendo a agenda a cada ciclo | WebJobs contínuos na Azure (`Publish/publish-webjob.ps1`) | [📖](src/Backend/Hosts/WebJob/README.md) |
+| ☁️ `WebJob` | um processo por job (`--job <IdJob>`), que atende todas as empresas ativas, uma de cada vez, lendo a agenda a cada ciclo | WebJobs contínuos na Azure (`Publish/publish-webjob.ps1`) | [📖](src/Backend/Hosts/WebJob/README.md) |
 | 🪟 `Worker` | Quartz.NET com `AdoJobStore` em cluster (schema `quartz`), agenda relida pelo `SchedulerRefreshJob` | serviço do Windows `EtlWorker` (`Publish/publish-worker.ps1`) | [📖](src/Backend/Hosts/Worker/README.md) |
 
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
 flowchart TB
-    JOBS[("auditing.Jobs<br/>IsActive = 1")]
+    JOBS[("auditing.Jobs<br/>job x empresa · IsActive = 1")]
 
     subgraph UM["Um host de agenda por vez"]
         direction LR
@@ -315,9 +406,11 @@ flowchart TB
 
     JOBS --> HF & WJ & WK
     HF & WJ & WK --> MAP["Hosts.Scheduling<br/>IdJob → método [JobVersion]"]
-    MAP --> LOCK{"IJobLock<br/>job:IdJob livre?"}
-    LOCK -- não --> SKIP["⏭️ pula a execução"]
-    LOCK -- sim --> RUN["▶️ service do módulo"]
+    MAP --> LOCKE{"trava da empresa<br/>job:IdJob:empresa livre?"}
+    LOCKE -- não --> SKIP["⏭️ pula a execução"]
+    LOCKE -- sim --> LOCKJ{"trava do job<br/>job:IdJob livre?"}
+    LOCKJ -- "não: outra empresa" --> ADIA["⏳ adia 1 minuto<br/>(WebJob: pula)"]
+    LOCKJ -- sim --> RUN["▶️ service do módulo<br/>com a empresa"]
     RUN --> LOGS[("auditing.Logs")]
     LOGS --> HB["auditing.vw_JobsHeartbeat"]
     HB --> REC["🩺 14000 StuckJobsRecovery<br/>(só WebJob)"]
@@ -325,22 +418,26 @@ flowchart TB
     classDef accent fill:#7c5cff,stroke:#7c5cff,color:#ffffff
     classDef warm fill:#f5a524,stroke:#f5a524,color:#1e1b2e
     class HF,WJ,WK accent
-    class SKIP warm
+    class SKIP,ADIA warm
 ```
 
 > [!WARNING]
 > **Um host de agenda por vez** no mesmo banco. O `WebApi` em modo só API combina com qualquer um deles, para o disparo
 > manual pelas rotas.
 
-* 🔒 **Trava de concorrência:** o `IJobLock` do Shared (`sp_getapplock`) usa as mesmas chaves nos três hosts
-  (`job:<IdJob>` e `group:datawarehouse` para os jobs do DW), então um job agendado nunca roda junto com ele mesmo, nem
-  durante uma troca de host; a execução que encontra a trava ocupada é pulada. As rotas do `WebApi` ficam fora dessa
-  trava.
+* 🔒 **Trava de concorrência em duas chaves:** o `IJobLock` do Shared (`sp_getapplock`) usa as mesmas chaves nos três
+  hosts. A **da empresa** (`job:<IdJob>:<empresa>`, ou `group:datawarehouse:<empresa>` no DW) ocupada quer dizer que a
+  execução anterior da mesma empresa ainda roda: **pula**. A **do job** (`job:<IdJob>`) vale entre empresas, porque todas
+  escrevem nas mesmas tabelas (`untreated` e a `sp_*_Sync`): ocupada por outra empresa, no Hangfire e no Worker a
+  execução **volta em 1 minuto** (`Rescheduled: job:<IdJob> running for another company`); no WebJob, que atende as
+  empresas uma de cada vez, o horário é pulado. As rotas do `WebApi` ficam fora dessas travas.
 * 🏷️ **Versão dos jobs:** o método chamado por um job recorrente leva `[JobVersion("MAJOR.MINOR.PATCH")]`; o nome do job
-  no agendador leva a versão (`<IdJob>-<Title> - V<versão>` no Hangfire e no Quartz, `<Title> - V<versão>` no WebJob), e
-  uma versão nova troca o job antigo na releitura da agenda. Sem versão, o host com agenda não sobe.
-* 🩺 **Heartbeat:** a view `auditing.vw_JobsHeartbeat` dá a última execução de cada job; no WebJob, o job 14000
-  `StuckJobsRecovery` reinicia na Azure os WebJobs com o heartbeat off (sem execução em 1 × o intervalo).
+  no agendador leva a versão e a empresa (`<IdJob>-<Title> - V<versão> - <empresa>` no Hangfire e no Quartz;
+  `<Title> - V<versão>` no WebJob, que atende todas as empresas), e uma versão nova troca o job antigo na releitura da
+  agenda. Sem versão, o host com agenda não sobe.
+* 🩺 **Heartbeat:** a view `auditing.vw_JobsHeartbeat` dá a última execução de cada (job, empresa); no WebJob, o 14000
+  `StuckJobsRecovery` de cada empresa lê o heartbeat só dela e reinicia na Azure os WebJobs com o heartbeat off (sem
+  execução em 1 × o intervalo).
 
 ---
 
@@ -351,7 +448,7 @@ desenvolvimento).
 
 | Módulo | 🔄 Leituras recorrentes | 🎯 Sob demanda | ✍️ Escritas e ações |
 |---|---|---|---|
-| **Totvs** | **43** (pessoas, filiais, vendedores, produtos, saldos, preços, pedidos, notas, duplicatas, catálogos) | **25** | **54** (pessoas, produtos, preços, pedidos de compra e de venda, duplicatas, bônus, fiscal) |
+| **Totvs** | **43** (pessoas, filiais, vendedores, produtos, saldos, preços, pedidos, notas, duplicatas, catálogos) | **24** (`GET` por chave) | **56** (`POST`/`PUT`/`DELETE` com `{docCompany}`: pessoas, produtos, preços, pedidos de compra e de venda, duplicatas, bônus, fiscal) |
 | **LinxMicrovix** | **260** (`POST <Método>`, um por método da API: 191 do ERP e 69 do B2C) | **24** | — |
 | **LinxCommerce** | **6** (`SearchOrders`, `SearchOrderStatus`, `SearchCustomer`, `SearchProduct`, `SearchSKU`, `SearchSalesRepresentative`) | **6** | — |
 | **Movidesk** | **3** (`Tickets`, `People`, `Services`) | **3** | **10** (tickets, anexos, pessoas, serviços) |
@@ -362,6 +459,7 @@ desenvolvimento).
 POST http://localhost:5252/TotvsJobs/Totvs/Customers
 GET  http://localhost:5252/TotvsJobs/Totvs/Customers/44065634000106/123
 X-User-Name: fulano
+X-Company: 44065634000106
 
 POST http://localhost:5252/LinxMicrovixJobs/LinxMicrovix/LinxProdutos
 POST http://localhost:5252/DataWarehouseJobs/DataWarehouse/RunHourly
@@ -379,9 +477,10 @@ POST http://localhost:5252/DataWarehouseJobs/DataWarehouse/RunHourly
 
 | Schema | Conteúdo |
 |---|---|
-| 📝 `auditing` | `Apps`, `Jobs`, `Types`, `Logs`, `Messages`, `Records`, as procedures `sp_Log_Start/Message/Error/End` e a view `vw_JobsHeartbeat` (Shared) |
+| 📝 `auditing` | `Apps`, `JobCatalog`, `Jobs`, `Types`, `Logs`, `Messages`, `Records` (com `Company`), as procedures `sp_Log_Start/Message/Error/End`, `sp_Add_Company`, `sp_Add_Company_App`, `sp_Remove_Company_App`, `sp_Add_Holding_Company`, a função `fn_JobCatalogTree` e a view `vw_JobsHeartbeat` (Shared) |
+| 🏢 `monitor` | `Company`, `HoldingCompanies`, `AppImage` e `AppSetting`: empresas clientes e a apresentação do painel por empresa (Shared, `Script008`) |
 | 📥 `untreated` | Carga bruta de cada tabela de dados, sem chave (recebe o bulk insert) |
-| 🧩 `totvs`, `linxmicrovix`, `linxcommerce`, `movidesk`, `aftersale` | Tabelas finais (com PK), procedures `sp_<Tabela>_Sync`, parâmetros e `<Módulo>Requests` |
+| 🧩 `totvs`, `linxmicrovix`, `linxcommerce`, `movidesk`, `aftersale` | Tabelas finais (com PK), procedures `sp_<Tabela>_Sync` (com `@Company`), parâmetros e `<Módulo>Requests` |
 | 🔧 `dbo` | `sp_Create_Merge_Procedure` (gera os merges), `sp_TryApplock`, limpeza de logs e manutenção (Shared) |
 | 🪟 `quartz` | Tabelas do Quartz.NET (`QRTZ_*`), só para o host `Worker` (migrator do próprio host) |
 | 🌐 `HangFire` | Storage do Hangfire, criado por ele mesmo quando o `WebApi` sobe com `Hangfire:Enabled = true` |
@@ -391,17 +490,31 @@ Toda tabela de dados tem **`doc_company`** (CNPJ da empresa) e **`integrated_or_
 Brasília).
 
 <details>
-<summary><b>🗺️ Modelo de <code>auditing</code></b></summary>
+<summary><b>🗺️ Modelo de <code>auditing</code> e <code>monitor</code></b></summary>
 
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'primaryColor':'#ede9fe','primaryTextColor':'#1e1b2e','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','tertiaryColor':'#ffffff'}}}%%
 erDiagram
-    Apps ||..o{ Jobs : "IdParent (sem FK)"
+    Company ||--o{ HoldingCompanies : "Holding"
+    Company ||--o{ Jobs : "Company"
+    Apps ||..o{ JobCatalog : "IdParent (sem FK)"
+    JobCatalog ||..o{ Jobs : "sp_Add_Company_App"
     Types ||--o{ Jobs : "IdType"
-    Jobs ||--o{ Logs : "IdJob, IdType"
+    Jobs ||--o{ Logs : "IdJob, IdType, Company"
     Logs ||--o{ Messages : "Execution"
     Logs ||--o{ Records : "Execution"
 
+    Company {
+        varchar Company PK
+        nvarchar Name
+        nvarchar TradeName
+        bit IsActive
+    }
+    HoldingCompanies {
+        varchar Company PK
+        varchar Holding FK
+        nvarchar Name
+    }
     Apps {
         int IdParent PK
         nvarchar Title
@@ -412,9 +525,19 @@ erDiagram
         nvarchar JobType
         nvarchar Description
     }
+    JobCatalog {
+        int IdJob PK
+        int IdType PK
+        int IdParent
+        nvarchar Title
+        int IntervalTimeInMinutes
+        time RunningDailyAt
+        nvarchar Queue
+    }
     Jobs {
         int IdJob PK
         int IdType PK
+        varchar Company PK
         int IdParent
         nvarchar Title
         int IntervalTimeInMinutes
@@ -425,6 +548,7 @@ erDiagram
     Logs {
         int IdJob PK
         int IdType PK
+        varchar Company PK
         uniqueidentifier Execution PK
         uniqueidentifier ExecutionParent
         datetime StartDate
@@ -432,6 +556,7 @@ erDiagram
     }
     Messages {
         bigint IdExecutionMessage
+        varchar Company FK
         uniqueidentifier Execution FK
         bit IsError
         nvarchar Message
@@ -440,6 +565,7 @@ erDiagram
     }
     Records {
         bigint IdRecord
+        varchar Company FK
         uniqueidentifier Execution FK
         nvarchar FieldKeyValue
         varchar RecordText
@@ -450,18 +576,23 @@ erDiagram
 
 ### Scripts (DbUp)
 
-Cada módulo tem `Infrastructure.<Módulo>/Scripts/SQLServer` com um `migrator.csx` e os scripts em subpastas:
+O DbUp cria **estrutura e catálogo do produto**; tudo o que depende de um cliente (linhas de `*Parameters` e de
+`auditing.Jobs`) fica fora dele. Cada módulo tem:
 
 ```text
-SQLServer/
-├── migrator.csx
-├── Parameters/        schema, tabela de parâmetros, app, credenciais e a tabela de requests
-└── <Service>/         um trio por service: _Tables, _Sync_Procedures e _Jobs_Into_Jobs_Table
+Infrastructure.<Módulo>/
+├── Scripts/SQLServer/     ← DbUp (estrutura e catálogo)
+│   ├── migrator.csx
+│   ├── Parameters/        schema, tabela de parâmetros, app e a tabela de requests
+│   └── <Service>/         um trio por service: _Tables, _Sync_Procedures e _Jobs_Into_Jobs_Table (→ auditing.JobCatalog)
+└── Seeds/SQLServer/       ← fora do DbUp: parâmetros (credenciais) de uma empresa, lidos só pelo .ps1 de teste
 ```
 
 * O **`Shared`**, base dos outros, não tem services e mantém os scripts direto em `SQLServer/` (`Script001` a
-  `Script007`: schemas e tabelas de `auditing`, procedures de log, merge, `dbo`, tipos, views e os jobs do app 140
-  `Hosts`).
+  `Script008`: schemas e tabelas de `auditing`, procedures de log e de cadastro, merge, `dbo`, tipos, views, os jobs do
+  app 140 `Hosts` no catálogo e o schema `monitor`).
+* Os scripts de credenciais de LinxMicrovix e LinxCommerce ficam **fora do git** (`.gitignore`), só com o `.example`;
+  os de Totvs, Movidesk e AfterSale estão no git, em `Seeds/SQLServer`.
 * O host **`Worker`** tem o próprio migrator, com as tabelas do Quartz.
 * A numeração é **única e sequencial** no módulo e define a ordem de execução (o `migrator.csx` lê as subpastas e ordena
   pelo número). No DW as pastas são por camada (`Parameters`, `Landing`, `History`, `PersonalData`, `Dimensions`,
@@ -475,12 +606,13 @@ SQLServer/
 flowchart LR
     SH["1️⃣ Shared<br/>auditing · merge · dbo"] --> MOD["2️⃣ Módulos<br/>Totvs · LinxMicrovix · LinxCommerce<br/>Movidesk · AfterSale"]
     MOD --> DW["3️⃣ DataWarehouse<br/>lê as tabelas dos módulos"]
+    DW --> SEED["4️⃣ Empresa<br/>Import-TestSeeds.ps1 ou tela"]
     SH -.-> WK["🪟 Worker<br/>tabelas do Quartz<br/>(só se usar esse host)"]
 
     classDef accent fill:#7c5cff,stroke:#7c5cff,color:#ffffff
     classDef warm fill:#f5a524,stroke:#f5a524,color:#1e1b2e
     class SH accent
-    class DW warm
+    class DW,SEED warm
 ```
 
 > [!WARNING]
@@ -503,10 +635,11 @@ agendador; ver o README de cada host):
 | `DataWarehouse:Pepper` | Pepper do hash de CPF/CNPJ no DW; sem ele, as etapas com `doc_hash` são puladas |
 | `Hangfire:Enabled` e `Hangfire:Dashboard:*` | Liga o Hangfire no `WebApi`; usuário e senha do dashboard só por variável de ambiente ou user-secrets |
 
-As empresas e credenciais de cada API ficam **no banco**, na tabela de parâmetros do módulo (`TotvsParameters`,
-`LinxMicrovixParameters`, `LinxCommerceParameters`, `MovideskParameters`, `AfterSaleParameters`), gravadas pelo script
-`Parameters/Script003` de cada um. O Linx Commerce não tem `BaseUrl`: o endereço é de cada cliente, na tabela de
-parâmetros.
+As empresas e credenciais de cada API ficam **no banco**: a empresa em `monitor.Company` e as credenciais na tabela de
+parâmetros do módulo (`TotvsParameters`, `LinxMicrovixParameters`, `LinxCommerceParameters`, `MovideskParameters`,
+`AfterSaleParameters`), uma linha por CNPJ. Elas entram pela tela de cadastro (em construção) ou, nos testes, pelos
+scripts de `Seeds/SQLServer` via `tools/seeds/Import-TestSeeds.ps1`. O Linx Commerce não tem `BaseUrl`: o endereço é de
+cada cliente, na tabela de parâmetros.
 
 > [!NOTE]
 > Credenciais nunca são gravadas em logs nem nas tabelas de requests.
@@ -529,7 +662,14 @@ dotnet script migrator.csx -- "Server=localhost;Database=NEWBLOOMERS;User Id=sa;
 > migrator a partir de `X:` ([MIGRATOR-CSX.md](docs/MIGRATOR-CSX.md)). O migrator do DW exige a connection string como
 > argumento e não imprime usuário nem senha.
 
-**2. 🔑 Parâmetros** — confira o `Parameters/Script003` de cada módulo (empresas e credenciais) antes de rodar o migrator.
+**2. 🏢 Empresa de teste** — cadastra a empresa, liga os CNPJs dos parâmetros, carrega os parâmetros de
+`Seeds/SQLServer` e cria os jobs (inativos, salvo `-ActivateJobs`). Só aceita banco com `Test`/`Teste` no nome (ou
+`-Force`):
+
+```powershell
+./tools/seeds/Import-TestSeeds.ps1 -Database 'EtlTeste'
+./tools/seeds/Import-TestSeeds.ps1 -Database 'EtlTeste' -Modules Totvs,DataWarehouse -ActivateJobs
+```
 
 **3. 🌐 Host**
 
@@ -545,6 +685,11 @@ connection string vai por user-secrets ou variável de ambiente; detalhes no REA
 ```bash
 dotnet run --project src/Backend/Hosts/WebJob -- --job 9002
 ```
+
+<p align="center">
+  <img src="docs/images/hosts/webjob-list-jobs.png" alt="Saída do WebJob --list-jobs" width="70%">
+  <br><sub><code>--list-jobs</code> lista os jobs que o host conhece, sem subir o host nem acessar o banco</sub>
+</p>
 
 ```bash
 dotnet run --project src/Backend/Hosts/Worker
@@ -570,12 +715,13 @@ falha no restore de módulos fora do host (pacotes sem versão em Dootax, Oto, S
 
 | Onde | O que fica registrado |
 |---|---|
-| `auditing.Logs` | Cada execução de job: `IdJob`, `IdType`, `Execution` (GUID), execução pai, início e fim |
+| `auditing.Logs` | Cada execução de job: `IdJob`, `IdType`, `Company`, `Execution` (GUID), execução pai, início e fim |
 | `auditing.Messages` | Mensagens da execução: erros de validação, respostas de erro da API, avisos |
 | `auditing.Records` | O registro integrado (JSON ou XML) pela chave (`FieldKeyValue`), para conferir o que veio da origem |
 | `<schema>.<Módulo>Requests` | Cada leitura sob demanda e escrita: usuário (`X-User-Name`), rota, chave, corpo, resposta, `is_success`, `status_code` |
-| `auditing.Jobs` / `auditing.Apps` | Catálogo dos jobs (id, título, intervalo, tipo: integração ou procedure) por app |
-| `auditing.vw_JobsHeartbeat` | Última execução de cada job (heartbeat dos hosts de agenda) |
+| `auditing.JobCatalog` / `auditing.Apps` | Catálogo dos jobs (id, título, intervalo, tipo: integração ou procedure) por app |
+| `auditing.Jobs` | Os jobs de cada empresa, com a agenda e a ativação dela |
+| `auditing.vw_JobsHeartbeat` | Última execução de cada (job, empresa) (heartbeat dos hosts de agenda) |
 | `dw_control.CheckResult` | Resultado das checagens do DW em cada carga |
 | `dw_control.Watermark` | Até onde cada origem já foi lida pelo DW |
 
@@ -670,6 +816,10 @@ e telas responsivas para celular e tablet.
 | ▶️ **Sob Demanda** | `/on-demand` | As integrações sem agenda, no estilo do Swagger (só com `Admin:Enabled`) |
 | 💻 **Executar Querys** | `/queries` | Consultas SQL com favoritas e querys prontas (só com `Admin:Enabled`) |
 
+O **cadastro de empresas** já tem os repositórios no WebApp (`ICompanyRepository` e `IModuleParametersRepository`, fase
+4.5 do [plano](docs/PLANO-TELA-CADASTRO-EMPRESA.md)): mock por padrão e Dapper com `Cadastro:UseDatabase = true`. A
+tela (fase 4.6) só começa depois do mockup aprovado.
+
 > [!NOTE]
 > O **assistente de IA** (botão roxo no canto inferior direito, em todas as telas menos o login) é um chat com o Claude que
 > responde sobre integrações, erros e execuções da empresa logada, só com consultas de leitura. As perguntas e os dados
@@ -743,9 +893,11 @@ As regras de organização valem para todos os módulos e estão em
 | 🔌 | **Módulos fora do host** | Dootax, Mobsim, Oto, Pagarme (General) e FlashCourier, Jadlog, Stone, TotalExpress (Shippment) têm código do sistema antigo, mas o registro no host e os controllers estão comentados. O `LinxMicrovix - Inbound Web Service` (escritas do B2C) está vazio |
 | ⏱️ | **Agendamento** | Os três hosts de agenda estão prontos, mas **nenhum está em produção**: o Hangfire está desligado no `WebApi`, os WebJobs não foram publicados e o `Worker` não foi instalado numa máquina. Hoje os jobs rodam pelas rotas, chamadas por um agendador externo |
 | 🖥️ | **Painel** | O `WebApp` ainda usa dados mockados; a leitura do banco e a autenticação são as fases 5 e 6 do [plano](src/Frontend/WebApp/docs/PLANO-WEBAPP.md) |
-| 🏢 | **Multiempresa no `auditing`** | **Em andamento** pela [proposta](src/Backend/Shared/docs/PROPOSTA-DOC-COMPANY-AUDITING.md): a empresa (holding) entra na chave de `auditing.Jobs` e das tabelas de log, com a ativação por empresa, e o schema `monitor` guarda a imagem e os parâmetros de apresentação do painel por empresa |
+| 🏢 | **Cadastro de empresas** | Banco, seed de teste, log, agenda e services por empresa e os repositórios do WebApp estão **feitos** (fases 4.1 a 4.5 do [plano](docs/PLANO-TELA-CADASTRO-EMPRESA.md)); falta a **tela** (4.6, com Testar conexão) e o Dapper do WebApp ainda não rodou contra o banco. Contratar cria os jobs inativos e remover só desativa: o banco ainda não distingue os dois casos |
+| 🔑 | **Credenciais em texto puro** | As tabelas `*Parameters` guardam segredos sem criptografia nesta fase; o acesso ao banco é o único controle |
 | 🔔 | **Nível de mensagem** | Informação, aviso e erro em `auditing.Messages`: ainda é só [proposta](src/Backend/Shared/docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md) |
-| 🔐 | **Autenticação** | O `[Authorize]` dos controllers está comentado |
+| 🔐 | **Autenticação** | O `[Authorize]` dos controllers está comentado, e o painel ainda não tem login (fase 4.7 do plano) |
+| ⚙️ | **Jobs só de procedure** | `RecurringJobDefinition.ForProcedure` está todo comentado; ao descomentar um, a procedure precisa receber `@Company` |
 | 🧪 | **Testes** | A pasta `tests` está vazia |
 
 ---
@@ -757,6 +909,7 @@ As regras de organização valem para todos os módulos e estão em
 | 📖 README de cada módulo | Conceitos da API, services e métodos, fluxos, endpoints, scripts, jobs, configuração e pendências |
 | ⏱️ README e `docs/PLANO-HOST-*.md` de cada host | [WebApi](src/Backend/Hosts/WebApi/README.md), [WebJob](src/Backend/Hosts/WebJob/README.md) e [Worker](src/Backend/Hosts/Worker/README.md): como rodar, publicar e configurar, e a decisão de cada passo |
 | 🖥️ [src/Frontend/WebApp](src/Frontend/WebApp/README.md) | Painel: telas, assistente de IA e o plano do front-end (`docs/PLANO-WEBAPP.md`) |
+| 🏢 [PLANO-TELA-CADASTRO-EMPRESA.md](docs/PLANO-TELA-CADASTRO-EMPRESA.md) | Cadastro de empresas: o que sai do DbUp, o `.ps1` de teste, log, agenda e services por empresa e as fases da tela |
 | 🏛️ [src/Backend/Modules/DataWarehouse/docs](src/Backend/Modules/DataWarehouse/docs/00-ordem-de-leitura.md) | Guia do data warehouse |
 | 📐 [PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md](docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md) | Padrão de código e scripts |
 | ⚡ [PADRAO-CACHE-INTEGRACOES.md](docs/PADRAO-CACHE-INTEGRACOES.md) | Padrão de cache |
