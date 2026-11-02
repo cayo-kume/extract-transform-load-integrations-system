@@ -5,7 +5,7 @@ INSERT INTO [auditing].[Apps] ([IdParent], [Title], [Description])
 VALUES
 (140, 'Hosts', 'Jobs dos próprios hosts de agenda (WebApi com o Hangfire e WebJob)');
 
-INSERT INTO [auditing].[Jobs] (IdParent, IdJob, Title, [Description], IntervalTimeInMinutes, RunningDailyAt, Queue, IdType)
+INSERT INTO [auditing].[Jobs] (IdParent, IdJob, Title, [Description], IntervalTimeInMinutes, RunningDailyAt, Queue, IdType, Company)
 VALUES
 /*Integrações*/
-(140, 14000, 'StuckJobsRecovery', 'Recuperação dos WebJobs travados: lê o heartbeat (auditing.vw_JobsHeartbeat) e reinicia na Azure só os WebJobs dos jobs com o heartbeat off', 15, NULL, 'default', 2);
+(140, 14000, 'StuckJobsRecovery', 'Recuperação dos WebJobs travados: lê o heartbeat (auditing.vw_JobsHeartbeat) e reinicia na Azure só os WebJobs dos jobs com o heartbeat off', 15, NULL, 'default', 2, ' ');
