@@ -5,8 +5,10 @@ namespace Application.LinxMicrovix.Outbound.Handlers.Commands
 {
     public class LinxMicrovixCommandHandler : ILinxMicrovixCommandHandler
     {
-        public string CreateGetCompanysQuery()
+        public string CreateGetCompanysQuery(string company)
         {
+            // só os CNPJs da holding da execução (monitor.HoldingCompanies, docs/PLANO-TELA-CADASTRO-EMPRESA.md 4.4); company é só
+            // dígitos (ICompanyContext)
             return @$"SELECT DISTINCT
                      DOC_COMPANY AS DOC_COMPANY,
                      GRUPO AS GRUPO,
@@ -16,7 +18,9 @@ namespace Application.LinxMicrovix.Outbound.Handlers.Commands
                      B2C_CHAVE AS B2C_CHAVE,
                      B2C_USER_NAME AS B2C_USER_NAME,
                      B2C_PASSWORD AS B2C_PASSWORD
-                     FROM LINXMICROVIX.LINXMICROVIXPARAMETERS";
+                     FROM LINXMICROVIX.LINXMICROVIXPARAMETERS P
+                     JOIN MONITOR.HOLDINGCOMPANIES HC ON HC.COMPANY = P.DOC_COMPANY
+                     WHERE HC.HOLDING = '{company}'";
         }
 
         public string CreateGetStoresQuery(string doc_company, EnumApi api)

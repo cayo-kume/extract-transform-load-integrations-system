@@ -4,7 +4,8 @@
     {
         public static WebApplicationBuilder AddArchitectures(this WebApplicationBuilder builder)
         {
-            builder.Services.AddControllers();
+            // empresa da execução em toda rota: X-Company ou a holding do {docCompany} (CompanyContextFilter)
+            builder.Services.AddControllers(options => options.Filters.Add<CompanyContextFilter>());
             builder.Services.AddEndpointsApiExplorer();
 
             //builder.Services

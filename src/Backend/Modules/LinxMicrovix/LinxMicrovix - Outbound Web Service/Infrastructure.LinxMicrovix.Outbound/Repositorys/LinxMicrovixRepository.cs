@@ -2,6 +2,7 @@ using Application.LinxMicrovix.Outbound.Abstractions.Handlers.Commands;
 using Domain.LinxMicrovix.Outbound.Abstractions.Repositorys;
 using Domain.LinxMicrovix.Outbound.Entities.Parameters;
 using Domain.LinxMicrovix.Outbound.Enums;
+using Application.Shared.Abstractions.Services;
 using Domain.Shared.Abstractions.Repositorys;
 
 namespace Infrastructure.LinxMicrovix.Outbound.Repositorys
@@ -10,13 +11,15 @@ namespace Infrastructure.LinxMicrovix.Outbound.Repositorys
     {
         private readonly ILinxMicrovixCommandHandler _linxMicrovixCommandHandler;
         private readonly ISharedRepository _coreRepository;
+        private readonly ICompanyContext _companyContext;
 
-        public LinxMicrovixRepository(ILinxMicrovixCommandHandler linxMicrovixCommandHandler, ISharedRepository coreRepository) =>
-            (_linxMicrovixCommandHandler, _coreRepository) = (linxMicrovixCommandHandler, coreRepository);
+        public LinxMicrovixRepository(ILinxMicrovixCommandHandler linxMicrovixCommandHandler, ISharedRepository coreRepository, ICompanyContext companyContext) =>
+            (_linxMicrovixCommandHandler, _coreRepository, _companyContext) = (linxMicrovixCommandHandler, coreRepository, companyContext);
 
         public async Task<IEnumerable<Company?>> GetCompanys()
         {
-            string sql = _linxMicrovixCommandHandler.CreateGetCompanysQuery();
+            string sql = _linxMicrovixCommandHandler.CreateGetCompanysQuery(
+                _companyContext.Company ?? throw new InvalidOperationException("Parâmetros do módulo sem a empresa da execução: informe ICompanyContext.SetCompany."));
 
             return await _coreRepository.GetRecords<Company>(sql);
         }

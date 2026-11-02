@@ -1,6 +1,7 @@
 ﻿using Application.AfterSale.Abstractions.Handlers.Commands;
 using Domain.AfterSale.Abstractions.Repositorys;
 using Domain.AfterSale.Entities.Parameters;
+using Application.Shared.Abstractions.Services;
 using Domain.Shared.Abstractions.Repositorys;
 using System.Data;
 
@@ -10,13 +11,15 @@ public class AfterSaleRepository : IAfterSaleRepository
 {
     private readonly IAfterSaleCommandHandler _afterSaleCommandHandler;
     private readonly ISharedRepository _coreRepository;
+    private readonly ICompanyContext _companyContext;
 
-    public AfterSaleRepository(IAfterSaleCommandHandler afterSaleCommandHandler, ISharedRepository coreRepository) =>
-            (_afterSaleCommandHandler, _coreRepository) = (afterSaleCommandHandler, coreRepository);
+    public AfterSaleRepository(IAfterSaleCommandHandler afterSaleCommandHandler, ISharedRepository coreRepository, ICompanyContext companyContext) =>
+            (_afterSaleCommandHandler, _coreRepository, _companyContext) = (afterSaleCommandHandler, coreRepository, companyContext);
 
     public async Task<IEnumerable<Company?>> GetCompanys()
     {
-        string sql = _afterSaleCommandHandler.CreateGetCompanysQuery();
+        string sql = _afterSaleCommandHandler.CreateGetCompanysQuery(
+                _companyContext.Company ?? throw new InvalidOperationException("Parâmetros do módulo sem a empresa da execução: informe ICompanyContext.SetCompany."));
 
         return await _coreRepository.GetRecords<Company>(sql);
     }

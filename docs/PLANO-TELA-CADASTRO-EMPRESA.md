@@ -213,15 +213,47 @@ Uma execução (job, empresa) cobre todos os CNPJs da holding naquele módulo, c
       com a mesma empresa; o heartbeat mostra a execução na empresa. Sem empresa: `AddLog` e `sp_Log_Start` (50005)
       recusam; empresa sem o job: 50001. `sp_Log_Message` e `sp_Log_Error` gravam a empresa.
 
-**Até a 4.4, nenhuma execução roda:** ninguém chama `ICompanyContext.SetCompany` ainda, então `AddLog` recusa todo job
-agendado. O agendador passa a informar a empresa em 4.4.
+A empresa da execução passou a ser informada pelo agendador e pelas rotas em 4.4.
 
-### 4.4 Agendador e services (fase F4 da proposta)
+### 4.4 Agendador e services (fase F4 da proposta) — feito
 
-- [ ] Agenda por (job, empresa) no WebApi (Hangfire), no WebJob e no Worker; cada execução abre um escopo e chama
-      `ICompanyContext.SetCompany` antes do service (4.3).
-- [ ] Services recebem a empresa e processam só ela, lendo os parâmetros pelo join com `monitor.HoldingCompanies`
-      (4.2.1); as procedures de sincronização recebem a empresa da execução.
+- [x] `JobScheduleRepository`: a agenda tem uma linha por (job, empresa), só das empresas ativas em `monitor.Company`;
+      `GetIntegrationJobByCompany(idJob)` para o WebJob; o heartbeat é lido por empresa.
+- [x] `ScheduledJobRunner.Run(idJob, company)`: informa a empresa ao `ICompanyContext` do escopo antes do service.
+- [x] WebApi (Hangfire): um recurring job por (job, empresa), `<IdJob>-<Title> - V<versão> - <empresa>`. Duas travas: a
+      da empresa (execução anterior da mesma empresa rodando: pula, como antes) e a do job, que vale entre empresas
+      porque todas escrevem nas mesmas tabelas (`untreated` e a `sp_*_Sync`, com `sp_TryApplock`). Com a do job ocupada
+      por outra empresa, a execução volta para a fila em 1 minuto, em vez de ser perdida.
+- [x] WebJob: o processo do job atende todas as empresas ativas, uma de cada vez, cada uma com a sua agenda e o seu
+      escopo; a mesma dupla de travas, para não rodar junto com o Hangfire. O 14000 de cada empresa lê o heartbeat só
+      dela; o WebJob reiniciado é o do job, que atende todas.
+- [x] Rotas do WebApi (`CompanyContextFilter`, global): a empresa vem do cabeçalho `X-Company` ou, sem ele, da holding do
+      `{docCompany}` da rota em `monitor.HoldingCompanies`. CNPJ sem holding, `X-Company` que não é a holding do
+      `docCompany` ou `X-Company` com algo além de dígitos dão 400. Sem nenhum dos dois, a rota segue sem empresa e o
+      log recusa.
+- [x] Services: `CreateGetCompanysQuery(company)` de Totvs, LinxMicrovix, LinxCommerce, Movidesk e AfterSale lê os
+      parâmetros pelo join com `monitor.HoldingCompanies` (4.2.1); os repositórios pegam a empresa do `ICompanyContext`.
+      Os services não mudaram: continuam percorrendo `GetCompanys()`, agora só os CNPJs da holding. As `sp_*_Sync`
+      recebem a empresa pelo `SharedRepository` (4.3).
+- [x] Teste no Docker, em banco zerado e apagado no fim, com `<Módulo>__BaseUrl` em `http://127.0.0.1:9/`: duas
+      empresas com o 3000 (Movidesk) ativo a cada minuto, a NEWBLOOMERS com parâmetros (Open Era) e a X sem.
+      - WebJob `--job 3000` por 3 minutos: a cada minuto, uma execução por empresa, cada uma com o seu log; a da X
+        terminou sem chamar a API ("0 registro(s)"), a da NEWBLOOMERS tentou a API e gravou o erro de conexão.
+      - WebApi com Hangfire: a agenda criou `3000-MovideskGetTickets - V1.0.0 - 11111111000111` e `... - 44065634000106`;
+        no mesmo minuto, uma rodou e a outra foi adiada ("Rescheduled: job:3000 running for another company") e rodou
+        depois. Rotas: `Tickets/38367316000199/1` rodou na NEWBLOOMERS; com `X-Company` de outra holding, com CNPJ sem
+        holding e com `X-Company` inválido, 400.
+
+Fora desta fase:
+
+- **Rotas que falham depois de gravar o log:** o `ExceptionHandler` do Shared grava o log de novo e a chave de
+  `auditing.Logs` recusa (500 sem a mensagem do erro). Já acontecia antes; o `ScheduledJobRunner` evita isso com
+  `HasUncommittedLog`, e o `ExceptionHandler` precisa da mesma checagem.
+- **Execução adiada e o disparo seguinte:** uma execução adiada pode rodar logo antes do disparo seguinte da mesma
+  empresa; as duas rodam em sequência (a trava da empresa impede rodarem juntas).
+- **Jobs só de procedure** (`RecurringJobDefinition.ForProcedure`, todos comentados) não passam `@Company`: ao
+  descomentar um, a procedure precisa receber a empresa.
+- **Oto** e o host **Quartz** (modelo vazio) ficaram fora.
 
 ### 4.5 Repositório do WebApp (Dapper, sem API e sem Shared)
 

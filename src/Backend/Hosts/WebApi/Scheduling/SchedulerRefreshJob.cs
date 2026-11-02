@@ -10,7 +10,8 @@ namespace WebApi.Scheduling
     /// <summary>
     /// monta a agenda do Hangfire a partir de auditing.Jobs (src/Backend/Hosts/WebApi/docs/PLANO-HOST-WEBAPI.md §4.4): roda na subida e
     /// a cada Hangfire:Schedule:RefreshIntervalInMinutes, e um UPDATE na tabela vale, no máximo, no ciclo seguinte. Entra na agenda o
-    /// job de integração ativo, com método no host e agenda que vira cron; sai o que ficou inativo, sem intervalo ou saiu do mapa
+    /// job de integração ativo, com método no host e agenda que vira cron; sai o que ficou inativo, sem intervalo ou saiu do mapa.
+    /// Um recurring job por (job, empresa), só das empresas ativas (docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.4)
     /// </summary>
     public class SchedulerRefreshJob
     {
@@ -32,7 +33,7 @@ namespace WebApi.Scheduling
             HangfireSettingsValidator.TryFindTimeZone(settings.TimeZone, out var timeZone);
 
             var warnings = new List<string>();
-            var desired = new Dictionary<string, (RecurringJobDefinition Definition, string Cron, string Queue)>();
+            var desired = new Dictionary<string, (RecurringJobDefinition Definition, string Company, string Cron, string Queue)>();
 
             foreach (var job in await _jobScheduleRepository.GetIntegrationJobs())
             {
@@ -41,7 +42,7 @@ namespace WebApi.Scheduling
 
                 if (!RecurringJobMap.Definitions.TryGetValue(job.IdJob, out var definition))
                 {
-                    warnings.Add($"{job.IdJob} {job.Title}: ativo em auditing.Jobs, mas sem método no host; fica fora da agenda.");
+                    warnings.Add($"{job.IdJob} {job.Title} ({job.Company}): ativo em auditing.Jobs, mas sem método no host; fica fora da agenda.");
                     continue;
                 }
 
@@ -49,14 +50,14 @@ namespace WebApi.Scheduling
 
                 if (cron is null)
                 {
-                    warnings.Add($"{job.IdJob} {job.Title}: intervalo de {job.IntervalTimeInMinutes} minutos não vira cron (precisa dividir a hora ou o dia, ou ter RunningDailyAt); fica fora da agenda.");
+                    warnings.Add($"{job.IdJob} {job.Title} ({job.Company}): intervalo de {job.IntervalTimeInMinutes} minutos não vira cron (precisa dividir a hora ou o dia, ou ter RunningDailyAt); fica fora da agenda.");
                     continue;
                 }
 
                 if (!settings.Server.Queues.Contains(job.Queue))
-                    warnings.Add($"{job.IdJob} {job.Title}: fila '{job.Queue}' não está em Hangfire:Server:Queues deste servidor; só roda se outro servidor atender a fila.");
+                    warnings.Add($"{job.IdJob} {job.Title} ({job.Company}): fila '{job.Queue}' não está em Hangfire:Server:Queues deste servidor; só roda se outro servidor atender a fila.");
 
-                desired[RecurringJobMap.RecurringJobId(job.IdJob, job.Title, definition.Version!)] = (definition, cron, job.Queue);
+                desired[RecurringJobMap.RecurringJobId(job.IdJob, job.Title, definition.Version!, job.Company)] = (definition, job.Company, cron, job.Queue);
             }
 
             using var connection = _jobStorage.GetConnection();
@@ -81,7 +82,8 @@ namespace WebApi.Scheduling
 
                 // o Hangfire executa o HangfireJobRunner, que passa pelo ScheduledJobRunner (log do erro); só grava o que mudou
                 var idJob = job.Definition.IdJob;
-                _recurringJobManager.AddOrUpdate<HangfireJobRunner>(recurringJobId, job.Queue, runner => runner.Run(idJob, recurringJobId), job.Cron, new RecurringJobOptions { TimeZone = timeZone });
+                var company = job.Company;
+                _recurringJobManager.AddOrUpdate<HangfireJobRunner>(recurringJobId, job.Queue, runner => runner.Run(idJob, company, recurringJobId), job.Cron, new RecurringJobOptions { TimeZone = timeZone });
             }
 
             var removed = current.Keys.Except(desired.Keys).ToList();

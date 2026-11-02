@@ -8,7 +8,8 @@ using Microsoft.Extensions.Options;
 namespace WebJob.Scheduling
 {
     /// <summary>
-    /// um job por processo (src/Backend/Hosts/WebJob/docs/PLANO-HOST-WEBJOB.md §4.1): lê a linha do job em auditing.Jobs, espera o
+    /// um job por processo (src/Backend/Hosts/WebJob/docs/PLANO-HOST-WEBJOB.md §4.1), para todas as empresas ativas, uma de cada vez
+    /// (docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.4): lê as linhas do job em auditing.Jobs, espera o
     /// próximo horário (intervalo ou RunningDailyAt, no fuso configurado), roda o método do mapa pelo ScheduledJobRunner e volta a
     /// ler a tabela. Mudar IntervalTimeInMinutes, RunningDailyAt ou IsActive vale no ciclo seguinte, sem republicar
     /// </summary>
@@ -54,39 +55,72 @@ namespace WebJob.Scheduling
             }
 
             var recheck = TimeSpan.FromMinutes(Math.Max(1, _settings.RecheckIntervalInMinutes));
-            string? lastState = null;
-            DateTimeOffset lastRun = DateTimeOffset.MinValue;
+
+            // por empresa (docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.4): o último horário rodado (ou desde quando ela está ativa) e o
+            // último estado registrado no log. As empresas rodam uma de cada vez neste processo
+            var lastRun = new Dictionary<string, DateTimeOffset>();
+            var lastState = new Dictionary<string, string>();
             DateTimeOffset? lastDue = null;
+            string? lastEmpty = null;
 
             while (!stoppingToken.IsCancellationRequested)
             {
-                var job = await ReadJob(idJob);
+                var jobs = await ReadJobs(idJob);
                 var now = DateTimeOffset.Now;
-                var after = lastRun > now ? lastRun : now;
-                DateTimeOffset? next = job is { IsActive: true } ? JobCron.NextOccurrence(job.IntervalTimeInMinutes, job.RunningDailyAt, after, timeZone) : null;
 
-                // o log só registra quando o estado muda, para não repetir a cada releitura
-                var state = Describe(job, definition, next);
-
-                if (state != lastState)
+                if (jobs.Count == 0)
                 {
-                    _logger.LogInformation("{State}", state);
-                    lastState = state;
+                    var empty = Describe(null, definition, null);
+
+                    if (empty != lastEmpty)
+                    {
+                        _logger.LogInformation("{State}", empty);
+                        lastEmpty = empty;
+                    }
+
+                    await Wait(recheck, stoppingToken);
+                    continue;
                 }
 
-                if (next is not DateTimeOffset due)
+                lastEmpty = null;
+                (JobSchedule Job, DateTimeOffset Due)? first = null;
+
+                foreach (var job in jobs)
+                {
+                    // inativa (ou nova) conta a partir de agora: ao ligar, não roda de uma vez os horários em que estava desligada
+                    if (!job.IsActive || !lastRun.ContainsKey(job.Company))
+                        lastRun[job.Company] = now;
+
+                    DateTimeOffset? next = job.IsActive ? JobCron.NextOccurrence(job.IntervalTimeInMinutes, job.RunningDailyAt, lastRun[job.Company], timeZone) : null;
+
+                    // o log só registra quando o estado muda, para não repetir a cada releitura
+                    var state = Describe(job, definition, next);
+
+                    if (!lastState.TryGetValue(job.Company, out var previous) || previous != state)
+                    {
+                        _logger.LogInformation("{State}", state);
+                        lastState[job.Company] = state;
+                    }
+
+                    if (next is DateTimeOffset due && (first is null || due < first.Value.Due))
+                        first = (job, due);
+                }
+
+                if (first is null)
                 {
                     await Wait(recheck, stoppingToken);
                     continue;
                 }
 
-                if (due != lastDue)
+                var (scheduled, dueAt) = first.Value;
+
+                if (dueAt != lastDue)
                 {
-                    _logger.LogInformation("Job {IdJob}: próxima execução em {Due:yyyy-MM-dd HH:mm} ({TimeZone}).", idJob, TimeZoneInfo.ConvertTime(due, timeZone), timeZone.Id);
-                    lastDue = due;
+                    _logger.LogInformation("Job {IdJob}, empresa {Company}: próxima execução em {Due:yyyy-MM-dd HH:mm} ({TimeZone}).", idJob, scheduled.Company, TimeZoneInfo.ConvertTime(dueAt, timeZone), timeZone.Id);
+                    lastDue = dueAt;
                 }
 
-                var wait = due - DateTimeOffset.Now;
+                var wait = dueAt - DateTimeOffset.Now;
 
                 // horário distante: espera em pedaços e relê a tabela, para uma mudança valer antes do horário antigo
                 if (wait > recheck)
@@ -100,36 +134,44 @@ namespace WebJob.Scheduling
                 if (stoppingToken.IsCancellationRequested)
                     break;
 
-                lastRun = due;
+                lastRun[scheduled.Company] = dueAt;
 
                 // relê logo antes de rodar: um job desligado (ou com a agenda trocada) durante a espera não roda neste horário
-                var current = await ReadJob(idJob);
+                var current = (await ReadJobs(idJob)).FirstOrDefault(j => j.Company == scheduled.Company);
 
                 if (current is not { IsActive: true }
-                    || current.IntervalTimeInMinutes != job!.IntervalTimeInMinutes
-                    || current.RunningDailyAt != job.RunningDailyAt)
+                    || current.IntervalTimeInMinutes != scheduled.IntervalTimeInMinutes
+                    || current.RunningDailyAt != scheduled.RunningDailyAt)
                     continue;
 
                 await Run(idJob, definition, current);
+
+                // uma execução longa não deixa a mesma empresa rodar de novo os horários que passaram durante ela; as outras
+                // empresas rodam em seguida os horários delas que já passaram
+                if (DateTimeOffset.Now > lastRun[scheduled.Company])
+                    lastRun[scheduled.Company] = DateTimeOffset.Now;
             }
         }
 
         private async Task Run(int idJob, RecurringJobDefinition definition, JobSchedule job)
         {
-            var name = RecurringJobMap.RecurringJobId(idJob, job.Title, definition.Version!);
+            var name = RecurringJobMap.RecurringJobId(idJob, job.Title, definition.Version!, job.Company);
+            var companyKey = definition.CompanyConcurrencyKey(job.Company);
 
-            // a mesma trava do WebApi (§5): um job nunca roda junto, nem entre um WebJob e o Hangfire. Ocupada, este horário é
-            // pulado sem esperar; o próximo tenta de novo
-            using var jobLock = _jobLock.TryAcquire(definition.ConcurrencyKey);
+            // a mesma trava do WebApi (§5): um job nunca roda junto, nem entre um WebJob e o Hangfire, nem para duas empresas ao
+            // mesmo tempo (as tabelas untreated e a sp_*_Sync são as mesmas). Ocupada, este horário é pulado sem esperar; o
+            // próximo tenta de novo
+            using var companyLock = _jobLock.TryAcquire(companyKey);
+            using var jobLock = companyLock is null ? null : _jobLock.TryAcquire(definition.ConcurrencyKey);
 
             if (jobLock is null)
             {
                 _consecutiveSkips++;
 
                 if (_consecutiveSkips % Math.Max(1, _settings.MaxConsecutiveSkips) == 0)
-                    _logger.LogWarning("{Name} ({Key}) pulado {Skips} vez(es) seguida(s): a execução anterior ainda está rodando. Se continuar, aumente o intervalo em auditing.Jobs.", name, definition.ConcurrencyKey, _consecutiveSkips);
+                    _logger.LogWarning("{Name} ({Key}) pulado {Skips} vez(es) seguida(s): outra execução do job ainda está rodando. Se continuar, aumente o intervalo em auditing.Jobs.", name, definition.ConcurrencyKey, _consecutiveSkips);
                 else
-                    _logger.LogInformation("{Name} ({Key}) pulado: a execução anterior ainda está rodando.", name, definition.ConcurrencyKey);
+                    _logger.LogInformation("{Name} ({Key}) pulado: outra execução do job ainda está rodando.", name, definition.ConcurrencyKey);
 
                 return;
             }
@@ -139,9 +181,9 @@ namespace WebJob.Scheduling
 
             try
             {
-                // um escopo por execução: o service e o ILoggerService do ScheduledJobRunner vêm dele
+                // um escopo por execução: o service, o ILoggerService e a empresa (ICompanyContext) do ScheduledJobRunner vêm dele
                 await using var scope = _scopeFactory.CreateAsyncScope();
-                await scope.ServiceProvider.GetRequiredService<ScheduledJobRunner>().Run(definition);
+                await scope.ServiceProvider.GetRequiredService<ScheduledJobRunner>().Run(definition, job.Company);
 
                 _logger.LogInformation("{Name}: execução concluída em {Duration:hh\\:mm\\:ss}.", name, DateTimeOffset.Now - started);
             }
@@ -152,27 +194,27 @@ namespace WebJob.Scheduling
             }
         }
 
-        private async Task<JobSchedule?> ReadJob(int idJob)
+        private async Task<List<JobSchedule>> ReadJobs(int idJob)
         {
             try
             {
                 await using var scope = _scopeFactory.CreateAsyncScope();
-                return await scope.ServiceProvider.GetRequiredService<IJobScheduleRepository>().GetIntegrationJob(idJob);
+                return (await scope.ServiceProvider.GetRequiredService<IJobScheduleRepository>().GetIntegrationJobByCompany(idJob)).ToList();
             }
             catch (Exception ex)
             {
                 // banco fora: tenta de novo na próxima releitura
                 _logger.LogError(ex, "Job {IdJob}: não foi possível ler auditing.Jobs.", idJob);
-                return null;
+                return [];
             }
         }
 
         private static string Describe(JobSchedule? job, RecurringJobDefinition definition, DateTimeOffset? next)
         {
             if (job is null)
-                return $"Job {definition.IdJob} ({definition.Target}): sem linha em auditing.Jobs (ou banco fora); aguardando.";
+                return $"Job {definition.IdJob} ({definition.Target}): sem linha em auditing.Jobs para nenhuma empresa ativa (ou banco fora); aguardando.";
 
-            var name = RecurringJobMap.RecurringJobId(job.IdJob, job.Title, definition.Version!);
+            var name = RecurringJobMap.RecurringJobId(job.IdJob, job.Title, definition.Version!, job.Company);
 
             if (!job.IsActive)
                 return $"{name}: inativo em auditing.Jobs (IsActive = 0); aguardando.";

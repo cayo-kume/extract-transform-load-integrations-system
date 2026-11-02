@@ -3,6 +3,6 @@
     public interface IAfterSaleCommandHandler
     {
         string CreateGetCompanyQuery(string doc_company);
-        string CreateGetCompanysQuery();
+        string CreateGetCompanysQuery(string company);
     }
 }

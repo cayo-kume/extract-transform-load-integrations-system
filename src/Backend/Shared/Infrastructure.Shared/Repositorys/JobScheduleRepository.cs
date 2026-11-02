@@ -6,7 +6,8 @@ using Infrastructure.Shared.Abstractions;
 namespace Infrastructure.Shared.Repositorys
 {
     /// <summary>
-    /// lê a agenda em auditing.Jobs pela conexão de auditoria, a mesma em que o LoggerService grava auditing.Logs
+    /// lê a agenda em auditing.Jobs pela conexão de auditoria, a mesma em que o LoggerService grava auditing.Logs. Uma linha
+    /// por (job, empresa), só das empresas ativas em monitor.Company (docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.4)
     /// </summary>
     public class JobScheduleRepository : IJobScheduleRepository
     {
@@ -17,36 +18,38 @@ namespace Infrastructure.Shared.Repositorys
 
         public async Task<IEnumerable<JobSchedule>> GetIntegrationJobs()
         {
-            const string sql = @"SELECT IdJob, Company, Title, IntervalTimeInMinutes, RunningDailyAt, Queue, IsActive
-                                 FROM [auditing].[Jobs]
-                                 WHERE IdType = 2";
+            const string sql = @"SELECT j.IdJob, j.Company, j.Title, j.IntervalTimeInMinutes, j.RunningDailyAt, j.Queue, j.IsActive
+                                 FROM [auditing].[Jobs] j
+                                 JOIN [monitor].[Company] c ON c.Company = j.Company AND c.IsActive = 1
+                                 WHERE j.IdType = 2";
 
             using var conn = _sqlServerConnection.GetIDbAuditingConnection();
 
             return await conn.QueryAsync<JobSchedule>(sql);
         }
 
-        public async Task<JobSchedule?> GetIntegrationJob(int idJob)
+        public async Task<IEnumerable<JobSchedule>> GetIntegrationJobByCompany(int idJob)
         {
-            const string sql = @"SELECT IdJob, Company, Title, IntervalTimeInMinutes, RunningDailyAt, Queue, IsActive
-                                 FROM [auditing].[Jobs]
-                                 WHERE IdType = 2 AND IdJob = @idJob";
+            const string sql = @"SELECT j.IdJob, j.Company, j.Title, j.IntervalTimeInMinutes, j.RunningDailyAt, j.Queue, j.IsActive
+                                 FROM [auditing].[Jobs] j
+                                 JOIN [monitor].[Company] c ON c.Company = j.Company AND c.IsActive = 1
+                                 WHERE j.IdType = 2 AND j.IdJob = @idJob";
 
             using var conn = _sqlServerConnection.GetIDbAuditingConnection();
 
-            return await conn.QueryFirstOrDefaultAsync<JobSchedule>(sql, new { idJob });
+            return await conn.QueryAsync<JobSchedule>(sql, new { idJob });
         }
 
-        public async Task<IEnumerable<JobHeartbeat>> GetActiveJobsHeartbeat()
+        public async Task<IEnumerable<JobHeartbeat>> GetActiveJobsHeartbeat(string company)
         {
             const string sql = @"SELECT IdParent, IdJob, Company, Title, IntervalTimeInMinutes, RunningDailyAt, Queue, IsActive,
                                         LastStartDate, LastEndDate, OpenSince
                                  FROM [auditing].[vw_JobsHeartbeat]
-                                 WHERE IsActive = 1";
+                                 WHERE IsActive = 1 AND Company = @company";
 
             using var conn = _sqlServerConnection.GetIDbAuditingConnection();
 
-            return await conn.QueryAsync<JobHeartbeat>(sql);
+            return await conn.QueryAsync<JobHeartbeat>(sql, new { company = new DbString { Value = company, IsAnsi = true, Length = 20 } });
         }
     }
 }
