@@ -215,10 +215,12 @@ dotnet script migrator.csx -- "Server=...;Database=...;User Id=...;Password=...;
 
 ### Antes de rodar
 
-* **Credenciais:** confira o `Parameters/Script003` do módulo (empresas e credenciais da API). No LinxMicrovix e no
-  LinxCommerce o `.sql` real fica fora do git: copie o `.sql.example` para o mesmo nome sem `.example` e preencha. Na Totvs, as
-  credenciais de homologação estão comentadas no próprio `Script003`, para rodar à mão no banco de homologação ou local, no
-  lugar das de produção.
+* **Credenciais:** ficam no script de parâmetros em `Infrastructure.<Módulo>/Seeds/SQLServer`, fora do alcance do DbUp
+  (o migrator não as grava; quem grava é a tela do WebApp ou, em teste, o `Import-TestSeeds.ps1`). No LinxMicrovix e no
+  LinxCommerce o `.sql` real fica fora do git: copie o `.sql.example` para o mesmo nome sem `.example` e preencha, na mesma
+  pasta `Seeds/SQLServer`. Uma cópia esquecida em `Scripts/SQLServer/Parameters` continua ignorada pelo git, mas o DbUp a
+  executa e grava as credenciais no banco: mova para `Seeds/SQLServer`. Na Totvs, as credenciais de homologação estão
+  comentadas no próprio script de parâmetros, para rodar à mão no banco de homologação ou local, no lugar das de produção.
 * **Banco que já rodou as migrações:** os scripts são identificados pelo nome (com a pasta) na `SchemaVersions`. Renomear,
   dividir, renumerar ou mover scripts faz o DbUp vê-los como novos e executá-los de novo, e um `CREATE TABLE` repetido
   falha. Depois de uma reorganização como a dos scripts em pastas, o banco precisa ser **recriado do zero**.

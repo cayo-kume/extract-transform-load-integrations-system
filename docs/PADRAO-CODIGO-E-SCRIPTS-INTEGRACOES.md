@@ -208,7 +208,7 @@ var upgrader = DeployChanges.To
 ```
 
 Credenciais de outro ambiente (ex.: homologação) não ficam numa pasta à parte: ficam **comentadas** no próprio
-script de parâmetros (`Parameters/Script003`), para rodar à mão no lugar das de produção.
+script de parâmetros (`Seeds/SQLServer/Script003`, fora do DbUp), para rodar à mão no lugar das de produção.
 
 Quando o módulo tem uma só API, as pastas das services ficam direto em `SQLServer/` (ex.: `SQLServer/People/`). Os
 scripts de jobs de escrita e de leitura sob demanda que estavam soltos vão para o script de jobs da service que usa
