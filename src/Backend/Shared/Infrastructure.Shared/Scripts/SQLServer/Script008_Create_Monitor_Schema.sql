@@ -29,6 +29,32 @@ ALTER TABLE [auditing].[Jobs] ADD  CONSTRAINT [FK_Jobs_Company] FOREIGN KEY([Com
 REFERENCES [monitor].[Company] ([Company])
 GO
 
+-- de/para dos CNPJs que aparecem em doc_company nas tabelas *Parameters para a empresa do painel (holding). As tabelas
+-- *Parameters não mudam: os serviços filtram por JOIN monitor.HoldingCompanies ON DocCompany = doc_company WHERE
+-- Holding = @company. Um CNPJ é de uma holding só. A própria holding só entra aqui se algum módulo tiver parâmetros com
+-- o CNPJ dela (NEWBLOOMERS: só as marcas Misha e Open Era; cliente de um CNPJ só: X -> X). Sem FK nas *Parameters:
+-- cada módulo tem a sua tabela, e o .ps1 de teste avisa sobre CNPJ de parâmetro sem holding.
+CREATE TABLE [monitor].[HoldingCompanies](
+    [DocCompany] [varchar](20) NOT NULL,
+    [Holding] [varchar](20) NOT NULL,
+    [Name] [nvarchar](150) NULL,
+    [CreatedAt] [datetime] NOT NULL CONSTRAINT [DF_HoldingCompanies_CreatedAt] DEFAULT (SYSUTCDATETIME() AT TIME ZONE 'UTC' AT TIME ZONE 'E. South America Standard Time'),
+    CONSTRAINT [CK_HoldingCompanies_DocCompany] CHECK (LEN([DocCompany]) > 0 AND [DocCompany] NOT LIKE '%[^0-9]%'),
+ CONSTRAINT [PK_HoldingCompanies] PRIMARY KEY CLUSTERED
+(
+    [DocCompany] ASC
+)WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+
+ALTER TABLE [monitor].[HoldingCompanies] ADD  CONSTRAINT [FK_HoldingCompanies_Company] FOREIGN KEY([Holding])
+REFERENCES [monitor].[Company] ([Company])
+GO
+
+CREATE NONCLUSTERED INDEX [IX_HoldingCompanies_Holding] ON [monitor].[HoldingCompanies] ([Holding] ASC)
+WITH (STATISTICS_NORECOMPUTE = OFF) ON [PRIMARY]
+GO
+
 -- imagem por módulo e empresa; Company = '*' é a imagem padrão do módulo
 CREATE TABLE [monitor].[AppImage](
     [IdParent] [int] NOT NULL,
@@ -80,6 +106,14 @@ BEGIN
     SET NOCOUNT ON;
     SET XACT_ABORT ON;
 
+    -- antes da transação: o CNPJ de uma marca de outra holding não vira empresa do painel
+    DECLARE @holding VARCHAR(20) = (SELECT Holding FROM [monitor].[HoldingCompanies] WHERE DocCompany = @company);
+    IF @holding IS NOT NULL AND @holding <> @company
+    BEGIN
+        DECLARE @msg NVARCHAR(200) = CONCAT(N'O CNPJ ', @company, N' já é da holding ', @holding, N' em monitor.HoldingCompanies.');
+        THROW 50003, @msg, 1;
+    END
+
     BEGIN TRANSACTION;
 
     IF NOT EXISTS (SELECT 1 FROM [monitor].[Company] WHERE Company = @company)
@@ -88,5 +122,42 @@ BEGIN
     EXEC [auditing].[sp_Add_Company_App] @company = @company, @idParent = 140;
 
     COMMIT TRANSACTION;
+END
+GO
+
+-- liga um CNPJ de parâmetros (doc_company) à empresa do painel. Chamada pela tela (ou pelo .ps1 de teste) ao gravar os
+-- parâmetros de um módulo: a holding só entra como DocCompany quando ela mesma tem parâmetros. Rodar de novo para o mesmo
+-- par não faz nada; um CNPJ que já é de outra holding, ou que é outra empresa do painel, é recusado.
+CREATE OR ALTER PROCEDURE [auditing].[sp_Add_Holding_Company] (
+    @company VARCHAR(20),
+    @docCompany VARCHAR(20),
+    @name NVARCHAR(150) = NULL
+) AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @msg NVARCHAR(200);
+
+    IF NOT EXISTS (SELECT 1 FROM [monitor].[Company] WHERE Company = @company)
+    BEGIN
+        SET @msg = CONCAT(N'A empresa ', @company, N' não está em monitor.Company.');
+        THROW 50002, @msg, 1;
+    END
+
+    DECLARE @holding VARCHAR(20) = (SELECT Holding FROM [monitor].[HoldingCompanies] WHERE DocCompany = @docCompany);
+    IF @holding IS NOT NULL AND @holding <> @company
+    BEGIN
+        SET @msg = CONCAT(N'O CNPJ ', @docCompany, N' já é da holding ', @holding, N' em monitor.HoldingCompanies.');
+        THROW 50003, @msg, 1;
+    END
+
+    IF @docCompany <> @company AND EXISTS (SELECT 1 FROM [monitor].[Company] WHERE Company = @docCompany)
+    BEGIN
+        SET @msg = CONCAT(N'O CNPJ ', @docCompany, N' é uma empresa do painel e não pode ser marca de ', @company, N'.');
+        THROW 50004, @msg, 1;
+    END
+
+    IF @holding IS NULL
+        INSERT INTO [monitor].[HoldingCompanies] (DocCompany, Holding, [Name]) VALUES (@docCompany, @company, @name);
 END
 GO

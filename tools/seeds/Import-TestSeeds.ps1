@@ -11,9 +11,13 @@
     1. confere que o banco existe e que os migrators já rodaram (auditing.JobCatalog com jobs e monitor.Company);
     2. cadastra a empresa com auditing.sp_Add_Company (que já cria os jobs dos hosts dela, como o 14000);
     3. para cada módulo, roda o script de parâmetros de Seeds/SQLServer numa transação. Rodar de novo não duplica: a linha
-       de uma empresa que já tinha parâmetros no módulo é descartada (a regra é uma linha por empresa em cada *Parameters);
-    4. para cada módulo, chama auditing.sp_Add_Company_App, que copia os jobs do catálogo para a empresa, inativos;
-    5. com -ActivateJobs, ativa os jobs da empresa nos módulos pedidos (os dos hosts continuam como estão).
+       de um CNPJ que já tinha parâmetros no módulo é descartada (a regra é uma linha por CNPJ em cada *Parameters);
+    4. liga cada CNPJ (doc_company) do script de parâmetros à empresa em monitor.HoldingCompanies, com
+       auditing.sp_Add_Holding_Company: os parâmetros não mudam, a holding só entra se tiver parâmetros com o CNPJ dela;
+    5. para cada módulo, chama auditing.sp_Add_Company_App, que copia os jobs do catálogo para a empresa, inativos;
+    6. com -ActivateJobs, ativa os jobs da empresa nos módulos pedidos (os dos hosts continuam como estão).
+
+    No fim, avisa sobre CNPJs das tabelas *Parameters que não estão em monitor.HoldingCompanies (nenhum serviço os lê).
 
     Os scripts de parâmetros têm credenciais reais. Os jobs nascem inativos e, antes de subir um host contra o banco de
     teste, aponte <Módulo>__BaseUrl para http://127.0.0.1:9/ para nenhum job chamar a API de verdade.
@@ -140,6 +144,13 @@ function Get-Marker {
     [int]($line.Substring($Name.Length + 1))
 }
 
+# todas as linhas "CHAVE=valor" da saída, só os valores
+function Get-Markers {
+    param([string[]]$Lines, [string]$Name)
+
+    @($Lines | Where-Object { $_ -like "$Name=*" } | ForEach-Object { $_.Substring($Name.Length + 1) })
+}
+
 # ---------------------------------------------------------------------------------------------------------------------
 # 1. o banco foi migrado?
 # ---------------------------------------------------------------------------------------------------------------------
@@ -161,28 +172,31 @@ $null = Invoke-Sql -Query "EXEC auditing.sp_Add_Company @company = '$Company', @
 Write-Host "Empresa $Company cadastrada (ou já existente), com os jobs dos hosts."
 
 # ---------------------------------------------------------------------------------------------------------------------
-# 3 a 5. parâmetros e jobs de cada módulo
+# 3 a 6. parâmetros, CNPJs da holding e jobs de cada módulo
 # ---------------------------------------------------------------------------------------------------------------------
 
 $summary = foreach ($name in $selected) {
     $module = $catalog[$name]
-    $warning = $null
+    $warnings = [System.Collections.Generic.List[string]]::new()
     $inserted = $null
+    $docs = @()
 
     if ($module.Table) {
         $seedsDir = Join-Path $modulesRoot $module.Folder 'Seeds/SQLServer'
         $seed = Get-ChildItem -LiteralPath $seedsDir -Filter '*_Insert_Values_Into_*_Parameters_Table.sql' -ErrorAction SilentlyContinue | Select-Object -First 1
 
         if (-not $seed) {
-            $warning = 'sem script de parâmetros em Seeds/SQLServer (fora do git: copie o .sql.example)'
             $oldDir = Join-Path $modulesRoot $module.Folder 'Scripts/SQLServer/Parameters'
             if (Get-ChildItem -LiteralPath $oldDir -Filter '*_Insert_Values_Into_*_Parameters_Table.sql' -ErrorAction SilentlyContinue) {
-                $warning = 'o script de parâmetros está no caminho antigo (Scripts/SQLServer/Parameters, que o DbUp executa): mova para Seeds/SQLServer'
+                $warnings.Add('o script de parâmetros está no caminho antigo (Scripts/SQLServer/Parameters, que o DbUp executa): mova para Seeds/SQLServer')
+            }
+            else {
+                $warnings.Add('sem script de parâmetros em Seeds/SQLServer (fora do git: copie o .sql.example)')
             }
         }
         else {
-            # o script do módulo entra pelo :r, numa transação; depois, as linhas novas de empresas que já tinham
-            # parâmetros no módulo são descartadas, e o que sobra é o que de fato foi inserido
+            # o script do módulo entra pelo :r, numa transação; os CNPJs das linhas dele saem como DOC=, e depois as
+            # linhas novas de CNPJs que já tinham parâmetros no módulo são descartadas: o que sobra é o que foi inserido
             $wrapper = New-TemporaryFile
             try {
                 Set-Content -LiteralPath $wrapper -Encoding utf8 -Value @"
@@ -194,6 +208,7 @@ BEGIN TRANSACTION;
 GO
 :r "$($seed.FullName)"
 GO
+SELECT DISTINCT CONCAT('DOC=', doc_company) FROM $($module.Table) WHERE id > (SELECT max_id FROM #before);
 DELETE t
 FROM $($module.Table) t
 WHERE t.id > (SELECT max_id FROM #before)
@@ -202,11 +217,27 @@ SELECT CONCAT('INSERTED=', COUNT(*)) FROM $($module.Table) WHERE id > (SELECT ma
 COMMIT TRANSACTION;
 GO
 "@
-                $inserted = Get-Marker (Invoke-Sql -InputFile $wrapper) 'INSERTED'
+                $output = Invoke-Sql -InputFile $wrapper
+                $inserted = Get-Marker $output 'INSERTED'
+                $docs = Get-Markers $output 'DOC'
             }
             finally {
                 Remove-Item -LiteralPath $wrapper -ErrorAction SilentlyContinue
             }
+        }
+    }
+
+    # um CNPJ de outra holding (ou que é outra empresa do painel) é recusado pela procedure e vira aviso
+    foreach ($doc in $docs) {
+        if ($doc -notmatch '^[0-9]+$') {
+            $warnings.Add("doc_company '$doc' não é só dígitos: fora de monitor.HoldingCompanies")
+            continue
+        }
+        try {
+            $null = Invoke-Sql -Query "EXEC auditing.sp_Add_Holding_Company @company = '$Company', @docCompany = '$doc';"
+        }
+        catch {
+            $warnings.Add("CNPJ $doc fora da holding: $(($_.Exception.Message -split "`n" | Where-Object { $_ -match 'holding|painel' } | Select-Object -First 1))")
         }
     }
 
@@ -228,16 +259,25 @@ SELECT CONCAT('ACTIVE=', COUNT(*)) FROM auditing.Jobs WHERE Company = '$Company'
     [pscustomobject]@{
         Modulo     = $name
         Parametros = if ($module.Table) { if ($null -ne $inserted) { "$inserted inserida(s)" } else { 'pulado' } } else { '-' }
+        CNPJs      = $docs -join ', '
         JobsNovos  = $created
         Jobs       = Get-Marker $state 'TOTAL'
         Ativos     = Get-Marker $state 'ACTIVE'
-        Aviso      = $warning
+        Avisos     = $warnings
     }
 }
 
-$summary | Format-Table -AutoSize | Out-String -Width 200 | Write-Host
+$summary | Select-Object Modulo, Parametros, CNPJs, JobsNovos, Jobs, Ativos | Format-Table -AutoSize | Out-String -Width 200 | Write-Host
 
-$summary | Where-Object Aviso | ForEach-Object { Write-Warning "$($_.Modulo): $($_.Aviso)" }
+$summary | ForEach-Object { $m = $_.Modulo; $_.Avisos | ForEach-Object { Write-Warning "${m}: $_" } }
+
+# CNPJs de parâmetros sem holding, em todos os módulos com tabela no banco: nenhum serviço os lê
+$orphanQuery = ($catalog.Values | Where-Object Table | ForEach-Object {
+        "IF OBJECT_ID('$($_.Table)') IS NOT NULL SELECT DISTINCT CONCAT('ORPHAN=$($_.Table) ', p.doc_company) FROM $($_.Table) p WHERE NOT EXISTS (SELECT 1 FROM monitor.HoldingCompanies hc WHERE hc.DocCompany = p.doc_company);"
+    }) -join "`n"
+Get-Markers (Invoke-Sql -Query $orphanQuery) 'ORPHAN' | ForEach-Object {
+    Write-Warning "CNPJ de parâmetro sem holding em monitor.HoldingCompanies (nenhum serviço lê): $_"
+}
 
 Write-Host 'Os scripts de parâmetros têm credenciais reais: antes de subir um host contra este banco, aponte' -ForegroundColor Yellow
 Write-Host '<Módulo>__BaseUrl para http://127.0.0.1:9/ (AfterSale, Movidesk, LinxMicrovix e Totvs).' -ForegroundColor Yellow

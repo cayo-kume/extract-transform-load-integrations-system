@@ -20,6 +20,13 @@ substitui a fase F2 (seed por procedure a partir das tabelas `*Parameters`) daqu
 8. Credenciais em **texto puro** nesta fase.
 9. A tela de cadastro tem um botão **Testar conexão** por módulo (passo 4.6).
 
+Decisões de 02/11/2026:
+
+10. **Os parâmetros não mudam.** O `doc_company` de cada `*Parameters` continua com o CNPJ que está lá (marca ou
+    holding). A ligação com a empresa do painel é a tabela de/para **`monitor.HoldingCompanies`** (passo 4.2.1).
+11. Uma holding só entra em `monitor.HoldingCompanies` se algum módulo tiver parâmetros com o CNPJ dela. Cliente de um
+    CNPJ só é a própria holding (`X → X`).
+
 Continuam valendo as decisões de 31/10/2026 da proposta: ativação é `UPDATE` em `auditing.Jobs.IsActive` por (job,
 empresa), sem tabela de ativação; uma execução do agendador por (job, empresa); a empresa do painel é a holding; banco
 zerado, sem backfill.
@@ -98,10 +105,13 @@ O que ele faz, em ordem:
    numa transação. Script fora do git que não existir na máquina (LinxMicrovix, LinxCommerce) gera um aviso e o módulo
    fica sem parâmetros, sem parar o resto; se o script ainda estiver no caminho antigo (`Scripts/SQLServer/Parameters`,
    que o DbUp executa), o aviso pede para movê-lo.
-4. Para cada módulo, chama `auditing.sp_Add_Company_App @company, @idParent`, que copia o catálogo de jobs do módulo para
+4. Liga cada CNPJ (`doc_company`) do script de parâmetros à empresa com `auditing.sp_Add_Holding_Company` (4.2.1). Um
+   CNPJ que já é de outra holding é recusado pela procedure e vira aviso.
+5. Para cada módulo, chama `auditing.sp_Add_Company_App @company, @idParent`, que copia o catálogo de jobs do módulo para
    `auditing.Jobs` com `Company = @company`.
-5. Com `-ActivateJobs`, faz o `UPDATE auditing.Jobs SET IsActive = 1` só da empresa e dos módulos pedidos.
-6. Imprime um resumo por módulo: parâmetros inseridos, jobs novos, jobs da empresa, jobs ativos e avisos.
+6. Com `-ActivateJobs`, faz o `UPDATE auditing.Jobs SET IsActive = 1` só da empresa e dos módulos pedidos.
+7. Imprime um resumo por módulo: parâmetros inseridos, CNPJs, jobs novos, jobs da empresa, jobs ativos e avisos. No fim,
+   avisa sobre CNPJs de qualquer `*Parameters` que não estão em `monitor.HoldingCompanies` (nenhum serviço os lê).
 
 Regras:
 
@@ -152,10 +162,35 @@ cadastrada falha ao gravar o log.
 - [x] Documentado em `docs/MIGRATOR-CSX.md` (ordem: migrators, depois o `.ps1`).
 
 **Achado do teste:** os parâmetros do Movidesk (`38367316000199`) e do AfterSale (`38367316000199` e `42538267000268`)
-estão com o CNPJ das **marcas** (Misha e Open Era), não com o da holding (`44065634000106`), que só aparece na Totvs. Com
-a decisão de que a empresa do painel é a holding, os jobs desses módulos são criados para a holding, mas os services vão
-procurar os parâmetros por `doc_company` da holding e não vão achar. Precisa de decisão antes da fase 4.4 (pergunta 2 da
-seção 7.2 da proposta): trocar o `doc_company` desses scripts para a holding, ou cadastrar as marcas como empresas.
+estão com o CNPJ das **marcas** (Misha e Open Era), não com o da holding (`44065634000106`), que só aparece na Totvs.
+Resolvido em 4.2.1 sem mexer nos parâmetros (decisões 10 e 11).
+
+### 4.2.1 De/para holding → CNPJs (`monitor.HoldingCompanies`) — feito
+
+- [x] `Script008`: `monitor.HoldingCompanies (DocCompany PK, Holding FK → monitor.Company, Name, CreatedAt)`, só
+      dígitos, índice por `Holding`. Um CNPJ é de uma holding só. Sem FK nas `*Parameters`: a ligação é por join.
+- [x] `Script008`: `auditing.sp_Add_Holding_Company @company, @docCompany, @name` liga um CNPJ de parâmetros à
+      empresa. Rodar de novo não faz nada. Recusa empresa não cadastrada (50002), CNPJ de outra holding (50003) e CNPJ
+      que é outra empresa do painel (50004).
+- [x] `sp_Add_Company` recusa, antes da transação, um CNPJ que já é marca de outra holding (50003).
+- [x] A holding **não** entra sozinha: só quando tem parâmetros com o próprio CNPJ (decisão 11). A tela chama
+      `sp_Add_Holding_Company` ao gravar os parâmetros de um módulo; o `.ps1` faz o mesmo com os CNPJs dos seeds.
+- [x] Teste no Docker, em banco zerado e apagado no fim: o `.ps1` ligou `44065634000106` (Totvs), `38367316000199`
+      (Movidesk e AfterSale) e `42538267000268` (AfterSale) à NEWBLOOMERS; a segunda execução não duplicou. O join do
+      AfterSale pela holding devolve as duas contas. Cliente de um CNPJ só (`X → X`) funciona. Misha como empresa do
+      painel, outro cliente pegando a Misha e outro cliente pegando a NEWBLOOMERS foram recusados sem deixar linha. Um
+      CNPJ de parâmetro sem holding gera aviso no `.ps1`.
+
+Nos services (4.4), os parâmetros de uma execução saem por:
+
+```sql
+SELECT p.*
+FROM <schema>.<Módulo>Parameters p
+JOIN monitor.HoldingCompanies hc ON hc.DocCompany = p.doc_company
+WHERE hc.Holding = @company
+```
+
+Uma execução (job, empresa) cobre todos os CNPJs da holding naquele módulo, como o AfterSale com as duas marcas.
 
 ### 4.3 Log por empresa (fase F3 da proposta)
 
@@ -167,14 +202,16 @@ seção 7.2 da proposta): trocar o `doc_company` desses scripts para a holding, 
 ### 4.4 Agendador e services (fase F4 da proposta)
 
 - [ ] Agenda por (job, empresa) no WebApi (Hangfire), no WebJob e no Worker.
-- [ ] Services recebem a empresa e processam só ela; as procedures de sincronização recebem a empresa da execução.
+- [ ] Services recebem a empresa e processam só ela, lendo os parâmetros pelo join com `monitor.HoldingCompanies`
+      (4.2.1); as procedures de sincronização recebem a empresa da execução.
 
 ### 4.5 Repositório do WebApp (Dapper, sem API e sem Shared)
 
 - [ ] `ICompanyRepository`: listar, criar, editar e desativar empresas (`monitor.Company`).
 - [ ] `IModuleParametersRepository`: ler e gravar a linha de `*Parameters` do módulo para a empresa. Cada módulo tem
       colunas próprias, então a tela usa uma definição por módulo (campo, rótulo, obrigatório, segredo), num único lugar
-      do WebApp.
+      do WebApp. Ao gravar, chama `auditing.sp_Add_Holding_Company` com o `doc_company` da linha.
+- [ ] CNPJs da empresa: listar os de `monitor.HoldingCompanies` da holding, com o módulo de cada parâmetro.
 - [ ] Contratar e remover integração: chama `sp_Add_Company_App` e `sp_Remove_Company_App`.
 - [ ] Mock primeiro, atrás das mesmas interfaces, como o resto do WebApp.
 
@@ -229,3 +266,4 @@ teste fica no próprio WebApp:
 | De quem são os jobs dos hosts (14000)? | De todas as empresas: cada uma tem o seu, criado por `sp_Add_Company` (decisão 7) |
 | Criptografar as credenciais? | Não nesta fase: texto puro (decisão 8) |
 | Botão para testar a conexão do módulo? | Sim, no próprio WebApp (decisão 9, passo 4.6.1) |
+| Parâmetros com CNPJ das marcas: trocar para a holding? | Não (02/11/2026): de/para em `monitor.HoldingCompanies` (decisões 10 e 11, passo 4.2.1) |
