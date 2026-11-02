@@ -30,19 +30,19 @@ REFERENCES [monitor].[Company] ([Company])
 GO
 
 -- de/para dos CNPJs que aparecem em doc_company nas tabelas *Parameters para a empresa do painel (holding). As tabelas
--- *Parameters não mudam: os serviços filtram por JOIN monitor.HoldingCompanies ON DocCompany = doc_company WHERE
+-- *Parameters não mudam: os serviços filtram por JOIN monitor.HoldingCompanies ON Company = doc_company WHERE
 -- Holding = @company. Um CNPJ é de uma holding só. A própria holding só entra aqui se algum módulo tiver parâmetros com
 -- o CNPJ dela (NEWBLOOMERS: só as marcas Misha e Open Era; cliente de um CNPJ só: X -> X). Sem FK nas *Parameters:
 -- cada módulo tem a sua tabela, e o .ps1 de teste avisa sobre CNPJ de parâmetro sem holding.
 CREATE TABLE [monitor].[HoldingCompanies](
-    [DocCompany] [varchar](20) NOT NULL,
+    [Company] [varchar](20) NOT NULL,
     [Holding] [varchar](20) NOT NULL,
     [Name] [nvarchar](150) NULL,
     [CreatedAt] [datetime] NOT NULL CONSTRAINT [DF_HoldingCompanies_CreatedAt] DEFAULT (SYSUTCDATETIME() AT TIME ZONE 'UTC' AT TIME ZONE 'E. South America Standard Time'),
-    CONSTRAINT [CK_HoldingCompanies_DocCompany] CHECK (LEN([DocCompany]) > 0 AND [DocCompany] NOT LIKE '%[^0-9]%'),
+    CONSTRAINT [CK_HoldingCompanies_Company] CHECK (LEN([Company]) > 0 AND [Company] NOT LIKE '%[^0-9]%'),
  CONSTRAINT [PK_HoldingCompanies] PRIMARY KEY CLUSTERED
 (
-    [DocCompany] ASC
+    [Company] ASC
 )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
@@ -107,7 +107,7 @@ BEGIN
     SET XACT_ABORT ON;
 
     -- antes da transação: o CNPJ de uma marca de outra holding não vira empresa do painel
-    DECLARE @holding VARCHAR(20) = (SELECT Holding FROM [monitor].[HoldingCompanies] WHERE DocCompany = @company);
+    DECLARE @holding VARCHAR(20) = (SELECT Holding FROM [monitor].[HoldingCompanies] WHERE Company = @company);
     IF @holding IS NOT NULL AND @holding <> @company
     BEGIN
         DECLARE @msg NVARCHAR(200) = CONCAT(N'O CNPJ ', @company, N' já é da holding ', @holding, N' em monitor.HoldingCompanies.');
@@ -126,7 +126,7 @@ END
 GO
 
 -- liga um CNPJ de parâmetros (doc_company) à empresa do painel. Chamada pela tela (ou pelo .ps1 de teste) ao gravar os
--- parâmetros de um módulo: a holding só entra como DocCompany quando ela mesma tem parâmetros. Rodar de novo para o mesmo
+-- parâmetros de um módulo: a holding só entra como Company quando ela mesma tem parâmetros. Rodar de novo para o mesmo
 -- par não faz nada; um CNPJ que já é de outra holding, ou que é outra empresa do painel, é recusado.
 CREATE OR ALTER PROCEDURE [auditing].[sp_Add_Holding_Company] (
     @company VARCHAR(20),
@@ -144,7 +144,7 @@ BEGIN
         THROW 50002, @msg, 1;
     END
 
-    DECLARE @holding VARCHAR(20) = (SELECT Holding FROM [monitor].[HoldingCompanies] WHERE DocCompany = @docCompany);
+    DECLARE @holding VARCHAR(20) = (SELECT Holding FROM [monitor].[HoldingCompanies] WHERE Company = @docCompany);
     IF @holding IS NOT NULL AND @holding <> @company
     BEGIN
         SET @msg = CONCAT(N'O CNPJ ', @docCompany, N' já é da holding ', @holding, N' em monitor.HoldingCompanies.');
@@ -158,6 +158,6 @@ BEGIN
     END
 
     IF @holding IS NULL
-        INSERT INTO [monitor].[HoldingCompanies] (DocCompany, Holding, [Name]) VALUES (@docCompany, @company, @name);
+        INSERT INTO [monitor].[HoldingCompanies] (Company, Holding, [Name]) VALUES (@docCompany, @company, @name);
 END
 GO

@@ -167,7 +167,7 @@ Resolvido em 4.2.1 sem mexer nos parâmetros (decisões 10 e 11).
 
 ### 4.2.1 De/para holding → CNPJs (`monitor.HoldingCompanies`) — feito
 
-- [x] `Script008`: `monitor.HoldingCompanies (DocCompany PK, Holding FK → monitor.Company, Name, CreatedAt)`, só
+- [x] `Script008`: `monitor.HoldingCompanies (Company PK, Holding FK → monitor.Company, Name, CreatedAt)`, só
       dígitos, índice por `Holding`. Um CNPJ é de uma holding só. Sem FK nas `*Parameters`: a ligação é por join.
 - [x] `Script008`: `auditing.sp_Add_Holding_Company @company, @docCompany, @name` liga um CNPJ de parâmetros à
       empresa. Rodar de novo não faz nada. Recusa empresa não cadastrada (50002), CNPJ de outra holding (50003) e CNPJ
@@ -186,7 +186,7 @@ Nos services (4.4), os parâmetros de uma execução saem por:
 ```sql
 SELECT p.*
 FROM <schema>.<Módulo>Parameters p
-JOIN monitor.HoldingCompanies hc ON hc.DocCompany = p.doc_company
+JOIN monitor.HoldingCompanies hc ON hc.Company = p.doc_company
 WHERE hc.Holding = @company
 ```
 

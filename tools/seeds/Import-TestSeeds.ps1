@@ -273,7 +273,7 @@ $summary | ForEach-Object { $m = $_.Modulo; $_.Avisos | ForEach-Object { Write-W
 
 # CNPJs de parâmetros sem holding, em todos os módulos com tabela no banco: nenhum serviço os lê
 $orphanQuery = ($catalog.Values | Where-Object Table | ForEach-Object {
-        "IF OBJECT_ID('$($_.Table)') IS NOT NULL SELECT DISTINCT CONCAT('ORPHAN=$($_.Table) ', p.doc_company) FROM $($_.Table) p WHERE NOT EXISTS (SELECT 1 FROM monitor.HoldingCompanies hc WHERE hc.DocCompany = p.doc_company);"
+        "IF OBJECT_ID('$($_.Table)') IS NOT NULL SELECT DISTINCT CONCAT('ORPHAN=$($_.Table) ', p.doc_company) FROM $($_.Table) p WHERE NOT EXISTS (SELECT 1 FROM monitor.HoldingCompanies hc WHERE hc.Company = p.doc_company);"
     }) -join "`n"
 Get-Markers (Invoke-Sql -Query $orphanQuery) 'ORPHAN' | ForEach-Object {
     Write-Warning "CNPJ de parâmetro sem holding em monitor.HoldingCompanies (nenhum serviço lê): $_"
