@@ -125,6 +125,28 @@ dotnet user-secrets set "Admin:Enabled" "true" --project src/Frontend/WebApp
 Para esconder as duas de novo, `dotnet user-secrets remove "Admin:Enabled" --project src/Frontend/WebApp`; depois de mudar
 a chave, reinicie o app. Fora disso, `/queries` e `/on-demand` caem na página de não encontrado e os itens somem do menu.
 
+## Assistente de IA
+
+O botão roxo no canto inferior direito (todas as telas, menos o login) abre um chat com o Claude (`claude-opus-5-5`, API
+da Anthropic, pacote NuGet `Anthropic`). Ele responde sobre integrações, erros e execuções da empresa logada consultando
+ferramentas **só de leitura** em cima do `IMonitorRepository` (`Data/AssistantTools.cs`): saúde das integrações, resumo do
+período, busca de jobs, execuções de um job e causas de erro. Não executa, não reconhece, não liga nem desliga nada, não
+roda querys e não vê credenciais nem parâmetros dos módulos. As respostas chegam aos poucos (streaming) e trazem links
+para as telas do painel; se o filtro de segurança recusar uma pergunta, o servidor tenta com o `claude-opus-4-8` na mesma
+chamada (fallback do lado do servidor).
+
+A chave fica nos User Secrets, nunca no `appsettings.json`; sem ela, o chat avisa que não está configurado:
+
+```bash
+dotnet user-secrets set "Assistant:ApiKey" "<chave da Anthropic>" --project src/Frontend/WebApp
+```
+
+As perguntas e os dados que as ferramentas consultam (nomes de jobs, mensagens de erro) vão para a API da Anthropic, e cada
+pergunta tem custo de uso. A conversa fica só na aba aberta, em memória: some ao recarregar a página ou em "Nova conversa".
+Código: `Components/Assistant/AssistantChat.razor` (botão e painel, no `MainLayout`), `Data/ClaudeAssistant.cs` (laço de
+ferramentas com streaming) e `Components/Assistant/AssistantMarkdown.cs` (negrito, listas e links internos; o resto vira
+texto).
+
 ## Executar Querys
 
 O que a tela faz:

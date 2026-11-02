@@ -1,0 +1,260 @@
+@using System.Text
+@using Anthropic.Exceptions
+@using Anthropic.Models.Beta.Messages
+@implements IDisposable
+@inject ClaudeAssistant Assistant
+@inject NavigationManager Navigation
+@inject ILogger<AssistantChat> Logger
+
+@* Assistente de IA no canto inferior direito (MainLayout, todas as telas menos o login): o botão abre o painel, que
+   continua aberto e com a conversa ao trocar de tela. A conversa fica só nesta aba, em memória. No celular, tela cheia. *@
+
+<div class="assistant">
+    @if (_open)
+    {
+        <div class="assistant-panel" role="dialog" aria-label="Assistente">
+            <div class="assistant-head">
+                <div class="assistant-avatar"><MudIcon Icon="@Icons.Material.Filled.AutoAwesome" Size="Size.Small" /></div>
+                <div class="assistant-head-text">
+                    <b>Assistente</b>
+                    <small><span class="assistant-dot @(Assistant.IsConfigured ? "" : "off")"></span>@LoggedCompany.Name · só leitura</small>
+                </div>
+                <MudSpacer />
+                <MudTooltip Text="Nova conversa">
+                    <MudIconButton Icon="@Icons.Material.Filled.RestartAlt" Size="Size.Small" OnClick="NewConversation" aria-label="Nova conversa" Disabled="@(_entries.Count == 0)" />
+                </MudTooltip>
+                <MudTooltip Text="Fechar">
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="Toggle" aria-label="Fechar o assistente" />
+                </MudTooltip>
+            </div>
+
+            @* column-reverse: a rolagem fica presa no fim enquanto a resposta chega *@
+            <div class="assistant-messages">
+                <div class="assistant-messages-inner">
+                    @if (_entries.Count == 0)
+                    {
+                        <div class="assistant-msg bot">
+                            @if (Assistant.IsConfigured)
+                            {
+                                <p>Olá! Posso explicar falhas, resumir o período e achar integrações. Não executo nem altero nada.</p>
+                            }
+                            else
+                            {
+                                <p>O assistente ainda não está configurado: falta a chave <strong>Assistant:ApiKey</strong> nos User Secrets do WebApp.</p>
+                            }
+                        </div>
+                    }
+                    @foreach (var entry in _entries)
+                    {
+                        @switch (entry.Kind)
+                        {
+                            case EntryKind.User:
+                                <div class="assistant-msg user">@entry.Text</div>
+                                break;
+                            case EntryKind.Tool:
+                                <div class="assistant-tool"><MudIcon Icon="@Icons.Material.Filled.ManageSearch" Size="Size.Small" /> consultou: @entry.Text</div>
+                                break;
+                            case EntryKind.Error:
+                                <div class="assistant-msg error">@entry.Text</div>
+                                break;
+                            default:
+                                @if (entry.Text.Length > 0)
+                                {
+                                    <div class="assistant-msg bot">@((MarkupString)AssistantMarkdown.ToHtml(entry.Text.ToString()))</div>
+                                }
+                                break;
+                        }
+                    }
+                    @if (_busy && !Streaming)
+                    {
+                        <div class="assistant-typing">Assistente está escrevendo…</div>
+                    }
+                </div>
+            </div>
+
+            @if (_entries.Count == 0 && Assistant.IsConfigured)
+            {
+                <div class="assistant-suggestions">
+                    @foreach (var suggestion in Suggestions)
+                    {
+                        <button type="button" class="assistant-suggestion" @onclick="@(() => SendAsync(suggestion))">@suggestion</button>
+                    }
+                </div>
+            }
+
+            <div class="assistant-input">
+                <input type="text" @bind="_question" @bind:event="oninput" @onkeydown="OnKeyDown" placeholder="Pergunte sobre integrações, erros…"
+                       maxlength="2000" disabled="@(_busy || !Assistant.IsConfigured)" aria-label="Pergunta para o assistente" />
+                @if (_busy)
+                {
+                    <MudTooltip Text="Parar">
+                        <button type="button" class="assistant-send stop" @onclick="Stop" aria-label="Parar a resposta"><MudIcon Icon="@Icons.Material.Filled.Stop" Size="Size.Small" /></button>
+                    </MudTooltip>
+                }
+                else
+                {
+                    <button type="button" class="assistant-send" @onclick="@(() => SendAsync(_question))" disabled="@(string.IsNullOrWhiteSpace(_question) || !Assistant.IsConfigured)" aria-label="Enviar">
+                        <MudIcon Icon="@Icons.Material.Filled.Send" Size="Size.Small" />
+                    </button>
+                }
+            </div>
+            <div class="assistant-foot">Respostas geradas por IA a partir dos dados do painel; confira antes de agir.</div>
+        </div>
+    }
+
+    <button type="button" class="assistant-fab" @onclick="Toggle" aria-label="@(_open ? "Fechar o assistente" : "Abrir o assistente")" aria-expanded="@(_open ? "true" : "false")">
+        <MudIcon Icon="@(_open ? Icons.Material.Filled.Close : Icons.Material.Filled.AutoAwesome)" />
+        @if (_unread && !_open)
+        {
+            <span class="assistant-badge"></span>
+        }
+    </button>
+</div>
+
+@code {
+    private enum EntryKind
+    {
+        User,
+        Assistant,
+        Tool,
+        Error
+    }
+
+    private sealed record Entry(EntryKind Kind, StringBuilder Text)
+    {
+        public Entry(EntryKind kind, string text) : this(kind, new StringBuilder(text))
+        {
+        }
+    }
+
+    // o que aparece na tela e o histórico no formato da API (com os blocos de pensamento e de ferramenta)
+    private readonly List<Entry> _entries = [];
+    private readonly List<BetaMessageParam> _history = [];
+
+    private bool _open;
+    private bool _busy;
+    private bool _unread;
+    private string? _question;
+    private CancellationTokenSource? _cts;
+
+    // a resposta já começou a aparecer: some o "escrevendo…"
+    private bool Streaming => _entries.Count > 0 && _entries[^1] is { Kind: EntryKind.Assistant, Text.Length: > 0 };
+
+    private string Path => "/" + Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0];
+
+    // sugestões conforme a tela aberta
+    private IEnumerable<string> Suggestions => Path switch
+    {
+        var p when p.StartsWith("/errors") => ["Qual a causa mais comum hoje?", "Quais jobs mais erraram nas últimas 24h?", "O que está com erro agora?"],
+        var p when p.StartsWith("/integrations") => ["O que está atrasado?", "Quais integrações estão com erro agora?", "Resumo das últimas 24h"],
+        _ => ["Resumo das últimas 24h", "O que está atrasado?", "Qual a causa mais comum hoje?"]
+    };
+
+    private void Toggle()
+    {
+        _open = !_open;
+        if (_open)
+            _unread = false;
+    }
+
+    private void OnKeyDown(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter" && !_busy)
+            _ = SendAsync(_question);
+    }
+
+    private void Stop() => _cts?.Cancel();
+
+    private void NewConversation()
+    {
+        _cts?.Cancel();
+        _entries.Clear();
+        _history.Clear();
+    }
+
+    private async Task SendAsync(string? question)
+    {
+        if (_busy || string.IsNullOrWhiteSpace(question) || !Assistant.IsConfigured)
+            return;
+
+        question = question.Trim();
+        _question = "";
+        _busy = true;
+        _entries.Add(new Entry(EntryKind.User, question));
+
+        // em erro ou parada, o histórico volta a como estava: a API não aceita uma pergunta sem resposta no meio
+        var historyCount = _history.Count;
+        var answer = new Entry(EntryKind.Assistant, "");
+        _entries.Add(answer);
+
+        _cts = new CancellationTokenSource();
+        var lastRender = DateTime.MinValue;
+
+        try
+        {
+            await foreach (var update in Assistant.AskAsync(_history, question, Path, _cts.Token))
+            {
+                switch (update)
+                {
+                    case AssistantUpdate.Text text:
+                        answer.Text.Append(text.Value);
+                        break;
+                    case AssistantUpdate.ToolUsed tool:
+                        // o aviso entra antes do texto da resposta, que continua no fim da lista
+                        _entries.Insert(_entries.IndexOf(answer), new Entry(EntryKind.Tool, tool.Label));
+                        break;
+                    case AssistantUpdate.Refused:
+                        _entries.Add(new Entry(EntryKind.Error, "O assistente não pôde responder a essa pergunta. Tente perguntar de outro jeito."));
+                        break;
+                }
+
+                // redesenha no máximo a cada 80 ms enquanto o texto chega
+                if (DateTime.UtcNow - lastRender > TimeSpan.FromMilliseconds(80))
+                {
+                    lastRender = DateTime.UtcNow;
+                    StateHasChanged();
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            RollBack(historyCount, answer, "Resposta interrompida.");
+        }
+        catch (AnthropicException exception)
+        {
+            Logger.LogError(exception, "Erro do assistente ao chamar a API da Anthropic");
+            RollBack(historyCount, answer, ErrorText(exception));
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Erro do assistente");
+            RollBack(historyCount, answer, "Não foi possível responder agora. Tente de novo em instantes.");
+        }
+        finally
+        {
+            _busy = false;
+            _cts.Dispose();
+            _cts = null;
+            if (!_open)
+                _unread = true;
+        }
+    }
+
+    private void RollBack(int historyCount, Entry answer, string message)
+    {
+        _history.RemoveRange(historyCount, _history.Count - historyCount);
+        if (answer.Text.Length == 0)
+            _entries.Remove(answer);
+        _entries.Add(new Entry(EntryKind.Error, message));
+    }
+
+    private static string ErrorText(AnthropicException exception) => exception switch
+    {
+        AnthropicUnauthorizedException => "A chave Assistant:ApiKey foi recusada pela Anthropic. Confira a chave nos User Secrets.",
+        AnthropicRateLimitException => "Muitas perguntas em pouco tempo. Espere um pouco e tente de novo.",
+        AnthropicIOException => "Sem conexão com a API da Anthropic. Tente de novo em instantes.",
+        _ => "Não foi possível responder agora. Tente de novo em instantes."
+    };
+
+    public void Dispose() => _cts?.Cancel();
+}

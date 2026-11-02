@@ -512,6 +512,14 @@ mockup para aprovação):
       classe `brand-field`): 40px de altura (`Margin.Dense`), canto arredondado, contorno roxo com fundo roxo leve, texto
       em negrito, rótulo sempre em cima (`ShrinkLabel`) em negrito, foco com contorno e brilho laranja; na busca
       (`brand-search`), a lupa laranja à esquerda, o rótulo laranja e um texto de exemplo.
+17. **Assistente de IA (01/11/2026, mockup aprovado):** chat no canto inferior direito com o Claude (`claude-opus-5-5`,
+    pacote `Anthropic` 13.3.0, endpoint beta para o fallback de recusa com o `claude-opus-4-8`), em todas as telas do
+    `MainLayout`. Ferramentas só de leitura sobre o `IMonitorRepository` (saúde, resumo do período, busca de jobs,
+    execuções e causas de erro, da empresa logada); nenhuma ação no sistema, sem credenciais nem parâmetros. Streaming com
+    o aviso "consultou: ..." de cada ferramenta, sugestões conforme a tela, links internos nas respostas, botão de parar e
+    "Nova conversa"; no celular, tela cheia. Chave em `Assistant:ApiKey` nos User Secrets; sem ela, o chat avisa que não
+    está configurado. Conversa só em memória, por aba. Na fase 5 as ferramentas passam a ler o banco junto com o
+    repositório, sem mudar o chat.
 
 # Fase 5 — Banco de dados (não implementar agora)
 

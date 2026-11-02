@@ -37,6 +37,10 @@ builder.Services.AddSingleton<IQueryRunner, MockQueryRunner>();
 // Sob Demanda: até a fase 5, respostas simuladas
 builder.Services.AddSingleton<IOnDemandRunner, MockOnDemandRunner>();
 
+// Assistente de IA (Claude, API da Anthropic): só leitura, chave em Assistant:ApiKey nos User Secrets
+builder.Services.AddSingleton<AssistantTools>();
+builder.Services.AddSingleton<ClaudeAssistant>();
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
