@@ -6,17 +6,17 @@ BEGIN
 END
 GO
 
--- imagem por módulo e empresa; DocCompany = '*' é a imagem padrão do módulo
+-- imagem por módulo e empresa; Company = '*' é a imagem padrão do módulo
 CREATE TABLE [monitor].[AppImage](
     [IdParent] [int] NOT NULL,
-    [DocCompany] [varchar](20) NOT NULL,
+    [Company] [varchar](20) NOT NULL,
     [ContentType] [varchar](100) NOT NULL,
     [Data] [varbinary](max) NOT NULL,
     [UpdatedAt] [datetime] NOT NULL CONSTRAINT [DF_AppImage_UpdatedAt] DEFAULT (SYSUTCDATETIME() AT TIME ZONE 'UTC' AT TIME ZONE 'E. South America Standard Time'),
  CONSTRAINT [PK_AppImage] PRIMARY KEY CLUSTERED
 (
     [IdParent] ASC,
-    [DocCompany] ASC
+    [Company] ASC
 )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
@@ -28,7 +28,7 @@ GO
 -- parâmetros de apresentação e acesso que não existem em nenhuma tabela *Parameters (decisão em aberto, proposta 7.2 item 1)
 CREATE TABLE [monitor].[AppSetting](
     [IdParent] [int] NOT NULL,
-    [DocCompany] [varchar](20) NOT NULL,
+    [Company] [varchar](20) NOT NULL,
     [Name] [nvarchar](100) NOT NULL,
     [Value] [nvarchar](max) NULL,
     [IsSecret] [bit] NOT NULL CONSTRAINT [DF_AppSetting_IsSecret] DEFAULT (0),
@@ -36,7 +36,7 @@ CREATE TABLE [monitor].[AppSetting](
  CONSTRAINT [PK_AppSetting] PRIMARY KEY CLUSTERED
 (
     [IdParent] ASC,
-    [DocCompany] ASC,
+    [Company] ASC,
     [Name] ASC
 )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]

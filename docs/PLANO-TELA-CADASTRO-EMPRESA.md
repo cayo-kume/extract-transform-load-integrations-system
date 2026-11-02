@@ -1,6 +1,7 @@
 # Plano: cadastro de empresas e integrações pela tela (fora do DbUp)
 
-Branch: `implementacao-tela-cadastro`. Status: **plano**; só o passo 1.1 (chaves de `auditing`) já está no código.
+Branch: `implementacao-tela-cadastro`. Status: **plano aprovado nas decisões**; no código só estão os dois primeiros itens
+de 4.1 (chaves de `auditing` e schema `monitor`).
 
 Base: [PROPOSTA-DOC-COMPANY-AUDITING.md](../src/Backend/Shared/docs/PROPOSTA-DOC-COMPANY-AUDITING.md). Este plano
 substitui a fase F2 (seed por procedure a partir das tabelas `*Parameters`) daquela proposta e muda o nome da coluna.
@@ -13,6 +14,12 @@ substitui a fase F2 (seed por procedure a partir das tabelas `*Parameters`) daqu
 3. `Company` faz parte da **PK de todas as tabelas de auditing** com empresa: `Jobs`, `Logs`, `Messages` e `Records`.
 4. Para testes, os scripts de inserção de parâmetros que existem hoje não se perdem: um script `.ps1` aplica todos de uma
    vez num banco de teste, sem cadastrar empresa por empresa na tela (passo 3).
+5. O catálogo do produto (`auditing.Types`, `auditing.Apps` e o catálogo de jobs) **fica no DbUp**.
+6. `monitor.AppImage` e `monitor.AppSetting` também usam **`Company`**: um nome só para a empresa no banco.
+7. **Toda empresa tem os jobs dos hosts.** Cada empresa tem o seu próprio 14000 (`StuckJobsRecovery`), que nasce junto
+   com a empresa, sem precisar contratar nada.
+8. Credenciais em **texto puro** nesta fase.
+9. A tela de cadastro tem um botão **Testar conexão** por módulo (passo 4.6).
 
 Continuam valendo as decisões de 31/10/2026 da proposta: ativação é `UPDATE` em `auditing.Jobs.IsActive` por (job,
 empresa), sem tabela de ativação; uma execução do agendador por (job, empresa); a empresa do painel é a holding; banco
@@ -26,15 +33,15 @@ O DbUp passa a criar **estrutura e catálogo do produto**. Tudo o que depende de
 |---|---|
 | schemas, tabelas, procedures, views, tipos | linhas de `*Parameters` (credenciais e endereços de cada cliente) |
 | `auditing.Types` (Script005 do Shared) | linhas de `auditing.Jobs` (agora uma por empresa) |
-| `auditing.Apps`: catálogo de módulos (ver pergunta 1) | |
-| catálogo de jobs, sem empresa (ver 4.1 e pergunta 1) | |
+| `auditing.Apps`: catálogo de módulos | |
+| `auditing.JobCatalog`: catálogo de jobs, sem empresa (4.1), inclusive o 14000 dos hosts | |
 | tabelas de referência do DataWarehouse (`Script006_Insert_DataWarehouse_Reference.sql`) | |
 
 ### 2.1 Scripts que saem do DbUp
 
 | Módulo | Parâmetros (credenciais) | Jobs |
 |---|---|---|
-| Shared | — | `Script007_Insert_Hosts_Jobs_Into_Jobs_Table.sql` (job 14000 dos hosts, ver pergunta 3) |
+| Shared | — | `Script007_Insert_Hosts_Jobs_Into_Jobs_Table.sql`: o 14000 passa a ser inserido no catálogo (continua no DbUp) |
 | Totvs | `Parameters/Script003_Insert_Values_Into_Totvs_Parameters_Table.sql` | 12 scripts `Insert_Totvs_*_Jobs` |
 | LinxMicrovix | `Parameters/Script003_Insert_Values_Into_LinxMicrovix_Parameters_Table.sql` (fora do git; há `.example`) | 29 scripts (`Erp/*` e `B2C/*`) |
 | LinxCommerce | `Parameters/Script003_Insert_Values_Into_LinxCommerce_Parameters_Table.sql` (fora do git; há `.example`) | 4 scripts |
@@ -79,7 +86,8 @@ O que ele faz, em ordem:
 
 1. Confere que o banco existe e que os migrators já rodaram (`auditing.Jobs` e as tabelas `*Parameters` existem). Não roda
    migrator: isso continua sendo o `migrator.csx`.
-2. Cadastra a empresa (`monitor.Company`, passo 4.1), se ainda não existir.
+2. Cadastra a empresa com `auditing.sp_Add_Company` (passo 4.1), se ainda não existir. Isso já cria os jobs dos hosts
+   da empresa.
 3. Para cada módulo, executa o script de parâmetros de `Seeds/SQLServer` com `sqlcmd -b`. Script fora do git que não
    existir na máquina (LinxMicrovix, LinxCommerce) gera um aviso e o módulo é pulado, sem parar o resto.
 4. Para cada módulo, chama `auditing.sp_Add_Company_App @company, @idParent` (passo 4.1), que copia o catálogo de jobs
@@ -103,15 +111,17 @@ Regras:
 
 - [x] `Script001`: `Company VARCHAR(20) NOT NULL` em `Jobs`, `Logs`, `Messages` e `Records`, na PK das quatro e nas FKs
       (`Logs` → `Jobs`; `Messages` e `Records` → `Logs`).
-- [x] `Script008_Create_Monitor_Schema.sql`: `monitor.AppImage` e `monitor.AppSetting` (hoje com `DocCompany`, ver
-      pergunta 2).
+- [x] `Script008_Create_Monitor_Schema.sql`: `monitor.AppImage` e `monitor.AppSetting`, com `Company`.
 - [ ] `monitor.Company`: `Company VARCHAR(20)` (PK, CNPJ), `Name`, `TradeName`, `IsActive`, `CreatedAt`, `UpdatedAt`.
       É a lista de empresas do seletor e do login. Não guarda credencial.
 - [ ] Catálogo de jobs: `auditing.JobCatalog` com as colunas de `auditing.Jobs` sem `Company` e sem `IsActive`. Os
       scripts `Insert_*_Jobs` atuais viram inserts nesse catálogo e **ficam no DbUp** (são produto, ligados ao
-      `EnumJob` do código), se a pergunta 1 for aceita.
+      `EnumJob` do código). O Script007 do Shared passa a inserir o 14000 no catálogo, não em `auditing.Jobs`.
 - [ ] `auditing.sp_Add_Company_App @company, @idParent`: copia os jobs do catálogo do módulo para `auditing.Jobs`, com
       `IsActive = 0`, sem duplicar. `auditing.sp_Remove_Company_App` desativa (não apaga, por causa das FKs de `Logs`).
+- [ ] `auditing.sp_Add_Company @company, @name, @tradeName`: insere em `monitor.Company` e chama
+      `sp_Add_Company_App @company, 140` (Hosts). Assim toda empresa nasce com o seu 14000. A ativação dele segue a mesma
+      regra dos outros jobs (`IsActive`).
 - [ ] Mover os scripts da seção 2.1 para `Seeds/SQLServer` e atualizar o `.gitignore`.
 - [ ] Teste: banco zerado no Docker, migrators de todos os módulos sem erro, `auditing.Jobs` vazio.
 
@@ -153,6 +163,23 @@ Mudança de layout só com mockup aprovado antes.
 - [ ] Segredos: nunca voltam para a tela depois de gravados. O campo mostra "definido" e aceita só substituir.
 - [ ] Ao contratar uma integração, os jobs nascem inativos. A ativação continua na tela de Integrações e na Visão geral.
 - [ ] Validação de CNPJ e de duplicidade.
+- [ ] Botão **Testar conexão** por módulo (ver 4.6.1).
+
+#### 4.6.1 Testar conexão
+
+O WebApp não usa a API do host nem o Shared ([decisões do WebApp](../src/Frontend/WebApp/docs/PLANO-WEBAPP.md)), então o
+teste fica no próprio WebApp:
+
+- Uma interface `IConnectionTester` por módulo, registrada junto da definição de campos do módulo (4.5). Recebe os
+  valores **do formulário**, ainda não gravados, e devolve sucesso ou a mensagem de erro do provedor.
+- O teste faz só a chamada mínima de autenticação, **sempre de leitura**: o pedido de token (Totvs, AfterSale), ou um
+  GET pequeno quando o módulo não tem token (Movidesk, LinxMicrovix, LinxCommerce). Nunca escreve no provedor, inclusive
+  na Totvs de produção.
+- Tempo limite curto (10 s). Nenhum segredo vai para o log nem para a mensagem de erro mostrada.
+- A lógica de autenticação fica duplicada entre o WebApp e o módulo. Ela é pequena; se crescer, vira uma fase própria
+  para extrair um pacote comum ou expor o teste pela API.
+- LinxCommerce não tem credenciais de teste: o testador dele é verificado só contra uma API simulada local.
+- Testes: a mesma regra dos outros testes, sem tráfego real em automação. O teste real é manual, pelo botão.
 
 ### 4.7 Autenticação (fase F6 da proposta)
 
@@ -160,24 +187,24 @@ Mudança de layout só com mockup aprovado antes.
 
 ## 5. Riscos
 
-- **Credenciais em texto puro:** hoje as tabelas `*Parameters` guardam segredos sem criptografia. Com vários clientes,
-  isso pesa mais (ver pergunta 4).
+- **Credenciais em texto puro:** as tabelas `*Parameters` guardam segredos sem criptografia, por decisão desta fase. Com
+  vários clientes, o acesso ao banco passa a ser o único controle; a criptografia fica para uma fase futura.
+- **Jobs dos hosts por empresa:** com N empresas há N jobs 14000. Cada um lê o heartbeat só da sua empresa, então a
+  recuperação de um WebJob travado acontece pelo job da empresa dona da execução.
 - **Credenciais de produção no `.ps1`:** os scripts de `Seeds/` têm credenciais reais. Jobs inativos por padrão e a
   trava de nome do banco reduzem o risco de tráfego real ou escrita em produção a partir de um teste.
 - **Ordem de deploy:** num ambiente novo, o sistema sobe sem nenhuma empresa. Nada roda até alguém cadastrar uma pela
   tela ou pelo `.ps1`.
 
-## 6. Perguntas em aberto
+## 6. Perguntas respondidas em 01/11/2026
 
-1. **Catálogo no DbUp:** `auditing.Apps`, `auditing.Types` e o catálogo de jobs (`auditing.JobCatalog`) descrevem o
-   produto, não o cliente, e dependem do código (`EnumJob`). Eles ficam no DbUp? (Recomendado: sim. Sem isso, a tela
-   não sabe quais jobs um módulo tem.)
-2. **Nome no `monitor`:** `monitor.AppImage` e `monitor.AppSetting` também passam a usar `Company` em vez de
-   `DocCompany`? (Recomendado: sim, um nome só no banco.)
-3. **Jobs dos hosts (14000, `StuckJobsRecovery`):** não pertencem a um cliente. Hoje o Script007 usa `Company = ' '`.
-   Ficam no DbUp com um valor fixo de sistema (por exemplo `'*'`, como a imagem padrão), ou viram configuração do host,
-   fora de `auditing.Jobs`?
-4. **Criptografia das credenciais:** manter texto puro nesta fase, ou criptografar já no cadastro (Always Encrypted,
-   chave no Key Vault)?
-5. **Testar conexão:** a tela deve ter um botão para testar a credencial do módulo? Isso exige chamar o módulo, e o
-   WebApp hoje não usa API nem Shared.
+| Pergunta | Resposta |
+|---|---|
+| O catálogo do produto (`Types`, `Apps`, catálogo de jobs) fica no DbUp? | Sim (decisão 5) |
+| `monitor.*` passa a usar `Company`? | Sim, já aplicado no `Script008` (decisão 6) |
+| De quem são os jobs dos hosts (14000)? | De todas as empresas: cada uma tem o seu, criado por `sp_Add_Company` (decisão 7) |
+| Criptografar as credenciais? | Não nesta fase: texto puro (decisão 8) |
+| Botão para testar a conexão do módulo? | Sim, no próprio WebApp (decisão 9, passo 4.6.1) |
+
+Até a fase 4.1 trocar o Script007 para o catálogo, o 14000 continua sendo inserido em `auditing.Jobs` com
+`Company = ' '`, só para o banco zerado subir.
