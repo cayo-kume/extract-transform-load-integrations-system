@@ -664,7 +664,8 @@ uma queda não aparece no painel (ponto 1).
 
 ### 8.3 Pontos em aberto
 
-Os 15 pontos para decidir, agrupados (o número é o da seção 6; nenhum foi corrigido ainda):
+Os 15 pontos para decidir, agrupados (o número é o da seção 6; nenhum foi corrigido ainda). As melhorias propostas
+para cada um estão em [PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md](PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md):
 
 | Grupo | Pontos | Resumo |
 |---|---|---|
