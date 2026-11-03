@@ -87,7 +87,10 @@ storage, o usuário e a senha do dashboard...), o host não sobe e a mensagem li
 > banco. Antes de ligar o Hangfire, parar os WebJobs no App Service e o serviço do Worker; antes de usar um dos outros
 > dois, `Hangfire:Enabled = false` aqui (as rotas continuam para disparo manual: o modo só API combina com qualquer um
 > deles). Se dois ficarem ligados por um tempo numa troca, a trava de concorrência ([abaixo](#-concorrência)) ainda impede
-> que um mesmo job rode junto nos dois.
+> que um mesmo job rode **ao mesmo tempo** nos dois, mas não que rode **duas vezes** no mesmo ciclo: no teste com o
+> Hangfire e o Worker no mesmo banco, 10 de 12 jobs rodaram duas vezes por ciclo (o segundo começa quando o primeiro já
+> terminou). Os dados não duplicaram (o merge é por chave), mas as APIs foram lidas em dobro. Nada no código impede os
+> dois ligados ([testes, ponto 7](../../../../docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md#83-pontos-em-aberto)).
 
 ---
 
@@ -377,7 +380,8 @@ da mesma empresa; as duas rodam em sequência (a trava da empresa impede rodarem
 
 > [!WARNING]
 > As **rotas dos controllers ficam fora da trava**: um disparo manual durante a execução agendada roda junto com ela. As
-> rotas são para uso manual e consciente (o DW continua com a própria trava no processo, que devolve 409).
+> rotas são para uso manual e consciente (o DW continua com a própria trava no processo, que devolve 409). Visto no
+> teste: `POST /MovideskJobs/Movidesk/Tickets` com o mesmo job agendado rodando leu a API em dobro, sem duplicar linha.
 
 ---
 
@@ -391,6 +395,24 @@ da mesma empresa; as duas rodam em sequência (a trava da empresa impede rodarem
   no minuto 15, e passa para `Deleted` as falhas com mais de `Maintenance:FailedJobsRetentionInDays`.
 * ⚙️ `SchedulerRefresh` e `FailedJobsCleanup` são do próprio host: não estão em `auditing.Jobs` e só somem com
   `Hangfire:Enabled = false`.
+
+---
+
+## 🧪 Comportamento testado
+
+Conferido nos [testes de hospedagem](../../../../docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md) de 02 e 03/11/2026 (cenários
+C1, C2, C3, A1, A2, A5, A6, A8 e A10), com os 12 jobs do conjunto mínimo a cada 5 minutos:
+
+| Situação | O que acontece |
+|---|---|
+| 🚀 Subida | O primeiro ciclo sai na virada do intervalo (o cron não roda na subida). Se o host estava fora do ar, os recorrentes atrasados rodam **uma vez** logo na subida, e o ritmo volta ao normal |
+| 💥 Processo derrubado no meio | As execuções em andamento vão para `Deleted`, sem reexecutar; o ciclo seguinte é normal. **Elas não deixam registro em `auditing.Logs`**, que só é gravado no fim |
+| 🗄️ Banco parado e religado | O Hangfire reconecta sozinho e roda os atrasados; nada fica preso |
+| ❌ Falha de API | Erro em `auditing.Messages`, job em `Failed` sem novas tentativas (nenhuma rajada contra a API) e de volta no ciclo seguinte |
+| 🐧 Container Linux | Funciona na imagem `mcr.microsoft.com/dotnet/aspnet:10.0` (Debian, com ICU e tzdata: o fuso `E. South America Standard Time` é convertido e o log sai em horário de Brasília). Evitar as imagens Alpine e chiseled, que vêm sem eles. Atrás do nginx só em HTTP o `UseHttpsRedirection` não age (o host não usa `UseForwardedHeaders`) |
+| ☁️ Azure SQL | O schema `HangFire` é criado no Azure SQL. Com o banco serverless pausado, o instalador recebe `Database ... is not currently available`, **repete sozinho** até o banco acordar (15 a 90 s) e o host sobe |
+| ☁️ App Service (Always On) | O Hangfire roda e cria o schema, mas num plano B1 junto com 12 WebJobs e o painel o HTTP do WebApi não respondeu (100% de CPU e 96% de memória). Para hospedar o Hangfire no App Service, um plano próprio ou maior |
+| 🔁 Troca de host | Parar o Worker e ligar o Hangfire (ou o contrário) não duplica nem perde execução; sobra uma linha da instância antiga em `quartz.QRTZ_SCHEDULER_STATE`, sem efeito |
 
 ---
 

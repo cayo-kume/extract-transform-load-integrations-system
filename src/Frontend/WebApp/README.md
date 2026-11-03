@@ -98,6 +98,22 @@ dotnet run --project src/Frontend/WebApp --launch-profile http
 Não precisa de **banco**, de **API** nem de **configuração**: o painel sobe com os dados do mock. Os perfis do
 `launchSettings.json` usam o ambiente `Development`.
 
+### 🚢 Publicado (Production)
+
+Conferido nos [testes de hospedagem](../../../docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md) de 02 e 03/11/2026: o painel
+publicado atrás do nginx num container Linux (C2, C5) e num App Service Windows (C7), lendo SQL Server e Azure SQL com o
+`etl_monitor`.
+
+| | Item | Detalhe |
+|:---:|---|---|
+| ⚙️ | Configuração | Em `Production` os User Secrets não valem: `Database__Enabled`, `ConnectionStrings__Connection` e `ConnectionStrings__QueryConnection` vão por variável de ambiente ou App Settings |
+| 🔒 | Telas de administrador | **Executar Querys** e **Sob Demanda** somem do menu, porque exigem `Development` ([abaixo](#-telas-de-administrador)). Esperado |
+| 🔌 | WebSocket | O Blazor Server precisa de WebSocket. No nginx: `proxy_http_version 1.1`, os cabeçalhos `Upgrade`/`Connection` e `proxy_read_timeout` longo (1 h no teste); no App Service, **Web sockets** ligado; no IIS, o recurso WebSocket Protocol |
+| 🔁 | Reinício | Depois de `docker restart`, o navegador recebe 502 e reconecta sozinho em ≈ 6 s, com circuito novo |
+| 🔑 | Data Protection | As chaves ficam dentro do container (aviso no log) e se perdem ao recriá-lo: as sessões abertas caem. Para manter, um volume para as chaves |
+| 🕒 | **Hora da tela** | As telas usam `DateTime.Now` (`Home`, `Integrations`, `Applications`, `Errors`, `HealthChip`, `DurationText`, `RecordsByDay`, `MessageCauses`): num servidor em UTC (container, App Service) o "Atualizado às" sai 3 h adiantado. Os horários das execuções, que vêm do banco, estão certos. Até a correção ([ponto 10](../../../docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md#83-pontos-em-aberto)), o contorno provável (não testado) é `TZ=America/Sao_Paulo` no container ou `WEBSITE_TIME_ZONE=E. South America Standard Time` no App Service Windows |
+| ⏱️ | Desempenho | Visão geral em ≈ 100 ms durante a carga inicial de 3 meses, sem bloqueio no banco (`WITH (NOLOCK)`) |
+
 ---
 
 ## 🗺️ Telas

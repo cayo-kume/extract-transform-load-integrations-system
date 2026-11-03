@@ -228,6 +228,15 @@ Seguem o padrão de [`docs/PADRAO-CACHE-INTEGRACOES.md`](../../../../../docs/PAD
   * As respostas são juntadas por id e o bloco é gravado em seguida.
   * Um ticket que falte em algum grupo não é gravado (o merge apagaria as filhas que faltaram): vira mensagem e volta na próxima execução.
 
+> [!WARNING]
+> **Risco de perda de tickets (visto no teste de hospedagem C7, 03/11/2026).** Quando a API responde um bloco da fase 2
+> com erro (`{"message":"An error has occurred."}`), o job para nesse bloco, grava a mensagem como aviso e termina
+> **"Concluída com sucesso"**. A execução seguinte parte do maior `lastUpdate` gravado − 1 h, que já pode estar depois
+> dos tickets dos blocos não gravados, e eles **não voltam** enquanto não forem alterados na Movidesk. No teste, a carga
+> inicial terminou com 1.190 tickets em vez de 1.864. Até a correção
+> ([ponto 11](../../../../../docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md#83-pontos-em-aberto)), procure esse aviso em
+> `auditing.Messages` depois de uma carga inicial e, se aparecer, recarregue a janela.
+
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','actorBkg':'#7c5cff','actorTextColor':'#ffffff','actorBorder':'#7c5cff','signalColor':'#f5a524','signalTextColor':'#7c5cff','noteBkgColor':'#fff4dd','noteTextColor':'#1e1b2e','noteBorderColor':'#f5a524','activationBkgColor':'#ede9fe','activationBorderColor':'#7c5cff','labelBoxBkgColor':'#7c5cff','labelBoxBorderColor':'#7c5cff','labelTextColor':'#ffffff','loopTextColor':'#1e1b2e'}}}%%
 sequenceDiagram

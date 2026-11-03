@@ -1,13 +1,13 @@
 # Proposta de testes por cenário de hospedagem
 
-Proposta de **como** validar o comportamento dos hosts de agenda (Hangfire, Quartz.NET, WebJobs), do painel de
-monitoramento (WebApp) e do banco em cada combinação de hospedagem. **Nada aqui foi executado nem implementado**: o
-documento é o roteiro para aprovação.
+Roteiro e resultado da validação dos hosts de agenda (Hangfire, Quartz.NET, WebJobs), do painel de monitoramento
+(WebApp) e do banco em cada combinação de hospedagem. O roteiro foi aprovado (seção 7) e **executado inteiro em 02 e
+03/11/2026**: os resultados estão na seção 6 e o aprendizado consolidado, com os pontos em aberto, na seção 8.
 
 | | |
 |---|---|
-| Data | 02/11/2026 |
-| Estado | Aprovada com as decisões da seção 7; Microvix validado por chamadas à API (seção 1.3) |
+| Data | 02/11/2026 (roteiro) · 03/11/2026 (execução concluída) |
+| Estado | Executada: todos os cenários (C1 a C7, A1 a A10); 15 pontos para decidir (seção 8.3) |
 | Escopo | Hosts `WebApi` (Hangfire), `Worker` (Quartz.NET), `WebJob`; painel `WebApp`; nginx no Docker como servidor web (no lugar do IIS); SQL Server no Docker e Azure SQL |
 | Fora do escopo | Escritas nas APIs (Totvs e demais ficam com `Writes:*:Enabled = false`), MobileApp, LinxCommerce, IIS (deploy descrito na seção 3.1, sem teste), carga histórica completa |
 
@@ -628,3 +628,69 @@ Decididas em 02/11/2026:
 | 6 | Cenários adicionais | A1, A2, A3, A4, A5, A6, A7 e A8 entram (A3 porque produção terá mais de um Worker); A9 e A10 opcionais, junto com a Azure |
 | 7 | Intervalo dos jobs nos testes | 5 min, só no banco de teste e só nos jobs ativos (seção 2) |
 | 8 | LinxCommerce | fora de todas as rodadas de teste: não há credenciais |
+
+---
+
+## 8. Aprendizado consolidado
+
+Resumo do que os testes de 02 e 03/11/2026 mostraram, por assunto, com o cenário de origem entre parênteses. O que vale
+para quem opera cada projeto foi levado aos READMEs (seção 8.4).
+
+### 8.1 O que funcionou como previsto
+
+| Assunto | Conclusão |
+|---|---|
+| Teto da carga inicial | `InitialLoad:MaxMonths = 3` funcionou nos três hosts e em todos os bancos: nada antes da janela nas tabelas com data, incremental sem duplicidade (C1, C2, C3, C4, C5, C6, C7). No Microvix, o incremental pelo `timestamp` traz depois cadastros antigos que a origem alterou, como deve (6.2) |
+| Os três hosts | Hangfire, Quartz e WebJobs rodaram a mesma agenda de `auditing.Jobs` com os mesmos resultados, no Windows, no Linux (container) e no App Service |
+| Trava por empresa | Execução longa é pulada nos ciclos seguintes (`Skipped`), sem execução dupla; duas empresas no mesmo job são adiadas 1 min (`Rescheduled`) (C1, A4) |
+| Quedas | Processo derrubado, `docker restart`, reinício do serviço do Windows, reinício da máquina, banco parado e reinício do App Service: o host volta sozinho e nada fica preso (V9, A5, C4b, C7) |
+| Quartz em cluster | Dois Workers no mesmo banco dividem o trabalho, cada job roda uma vez e o nó vivo assume quando o outro cai (A3) |
+| Linux | A imagem `mcr.microsoft.com/dotnet/aspnet:10.0` (Debian) converte o fuso `E. South America Standard Time` e grava em horário de Brasília; Totvs (TLS), Microvix, Movidesk e AfterSale funcionam do container (C2) |
+| Painel | Lê o banco com o `etl_monitor` (SQL Server e Azure SQL, como usuário contido), mostra o mesmo que o banco, responde em ≈ 100 ms durante a carga inicial e reconecta sozinho o circuito Blazor depois de um reinício (C1, A7, C5, C7) |
+| Azure SQL | O `migrator.csx` do Shared cria `etl_monitor`/`etl_query` como usuários contidos; Hangfire e Quartz sobem e rodam no Azure SQL serverless, inclusive acordando um banco pausado (C3, C6, A8) |
+| App Service | O App Service Windows tem o runtime `dotnet:10`; os nomes `<Title> - V<versão>` com espaço e ponto são aceitos; cada WebJob publica em ≈ 1 min; os WebJobs gravam em horário de Brasília com o App Service em UTC (C7, A9) |
+
+### 8.2 Diferenças de comportamento entre os hosts
+
+| Situação | Hangfire (WebApi) | Quartz (Worker) | WebJob |
+|---|---|---|---|
+| Host volta depois de ficar parado | roda **uma vez** os recorrentes atrasados, logo na subida | junta os disparos perdidos num só se estiverem dentro de `Misfire:ThresholdInMinutes` (15); além disso, **descarta** e volta no horário seguinte | o processo recomeça e calcula o próximo horário a partir da subida (no reinício do App Service, o ciclo seguinte foi normal) |
+| Execução interrompida por queda | vai para `Deleted`, sem reexecutar | o cluster limpa o disparo, sem reexecutar | o processo recomeça e espera o próximo horário |
+| Falha de uma execução | `Failed`, sem nova tentativa | gravada em `auditing`, sem nova tentativa | gravada em `auditing`, sem nova tentativa |
+| Banco indisponível na subida | o instalador do schema `HangFire` repete sozinho até o banco responder | sobe e conecta quando o banco volta (como serviço, o Windows reinicia o processo a cada minuto, sem limite) | não testado (o banco do C7 estava acordado) |
+
+Comum aos três: **uma execução interrompida não deixa registro** em `auditing.Logs` (o log é gravado só no fim), então
+uma queda não aparece no painel (ponto 1).
+
+### 8.3 Pontos em aberto
+
+Os 15 pontos para decidir, agrupados (o número é o da seção 6; nenhum foi corrigido ainda):
+
+| Grupo | Pontos | Resumo |
+|---|---|---|
+| **Perda ou falta de dado** | 11 | Movidesk tickets: bloco com erro da API termina "com sucesso" e a marca d'água pula os tickets não gravados (574 tickets a menos no C7). **O mais grave** |
+| | 4 | `ApiClient` sem nova tentativa para erro de rede na leitura da resposta (a Totvs cortou a resposta das notas no C1) |
+| **Auditoria** | 1 | Gravar o início da execução, para uma queda aparecer como execução aberta |
+| | 9, 15 | Log da execução em 3 passos sem transação: deadlock (C2) ou "schema change" (C3, Azure SQL) no bulk insert de `auditing.Messages` deixa a execução sem mensagens e o `CommitError` bate na PK |
+| | 3 | Job sem pré-requisito (filiais, lojas) aparece como "Ok" |
+| **Concorrência** | 6 | As rotas do WebApi não pedem a trava: disparo manual roda junto com o agendado e lê a API em dobro (A6) |
+| | 7 | Nada impede dois agendadores no mesmo banco: 10 de 12 jobs rodaram duas vezes por ciclo (A2) |
+| | 8 | Fixar o `instanceId` do Quartz (aviso na subida) |
+| **Ordem e infraestrutura** | 2 | O DataWarehouse exige a estrutura do LinxCommerce |
+| | 5 | A carga completa leva 2 ciclos quando os pré-requisitos rodam junto |
+| | 10 | O painel mostra a hora do servidor (`DateTime.Now`): em UTC no container e no App Service |
+| | 12 | O plano B1 não comporta 12 WebJobs + painel + WebApi |
+| | 13 | A recuperação dos WebJobs (`Recovery`) precisa de um Owner para dar o papel à identidade gerenciada; não foi testada |
+| | 14 | O migrator espera 15 s pela conexão; um Azure SQL pausado leva até ≈ 90 s para acordar |
+| | C4b | `publish-worker.ps1`: o comentário diz "até três vezes por dia", mas o reinício é sem limite; sem banco, o Quartz cai com uma mensagem que fala de tabelas faltando |
+
+### 8.4 Onde o aprendizado foi registrado
+
+| Documento | O que entrou |
+|---|---|
+| [README](../README.md) | situação dos hosts e do painel depois dos testes; esta proposta na lista de documentos |
+| [GUIA-DE-USO.md](../GUIA-DE-USO.md) | sintomas vistos nos testes na tabela de solução de problemas |
+| [MIGRATOR-CSX.md](MIGRATOR-CSX.md) | Azure SQL: criar o banco antes, collation, usuários contidos, banco pausado |
+| [WebApi](../src/Backend/Hosts/WebApi/README.md), [Worker](../src/Backend/Hosts/Worker/README.md), [WebJob](../src/Backend/Hosts/WebJob/README.md) | o comportamento testado de cada host, a publicação conferida e os limites encontrados |
+| [WebApp](../src/Frontend/WebApp/README.md) | o painel publicado (`Production`, proxy, App Service) e a hora do servidor |
+| [Movidesk](../src/Backend/Modules/General/Movidesk/README.md) | o risco de perda de tickets do ponto 11 |

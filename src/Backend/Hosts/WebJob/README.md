@@ -57,7 +57,8 @@ WebApi, os WebJobs publicados ou o serviço do Worker.
 
 > [!NOTE]
 > Se, numa troca, dois ficarem ligados por um tempo, a trava ([abaixo](#-concorrência)) ainda impede que um mesmo job rode
-> junto nos dois. A coluna `Queue` é só a fila do Hangfire: não divide jobs entre os hosts.
+> junto nos dois, mas não que rode duas vezes no mesmo ciclo (visto no teste entre o Hangfire e o Worker: APIs lidas em
+> dobro). A coluna `Queue` é só a fila do Hangfire: não divide jobs entre os hosts.
 
 ---
 
@@ -134,6 +135,21 @@ O zip não leva `ConnectionStrings`: elas ficam nas configurações do App Servi
 settings, ex.: `ConnectionStrings__Connection`) e valem para todos os WebJobs dele. O mesmo vale para qualquer
 parâmetro que mude por ambiente (ex.: `Recovery__AppServiceName`).
 
+**O que o App Service precisa** (conferido no teste C7, 03/11/2026, com 12 WebJobs num App Service de teste):
+
+| | Item | Detalhe |
+|:---:|---|---|
+| 🪟 | Plano **Windows**, Basic ou acima | WebJob contínuo exige **Always On**, que não existe no Free/Shared. Runtime `dotnet:10` disponível (perfil com `SelfContained = $false`); 64 bits ligado |
+| 📏 | **Tamanho do plano** | Um **B1** (1 núcleo, 1,75 GB) com 12 WebJobs, o painel e o WebApi ficou em 100% de CPU e 96% de memória: a leitura das notas da Totvs levou 5 vezes mais e foi cancelada. Para produção, um plano maior (B2, S1, P0v3) ou menos processos por plano ([ponto 12](../../../../docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md#83-pontos-em-aberto)) |
+| 🗄️ | Banco | Connection string do tipo `SQLAzure` (ou `SQLServer`); no firewall do Azure SQL, os **IPs de saída** do App Service (`outboundIpAddresses`) |
+| 🕒 | Fuso | O App Service roda em UTC; os WebJobs usam `WebJob:TimeZone` e gravam em horário de Brasília, então `RunningDailyAt` vale no horário de Brasília |
+| 🔁 | Reinício | `az webapp restart` no meio de um ciclo: os WebJobs voltam sozinhos e o ciclo seguinte é normal. As execuções interrompidas não deixam registro em `auditing.Logs` (o log só é gravado no fim) |
+
+> [!NOTE]
+> Na sandbox do App Service, uma chamada a uma porta local fechada (a `BaseUrl` `http://127.0.0.1:9/` dos testes sem API)
+> falha com `An attempt was made to access a socket in a way forbidden by its access permissions`, e não com "conexão
+> recusada" como no local. É esperado.
+
 ---
 
 ## 🗂️ Estrutura
@@ -152,7 +168,7 @@ WebJob/
 │   └── StuckJobsRecovery.cs        RecoverStuckJobs(): heartbeat da empresa e reinício
 ├── Publish/
 │   ├── publish-webjob.ps1          script de publicação
-│   └── publish-profiles.psd1       perfis (dev, prod)
+│   └── publish-profiles.psd1       perfis (dev, teste, prod)
 ├── settings.job
 ├── appsettings.json
 └── docs/PLANO-HOST-WEBJOB.md
@@ -342,10 +358,19 @@ flowchart LR
 
 Outros parâmetros: `-ProfilesFile` (outro arquivo de perfis, para pipeline ou teste).
 
+**Conferido numa publicação real** (perfil `teste`, 03/11/2026): a Azure aceita espaço e ponto no nome
+(`NameFormat = 'Spaces'`), o App Service Windows tem o runtime do .NET 10 (`SelfContained = $false`), cada WebJob publica
+em cerca de 1 minuto e sobe `Running`.
+
 > [!WARNING]
-> **Ainda não conferido numa publicação real:** se a Azure aceita espaço e ponto no nome (senão, `NameFormat = 'Safe'`),
-> se o App Service tem o runtime do .NET 10 (senão, `SelfContained = $true`) e a troca de versão. Cada zip tem cerca de
-> 15 MB: com muitos jobs no mesmo App Service, conferir o espaço em disco do plano.
+> **Ainda não conferido:** a troca de versão (publicar uma versão nova e o script apagar o WebJob da anterior). Cada zip
+> tem cerca de 15 MB: com muitos jobs no mesmo App Service, conferir o espaço em disco do plano.
+
+> [!CAUTION]
+> O perfil `dev` publica no `app-dev-webjobs-2`, na mesma assinatura da NEWBLOOMERS que tem produção. O perfil `teste`
+> aponta para o grupo `rg-etl-teste`, criado e apagado pelo
+> [`tools/azure/New-AzureTestResources.ps1`](../../../../tools/azure/New-AzureTestResources.ps1) só para os testes: sem
+> esse grupo, publicar com ele falha.
 
 ---
 
@@ -413,7 +438,12 @@ local, o `az login`. Um service principal, se um dia precisar, entra pelas vari�
 > Para ligar: `UPDATE [auditing].[Jobs] SET IsActive = 1 WHERE IdType = 2 AND IdJob = 14000 AND Company = '<CNPJ da holding>';`
 > e o 14000 no `Jobs` do perfil. Para começar só observando, `Recovery__DryRun=true` no App Service.
 
-**Ainda não conferido na Azure real:** o reinício, num App Service de teste, com a identidade gerenciada e a permissão.
+> [!IMPORTANT]
+> **Ainda não conferido na Azure real.** No teste C7 a identidade gerenciada foi ligada, mas dar a ela o papel
+> **Website Contributor** no App Service pede `Microsoft.Authorization/roleAssignments/write` (Owner ou User Access
+> Administrator), que a conta usada não tinha; sem o papel, a recuperação não lista nem reinicia os WebJobs. Antes de
+> contar com ela em produção, alguém com essa permissão dá o papel e o reinício é testado com `Recovery__DryRun=true` e
+> depois de verdade ([ponto 13](../../../../docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md#83-pontos-em-aberto)).
 
 ---
 

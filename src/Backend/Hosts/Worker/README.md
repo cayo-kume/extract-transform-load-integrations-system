@@ -81,6 +81,12 @@ mas **só um agenda por vez** no mesmo banco.
 > assim mesmo, porque a trava ([abaixo](#-concorrência)) impede que um job rode junto nos dois. Os WebJobs não são
 > conferidos.
 
+> [!WARNING]
+> A trava impede que o mesmo job rode **ao mesmo tempo** em dois hosts, mas não que rode **duas vezes** no mesmo ciclo:
+> no teste com o Worker e o Hangfire no mesmo banco, o Quartz dispara no minuto cheio e o Hangfire pega a fila uns 11 s
+> depois, quando a execução do Worker já terminou; 10 de 12 jobs rodaram duas vezes por ciclo (APIs lidas em dobro, dados
+> sem duplicidade). O aviso na subida é o único sinal.
+
 ---
 
 ## ▶️ Como rodar no local
@@ -393,8 +399,10 @@ flowchart LR
    `ConnectionStrings`;
 2. para o serviço e espera (a parada espera os jobs em andamento, até `Quartz:Shutdown:TimeoutInMinutes`);
 3. espelha o build na pasta do serviço sem apagar nem sobrescrever o `appsettings.Production.json` de lá;
-4. na primeira vez, cria o serviço: início automático atrasado, reinício automático se o processo cair (1 minuto, até três
-   vezes por dia), a conta do perfil com leitura da pasta e a origem no Log de Eventos;
+4. na primeira vez, cria o serviço: início automático atrasado, reinício automático se o processo cair (1 minuto depois),
+   a conta do perfil com leitura da pasta e a origem no Log de Eventos. Na prática o reinício **não tem limite**: o
+   Windows repete a última ação de recuperação, e a contagem de quedas recomeça a cada boot (visto no teste, com o
+   serviço caindo a cada minuto até o banco voltar);
 5. grava `DOTNET_ENVIRONMENT` e `Service__Name` no ambiente do serviço;
 6. inicia o serviço e confere que ele continua rodando 15 s depois (senão, aponta o Log de Eventos).
 
@@ -411,13 +419,43 @@ flowchart LR
 
 > [!IMPORTANT]
 > **Antes da primeira instalação:** o migrator do host no banco (tabelas do Quartz) e, na pasta do serviço, um
-> `appsettings.Production.json` com a connection string (ou a connection string numa variável de ambiente do serviço).
-> Com a conta virtual e o SQL Server em outra máquina com autenticação integrada, o login no banco é o da conta da
-> máquina (`DOMÍNIO\<máquina>$`).
+> `appsettings.Production.json` com a connection string e o resto da configuração do ambiente. Variáveis de ambiente
+> próprias do serviço não servem: o script regrava o ambiente do serviço só com `DOTNET_ENVIRONMENT` e `Service__Name` a
+> cada publicação. Com a conta virtual e o SQL Server em outra máquina com autenticação integrada, o login no banco é o
+> da conta da máquina (`DOMÍNIO\<máquina>$`).
+
+> [!TIP]
+> O PowerShell de administrador abre em `C:\Windows\System32`: chame o script pelo **caminho completo**
+> (`& 'C:\...\src\Backend\Hosts\Worker\Publish\publish-worker.ps1' -Profile dev`). Parar, iniciar e reiniciar o serviço
+> também pedem administrador.
+
+**Conferido no teste C4b** (02/11/2026, máquina local, perfil `dev`): o script criou o serviço `EtlWorker` com a conta
+`NT SERVICE\EtlWorker`; instalado **sem** o `appsettings.Production.json`, o serviço caiu e a conferência de 15 s do
+script apontou a falha; com o arquivo, a reinstalação o manteve e os ciclos rodaram; `Restart-Service` e o reinício da
+máquina voltaram sozinhos (no boot com o banco fora do ar, o serviço caiu e foi reiniciado a cada minuto até o banco
+voltar, e então rodou uma vez o ciclo atrasado).
 
 > [!WARNING]
-> **Ainda não conferido numa instalação real:** a criação do serviço pelo script e a parada esperando um job em andamento
-> (com um job lento rodando, `Stop-Service EtlWorker` só termina quando o job termina).
+> **Ainda não conferido no serviço:** a parada esperando um job em andamento (com um job lento rodando,
+> `Stop-Service EtlWorker` só termina quando o job termina); no console, o Ctrl+C esperou como previsto.
+>
+> Sem conexão com o banco, o Quartz derruba o processo com `Database schema validation failed. Make sure you have created
+> the database tables...`: a mensagem fala de tabelas, mas a causa costuma ser o banco fora do ar ou a connection string.
+
+---
+
+## 🧪 Comportamento testado
+
+Conferido nos [testes de hospedagem](../../../../docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md) de 02 e 03/11/2026 (cenários
+C4, C4b, C5, C6, A1, A2, A3, A6 e A8), com os 12 jobs do conjunto mínimo a cada 5 minutos:
+
+| Situação | O que acontece |
+|---|---|
+| 💥 Worker derrubado no meio | Os disparos em andamento ficam `EXECUTING` em `QRTZ_FIRED_TRIGGERS` e são limpos na volta, **sem reexecução**. As execuções interrompidas **não deixam registro em `auditing.Logs`**, que só é gravado no fim |
+| 💤 Worker parado mais que o misfire | Os disparos perdidos são descartados (aviso `Misfired` no log) e o job volta no horário seguinte. Dentro do limite, viram um disparo só. É a diferença para o Hangfire, que sempre roda uma vez o que atrasou |
+| 🧩 Dois Workers (cluster) | Check-in a cada 20 s, cada job roda uma vez por ciclo e o trabalho é dividido. Um nó derrubado: o outro detecta a instância morta, não reexecuta os disparos dela (`DisallowConcurrentExecution`) e segue sozinho |
+| 🆔 Id da instância | Com `AUTO`, o Quartz avisa na subida que pede um id fixo para afinidade de nó (sem efeito no teste; [ponto 8](../../../../docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md#83-pontos-em-aberto)) |
+| ☁️ Azure SQL | As 11 tabelas `quartz` e os ciclos funcionam no Azure SQL. Com o banco serverless pausado, o Quartz sobe e o primeiro ciclo é normal; o `SchedulingHostGuard` só avisa que não conseguiu conferir o Hangfire. O check-in a cada 20 s mantém um banco serverless **sempre acordado** (custo) |
 
 ---
 

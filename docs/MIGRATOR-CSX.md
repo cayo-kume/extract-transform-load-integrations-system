@@ -80,6 +80,19 @@ Cria o banco se ele ainda não existir.
 > causa o erro `911 - Database does not exist`, porque o SQL Server compila o batch inteiro antes de executá-lo e o `USE` não
 > enxerga um banco criado no mesmo batch.
 
+**No Azure SQL, criar o banco antes do migrator** (visto nos testes de hospedagem de 03/11/2026, ver
+[PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md](PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md), seção 6.5):
+
+* o `EnsureDatabase`, se criar o banco, usa o tier padrão da Azure, que é caro: crie o banco no tier escolhido
+  (serverless, *free offer*) pelo portal ou pelo az cli, como faz o
+  [`tools/azure/New-AzureTestResources.ps1`](../tools/azure/New-AzureTestResources.ps1);
+* a collation **`Latin1_General_100_CI_AS_SC_UTF8`** tem que ser dada na criação (`az sql db create --collation ...`): no
+  Azure SQL o `Script001` do Shared não troca a collation do banco;
+* os usuários `etl_monitor` e `etl_query` saem como **usuários contidos** no banco (o `Script009` detecta
+  `EngineEdition = 5`), sem login no servidor;
+* um banco serverless **pausado** leva de 15 s a 90 s para acordar, e a primeira conexão do migrator (15 s de espera)
+  falha com `Connection Timeout Expired`. Rode de novo, ou ponha `Connect Timeout=120` na connection string.
+
 ### Configura o DbUp
 
 ```csharp
@@ -236,6 +249,8 @@ dotnet script migrator.csx -- "Server=...;Database=...;User Id=...;Password=...;
 | `There is already an object named ...` | O banco já tinha rodado os scripts com outro nome (antes de uma renomeação ou reorganização) | Recriar o banco do zero |
 | Script ignorado ou fora de ordem | O script foi colocado fora de `Scripts/SQLServer` ou o número repete outro do módulo | A numeração é única e sequencial no módulo; o arquivo precisa estar dentro da pasta do migrator ou de uma subpasta dela |
 | DataWarehouse para com "A connection string é obrigatória" ou "está incompleta" | O migrator do DW não tem padrão e confere a connection string | Passar a connection string completa (servidor, banco e autenticação) |
+| `Connection Timeout Expired` no Azure SQL | Banco serverless pausado: o despertar leva até ≈ 90 s | Rodar de novo, ou `Connect Timeout=120` na connection string |
+| DataWarehouse para em `sp_Create_Landing` (`[linxcommerce].[LinxCommerceRequests]` não existe) | O DW lê as tabelas do LinxCommerce | Rodar também o migrator do LinxCommerce (só a estrutura; na tela `Invoke-Migrators.ps1` ele vem marcado) |
 
 ## Migrators de MySQL e PostgreSQL
 

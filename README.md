@@ -111,7 +111,7 @@ flowchart TB
 | 🗃️ **Acesso a dados** | **Dapper** e bulk insert (`ISharedRepository`), SQL montado nos *command handlers* |
 | 🗄️ **Banco** | **SQL Server** (dados, auditoria e DW); scripts para MySQL e PostgreSQL existem só como `migrator.csx` |
 | 🔁 **Migrações** | **DbUp** executado por `dotnet-script` (`migrator.csx` em cada módulo): só estrutura e catálogo do produto |
-| 🧰 **Ferramentas** | `tools/migrators/Invoke-Migrators.ps1` (tela Windows Forms ou console) sobe as tabelas de todas as aplicações; `tools/seeds/Import-TestSeeds.ps1` (PowerShell 7 + `sqlcmd`) carrega empresa, parâmetros e jobs num banco de teste |
+| 🧰 **Ferramentas** | `tools/migrators/Invoke-Migrators.ps1` (tela Windows Forms ou console) sobe as tabelas de todas as aplicações; `tools/seeds/Import-TestSeeds.ps1` (PowerShell 7 + `sqlcmd`) carrega empresa, parâmetros e jobs num banco de teste; `tools/azure/New-AzureTestResources.ps1` (az cli) cria e apaga o grupo `rg-etl-teste` dos testes na Azure |
 | ✅ **Validação** | **FluentValidation** (um validador por DTO) |
 | 🔌 **HTTP e JSON** | `IHttpClientFactory` (`IApiClient` nomeado por módulo), **Newtonsoft.Json**, XML (`System.Xml.Linq`) no Linx Microvix |
 | ⚡ **Cache** | `IMemoryCache` ([padrão](docs/PADRAO-CACHE-INTEGRACOES.md)) |
@@ -144,6 +144,7 @@ extract-transform-load-integrations-system/
 │   ├── Frontend/WebApp/                  painel Blazor (visão geral, aplicações, integrações, erros, sob demanda e consultas)
 │   └── Mobile/MobileApp/                 app MAUI
 ├── 🧰 tools/
+│   ├── azure/                            New-AzureTestResources.ps1: cria e apaga os recursos da Azure dos testes de hospedagem
 │   ├── migrators/                        Invoke-Migrators.ps1: tela para rodar os migrators na ordem certa
 │   └── seeds/                            Import-TestSeeds.ps1: carrega uma empresa de teste (parâmetros e jobs)
 └── 🧪 tests/                                (vazio)
@@ -904,8 +905,8 @@ As regras de organização valem para todos os módulos e estão em
 | | Item | Situação |
 |:---:|---|---|
 | 🔌 | **Módulos fora do host** | Dootax, Mobsim, Oto, Pagarme (General) e FlashCourier, Jadlog, Stone, TotalExpress (Shippment) têm código do sistema antigo, mas o registro no host e os controllers estão comentados. O `LinxMicrovix - Inbound Web Service` (escritas do B2C) está vazio |
-| ⏱️ | **Agendamento** | Os três hosts de agenda estão prontos, mas **nenhum está em produção**: o Hangfire está desligado no `WebApi`, os WebJobs não foram publicados e o `Worker` não foi instalado numa máquina. Hoje os jobs rodam pelas rotas, chamadas por um agendador externo |
-| 🖥️ | **Painel** | O `WebApp` ainda usa dados mockados; a leitura do banco e a autenticação são as fases 5 e 6 do [plano](src/Frontend/WebApp/docs/PLANO-WEBAPP.md) |
+| ⏱️ | **Agendamento** | Os três hosts de agenda estão prontos e foram **testados em 02 e 03/11/2026** (Docker, nginx, serviço do Windows, Azure SQL e App Service, nos [testes de hospedagem](docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md)), mas **nenhum está em produção**. Hoje os jobs rodam pelas rotas, chamadas por um agendador externo. Os testes deixaram 15 pontos para decidir ([seção 8.3](docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md#83-pontos-em-aberto)); o mais grave é a perda de tickets da Movidesk quando a API erra um bloco |
+| 🖥️ | **Painel** | O `WebApp` lê o banco com `Database:Enabled = true` (fase 5, usada em todos os testes de hospedagem, inclusive publicado em container e no App Service); sem a chave, fica no mock. Falta a autenticação (fase 6 do [plano](src/Frontend/WebApp/docs/PLANO-WEBAPP.md)), e num servidor em UTC a hora das telas sai adiantada |
 | 🏢 | **Cadastro de empresas** | Banco, seed de teste, log, agenda e services por empresa e os repositórios do WebApp estão **feitos** (fases 4.1 a 4.5 do [plano](docs/PLANO-TELA-CADASTRO-EMPRESA.md)); falta a **tela** (4.6, com Testar conexão) e o Dapper do WebApp ainda não rodou contra o banco. Contratar cria os jobs inativos e remover só desativa: o banco ainda não distingue os dois casos |
 | 🔑 | **Credenciais em texto puro** | As tabelas `*Parameters` guardam segredos sem criptografia nesta fase; o acesso ao banco é o único controle |
 | 🔔 | **Nível de mensagem** | Informação, aviso e erro em `auditing.Messages`: ainda é só [proposta](src/Backend/Shared/docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md) |
@@ -928,6 +929,7 @@ As regras de organização valem para todos os módulos e estão em
 | ⚡ [PADRAO-CACHE-INTEGRACOES.md](docs/PADRAO-CACHE-INTEGRACOES.md) | Padrão de cache |
 | 🚀 [GUIA-DE-USO.md](GUIA-DE-USO.md) | Passo a passo para subir o banco, carregar uma empresa e usar cada projeto |
 | 🔁 [MIGRATOR-CSX.md](docs/MIGRATOR-CSX.md) | Como rodar o `migrator.csx` e a tela `Invoke-Migrators.ps1` |
+| 🧪 [PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md](docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md) | Testes de hospedagem (C1 a C7, A1 a A10): roteiro, resultados, diferenças entre os hosts e pontos em aberto; recursos da Azure de teste pelo [`tools/azure/New-AzureTestResources.ps1`](tools/azure/New-AzureTestResources.ps1) |
 | 🔍 [REVISAO-PADRAO-CODIGO-E-SCRIPTS.md](docs/REVISAO-PADRAO-CODIGO-E-SCRIPTS.md) | Revisão dos módulos contra o padrão (todos os módulos do host e o Shared já seguem) |
 | 📂 `docs/` de cada módulo | Propostas, planos, implementações e modelagens do módulo (ex.: `src/Backend/Modules/Totvs/docs`); os do Shared ficam em `src/Backend/Shared/docs` (merge e auditoria, conversores dos validadores e as propostas de `auditing`) |
 
