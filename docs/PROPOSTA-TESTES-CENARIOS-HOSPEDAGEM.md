@@ -235,7 +235,7 @@ configuração do servidor:
   `Start Mode = AlwaysRunning`, `Idle Time-out = 0` e `preloadEnabled = true` no site (Application Initialization).
 * No Windows o fuso `E. South America Standard Time` existe nativamente (o ponto 1 acima não se aplica).
 
-### C3. Hangfire e painel locais · Azure SQL (fora da assinatura NEWBLOOMERS)
+### C3. Hangfire e painel locais · Azure SQL (assinatura NEWBLOOMERS, grupo `rg-etl-teste`)
 
 * Banco: Azure SQL Database numa assinatura **separada** (seção 5). Criar o banco **antes** do migrator, no tier
   escolhido (serverless com auto-pause ou o free offer): o `EnsureDatabase` do DbUp, se criar o banco, usa o tier padrão
@@ -263,25 +263,26 @@ configuração do servidor:
 * Específico: o painel não tem agenda nenhuma, só lê; o foco é o painel em `Production` com banco real (permissões do
   `etl_monitor`, WebSocket pelo nginx, reconexão do circuito Blazor após `docker restart webapp`).
 
-### C6. Quartz e painel locais · Azure SQL (fora da assinatura NEWBLOOMERS)
+### C6. Quartz e painel locais · Azure SQL (assinatura NEWBLOOMERS, grupo `rg-etl-teste`)
 
 * Banco como em C3 (pode ser o mesmo servidor lógico, **banco diferente**: `EtlTeste_C6`).
 * Específico: o cluster do Quartz faz check-in a cada 20 s (`ClusterCheckinIntervalInSeconds`): isso mantém o banco
   serverless **sempre acordado** (custo) e é sensível a latência. Medir o custo diário e anotar.
 
-### C7. WebJobs, painel e banco na Azure (fora da assinatura NEWBLOOMERS)
+### C7. WebJobs, painel e banco na Azure (assinatura NEWBLOOMERS, grupo `rg-etl-teste`)
 
 * Recursos (num grupo `rg-etl-teste`): App Service Plan **Windows** (Basic B1 ou acima, porque WebJob contínuo exige
   **Always On**, que não existe no Free/Shared), um App Service para os WebJobs, um App Service para o painel (pode ser
   o mesmo plano), Azure SQL como em C3.
-* Publicação: `publish-webjob.ps1` com um **perfil novo** (ex.: `teste`) em `publish-profiles.psd1` com
-  `SubscriptionId` **preenchido**. Atenção: o perfil `dev` atual tem `SubscriptionId = ''`, que publica na assinatura
-  padrão do `az login`; se essa for a da NEWBLOOMERS, o deploy vai para lá. Ver seção 5.
-* Runtime: se o App Service ainda não oferecer o .NET 10, usar `SelfContained = $true` no perfil.
+* Publicação: `publish-webjob.ps1 -Profile teste` (perfil já no `publish-profiles.psd1`: assinatura da NEWBLOOMERS,
+  grupo `rg-etl-teste`, App Service `app-etl-teste-webjobs-f65c86` e os 12 jobs da seção 2.1). **Nunca** o perfil
+  `dev`: ele publica no `app-dev-webjobs-2` do `RG-WEBJOBS`, na mesma assinatura. Ver seção 5.
+* Runtime: o App Service Windows oferece `dotnet:10` (conferido no `az webapp list-runtimes` em 02/11/2026), então o
+  perfil fica com `SelfContained = $false`.
 * Configuração: `ConnectionStrings:Connection`, `InitialLoad__MaxMonths`, `WebJob:TimeZone` nos App Settings; o
   App Service roda em UTC, então conferir jobs com `RunningDailyAt` no horário de São Paulo.
 * `Recovery` (reinício automático do WebJob travado): precisa de identidade gerenciada com permissão no App Service da
-  assinatura de teste e `TenantId`/`SubscriptionId`/`ResourceGroup`/`AppServiceName` dela. Testar primeiro com
+  grupo de teste e `TenantId`/`SubscriptionId`/`ResourceGroup`/`AppServiceName` dele. Testar primeiro com
   `DryRun = true`.
 * Rede: liberar no firewall do Azure SQL os IPs de saída do App Service (ou "Allow Azure services"). Conferir se alguma
   API externa (Totvs, Microvix) **restringe por IP de origem**: se restringir, a fase B deste cenário depende de liberar
@@ -308,22 +309,98 @@ configuração do servidor:
 
 ---
 
-## 5. Assinatura Azure fora da NEWBLOOMERS
+## 5. Assinatura Azure: a da NEWBLOOMERS, só no grupo `rg-etl-teste`
 
-Os cenários C3, C6 e C7 (e A8) **não podem** usar a assinatura atual da NEWBLOOMERS.
+**Decisão de 02/11/2026 (substitui a anterior, que usava a assinatura `753acd3c-…` do Cayo):** os cenários C3, C6 e C7
+(e A8, A9, A10) usam a assinatura da **NEWBLOOMERS** (`Azure Subscription 1508129 - New Blommers`, `f65c8654-2630-4bda-aba5-4c2a8eba4cf0`), e o
+grupo `rg-etl-teste` **tem que ser apagado no fim dos testes** (etapa 7 da seção 6). Essa assinatura tem produção
+(`rg-newbloomers-prod`), o ambiente dev dos WebJobs (`RG-WEBJOBS`, com `sql-dev-webjobs` e o `app-dev-webjobs-2`) e
+outros grupos: nada fora do `rg-etl-teste` é criado, alterado ou apagado. Em 02/11/2026 o grupo `rg-etl-teste` não
+existia e nenhum banco da assinatura usava o *free offer* (os dois bancos de `sql-dev-webjobs` são Standard).
 
-1. **Assinatura de teste**: `753acd3c-4e07-4c27-8efb-07b19d3f6e38`, criada pelo Cayo no nome dele. É a única
-   assinatura em que os recursos destes testes podem ser criados. Para o Azure SQL, o *free offer* (um banco
-   serverless gratuito por assinatura, com limite mensal de vCore-segundos) cobre C3 e C6 se usados um de cada vez.
+1. **Isolamento**: tudo num único grupo `rg-etl-teste`, criado pelo script da seção 5.2 com a tag
+   `finalidade=etl-teste`. A criação para se já houver um grupo com esse nome sem a tag, e a exclusão só apaga um grupo
+   com ela.
 2. **Trava contra engano**, antes de qualquer comando:
-   * `az account show` mostrando o ID `753acd3c-4e07-4c27-8efb-07b19d3f6e38`;
-   * todo comando `az` com `--subscription 753acd3c-4e07-4c27-8efb-07b19d3f6e38` explícito;
-   * perfil `teste` no `publish-profiles.psd1` com esse `SubscriptionId` preenchido; **nunca** publicar com o perfil
-     `dev` (vazio = assinatura padrão).
-3. **Custo**: alerta de orçamento (Budget) na assinatura de teste; recursos num único grupo `rg-etl-teste` para apagar de
-   uma vez no fim; serverless com auto-pause no banco; B1 no plano, só enquanto C7 roda.
-4. **Limpeza**: `az group delete --name rg-etl-teste --subscription 753acd3c-4e07-4c27-8efb-07b19d3f6e38` no fim de
-   cada cenário de nuvem.
+   * `az account show --subscription f65c8654-2630-4bda-aba5-4c2a8eba4cf0` respondendo;
+   * todo comando `az` com `--subscription f65c8654-2630-4bda-aba5-4c2a8eba4cf0` explícito (o script já faz);
+   * publicar os WebJobs **só com o perfil `teste`** do `publish-profiles.psd1` (grupo `rg-etl-teste`, App Service
+     `app-etl-teste-webjobs-f65c86`); **nunca** com o perfil `dev`, que publica no `app-dev-webjobs-2` do `RG-WEBJOBS`
+     desta mesma assinatura;
+   * o migrator só com `-Server sql-etl-teste-f65c86.database.windows.net`, nunca com o `sql-dev-webjobs`.
+3. **Custo**: alerta de orçamento (Budget) no escopo do grupo (só os custos dos testes); serverless no *free offer* nos
+   bancos; B1 no plano, só enquanto C7/A10 rodam.
+4. **Limpeza**: `./tools/azure/New-AzureTestResources.ps1 -Remove` (Budget e grupo, com conferência) no fim de cada
+   cenário de nuvem e, **obrigatoriamente**, no fim dos testes na Azure ou se eles forem interrompidos (etapa 7 da
+   seção 6).
+
+### 5.1 Orçamento estimado (levantado em 02/11/2026)
+
+Preços de varejo da região **Brazil South** (`brazilsouth`, a mais perto das APIs e da máquina de teste), consultados
+na API pública de preços da Azure (`prices.azure.com/api/retail/prices`), sem desconto nem crédito. Câmbio implícito da
+própria API: US$ 1 ≈ R$ 5,38.
+
+| Recurso | Preço | Observação |
+|---|---|---|
+| Azure SQL Database, *free offer* (General Purpose serverless) | R$ 0 | Por banco e por mês: 100.000 vCore-segundos, 32 GB de dados e 32 GB de backup; **até 10 bancos por assinatura**, cada um com o seu limite; renova todo mês. Ao atingir o limite: "pausar até o mês seguinte" (sem cobrança, recomendado) ou "continuar cobrando" (não dá para voltar atrás) |
+| Azure SQL serverless acima do gratuito | US$ 0,99134 por vCore-hora (≈ R$ 5,33) | Só se o banco for criado fora do *free offer* ou com "continuar cobrando". Acordado com o mínimo de 0,5 vCore: ≈ R$ 2,66 por hora, ≈ R$ 64 por dia |
+| App Service Plan **Windows Basic B1** | US$ 0,0915 por hora (≈ R$ 0,49; ≈ R$ 11,80 por dia) | Cobrado por hora enquanto o plano existir, com ou sem uso; um plano serve os dois App Services (WebJobs e painel). O B1 Linux custa US$ 0,02/h, mas o WebJob pede Windows |
+| Armazenamento acima de 32 GB | US$ 0,2185 por GB/mês | Não se aplica: a carga de 3 meses fica bem abaixo |
+| Saída de rede, identidade gerenciada, Budget, Kudu | R$ 0 | Os primeiros 100 GB/mês de saída são gratuitos; o WebJob não usa conta de storage (`AzureWebJobsStorage`) nem Application Insights |
+
+Um banco serverless **acordado** consome no mínimo 0,5 vCore, ou seja, 1.800 vCore-segundos por hora: o *free offer* cobre
+≈ 55 horas acordado por banco e por mês. Os agendadores mantêm o banco acordado enquanto estão ligados (Hangfire faz
+polling a cada 15 s, Quartz faz check-in a cada 20 s), então o que conta é o tempo com o host ligado, não o número de
+jobs. Durante a carga inicial o consumo sobe acima de 0,5 vCore, o que entra na folga abaixo.
+
+| Cenário | Recursos | Tempo previsto | Custo previsto |
+|---|---|---|---|
+| C3 | `EtlTeste_C3` no *free offer* | ≈ 6 h com o host ligado (fases A e B) ≈ 11.000 a 22.000 vCore-s | R$ 0 |
+| C6 | `EtlTeste_C6` no *free offer* (banco próprio, limite próprio) | ≈ 6 h, idem | R$ 0 |
+| C7 | `EtlTeste_C7` no *free offer* + plano B1 Windows (WebJobs e painel) | 2 dias com o plano ligado (≈ 86.000 vCore-s, dentro do limite do banco) | ≈ R$ 24 (3 dias: ≈ R$ 36) |
+| A8 | o banco do C3 ou do C6 pausado | espera com o host desligado até o auto-pause (sem cobrança enquanto pausado) | R$ 0 |
+| A9 | junto com o C7 | — | R$ 0 |
+| A10 | outro App Service no mesmo plano B1 (Hangfire com Always On), banco próprio no *free offer* | algumas horas dentro dos dias do C7 | R$ 0 a mais |
+| **Total previsto** | | | **≈ R$ 25 a R$ 40** |
+
+Riscos de custo e como cobrir:
+
+* **Plano B1 esquecido ligado**: ≈ R$ 360 por mês. Por isso o `az group delete` no fim de cada cenário e o B1 só
+  enquanto o C7/A10 rodam.
+* **Banco fora do *free offer*** ou com "continuar cobrando": ≈ R$ 64 por dia acordado; esquecido com um agendador
+  ligado, ≈ R$ 1.900 por mês. Criar os bancos sempre com o *free offer* e "pausar até o mês seguinte", **antes** do
+  migrator (o `EnsureDatabase` do DbUp criaria no tier padrão). Conferir pela métrica *Free amount remaining*.
+* **C7 mais longo que 2 dias**: o banco do C7 passa de 55 h acordado e pausa até o mês seguinte. Criar um banco novo no
+  *free offer* (há 10 por assinatura) em vez de mudar para "continuar cobrando".
+* **Budget recomendado**: R$ 100 no grupo `rg-etl-teste`, com alertas em 50%, 80% e 100% (o Budget só avisa, não
+  desliga nada). Cobre o previsto com folga de mais de 2 vezes.
+* **Um banco gratuito só?** A documentação atual da Microsoft fala em até 10 bancos no *free offer* por assinatura, mas a
+  ajuda do `az sql db create --use-free-limit` (az cli 2.86) ainda diz "um banco por assinatura". Se a Azure recusar o
+  segundo, o script para sem criar banco pago, e os cenários rodam um de cada vez no mesmo limite mensal (C3 e C6
+  somam ≈ 12 h; o C7 então cabe em ≈ 40 h no mesmo mês, ou fica para o mês seguinte).
+
+### 5.2 Criação e exclusão dos recursos pelo az cli
+
+Os recursos são criados e apagados só pelo az cli, com o script
+[`tools/azure/New-AzureTestResources.ps1`](../tools/azure/New-AzureTestResources.ps1), nos planos da seção 5.1. A
+assinatura da NEWBLOOMERS é **fixa no script** (não é parâmetro), todo comando leva `--subscription` e o script para se
+o `az login` não enxergar essa assinatura. O grupo leva a tag `finalidade=etl-teste` (seção 5, item 1).
+
+| Comando | O que cria |
+|---|---|
+| `-Scenario C3` / `C6` | grupo `rg-etl-teste`, servidor lógico `sql-etl-teste-f65c86` (TLS 1.2), regra de firewall do IP público da máquina, banco `EtlTeste_C3`/`EtlTeste_C6` no *free offer* (serverless Gen5, 2 vCores no máximo, mínimo 0,5, auto-pause em 60 min, backup local, "pausar até o mês seguinte") |
+| `-Scenario C7` | o banco `EtlTeste_C7`, o plano `plan-etl-teste` (Windows B1), o App Service dos WebJobs (`dotnet:10`, Always On, 64 bits, `InitialLoad__MaxMonths=3`, `Recovery__*` do grupo de teste com `Recovery__DryRun=true`, identidade gerenciada com Website Contributor nele mesmo) e o do painel (WebSockets, `Database__Enabled=true`, `Connection`/`QueryConnection` com `etl_monitor`/`etl_query`); IPs de saída dos dois no firewall do banco |
+| `-Scenario A10` | o banco `EtlTeste_A10` e o App Service do WebApi (`Hangfire__Enabled=true`, Always On) no mesmo plano |
+| `-Phase A` (padrão) / `B` | fase A grava as `BaseUrl` das APIs em `http://127.0.0.1:9/`; fase B apaga essas chaves (valem as do `appsettings.json`) |
+| `-AlertEmail <e-mail>` | o Budget `budget-etl-teste` no escopo do grupo (`-BudgetAmount`, padrão 100), alertas em 50%, 80% e 100% |
+| `-Remove` | apaga o Budget e o grupo inteiro (etapa 7 da seção 6), com confirmação, só se o grupo tiver a tag, e confere com `az group exists` que ele sumiu |
+| `-DryRun` | só mostra os comandos az, sem chamar a Azure |
+
+Rodar de novo só cria o que falta, então os cenários podem ser criados um de cada vez. A senha do administrador do SQL
+vem de `-SqlAdminCredential` (ou `Get-Credential`) e as do painel, das variáveis `ETL_MONITOR_PASSWORD` e
+`ETL_QUERY_PASSWORD` (as mesmas do migrator); nenhuma aparece no console. No fim, o script mostra o comando do migrator
+de cada banco (`-Server sql-etl-teste-f65c86.database.windows.net`). A publicação continua com o `publish-webjob.ps1`
+(perfil `teste`) e o `dotnet publish` do painel.
 
 ---
 
@@ -338,12 +415,13 @@ Ordem sugerida, do mais simples para o mais distante, para que uma falha de cód
 | 2 | C4 (+ C4b), A1, A2, A4, A5, A6, A7 | 1 |
 | 3 | C2, C5 (nginx no Docker) | imagens `aspnet:10.0` e `nginx` baixadas |
 | 4 | A3 (cluster Quartz) | 2 |
-| 5 | C3, C6, A8 — **em espera** | liberação do Cayo (custo da Azure) |
-| 6 | C7, A9 (+ A10 se aprovado) — **em espera** | 5 |
+| 5 | C3, C6, A8 — **em espera**. Recursos pelo `New-AzureTestResources.ps1 -Scenario C3,C6` (seção 5.2) | liberação do Cayo (custo da Azure) |
+| 6 | C7, A9 (+ A10 se aprovado) — **em espera**. Recursos pelo `New-AzureTestResources.ps1 -Scenario C7` (e `A10`) | 5 |
+| 7 | **Exclusão do resource group `rg-etl-teste`** no fim dos testes na Azure: `./tools/azure/New-AzureTestResources.ps1 -Remove` (apaga o Budget e o grupo, só se o grupo tiver a tag `finalidade=etl-teste`, e confere sozinho). Conferir de novo à mão: `az group exists --name rg-etl-teste --subscription f65c8654-2630-4bda-aba5-4c2a8eba4cf0` precisa dar `false`, e `az resource list --subscription f65c8654-2630-4bda-aba5-4c2a8eba4cf0 --query "[?contains(name,'etl-teste')]"` precisa voltar vazio. Só então os testes da Azure contam como encerrados | 6 (ou ao interromper os testes da Azure por qualquer motivo) |
 
 > [!IMPORTANT]
 > Os cenários com Azure (C3, C6, C7, A8, A9, A10) ficam **por último e em espera**: geram custo, e o Cayo vai definir
-> a melhor forma de pagar. Nenhum recurso é criado na assinatura de teste até essa liberação.
+> a melhor forma de pagar. Nenhum recurso é criado na Azure até essa liberação.
 
 Registro dos resultados (preenchido na execução):
 
@@ -504,7 +582,7 @@ Decididas em 02/11/2026:
 | 1 | Teto de 3 meses na carga inicial | configuração `InitialLoad:MaxMonths`, desligada no git (1.2) |
 | 2 | Microvix: carga inicial com `filtra_somente_timestamp = 0` e datas | validado com chamadas `curl` à API: funciona (1.3) |
 | 3 | Fase B com APIs reais | em todos os cenários, depois da fase A de cada um, com o conjunto mínimo de jobs (2.1) |
-| 4 | Assinatura Azure de teste | `753acd3c-4e07-4c27-8efb-07b19d3f6e38`, no nome do Cayo (seção 5) |
+| 4 | Assinatura Azure de teste | a da NEWBLOOMERS (`f65c8654-2630-4bda-aba5-4c2a8eba4cf0`), só no grupo `rg-etl-teste`, apagado obrigatoriamente no fim (seção 5; decisão de 02/11/2026, no lugar da `753acd3c-…` do Cayo) |
 | 5 | Servidor web do C2/C5 | nginx num container Docker, no lugar do IIS (sem IIS na máquina local); o deploy de produção pode ser no IIS (seção 3.1). Compose e comandos documentados durante o C2, sem script novo |
 | 6 | Cenários adicionais | A1, A2, A3, A4, A5, A6, A7 e A8 entram (A3 porque produção terá mais de um Worker); A9 e A10 opcionais, junto com a Azure |
 | 7 | Intervalo dos jobs nos testes | 5 min, só no banco de teste e só nos jobs ativos (seção 2) |
