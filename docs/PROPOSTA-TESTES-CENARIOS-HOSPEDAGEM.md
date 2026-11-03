@@ -355,6 +355,7 @@ Registro dos resultados (preenchido na execução):
 | C3 | | | | | | | | | | | |
 | C4 (fase A) | OK | OK | OK | OK | — | OK | OK | OK | OK⁷ | OK | ver 6.3 |
 | C4 (fase B) | — | — | OK | OK | OK | OK | OK | OK | — | OK | ver 6.3 |
+| C4b (fase A, serviço) | OK | — | OK | OK | — | OK | — | OK | OK | OK | ver 6.3 |
 | C5 (fases A e B) | OK | OK | OK | OK | OK | OK | OK⁹ | OK | — | OK | ver 6.4 |
 | C6 | | | | | | | | | | | |
 | C7 | | | | | | | | | | | |
@@ -425,7 +426,29 @@ primeira.
 | A1 | Worker parado às 17:56 e o Hangfire seguiu sozinho: ciclo das 18:00 com uma execução por job, sem duplicidade. Trocar de host é só parar um e ligar o outro; sobra uma linha da instância antiga em `quartz.QRTZ_SCHEDULER_STATE`, sem efeito. **OK** |
 | A5 | Container `sql-server` parado às 18:05:12 (ciclo em andamento) e religado às 18:05:53. O Hangfire voltou sozinho, rodou os atrasados às 18:06 sem erro e o ciclo das 18:10 foi normal. As execuções em andamento às 18:05 **não deixaram registro** (o mesmo achado do V9). **OK**, com o achado |
 | A4 | Segunda holding de teste (`11222333000181`) com o token do AfterSale copiado no banco e o `AfterSaleReverses` ativo. Dados separados por `doc_company` (36 da holding nova; 36 e 33 das marcas da NEWBLOOMERS). Com as duas empresas no mesmo minuto, a trava adiou a NEWBLOOMERS de 18:06 para 18:07 (`Rescheduled: ... running for another company`). **OK** |
-| C4b | **Não feito**: instalar o Worker como serviço do Windows (`publish-worker.ps1`) pede um terminal de administrador; fica para quando houver liberação |
+| C4b | Feito à parte, ver a tabela abaixo |
+
+**C4b, Worker como serviço do Windows** (02/11/2026, fase A). `publish-worker.ps1 -Profile dev` num PowerShell de
+administrador (o caminho do script precisa ser completo: o terminal de administrador abre em `C:\Windows\System32`).
+Serviço `EtlWorker` em `C:\Services\EtlWorker`, conta `NT SERVICE\EtlWorker`, início automático atrasado, banco
+`EtlTeste_C4b` e um `appsettings.Production.json` na pasta do serviço com a connection string, `InitialLoad:MaxMonths = 3`
+e as `BaseUrl` da fase A (as variáveis de ambiente do serviço o script regrava só com `DOTNET_ENVIRONMENT` e
+`Service__Name`, então a configuração do teste fica no arquivo). Parar, iniciar e reiniciar o serviço também pede
+administrador.
+
+| | O que se viu |
+|---|---|
+| Instalação sem configuração | A 1ª instalação foi antes do `appsettings.Production.json`: o serviço subiu e caiu (`ConnectionStrings:Connection ... não existe ou está vazia`, no Log de Eventos pelo `.NET Runtime`) e o script parou com "O serviço 'EtlWorker' parou depois de iniciar". **OK**: a conferência de 15 s do script pegou a falha |
+| Instalação | Com o arquivo na pasta, a 2ª execução do script manteve o `appsettings.Production.json`, iniciou o serviço (21:50:41) e o ciclo das 21:55 rodou os 12 jobs uma vez cada, com os 7 erros de conexão esperados. **OK** |
+| Restart do serviço | `Restart-Service EtlWorker` às 21:58:29: parou e subiu em menos de 1 s (fora de um ciclo, sem job em andamento; a espera pelos jobs na parada foi vista no C4). A linha da instância antiga em `QRTZ_SCHEDULER_STATE` foi limpa pelo próprio cluster e o ciclo das 22:00 rodou cada job uma vez. **OK** |
+| Reinício da máquina | Boot às 22:13:46 com o container `sql-server` parado (restart policy `no`). O serviço subiu sozinho às 22:16:13 (início atrasado) e caiu sem o banco; o Windows o reiniciou a cada 60 s, **sem parar depois da 3ª queda** (5 quedas até 22:21:59): o Windows repete a última ação de recuperação, e a contagem de quedas recomeça a cada boot. `docker start sql-server` às 22:22:51: a tentativa seguinte (22:23:00) ficou no ar, rodou uma vez o ciclo atrasado (22:15 e 22:20 viraram um disparo só, dentro do limite de misfire de 15 min) e seguiu às 22:25 e 22:30. **OK** |
+
+Pontos para decidir do C4b:
+
+* O comentário do `publish-worker.ps1` diz "até três vezes por dia", mas o serviço é reiniciado a cada minuto sem
+  limite (o que foi bom no teste do boot). Acertar o comentário ou limitar de fato.
+* Sem banco, o Quartz derruba o processo com "Database schema validation failed. Make sure you have created the
+  database tables...", que leva a procurar tabela faltando quando o problema é conexão.
 
 Pontos para decidir, além dos da 6.1 e 6.2:
 
