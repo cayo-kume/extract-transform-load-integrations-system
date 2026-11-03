@@ -35,11 +35,32 @@ namespace Application.Shared.Abstractions.Services
         );
 
         /// <summary>
-        /// Add an information message
+        /// Add an information message (nível 1): progresso, totais e o resumo final
         /// </summary>
         /// <param name="message"></param>
         /// <returns>ILoggerService</returns>
         public ILoggerService AddMessage(string message);
+
+        /// <summary>
+        /// Add a warning message (nível 2): parte do que devia ser processado não foi, por cadastro, ordem dos jobs ou descarte
+        /// de propósito (src/Backend/Shared/docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md)
+        /// </summary>
+        /// <param name="message"></param>
+        /// <returns>ILoggerService</returns>
+        public ILoggerService AddWarning(string message);
+
+        /// <summary>
+        /// Add an error message without exception (nível 3): a fonte externa respondeu com erro ou com algo que não dá para ler,
+        /// e o dado não foi carregado
+        /// </summary>
+        /// <param name="message"></param>
+        /// <returns>ILoggerService</returns>
+        public ILoggerService AddError(string message);
+
+        /// <summary>
+        /// a execução tem alguma mensagem de erro (nível 3)
+        /// </summary>
+        public bool HasErrors { get; }
 
         /// <summary>
         /// Add to list a new record obtained from API

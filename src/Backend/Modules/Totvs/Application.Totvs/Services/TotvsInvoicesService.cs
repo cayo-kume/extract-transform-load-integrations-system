@@ -84,7 +84,7 @@ namespace Application.Totvs.Services
 
                     if (branchCodes.Count == 0)
                     {
-                        _logger.AddMessage($"Empresa {company.doc_company} sem lojas em totvs.TotvsBranches: rode o GetBranchesList antes.");
+                        _logger.AddWarning($"Empresa {company.doc_company} sem lojas em totvs.TotvsBranches: rode o GetBranchesList antes.");
                         continue;
                     }
 
@@ -138,7 +138,8 @@ namespace Application.Totvs.Services
                                     HttpMethod.Post,
                                     "fiscal/v2/invoices/search",
                                     content,
-                                    headers: new Dictionary<string, string> { { "Authorization", $"Bearer {token}" } }
+                                    headers: new Dictionary<string, string> { { "Authorization", $"Bearer {token}" } },
+                                    retryOnNetworkError: true
                                 );
 
                                 if (attempt == 1 && response.StatusCode == 401)
@@ -173,7 +174,7 @@ namespace Application.Totvs.Services
                             if (!response.IsSuccess)
                             {
                                 var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                                _logger.AddMessage($"Erro da API Totvs em fiscal/v2/invoices/search (empresa {company.doc_company}, janela {windowStart:dd/MM/yyyy HH:mm} a {windowEnd:dd/MM/yyyy HH:mm}, página {page} de {pageSize}): {response.StatusCode} {body}");
+                                _logger.AddError($"Erro da API Totvs em fiscal/v2/invoices/search (empresa {company.doc_company}, janela {windowStart:dd/MM/yyyy HH:mm} a {windowEnd:dd/MM/yyyy HH:mm}, página {page} de {pageSize}): {response.StatusCode} {body}");
 
                                 return null;
                             }
@@ -200,7 +201,7 @@ namespace Application.Totvs.Services
                             if (result?.items is null)
                             {
                                 var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                                _logger.AddMessage($"Resposta inválida da API Totvs em fiscal/v2/invoices/search (empresa {company.doc_company}, página {page} de {pageSize}): {body}");
+                                _logger.AddError($"Resposta inválida da API Totvs em fiscal/v2/invoices/search (empresa {company.doc_company}, página {page} de {pageSize}): {body}");
 
                                 return null;
                             }
@@ -222,7 +223,7 @@ namespace Application.Totvs.Services
                                 var result = await Search(page, 1, Expand.Replace("referencedInvoices,", String.Empty));
 
                                 foreach (var x in result?.items ?? [])
-                                    _logger.AddMessage($"Nota {x.branchCode}/{x.invoiceSequence} de {x.invoiceDate} (empresa {company.doc_company}) gravada sem as notas referenciadas dos produtos (referencedInvoices): a API Totvs devolve erro 400 em {ReferencedInvoicesError} para ela.");
+                                    _logger.AddWarning($"Nota {x.branchCode}/{x.invoiceSequence} de {x.invoiceDate} (empresa {company.doc_company}) gravada sem as notas referenciadas dos produtos (referencedInvoices): a API Totvs devolve erro 400 em {ReferencedInvoicesError} para ela.");
 
                                 return result;
                             }
@@ -344,7 +345,7 @@ namespace Application.Totvs.Services
                 if (company is null)
                 {
                     // nenhuma chamada à API: não há o que registrar em TotvsRequests (igual ao Movidesk)
-                    _logger.AddMessage($"Empresa {doc_company} não cadastrada em totvs.TotvsParameters.");
+                    _logger.AddWarning($"Empresa {doc_company} não cadastrada em totvs.TotvsParameters.");
                     return null;
                 }
 
@@ -387,7 +388,8 @@ namespace Application.Totvs.Services
                                 HttpMethod.Post,
                                 route,
                                 content,
-                                headers: new Dictionary<string, string> { { "Authorization", $"Bearer {token}" } }
+                                headers: new Dictionary<string, string> { { "Authorization", $"Bearer {token}" } },
+                                retryOnNetworkError: true
                             );
     
                             if (attempt == 1 && response.StatusCode == 401)
@@ -429,7 +431,7 @@ namespace Application.Totvs.Services
                     if (!response.IsSuccess)
                     {
                         var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                        _logger.AddMessage($"Erro da API Totvs em {route} (empresa {doc_company}, nota {key}): {response.StatusCode} {body}");
+                        _logger.AddError($"Erro da API Totvs em {route} (empresa {doc_company}, nota {key}): {response.StatusCode} {body}");
 
                         _totvsService.SaveRequest(EnumJob.TotvsGetInvoiceByKey, user_name, "POST", route, doc_company, key, response.Content, false, requestBody);
                         return null;
@@ -452,7 +454,7 @@ namespace Application.Totvs.Services
 
                     if (page?.items is null)
                     {
-                        _logger.AddMessage($"Resposta inválida da API Totvs em {route} (empresa {doc_company}, nota {key}): {response.Content}");
+                        _logger.AddError($"Resposta inválida da API Totvs em {route} (empresa {doc_company}, nota {key}): {response.Content}");
                         result = null;
                     }
                     else if (invoice is null || json is null)
@@ -517,7 +519,7 @@ namespace Application.Totvs.Services
 
                     if (branchCodes.Count == 0)
                     {
-                        _logger.AddMessage($"Empresa {company.doc_company} sem lojas em totvs.TotvsBranches: rode o GetBranchesList antes.");
+                        _logger.AddWarning($"Empresa {company.doc_company} sem lojas em totvs.TotvsBranches: rode o GetBranchesList antes.");
                         continue;
                     }
 
@@ -586,7 +588,7 @@ namespace Application.Totvs.Services
                             {
                                 var message = String.Empty;
                                 validations.Errors.ForEach(s => message += $"inutilização {item.dto.branchCode}/{item.dto.documentType}/{item.dto.serialCode}/{item.dto.initialInvoiceNumber}: {s.ErrorMessage}\n");
-                                _logger.AddMessage(message);
+                                _logger.AddWarning(message);
                             }
 
                             var record = new Domain.Totvs.Entities.Reads.Invoices.InvoiceDisable(company.doc_company!, batchTime, item.dto);
@@ -684,7 +686,7 @@ namespace Application.Totvs.Services
                         {
                             var message = String.Empty;
                             validations.Errors.ForEach(s => message += $"centro de custo {item.dto.code}: {s.ErrorMessage}\n");
-                            _logger.AddMessage(message);
+                            _logger.AddWarning(message);
                         }
 
                         _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Invoices.CostCenter(company.doc_company!, batchTime, hash, item.dto), json));
@@ -880,7 +882,7 @@ namespace Application.Totvs.Services
                 if (status != "Success" || pdf is null || pdf.Length == 0)
                 {
                     _totvsService.SaveRequest(EnumJob.TotvsPostTransactionPrint, user_name, "POST", route, doc_company, key, summary, false, requestBody);
-                    _logger.AddMessage($"Impressão da transação {key} (empresa {doc_company}): {status} {unifaceMessage}");
+                    _logger.AddError($"Impressão da transação {key} (empresa {doc_company}): {status} {unifaceMessage}");
 
                     return new Domain.Totvs.Dtos.Writes.Result
                     {
@@ -1116,14 +1118,14 @@ namespace Application.Totvs.Services
                 {
                     var message = String.Empty;
                     validations.Errors.ForEach(s => message += $"nota {invoice.branchCode}/{invoice.invoiceSequence} de {invoice.invoiceDate}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
+                    _logger.AddWarning(message);
                 }
 
                 // vínculo com pedido sem loja ou número não tem chave e é descartado pela entidade
                 var semChave = (invoice.salesOrder ?? []).Count(x => ConverterValidatorsExtensions.ConvertToInt32Validation(x.branchCode) == 0 || ConverterValidatorsExtensions.ConvertToInt32Validation(x.orderCode) == 0);
 
                 if (semChave > 0)
-                    _logger.AddMessage($"nota {invoice.branchCode}/{invoice.invoiceSequence} de {invoice.invoiceDate}: {semChave} pedido(s) de venda sem loja ou número descartado(s).");
+                    _logger.AddWarning($"nota {invoice.branchCode}/{invoice.invoiceSequence} de {invoice.invoiceDate}: {semChave} pedido(s) de venda sem loja ou número descartado(s).");
 
                 _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.Invoices.Invoice(doc_company, batchTime, invoice));
             }
@@ -1204,7 +1206,7 @@ namespace Application.Totvs.Services
                     if (response is not null)
                     {
                         var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                        _logger.AddMessage($"Erro da API Totvs em {routeName} (empresa {company.doc_company}, página {page}): {response.StatusCode} {body}");
+                        _logger.AddError($"Erro da API Totvs em {routeName} (empresa {company.doc_company}, página {page}): {response.StatusCode} {body}");
                     }
 
                     return null;
@@ -1229,7 +1231,7 @@ namespace Application.Totvs.Services
                 if (result?.items is null || json.Count != result.items.Count)
                 {
                     var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                    _logger.AddMessage($"Resposta inválida da API Totvs em {routeName} (empresa {company.doc_company}, página {page}): {body}");
+                    _logger.AddError($"Resposta inválida da API Totvs em {routeName} (empresa {company.doc_company}, página {page}): {body}");
 
                     return null;
                 }
@@ -1313,7 +1315,8 @@ namespace Application.Totvs.Services
                         method,
                         route,
                         content,
-                        headers: new Dictionary<string, string> { { "Authorization", $"Bearer {token}" } }
+                        headers: new Dictionary<string, string> { { "Authorization", $"Bearer {token}" } },
+                        retryOnNetworkError: true
                     );
 
                     if (attempt == 1 && response.StatusCode == 401)
@@ -1357,7 +1360,7 @@ namespace Application.Totvs.Services
                 return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, statusCode = 0, apiCalled = false, message = "Falha no login na Totvs: veja o log da execução." };
 
             var message = TotvsMessage(response);
-            _logger.AddMessage($"Erro da API Totvs em {route} ({key}): {response.StatusCode} {message}");
+            _logger.AddError($"Erro da API Totvs em {route} ({key}): {response.StatusCode} {message}");
 
             var notFound = response.StatusCode == 404 || (response.StatusCode == 400 && (response.Content ?? String.Empty).Contains("\"KeyNotFound\""));
 
@@ -1397,14 +1400,14 @@ namespace Application.Totvs.Services
         private Domain.Totvs.Dtos.Writes.Result CompanyNotFound(string doc_company, string key)
         {
             // nenhuma chamada à API: não há o que registrar em TotvsRequests (igual ao Movidesk)
-            _logger.AddMessage($"Empresa {doc_company} não cadastrada em totvs.TotvsParameters.");
+            _logger.AddWarning($"Empresa {doc_company} não cadastrada em totvs.TotvsParameters.");
 
             return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, statusCode = 0, apiCalled = false, message = $"Empresa {doc_company} não cadastrada." };
         }
 
         private Domain.Totvs.Dtos.Writes.Result InvalidResponse(string key, string route, string? content)
         {
-            _logger.AddMessage($"Resposta inválida da API Totvs em {route} ({key}): {Truncate(content)}");
+            _logger.AddError($"Resposta inválida da API Totvs em {route} ({key}): {Truncate(content)}");
 
             // JSON inválido ou sem o conteúdo esperado: 502 (§8.1)
             return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, statusCode = StatusCodes.BadGateway, apiCalled = true, message = "Resposta inválida da Totvs.", response = Truncate(content) };
@@ -1477,7 +1480,7 @@ namespace Application.Totvs.Services
         {
             // nenhuma chamada à API: não há o que registrar em TotvsRequests
             var message = $"Loja(s) {String.Join(", ", branchCodes)} fora de totvs.TotvsBranches da empresa {doc_company}.";
-            _logger.AddMessage(message);
+            _logger.AddWarning(message);
 
             return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, statusCode = 0, apiCalled = false, message = message };
         }

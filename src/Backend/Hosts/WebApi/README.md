@@ -89,8 +89,11 @@ storage, o usuário e a senha do dashboard...), o host não sobe e a mensagem li
 > deles). Se dois ficarem ligados por um tempo numa troca, a trava de concorrência ([abaixo](#-concorrência)) ainda impede
 > que um mesmo job rode **ao mesmo tempo** nos dois, mas não que rode **duas vezes** no mesmo ciclo: no teste com o
 > Hangfire e o Worker no mesmo banco, 10 de 12 jobs rodaram duas vezes por ciclo (o segundo começa quando o primeiro já
-> terminou). Os dados não duplicaram (o merge é por chave), mas as APIs foram lidas em dobro. Nada no código impede os
-> dois ligados ([testes, ponto 7](../../../../docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md#83-pontos-em-aberto)).
+> terminou). Os dados não duplicaram (o merge é por chave), mas as APIs foram lidas em dobro. Desde 03/11/2026, cada
+> host se registra em `auditing.SchedulingHosts` com heartbeat (a cada 30 s, expira em 2 min) e só o tipo que está no ar
+> há mais tempo executa os jobs da agenda: o Hangfire ligado com o Worker no ar sobe, avisa no log e deixa os jobs da
+> agenda em `Deleted` com o motivo, até o Worker sair. Para ligar os dois de propósito numa migração:
+> `Scheduling:AllowOtherHostTypes = true` ([melhorias, 4.2](../../../../docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md#42-ponto-7-dois-agendadores-no-mesmo-banco)).
 
 ---
 
@@ -378,10 +381,13 @@ Depois de `Concurrency:MaxConsecutiveSkips` pulos seguidos, sai um aviso no log:
 intervalo, e a correção é aumentar o intervalo na tabela. Uma execução adiada pode rodar logo antes do disparo seguinte
 da mesma empresa; as duas rodam em sequência (a trava da empresa impede rodarem juntas).
 
-> [!WARNING]
-> As **rotas dos controllers ficam fora da trava**: um disparo manual durante a execução agendada roda junto com ela. As
-> rotas são para uso manual e consciente (o DW continua com a própria trava no processo, que devolve 409). Visto no
-> teste: `POST /MovideskJobs/Movidesk/Tickets` com o mesmo job agendado rodando leu a API em dobro, sem duplicar linha.
+> [!NOTE]
+> **As rotas que rodam um job da agenda pedem a mesma trava** (desde 03/11/2026; no teste A6, o disparo manual rodou junto
+> com o agendado e leu a API em dobro). Quando a rota abre o log de um job que está no mapa da agenda, o `RouteJobLock`
+> pede a trava do job (`job:<IdJob>`, ou a do grupo do DW) sem esperar. Ocupada, a rota devolve **409**
+> (`JOB_ALREADY_RUNNING`) sem gravar nada em `auditing`; a trava fica com a requisição até o fim. As rotas por chave
+> (ex.: um ticket pelo número) e as de escrita não são jobs da agenda e não pedem trava
+> ([melhorias, 4.1](../../../../docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md#41-ponto-6-rotas-do-webapi-sem-a-trava)).
 
 ---
 

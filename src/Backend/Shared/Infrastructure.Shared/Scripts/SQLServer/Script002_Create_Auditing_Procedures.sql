@@ -48,20 +48,21 @@ GO
 CREATE OR ALTER PROCEDURE [auditing].[sp_Log_Message] (
     @execution UNIQUEIDENTIFIER,
     @message VARCHAR(MAX),
+    -- 1 informação, 2 aviso, 3 erro (auditing.Messages.Level)
     @logLevel INT
 ) AS
 BEGIN
 	SET XACT_ABORT OFF
 	SET @message = LEFT(@message,800)
 
-    INSERT INTO [auditing].[Messages] (IdJob, IdType, Company, Execution, [Message], IsError)
+    INSERT INTO [auditing].[Messages] (IdJob, IdType, Company, Execution, [Message], [Level])
     SELECT
         IdJob,
         IdType,
         Company,
         Execution,
         @message,
-        CASE WHEN @logLevel = 5 THEN 1 ELSE 0 END
+        @logLevel
     FROM
         [auditing].[Logs]
     WHERE
@@ -75,14 +76,14 @@ CREATE OR ALTER PROCEDURE [auditing].[sp_Log_Error] (
 ) AS
 BEGIN
     BEGIN TRY
-	    INSERT INTO [auditing].[Messages] (IdJob, IdType, Company, Execution, [Message], IsError)
+	    INSERT INTO [auditing].[Messages] (IdJob, IdType, Company, Execution, [Message], [Level])
 	        SELECT
                 IdJob,
                 IdType,
                 Company,
                 Execution,
 		        LEFT(CONCAT('Concluída com Erro. ' , @err_msg), 800),
-		        1
+		        3
             FROM
                 [auditing].[Logs]
             WHERE

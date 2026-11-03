@@ -80,7 +80,7 @@ namespace Application.AfterSale.Services
                             message += $"{s.ErrorMessage}\n"
                         );
 
-                        _logger.AddMessage(message);
+                        _logger.AddWarning(message);
                     }
 
                     _listSomenteNovos.Add(new Domain.AfterSale.Entities.Reads.Me.Ecommerce(me.data, response));

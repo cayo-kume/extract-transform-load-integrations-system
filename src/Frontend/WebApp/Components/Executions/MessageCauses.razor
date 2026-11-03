@@ -55,7 +55,7 @@ else
             return;
 
         _loaded = Query;
-        _now = DateTime.Now;
+        _now = WebApp.Data.Sql.MainDatabase.LocalNow();
         await Snackbar.TryAsync(Logger, async () => _groups = await MonitorRepository.GetMessageGroupsAsync(Query), "Não foi possível carregar as causas das mensagens.");
         _groups ??= [];
 

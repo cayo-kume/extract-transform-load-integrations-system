@@ -105,7 +105,7 @@ namespace Application.Totvs.Services
             {
                 // a resposta de erro não traz credenciais ({ code, message, detailedMessage })
                 var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                _logger.AddMessage($"Falha na autenticação da Totvs (empresa {company.doc_company}): {response.StatusCode} {body}");
+                _logger.AddError($"Falha na autenticação da Totvs (empresa {company.doc_company}): {response.StatusCode} {body}");
 
                 return null;
             }
@@ -124,7 +124,7 @@ namespace Application.Totvs.Services
             if (String.IsNullOrWhiteSpace(token?.access_token))
             {
                 // o corpo não é registrado: uma resposta de sucesso pode trazer o token
-                _logger.AddMessage($"Resposta inválida do login da Totvs (empresa {company.doc_company}): access_token ausente.");
+                _logger.AddError($"Resposta inválida do login da Totvs (empresa {company.doc_company}): access_token ausente.");
 
                 return null;
             }
@@ -221,7 +221,7 @@ namespace Application.Totvs.Services
                 SaveRequest(job, user_name, method.Method, route, company.doc_company!, key, response.Content, false, requestBody, response.StatusCode);
 
                 var message = TotvsMessage(response);
-                _logger.AddMessage($"Erro da API Totvs em {routeName} ({key}): {response.StatusCode} {message}");
+                _logger.AddError($"Erro da API Totvs em {routeName} ({key}): {response.StatusCode} {message}");
 
                 return new Domain.Totvs.Dtos.Writes.Result
                 {
@@ -244,7 +244,7 @@ namespace Application.Totvs.Services
             catch (System.Text.Json.JsonException)
             {
                 SaveRequest(job, user_name, method.Method, route, company.doc_company!, key, Truncate(response.Content), false, requestBody);
-                _logger.AddMessage($"Resposta inválida da API Totvs em {routeName} ({key}): {Truncate(response.Content)}");
+                _logger.AddError($"Resposta inválida da API Totvs em {routeName} ({key}): {Truncate(response.Content)}");
 
                 // JSON inválido: 502 (§8.1)
                 return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, statusCode = 502, apiCalled = true, message = "Resposta inválida da Totvs.", response = Truncate(response.Content) };
@@ -343,7 +343,7 @@ namespace Application.Totvs.Services
                 // sem resposta (timeout, rede): a escrita pode ter sido feita. O status 0 marca a dúvida para a trava de repetição
                 var failure = $"Exceção ao chamar a API: {ex.Message.TrimEnd('.')}";
                 SaveRequest(job, user_name, method.Method, route, company.doc_company!, key, failure, false, storedBody, 0);
-                _logger.AddMessage($"{routeName} ({key}, empresa {company.doc_company}): {failure}. {checkHint}");
+                _logger.AddError($"{routeName} ({key}, empresa {company.doc_company}): {failure}. {checkHint}");
 
                 return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, apiCalled = true, message = $"{failure}. {checkHint}" };
             }
@@ -361,7 +361,7 @@ namespace Application.Totvs.Services
             if (!response.IsSuccess)
             {
                 var message = TotvsMessage(response);
-                _logger.AddMessage($"{routeName} ({key}, empresa {company.doc_company}): {response.StatusCode} {message}");
+                _logger.AddError($"{routeName} ({key}, empresa {company.doc_company}): {response.StatusCode} {message}");
 
                 return new Domain.Totvs.Dtos.Writes.Result
                 {
@@ -400,7 +400,7 @@ namespace Application.Totvs.Services
                     ? $"A mesma escrita foi aceita pela Totvs às {previous.request_date:HH:mm:ss}: repetir em menos de {RepeatLockMinutes} minutos é recusado."
                     : $"A mesma escrita ficou sem resposta certa às {previous.request_date:HH:mm:ss} e pode ter sido feita. {checkHint}";
 
-                _logger.AddMessage($"{route.Split('?')[0]} ({key}, empresa {company.doc_company}): repetição recusada. {message}");
+                _logger.AddWarning($"{route.Split('?')[0]} ({key}, empresa {company.doc_company}): repetição recusada. {message}");
 
                 return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, statusCode = 409, message = message };
             }
@@ -410,7 +410,7 @@ namespace Application.Totvs.Services
         {
             // nenhuma chamada à API: não há o que registrar em TotvsRequests
             var message = $"Escritas do grupo {group} desligadas (Totvs:Writes:{group}:Enabled).";
-            _logger.AddMessage(message);
+            _logger.AddWarning(message);
 
             return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, message = message };
         }
@@ -418,7 +418,7 @@ namespace Application.Totvs.Services
         public Domain.Totvs.Dtos.Writes.Result CompanyNotFound(string doc_company, string key)
         {
             // nenhuma chamada à API: não há o que registrar em TotvsRequests (igual ao Movidesk)
-            _logger.AddMessage($"Empresa {doc_company} não cadastrada em totvs.TotvsParameters.");
+            _logger.AddWarning($"Empresa {doc_company} não cadastrada em totvs.TotvsParameters.");
 
             return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, statusCode = 0, apiCalled = false, message = $"Empresa {doc_company} não cadastrada." };
         }
@@ -427,7 +427,7 @@ namespace Application.Totvs.Services
         {
             // nenhuma chamada à API: não há o que registrar em TotvsRequests
             var message = $"Loja(s) {String.Join(", ", branches)} fora de totvs.TotvsBranches da empresa {doc_company}.";
-            _logger.AddMessage(message);
+            _logger.AddWarning(message);
 
             return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, statusCode = 0, apiCalled = false, message = message };
         }

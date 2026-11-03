@@ -184,7 +184,7 @@ namespace Application.AfterSale.Services
                             message += $"{s.ErrorMessage}\n"
                         );
 
-                        _logger.AddMessage(message);
+                        _logger.AddWarning(message);
                     }
 
                     _listSomenteNovos.Add(new Domain.AfterSale.Entities.Reads.Refunds.SearchRefunds.Refund(company.doc_company, summarizedRefund));
@@ -285,7 +285,7 @@ namespace Application.AfterSale.Services
                             message += $"{s.ErrorMessage}\n"
                         );
 
-                        _logger.AddMessage(message);
+                        _logger.AddWarning(message);
                     }
 
                     _listSomenteNovos.Add(new Domain.AfterSale.Entities.Reads.Refunds.Actions.Action(actionRefund, actionRefund.doc_company));
@@ -381,7 +381,7 @@ namespace Application.AfterSale.Services
                             message += $"{s.ErrorMessage}\n"
                         );
 
-                        _logger.AddMessage(message);
+                        _logger.AddWarning(message);
                     }
 
                     _listSomenteNovos.Add(new Domain.AfterSale.Entities.Reads.Refunds.Banks.Bank(bankRefund, bankRefund.doc_company));
@@ -446,7 +446,7 @@ namespace Application.AfterSale.Services
 
                 if (company is null)
                 {
-                    _logger.AddMessage($"CNPJ {refundsByCompany.Key} não encontrado em AfterSaleParameters: {refundsByCompany.Count()} reembolso(s) ignorado(s).\n");
+                    _logger.AddWarning($"CNPJ {refundsByCompany.Key} não encontrado em AfterSaleParameters: {refundsByCompany.Count()} reembolso(s) ignorado(s).\n");
                     continue;
                 }
 
@@ -523,7 +523,7 @@ namespace Application.AfterSale.Services
                             message += $"{s.ErrorMessage}\n"
                         );
 
-                        _logger.AddMessage(message);
+                        _logger.AddWarning(message);
                     }
 
                     _listSomenteNovos.Add(new Domain.AfterSale.Entities.Reads.Refunds.GetRefund.Refund(company.doc_company, refundsDto.data));
@@ -578,7 +578,7 @@ namespace Application.AfterSale.Services
                 if (company is null)
                 {
                     // nenhuma chamada à API: não há o que registrar em AfterSaleRequests
-                    _logger.AddMessage($"Empresa {doc_company} não cadastrada em aftersale.AfterSaleParameters.");
+                    _logger.AddWarning($"Empresa {doc_company} não cadastrada em aftersale.AfterSaleParameters.");
                     return null;
                 }
 
@@ -611,7 +611,7 @@ namespace Application.AfterSale.Services
 
                 if (root is null)
                 {
-                    _logger.AddMessage($"Resposta inválida da API AfterSale para o reembolso {id} (empresa {doc_company}): {response}");
+                    _logger.AddError($"Resposta inválida da API AfterSale para o reembolso {id} (empresa {doc_company}): {response}");
                     result = null;
                 }
                 else if (!root.success)
@@ -639,7 +639,7 @@ namespace Application.AfterSale.Services
                 }
                 else if (root.data is null || ConverterValidatorsExtensions.ConvertToInt64Validation(root.data.id) != id)
                 {
-                    _logger.AddMessage($"Resposta inválida da API AfterSale para o reembolso {id} (empresa {doc_company}): {response}");
+                    _logger.AddError($"Resposta inválida da API AfterSale para o reembolso {id} (empresa {doc_company}): {response}");
                     result = null;
                 }
                 else
@@ -653,7 +653,7 @@ namespace Application.AfterSale.Services
                             message += $"{s.ErrorMessage}\n"
                         );
 
-                        _logger.AddMessage(message);
+                        _logger.AddWarning(message);
                     }
 
                     var refund = new Domain.AfterSale.Entities.Reads.Refunds.GetRefund.Refund(doc_company, root.data);
@@ -733,7 +733,7 @@ namespace Application.AfterSale.Services
                             message += $"{s.ErrorMessage}\n"
                         );
 
-                        _logger.AddMessage(message);
+                        _logger.AddWarning(message);
                     }
 
                     _listSomenteNovos.Add(new Domain.AfterSale.Entities.Reads.Refunds.Status.Status(statusRefund, statusRefund.doc_company));
@@ -831,7 +831,7 @@ namespace Application.AfterSale.Services
                             message += $"{s.ErrorMessage}\n"
                         );
 
-                        _logger.AddMessage(message);
+                        _logger.AddWarning(message);
                     }
 
                     _listSomenteNovos.Add(new Domain.AfterSale.Entities.Reads.Refunds.Types.Type(typeRefund, typeRefund.doc_company));
@@ -980,7 +980,7 @@ namespace Application.AfterSale.Services
                 if (company is null)
                 {
                     result = new TResponse { success = false, message = $"CNPJ {doc_company} não encontrado em AfterSaleParameters." };
-                    _logger.AddMessage($"Reembolso {id}: {result.message}");
+                    _logger.AddWarning($"Reembolso {id}: {result.message}");
 
                     return result;
                 }
@@ -1021,7 +1021,7 @@ namespace Application.AfterSale.Services
                 }
                 else
                 {
-                    _logger.AddMessage($"Reembolso {id}: {result.message_translated ?? result.message ?? result.error ?? "a API não retornou sucesso."}");
+                    _logger.AddError($"Reembolso {id}: {result.message_translated ?? result.message ?? result.error ?? "a API não retornou sucesso."}");
 
                     await _afterSaleRefundsRepository.BulkInsertIntoAfterSaleErrors(
                         [

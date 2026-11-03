@@ -6,8 +6,8 @@
 }
 else if (Start is DateTime running)
 {
-    <MudTooltip Text="@($"Rodando desde {MonitorDisplay.Time(running, Now ?? DateTime.Now)}")">
-        <i>@MonitorDisplay.Elapsed((Now ?? DateTime.Now) - running)…</i>
+    <MudTooltip Text="@($"Rodando desde {MonitorDisplay.Time(running, Now ?? WebApp.Data.Sql.MainDatabase.LocalNow())}")">
+        <i>@MonitorDisplay.Elapsed((Now ?? WebApp.Data.Sql.MainDatabase.LocalNow()) - running)…</i>
     </MudTooltip>
 }
 else

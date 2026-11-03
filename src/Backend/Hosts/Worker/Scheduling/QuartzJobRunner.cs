@@ -37,10 +37,11 @@ namespace Worker.Scheduling
         private readonly ScheduledJobRunner _runner;
         private readonly IJobLock _jobLock;
         private readonly JobSkipCounter _skips;
+        private readonly SchedulingHostRegistry _hosts;
         private readonly ILogger<QuartzJobRunner> _logger;
 
-        public QuartzJobRunner(ScheduledJobRunner runner, IJobLock jobLock, JobSkipCounter skips, ILogger<QuartzJobRunner> logger) =>
-            (_runner, _jobLock, _skips, _logger) = (runner, jobLock, skips, logger);
+        public QuartzJobRunner(ScheduledJobRunner runner, IJobLock jobLock, JobSkipCounter skips, SchedulingHostRegistry hosts, ILogger<QuartzJobRunner> logger) =>
+            (_runner, _jobLock, _skips, _hosts, _logger) = (runner, jobLock, skips, hosts, logger);
 
         public async Task Execute(IJobExecutionContext context)
         {
@@ -53,6 +54,13 @@ namespace Worker.Scheduling
                 || data.GetString(CompanyKey) is not { Length: > 0 } company)
             {
                 _logger.LogError("{Name}: sem IdJob ou empresa no JobDataMap, ou sem método nos mapas de jobs recorrentes; nada executado.", name);
+                return;
+            }
+
+            // outro tipo de host agenda neste banco (SchedulingHostRegistry): este não executa; o heartbeat já avisou no log
+            if (!_hosts.IsActive)
+            {
+                context.Result = _hosts.SkipReason;
                 return;
             }
 

@@ -270,6 +270,11 @@ $env:InitialLoad__MaxMonths = '3'
 Vale para Totvs, Linx Microvix, Movidesk e LinxCommerce. No Microvix, a carga inicial passa a mandar a data e
 `filtra_somente_timestamp = 0` (detalhes em [docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md](docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md#1-carga-inicial-limitada-a-3-meses)).
 
+**A carga inicial completa leva dois ciclos.** No primeiro, os jobs que dependem de filiais (Totvs) e lojas (Linx
+Microvix) rodam junto com os que as carregam e saem com pouco ou nada, com o aviso "sem lojas ... rode o ... antes" (nível
+aviso: o job não fica em erro). No ciclo seguinte, os dados vêm. Para ter tudo no primeiro ciclo, rode antes
+`TotvsGetBranchesList` e `LinxGrupoLojas` pela tela Sob Demanda ([melhorias, 5.2](docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md#52-ponto-5-carga-completa-em-2-ciclos)).
+
 ---
 
 ## 🖥️ 6. Painel
@@ -314,7 +319,7 @@ dotnet user-secrets set "Admin:Enabled" "true" --project src/Frontend/WebApp
 SELECT TOP 50 L.IdJob, J.Title, L.StartDate, L.EndDate, M.Message
 FROM auditing.Logs L
 JOIN auditing.Jobs J ON J.IdJob = L.IdJob AND J.IdType = L.IdType AND J.Company = L.Company
-JOIN auditing.Messages M ON M.Execution = L.Execution AND M.IsError = 1
+JOIN auditing.Messages M ON M.Execution = L.Execution AND M.[Level] = 3
 WHERE L.Company = '44065634000106'
 ORDER BY L.StartDate DESC;
 ```

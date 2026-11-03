@@ -898,6 +898,14 @@ Toda execução grava `auditing.Logs` (com a empresa) e, conforme o caso:
 * `auditing.Messages`, com mensagens e erros de validação;
 * `auditing.Records`, com os registros integrados e o JSON recebido.
 
+Cada mensagem tem um nível ([`PROPOSTA-NIVEL-MENSAGEM-AUDITING.md`](../../Shared/docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md)):
+
+| Nível | Mensagens |
+|---|---|
+| **Erro** (3) | `Erro da API Totvs em ...`, `Resposta inválida da API Totvs em ...`, `Falha na autenticação da Totvs ...`, `Empresa X: não foi possível descobrir os códigos de <preço/custo/saldo> ...`, a escrita que a Totvs recusou ou que ficou sem resposta (`<rota> (<chave>, empresa X): <status> <mensagem>`, `Parcela X ...`, `Impressão da transação X ...`) e `Não foi possível conferir se o orderId X já existe ...` |
+| **Aviso** (2) | `Empresa X sem lojas em totvs.TotvsBranches: rode o GetBranchesList antes.`, `... rode o PostSearchReferences antes da conferência.`, `Empresa X não cadastrada em totvs.TotvsParameters.`, loja fora de `totvs.TotvsBranches`, escrita desligada na configuração ou recusada antes da chamada (saldo, variação de preço, `orderId` repetido, repetição recusada), os descartes (`... descartado(s)`, `Sugestões de faturamento ... descartadas`, `Região de atuação ... descartados`), a nota gravada sem `referencedInvoices`, o produto em mais de uma referência do lote e as inconsistências da validação |
+| **Informação** (1) | `Concluída com sucesso ...`, `Sem registros em <rota> (<chave>).`, `<Nota/Pedido/Produto/...> X não encontrado na Totvs` (consulta sob demanda) e os totais da conferência de produtos |
+
 <div align="center">
 
 ![Tela Integrações do Monitor](../../../../docs/images/webapp/integracoes.png)

@@ -41,6 +41,9 @@ namespace Infrastructure.Shared
             services.AddScoped<ICompanyContext, CompanyContext>();
             services.AddScoped<ILoggerService, LoggerService>();
 
+            // o WebApi troca pela trava das rotas (RouteJobLock); os hosts de agenda já pedem a trava antes de executar
+            services.AddScoped<IJobExecutionGuard, NoJobExecutionGuard>();
+
             services.AddScoped<IExceptionHandler, ExceptionHandler>();
             services.AddScoped<ICommandHandler, CommandHandler>();
 

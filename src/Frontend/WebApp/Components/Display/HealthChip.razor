@@ -59,7 +59,7 @@
     /// </summary>
     [Parameter] public DateTime? Now { get; set; }
 
-    private DateTime NowOrDefault => Now ?? DateTime.Now;
+    private DateTime NowOrDefault => Now ?? WebApp.Data.Sql.MainDatabase.LocalNow();
 
     private Color Color => Context.IsRunningTooLong(NowOrDefault) ? Color.Warning : MonitorDisplay.HealthColor(Context.Health);
 

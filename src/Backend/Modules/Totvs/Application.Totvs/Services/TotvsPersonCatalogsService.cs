@@ -134,7 +134,7 @@ namespace Application.Totvs.Services
                             if (response is not null)
                             {
                                 var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                                _logger.AddMessage($"Erro da API Totvs em person/v2/classifications (empresa {company.doc_company}, página {page}): {response.StatusCode} {body}");
+                                _logger.AddError($"Erro da API Totvs em person/v2/classifications (empresa {company.doc_company}, página {page}): {response.StatusCode} {body}");
                             }
 
                             failed = true;
@@ -163,7 +163,7 @@ namespace Application.Totvs.Services
                         if (result?.items is null)
                         {
                             var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                            _logger.AddMessage($"Resposta inválida da API Totvs em person/v2/classifications (empresa {company.doc_company}, página {page}): {body}");
+                            _logger.AddError($"Resposta inválida da API Totvs em person/v2/classifications (empresa {company.doc_company}, página {page}): {body}");
 
                             failed = true;
                             break;
@@ -213,7 +213,7 @@ namespace Application.Totvs.Services
                         {
                             var message = String.Empty;
                             validations.Errors.ForEach(s => message += $"classificação {$"{ConverterValidatorsExtensions.ConvertToInt32Validation(item.typeCode)}|{(item.code ?? String.Empty).ToUpperInvariant()}"}: {s.ErrorMessage}\n");
-                            _logger.AddMessage(message);
+                            _logger.AddWarning(message);
                         }
 
                         _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.People.Catalogs.PersonClassification(company.doc_company!, batchTime, item));
@@ -333,7 +333,7 @@ namespace Application.Totvs.Services
                             if (response is not null)
                             {
                                 var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                                _logger.AddMessage($"Erro da API Totvs em person/v2/email-types (empresa {company.doc_company}, página {page}): {response.StatusCode} {body}");
+                                _logger.AddError($"Erro da API Totvs em person/v2/email-types (empresa {company.doc_company}, página {page}): {response.StatusCode} {body}");
                             }
 
                             failed = true;
@@ -362,7 +362,7 @@ namespace Application.Totvs.Services
                         if (result?.items is null)
                         {
                             var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                            _logger.AddMessage($"Resposta inválida da API Totvs em person/v2/email-types (empresa {company.doc_company}, página {page}): {body}");
+                            _logger.AddError($"Resposta inválida da API Totvs em person/v2/email-types (empresa {company.doc_company}, página {page}): {body}");
 
                             failed = true;
                             break;
@@ -412,7 +412,7 @@ namespace Application.Totvs.Services
                         {
                             var message = String.Empty;
                             validations.Errors.ForEach(s => message += $"tipo de e-mail {ConverterValidatorsExtensions.ConvertToInt32Validation(item.code)}: {s.ErrorMessage}\n");
-                            _logger.AddMessage(message);
+                            _logger.AddWarning(message);
                         }
 
                         _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.People.Catalogs.EmailType(company.doc_company!, batchTime, item));
@@ -532,7 +532,7 @@ namespace Application.Totvs.Services
                             if (response is not null)
                             {
                                 var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                                _logger.AddMessage($"Erro da API Totvs em person/v2/phone-types (empresa {company.doc_company}, página {page}): {response.StatusCode} {body}");
+                                _logger.AddError($"Erro da API Totvs em person/v2/phone-types (empresa {company.doc_company}, página {page}): {response.StatusCode} {body}");
                             }
 
                             failed = true;
@@ -561,7 +561,7 @@ namespace Application.Totvs.Services
                         if (result?.items is null)
                         {
                             var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                            _logger.AddMessage($"Resposta inválida da API Totvs em person/v2/phone-types (empresa {company.doc_company}, página {page}): {body}");
+                            _logger.AddError($"Resposta inválida da API Totvs em person/v2/phone-types (empresa {company.doc_company}, página {page}): {body}");
 
                             failed = true;
                             break;
@@ -611,7 +611,7 @@ namespace Application.Totvs.Services
                         {
                             var message = String.Empty;
                             validations.Errors.ForEach(s => message += $"tipo de telefone {ConverterValidatorsExtensions.ConvertToInt32Validation(item.code)}: {s.ErrorMessage}\n");
-                            _logger.AddMessage(message);
+                            _logger.AddWarning(message);
                         }
 
                         _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.People.Catalogs.PhoneType(company.doc_company!, batchTime, item));
@@ -731,7 +731,7 @@ namespace Application.Totvs.Services
                             if (response is not null)
                             {
                                 var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                                _logger.AddMessage($"Erro da API Totvs em person/v2/contact-types (empresa {company.doc_company}, página {page}): {response.StatusCode} {body}");
+                                _logger.AddError($"Erro da API Totvs em person/v2/contact-types (empresa {company.doc_company}, página {page}): {response.StatusCode} {body}");
                             }
 
                             failed = true;
@@ -760,7 +760,7 @@ namespace Application.Totvs.Services
                         if (result?.items is null)
                         {
                             var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                            _logger.AddMessage($"Resposta inválida da API Totvs em person/v2/contact-types (empresa {company.doc_company}, página {page}): {body}");
+                            _logger.AddError($"Resposta inválida da API Totvs em person/v2/contact-types (empresa {company.doc_company}, página {page}): {body}");
 
                             failed = true;
                             break;
@@ -810,7 +810,7 @@ namespace Application.Totvs.Services
                         {
                             var message = String.Empty;
                             validations.Errors.ForEach(s => message += $"tipo de contato {ConverterValidatorsExtensions.ConvertToInt32Validation(item.code)}: {s.ErrorMessage}\n");
-                            _logger.AddMessage(message);
+                            _logger.AddWarning(message);
                         }
 
                         _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.People.Catalogs.ContactType(company.doc_company!, batchTime, item));

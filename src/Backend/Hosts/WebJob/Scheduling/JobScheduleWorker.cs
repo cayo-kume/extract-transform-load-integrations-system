@@ -20,12 +20,13 @@ namespace WebJob.Scheduling
         private readonly ILogger<JobScheduleWorker> _logger;
         private readonly IHostApplicationLifetime _lifetime;
         private readonly IJobLock _jobLock;
+        private readonly SchedulingHostRegistry _hosts;
 
         // pulos seguidos deste processo: zera quando o job consegue rodar
         private int _consecutiveSkips;
 
-        public JobScheduleWorker(IServiceScopeFactory scopeFactory, IOptions<WebJobSettings> settings, ILogger<JobScheduleWorker> logger, IHostApplicationLifetime lifetime, IJobLock jobLock) =>
-            (_scopeFactory, _settings, _logger, _lifetime, _jobLock) = (scopeFactory, settings.Value, logger, lifetime, jobLock);
+        public JobScheduleWorker(IServiceScopeFactory scopeFactory, IOptions<WebJobSettings> settings, ILogger<JobScheduleWorker> logger, IHostApplicationLifetime lifetime, IJobLock jobLock, SchedulingHostRegistry hosts) =>
+            (_scopeFactory, _settings, _logger, _lifetime, _jobLock, _hosts) = (scopeFactory, settings.Value, logger, lifetime, jobLock, hosts);
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
@@ -157,6 +158,13 @@ namespace WebJob.Scheduling
         {
             var name = RecurringJobMap.RecurringJobId(idJob, job.Title, definition.Version!, job.Company);
             var companyKey = definition.CompanyConcurrencyKey(job.Company);
+
+            // outro tipo de host agenda neste banco (SchedulingHostRegistry): este horário não roda aqui; o heartbeat já avisou
+            if (!_hosts.IsActive)
+            {
+                _logger.LogInformation("{Name}: {Reason}.", name, _hosts.SkipReason);
+                return;
+            }
 
             // a mesma trava do WebApi (§5): um job nunca roda junto, nem entre um WebJob e o Hangfire, nem para duas empresas ao
             // mesmo tempo (as tabelas untreated e a sp_*_Sync são as mesmas). Ocupada, este horário é pulado sem esperar; o

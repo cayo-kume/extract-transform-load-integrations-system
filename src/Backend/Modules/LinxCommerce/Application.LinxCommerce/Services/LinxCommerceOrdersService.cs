@@ -112,7 +112,7 @@ namespace Application.LinxCommerce.Services
                         if (order is null || ConverterValidatorsExtensions.ConvertToGuidValidation(order.Value.dto.OrderID) != id)
                         {
                             if (order is not null)
-                                _logger.AddMessage($"GetOrder do pedido {id} (empresa {company.doc_company}) devolveu outro OrderID: {order.Value.dto.OrderID}.");
+                                _logger.AddError($"GetOrder do pedido {id} (empresa {company.doc_company}) devolveu outro OrderID: {order.Value.dto.OrderID}.");
 
                             failed = true;
                             break;
@@ -180,7 +180,7 @@ namespace Application.LinxCommerce.Services
                         {
                             var message = String.Empty;
                             validations.Errors.ForEach(s => message += $"status de pedido {dto.OrderStatusID}: {s.ErrorMessage}\n");
-                            _logger.AddMessage(message);
+                            _logger.AddWarning(message);
                         }
 
                         var status = new Domain.LinxCommerce.Entities.Reads.Orders.OrderStatus(company.doc_company!, batchTime, dto);
@@ -250,7 +250,7 @@ namespace Application.LinxCommerce.Services
                 if (company is null)
                 {
                     // nenhuma chamada à API: não há o que registrar em LinxCommerceRequests (igual ao Totvs)
-                    _logger.AddMessage($"Empresa {doc_company} não cadastrada em linxcommerce.LinxCommerceParameters.");
+                    _logger.AddWarning($"Empresa {doc_company} não cadastrada em linxcommerce.LinxCommerceParameters.");
                     return null;
                 }
 
@@ -306,7 +306,7 @@ namespace Application.LinxCommerce.Services
                 {
                     var message = String.Empty;
                     validations.Errors.ForEach(s => message += $"pedido {order.OrderNumber} ({order.OrderID}), {s.PropertyName}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
+                    _logger.AddWarning(message);
                 }
 
                 _listSomenteNovos.Add(new Domain.LinxCommerce.Entities.Reads.Orders.Order(doc_company, batchTime, order));

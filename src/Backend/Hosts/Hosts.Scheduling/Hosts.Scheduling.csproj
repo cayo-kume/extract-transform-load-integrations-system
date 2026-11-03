@@ -12,6 +12,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- o mesmo cliente do Shared: o heartbeat dos hosts de agenda reconhece SqlException e lê a connection string -->
+    <PackageReference Include="System.Data.SqlClient" Version="4.9.1" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\Modules\DataWarehouse\Application.DataWarehouse\Application.DataWarehouse.csproj" />
     <ProjectReference Include="..\..\Modules\General\AfterSale\Application.AfterSale\Application.AfterSale.csproj" />
     <ProjectReference Include="..\..\Modules\General\Movidesk\Application.Movidesk\Application.Movidesk.csproj" />

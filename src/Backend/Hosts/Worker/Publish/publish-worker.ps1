@@ -123,7 +123,8 @@ $deploy = {
 
         & sc.exe description $ServiceName 'Agenda dos jobs de integração a partir de auditing.Jobs (Quartz.NET).' | Out-Null
         & sc.exe config $ServiceName start= delayed-auto | Out-Null
-        # o processo caiu: reinicia depois de 1 minuto, até três vezes por dia
+        # o processo caiu: reinicia 1 minuto depois de cada queda, sem limite (o Windows repete a última ação da lista); a
+        # contagem de quedas zera a cada 24 h (reset). Sem limite foi o que fez o serviço voltar sozinho no teste do boot sem banco (C4b)
         & sc.exe failure $ServiceName reset= 86400 actions= restart/60000/restart/60000/restart/60000 | Out-Null
 
         # leitura e execução da pasta para a conta do serviço

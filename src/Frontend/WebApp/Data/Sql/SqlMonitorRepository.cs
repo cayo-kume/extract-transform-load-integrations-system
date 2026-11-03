@@ -11,8 +11,8 @@ namespace WebApp.Data.Sql
     /// logada. Toda leitura é WITH (NOLOCK), para não segurar o sp_Log_Start nem o bulk insert de Records; as contagens saem
     /// prontas do SQL. A lista de jobs (com a última execução) e os totais por período passam por um cache de 30 s, e
     /// qualquer escrita daqui o invalida. A saúde, o reconhecimento e a ordem são os mesmos do MockMonitorRepository.
-    /// Mensagens: enquanto a proposta de nível não chega ao back-end, IsError vira nível 3 (erro) ou 1 (informação), e não
-    /// há avisos (passo 11.2.7).
+    /// Mensagens: o nível vem de auditing.Messages.Level (1 informação, 2 aviso, 3 erro), da proposta de nível
+    /// (src/Backend/Shared/docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md): só o erro põe o job em saúde de erro; o aviso é contado à parte.
     /// </summary>
     public class SqlMonitorRepository(MainDatabase database, IMemoryCache cache, IModuleParametersRepository parameters, ILogger<SqlMonitorRepository> logger) : IMonitorRepository
     {
@@ -45,7 +45,7 @@ namespace WebApp.Data.Sql
             )
             """;
 
-        // registros e mensagens de erro de uma execução l
+        // registros, mensagens de erro (nível 3) e de aviso (nível 2) de uma execução l
         private const string ExecutionCounts = """
             CROSS APPLY (
                 SELECT COUNT(*) AS Records
@@ -53,9 +53,11 @@ namespace WebApp.Data.Sql
                 WHERE r.Company = l.Company AND r.IdJob = l.IdJob AND r.IdType = l.IdType AND r.Execution = l.Execution
             ) rc
             CROSS APPLY (
-                SELECT COUNT(*) AS Errors
+                SELECT
+                    COALESCE(SUM(CASE WHEN m.[Level] = 3 THEN 1 ELSE 0 END), 0) AS Errors,
+                    COALESCE(SUM(CASE WHEN m.[Level] = 2 THEN 1 ELSE 0 END), 0) AS Warnings
                 FROM [auditing].[Messages] m WITH (NOLOCK)
-                WHERE m.Company = l.Company AND m.IdJob = l.IdJob AND m.IdType = l.IdType AND m.Execution = l.Execution AND m.IsError = 1
+                WHERE m.Company = l.Company AND m.IdJob = l.IdJob AND m.IdType = l.IdType AND m.Execution = l.Execution AND m.[Level] > 1
             ) ec
             """;
 
@@ -80,6 +82,7 @@ namespace WebApp.Data.Sql
                 last.EndDate,
                 COALESCE(counts.Records, 0) AS Records,
                 COALESCE(counts.Errors, 0) AS Errors,
+                COALESCE(counts.Warnings, 0) AS Warnings,
                 ack.Execution AS AckExecution,
                 ack.Note AS AckNote,
                 ack.[User] AS AckUser,
@@ -96,7 +99,7 @@ namespace WebApp.Data.Sql
                     ORDER BY l.StartDate DESC
                 ) last
                 OUTER APPLY (
-                    SELECT rc.Records, ec.Errors
+                    SELECT rc.Records, ec.Errors, ec.Warnings
                     FROM (SELECT last.Company, last.IdJob, last.IdType, last.Execution) l
                     {ExecutionCounts}
                     WHERE last.Execution IS NOT NULL
@@ -121,6 +124,7 @@ namespace WebApp.Data.Sql
                 SUM(CASE WHEN ec.Errors > 0 THEN 1 ELSE 0 END) AS FailedExecutions,
                 SUM(CAST(rc.Records AS bigint)) AS Records,
                 SUM(ec.Errors) AS Errors,
+                SUM(ec.Warnings) AS Warnings,
                 MAX(CASE WHEN ec.Errors > 0 THEN l.StartDate END) AS LastErrorAt
             FROM
                 [auditing].[Logs] l WITH (NOLOCK)
@@ -135,7 +139,7 @@ namespace WebApp.Data.Sql
             """;
 
         private const string SelectExecutionColumns = """
-            l.IdExecution, l.IdJob, l.IdType, l.Execution, l.ExecutionParent, l.StartDate, l.EndDate, rc.Records, ec.Errors, 0 AS Warnings
+            l.IdExecution, l.IdJob, l.IdType, l.Execution, l.ExecutionParent, l.StartDate, l.EndDate, rc.Records, ec.Errors, ec.Warnings
             """;
 
         // mensagens do filtro da tela Logs de Erros (MessageFilter monta os parâmetros)
@@ -148,7 +152,7 @@ namespace WebApp.Data.Sql
             WHERE
                 m.Company = @company
                 AND l.StartDate >= @since
-                AND (@errorsOnly = 0 OR m.IsError = 1)
+                AND m.[Level] >= @minLevel
                 AND (@idApp IS NULL OR COALESCE(ja.IdApp, j.IdParent) = @idApp)
                 AND (@idJob IS NULL OR (m.IdJob = @idJob AND m.IdType = @idType))
                 AND (@search IS NULL
@@ -161,7 +165,7 @@ namespace WebApp.Data.Sql
             m.IdJob,
             m.IdType,
             m.Execution,
-            CASE WHEN m.IsError = 1 THEN 3 ELSE 1 END AS [Level],
+            CAST(m.[Level] AS int) AS [Level],
             m.[Message],
             m.SqlCommand,
             m.ExceptionMessage,
@@ -202,7 +206,7 @@ namespace WebApp.Data.Sql
                         Executions = executions.Sum(t => t.Executions),
                         FailedExecutions = executions.Sum(t => t.FailedExecutions),
                         Records = Clamp(executions.Sum(t => t.Records)),
-                        Warnings = 0,
+                        Warnings = executions.Sum(t => t.Warnings),
                         Errors = executions.Sum(t => t.Errors),
                         LastErrorAt = executions.Max(t => t.LastErrorAt),
                         FailingJobs = x.Jobs.Count(job => Health(job, now) == JobHealth.Error)
@@ -387,7 +391,7 @@ namespace WebApp.Data.Sql
                     EndDate = x.Job.EndDate,
                     Records = x.Job.Records,
                     Health = x.Health ?? JobHealth.Ok,
-                    HasWarnings = false,
+                    HasWarnings = x.Job.Warnings > 0,
                     IntervalTimeInMinutes = x.Job.IntervalTimeInMinutes,
                     RunningDailyAt = DailyAt(x.Job.RunningDailyAt),
                     Acknowledgement = x.Acknowledgement
@@ -738,7 +742,7 @@ namespace WebApp.Data.Sql
                     m.IdExecutionMessage,
                     m.IdJob,
                     m.IdType,
-                    CASE WHEN m.IsError = 1 THEN 3 ELSE 1 END AS [Level],
+                    CAST(m.[Level] AS int) AS [Level],
                     m.[Message],
                     l.StartDate
                 {MessagesFrom}
@@ -799,7 +803,7 @@ namespace WebApp.Data.Sql
             {
                 company = Company,
                 since = MainDatabase.LocalNow() - query.Period.ToTimeSpan(),
-                errorsOnly = query.MinLevel > MessageLevel.Information,
+                minLevel = (int)query.MinLevel,
                 idApp = query.IdApp,
                 idJob = query.IdJob,
                 idType = query.IdType,
@@ -857,7 +861,8 @@ namespace WebApp.Data.Sql
                 StartDate = job.StartDate ?? default,
                 EndDate = job.EndDate,
                 Records = job.Records,
-                Errors = job.Errors
+                Errors = job.Errors,
+                Warnings = job.Warnings
             };
 
         // a mesma regra de JobModel.IsOnDemand
@@ -901,6 +906,7 @@ namespace WebApp.Data.Sql
             public DateTime? EndDate { get; set; }
             public int Records { get; set; }
             public int Errors { get; set; }
+            public int Warnings { get; set; }
             public Guid? AckExecution { get; set; }
             public string? AckNote { get; set; }
             public string? AckUser { get; set; }
@@ -917,6 +923,7 @@ namespace WebApp.Data.Sql
             public int FailedExecutions { get; set; }
             public long Records { get; set; }
             public int Errors { get; set; }
+            public int Warnings { get; set; }
             public DateTime? LastErrorAt { get; set; }
         }
 

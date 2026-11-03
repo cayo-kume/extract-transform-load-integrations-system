@@ -228,14 +228,17 @@ Seguem o padrão de [`docs/PADRAO-CACHE-INTEGRACOES.md`](../../../../../docs/PAD
   * As respostas são juntadas por id e o bloco é gravado em seguida.
   * Um ticket que falte em algum grupo não é gravado (o merge apagaria as filhas que faltaram): vira mensagem e volta na próxima execução.
 
-> [!WARNING]
-> **Risco de perda de tickets (visto no teste de hospedagem C7, 03/11/2026).** Quando a API responde um bloco da fase 2
-> com erro (`{"message":"An error has occurred."}`), o job para nesse bloco, grava a mensagem como aviso e termina
-> **"Concluída com sucesso"**. A execução seguinte parte do maior `lastUpdate` gravado − 1 h, que já pode estar depois
-> dos tickets dos blocos não gravados, e eles **não voltam** enquanto não forem alterados na Movidesk. No teste, a carga
-> inicial terminou com 1.190 tickets em vez de 1.864. Até a correção
-> ([ponto 11](../../../../../docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md#83-pontos-em-aberto)), procure esse aviso em
-> `auditing.Messages` depois de uma carga inicial e, se aparecer, recarregue a janela.
+> [!IMPORTANT]
+> **Marca d'água própria (desde 03/11/2026, `GetTickets` 1.1.0).** No teste de hospedagem C7, um bloco da fase 2 com erro
+> da API (`{"message":"An error has occurred."}`) fez a execução terminar "Concluída com sucesso", e a seguinte, partindo do
+> maior `lastUpdate` gravado − 1 h, pulou os tickets dos blocos não gravados (1.190 em vez de 1.864). Agora a janela
+> começa em `movidesk.MovideskParameters.tickets_synced_until` (UTC): o início da listagem da última execução **completa**
+> da empresa, menos 1 h. Ela só avança quando todos os tickets alterados da janela foram gravados; com erro da API, bloco
+> com `$top` cheio ou ticket sem algum grupo, fica onde estava, e a próxima execução relista a mesma janela (o cache de
+> estado evita regravar o que já entrou). Erro da API é mensagem de **erro** e a execução termina "Concluída com erro da
+> API Movidesk em N empresa(s)". Com a coluna nula (antes da primeira execução completa), vale a regra antiga
+> ([melhorias, 2.1](../../../../../docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md#21-ponto-11-movidesk-tickets-pula-tickets-depois-de-um-bloco-com-erro)).
+> Num banco que rodou a versão anterior, para recuperar tickets pulados, ponha `tickets_synced_until` 89 dias atrás uma vez.
 
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','actorBkg':'#7c5cff','actorTextColor':'#ffffff','actorBorder':'#7c5cff','signalColor':'#f5a524','signalTextColor':'#7c5cff','noteBkgColor':'#fff4dd','noteTextColor':'#1e1b2e','noteBorderColor':'#f5a524','activationBkgColor':'#ede9fe','activationBorderColor':'#7c5cff','labelBoxBkgColor':'#7c5cff','labelBoxBorderColor':'#7c5cff','labelTextColor':'#ffffff','loopTextColor':'#1e1b2e'}}}%%
@@ -528,6 +531,14 @@ flowchart LR
 Toda execução grava `auditing.Logs` (com a `Company` da execução) e, conforme o caso:
 * `auditing.Messages`, com mensagens e erros de validação;
 * `auditing.Records`, com os registros integrados e o JSON recebido.
+
+Cada mensagem tem um nível ([`PROPOSTA-NIVEL-MENSAGEM-AUDITING.md`](../../../Shared/docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md)):
+
+| Nível | Mensagens |
+|---|---|
+| **Erro** (3) | `Resposta inválida da API Movidesk ...` e `<Pessoa/Serviço> X (empresa Y): <mensagem da API>` quando a escrita falha |
+| **Aviso** (2) | `Empresa X não cadastrada em movidesk.MovideskParameters.`, `Ticket X ... não veio em todos os grupos do $expand: não gravado nesta execução.`, `<Ticket/Pessoa/Serviço> X <criado/alterado/excluído> na Movidesk, mas não gravado no banco ...` e as inconsistências da validação |
+| **Informação** (1) | `Concluída com sucesso ...` e `<Ticket/Pessoa/Serviço> X não encontrado na Movidesk` (consulta sob demanda) |
 
 ---
 

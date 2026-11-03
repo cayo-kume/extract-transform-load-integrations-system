@@ -106,7 +106,7 @@ namespace Application.LinxCommerce.Services
                         if (product is null || ConverterValidatorsExtensions.ConvertToInt32Validation(product.Value.dto.ProductID) != id)
                         {
                             if (product is not null)
-                                _logger.AddMessage($"GetProduct do produto {id} (empresa {company.doc_company}) devolveu outro ProductID: {product.Value.dto.ProductID}.");
+                                _logger.AddError($"GetProduct do produto {id} (empresa {company.doc_company}) devolveu outro ProductID: {product.Value.dto.ProductID}.");
 
                             failed = true;
                             break;
@@ -204,7 +204,7 @@ namespace Application.LinxCommerce.Services
                         if (sku is null || ConverterValidatorsExtensions.ConvertToInt32Validation(sku.Value.dto.ProductID) != id)
                         {
                             if (sku is not null)
-                                _logger.AddMessage($"GetSKU do SKU {id} (empresa {company.doc_company}) devolveu outro ProductID: {sku.Value.dto.ProductID}.");
+                                _logger.AddError($"GetSKU do SKU {id} (empresa {company.doc_company}) devolveu outro ProductID: {sku.Value.dto.ProductID}.");
 
                             failed = true;
                             break;
@@ -250,7 +250,7 @@ namespace Application.LinxCommerce.Services
                 if (company is null)
                 {
                     // nenhuma chamada à API: não há o que registrar em LinxCommerceRequests (igual ao Totvs)
-                    _logger.AddMessage($"Empresa {doc_company} não cadastrada em linxcommerce.LinxCommerceParameters.");
+                    _logger.AddWarning($"Empresa {doc_company} não cadastrada em linxcommerce.LinxCommerceParameters.");
                     return null;
                 }
 
@@ -298,7 +298,7 @@ namespace Application.LinxCommerce.Services
                 if (company is null)
                 {
                     // nenhuma chamada à API: não há o que registrar em LinxCommerceRequests (igual ao Totvs)
-                    _logger.AddMessage($"Empresa {doc_company} não cadastrada em linxcommerce.LinxCommerceParameters.");
+                    _logger.AddWarning($"Empresa {doc_company} não cadastrada em linxcommerce.LinxCommerceParameters.");
                     return null;
                 }
 
@@ -353,7 +353,7 @@ namespace Application.LinxCommerce.Services
                 {
                     var message = String.Empty;
                     validations.Errors.ForEach(s => message += $"produto {product.ProductID}, {s.PropertyName}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
+                    _logger.AddWarning(message);
                 }
 
                 _listSomenteNovos.Add(new Domain.LinxCommerce.Entities.Reads.Catalog.Product(doc_company, batchTime, product));
@@ -396,7 +396,7 @@ namespace Application.LinxCommerce.Services
                 {
                     var message = String.Empty;
                     validations.Errors.ForEach(s => message += $"SKU {sku.ProductID} ({sku.SKU}), {s.PropertyName}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
+                    _logger.AddWarning(message);
                 }
 
                 _listSomenteNovos.Add(new Domain.LinxCommerce.Entities.Reads.Catalog.Sku(doc_company, batchTime, sku));

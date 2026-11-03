@@ -4,7 +4,7 @@
 <div class="records-by-day" role="img" aria-label="Registros processados por dia, últimos 7 dias">
     @foreach (var day in Days)
     {
-        var today = day.Start.Date == (Now ?? DateTime.Now).Date;
+        var today = day.Start.Date == (Now ?? WebApp.Data.Sql.MainDatabase.LocalNow()).Date;
         var percent = Max == 0 ? 0 : day.Records * 100.0 / Max;
         <div class="records-day @(today ? "today" : "")" title="@Tooltip(day, today)">
             @* no celular, sem a casa decimal, para os 7 valores caberem lado a lado *@

@@ -31,7 +31,7 @@ namespace WebApp.Data
                 FROM auditing.Messages M WITH (NOLOCK)
                 JOIN auditing.Logs L WITH (NOLOCK) ON L.IdJob = M.IdJob AND L.IdType = M.IdType AND L.Execution = M.Execution
                 JOIN auditing.Jobs J WITH (NOLOCK) ON J.IdJob = M.IdJob AND J.IdType = M.IdType
-                WHERE M.IsError = 1 AND L.StartDate >= CAST(GETDATE() AS DATE)
+                WHERE M.[Level] = 3 AND L.StartDate >= CAST(CAST(SYSUTCDATETIME() AT TIME ZONE 'UTC' AT TIME ZONE 'E. South America Standard Time' AS DATETIME) AS DATE)
                 ORDER BY L.StartDate DESC
                 """),
             new("Auditoria", "Execuções por aplicação (24h)", DefaultDatabase, """
@@ -39,7 +39,7 @@ namespace WebApp.Data
                 FROM auditing.Logs L WITH (NOLOCK)
                 JOIN auditing.Jobs J WITH (NOLOCK) ON J.IdJob = L.IdJob AND J.IdType = L.IdType
                 JOIN auditing.Apps A WITH (NOLOCK) ON A.IdParent = J.IdParent
-                WHERE L.StartDate >= DATEADD(HOUR, -24, GETDATE())
+                WHERE L.StartDate >= DATEADD(HOUR, -24, CAST(SYSUTCDATETIME() AT TIME ZONE 'UTC' AT TIME ZONE 'E. South America Standard Time' AS DATETIME))
                 GROUP BY A.Title
                 ORDER BY Execucoes DESC
                 """),

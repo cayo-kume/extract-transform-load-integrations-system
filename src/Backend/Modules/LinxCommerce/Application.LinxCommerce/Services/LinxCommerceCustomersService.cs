@@ -84,7 +84,7 @@ namespace Application.LinxCommerce.Services
                         if (customer is null || Domain.Shared.Extensions.ConverterValidatorsExtensions.ConvertToInt32Validation(customer.Value.dto.CustomerID) != id)
                         {
                             if (customer is not null)
-                                _logger.AddMessage($"{route} do cliente {id} (empresa {company.doc_company}) devolveu outro CustomerID: {customer.Value.dto.CustomerID}.");
+                                _logger.AddError($"{route} do cliente {id} (empresa {company.doc_company}) devolveu outro CustomerID: {customer.Value.dto.CustomerID}.");
 
                             failed = true;
                             break;
@@ -133,7 +133,7 @@ namespace Application.LinxCommerce.Services
                 if (company is null)
                 {
                     // nenhuma chamada à API: não há o que registrar em LinxCommerceRequests (igual ao Totvs)
-                    _logger.AddMessage($"Empresa {doc_company} não cadastrada em linxcommerce.LinxCommerceParameters.");
+                    _logger.AddWarning($"Empresa {doc_company} não cadastrada em linxcommerce.LinxCommerceParameters.");
                     return null;
                 }
 
@@ -150,7 +150,7 @@ namespace Application.LinxCommerce.Services
                 if (!search.IsValid || search.Dto!.Result is null)
                 {
                     if (search.IsValid)
-                        _logger.AddMessage($"Resposta inválida do Linx Commerce em Profile/API.svc/web/SearchCustomer (cliente {customerId}, empresa {doc_company}): sem Result.");
+                        _logger.AddError($"Resposta inválida do Linx Commerce em Profile/API.svc/web/SearchCustomer (cliente {customerId}, empresa {doc_company}): sem Result.");
 
                     return null;
                 }
@@ -210,7 +210,7 @@ namespace Application.LinxCommerce.Services
                 {
                     var message = String.Empty;
                     validations.Errors.ForEach(s => message += $"cliente {customer.CustomerID}, {s.PropertyName}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
+                    _logger.AddWarning(message);
                 }
 
                 _listSomenteNovos.Add(new Domain.LinxCommerce.Entities.Reads.Customers.Customer(doc_company, batchTime, customer));

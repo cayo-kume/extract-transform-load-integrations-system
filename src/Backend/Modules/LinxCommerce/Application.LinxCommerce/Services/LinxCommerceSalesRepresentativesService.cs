@@ -81,7 +81,7 @@ namespace Application.LinxCommerce.Services
                         if (salesRepresentative is null || ConverterValidatorsExtensions.ConvertToInt32Validation(salesRepresentative.SalesRepresentativeID) != id)
                         {
                             if (response is not null)
-                                _logger.AddMessage($"GetSalesRepresentative do vendedor {id} (empresa {company.doc_company}) não devolveu o vendedor {id}.");
+                                _logger.AddError($"GetSalesRepresentative do vendedor {id} (empresa {company.doc_company}) não devolveu o vendedor {id}.");
 
                             failed = true;
                             break;
@@ -127,7 +127,7 @@ namespace Application.LinxCommerce.Services
                 if (company is null)
                 {
                     // nenhuma chamada à API: não há o que registrar em LinxCommerceRequests (igual ao Totvs)
-                    _logger.AddMessage($"Empresa {doc_company} não cadastrada em linxcommerce.LinxCommerceParameters.");
+                    _logger.AddWarning($"Empresa {doc_company} não cadastrada em linxcommerce.LinxCommerceParameters.");
                     return null;
                 }
 
@@ -186,7 +186,7 @@ namespace Application.LinxCommerce.Services
                 {
                     var message = String.Empty;
                     validations.Errors.ForEach(s => message += $"vendedor {salesRepresentative.SalesRepresentativeID}, {s.PropertyName}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
+                    _logger.AddWarning(message);
                 }
 
                 _listSomenteNovos.Add(new Domain.LinxCommerce.Entities.Reads.SalesRepresentatives.SalesRepresentative(doc_company, batchTime, salesRepresentative));

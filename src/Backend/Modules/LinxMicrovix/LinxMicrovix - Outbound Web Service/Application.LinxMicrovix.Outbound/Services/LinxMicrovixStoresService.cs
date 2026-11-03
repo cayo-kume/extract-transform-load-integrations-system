@@ -105,7 +105,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                     if (response is null || !response.IsSuccess)
                     {
                         var body = response?.Content?.Length > 800 ? response.Content[..800] : response?.Content;
-                        _logger.AddMessage($"Erro da API Linx Microvix em LinxGrupoLojas (empresa {company.doc_company}): {response?.StatusCode} {body}");
+                        _logger.AddError($"Erro da API Linx Microvix em LinxGrupoLojas (empresa {company.doc_company}): {response?.StatusCode} {body}");
                         continue;
                     }
 
@@ -123,7 +123,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                     if (root is null || !String.Equals(root.Element("ResponseResult")?.Element("ResponseSuccess")?.Value, "true", StringComparison.OrdinalIgnoreCase))
                     {
                         var message = root?.Descendants("Message").FirstOrDefault()?.Value ?? (response.Content?.Length > 800 ? response.Content[..800] : response.Content);
-                        _logger.AddMessage($"Resposta de erro da API Linx Microvix em LinxGrupoLojas (empresa {company.doc_company}): {message}");
+                        _logger.AddError($"Resposta de erro da API Linx Microvix em LinxGrupoLojas (empresa {company.doc_company}): {message}");
                         continue;
                     }
 
@@ -133,7 +133,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                     // erro de parâmetro também vem com ResponseSuccess = True: <C /> vazio e a mensagem numa linha (testado no LinxFaturas)
                     if (columns.Count == 0 && root.Element("ResponseData")?.Element("R") is XElement messageRow)
                     {
-                        _logger.AddMessage($"Resposta de erro da API Linx Microvix em LinxGrupoLojas (empresa {company.doc_company}): {messageRow.Value}");
+                        _logger.AddError($"Resposta de erro da API Linx Microvix em LinxGrupoLojas (empresa {company.doc_company}): {messageRow.Value}");
                         continue;
                     }
 
@@ -178,7 +178,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                         {
                             var message = String.Empty;
                             validations.Errors.ForEach(s => message += $"loja {dto.portal}/{dto.empresa} ({dto.CNPJ}): {s.ErrorMessage}\n");
-                            _logger.AddMessage(message);
+                            _logger.AddWarning(message);
                         }
 
                         var entity = new Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.Stores.LinxGrupoLojas(company.doc_company!, batchTime, dto);
@@ -234,7 +234,7 @@ namespace Application.LinxMicrovix.Outbound.Services
 
                     if (stores.Count == 0)
                     {
-                        _logger.AddMessage($"Empresa {company.doc_company} sem lojas em linxmicrovix.LinxGrupoLojas: rode o LinxGrupoLojas antes.");
+                        _logger.AddWarning($"Empresa {company.doc_company} sem lojas em linxmicrovix.LinxGrupoLojas: rode o LinxGrupoLojas antes.");
                         continue;
                     }
 
@@ -286,7 +286,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                             if (response is null || !response.IsSuccess)
                             {
                                 var body = response?.Content?.Length > 800 ? response.Content[..800] : response?.Content;
-                                _logger.AddMessage($"Erro da API Linx Microvix em LinxLojas (empresa {company.doc_company}, loja {cnpj_emp}, timestamp {timestamp}): {response?.StatusCode} {body}");
+                                _logger.AddError($"Erro da API Linx Microvix em LinxLojas (empresa {company.doc_company}, loja {cnpj_emp}, timestamp {timestamp}): {response?.StatusCode} {body}");
 
                                 failed = true;
                                 break;
@@ -306,7 +306,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                             if (root is null || !String.Equals(root.Element("ResponseResult")?.Element("ResponseSuccess")?.Value, "true", StringComparison.OrdinalIgnoreCase))
                             {
                                 var message = root?.Descendants("Message").FirstOrDefault()?.Value ?? (response.Content?.Length > 800 ? response.Content[..800] : response.Content);
-                                _logger.AddMessage($"Resposta de erro da API Linx Microvix em LinxLojas (empresa {company.doc_company}, loja {cnpj_emp}, timestamp {timestamp}): {message}");
+                                _logger.AddError($"Resposta de erro da API Linx Microvix em LinxLojas (empresa {company.doc_company}, loja {cnpj_emp}, timestamp {timestamp}): {message}");
 
                                 failed = true;
                                 break;
@@ -318,7 +318,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                             // erro de parâmetro também vem com ResponseSuccess = True: <C /> vazio e a mensagem numa linha (testado no LinxFaturas)
                             if (columns.Count == 0 && pageRows.Count > 0)
                             {
-                                _logger.AddMessage($"Resposta de erro da API Linx Microvix em LinxLojas (empresa {company.doc_company}, loja {cnpj_emp}, timestamp {timestamp}): {pageRows[0].Value}");
+                                _logger.AddError($"Resposta de erro da API Linx Microvix em LinxLojas (empresa {company.doc_company}, loja {cnpj_emp}, timestamp {timestamp}): {pageRows[0].Value}");
 
                                 failed = true;
                                 break;
@@ -396,7 +396,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                         {
                             var message = String.Empty;
                             validations.Errors.ForEach(s => message += $"loja {cnpj_emp}: {s.ErrorMessage}\n");
-                            _logger.AddMessage(message);
+                            _logger.AddWarning(message);
                         }
 
                         var _listSomenteNovos = new List<Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.Stores.LinxLojas>
@@ -445,7 +445,7 @@ namespace Application.LinxMicrovix.Outbound.Services
 
                     if (stores.Count == 0)
                     {
-                        _logger.AddMessage($"Empresa {company.doc_company} sem lojas em linxmicrovix.LinxGrupoLojas: rode o LinxGrupoLojas antes.");
+                        _logger.AddWarning($"Empresa {company.doc_company} sem lojas em linxmicrovix.LinxGrupoLojas: rode o LinxGrupoLojas antes.");
                         continue;
                     }
 
@@ -497,7 +497,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                             if (response is null || !response.IsSuccess)
                             {
                                 var body = response?.Content?.Length > 800 ? response.Content[..800] : response?.Content;
-                                _logger.AddMessage($"Erro da API Linx Microvix em LinxLojasParametros (empresa {company.doc_company}, loja {cnpj_emp}, timestamp {timestamp}): {response?.StatusCode} {body}");
+                                _logger.AddError($"Erro da API Linx Microvix em LinxLojasParametros (empresa {company.doc_company}, loja {cnpj_emp}, timestamp {timestamp}): {response?.StatusCode} {body}");
 
                                 failed = true;
                                 break;
@@ -517,7 +517,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                             if (root is null || !String.Equals(root.Element("ResponseResult")?.Element("ResponseSuccess")?.Value, "true", StringComparison.OrdinalIgnoreCase))
                             {
                                 var message = root?.Descendants("Message").FirstOrDefault()?.Value ?? (response.Content?.Length > 800 ? response.Content[..800] : response.Content);
-                                _logger.AddMessage($"Resposta de erro da API Linx Microvix em LinxLojasParametros (empresa {company.doc_company}, loja {cnpj_emp}, timestamp {timestamp}): {message}");
+                                _logger.AddError($"Resposta de erro da API Linx Microvix em LinxLojasParametros (empresa {company.doc_company}, loja {cnpj_emp}, timestamp {timestamp}): {message}");
 
                                 failed = true;
                                 break;
@@ -529,7 +529,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                             // erro de parâmetro também vem com ResponseSuccess = True: <C /> vazio e a mensagem numa linha (testado no LinxFaturas)
                             if (columns.Count == 0 && pageRows.Count > 0)
                             {
-                                _logger.AddMessage($"Resposta de erro da API Linx Microvix em LinxLojasParametros (empresa {company.doc_company}, loja {cnpj_emp}, timestamp {timestamp}): {pageRows[0].Value}");
+                                _logger.AddError($"Resposta de erro da API Linx Microvix em LinxLojasParametros (empresa {company.doc_company}, loja {cnpj_emp}, timestamp {timestamp}): {pageRows[0].Value}");
 
                                 failed = true;
                                 break;
@@ -579,7 +579,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                         {
                             var message = String.Empty;
                             validations.Errors.ForEach(s => message += $"parâmetros da loja {cnpj_emp}: {s.ErrorMessage}\n");
-                            _logger.AddMessage(message);
+                            _logger.AddWarning(message);
                         }
 
                         var _listSomenteNovos = new List<Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.Stores.LinxLojasParametros>
@@ -669,7 +669,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                         if (response is null || !response.IsSuccess)
                         {
                             var body = response?.Content?.Length > 800 ? response.Content[..800] : response?.Content;
-                            _logger.AddMessage($"Erro da API Linx Microvix em LinxUsuarios (empresa {company.doc_company}, timestamp {timestamp}): {response?.StatusCode} {body}");
+                            _logger.AddError($"Erro da API Linx Microvix em LinxUsuarios (empresa {company.doc_company}, timestamp {timestamp}): {response?.StatusCode} {body}");
 
                             failed = true;
                             break;
@@ -689,7 +689,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                         if (root is null || !String.Equals(root.Element("ResponseResult")?.Element("ResponseSuccess")?.Value, "true", StringComparison.OrdinalIgnoreCase))
                         {
                             var message = root?.Descendants("Message").FirstOrDefault()?.Value ?? (response.Content?.Length > 800 ? response.Content[..800] : response.Content);
-                            _logger.AddMessage($"Resposta de erro da API Linx Microvix em LinxUsuarios (empresa {company.doc_company}, timestamp {timestamp}): {message}");
+                            _logger.AddError($"Resposta de erro da API Linx Microvix em LinxUsuarios (empresa {company.doc_company}, timestamp {timestamp}): {message}");
 
                             failed = true;
                             break;
@@ -701,7 +701,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                         // erro de parâmetro também vem com ResponseSuccess = True: <C /> vazio e a mensagem numa linha (testado no LinxFaturas)
                         if (columns.Count == 0 && pageRows.Count > 0)
                         {
-                            _logger.AddMessage($"Resposta de erro da API Linx Microvix em LinxUsuarios (empresa {company.doc_company}, timestamp {timestamp}): {pageRows[0].Value}");
+                            _logger.AddError($"Resposta de erro da API Linx Microvix em LinxUsuarios (empresa {company.doc_company}, timestamp {timestamp}): {pageRows[0].Value}");
 
                             failed = true;
                             break;
@@ -765,7 +765,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                         {
                             var message = String.Empty;
                             validations.Errors.ForEach(s => message += $"usuário {dto.usuario_id}: {s.ErrorMessage}\n");
-                            _logger.AddMessage(message);
+                            _logger.AddWarning(message);
                         }
 
                         var entity = new Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.Stores.LinxUsuarios(company.doc_company!, batchTime, dto);
@@ -849,7 +849,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                     if (response is null || !response.IsSuccess)
                     {
                         var body = response?.Content?.Length > 800 ? response.Content[..800] : response?.Content;
-                        _logger.AddMessage($"Erro da API Linx Microvix em LinxMetodos (empresa {company.doc_company}): {response?.StatusCode} {body}");
+                        _logger.AddError($"Erro da API Linx Microvix em LinxMetodos (empresa {company.doc_company}): {response?.StatusCode} {body}");
                         continue;
                     }
 
@@ -867,7 +867,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                     if (root is null || !String.Equals(root.Element("ResponseResult")?.Element("ResponseSuccess")?.Value, "true", StringComparison.OrdinalIgnoreCase))
                     {
                         var message = root?.Descendants("Message").FirstOrDefault()?.Value ?? (response.Content?.Length > 800 ? response.Content[..800] : response.Content);
-                        _logger.AddMessage($"Resposta de erro da API Linx Microvix em LinxMetodos (empresa {company.doc_company}): {message}");
+                        _logger.AddError($"Resposta de erro da API Linx Microvix em LinxMetodos (empresa {company.doc_company}): {message}");
                         continue;
                     }
 
@@ -896,7 +896,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                         {
                             var message = String.Empty;
                             validations.Errors.ForEach(s => message += $"método {dto.retorno}: {s.ErrorMessage}\n");
-                            _logger.AddMessage(message);
+                            _logger.AddWarning(message);
                         }
 
                         var entity = new Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.Stores.LinxMetodos(company.doc_company!, batchTime, dto);
@@ -995,7 +995,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                         if (response is null || !response.IsSuccess)
                         {
                             var body = response?.Content?.Length > 800 ? response.Content[..800] : response?.Content;
-                            _logger.AddMessage($"Erro da API Linx Microvix em LinxEntrantes (empresa {company.doc_company}, timestamp {timestamp}): {response?.StatusCode} {body}");
+                            _logger.AddError($"Erro da API Linx Microvix em LinxEntrantes (empresa {company.doc_company}, timestamp {timestamp}): {response?.StatusCode} {body}");
 
                             failed = true;
                             break;
@@ -1015,7 +1015,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                         if (root is null || !String.Equals(root.Element("ResponseResult")?.Element("ResponseSuccess")?.Value, "true", StringComparison.OrdinalIgnoreCase))
                         {
                             var message = root?.Descendants("Message").FirstOrDefault()?.Value ?? (response.Content?.Length > 800 ? response.Content[..800] : response.Content);
-                            _logger.AddMessage($"Resposta de erro da API Linx Microvix em LinxEntrantes (empresa {company.doc_company}, timestamp {timestamp}): {message}");
+                            _logger.AddError($"Resposta de erro da API Linx Microvix em LinxEntrantes (empresa {company.doc_company}, timestamp {timestamp}): {message}");
 
                             failed = true;
                             break;
@@ -1027,7 +1027,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                         // erro de parâmetro também vem com ResponseSuccess = True: <C /> vazio e a mensagem numa linha (testado no LinxFaturas)
                         if (columns.Count == 0 && pageRows.Count > 0)
                         {
-                            _logger.AddMessage($"Resposta de erro da API Linx Microvix em LinxEntrantes (empresa {company.doc_company}, timestamp {timestamp}): {pageRows[0].Value}");
+                            _logger.AddError($"Resposta de erro da API Linx Microvix em LinxEntrantes (empresa {company.doc_company}, timestamp {timestamp}): {pageRows[0].Value}");
 
                             failed = true;
                             break;
@@ -1084,7 +1084,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                         {
                             var message = String.Empty;
                             validations.Errors.ForEach(s => message += $"entrantes {dto.id_entrantes}: {s.ErrorMessage}\n");
-                            _logger.AddMessage(message);
+                            _logger.AddWarning(message);
                         }
 
                         var entity = new Domain.LinxMicrovix.Outbound.Entities.Reads.Erp.Stores.LinxEntrantes(company.doc_company!, batchTime, dto);

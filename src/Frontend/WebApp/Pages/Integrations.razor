@@ -442,7 +442,7 @@
             _apps = await MonitorRepository.GetAppSummariesAsync(_filter.Period);
             _jobs = await MonitorRepository.GetJobsAsync(idApp: null, idType: null);
             _drafts.Queues = await MonitorRepository.GetQueuesAsync();
-            _updatedAt = DateTime.Now;
+            _updatedAt = WebApp.Data.Sql.MainDatabase.LocalNow();
         }, "Não foi possível carregar os jobs.");
 
         _loading = false;

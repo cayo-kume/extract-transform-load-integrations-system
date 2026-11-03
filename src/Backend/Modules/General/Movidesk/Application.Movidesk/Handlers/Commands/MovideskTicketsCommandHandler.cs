@@ -11,6 +11,20 @@ namespace Application.Movidesk.Handlers.Commands
                      WHERE DOC_COMPANY = '{doc_company}'";
         }
 
+        public string CreateGetTicketsSyncedUntilQuery(string doc_company)
+        {
+            return @$"SELECT TICKETS_SYNCED_UNTIL
+                     FROM MOVIDESK.MOVIDESKPARAMETERS
+                     WHERE DOC_COMPANY = '{doc_company}'";
+        }
+
+        public string CreateSetTicketsSyncedUntilQuery()
+        {
+            return @"UPDATE MOVIDESK.MOVIDESKPARAMETERS
+                     SET TICKETS_SYNCED_UNTIL = @syncedUntil
+                     WHERE DOC_COMPANY = @doc_company";
+        }
+
         public string CreateGetTicketsByIdsQuery(string doc_company, List<long> ids)
         {
             // com lista vazia o IN () é SQL inválido; o repositório não chama a query nesse caso

@@ -275,8 +275,9 @@ flowchart TB
 
 Nas procedures, o `IdParent` de `auditing.Jobs` é o job de integração que as chama, não a aplicação; o painel resolve a
 aplicação pelo job pai (`JobModel.IdApp`). O nível das mensagens (informação, aviso e erro) segue a proposta
-[PROPOSTA-NIVEL-MENSAGEM-AUDITING.md](../../Backend/Shared/docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md); enquanto ela não for
-implementada no back-end, o banco só tem `IsError`.
+[PROPOSTA-NIVEL-MENSAGEM-AUDITING.md](../../Backend/Shared/docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md), implementada em
+03/11/2026: o painel lê `auditing.Messages.Level` (1 informação, 2 aviso, 3 erro). Só o erro põe o job em saúde de erro; o
+aviso conta em "Warnings" e aparece na linha do heartbeat. `IsError` continua no banco como coluna calculada.
 
 ---
 
@@ -357,8 +358,9 @@ Os usuários `etl_monitor` e `etl_query` saem das procedures `dbo.sp_Create_Moni
 
 > [!IMPORTANT]
 > Ainda sem banco: **Executar agora** (o host não lê pedidos de execução; o botão avisa que não foi possível) e a tela
-> **Sob Demanda** (continua simulada, até o executor que chama o WebApi). Avisos (nível 2) só depois da proposta de nível
-> de mensagem: até lá, `IsError` vira erro ou informação.
+> **Sob Demanda** (continua simulada, até o executor que chama o WebApi). As telas usam a hora de Brasília
+> (`MainDatabase.LocalNow()`), qualquer que seja o fuso do servidor: num container ou no App Service, em UTC, o
+> "Atualizado às" mostrava a hora do servidor (testes C5 e A9).
 
 ---
 

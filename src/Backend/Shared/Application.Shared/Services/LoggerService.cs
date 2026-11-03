@@ -11,16 +11,20 @@ namespace Application.Shared.Services
     {
         private readonly ILoggerRepository _logRepository;
         private readonly ICompanyContext _companyContext;
+        private readonly IJobExecutionGuard _guard;
         public Log? Log { get; private set; }
-        private bool _committed;
+
+        // a linha de auditing.Logs já está no banco (gravada no AddLog, ou no primeiro commit se o AddLog não conseguiu): os
+        // commits seguintes só atualizam o fim, sem inserir de novo (o CommitError do ScheduledJobRunner batia na PK)
+        private bool _started;
 
         // quantas mensagens e registros do Log já estão no banco: uma segunda gravação (ex.: o erro de um service que caiu depois
-        // de gravar o log) grava só o que veio depois, na mesma execução, sem inserir auditing.Logs de novo
+        // de gravar o log) grava só o que veio depois, na mesma execução
         private int _committedMessages;
         private int _committedRecords;
 
-        public LoggerService(ILoggerRepository logRepository, ICompanyContext companyContext) =>
-            (_logRepository, _companyContext) = (logRepository, companyContext);
+        public LoggerService(ILoggerRepository logRepository, ICompanyContext companyContext, IJobExecutionGuard guard) =>
+            (_logRepository, _companyContext, _guard) = (logRepository, companyContext, guard);
 
         // a empresa vem do contexto da execução, que o agendador ou a rota informam (docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.3)
         public ILoggerService AddLog(Enum job) =>
@@ -30,7 +34,19 @@ namespace Application.Shared.Services
         public ILoggerService AddLog(Enum job, string company)
         {
             _companyContext.SetCompany(company);
-            Log ??= new Log(job: job, company: company);
+
+            if (Log is null)
+            {
+                // numa rota do WebApi, a trava do job (JobAlreadyRunningException com ela ocupada), antes de qualquer gravação
+                _guard.BeforeLogStart(job, company);
+
+                Log = new Log(job: job, company: company);
+
+                // a execução aparece aberta desde o início (docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md, 3.1). Sem banco, a
+                // exceção sobe: o job não teria onde gravar o que lê
+                _logRepository.LogStart(Log);
+                _started = true;
+            }
 
             return this;
         }
@@ -62,7 +78,16 @@ namespace Application.Shared.Services
             return this;
         }
 
-        public ILoggerService AddMessage(string message)
+        public ILoggerService AddMessage(string message) =>
+            AddMessage(message, MessageLevel.Information);
+
+        public ILoggerService AddWarning(string message) =>
+            AddMessage(message, MessageLevel.Warning);
+
+        public ILoggerService AddError(string message) =>
+            AddMessage(message, MessageLevel.Error);
+
+        private ILoggerService AddMessage(string message, MessageLevel level)
         {
             if (Log is null) return this;
 
@@ -72,12 +97,16 @@ namespace Application.Shared.Services
                     jobType: Log.IdType,
                     company: Log.Company,
                     message,
-                    Log.Execution
+                    Log.Execution,
+                    level
                 )
             );
 
             return this;
         }
+
+        public bool HasErrors =>
+            Log?.Messages.Any(x => x.Level == MessageLevel.Error) == true;
 
         public ILoggerService AddRecord(string key, string xml)
         {
@@ -110,12 +139,9 @@ namespace Application.Shared.Services
         {
             if (Log is null) return;
 
-            if (_committed)
-                await _logRepository.LogAppend(Log.Messages.Skip(_committedMessages), Log.Records.Skip(_committedRecords));
-            else
-                await _logRepository.LogInsert(Log);
+            await _logRepository.LogCommit(Log, Log.Messages.Skip(_committedMessages).ToList(), Log.Records.Skip(_committedRecords).ToList(), _started);
 
-            _committed = true;
+            _started = true;
             _committedMessages = Log.Messages.Count;
             _committedRecords = Log.Records.Count;
         }

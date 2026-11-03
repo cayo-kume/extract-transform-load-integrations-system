@@ -51,5 +51,73 @@ namespace Infrastructure.Shared.Repositorys
 
             return await conn.QueryAsync<JobHeartbeat>(sql, new { company = new DbString { Value = company, IsAnsi = true, Length = 20 } });
         }
+
+        public async Task<int> CloseInterruptedExecutions(int idJob, string company)
+        {
+            // fim = agora (a execução seguinte começa), em horário de Brasília como o resto de auditing.Logs
+            const string sql = """
+                DECLARE @now DATETIME = CAST(SYSUTCDATETIME() AT TIME ZONE 'UTC' AT TIME ZONE 'E. South America Standard Time' AS DATETIME);
+                DECLARE @closed TABLE (IdJob INT, IdType INT, Company VARCHAR(20), Execution UNIQUEIDENTIFIER, StartDate DATETIME);
+
+                UPDATE [auditing].[Logs] SET EndDate = @now
+                OUTPUT inserted.IdJob, inserted.IdType, inserted.Company, inserted.Execution, inserted.StartDate INTO @closed
+                WHERE IdJob = @idJob AND IdType = 2 AND Company = @company AND EndDate IS NULL;
+
+                INSERT INTO [auditing].[Messages] (IdJob, IdType, Company, Execution, [Message], [Level])
+                SELECT IdJob, IdType, Company, Execution,
+                    CONCAT('Execução interrompida: o processo parou antes do fim (queda, reinício ou deploy). Iniciada em ',
+                        FORMAT(StartDate, 'dd/MM/yyyy HH:mm:ss'), ' e fechada pela execução seguinte.'),
+                    3
+                FROM @closed;
+
+                SELECT COUNT(*) FROM @closed;
+                """;
+
+            using var conn = _sqlServerConnection.GetIDbAuditingConnection();
+            using var transaction = conn.BeginTransaction();
+
+            var closed = await conn.ExecuteScalarAsync<int>(sql, new { idJob, company = new DbString { Value = company, IsAnsi = true, Length = 20 } }, transaction);
+
+            transaction.Commit();
+
+            return closed;
+        }
+
+        public async Task<IReadOnlyList<SchedulingHostType>> HeartbeatSchedulingHost(Guid instanceId, string hostType, string instanceName, TimeSpan expireAfter)
+        {
+            const string sql = """
+                DELETE FROM [auditing].[SchedulingHosts] WHERE LastHeartbeat < DATEADD(SECOND, -@expireSeconds, SYSUTCDATETIME());
+
+                UPDATE [auditing].[SchedulingHosts] SET LastHeartbeat = SYSUTCDATETIME() WHERE InstanceId = @instanceId;
+
+                IF @@ROWCOUNT = 0
+                    INSERT INTO [auditing].[SchedulingHosts] (InstanceId, HostType, InstanceName, StartedAt, LastHeartbeat)
+                    VALUES (@instanceId, @hostType, @instanceName, SYSUTCDATETIME(), SYSUTCDATETIME());
+
+                SELECT HostType, COUNT(*) AS Instances, MIN(StartedAt) AS StartedAt, MAX(LastHeartbeat) AS LastHeartbeat
+                FROM [auditing].[SchedulingHosts]
+                GROUP BY HostType
+                ORDER BY MIN(StartedAt), HostType;
+                """;
+
+            using var conn = _sqlServerConnection.GetIDbAuditingConnection();
+
+            var types = await conn.QueryAsync<SchedulingHostType>(sql, new
+            {
+                instanceId,
+                hostType = new DbString { Value = hostType, IsAnsi = true, Length = 20 },
+                instanceName = instanceName.Length > 200 ? instanceName[..200] : instanceName,
+                expireSeconds = (int)expireAfter.TotalSeconds
+            });
+
+            return types.ToList();
+        }
+
+        public async Task RemoveSchedulingHost(Guid instanceId)
+        {
+            using var conn = _sqlServerConnection.GetIDbAuditingConnection();
+
+            await conn.ExecuteAsync("DELETE FROM [auditing].[SchedulingHosts] WHERE InstanceId = @instanceId", new { instanceId });
+        }
     }
 }

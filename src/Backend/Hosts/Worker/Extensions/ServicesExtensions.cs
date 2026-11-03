@@ -63,7 +63,7 @@ namespace Worker.Extensions
             builder.Services.AddQuartz(q =>
             {
                 q.SchedulerName = settings.SchedulerName;
-                q.SchedulerId = "AUTO";
+                q.SchedulerId = InstanceIdOf(settings, builder.Configuration);
                 q.MisfireThreshold = TimeSpan.FromMinutes(settings.Misfire.ThresholdInMinutes);
                 q.UseDefaultThreadPool(pool => pool.MaxConcurrency = settings.Threads.MaxConcurrency);
 
@@ -100,8 +100,9 @@ namespace Worker.Extensions
                     .StartNow());
             });
 
-            // um host de agenda por vez (§6.2): aviso no log se o Hangfire estiver agendando no mesmo banco, antes do Quartz subir
-            builder.Services.AddHostedService<SchedulingHostGuard>();
+            // um tipo de host de agenda por banco (docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md, 4.2): o heartbeat em
+            // auditing.SchedulingHosts sobe antes do Quartz e, sem banco, diz isso no log antes da mensagem de schema do Quartz
+            builder.Services.AddSchedulingHostRegistration("Quartz");
 
             // na parada, espera as execuções em andamento terminarem, até Shutdown:TimeoutInMinutes
             builder.Services.AddQuartzHostedService(options => options.WaitForJobsToComplete = true);
@@ -109,6 +110,14 @@ namespace Worker.Extensions
 
             return builder;
         }
+
+        /// <summary>
+        /// Quartz:InstanceId ou, vazio, &lt;máquina&gt;-&lt;Service:Name&gt; (o nome do serviço do Windows, EtlWorker por padrão)
+        /// </summary>
+        public static string InstanceIdOf(QuartzSettings settings, IConfiguration configuration) =>
+            settings.InstanceId is { Length: > 0 } instanceId
+                ? instanceId
+                : $"{Environment.MachineName}-{(configuration["Service:Name"] is { Length: > 0 } name ? name : "EtlWorker")}";
 
         /// <summary>
         /// serviço do Windows (passo 6.1): o nome vem de Service:Name, o mesmo do perfil de publicação, e vira também a origem no Log

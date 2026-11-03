@@ -126,7 +126,7 @@ Obs:
             EXEC sp_executesql @sql;
             
             set @msg = 'ix: ' + @ix_name
-            EXEC auditing.sp_Log_Message @execution, @msg,5;
+            EXEC auditing.sp_Log_Message @execution, @msg,1;
 
             insert into @output values(@type,@ix_name)
 
@@ -135,7 +135,7 @@ Obs:
             --PRINT 'Erro: ' + ERROR_MESSAGE();
 
             set @msg = CONCAT_WS(' ','ix: ',@ix_name,'Erro: ', ERROR_MESSAGE())
-            exec auditing.sp_Log_Message @execution, @msg,5;
+            exec auditing.sp_Log_Message @execution, @msg,3;
 
             insert into @output values('Erro',@ix_name)
         END CATCH;

@@ -15,9 +15,17 @@ namespace Worker.Scheduling
         public bool Enabled { get; set; } = true;
 
         /// <summary>
-        /// nome do scheduler, o mesmo em todos os Workers do cluster (cada um tem o seu instanceId, AUTO)
+        /// nome do scheduler, o mesmo em todos os Workers do cluster (cada um tem o seu InstanceId)
         /// </summary>
         public string SchedulerName { get; set; } = "Worker";
+
+        /// <summary>
+        /// id da instância no cluster (quartz.scheduler.instanceId), fixo entre reinícios para a afinidade de nó do Quartz
+        /// (docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md, 4.3). Vazio: &lt;máquina&gt;-&lt;Service:Name&gt;, único quando cada máquina tem
+        /// um Worker. Dois Workers na mesma máquina precisam de nomes de serviço diferentes, ou deste id na configuração de cada
+        /// um: dois processos vivos com o mesmo id confundem o cluster
+        /// </summary>
+        public string? InstanceId { get; set; }
 
         public string TimeZone { get; set; } = "America/Sao_Paulo";
         public StorageSettings Storage { get; set; } = new();

@@ -96,7 +96,7 @@ namespace WebApp.Data.Sql
                 else
                 {
                     var id = Guid.NewGuid();
-                    var open = new OpenTransaction(connection, transaction, database, sql, kind, result.RowsAffected, DateTime.Now);
+                    var open = new OpenTransaction(connection, transaction, database, sql, kind, result.RowsAffected, MainDatabase.LocalNow());
                     open.Abandon = new Timer(_ => _ = FinishAsync(id, commit: false, abandoned: true), null, AbandonedAfter, Timeout.InfiniteTimeSpan);
                     _open[id] = open;
                     result.TransactionId = id;
@@ -200,7 +200,7 @@ namespace WebApp.Data.Sql
                 else
                     await RollbackQuietlyAsync(open.Transaction);
 
-                Log(open.Database, open.Sql, open.Kind, DateTime.Now - open.StartedAt, open.RowsAffected,
+                Log(open.Database, open.Sql, open.Kind, MainDatabase.LocalNow() - open.StartedAt, open.RowsAffected,
                     commit ? "COMMIT" : abandoned ? "ROLLBACK (sem resposta da tela)" : "ROLLBACK");
             }
             finally

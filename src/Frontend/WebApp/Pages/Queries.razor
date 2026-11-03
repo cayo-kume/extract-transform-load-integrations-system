@@ -562,7 +562,7 @@
         var lines = new List<string> { string.Join(';', _result.Columns.Select(Cell)) };
         lines.AddRange(rows.Select(row => string.Join(';', row.Select(Cell))));
 
-        await JS.InvokeVoidAsync("webApp.download", $"{_database}_{DateTime.Now:yyyyMMdd_HHmmss}{(filtered ? "_filtrado" : "")}.csv", "﻿" + string.Join("\r\n", lines), "text/csv;charset=utf-8");
+        await JS.InvokeVoidAsync("webApp.download", $"{_database}_{WebApp.Data.Sql.MainDatabase.LocalNow():yyyyMMdd_HHmmss}{(filtered ? "_filtrado" : "")}.csv", "﻿" + string.Join("\r\n", lines), "text/csv;charset=utf-8");
     }
 
     private FavoriteItem? FavoriteOf(string database, string sql) =>
@@ -631,7 +631,7 @@
     private async Task AddToHistory(string database, string sql)
     {
         _history.RemoveAll(x => x.Database == database && x.Sql == sql);
-        _history.Insert(0, new HistoryItem(database, sql, DateTime.Now));
+        _history.Insert(0, new HistoryItem(database, sql, WebApp.Data.Sql.MainDatabase.LocalNow()));
         if (_history.Count > HistorySize)
             _history.RemoveRange(HistorySize, _history.Count - HistorySize);
 

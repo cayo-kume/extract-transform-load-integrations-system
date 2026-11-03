@@ -659,13 +659,16 @@ para quem opera cada projeto foi levado aos READMEs (seção 8.4).
 | Falha de uma execução | `Failed`, sem nova tentativa | gravada em `auditing`, sem nova tentativa | gravada em `auditing`, sem nova tentativa |
 | Banco indisponível na subida | o instalador do schema `HangFire` repete sozinho até o banco responder | sobe e conecta quando o banco volta (como serviço, o Windows reinicia o processo a cada minuto, sem limite) | não testado (o banco do C7 estava acordado) |
 
-Comum aos três: **uma execução interrompida não deixa registro** em `auditing.Logs` (o log é gravado só no fim), então
-uma queda não aparece no painel (ponto 1).
+Comum aos três: **uma execução interrompida não deixava registro** em `auditing.Logs` (o log era gravado só no fim), então
+uma queda não aparecia no painel (ponto 1). Desde 03/11/2026 a linha entra no início, aparece como **Rodando**, e a
+execução seguinte do job a fecha como interrompida, com uma mensagem de erro.
 
 ### 8.3 Pontos em aberto
 
-Os 15 pontos para decidir, agrupados (o número é o da seção 6; nenhum foi corrigido ainda). As melhorias propostas
-para cada um estão em [PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md](PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md):
+Os 15 pontos para decidir, agrupados (o número é o da seção 6). As melhorias de cada um estão em
+[PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md](PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md) e foram **implementadas em 03/11/2026**
+(seção 8 daquele documento), menos o 12 e o 13, que dependem de liberação de custo e de um Owner da assinatura. O 2 e o 5
+foram aceitos e documentados:
 
 | Grupo | Pontos | Resumo |
 |---|---|---|

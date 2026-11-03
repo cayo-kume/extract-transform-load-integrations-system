@@ -436,7 +436,7 @@
                 .ToList();
             _heartbeat = heartbeat.Where(x => _filter.IdApp is null || x.IdApp == _filter.IdApp).ToList();
 
-            _updatedAt = DateTime.Now;
+            _updatedAt = WebApp.Data.Sql.MainDatabase.LocalNow();
             _failedAt = null;
         }
         catch (OperationCanceledException)
@@ -450,7 +450,7 @@
             if (!quiet || _failedAt is null)
                 Snackbar.Add("Não foi possível atualizar o painel.", Severity.Error);
 
-            _failedAt = DateTime.Now;
+            _failedAt = WebApp.Data.Sql.MainDatabase.LocalNow();
         }
         finally
         {

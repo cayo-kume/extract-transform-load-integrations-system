@@ -1,3 +1,4 @@
+using Hosts.Scheduling;
 using Hosts.Scheduling.RecurringJobs;
 using WebJob.Extensions;
 using WebJob.Scheduling;
@@ -20,6 +21,9 @@ builder.Configuration.AddCommandLine(args, new Dictionary<string, string> { ["--
 builder.AddServices();
 
 builder.Services.Configure<WebJobSettings>(builder.Configuration.GetSection(WebJobSettings.SectionName));
+
+// um tipo de host de agenda por banco (docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md, 4.2): o heartbeat sobe antes do agendador
+builder.Services.AddSchedulingHostRegistration("WebJob");
 builder.Services.AddHostedService<JobScheduleWorker>();
 
 var host = builder.Build();

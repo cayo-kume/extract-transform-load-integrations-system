@@ -502,6 +502,14 @@ flowchart LR
 Toda execução grava `auditing.Logs` (com a `Company` da execução) e, conforme o caso, `auditing.Messages` (mensagens e erros de
 validação) e `auditing.Records` (registros integrados).
 
+Cada mensagem tem um nível ([`PROPOSTA-NIVEL-MENSAGEM-AUDITING.md`](../../../Shared/docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md)):
+
+| Nível | Mensagens |
+|---|---|
+| **Erro** (3) | `Resposta inválida da API AfterSale ...`, `Reversa X: resposta sem sucesso ao consultar courier attributes.` e `<Reversa/Reembolso> X: <mensagem da API>` quando a escrita falha |
+| **Aviso** (2) | `Empresa X não cadastrada em aftersale.AfterSaleParameters.`, `<Reversa/Reembolso> X: CNPJ Y não encontrado em AfterSaleParameters.`, `CNPJ X não encontrado em AfterSaleParameters: N <reversa(s)/reembolso(s)> ignorada(s).` e as inconsistências da validação |
+| **Informação** (1) | `Concluída com sucesso ...`, `<Reversa/Reembolso> X: concluída com sucesso.` e `<Reversa/Reembolso> X não encontrada na AfterSale` (consulta sob demanda) |
+
 ---
 
 ## 🔑 Configuração

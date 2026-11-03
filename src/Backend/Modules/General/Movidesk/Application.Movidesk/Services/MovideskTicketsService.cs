@@ -100,7 +100,7 @@ namespace Application.Movidesk.Services
                 if (company is null)
                 {
                     // nenhuma chamada à API: não há o que registrar em MovideskRequests (igual ao AfterSale)
-                    _logger.AddMessage($"Empresa {doc_company} não cadastrada em movidesk.MovideskParameters.");
+                    _logger.AddWarning($"Empresa {doc_company} não cadastrada em movidesk.MovideskParameters.");
                     return null;
                 }
 
@@ -149,7 +149,7 @@ namespace Application.Movidesk.Services
 
                     if (ticket is null || ConverterValidatorsExtensions.ConvertToInt64Validation(ticket.id) != id)
                     {
-                        _logger.AddMessage($"Resposta inválida da API Movidesk para o ticket {id} (empresa {doc_company}): {response}");
+                        _logger.AddError($"Resposta inválida da API Movidesk para o ticket {id} (empresa {doc_company}): {response}");
                         result = null;
                     }
                     else
@@ -179,8 +179,12 @@ namespace Application.Movidesk.Services
         /// sincroniza os tickets atualizados desde a última execução, para cada empresa.
         /// Fase 1: lista id e lastUpdate da janela. Fase 2: busca só os alterados, em blocos por faixa de ids,
         /// com o $expand dividido em grupos, e grava bloco a bloco.
+        /// A janela começa na marca d'água da empresa (movidesk.MovideskParameters.tickets_synced_until), que só avança quando
+        /// todos os tickets alterados da janela foram gravados. Os blocos vão por id, não por lastUpdate: com a marca no maior
+        /// lastUpdate gravado, um bloco com erro deixava para trás tickets que nunca mais entravam na janela (574 no teste C7,
+        /// docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md, 2.1). Erro da API em qualquer empresa termina a execução com erro.
         /// </summary>
-        [JobVersion("1.0.0")]
+        [JobVersion("1.1.0")]
         public async Task<bool?> GetTickets()
         {
             _logger
@@ -188,6 +192,7 @@ namespace Application.Movidesk.Services
                 .AddLog(EnumJob.MovideskGetTickets);
 
             var totalInseridos = 0;
+            var companysFailed = 0;
             var companys = await _movideskRepository.GetCompanys();
 
             // início da última chamada à API: os 6 s do limite contam a partir dele
@@ -198,9 +203,19 @@ namespace Application.Movidesk.Services
                 if (company?.doc_company is null)
                     continue;
 
-                // lastUpdate é UTC na API; 1 hora de folga para o atraso de replicação. Banco vazio: /tickets só traz até 90 dias
-                var lastUpdate = await _movideskTicketsRepository.GetTicketsLastUpdate(company.doc_company);
-                var since = lastUpdate.HasValue ? lastUpdate.Value.AddHours(-1) : _movideskService.GetInitialLoad(DateTime.UtcNow.AddDays(-89));
+                // lastUpdate é UTC na API. A marca d'água já tem 1 hora de folga para o atraso de replicação. Sem ela (antes da
+                // primeira execução completa): o maior lastUpdate gravado − 1 h; banco vazio: /tickets só traz até 90 dias
+                var syncedUntil = await _movideskTicketsRepository.GetTicketsSyncedUntil(company.doc_company);
+                var lastUpdate = syncedUntil is null ? await _movideskTicketsRepository.GetTicketsLastUpdate(company.doc_company) : null;
+                var since = syncedUntil
+                    ?? (lastUpdate.HasValue ? lastUpdate.Value.AddHours(-1) : _movideskService.GetInitialLoad(DateTime.UtcNow.AddDays(-89)));
+
+                // o início da listagem: a próxima marca d'água, se nenhum ticket alterado ficar para trás
+                var listStartedAt = DateTime.UtcNow;
+
+                // algum ticket alterado da janela não foi gravado (erro da API, bloco cheio, ticket sem algum grupo): a marca
+                // d'água não se mexe, e a próxima execução relista a mesma janela (o cache evita regravar os que já entraram)
+                var pending = false;
 
                 // fase 1: id e lastUpdate dos tickets da janela, em ordem de id (1.000 por chamada, o máximo da API)
                 var listed = new List<(long id, DateTime? lastUpdate)>();
@@ -241,7 +256,7 @@ namespace Application.Movidesk.Services
                     catch (JsonException)
                     {
                         // a API devolve um objeto de erro (ou 429 Too many failed requests) em vez da lista
-                        _logger.AddMessage($"Resposta inválida da API Movidesk (empresa {company.doc_company}, lista de ids, skip {skip}): {response}");
+                        _logger.AddError($"Resposta inválida da API Movidesk (empresa {company.doc_company}, lista de ids, skip {skip}): {response}");
                         listFailed = true;
                         break;
                     }
@@ -259,9 +274,20 @@ namespace Application.Movidesk.Services
                     skip += IdsPageSize;
                 }
 
-                // erro na lista de ids: nada foi buscado ainda, a empresa fica para a próxima execução
-                if (listFailed || listed.Count == 0)
+                // erro na lista de ids: nada foi buscado ainda, a empresa fica para a próxima execução, com a mesma marca d'água
+                if (listFailed)
+                {
+                    companysFailed++;
+                    await KeepTicketsWindow(company.doc_company, syncedUntil, since);
                     continue;
+                }
+
+                // nada mudou na janela: a marca d'água avança
+                if (listed.Count == 0)
+                {
+                    await _movideskTicketsRepository.SetTicketsSyncedUntil(company.doc_company, listStartedAt.AddHours(-1));
+                    continue;
+                }
 
                 // um ticket alterado durante a leitura pode aparecer em duas páginas
                 listed = listed
@@ -361,7 +387,7 @@ namespace Application.Movidesk.Services
                         }
                         catch (JsonReaderException)
                         {
-                            _logger.AddMessage($"Resposta inválida da API Movidesk (empresa {company.doc_company}, tickets {block[0]} a {block[^1]}, $expand {expand}): {response}");
+                            _logger.AddError($"Resposta inválida da API Movidesk (empresa {company.doc_company}, tickets {block[0]} a {block[^1]}, $expand {expand}): {response}");
                             apiFailed = true;
                             break;
                         }
@@ -369,7 +395,7 @@ namespace Application.Movidesk.Services
                         // $top cheio: pode ter ficado ticket de fora; o bloco é remontado na próxima execução
                         if (page.Count >= BlockTop)
                         {
-                            _logger.AddMessage($"Bloco de tickets {block[0]} a {block[^1]} (empresa {company.doc_company}) com {page.Count} registros: não gravado, será remontado na próxima execução.");
+                            _logger.AddWarning($"Bloco de tickets {block[0]} a {block[^1]} (empresa {company.doc_company}) com {page.Count} registros: não gravado, será remontado na próxima execução.");
                             blockFull = true;
                             break;
                         }
@@ -392,19 +418,26 @@ namespace Application.Movidesk.Services
                     }
 
                     // a API devolveu erro: interrompe a empresa em vez de tentar de novo (3 erros seguidos bloqueiam a API).
-                    // Os blocos anteriores já foram gravados.
+                    // Os blocos anteriores já foram gravados; este e os seguintes voltam na próxima execução
                     if (apiFailed)
+                    {
+                        pending = true;
                         break;
+                    }
 
                     if (blockFull)
+                    {
+                        pending = true;
                         continue;
+                    }
 
                     // ticket sem algum grupo não é gravado: o merge apagaria as filhas que faltaram. Volta na próxima execução,
                     // porque o lastUpdate gravado continua antigo
                     foreach (var id in merged.Keys.Where(id => seen[id] < TicketsExpandGroups.Length).ToList())
                     {
-                        _logger.AddMessage($"Ticket {id} (empresa {company.doc_company}) não veio em todos os grupos do $expand: não gravado nesta execução.");
+                        _logger.AddWarning($"Ticket {id} (empresa {company.doc_company}) não veio em todos os grupos do $expand: não gravado nesta execução.");
                         merged.Remove(id);
+                        pending = true;
                     }
 
                     if (merged.Count == 0)
@@ -416,16 +449,40 @@ namespace Application.Movidesk.Services
                     // um horário de lote por bloco: ticket, filhas e netas gravam o mesmo valor (condição de exclusão do merge)
                     totalInseridos += await SaveTickets(company.doc_company, _movideskService.GetBatchTime(), tickets, ticketsJson, ticketsCache);
                 }
+
+                if (apiFailed)
+                    companysFailed++;
+
+                if (!pending)
+                    await _movideskTicketsRepository.SetTicketsSyncedUntil(company.doc_company, listStartedAt.AddHours(-1));
+                else
+                    await KeepTicketsWindow(company.doc_company, syncedUntil, since);
             }
 
-            _logger.AddMessage(
-                $"Concluída com sucesso: {totalInseridos} registro(s) novo(s) ou atualizado(s) inserido(s)!"
-            );
+            // com erro da API, a execução não é "com sucesso": a mensagem de erro já está no log, e os tickets que faltaram voltam
+            // na próxima execução, pela marca d'água que não andou
+            if (companysFailed > 0)
+                _logger.AddError($"Concluída com erro da API Movidesk em {companysFailed} empresa(s): {totalInseridos} registro(s) novo(s) ou atualizado(s) inserido(s); os tickets que faltaram voltam na próxima execução.");
+            else
+                _logger.AddMessage(
+                    $"Concluída com sucesso: {totalInseridos} registro(s) novo(s) ou atualizado(s) inserido(s)!"
+                );
 
             _logger.SetLogEndDate();
             await _logger.CommitAllChanges();
 
             return true;
+        }
+
+        /// <summary>
+        /// execução que deixou ticket para trás com a marca d'água ainda nula (a primeira de um banco novo, ou a primeira depois
+        /// da versão 1.1.0): grava o início da janela usada. Nula, a próxima voltaria ao maior lastUpdate gravado − 1 h, que pode
+        /// já estar depois dos tickets que faltaram (visto no teste da correção, 03/11/2026)
+        /// </summary>
+        private async Task KeepTicketsWindow(string doc_company, DateTime? syncedUntil, DateTime since)
+        {
+            if (syncedUntil is null)
+                await _movideskTicketsRepository.SetTicketsSyncedUntil(doc_company, since);
         }
 
         /// <summary>
@@ -557,7 +614,7 @@ namespace Application.Movidesk.Services
                 {
                     // nenhuma chamada à API: não há o que registrar em MovideskRequests (igual ao GetTicketById)
                     var notFound = $"Empresa {doc_company} não cadastrada em movidesk.MovideskParameters.";
-                    _logger.AddMessage(notFound);
+                    _logger.AddWarning(notFound);
 
                     return new Domain.Movidesk.Dtos.Writes.Result { success = false, id = id?.ToString(), message = notFound };
                 }
@@ -601,7 +658,7 @@ namespace Application.Movidesk.Services
                     }
 
                     var message = apiMessage ?? (response.Content?.Length > 800 ? response.Content[..800] : response.Content) ?? $"A Movidesk devolveu {response.StatusCode}.";
-                    _logger.AddMessage($"Ticket {ticketId?.ToString() ?? "novo"} (empresa {doc_company}): {message}");
+                    _logger.AddError($"Ticket {ticketId?.ToString() ?? "novo"} (empresa {doc_company}): {message}");
 
                     return new Domain.Movidesk.Dtos.Writes.Result
                     {
@@ -625,7 +682,7 @@ namespace Application.Movidesk.Services
                     }
                     catch (Exception ex)
                     {
-                        _logger.AddMessage($"Ticket {ticketId} criado, mas não gravado no banco (o GetTickets grava depois): {ex.Message}");
+                        _logger.AddWarning($"Ticket {ticketId} criado, mas não gravado no banco (o GetTickets grava depois): {ex.Message}");
                     }
                 }
 
@@ -668,7 +725,7 @@ namespace Application.Movidesk.Services
                 {
                     var message = String.Empty;
                     validations.Errors.ForEach(s => message += $"ticket {ticket.id}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
+                    _logger.AddWarning(message);
                 }
 
                 _listSomenteNovos.Add(new Domain.Movidesk.Entities.Reads.Tickets.Ticket(doc_company, batchTime, ticket));

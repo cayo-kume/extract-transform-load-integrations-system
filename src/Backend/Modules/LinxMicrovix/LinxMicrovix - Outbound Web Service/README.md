@@ -1130,6 +1130,14 @@ Toda execução grava `auditing.Logs` e, conforme o caso:
 * `auditing.Messages`, com mensagens e erros de validação;
 * `auditing.Records`, com os registros integrados e o XML da linha recebida.
 
+Cada mensagem tem um nível ([`PROPOSTA-NIVEL-MENSAGEM-AUDITING.md`](../../../Shared/docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md)):
+
+| Nível | Mensagens |
+|---|---|
+| **Erro** (3) | `Erro da API Linx Microvix em ...` (status HTTP de falha) e `Resposta de erro da API Linx Microvix em ...` (`ResponseSuccess = False` ou `<C />` vazio com mensagem): a loja não foi carregada |
+| **Aviso** (2) | `Empresa X sem lojas em ...: rode o ... antes.`, `Empresa X, loja Y sem <campo> em ...: rode o ... antes.`, `Empresa X não cadastrada em linxmicrovix.LinxMicrovixParameters ou sem a chave ...`, `Loja X não está entre as lojas ...` e as inconsistências da validação |
+| **Informação** (1) | `Concluída com sucesso ...` e `<Método> X não encontrado no Linx Microvix` (consulta sob demanda) |
+
 <div align="center">
 
 ![Tela Logs de Erros do Monitor](../../../../../docs/images/webapp/logs-de-erros.png)

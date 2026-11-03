@@ -132,7 +132,7 @@ namespace Application.Totvs.Services
                     if (balance.statusCode == 404 || (balance.success && (available ?? 0) < body.usedValue))
                     {
                         var refused = $"Saldo de bônus da pessoa na loja {body.branchCode} ({available ?? 0:0.00}) menor que o consumo pedido ({body.usedValue:0.00}).";
-                        _logger.AddMessage(refused);
+                        _logger.AddWarning(refused);
 
                         // a escrita não foi chamada: 422, não 502
                         return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, message = refused };

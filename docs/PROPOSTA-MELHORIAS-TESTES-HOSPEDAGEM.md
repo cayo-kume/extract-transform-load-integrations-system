@@ -1,6 +1,8 @@
 # Proposta de melhorias: pontos em aberto dos testes de hospedagem
 
-Proposta de 03/11/2026, **não implementada**. Ela responde aos 15 pontos (e ao do C4b) da seção 8.3 de
+Proposta de 03/11/2026, **implementada no mesmo dia** com as recomendações da seção 7 (o que foi feito, o que ficou
+diferente e o teste estão na seção 8). Junto entrou a proposta de nível de mensagem
+([PROPOSTA-NIVEL-MENSAGEM-AUDITING.md](../src/Backend/Shared/docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md)). Ela responde aos 15 pontos (e ao do C4b) da seção 8.3 de
 [PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md](PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md). Os números são os da seção 6 daquele
 documento, onde está o que se viu em cada teste. Aqui ficam a causa no código, a melhoria proposta e como conferir.
 
@@ -342,6 +344,8 @@ de `MIGRATOR-CSX.md` passa a citar isso, e o `Connect Timeout=120` fica como alt
 
 ## 7. Para decidir
 
+Decidido em 03/11/2026: seguir as recomendações abaixo (seção 8).
+
 | # | Pergunta | Recomendação |
 |---|---|---|
 | 1 | Onde fica a marca d'água do Movidesk (ponto 11) | coluna em `movidesk.MovideskParameters` |
@@ -352,3 +356,110 @@ de `MIGRATOR-CSX.md` passa a citar isso, e o `Connect Timeout=120` fica como alt
 | 6 | Carga em 2 ciclos (ponto 5) | aceitar e documentar |
 | 7 | Plano da Azure (ponto 12) | medir no B2 antes de escolher, com liberação de custo |
 | 8 | Reinício do serviço do Worker (C4b) | sem limite, corrigindo o comentário |
+
+## 8. Implementação (03/11/2026)
+
+### 8.1 O que foi feito, por ponto
+
+| Ponto | Feito | Diferença em relação à proposta |
+|---|---|---|
+| 11 | `movidesk.MovideskParameters.tickets_synced_until` (no `CREATE TABLE` do `Script001` do Movidesk); `GetTickets` 1.1.0 só avança a marca quando nada ficou para trás; erro da API é erro e a execução termina "Concluída com erro da API Movidesk em N empresa(s)" | Quando a execução deixa ticket para trás e a marca ainda é nula (a primeira de um banco novo), ela recebe o início da janela usada: o teste mostrou que, nula, a execução seguinte voltava ao maior `lastUpdate` − 1 h e repetia a perda |
+| 4 | `ApiClient.SendWithRetry`: uma nova tentativa depois de 10 s para `HttpIOException`, `HttpRequestException` com `ResponseEnded` ou `IOException`; nunca para tempo esgotado nem conexão recusada. `GetAsync` e o `SendAsync` com GET sempre; `SendAsync` com `retryOnNetworkError: true` nas 12 consultas por POST da Totvs (rotas `/search` e as consultas da API Fiscal) | Sem `Func<HttpContent>`: a nova tentativa monta outra `HttpRequestMessage` com o mesmo conteúdo, e `StringContent` pode ser enviado de novo (a mensagem não é descartada, para não descartar o conteúdo) |
+| 1 | `LoggerService.AddLog` grava a linha de `auditing.Logs` com `EndDate` nulo; o `ScheduledJobRunner` fecha, antes de executar, as linhas abertas do job e da empresa (`IJobScheduleRepository.CloseInterruptedExecutions`) com `EndDate` = agora e a mensagem de erro "Execução interrompida ..." | O painel já mostrava `EndDate` nulo como **Rodando** (com o aviso de rodando há muito tempo): nada a mudar nele |
+| 9, 15 | `LoggerRepository.LogCommit`: fim da execução, registros e mensagens numa transação (`SqlBulkCopy` com a transação externa), repetida até 3 vezes para 1205, 4891 e os erros transitórios do Azure SQL; o `LoggerService` marca a linha como gravada no início, e o `CommitError` grava só o que falta | A causa do deadlock não foi investigada à parte: a transação curta com nova tentativa cobre o caso |
+| 3 | proposta de nível de mensagem implementada (falta de pré-requisito é aviso) | ver a seção 7 daquela proposta |
+| 6 | `IJobExecutionGuard` no Shared (chamado pelo `AddLog`); no WebApi, `RouteJobLock` pede a trava do job quando a rota abre o log de um job do mapa da agenda e devolve 409 `JOB_ALREADY_RUNNING` com ela ocupada | Sem atributo `[JobLock]` em cada action (seriam mais de 300): a trava vem do log que a rota abre. Não fecha execuções interrompidas: isso fica com a agenda |
+| 7 | `auditing.SchedulingHosts` (`Script001` do Shared); `SchedulingHostRegistry` e `SchedulingHostHeartbeat` no Hosts.Scheduling, a cada 30 s, expiração em 2 min; o tipo mais antigo no ar executa; `Scheduling:AllowOtherHostTypes` libera | O host que não agenda continua com o agendador ligado e pula os jobs da agenda na hora de executar (Hangfire: `Deleted` com o motivo; Quartz: `Result`; WebJob: log). O `SchedulingHostGuard` do Worker saiu |
+| 8 | `Quartz:InstanceId`, padrão `<máquina>-<Service:Name>` | — |
+| 10 | telas e `SqlQueryRunner` com `MainDatabase.LocalNow()`; consultas prontas com a hora de Brasília a partir de `SYSUTCDATETIME()` | — |
+| 14 | `migrator.csx` do Shared: até 6 tentativas de conexão, 20 s entre elas, para tempo esgotado, 40613 e 40501 | A sondagem usa uma conexão sem pool: com pool, o erro de um banco que ainda não existe voltava no DbUp logo depois de o `EnsureDatabase` criar o banco (visto no teste) |
+| C4b | comentário do `publish-worker.ps1` corrigido (reinício sem limite); sem banco, o heartbeat registra "Sem conexão com o banco (servidor, banco)" antes da mensagem de schema do Quartz | — |
+| 2, 5 | documentados ([DATAWAREHOUSE-FUNCIONAMENTO-E-FLUXO.md](../src/Backend/Modules/DataWarehouse/docs/DATAWAREHOUSE-FUNCIONAMENTO-E-FLUXO.md), seção 12, e [GUIA-DE-USO.md](../GUIA-DE-USO.md)) | — |
+| 12, 13 | não implementados: dependem de liberação de custo (medir no B2) e de um Owner da assinatura | — |
+
+### 8.2 Banco que já existia
+
+As mudanças de tabela entraram nos scripts de criação originais, como manda o padrão; o DbUp não roda de novo um script
+que já rodou. Num banco que já tinha os scripts, rode à parte, uma vez (pode rodar de novo sem efeito; testado num banco com
+a tabela antiga):
+
+```sql
+-- auditing.Messages: Level no lugar de IsError (o histórico vira informação ou erro)
+IF COL_LENGTH('auditing.Messages', 'Level') IS NULL
+    ALTER TABLE [auditing].[Messages] ADD [Level] [tinyint] NOT NULL CONSTRAINT [DF_Messages_Level] DEFAULT (1);
+GO
+
+IF COLUMNPROPERTY(OBJECT_ID('auditing.Messages'), 'IsError', 'IsComputed') = 0
+BEGIN
+    EXEC('UPDATE [auditing].[Messages] SET [Level] = CASE WHEN [IsError] = 1 THEN 3 ELSE 1 END');
+
+    IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Messages_Execution' AND object_id = OBJECT_ID('auditing.Messages'))
+        DROP INDEX [IX_Messages_Execution] ON [auditing].[Messages];
+
+    ALTER TABLE [auditing].[Messages] DROP COLUMN [IsError];
+    ALTER TABLE [auditing].[Messages] ADD CONSTRAINT [CK_Messages_Level] CHECK ([Level] IN (1, 2, 3));
+    ALTER TABLE [auditing].[Messages] ADD [IsError] AS CAST(CASE WHEN [Level] = 3 THEN 1 ELSE 0 END AS BIT);
+
+    CREATE NONCLUSTERED INDEX [IX_Messages_Execution] ON [auditing].[Messages] ([Company] ASC, [IdJob] ASC, [IdType] ASC, [Execution] ASC)
+    INCLUDE ([Level])
+    WITH (STATISTICS_NORECOMPUTE = OFF, FILLFACTOR = 90, DATA_COMPRESSION = ROW) ON [PRIMARY];
+END
+GO
+
+-- hosts de agenda
+IF OBJECT_ID('auditing.SchedulingHosts', 'U') IS NULL
+    CREATE TABLE [auditing].[SchedulingHosts](
+        [InstanceId] [uniqueidentifier] NOT NULL,
+        [HostType] [varchar](20) NOT NULL,
+        [InstanceName] [nvarchar](200) NOT NULL,
+        [StartedAt] [datetime2](0) NOT NULL,
+        [LastHeartbeat] [datetime2](0) NOT NULL,
+     CONSTRAINT [PK_SchedulingHosts] PRIMARY KEY CLUSTERED ([InstanceId] ASC)
+    ) ON [PRIMARY];
+GO
+
+-- Movidesk: marca d'água do GetTickets (só onde o módulo existe)
+IF OBJECT_ID('movidesk.MovideskParameters', 'U') IS NOT NULL AND COL_LENGTH('movidesk.MovideskParameters', 'tickets_synced_until') IS NULL
+    ALTER TABLE [movidesk].[MovideskParameters] ADD [tickets_synced_until] [datetime] NULL;
+GO
+```
+
+Depois, rode de novo à mão os `CREATE OR ALTER` de `auditing.sp_Log_Message` e `auditing.sp_Log_Error`
+(`Script002` do Shared) e troque, no `dbo.sp_Etl_Tables_Maintenance` (`Script004`, que é `CREATE PROCEDURE`), os dois
+`sp_Log_Message ..., 5` por `1` (índice criado) e `3` (falha), com `ALTER PROCEDURE`. Sem isso, `sp_Log_Message` grava em
+`IsError`, que passou a ser calculada, e falha.
+
+Para recuperar tickets do Movidesk pulados pela versão anterior (decisão 2), depois de publicar o `GetTickets` 1.1.0:
+
+```sql
+UPDATE movidesk.MovideskParameters SET tickets_synced_until = DATEADD(DAY, -89, GETUTCDATE());
+```
+
+A execução seguinte relê 89 dias (como uma carga inicial, ≈ 10 min por 1.900 tickets) e grava só os que mudaram ou
+faltavam.
+
+### 8.3 Teste (03/11/2026)
+
+Banco `EtlTeste_Melhorias` no container `sql-server` (migrators do Shared, Movidesk e Worker, empresa de teste), só o
+`MovideskGetTickets` ativo a cada 2 min, a Movidesk **simulada** em `127.0.0.1:5099` (250 tickets falsos, com o
+`lastUpdate` mais recente nos ids baixos, como no caso do C7) e as outras APIs em `127.0.0.1:9`. O simulador erra o bloco
+101–200 uma vez, corta a resposta da listagem uma vez e, quando pedido, demora 100 s para responder.
+
+| Ponto | O que se fez | Resultado |
+|---|---|---|
+| Migrator | banco novo pelos migrators | ⚠️ na 1ª tentativa, a sondagem do Azure SQL pausado deixou no pool o erro do banco que ainda não existia e o DbUp falhou logo depois de criá-lo; **corrigido** com a sondagem sem pool, e o banco subiu de primeira. `Level`, `IsError` calculada, `auditing.SchedulingHosts` e `tickets_synced_until` criados |
+| 4 | listagem com a resposta cortada no meio | **OK**: `HttpIOException: The response ended prematurely` (a mesma exceção da Totvs no C1), aviso no log e nova tentativa 10 s depois, com sucesso |
+| 11 | carga inicial com o bloco 101–200 com erro | 1ª execução: 100 tickets, mensagem de **erro** (nível 3) e "Concluída com erro da API Movidesk em 1 empresa(s)". ⚠️ Na primeira versão, a marca ficava nula e a 2ª execução voltou ao maior `lastUpdate` − 1 h, gravando 0 tickets: a mesma perda. **Corrigido** (a marca recebe o início da janela). Refeito do zero: 1ª execução com 100 e a marca em 06/08 (início da carga); 2ª com os **150 que faltavam**, "Concluída com sucesso", **250 de 250** e a marca avançada |
+| 1 | consulta a `auditing.Logs` durante a execução | **OK**: a linha aparece com `EndDate` nulo desde o início |
+| 6 | `GET /MovideskJobs/Movidesk/Tickets` com o job agendado rodando no Worker | **OK**: `409 JOB_ALREADY_RUNNING`, "O job 3000 já está rodando (... trava job:3000)" |
+| 7 | WebApi com Hangfire ligado com o Worker no ar | **OK**: aviso na subida ("Quartz agenda neste banco desde ...") e o job das 10:52 do Hangfire em `Deleted` com "Skipped: the Quartz scheduling host is active in this database" |
+| 8 | subida do Worker | **OK**: `instanceId 'NB-PE0C0A5N-51-EtlWorker'`, sem o aviso do `AUTO` |
+| Nível | `sp_Log_Message ..., 2` e o painel com o banco | **OK**: a procedure grava `Level` = 2; a visão geral mostra os erros do nível 3 e a hora de Brasília ("Atualizado às 10:52:53") |
+| 1 | Worker derrubado (`Stop-Process -Force`) às 10:52:15 com o job preso 100 s na API simulada | **OK**: a linha ficou aberta (painel: **Rodando**); no ciclo seguinte, quem executou fechou a execução às 10:56 com a mensagem de erro "Execução interrompida: o processo parou antes do fim ... Iniciada em 03/11/2026 10:52:00 e fechada pela execução seguinte" e rodou normalmente |
+| 7 | depois da queda do Worker, sem heartbeat do Quartz | **OK**: às 10:54:19 (2 min depois do último heartbeat do Quartz) o Hangfire registrou "Nenhum outro tipo de host agenda neste banco: Hangfire passa a executar os jobs da agenda" e rodou o ciclo das 10:56 (o que fechou a execução interrompida) |
+| Painel | aviso de nível 2 gravado e as telas com o banco | **OK**: a visão geral passou a mostrar "Avisos: 1" no Movidesk; Logs de Erros com os 2 erros do nível 3 |
+
+Não testados aqui: o WebJob (precisa do App Service; o código do registro é o mesmo dos outros dois hosts), o Azure SQL
+pausado no migrator (a sondagem foi exercitada só com o banco que ainda não existia) e o deadlock e o "schema change" do
+ponto 9/15, que não se reproduzem à vontade: a transação e a nova tentativa ficaram cobertas pela gravação normal dos
+logs em todas as execuções acima, sem nenhuma execução sem mensagens. Banco `EtlTeste_Melhorias` apagado no fim.

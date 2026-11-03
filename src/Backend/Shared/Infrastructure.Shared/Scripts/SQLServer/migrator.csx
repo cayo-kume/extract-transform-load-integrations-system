@@ -2,6 +2,7 @@
 #r "nuget: dbup-sqlserver"
 
 using System;
+using System.Threading;
 using DbUp;
 using Microsoft.Data.SqlClient;
 
@@ -11,6 +12,31 @@ var connectionString = Args.Count > 0 ? Args[0] : "Server=localhost;Database=Com
 // só servidor e banco: nada de usuário ou senha no console
 var builder = new SqlConnectionStringBuilder(connectionString);
 Console.WriteLine($"Conectando em: servidor {builder.DataSource}, banco {builder.InitialCatalog}");
+
+// 0. Azure SQL serverless pausado: o primeiro acesso acorda o banco, o que leva até ≈ 90 s, e a conexão desiste em 15 s
+// (testes de hospedagem, A8; docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md, 5.6). Repete enquanto o banco acorda; qualquer outro
+// erro (banco que ainda não existe, login) segue para o EnsureDatabase, que mostra o erro de verdade. Sem pool: com ele, o
+// erro de um banco que ainda não existe fica guardado e volta na conexão do DbUp logo depois de o EnsureDatabase criar o banco
+var probe = new SqlConnectionStringBuilder(connectionString) { Pooling = false }.ConnectionString;
+
+for (var attempt = 1; attempt <= 6; attempt++)
+{
+    try
+    {
+        using var connection = new SqlConnection(probe);
+        connection.Open();
+        break;
+    }
+    catch (SqlException exception) when (attempt < 6 && (exception.Number is 40613 or 40501 or -2 || exception.Message.Contains("Timeout", StringComparison.OrdinalIgnoreCase)))
+    {
+        Console.WriteLine($"Banco ainda não respondeu ({exception.Message.Split('\n')[0].Trim()}): se for um Azure SQL pausado, ele está acordando. Nova tentativa em 20 s ({attempt}/5).");
+        Thread.Sleep(TimeSpan.FromSeconds(20));
+    }
+    catch (SqlException)
+    {
+        break;
+    }
+}
 
 // 1. Garante que o banco existe
 EnsureDatabase.For.SqlDatabase(connectionString);

@@ -2,6 +2,7 @@ using Application.Shared.Abstractions.Services;
 using Hangfire.Server;
 using Hangfire.States;
 using System.Collections.Concurrent;
+using Hosts.Scheduling;
 using Hosts.Scheduling.RecurringJobs;
 
 namespace WebApi.Scheduling
@@ -33,14 +34,15 @@ namespace WebApi.Scheduling
         };
 
         private readonly IJobLock _jobLock;
+        private readonly SchedulingHostRegistry _hosts;
         private readonly ILogger<SkipConcurrentExecutionFilter> _logger;
         private readonly int _maxConsecutiveSkips;
 
         // pulos seguidos por chave, neste processo: zera quando o job consegue rodar
         private readonly ConcurrentDictionary<string, int> _consecutiveSkips = new();
 
-        public SkipConcurrentExecutionFilter(IJobLock jobLock, ILogger<SkipConcurrentExecutionFilter> logger, int maxConsecutiveSkips) =>
-            (_jobLock, _logger, _maxConsecutiveSkips) = (jobLock, logger, maxConsecutiveSkips);
+        public SkipConcurrentExecutionFilter(IJobLock jobLock, SchedulingHostRegistry hosts, ILogger<SkipConcurrentExecutionFilter> logger, int maxConsecutiveSkips) =>
+            (_jobLock, _hosts, _logger, _maxConsecutiveSkips) = (jobLock, hosts, logger, maxConsecutiveSkips);
 
         /// <summary>
         /// chave da trava de um recurring job: a do mapa (job:&lt;IdJob&gt; ou a do grupo) ou a de manutenção. Null fora da agenda (job
@@ -72,6 +74,16 @@ namespace WebApi.Scheduling
 
             if (key is null)
                 return;
+
+            // outro tipo de host agenda neste banco (SchedulingHostRegistry): os jobs da agenda não rodam aqui; os de manutenção
+            // do Hangfire (releitura da agenda, limpeza) seguem. O heartbeat já avisou no log
+            if (!_hosts.IsActive && RecurringJobMap.IdJobOf(recurringJobId) is not null)
+            {
+                context.SetJobParameter(RescheduledReasonParameter, (string?)null);
+                context.SetJobParameter(SkippedReasonParameter, _hosts.SkipReason);
+                context.Canceled = true;
+                return;
+            }
 
             var companyKey = CompanyKeyFor(recurringJobId);
             var skipKey = companyKey ?? key;

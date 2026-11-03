@@ -1,4 +1,5 @@
-﻿using Domain.Shared.Extensions;
+﻿using Domain.Shared.Enums;
+using Domain.Shared.Extensions;
 
 namespace Domain.Shared.Entities.Auditing
 {
@@ -10,7 +11,10 @@ namespace Domain.Shared.Entities.Auditing
 
         public string Company { get; private set; } = string.Empty;
 
-        public bool IsError { get; private set; }
+        /// <summary>
+        /// 1 informação, 2 aviso, 3 erro (auditing.Messages.Level; IsError é calculada a partir dele no banco)
+        /// </summary>
+        public MessageLevel Level { get; private set; }
 
         public Guid Execution { get; private set; }
 
@@ -26,17 +30,18 @@ namespace Domain.Shared.Entities.Auditing
         public Message() { }
 
         /// <summary>
-        /// Build an INFORMATION message
+        /// Build a message without exception details, with the level (information, warning or error)
         /// </summary>
         /// <param name="message"></param>
         /// <param name="guidExecution"></param>
-        public Message(Enum job, Enum jobType, string company, string message, Guid guidExecution)
+        /// <param name="level"></param>
+        public Message(Enum job, Enum jobType, string company, string message, Guid guidExecution, MessageLevel level = MessageLevel.Information)
         {
             Company = company;
             IdJob = job;
             IdType = jobType;
             Msg = message.Length > 800 ? message.Substring(0, 800) : message;
-            IsError = false;
+            Level = level;
             Execution = guidExecution;
         }
 
@@ -52,7 +57,7 @@ namespace Domain.Shared.Entities.Auditing
             IdJob = job;
             IdType = jobType;
             Msg = message.Length > 800 ? message.Substring(0, 800) : message;
-            IsError = true;
+            Level = MessageLevel.Error;
             SqlCommand = sqlCommand;
             ExceptionStackTrace = stackTraceMessage;
             ExceptionMessage = exceptionMessage;

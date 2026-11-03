@@ -90,8 +90,10 @@ Cria o banco se ele ainda não existir.
   Azure SQL o `Script001` do Shared não troca a collation do banco;
 * os usuários `etl_monitor` e `etl_query` saem como **usuários contidos** no banco (o `Script009` detecta
   `EngineEdition = 5`), sem login no servidor;
-* um banco serverless **pausado** leva de 15 s a 90 s para acordar, e a primeira conexão do migrator (15 s de espera)
-  falha com `Connection Timeout Expired`. Rode de novo, ou ponha `Connect Timeout=120` na connection string.
+* um banco serverless **pausado** leva de 15 s a 90 s para acordar. O migrator do Shared, que roda primeiro, tenta abrir a
+  conexão até 6 vezes, com 20 s entre elas, enquanto recebe tempo esgotado ou os erros 40613 e 40501 (banco acordando), e
+  mostra uma linha a cada tentativa. Se ainda assim falhar com `Connection Timeout Expired`, rode de novo ou ponha
+  `Connect Timeout=120` na connection string.
 
 ### Configura o DbUp
 

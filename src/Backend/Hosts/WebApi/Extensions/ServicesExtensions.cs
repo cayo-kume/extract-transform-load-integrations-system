@@ -27,6 +27,12 @@ namespace WebApi.Extensions
         {
             builder.Services.AddScopedSharedServices();
 
+            // rotas que rodam um job da agenda pedem a mesma trava dos agendadores (docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md,
+            // 4.1): ligada pelo RouteJobLockFilter só nas requisições, não nas execuções do Hangfire; ocupada, 409
+            builder.Services.AddScoped<RouteJobLock>();
+            builder.Services.AddScoped<IJobExecutionGuard>(sp => sp.GetRequiredService<RouteJobLock>());
+            builder.Services.AddScoped<Application.Shared.Abstractions.Handlers.Exceptions.IExceptionHandler, JobAlreadyRunningExceptionHandler>();
+
             builder.Services.AddScopedLinxCommerceServices(builder.Configuration);
             builder.Services.AddScopedLinxMicrovixServices(builder.Configuration);
             //builder.Services.AddScopedFlashCourierServices(builder.Configuration);
@@ -68,6 +74,7 @@ namespace WebApi.Extensions
                 .UseFilter(new JobExpirationTimeoutFilter(TimeSpan.FromMinutes(settings.Storage.JobExpirationTimeoutInMinutes)))
                 .UseFilter(new SkipConcurrentExecutionFilter(
                     serviceProvider.GetRequiredService<IJobLock>(),
+                    serviceProvider.GetRequiredService<SchedulingHostRegistry>(),
                     serviceProvider.GetRequiredService<ILogger<SkipConcurrentExecutionFilter>>(),
                     settings.Concurrency.MaxConsecutiveSkips))
                 .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
@@ -86,6 +93,10 @@ namespace WebApi.Extensions
 
             // executor dos jobs da agenda (Hosts.Scheduling): grava o log da execução que cai no meio
             services.AddScheduledJobRunner();
+
+            // um tipo de host de agenda por banco (docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md, 4.2): antes do servidor do
+            // Hangfire, que roda os atrasados logo na subida
+            services.AddSchedulingHostRegistration("Hangfire");
 
             services.AddHangfireServer(options =>
             {

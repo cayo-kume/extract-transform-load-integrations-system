@@ -140,7 +140,10 @@ CREATE TABLE [auditing].[Messages](
 	[IdType] [int] NOT NULL,
 	[Company] [varchar](20) NOT NULL,
 	[Execution] [uniqueidentifier] NOT NULL,
-	[IsError] [bit] NULL,
+	-- 1 informação, 2 aviso, 3 erro (src/Backend/Shared/docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md)
+	[Level] [tinyint] NOT NULL CONSTRAINT [DF_Messages_Level] DEFAULT (1) CONSTRAINT [CK_Messages_Level] CHECK ([Level] IN (1, 2, 3)),
+	-- calculada, para as consultas e procedures que ainda leem IsError
+	[IsError] AS CAST(CASE WHEN [Level] = 3 THEN 1 ELSE 0 END AS BIT),
 	[Message] [nvarchar](800) NULL,
 	[SqlCommand] [nvarchar](max) NULL,
 	[ExceptionMessage] [nvarchar](max) NULL,
@@ -156,10 +159,23 @@ CREATE TABLE [auditing].[Messages](
 ) ON [PRIMARY]
 GO
 
--- painel do WebApp: mensagens e erros de cada execução (a PK começa pelo IDENTITY e não serve para essa busca)
+-- painel do WebApp: mensagens de cada execução, contadas por nível (a PK começa pelo IDENTITY e não serve para essa busca)
 CREATE NONCLUSTERED INDEX [IX_Messages_Execution] ON [auditing].[Messages] ([Company] ASC, [IdJob] ASC, [IdType] ASC, [Execution] ASC)
-INCLUDE ([IsError])
+INCLUDE ([Level])
 WITH (STATISTICS_NORECOMPUTE = OFF, FILLFACTOR = 90, DATA_COMPRESSION = ROW) ON [PRIMARY]
+GO
+
+-- hosts de agenda (Hangfire, Quartz, WebJob) que estão no ar neste banco, pelo heartbeat (docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md,
+-- 4.2): um tipo de host agenda por vez, o que está no ar há mais tempo. Datas em UTC; a linha sem heartbeat há mais de 2 min
+-- é apagada pelo próximo heartbeat de qualquer host
+CREATE TABLE [auditing].[SchedulingHosts](
+	[InstanceId] [uniqueidentifier] NOT NULL,
+	[HostType] [varchar](20) NOT NULL,
+	[InstanceName] [nvarchar](200) NOT NULL,
+	[StartedAt] [datetime2](0) NOT NULL,
+	[LastHeartbeat] [datetime2](0) NOT NULL,
+ CONSTRAINT [PK_SchedulingHosts] PRIMARY KEY CLUSTERED ([InstanceId] ASC)
+) ON [PRIMARY]
 GO
 
 CREATE TABLE [auditing].[Records](

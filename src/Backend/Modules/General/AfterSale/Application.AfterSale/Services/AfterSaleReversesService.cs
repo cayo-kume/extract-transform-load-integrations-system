@@ -214,7 +214,7 @@ namespace Application.AfterSale.Services
                             message += $"{s.ErrorMessage}\n"
                         );
 
-                        _logger.AddMessage(message);
+                        _logger.AddWarning(message);
                     }
 
                     _listSomenteNovos.Add(new Domain.AfterSale.Entities.Reads.Reverses.SearchReverses.Reverse(company.doc_company, summarizedReverse));
@@ -284,7 +284,7 @@ namespace Application.AfterSale.Services
 
                 if (company is null)
                 {
-                    _logger.AddMessage($"CNPJ {reversesByCompany.Key} não encontrado em AfterSaleParameters: {reversesByCompany.Count()} reversa(s) ignorada(s).\n");
+                    _logger.AddWarning($"CNPJ {reversesByCompany.Key} não encontrado em AfterSaleParameters: {reversesByCompany.Count()} reversa(s) ignorada(s).\n");
                     continue;
                 }
 
@@ -361,7 +361,7 @@ namespace Application.AfterSale.Services
                             message += $"{s.ErrorMessage}\n"
                         );
 
-                        _logger.AddMessage(message);
+                        _logger.AddWarning(message);
                     }
 
                     _listSomenteNovos.Add(new Domain.AfterSale.Entities.Reads.Reverses.GetReverse.Reverse(company.doc_company, reversesDto.data.reverse, reversesDto.data.customer, reversesDto.data.tracking_history));
@@ -416,7 +416,7 @@ namespace Application.AfterSale.Services
                 if (company is null)
                 {
                     // nenhuma chamada à API: não há o que registrar em AfterSaleRequests
-                    _logger.AddMessage($"Empresa {doc_company} não cadastrada em aftersale.AfterSaleParameters.");
+                    _logger.AddWarning($"Empresa {doc_company} não cadastrada em aftersale.AfterSaleParameters.");
                     return null;
                 }
 
@@ -449,7 +449,7 @@ namespace Application.AfterSale.Services
 
                 if (root is null)
                 {
-                    _logger.AddMessage($"Resposta inválida da API AfterSale para a reversa {id} (empresa {doc_company}): {response}");
+                    _logger.AddError($"Resposta inválida da API AfterSale para a reversa {id} (empresa {doc_company}): {response}");
                     result = null;
                 }
                 else if (!root.success)
@@ -477,7 +477,7 @@ namespace Application.AfterSale.Services
                 }
                 else if (root.data?.reverse is null || ConverterValidatorsExtensions.ConvertToInt64Validation(root.data.reverse.id) != id)
                 {
-                    _logger.AddMessage($"Resposta inválida da API AfterSale para a reversa {id} (empresa {doc_company}): {response}");
+                    _logger.AddError($"Resposta inválida da API AfterSale para a reversa {id} (empresa {doc_company}): {response}");
                     result = null;
                 }
                 else
@@ -491,7 +491,7 @@ namespace Application.AfterSale.Services
                             message += $"{s.ErrorMessage}\n"
                         );
 
-                        _logger.AddMessage(message);
+                        _logger.AddWarning(message);
                     }
 
                     var reverse = new Domain.AfterSale.Entities.Reads.Reverses.GetReverse.Reverse(doc_company, root.data.reverse, root.data.customer, root.data.tracking_history);
@@ -539,7 +539,7 @@ namespace Application.AfterSale.Services
 
                 if (company is null)
                 {
-                    _logger.AddMessage($"CNPJ {reversesByCompany.Key} não encontrado em AfterSaleParameters: {reversesByCompany.Count()} reversa(s) ignorada(s).\n");
+                    _logger.AddWarning($"CNPJ {reversesByCompany.Key} não encontrado em AfterSaleParameters: {reversesByCompany.Count()} reversa(s) ignorada(s).\n");
                     continue;
                 }
 
@@ -561,7 +561,7 @@ namespace Application.AfterSale.Services
 
                     if (root is null || !root.success || root.data is null)
                     {
-                        _logger.AddMessage($"Reversa {summarizedReverse.id}: resposta sem sucesso ao consultar courier attributes.\n");
+                        _logger.AddError($"Reversa {summarizedReverse.id}: resposta sem sucesso ao consultar courier attributes.\n");
                         continue;
                     }
 
@@ -601,7 +601,7 @@ namespace Application.AfterSale.Services
                             message += $"{s.ErrorMessage}\n"
                         );
 
-                        _logger.AddMessage(message);
+                        _logger.AddWarning(message);
                     }
 
                     _listSomenteNovos.Add(new Domain.AfterSale.Entities.Reads.Reverses.CourierAttributes.CourierAttributes(company.doc_company, reverseId, courierAttribute));
@@ -688,7 +688,7 @@ namespace Application.AfterSale.Services
                             message += $"{s.ErrorMessage}\n"
                         );
 
-                        _logger.AddMessage(message);
+                        _logger.AddWarning(message);
                     }
 
                     _listSomenteNovos.Add(new Domain.AfterSale.Entities.Reads.Reverses.Status.Status(statusReverse, statusReverse.doc_company));
@@ -784,7 +784,7 @@ namespace Application.AfterSale.Services
                             message += $"{s.ErrorMessage}\n"
                         );
 
-                        _logger.AddMessage(message);
+                        _logger.AddWarning(message);
                     }
 
                     _listSomenteNovos.Add(new Domain.AfterSale.Entities.Reads.Reverses.Transportations.Transportation(transportationReverse, company.doc_company));
@@ -931,7 +931,7 @@ namespace Application.AfterSale.Services
                 if (company is null)
                 {
                     result = new TResponse { success = false, message = $"CNPJ {doc_company} não encontrado em AfterSaleParameters." };
-                    _logger.AddMessage($"Reversa {id}: {result.message}");
+                    _logger.AddWarning($"Reversa {id}: {result.message}");
 
                     return result;
                 }
@@ -972,7 +972,7 @@ namespace Application.AfterSale.Services
                 }
                 else
                 {
-                    _logger.AddMessage($"Reversa {id}: {result.message_translated ?? result.message ?? result.error ?? "a API não retornou sucesso."}");
+                    _logger.AddError($"Reversa {id}: {result.message_translated ?? result.message ?? result.error ?? "a API não retornou sucesso."}");
 
                     await _afterSaleReversesRepository.BulkInsertIntoAfterSaleErrors(
                         [

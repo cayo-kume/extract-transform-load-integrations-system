@@ -76,14 +76,14 @@ namespace Application.LinxCommerce.Services
                 // o doc_company entra nas queries: só CNPJ de 14 dígitos
                 if (company.doc_company is null || !Cnpj().IsMatch(company.doc_company))
                 {
-                    _logger.AddMessage($"Cliente '{company.doc_company}' de linxcommerce.LinxCommerceParameters ignorado: doc_company não é um CNPJ de 14 dígitos.");
+                    _logger.AddWarning($"Cliente '{company.doc_company}' de linxcommerce.LinxCommerceParameters ignorado: doc_company não é um CNPJ de 14 dígitos.");
                     continue;
                 }
 
                 // https, salvo http://localhost (API simulada nos testes locais, sem credencial do Linx Commerce)
                 if (!Uri.TryCreate(company.base_url, UriKind.Absolute, out var uri) || !(uri.Scheme == Uri.UriSchemeHttps || (uri.Scheme == Uri.UriSchemeHttp && uri.IsLoopback)) || String.IsNullOrWhiteSpace(company.user_name) || String.IsNullOrWhiteSpace(company.api_key))
                 {
-                    _logger.AddMessage($"Cliente {company.doc_company} de linxcommerce.LinxCommerceParameters ignorado: base_url (https), user_name ou api_key vazios.");
+                    _logger.AddWarning($"Cliente {company.doc_company} de linxcommerce.LinxCommerceParameters ignorado: base_url (https), user_name ou api_key vazios.");
                     continue;
                 }
 
@@ -145,7 +145,7 @@ namespace Application.LinxCommerce.Services
 
                 if (result?.Result is null || json.Count != result.Result.Count || !String.IsNullOrWhiteSpace(result.Page?.ErrorMessage))
                 {
-                    _logger.AddMessage($"Resposta inválida do Linx Commerce em {route} (empresa {company.doc_company}, página {pageIndex}): {Truncate(response.Content)}");
+                    _logger.AddError($"Resposta inválida do Linx Commerce em {route} (empresa {company.doc_company}, página {pageIndex}): {Truncate(response.Content)}");
 
                     return null;
                 }
@@ -185,7 +185,7 @@ namespace Application.LinxCommerce.Services
                 // tratado abaixo como resposta inválida
             }
 
-            _logger.AddMessage($"Resposta inválida do Linx Commerce em {route} ({key}, empresa {company.doc_company}): {Truncate(response.Content)}");
+            _logger.AddError($"Resposta inválida do Linx Commerce em {route} ({key}, empresa {company.doc_company}): {Truncate(response.Content)}");
 
             return null;
         }
@@ -201,7 +201,7 @@ namespace Application.LinxCommerce.Services
             if (response is null)
             {
                 // registra a tentativa mesmo quando a chamada não chega a ter resposta (timeout, rede)
-                _logger.AddMessage($"Falha ao chamar o Linx Commerce em {route} ({key}, empresa {company.doc_company}): {failure}");
+                _logger.AddError($"Falha ao chamar o Linx Commerce em {route} ({key}, empresa {company.doc_company}): {failure}");
                 SaveRequest(job, user_name, route, company.doc_company!, key, requestBody, $"Exceção ao chamar a API: {failure}", false, 0);
 
                 return new OnDemandResponse<T>();
@@ -224,9 +224,9 @@ namespace Application.LinxCommerce.Services
             }
 
             if (!response.IsSuccess)
-                _logger.AddMessage($"Erro do Linx Commerce em {route} ({key}, empresa {company.doc_company}): {response.StatusCode} {Truncate(response.Content)}");
+                _logger.AddError($"Erro do Linx Commerce em {route} ({key}, empresa {company.doc_company}): {response.StatusCode} {Truncate(response.Content)}");
             else if (dto is null)
-                _logger.AddMessage($"Resposta inválida do Linx Commerce em {route} ({key}, empresa {company.doc_company}): {Truncate(response.Content)}");
+                _logger.AddError($"Resposta inválida do Linx Commerce em {route} ({key}, empresa {company.doc_company}): {Truncate(response.Content)}");
 
             // o corpo da resposta vai sem os campos sensíveis; resposta que não é JSON, cortada
             SaveRequest(job, user_name, route, company.doc_company!, key, requestBody, json ?? Truncate(response.Content), dto is not null, response.StatusCode);
@@ -264,14 +264,14 @@ namespace Application.LinxCommerce.Services
 
             if (response is null)
             {
-                _logger.AddMessage($"Falha ao chamar o Linx Commerce em {route} ({context}): {failure}");
+                _logger.AddError($"Falha ao chamar o Linx Commerce em {route} ({context}): {failure}");
 
                 return null;
             }
 
             if (!response.IsSuccess)
             {
-                _logger.AddMessage($"Erro do Linx Commerce em {route} ({context}): {response.StatusCode} {Truncate(response.Content)}");
+                _logger.AddError($"Erro do Linx Commerce em {route} ({context}): {response.StatusCode} {Truncate(response.Content)}");
 
                 return null;
             }

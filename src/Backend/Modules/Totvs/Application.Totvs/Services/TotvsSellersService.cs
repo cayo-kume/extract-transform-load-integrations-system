@@ -73,7 +73,7 @@ namespace Application.Totvs.Services
 
                     if (branchCodes.Count == 0)
                     {
-                        _logger.AddMessage($"Empresa {company.doc_company} sem lojas em totvs.TotvsBranches: rode o GetBranchesList antes.");
+                        _logger.AddWarning($"Empresa {company.doc_company} sem lojas em totvs.TotvsBranches: rode o GetBranchesList antes.");
                         continue;
                     }
 
@@ -125,7 +125,8 @@ namespace Application.Totvs.Services
                                 HttpMethod.Post,
                                 "seller/v2/search",
                                 content,
-                                headers: new Dictionary<string, string> { { "Authorization", $"Bearer {token}" } }
+                                headers: new Dictionary<string, string> { { "Authorization", $"Bearer {token}" } },
+                                retryOnNetworkError: true
                             );
 
                             if (attempt == 1 && response.StatusCode == 401)
@@ -155,7 +156,7 @@ namespace Application.Totvs.Services
                             if (response is not null)
                             {
                                 var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                                _logger.AddMessage($"Erro da API Totvs em seller/v2/search (empresa {company.doc_company}, página {page}): {response.StatusCode} {body}");
+                                _logger.AddError($"Erro da API Totvs em seller/v2/search (empresa {company.doc_company}, página {page}): {response.StatusCode} {body}");
                             }
 
                             failed = true;
@@ -184,7 +185,7 @@ namespace Application.Totvs.Services
                         if (result?.items is null)
                         {
                             var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                            _logger.AddMessage($"Resposta inválida da API Totvs em seller/v2/search (empresa {company.doc_company}, página {page}): {body}");
+                            _logger.AddError($"Resposta inválida da API Totvs em seller/v2/search (empresa {company.doc_company}, página {page}): {body}");
 
                             failed = true;
                             break;
@@ -236,7 +237,7 @@ namespace Application.Totvs.Services
                         {
                             var message = String.Empty;
                             validations.Errors.ForEach(s => message += $"vendedor {seller.sellerCode}: {s.ErrorMessage}\n");
-                            _logger.AddMessage(message);
+                            _logger.AddWarning(message);
                         }
 
                         _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.Sellers.Seller(company.doc_company!, batchTime, seller));
@@ -334,7 +335,7 @@ namespace Application.Totvs.Services
                     var citiesByArea = cities.ToLookup(x => AreaCode(x.dto.operationalAreaCode));
 
                     foreach (var orphan in statesByArea.Select(g => g.Key).Concat(cepsByArea.Select(g => g.Key)).Concat(citiesByArea.Select(g => g.Key)).Distinct().Where(x => !areasByCode.ContainsKey(x)))
-                        _logger.AddMessage($"Região de atuação {orphan} (empresa {company.doc_company}) tem estados, CEPs ou cidades, mas não veio em seller/v2/operational-area: descartados.");
+                        _logger.AddWarning($"Região de atuação {orphan} (empresa {company.doc_company}) tem estados, CEPs ou cidades, mas não veio em seller/v2/operational-area: descartados.");
 
                     var _listSomenteNovos = new List<Domain.Totvs.Entities.Reads.Sellers.OperationalArea>();
                     var areasJson = new Dictionary<int, string>();
@@ -367,7 +368,7 @@ namespace Application.Totvs.Services
                         areaCities.ForEach(x => _operationalAreaCityValidator.Validate(x.dto).Errors.ForEach(s => messages.Add($"região de atuação {code}, cidade {x.dto.cityCode}: {s.ErrorMessage}")));
 
                         if (messages.Count > 0)
-                            _logger.AddMessage(String.Join("\n", messages) + "\n");
+                            _logger.AddWarning(String.Join("\n", messages) + "\n");
 
                         _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.Sellers.OperationalArea(
                             company.doc_company!,
@@ -470,7 +471,7 @@ namespace Application.Totvs.Services
                         if (response is not null)
                         {
                             var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                            _logger.AddMessage($"Erro da API Totvs em {route} (empresa {company.doc_company}, página {page}): {response.StatusCode} {body}");
+                            _logger.AddError($"Erro da API Totvs em {route} (empresa {company.doc_company}, página {page}): {response.StatusCode} {body}");
                         }
 
                         return null;
@@ -495,7 +496,7 @@ namespace Application.Totvs.Services
                     if (result?.items is null || json.Count != result.items.Count)
                     {
                         var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                        _logger.AddMessage($"Resposta inválida da API Totvs em {route} (empresa {company.doc_company}, página {page}): {body}");
+                        _logger.AddError($"Resposta inválida da API Totvs em {route} (empresa {company.doc_company}, página {page}): {body}");
 
                         return null;
                     }

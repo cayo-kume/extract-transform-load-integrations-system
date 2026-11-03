@@ -427,7 +427,10 @@ flowchart TB
 
 > [!WARNING]
 > **Um host de agenda por vez** no mesmo banco. O `WebApi` em modo só API combina com qualquer um deles, para o disparo
-> manual pelas rotas.
+> manual pelas rotas. Desde 03/11/2026 o código garante a regra: cada host se registra em `auditing.SchedulingHosts`
+> com heartbeat, e só o tipo que está no ar há mais tempo executa os jobs; o outro espera ele sair
+> ([melhorias, 4.2](docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md#42-ponto-7-dois-agendadores-no-mesmo-banco)). As rotas
+> que rodam um job da agenda pedem a mesma trava e devolvem 409 com ele rodando.
 
 * 🔒 **Trava de concorrência em duas chaves:** o `IJobLock` do Shared (`sp_getapplock`) usa as mesmas chaves nos três
   hosts. A **da empresa** (`job:<IdJob>:<empresa>`, ou `group:datawarehouse:<empresa>` no DW) ocupada quer dizer que a

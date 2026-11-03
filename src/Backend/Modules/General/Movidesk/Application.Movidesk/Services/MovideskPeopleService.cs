@@ -74,7 +74,7 @@ namespace Application.Movidesk.Services
                 if (company is null)
                 {
                     // nenhuma chamada à API: não há o que registrar em MovideskRequests (igual ao GetTicketById)
-                    _logger.AddMessage($"Empresa {doc_company} não cadastrada em movidesk.MovideskParameters.");
+                    _logger.AddWarning($"Empresa {doc_company} não cadastrada em movidesk.MovideskParameters.");
                     return null;
                 }
 
@@ -124,7 +124,7 @@ namespace Application.Movidesk.Services
 
                     if (person is null || !String.Equals(person.id, id, StringComparison.Ordinal))
                     {
-                        _logger.AddMessage($"Resposta inválida da API Movidesk para a pessoa {id} (empresa {doc_company}): {response}");
+                        _logger.AddError($"Resposta inválida da API Movidesk para a pessoa {id} (empresa {doc_company}): {response}");
                         result = null;
                     }
                     else
@@ -206,7 +206,7 @@ namespace Application.Movidesk.Services
                     catch (Newtonsoft.Json.JsonException)
                     {
                         // objeto de erro (ou 429) em vez da lista: 3 erros seguidos bloqueiam a API, então a empresa é interrompida
-                        _logger.AddMessage($"Resposta inválida da API Movidesk (empresa {company.doc_company}, skip {skip}): {response}");
+                        _logger.AddError($"Resposta inválida da API Movidesk (empresa {company.doc_company}, skip {skip}): {response}");
                         break;
                     }
 
@@ -375,7 +375,7 @@ namespace Application.Movidesk.Services
                 {
                     // nenhuma chamada à API: não há o que registrar em MovideskRequests (igual ao GetPersonById)
                     var notFound = $"Empresa {doc_company} não cadastrada em movidesk.MovideskParameters.";
-                    _logger.AddMessage(notFound);
+                    _logger.AddWarning(notFound);
 
                     return new Domain.Movidesk.Dtos.Writes.Result { success = false, id = id, message = notFound };
                 }
@@ -419,7 +419,7 @@ namespace Application.Movidesk.Services
                     }
 
                     var message = apiMessage ?? (response.Content?.Length > 800 ? response.Content[..800] : response.Content) ?? $"A Movidesk devolveu {response.StatusCode}.";
-                    _logger.AddMessage($"Pessoa {personId ?? "nova"} (empresa {doc_company}): {message}");
+                    _logger.AddError($"Pessoa {personId ?? "nova"} (empresa {doc_company}): {message}");
 
                     return new Domain.Movidesk.Dtos.Writes.Result
                     {
@@ -446,7 +446,7 @@ namespace Application.Movidesk.Services
                     catch (Exception ex)
                     {
                         localMessage = $"Pessoa {personId} criada, mas não gravada no banco (o GetPeople grava depois): {ex.Message}";
-                        _logger.AddMessage(localMessage);
+                        _logger.AddWarning(localMessage);
                     }
                 }
 
@@ -465,7 +465,7 @@ namespace Application.Movidesk.Services
                     catch (Exception ex)
                     {
                         localMessage = $"Pessoa {personId} excluída na Movidesk, mas não apagada do banco local: {ex.Message}";
-                        _logger.AddMessage(localMessage);
+                        _logger.AddWarning(localMessage);
                     }
                 }
 
@@ -509,7 +509,7 @@ namespace Application.Movidesk.Services
                 {
                     var message = String.Empty;
                     validations.Errors.ForEach(s => message += $"pessoa {person.id}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
+                    _logger.AddWarning(message);
                 }
 
                 _listSomenteNovos.Add(new Domain.Movidesk.Entities.Reads.People.Person(doc_company, batchTime, person));

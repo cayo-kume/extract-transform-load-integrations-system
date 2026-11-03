@@ -120,6 +120,7 @@ flowchart TB
 Pontos importantes do código:
 
 - **O service não tem SQL de negócio.** Cada passo é `Step("[schema].sp_Nome")`, que chama `ExecuteProcedure`, mede o tempo e grava no log `"<procedure>: N linha(s) em X s"`. Toda procedure devolve as linhas afetadas no parâmetro de saída `@rows`.
+- **Nível das mensagens** ([`PROPOSTA-NIVEL-MENSAGEM-AUDITING.md`](../../../Shared/docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md)): os tempos dos passos e `"Concluída com sucesso!"` são informação; `"Checagem X: N linha(s) com erro"`, `"Concluída com checagem bloqueante: veja dw_control.CheckResult."` e `"DataWarehouse:Pepper não configurado: ..."` são aviso; a exceção que interrompe a carga (`"Carga interrompida: ..."` e as variações) é erro.
 - **Os nomes das procedures de landing e snapshot vêm do catálogo** `dw_control.LandingSource` (só as linhas com `is_enabled = 1`): `sp_<source_table>_Load`, `sp_<source_table>_DetectMissing`, `sp_<source_table>_Snapshot`. Ligar uma origem nova é inserir no catálogo, sem mexer no C#.
 - **Proteção contra injeção:** como os nomes são montados como texto, o repositório só aceita `schema.nome` com letras, números e sublinhado (regex `ObjectName`), tanto para procedure quanto para view.
 - **Timeout de 2 horas** por procedure, porque a carga inicial dos fatos passa dos 45 minutos padrão do Shared.
@@ -440,6 +441,14 @@ O DW **não envia nada** para fora: cada módulo de saída varre a sua view em `
 ## 12. Criação dos objetos (migração)
 
 Os objetos do DW são criados pelo DbUp, via `dotnet script migrator.csx "<connection string>"`, que executa os scripts em ordem numérica, uma vez cada. O migrator do DW roda **por último**, depois dos migrators dos módulos de origem, porque as views referenciam tabelas de origem e o SQL Server as valida na criação.
+
+> [!IMPORTANT]
+> **A estrutura de todos os módulos de origem precisa existir**, mesmo de um módulo que a empresa não usa: a
+> `sp_Create_Landing` lê as tabelas de requisição de cada origem, inclusive `[linxcommerce].[LinxCommerceRequests]`. Num
+> banco novo do teste C1, sem o LinxCommerce, a criação falhou. Rode o migrator de todos os módulos (os jobs nascem inativos
+> e sem parâmetros); foi a decisão de 03/11/2026 ([melhorias, 5.1](../../../../../docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md#51-ponto-2-o-datawarehouse-exige-a-estrutura-do-linxcommerce)).
+> Se um cliente precisar ser instalado só com alguns módulos, a alternativa é a `sp_Create_Landing` pular a origem sem
+> tabela, no script original da procedure.
 
 ```mermaid
 flowchart LR

@@ -74,7 +74,7 @@ namespace Application.Totvs.Services
 
                     if (branchCodes.Count == 0)
                     {
-                        _logger.AddMessage($"Empresa {company.doc_company} sem lojas em totvs.TotvsBranches: rode o GetBranchesList antes.");
+                        _logger.AddWarning($"Empresa {company.doc_company} sem lojas em totvs.TotvsBranches: rode o GetBranchesList antes.");
                         continue;
                     }
 
@@ -133,7 +133,8 @@ namespace Application.Totvs.Services
                                     HttpMethod.Post,
                                     "accounts-payable/v2/duplicates/search",
                                     content,
-                                    headers: new Dictionary<string, string> { { "Authorization", $"Bearer {token}" } }
+                                    headers: new Dictionary<string, string> { { "Authorization", $"Bearer {token}" } },
+                                    retryOnNetworkError: true
                                 );
 
                                 if (attempt == 1 && response.StatusCode == 401)
@@ -163,7 +164,7 @@ namespace Application.Totvs.Services
                                 if (response is not null)
                                 {
                                     var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                                    _logger.AddMessage($"Erro da API Totvs em accounts-payable/v2/duplicates/search (empresa {company.doc_company}, janela {windowStart:dd/MM/yyyy HH:mm} a {windowEnd:dd/MM/yyyy HH:mm}, página {page}): {response.StatusCode} {body}");
+                                    _logger.AddError($"Erro da API Totvs em accounts-payable/v2/duplicates/search (empresa {company.doc_company}, janela {windowStart:dd/MM/yyyy HH:mm} a {windowEnd:dd/MM/yyyy HH:mm}, página {page}): {response.StatusCode} {body}");
                                 }
 
                                 failed = true;
@@ -197,7 +198,7 @@ namespace Application.Totvs.Services
                             if (result?.items is null)
                             {
                                 var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                                _logger.AddMessage($"Resposta inválida da API Totvs em accounts-payable/v2/duplicates/search (empresa {company.doc_company}, página {page}): {body}");
+                                _logger.AddError($"Resposta inválida da API Totvs em accounts-payable/v2/duplicates/search (empresa {company.doc_company}, página {page}): {body}");
 
                                 failed = true;
                                 break;
@@ -255,7 +256,7 @@ namespace Application.Totvs.Services
                             {
                                 var message = String.Empty;
                                 validations.Errors.ForEach(s => message += $"duplicata {duplicate.branchCode}/{duplicate.supplierCode}/{duplicate.duplicateCode}/{duplicate.installmentCode}: {s.ErrorMessage}\n");
-                                _logger.AddMessage(message);
+                                _logger.AddWarning(message);
                             }
 
                             _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.AccountsPayable.Duplicate(company.doc_company!, batchTime, duplicate));
@@ -317,7 +318,7 @@ namespace Application.Totvs.Services
 
                     if (branchCodes.Count == 0)
                     {
-                        _logger.AddMessage($"Empresa {company.doc_company} sem lojas em totvs.TotvsBranches: rode o GetBranchesList antes.");
+                        _logger.AddWarning($"Empresa {company.doc_company} sem lojas em totvs.TotvsBranches: rode o GetBranchesList antes.");
                         continue;
                     }
 
@@ -367,7 +368,8 @@ namespace Application.Totvs.Services
                                     HttpMethod.Post,
                                     "accounts-payable/v2/comissions-paid/search",
                                     content,
-                                    headers: new Dictionary<string, string> { { "Authorization", $"Bearer {token}" } }
+                                    headers: new Dictionary<string, string> { { "Authorization", $"Bearer {token}" } },
+                                    retryOnNetworkError: true
                                 );
 
                                 if (attempt == 1 && response.StatusCode == 401)
@@ -397,7 +399,7 @@ namespace Application.Totvs.Services
                                 if (response is not null)
                                 {
                                     var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                                    _logger.AddMessage($"Erro da API Totvs em accounts-payable/v2/comissions-paid/search (empresa {company.doc_company}, loja {branchCode}, página {page}): {response.StatusCode} {body}");
+                                    _logger.AddError($"Erro da API Totvs em accounts-payable/v2/comissions-paid/search (empresa {company.doc_company}, loja {branchCode}, página {page}): {response.StatusCode} {body}");
                                 }
 
                                 // sem janela pelo banco, uma loja com erro não atrapalha as outras: ela é lida de novo na próxima execução
@@ -430,7 +432,7 @@ namespace Application.Totvs.Services
                             if (result?.items is null)
                             {
                                 var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                                _logger.AddMessage($"Resposta inválida da API Totvs em accounts-payable/v2/comissions-paid/search (empresa {company.doc_company}, loja {branchCode}, página {page}): {body}");
+                                _logger.AddError($"Resposta inválida da API Totvs em accounts-payable/v2/comissions-paid/search (empresa {company.doc_company}, loja {branchCode}, página {page}): {body}");
                                 break;
                             }
 
@@ -471,7 +473,7 @@ namespace Application.Totvs.Services
                         {
                             var message = String.Empty;
                             validations.Errors.ForEach(s => message += $"fechamento de comissão {commission.closingBranchCode}/{commission.closingCode}/{commission.commissionedCpfCnpj}: {s.ErrorMessage}\n");
-                            _logger.AddMessage(message);
+                            _logger.AddWarning(message);
                         }
 
                         _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.AccountsPayable.CommissionPaid(company.doc_company!, batchTime, commission));
@@ -533,7 +535,7 @@ namespace Application.Totvs.Services
                 if (!_totvsService.IsWriteEnabled(WritesGroup))
                 {
                     var disabled = $"Escritas de contas a pagar desligadas (Totvs:Writes:{WritesGroup}:Enabled).";
-                    _logger.AddMessage(disabled);
+                    _logger.AddWarning(disabled);
 
                     return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, message = disabled };
                 }
@@ -544,7 +546,7 @@ namespace Application.Totvs.Services
                 {
                     // nenhuma chamada à API: não há o que registrar em TotvsRequests (igual às leituras sob demanda)
                     var notFound = $"Empresa {doc_company} não cadastrada em totvs.TotvsParameters.";
-                    _logger.AddMessage(notFound);
+                    _logger.AddWarning(notFound);
 
                     return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, message = notFound };
                 }
@@ -552,7 +554,7 @@ namespace Application.Totvs.Services
                 if (await _totvsService.GetBranchCodeByCnpj(company, body.branchCnpj!) is null)
                 {
                     var branchNotFound = $"CNPJ {body.branchCnpj} não é uma loja da empresa {doc_company} em totvs.TotvsBranches.";
-                    _logger.AddMessage(branchNotFound);
+                    _logger.AddWarning(branchNotFound);
 
                     return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, message = branchNotFound };
                 }
@@ -603,7 +605,7 @@ namespace Application.Totvs.Services
                     // sem resposta (timeout, rede): a escrita pode ter sido feita; conferir antes de repetir
                     var failure = $"Exceção ao chamar a API: {ex.Message.TrimEnd('.')}";
                     _totvsService.SaveRequest(EnumJob.TotvsPostDuplicatesInstallmentsStage, user_name, "POST", route, doc_company, key, failure, false, requestBody, 0);
-                    _logger.AddMessage($"Parcela {key} (empresa {doc_company}): {failure}. Confira o estágio na Totvs antes de repetir.");
+                    _logger.AddError($"Parcela {key} (empresa {doc_company}): {failure}. Confira o estágio na Totvs antes de repetir.");
 
                     return new Domain.Totvs.Dtos.Writes.Result { success = false, key = key, apiCalled = true, message = $"{failure}. Confira o estágio na Totvs antes de repetir." };
                 }
@@ -621,7 +623,7 @@ namespace Application.Totvs.Services
                 if (!response.IsSuccess)
                 {
                     var message = TotvsMessage(response);
-                    _logger.AddMessage($"Parcela {key} (empresa {doc_company}): {response.StatusCode} {message}");
+                    _logger.AddError($"Parcela {key} (empresa {doc_company}): {response.StatusCode} {message}");
 
                     return new Domain.Totvs.Dtos.Writes.Result
                     {

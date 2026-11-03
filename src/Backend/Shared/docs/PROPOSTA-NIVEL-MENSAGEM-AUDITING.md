@@ -1,6 +1,8 @@
 # Proposta: nível de mensagem em `auditing.Messages`
 
-Proposta de 30/10/2026, **não implementada**. Ela troca o `IsError` (bit) de `auditing.Messages` por um nível com três
+Proposta de 30/10/2026, **implementada em 03/11/2026** junto com as melhorias dos testes de hospedagem
+([PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md](../../../../docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md), seção 8, onde está o
+script para um banco que já existia). O que ficou diferente do texto abaixo está na seção 7. Ela troca o `IsError` (bit) de `auditing.Messages` por um nível com três
 valores (informação, aviso e erro) e diz onde cada nível é usado nas integrações. A motivação é o painel do WebApp
 (`src/Frontend/WebApp/docs/PLANO-WEBAPP.md`), que precisa de um número de "warnings" por aplicação e de um estado de
 saúde que diga quando algo deu errado sem exceção.
@@ -75,7 +77,7 @@ Error), para o número na tabela ser legível sozinho.
 | `nota X: N pedido(s) de venda sem loja ou número descartado(s).` e `Sugestões de faturamento da loja X descartadas ...` | descarte de propósito, mas alguém precisa saber |
 | `Região de atuação X ... descartados.` | idem |
 | `Ticket X ... não veio em todos os grupos do $expand: não gravado nesta execução.` e `Ticket X criado, mas não gravado no banco ...` | o dado fica para a próxima execução |
-| `... devolveu outro CustomerID` | inconsistência na fonte que não impediu a gravação |
+| `... devolveu outro CustomerID` | inconsistência na fonte que não impediu a gravação (na implementação, foi para **erro**: ver seção 7) |
 | `Concluída com checagem bloqueante: veja dw_control.CheckResult.` | a carga do DataWarehouse terminou, mas uma checagem bloqueou a publicação |
 
 ### 3.3 Informação (1)
@@ -92,8 +94,7 @@ aviso e erro, a pergunta é se o dado ficou para trás por falha: se ficou, é e
 
 ## 4. Mudanças (quando for implementar)
 
-Todas no Shared e nos services dos módulos. Nada disso entra agora: o trabalho atual é só no front-end, e o mock do
-WebApp já nasce com o nível (seção 5).
+Todas no Shared e nos services dos módulos. Feitas em 03/11/2026 (seção 7).
 
 ### 4.1 Banco
 
@@ -138,3 +139,26 @@ WebApp já nasce com o nível (seção 5).
    textos for "sem dados", ele é informação, não erro, e precisa de tratamento próprio no service.
 2. O histórico (`IsError = 0`) fica como informação, ou vale um `UPDATE` único reclassificando pelos padrões de texto da
    seção 3 (por exemplo `Message LIKE 'Resposta de erro da API%'` → 3)?
+
+## 7. Implementação (03/11/2026)
+
+| Parte | O que entrou |
+|---|---|
+| Banco | `Level TINYINT NOT NULL DEFAULT 1` com `CK_Messages_Level`, `IsError` calculada e `IX_Messages_Execution` com `INCLUDE (Level)`, no `CREATE TABLE` do `Script001`. `sp_Log_Message` grava `@logLevel` em `Level`; `sp_Log_Error` grava 3 |
+| `sp_Etl_Tables_Maintenance` (`Script004`) | o índice criado com sucesso ia com `5` (erro): agora vai com `1`; a falha vai com `3` |
+| Shared | `MessageLevel` em `Domain.Shared/Enums`; `Message.Level`; `AddWarning`, `AddError` e `HasErrors` no `ILoggerService` |
+| Módulos | 953 chamadas viraram `AddError` e 709 `AddWarning` (LinxMicrovix, Totvs, LinxCommerce, AfterSale, Movidesk e DataWarehouse), com os textos iguais. Os README dos módulos dizem o nível de cada mensagem |
+| Painel | lê `Level` direto: erros e avisos por execução, por job e por aplicação, e o filtro "incluir avisos" dos Logs de Erros, que antes só trazia erros |
+
+Diferenças em relação ao texto acima, e as perguntas da seção 6:
+
+1. **"Resposta de erro da API Linx Microvix" (pergunta 1):** nenhum caso é "sem dados". Todas as 567 chamadas marcam a
+   loja como falha ou pulam a empresa, e a resposta vazia sem erro já é tratada como sucesso. Ficam todas como erro.
+2. **Histórico (pergunta 2):** sem reclassificação por texto. O script de conversão de um banco existente (melhorias,
+   seção 8) leva `IsError = 1` para 3 e o resto para 1.
+3. **"devolveu outro ProductID/OrderID/CustomerID" e "não devolveu o vendedor" (LinxCommerce) são erro**, não aviso: o
+   service para a leitura do cliente sem gravar, então o dado ficou para trás por uma resposta inconsistente da fonte.
+4. **Mensagens da validação (FluentValidation) são aviso:** o registro é gravado mesmo assim, como uma inconsistência na
+   fonte que não impediu a gravação (cerca de 320 chamadas).
+5. **Escritas da Totvs recusadas pelas nossas conferências** (saldo de bônus, variação de preço, `orderId` existente,
+   escritas desligadas, loja fora de `totvs.TotvsBranches`) são aviso; a conferência que falhou por erro da API é erro.

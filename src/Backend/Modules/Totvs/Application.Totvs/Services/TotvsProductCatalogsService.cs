@@ -163,7 +163,7 @@ namespace Application.Totvs.Services
                         {
                             var message = String.Empty;
                             validations.Errors.ForEach(s => message += $"tipo de classificação {ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.code)}: {s.ErrorMessage}\n");
-                            _logger.AddMessage(message);
+                            _logger.AddWarning(message);
                         }
 
                         _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Catalogs.ClassificationType(company.doc_company!, batchTime, item.dto), item.json.ToString(Formatting.None)));
@@ -271,7 +271,7 @@ namespace Application.Totvs.Services
                         {
                             var message = String.Empty;
                             validations.Errors.ForEach(s => message += $"classificação {$"{ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.typeCode)}|{(item.dto.code ?? String.Empty).ToUpperInvariant()}"}: {s.ErrorMessage}\n");
-                            _logger.AddMessage(message);
+                            _logger.AddWarning(message);
                         }
 
                         _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Catalogs.ProductClassification(company.doc_company!, batchTime, item.dto), item.json.ToString(Formatting.None)));
@@ -380,7 +380,7 @@ namespace Application.Totvs.Services
                         {
                             var message = String.Empty;
                             validations.Errors.ForEach(s => message += $"categoria {ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.code)}: {s.ErrorMessage}\n");
-                            _logger.AddMessage(message);
+                            _logger.AddWarning(message);
                         }
 
                         _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Catalogs.Category(company.doc_company!, batchTime, item.dto), item.json.ToString(Formatting.None)));
@@ -489,7 +489,7 @@ namespace Application.Totvs.Services
                         {
                             var message = String.Empty;
                             validations.Errors.ForEach(s => message += $"grade {ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.code)}: {s.ErrorMessage}\n");
-                            _logger.AddMessage(message);
+                            _logger.AddWarning(message);
                         }
 
                         _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Catalogs.Grid(company.doc_company!, batchTime, item.dto), item.json.ToString(Formatting.None)));
@@ -598,7 +598,7 @@ namespace Application.Totvs.Services
                         {
                             var message = String.Empty;
                             validations.Errors.ForEach(s => message += $"unidade de medida {(item.dto.code ?? String.Empty).ToUpperInvariant()}: {s.ErrorMessage}\n");
-                            _logger.AddMessage(message);
+                            _logger.AddWarning(message);
                         }
 
                         _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Catalogs.MeasurementUnit(company.doc_company!, batchTime, item.dto), item.json.ToString(Formatting.None)));
@@ -695,7 +695,7 @@ namespace Application.Totvs.Services
                         {
                             var message = String.Empty;
                             validations.Errors.ForEach(s => message += $"cor {(item.dto.colorCode ?? String.Empty).ToUpperInvariant()}: {s.ErrorMessage}\n");
-                            _logger.AddMessage(message);
+                            _logger.AddWarning(message);
                         }
 
                         _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Catalogs.Color(company.doc_company!, batchTime, hash, item.dto), json));
@@ -797,7 +797,7 @@ namespace Application.Totvs.Services
                         {
                             var message = String.Empty;
                             validations.Errors.ForEach(s => message += $"tipo de campo adicional {ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.code)}: {s.ErrorMessage}\n");
-                            _logger.AddMessage(message);
+                            _logger.AddWarning(message);
                         }
 
                         _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Catalogs.AdditionalFieldType(company.doc_company!, batchTime, item.dto), item.json.ToString(Formatting.None)));
@@ -906,7 +906,7 @@ namespace Application.Totvs.Services
                         {
                             var message = String.Empty;
                             validations.Errors.ForEach(s => message += $"agrupador {ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.grouperCode)}: {s.ErrorMessage}\n");
-                            _logger.AddMessage(message);
+                            _logger.AddWarning(message);
                         }
 
                         _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Catalogs.ProductGrouperConfiguration(company.doc_company!, batchTime, item.dto), item.json.ToString(Formatting.None)));
@@ -1015,7 +1015,7 @@ namespace Application.Totvs.Services
                         {
                             var message = String.Empty;
                             validations.Errors.ForEach(s => message += $"item de instrução {ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.code)}: {s.ErrorMessage}\n");
-                            _logger.AddMessage(message);
+                            _logger.AddWarning(message);
                         }
 
                         _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Catalogs.InstructionItem(company.doc_company!, batchTime, item.dto), item.json.ToString(Formatting.None)));
@@ -1125,7 +1125,7 @@ namespace Application.Totvs.Services
                         {
                             var message = String.Empty;
                             validations.Errors.ForEach(s => message += $"composição {ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.code)}: {s.ErrorMessage}\n");
-                            _logger.AddMessage(message);
+                            _logger.AddWarning(message);
                         }
 
                         _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Catalogs.Composition(company.doc_company!, batchTime, item.dto), item.json.ToString(Formatting.None)));
@@ -1234,7 +1234,7 @@ namespace Application.Totvs.Services
                         {
                             var message = String.Empty;
                             validations.Errors.ForEach(s => message += $"tabela de preço {ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.code)}: {s.ErrorMessage}\n");
-                            _logger.AddMessage(message);
+                            _logger.AddWarning(message);
                         }
 
                         _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Catalogs.PriceTable(company.doc_company!, batchTime, item.dto), item.json.ToString(Formatting.None)));
@@ -1342,7 +1342,7 @@ namespace Application.Totvs.Services
                         {
                             var message = String.Empty;
                             validations.Errors.ForEach(s => message += $"escala {ConverterValidatorsExtensions.ConvertToInt32Validation(item.dto.scaleCode)}: {s.ErrorMessage}\n");
-                            _logger.AddMessage(message);
+                            _logger.AddWarning(message);
                         }
 
                         _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Catalogs.PriceTableScale(company.doc_company!, batchTime, item.dto), item.json.ToString(Formatting.None)));
@@ -1543,7 +1543,7 @@ namespace Application.Totvs.Services
                     if (response is not null)
                     {
                         var body800 = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                        _logger.AddMessage($"Erro da API Totvs em {route} (empresa {company.doc_company}, página {page}): {response.StatusCode} {body800}");
+                        _logger.AddError($"Erro da API Totvs em {route} (empresa {company.doc_company}, página {page}): {response.StatusCode} {body800}");
                     }
 
                     return null;
@@ -1568,7 +1568,7 @@ namespace Application.Totvs.Services
                 if (result?.items is null || json.Count != result.items.Count)
                 {
                     var body800 = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                    _logger.AddMessage($"Resposta inválida da API Totvs em {route} (empresa {company.doc_company}, página {page}): {body800}");
+                    _logger.AddError($"Resposta inválida da API Totvs em {route} (empresa {company.doc_company}, página {page}): {body800}");
 
                     return null;
                 }

@@ -67,7 +67,7 @@ namespace Application.Movidesk.Services
                 if (company is null)
                 {
                     // nenhuma chamada à API: não há o que registrar em MovideskRequests (igual ao GetTicketById)
-                    _logger.AddMessage($"Empresa {doc_company} não cadastrada em movidesk.MovideskParameters.");
+                    _logger.AddWarning($"Empresa {doc_company} não cadastrada em movidesk.MovideskParameters.");
                     return null;
                 }
 
@@ -112,7 +112,7 @@ namespace Application.Movidesk.Services
 
                     if (service is null || ConverterValidatorsExtensions.ConvertToInt32Validation(service.id) != id)
                     {
-                        _logger.AddMessage($"Resposta inválida da API Movidesk para o serviço {id} (empresa {doc_company}): {response}");
+                        _logger.AddError($"Resposta inválida da API Movidesk para o serviço {id} (empresa {doc_company}): {response}");
                         result = null;
                     }
                     else
@@ -170,7 +170,7 @@ namespace Application.Movidesk.Services
                 }
                 catch (Newtonsoft.Json.JsonException)
                 {
-                    _logger.AddMessage($"Resposta inválida da API Movidesk (empresa {company.doc_company}): {response}");
+                    _logger.AddError($"Resposta inválida da API Movidesk (empresa {company.doc_company}): {response}");
                     continue;
                 }
 
@@ -302,7 +302,7 @@ namespace Application.Movidesk.Services
                 {
                     // nenhuma chamada à API: não há o que registrar em MovideskRequests (igual ao GetServiceById)
                     var notFound = $"Empresa {doc_company} não cadastrada em movidesk.MovideskParameters.";
-                    _logger.AddMessage(notFound);
+                    _logger.AddWarning(notFound);
 
                     return new Domain.Movidesk.Dtos.Writes.Result { success = false, id = id?.ToString(), message = notFound };
                 }
@@ -346,7 +346,7 @@ namespace Application.Movidesk.Services
                     }
 
                     var message = apiMessage ?? (response.Content?.Length > 800 ? response.Content[..800] : response.Content) ?? $"A Movidesk devolveu {response.StatusCode}.";
-                    _logger.AddMessage($"Serviço {serviceId?.ToString() ?? "novo"} (empresa {doc_company}): {message}");
+                    _logger.AddError($"Serviço {serviceId?.ToString() ?? "novo"} (empresa {doc_company}): {message}");
 
                     return new Domain.Movidesk.Dtos.Writes.Result
                     {
@@ -398,7 +398,7 @@ namespace Application.Movidesk.Services
                 }
 
                 if (localMessage is not null)
-                    _logger.AddMessage(localMessage);
+                    _logger.AddWarning(localMessage);
 
                 _logger.AddMessage($"Concluída com sucesso: serviço {serviceId?.ToString() ?? "(id não informado pela API)"} ({method.Method} {route}).");
 
@@ -437,7 +437,7 @@ namespace Application.Movidesk.Services
                 {
                     var message = String.Empty;
                     validations.Errors.ForEach(s => message += $"serviço {service.id}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
+                    _logger.AddWarning(message);
                 }
 
                 _listSomenteNovos.Add(new Domain.Movidesk.Entities.Reads.Services.Service(doc_company, batchTime, service));

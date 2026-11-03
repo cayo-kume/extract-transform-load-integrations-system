@@ -90,7 +90,7 @@
         await Snackbar.TryAsync(Logger, async () =>
         {
             _apps = await MonitorRepository.GetAppSummariesAsync(_filter.Period);
-            _updatedAt = DateTime.Now;
+            _updatedAt = WebApp.Data.Sql.MainDatabase.LocalNow();
         }, "Não foi possível carregar as aplicações.");
 
         _loading = false;

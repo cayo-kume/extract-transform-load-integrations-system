@@ -9,6 +9,9 @@ namespace Infrastructure.Shared.Api
 {
     public class ApiClient : IApiClient
     {
+        // erro de rede na leitura da resposta: uma nova tentativa, depois desta espera (docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md, 2.2)
+        private static readonly TimeSpan NetworkRetryDelay = TimeSpan.FromSeconds(10);
+
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<ApiClient> _logger;
         private readonly string _clientName;
@@ -28,12 +31,10 @@ namespace Infrastructure.Shared.Api
 
             _logger.LogDebug("[ApiClient] GET {Url}", url);
 
-            var started = Stopwatch.GetTimestamp();
-            var response = await client.GetAsync(url);
-            JobProgress.ApiCall("GET", route, (int)response.StatusCode, Stopwatch.GetElapsedTime(started));
-            var content = await response.Content.ReadAsStringAsync();
+            var (response, content) = await SendWithRetry(client, () => new HttpRequestMessage(HttpMethod.Get, url), route, retryOnNetworkError: true);
 
-            _logger.LogDebug("[ApiClient] GET {Url} → {StatusCode}", url, response.StatusCode);
+            using (response)
+                _logger.LogDebug("[ApiClient] GET {Url} → {StatusCode}", url, response.StatusCode);
 
             return content;
         }
@@ -149,20 +150,19 @@ namespace Infrastructure.Shared.Api
             return content;
         }
 
-        public async Task<ApiResponse> SendAsync(HttpMethod method, string route, HttpContent? content = null, Dictionary<string, string>? headers = null, Dictionary<string, string>? queryParams = null)
+        public async Task<ApiResponse> SendAsync(HttpMethod method, string route, HttpContent? content = null, Dictionary<string, string>? headers = null, Dictionary<string, string>? queryParams = null, bool retryOnNetworkError = false)
         {
             var client = CreateClient(headers);
 
             var url = BuildUrl(client.BaseAddress?.ToString(), route, queryParams);
 
-            using var request = new HttpRequestMessage(method, url) { Content = content };
-
             _logger.LogDebug("[ApiClient] {Method} {Route}", method, route);
 
-            var started = Stopwatch.GetTimestamp();
-            using var response = await client.SendAsync(request);
-            JobProgress.ApiCall(method.Method, route, (int)response.StatusCode, Stopwatch.GetElapsedTime(started));
-            var body = await response.Content.ReadAsStringAsync();
+            // uma HttpRequestMessage só pode ser enviada uma vez: cada tentativa monta a sua, com o mesmo conteúdo
+            var (sent, body) = await SendWithRetry(client, () => new HttpRequestMessage(method, url) { Content = content }, route,
+                retryOnNetworkError: retryOnNetworkError || method == HttpMethod.Get || method == HttpMethod.Head);
+
+            using var response = sent;
 
             // cabeçalhos da resposta e do conteúdo juntos (retry-after vem na resposta, content-type no conteúdo)
             var responseHeaders = response.Headers
@@ -175,6 +175,63 @@ namespace Infrastructure.Shared.Api
 
             return new ApiResponse((int)response.StatusCode, body, responseHeaders);
         }
+
+        /// <summary>
+        /// envia e lê o corpo. O HttpClient lê o corpo inteiro dentro do SendAsync, então a resposta cortada no meio
+        /// (HttpIOException "The response ended prematurely", Totvs no teste C1) sai daqui como exceção. Com retryOnNetworkError, esse
+        /// erro repete uma vez depois de NetworkRetryDelay. Tempo esgotado (TaskCanceledException) não repete: a origem está lenta,
+        /// e repetir dobraria o tempo; recusa de conexão também não (a API está fora, não cortou a resposta)
+        /// </summary>
+        private async Task<(HttpResponseMessage Response, string Body)> SendWithRetry(HttpClient client, Func<HttpRequestMessage> request, string route, bool retryOnNetworkError)
+        {
+            for (var attempt = 1; ; attempt++)
+            {
+                // sem using: o Dispose da mensagem descartaria o conteúdo, que a nova tentativa envia de novo (quem monta o
+                // conteúdo o descarta)
+                var message = request();
+                var started = Stopwatch.GetTimestamp();
+
+                try
+                {
+                    var response = await client.SendAsync(message);
+                    JobProgress.ApiCall(message.Method.Method, route, (int)response.StatusCode, Stopwatch.GetElapsedTime(started));
+
+                    try
+                    {
+                        return (response, await response.Content.ReadAsStringAsync());
+                    }
+                    catch
+                    {
+                        response.Dispose();
+                        throw;
+                    }
+                }
+                catch (Exception ex) when (retryOnNetworkError && attempt == 1 && IsResponseCut(ex))
+                {
+                    // a rota, não a url: a query string pode levar o token
+                    _logger.LogWarning(ex, "[ApiClient] {Method} {Route}: a resposta foi interrompida ({Message}); nova tentativa em {Delay} s.",
+                        message.Method, route, ex.Message, NetworkRetryDelay.TotalSeconds);
+
+                    await Task.Delay(NetworkRetryDelay);
+                }
+            }
+        }
+
+        /// <summary>
+        /// a conexão caiu ou a resposta acabou antes do fim, depois de a requisição chegar à origem
+        /// </summary>
+        private static bool IsResponseCut(Exception? ex) =>
+            ex switch
+            {
+                null => false,
+                OperationCanceledException => false,
+                HttpIOException => true,
+                HttpRequestException { HttpRequestError: HttpRequestError.ResponseEnded } => true,
+                HttpRequestException { HttpRequestError: HttpRequestError.ConnectionError or HttpRequestError.NameResolutionError or HttpRequestError.SecureConnectionError } => false,
+                HttpRequestException { StatusCode: not null } => false,
+                IOException => true,
+                _ => IsResponseCut(ex.InnerException)
+            };
 
         private HttpClient CreateClient(Dictionary<string, string>? headers)
         {

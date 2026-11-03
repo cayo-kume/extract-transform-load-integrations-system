@@ -20,7 +20,10 @@ namespace Domain.Shared.Entities.Auditing
 
         public DateTime StartDate { get; private set; }
 
-        public DateTime EndDate { get; private set; }
+        /// <summary>
+        /// nula enquanto a execução roda: a linha entra em auditing.Logs no início (LoggerService.AddLog) e o fim é gravado no commit
+        /// </summary>
+        public DateTime? EndDate { get; private set; }
 
         public Guid Execution { get; private set; }
 

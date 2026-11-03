@@ -22,6 +22,20 @@ namespace Infrastructure.Movidesk.Repositorys
             return await _coreRepository.GetRecord<DateTime?>(sql);
         }
 
+        public async Task<DateTime?> GetTicketsSyncedUntil(string doc_company)
+        {
+            string sql = _movideskTicketsCommandHandler.CreateGetTicketsSyncedUntilQuery(doc_company);
+
+            return await _coreRepository.GetRecord<DateTime?>(sql);
+        }
+
+        public async Task SetTicketsSyncedUntil(string doc_company, DateTime syncedUntil)
+        {
+            string sql = _movideskTicketsCommandHandler.CreateSetTicketsSyncedUntilQuery();
+
+            await _coreRepository.ExecuteCommand(sql, new Dictionary<string, object?> { { "doc_company", doc_company }, { "syncedUntil", syncedUntil } });
+        }
+
         public async Task<IEnumerable<Ticket?>> GetTicketsByIds(string doc_company, List<long> ids)
         {
             if (ids.Count == 0)

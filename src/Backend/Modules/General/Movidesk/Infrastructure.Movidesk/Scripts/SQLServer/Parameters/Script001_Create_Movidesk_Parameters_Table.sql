@@ -12,5 +12,9 @@ create table [movidesk].MovideskParameters (
 	integrated_or_updated_at	datetime,
 	id							int not null identity primary key,
 	[doc_company]				nvarchar(14) not null,
-	token						uniqueidentifier
+	token						uniqueidentifier,
+	--marca d'água do GetTickets (UTC, como o lastUpdate da API): o início da listagem da última execução completa da empresa,
+	--menos 1 h de folga. Só avança quando todos os tickets alterados foram gravados; nula, o GetTickets parte do maior
+	--lastUpdate gravado (docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md, 2.1)
+	tickets_synced_until		datetime null
 );

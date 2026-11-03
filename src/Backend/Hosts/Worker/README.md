@@ -48,7 +48,7 @@ estão em [docs/PLANO-HOST-WORKER.md](docs/PLANO-HOST-WORKER.md).
 flowchart LR
     subgraph CLUSTER["🪟 Cluster do Quartz"]
         direction TB
-        W1["Worker A<br/>instanceId AUTO"]
+        W1["Worker A<br/>instanceId máquina-serviço"]
         W2["Worker B<br/>(opcional)"]
     end
     CLUSTER -- "check-in a cada 20 s" --> QZ[("schema quartz<br/>QRTZ_*")]
@@ -76,16 +76,18 @@ mas **só um agenda por vez** no mesmo banco.
   outro host.
 
 > [!TIP]
-> Uma combinação natural é o WebApi em modo só API, para as rotas manuais, com o Worker agendando. Na subida, o Worker
-> avisa no log se encontrar um servidor do Hangfire com heartbeat recente no mesmo banco (`[HangFire].[Server]`); ele sobe
-> assim mesmo, porque a trava ([abaixo](#-concorrência)) impede que um job rode junto nos dois. Os WebJobs não são
-> conferidos.
+> Uma combinação natural é o WebApi em modo só API, para as rotas manuais, com o Worker agendando. Desde 03/11/2026 cada
+> host de agenda se registra em `auditing.SchedulingHosts` com heartbeat (`SchedulingHostHeartbeat`, a cada 30 s, expira
+> em 2 min), e só o tipo que está no ar há mais tempo executa os jobs: um Worker que sobe com o Hangfire ou os WebJobs no
+> ar avisa no log e espera eles saírem; vários Workers (o cluster) são do mesmo tipo e rodam juntos. Para os dois tipos
+> agendarem de propósito: `Scheduling:AllowOtherHostTypes = true`
+> ([melhorias, 4.2](../../../../docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md#42-ponto-7-dois-agendadores-no-mesmo-banco)).
 
 > [!WARNING]
 > A trava impede que o mesmo job rode **ao mesmo tempo** em dois hosts, mas não que rode **duas vezes** no mesmo ciclo:
 > no teste com o Worker e o Hangfire no mesmo banco, o Quartz dispara no minuto cheio e o Hangfire pega a fila uns 11 s
 > depois, quando a execução do Worker já terminou; 10 de 12 jobs rodaram duas vezes por ciclo (APIs lidas em dobro, dados
-> sem duplicidade). O aviso na subida é o único sinal.
+> sem duplicidade). O registro dos hosts (acima) impede isso, salvo com `Scheduling:AllowOtherHostTypes = true`.
 
 ---
 
@@ -141,7 +143,7 @@ Worker/
 │   ├── SchedulerRefreshJob.cs    a agenda a partir de auditing.Jobs (um job por empresa)
 │   ├── JobSkipCounter.cs         pulos seguidos por job e o aviso
 │   ├── MisfireListener.cs        descartes pelo misfire, no mesmo contador
-│   └── SchedulingHostGuard.cs    aviso de Hangfire agendando no mesmo banco
+│   └── (o registro dos hosts de agenda fica no Hosts.Scheduling: SchedulingHostRegistry e SchedulingHostHeartbeat)
 ├── Scripts/SQLServer/            tabelas do Quartz (schema quartz) e o migrator.csx
 ├── Publish/
 │   ├── publish-worker.ps1        script de publicação
@@ -172,7 +174,8 @@ Os mapas `IdJob → método` (`RecurringJobs/`), o `JobCron` e o `ScheduledJobRu
 | Parâmetro | Valor | Uso |
 |---|---|---|
 | `Enabled` | `true` | `false`: o host sobe sem o Quartz |
-| `SchedulerName` | `Worker` | o mesmo em todos os Workers do cluster; cada processo tem o seu `instanceId` (`AUTO`) |
+| `SchedulerName` | `Worker` | o mesmo em todos os Workers do cluster; cada processo tem o seu `InstanceId` |
+| `InstanceId` | vazio | id da instância no cluster; vazio: `<máquina>-<Service:Name>`, fixo entre reinícios. Dois Workers na mesma máquina precisam de nomes de serviço diferentes ou deste id |
 | `TimeZone` | `America/Sao_Paulo` | fuso de todos os triggers |
 | `Storage:ConnectionStringName` | `Connection` | onde ficam as tabelas do Quartz |
 | `Storage:TablePrefix` | `quartz.QRTZ_` | schema e prefixo das tabelas (sem colchetes) |
@@ -454,8 +457,8 @@ C4, C4b, C5, C6, A1, A2, A3, A6 e A8), com os 12 jobs do conjunto mínimo a cada
 | 💥 Worker derrubado no meio | Os disparos em andamento ficam `EXECUTING` em `QRTZ_FIRED_TRIGGERS` e são limpos na volta, **sem reexecução**. As execuções interrompidas **não deixam registro em `auditing.Logs`**, que só é gravado no fim |
 | 💤 Worker parado mais que o misfire | Os disparos perdidos são descartados (aviso `Misfired` no log) e o job volta no horário seguinte. Dentro do limite, viram um disparo só. É a diferença para o Hangfire, que sempre roda uma vez o que atrasou |
 | 🧩 Dois Workers (cluster) | Check-in a cada 20 s, cada job roda uma vez por ciclo e o trabalho é dividido. Um nó derrubado: o outro detecta a instância morta, não reexecuta os disparos dela (`DisallowConcurrentExecution`) e segue sozinho |
-| 🆔 Id da instância | Com `AUTO`, o Quartz avisa na subida que pede um id fixo para afinidade de nó (sem efeito no teste; [ponto 8](../../../../docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md#83-pontos-em-aberto)) |
-| ☁️ Azure SQL | As 11 tabelas `quartz` e os ciclos funcionam no Azure SQL. Com o banco serverless pausado, o Quartz sobe e o primeiro ciclo é normal; o `SchedulingHostGuard` só avisa que não conseguiu conferir o Hangfire. O check-in a cada 20 s mantém um banco serverless **sempre acordado** (custo) |
+| 🆔 Id da instância | Com `AUTO`, o Quartz avisava na subida que pede um id fixo para afinidade de nó. Desde 03/11/2026 o id é `Quartz:InstanceId` ou `<máquina>-<Service:Name>` ([melhorias, 4.3](../../../../docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md#43-ponto-8-instanceid-do-quartz)) |
+| ☁️ Azure SQL | As 11 tabelas `quartz` e os ciclos funcionam no Azure SQL. Com o banco serverless pausado, o Quartz sobe e o primeiro ciclo é normal; o heartbeat dos hosts de agenda registra o erro de conexão uma vez e segue. O check-in a cada 20 s mantém um banco serverless **sempre acordado** (custo) |
 
 ---
 

@@ -137,7 +137,8 @@ namespace Application.Totvs.Services
                                 HttpMethod.Post,
                                 "person/v2/representatives/search",
                                 content,
-                                headers: new Dictionary<string, string> { { "Authorization", $"Bearer {token}" } }
+                                headers: new Dictionary<string, string> { { "Authorization", $"Bearer {token}" } },
+                                retryOnNetworkError: true
                             );
 
                             if (attempt == 1 && response.StatusCode == 401)
@@ -167,7 +168,7 @@ namespace Application.Totvs.Services
                             if (response is not null)
                             {
                                 var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                                _logger.AddMessage($"Erro da API Totvs em person/v2/representatives/search (empresa {company.doc_company}, página {page}): {response.StatusCode} {body}");
+                                _logger.AddError($"Erro da API Totvs em person/v2/representatives/search (empresa {company.doc_company}, página {page}): {response.StatusCode} {body}");
                             }
 
                             failed = true;
@@ -196,7 +197,7 @@ namespace Application.Totvs.Services
                         if (result?.items is null)
                         {
                             var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                            _logger.AddMessage($"Resposta inválida da API Totvs em person/v2/representatives/search (empresa {company.doc_company}, página {page}): {body}");
+                            _logger.AddError($"Resposta inválida da API Totvs em person/v2/representatives/search (empresa {company.doc_company}, página {page}): {body}");
 
                             failed = true;
                             break;
@@ -272,7 +273,7 @@ namespace Application.Totvs.Services
                 if (company is null)
                 {
                     // nenhuma chamada à API: não há o que registrar em TotvsRequests (igual ao Movidesk)
-                    _logger.AddMessage($"Empresa {doc_company} não cadastrada em totvs.TotvsParameters.");
+                    _logger.AddWarning($"Empresa {doc_company} não cadastrada em totvs.TotvsParameters.");
                     return null;
                 }
 
@@ -365,7 +366,7 @@ namespace Application.Totvs.Services
                 if (!response.IsSuccess)
                 {
                     var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                    _logger.AddMessage($"Erro da API Totvs em {route} (empresa {doc_company}, representante {code}): {response.StatusCode} {body}");
+                    _logger.AddError($"Erro da API Totvs em {route} (empresa {doc_company}, representante {code}): {response.StatusCode} {body}");
 
                     _totvsService.SaveRequest(EnumJob.TotvsGetRepresentativeByCode, user_name, "POST", route, doc_company, code.ToString(), response.Content, false, requestBody);
                     return null;
@@ -388,7 +389,7 @@ namespace Application.Totvs.Services
 
                 if (page?.items is null)
                 {
-                    _logger.AddMessage($"Resposta inválida da API Totvs em {route} (empresa {doc_company}, representante {code}): {response.Content}");
+                    _logger.AddError($"Resposta inválida da API Totvs em {route} (empresa {doc_company}, representante {code}): {response.Content}");
                     result = null;
                 }
                 else if (representative is null || json is null)
@@ -514,7 +515,7 @@ namespace Application.Totvs.Services
                                 if (response is not null)
                                 {
                                     var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                                    _logger.AddMessage($"Erro da API Totvs em person/v2/reception-sale/search (empresa {company.doc_company}, movimento {windowStart:dd/MM/yyyy} a {windowEnd:dd/MM/yyyy}, página {page}): {response.StatusCode} {body}");
+                                    _logger.AddError($"Erro da API Totvs em person/v2/reception-sale/search (empresa {company.doc_company}, movimento {windowStart:dd/MM/yyyy} a {windowEnd:dd/MM/yyyy}, página {page}): {response.StatusCode} {body}");
                                 }
 
                                 failed = true;
@@ -546,7 +547,7 @@ namespace Application.Totvs.Services
                             if (result?.items is null)
                             {
                                 var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                                _logger.AddMessage($"Resposta inválida da API Totvs em person/v2/reception-sale/search (empresa {company.doc_company}, página {page}): {body}");
+                                _logger.AddError($"Resposta inválida da API Totvs em person/v2/reception-sale/search (empresa {company.doc_company}, página {page}): {body}");
 
                                 failed = true;
                                 break;
@@ -596,7 +597,7 @@ namespace Application.Totvs.Services
                             {
                                 var message = String.Empty;
                                 validations.Errors.ForEach(s => message += $"recepção {key.branchCode}/{key.movementDate:dd/MM/yyyy}/{key.sequence}: {s.ErrorMessage}\n");
-                                _logger.AddMessage(message);
+                                _logger.AddWarning(message);
                             }
 
                             _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.People.ReceptionSales.ReceptionSale(company.doc_company!, batchTime, hash, reception));
@@ -685,7 +686,7 @@ namespace Application.Totvs.Services
                 {
                     var message = String.Empty;
                     validations.Errors.ForEach(s => message += $"representante {representative.code}: {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
+                    _logger.AddWarning(message);
                 }
 
                 _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.People.Representatives.Representative(doc_company, batchTime, representative));

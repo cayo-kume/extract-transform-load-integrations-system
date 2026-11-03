@@ -58,7 +58,11 @@ WebApi, os WebJobs publicados ou o serviço do Worker.
 > [!NOTE]
 > Se, numa troca, dois ficarem ligados por um tempo, a trava ([abaixo](#-concorrência)) ainda impede que um mesmo job rode
 > junto nos dois, mas não que rode duas vezes no mesmo ciclo (visto no teste entre o Hangfire e o Worker: APIs lidas em
-> dobro). A coluna `Queue` é só a fila do Hangfire: não divide jobs entre os hosts.
+> dobro). Por isso, desde 03/11/2026, cada processo se registra em `auditing.SchedulingHosts` (tipo `WebJob`, com o nome
+> do WebJob em `WEBJOBS_NAME`) e só executa os horários se o tipo dele for o que está no ar há mais tempo; os outros
+> WebJobs do mesmo App Service são do mesmo tipo e rodam juntos normalmente
+> ([melhorias, 4.2](../../../../docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md#42-ponto-7-dois-agendadores-no-mesmo-banco)). A coluna `Queue` é só a fila do Hangfire:
+> não divide jobs entre os hosts.
 
 ---
 

@@ -5,10 +5,14 @@
         public static WebApplicationBuilder AddArchitectures(this WebApplicationBuilder builder)
         {
             // empresa da execução em toda rota: X-Company ou a holding do {docCompany} (CompanyContextFilter)
+            // a mesma trava dos agendadores nas rotas que rodam um job da agenda (RouteJobLockFilter)
             // em Development, barra de progresso no console para o job chamado pelo Swagger (JobProgressFilter)
             builder.Services.AddControllers(options =>
             {
                 options.Filters.Add<CompanyContextFilter>();
+
+                // trava do job nas rotas que rodam um job da agenda (RouteJobLock): 409 com ele rodando
+                options.Filters.Add<RouteJobLockFilter>();
 
                 if (builder.Environment.IsDevelopment())
                     options.Filters.Add<JobProgressFilter>();

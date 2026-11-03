@@ -124,7 +124,7 @@ namespace Application.Totvs.Services
 
                         if (brandBranchCodes.Count == 0)
                         {
-                            _logger.AddMessage($"Empresa {company.doc_company}: matriz {baseBranchCode} sem lojas em totvs.TotvsBranches: rode o GetBranchesList antes.");
+                            _logger.AddWarning($"Empresa {company.doc_company}: matriz {baseBranchCode} sem lojas em totvs.TotvsBranches: rode o GetBranchesList antes.");
                             continue;
                         }
 
@@ -247,7 +247,7 @@ namespace Application.Totvs.Services
                             {
                                 var message = String.Empty;
                                 validations.Errors.ForEach(s => message += $"saldos do produto {productCode} na loja {branchCode}: {s.ErrorMessage}\n");
-                                _logger.AddMessage(message);
+                                _logger.AddWarning(message);
                             }
 
                             var rows = (item.dto.balances ?? [])
@@ -299,7 +299,7 @@ namespace Application.Totvs.Services
                             if (response is not null)
                             {
                                 var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                                _logger.AddMessage($"Erro da API Totvs em {route} (empresa {company.doc_company}, {context}): {response.StatusCode} {body}");
+                                _logger.AddError($"Erro da API Totvs em {route} (empresa {company.doc_company}, {context}): {response.StatusCode} {body}");
                             }
 
                             return null;
@@ -324,7 +324,7 @@ namespace Application.Totvs.Services
                         if (result?.items is null || json.Count != result.items.Count)
                         {
                             var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                            _logger.AddMessage($"Resposta inválida da API Totvs em {route} (empresa {company.doc_company}, {context}): {body}");
+                            _logger.AddError($"Resposta inválida da API Totvs em {route} (empresa {company.doc_company}, {context}): {body}");
 
                             return null;
                         }
@@ -437,7 +437,7 @@ namespace Application.Totvs.Services
                 if (codes.Count == 0)
                 {
                     var body = response?.Content?.Length > 800 ? response.Content[..800] : response?.Content;
-                    _logger.AddMessage($"Empresa {company.doc_company}: não foi possível descobrir os códigos de saldo em product/v2/balances/search ({response?.StatusCode} {body}).");
+                    _logger.AddError($"Empresa {company.doc_company}: não foi possível descobrir os códigos de saldo em product/v2/balances/search ({response?.StatusCode} {body}).");
 
                     return null;
                 }
@@ -609,7 +609,7 @@ namespace Application.Totvs.Services
                     {
                         var message = String.Empty;
                         validations.Errors.ForEach(s => message += $"similares do produto {item.dto.productCode}: {s.ErrorMessage}\n");
-                        _logger.AddMessage(message);
+                        _logger.AddWarning(message);
                     }
 
                     _listSomenteNovos.Add((new Domain.Totvs.Entities.Reads.Products.Similars.ProductSimilar(company.doc_company!, batchTime, end, hash, item.dto), json));
@@ -648,7 +648,7 @@ namespace Application.Totvs.Services
 
                     if (branchCodes.Count == 0)
                     {
-                        _logger.AddMessage($"Empresa {company.doc_company} sem lojas em totvs.TotvsBranches: rode o GetBranchesList antes.");
+                        _logger.AddWarning($"Empresa {company.doc_company} sem lojas em totvs.TotvsBranches: rode o GetBranchesList antes.");
                         continue;
                     }
 
@@ -732,7 +732,7 @@ namespace Application.Totvs.Services
                             {
                                 var message = String.Empty;
                                 validations.Errors.ForEach(s => message += $"lote {item.dto.batchCode} do produto {item.dto.productCode} na loja {item.dto.branchCode}: {s.ErrorMessage}\n");
-                                _logger.AddMessage(message);
+                                _logger.AddWarning(message);
                             }
 
                             if (key.Item1 == 0 || key.Item2 == 0 || key.Item3 == 0)
@@ -786,7 +786,7 @@ namespace Application.Totvs.Services
                         // sem referências gravadas a conferência seria a carga inteira: é o trabalho do PostSearchReferences
                         if (stored.Count == 0)
                         {
-                            _logger.AddMessage($"Empresa {company.doc_company}, matriz {baseBranchCode}: nenhum produto gravado em totvs.TotvsSkusColorsProducts; rode o PostSearchReferences antes da conferência.");
+                            _logger.AddWarning($"Empresa {company.doc_company}, matriz {baseBranchCode}: nenhum produto gravado em totvs.TotvsSkusColorsProducts; rode o PostSearchReferences antes da conferência.");
                             continue;
                         }
 
@@ -995,7 +995,7 @@ namespace Application.Totvs.Services
 
                         if (brandBranchCodes.Count == 0)
                         {
-                            _logger.AddMessage($"Empresa {company.doc_company}: matriz {baseBranchCode} sem lojas em totvs.TotvsBranches: rode o GetBranchesList antes.");
+                            _logger.AddWarning($"Empresa {company.doc_company}: matriz {baseBranchCode} sem lojas em totvs.TotvsBranches: rode o GetBranchesList antes.");
                             continue;
                         }
 
@@ -1078,7 +1078,8 @@ namespace Application.Totvs.Services
                                         HttpMethod.Post,
                                         "product/v2/references/search",
                                         content,
-                                        headers: new Dictionary<string, string> { { "Authorization", $"Bearer {token}" } }
+                                        headers: new Dictionary<string, string> { { "Authorization", $"Bearer {token}" } },
+                                        retryOnNetworkError: true
                                     );
 
                                     if (attempt == 1 && response.StatusCode == 401)
@@ -1108,7 +1109,7 @@ namespace Application.Totvs.Services
                                     if (response is not null)
                                     {
                                         var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                                        _logger.AddMessage($"Erro da API Totvs em product/v2/references/search (empresa {company.doc_company}, matriz {baseBranchCode}, janela {windowStart:dd/MM/yyyy HH:mm} a {windowEnd:dd/MM/yyyy HH:mm}, página {page}): {response.StatusCode} {body}");
+                                        _logger.AddError($"Erro da API Totvs em product/v2/references/search (empresa {company.doc_company}, matriz {baseBranchCode}, janela {windowStart:dd/MM/yyyy HH:mm} a {windowEnd:dd/MM/yyyy HH:mm}, página {page}): {response.StatusCode} {body}");
                                     }
 
                                     failed = true;
@@ -1135,7 +1136,7 @@ namespace Application.Totvs.Services
                                 if (items is null)
                                 {
                                     var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                                    _logger.AddMessage($"Resposta inválida da API Totvs em product/v2/references/search (empresa {company.doc_company}, matriz {baseBranchCode}, página {page}): {body}");
+                                    _logger.AddError($"Resposta inválida da API Totvs em product/v2/references/search (empresa {company.doc_company}, matriz {baseBranchCode}, página {page}): {body}");
 
                                     failed = true;
                                     break;
@@ -1243,7 +1244,7 @@ namespace Application.Totvs.Services
                 if (company is null)
                 {
                     // nenhuma chamada à API: não há o que registrar em TotvsRequests (igual ao Movidesk)
-                    _logger.AddMessage($"Empresa {doc_company} não cadastrada em totvs.TotvsParameters.");
+                    _logger.AddWarning($"Empresa {doc_company} não cadastrada em totvs.TotvsParameters.");
                     return null;
                 }
 
@@ -1353,7 +1354,7 @@ namespace Application.Totvs.Services
                     if (!response.IsSuccess)
                     {
                         var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                        _logger.AddMessage($"Erro da API Totvs em {route} (empresa {doc_company}, matriz {baseBranchCode}, produto {code}): {response.StatusCode} {body}");
+                        _logger.AddError($"Erro da API Totvs em {route} (empresa {doc_company}, matriz {baseBranchCode}, produto {code}): {response.StatusCode} {body}");
 
                         _totvsService.SaveRequest(EnumJob.TotvsGetProductByCode, user_name, "POST", route, doc_company, code.ToString(), response.Content, false, requestBody);
                         return null;
@@ -1372,7 +1373,7 @@ namespace Application.Totvs.Services
 
                     if (page?.items is null)
                     {
-                        _logger.AddMessage($"Resposta inválida da API Totvs em {route} (empresa {doc_company}, matriz {baseBranchCode}, produto {code}): {response.Content}");
+                        _logger.AddError($"Resposta inválida da API Totvs em {route} (empresa {doc_company}, matriz {baseBranchCode}, produto {code}): {response.Content}");
 
                         _totvsService.SaveRequest(EnumJob.TotvsGetProductByCode, user_name, "POST", route, doc_company, code.ToString(), response.Content, false, requestBody);
                         return null;
@@ -1400,7 +1401,7 @@ namespace Application.Totvs.Services
 
                 if (String.IsNullOrWhiteSpace(referenceCode))
                 {
-                    _logger.AddMessage($"Produto {code} (referência {referenceId}, matriz {foundBaseBranchCode}): a referência veio sem ReferenceCode, não dá para lê-la inteira.");
+                    _logger.AddError($"Produto {code} (referência {referenceId}, matriz {foundBaseBranchCode}): a referência veio sem ReferenceCode, não dá para lê-la inteira.");
                     return null;
                 }
 
@@ -1439,7 +1440,7 @@ namespace Application.Totvs.Services
                     if (!response.IsSuccess)
                     {
                         var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                        _logger.AddMessage($"Erro da API Totvs em {route} (empresa {doc_company}, matriz {foundBaseBranchCode}, referência {referenceCode}, página {pageNumber}): {response.StatusCode} {body}");
+                        _logger.AddError($"Erro da API Totvs em {route} (empresa {doc_company}, matriz {foundBaseBranchCode}, referência {referenceCode}, página {pageNumber}): {response.StatusCode} {body}");
 
                         _totvsService.SaveRequest(EnumJob.TotvsGetProductByCode, user_name, "POST", route, doc_company, code.ToString(), response.Content, false, requestBody);
                         return null;
@@ -1469,7 +1470,7 @@ namespace Application.Totvs.Services
 
                     if (item is null)
                     {
-                        _logger.AddMessage($"Resposta inválida da API Totvs em {route} (empresa {doc_company}, matriz {foundBaseBranchCode}): a referência {referenceCode} ({referenceId}) não veio na página {pageNumber}.");
+                        _logger.AddError($"Resposta inválida da API Totvs em {route} (empresa {doc_company}, matriz {foundBaseBranchCode}): a referência {referenceCode} ({referenceId}) não veio na página {pageNumber}.");
                         return null;
                     }
 
@@ -1486,7 +1487,7 @@ namespace Application.Totvs.Services
 
                 if (dto is null)
                 {
-                    _logger.AddMessage($"Resposta inválida da API Totvs em {route} (empresa {doc_company}): a referência {referenceCode} ({referenceId}) não pôde ser lida.");
+                    _logger.AddError($"Resposta inválida da API Totvs em {route} (empresa {doc_company}): a referência {referenceCode} ({referenceId}) não pôde ser lida.");
                     return null;
                 }
 
@@ -1783,7 +1784,7 @@ namespace Application.Totvs.Services
                 if (response is not null)
                 {
                     var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                    _logger.AddMessage($"Erro da API Totvs em {route} (empresa {company.doc_company}, {context}): {response.StatusCode} {body}");
+                    _logger.AddError($"Erro da API Totvs em {route} (empresa {company.doc_company}, {context}): {response.StatusCode} {body}");
                 }
 
                 return null;
@@ -1807,7 +1808,7 @@ namespace Application.Totvs.Services
             if (result?.items is null || json.Count != result.items.Count)
             {
                 var body = response.Content?.Length > 800 ? response.Content[..800] : response.Content;
-                _logger.AddMessage($"Resposta inválida da API Totvs em {route} (empresa {company.doc_company}, {context}): {body}");
+                _logger.AddError($"Resposta inválida da API Totvs em {route} (empresa {company.doc_company}, {context}): {body}");
 
                 return null;
             }
@@ -1881,7 +1882,7 @@ namespace Application.Totvs.Services
                 {
                     var message = String.Empty;
                     validations.Errors.ForEach(s => message += $"referência {reference.referenceId} (matriz {baseBranchCode}): {s.ErrorMessage}\n");
-                    _logger.AddMessage(message);
+                    _logger.AddWarning(message);
                 }
 
                 _listSomenteNovos.Add(new Domain.Totvs.Entities.Reads.Products.Sku(doc_company, batchTime, baseBranchCode, reference));
@@ -1894,7 +1895,7 @@ namespace Application.Totvs.Services
             var repeatedProducts = _listSomenteNovos.SelectMany(x => x.colors).SelectMany(x => x.products).GroupBy(x => x.code).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
 
             if (repeatedProducts.Count > 0)
-                _logger.AddMessage($"Matriz {baseBranchCode}: produto(s) em mais de uma referência do lote, gravado(s) só na última: {String.Join(", ", repeatedProducts)}");
+                _logger.AddWarning($"Matriz {baseBranchCode}: produto(s) em mais de uma referência do lote, gravado(s) só na última: {String.Join(", ", repeatedProducts)}");
 
             foreach (var product in repeatedProducts)
                 foreach (var color in _listSomenteNovos.SelectMany(x => x.colors).Where(c => c.products.Any(p => p.code == product)).SkipLast(1))

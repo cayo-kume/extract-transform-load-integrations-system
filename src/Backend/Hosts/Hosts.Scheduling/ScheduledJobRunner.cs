@@ -1,4 +1,5 @@
 using Application.Shared.Abstractions.Services;
+using Domain.Shared.Abstractions.Repositorys;
 using Hosts.Scheduling.RecurringJobs;
 using Microsoft.Extensions.Logging;
 
@@ -11,17 +12,20 @@ namespace Hosts.Scheduling
     /// É scoped: o host cria um escopo por execução (o Hangfire faz isso sozinho), e o service e o ILoggerService vêm do mesmo
     /// escopo, então o erro vai para o log que o service abriu. A exceção segue adiante, para o host marcar a falha. Cada execução
     /// é de uma empresa (docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.4): o executor informa a empresa ao ICompanyContext do escopo
-    /// antes de chamar o service, e o log, os parâmetros e as procedures de sincronização usam essa empresa
+    /// antes de chamar o service, e o log, os parâmetros e as procedures de sincronização usam essa empresa. Quem chama segura a
+    /// trava da empresa; por isso, antes de executar, o executor fecha como interrompidas as execuções do job e da empresa que
+    /// ficaram abertas em auditing.Logs (queda, reinício ou deploy no meio), docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md, 3.1
     /// </summary>
     public class ScheduledJobRunner
     {
         private readonly IServiceProvider _services;
         private readonly ILoggerService _jobLog;
         private readonly ICompanyContext _companyContext;
+        private readonly IJobScheduleRepository _jobScheduleRepository;
         private readonly ILogger<ScheduledJobRunner> _logger;
 
-        public ScheduledJobRunner(IServiceProvider services, ILoggerService jobLog, ICompanyContext companyContext, ILogger<ScheduledJobRunner> logger) =>
-            (_services, _jobLog, _companyContext, _logger) = (services, jobLog, companyContext, logger);
+        public ScheduledJobRunner(IServiceProvider services, ILoggerService jobLog, ICompanyContext companyContext, IJobScheduleRepository jobScheduleRepository, ILogger<ScheduledJobRunner> logger) =>
+            (_services, _jobLog, _companyContext, _jobScheduleRepository, _logger) = (services, jobLog, companyContext, jobScheduleRepository, logger);
 
         public Task Run(int idJob, string company) =>
             RecurringJobMap.Definitions.TryGetValue(idJob, out var definition)
@@ -35,6 +39,8 @@ namespace Hosts.Scheduling
         {
             _companyContext.SetCompany(company);
 
+            await CloseInterruptedExecutions(definition, company);
+
             try
             {
                 await definition.Invoke(_services);
@@ -43,6 +49,25 @@ namespace Hosts.Scheduling
             {
                 await CommitError(definition, ex);
                 throw;
+            }
+        }
+
+        /// <summary>
+        /// execuções anteriores do job e da empresa sem fim gravado: o processo parou no meio. Uma falha aqui só vai para o log do
+        /// host; o job roda do mesmo jeito
+        /// </summary>
+        private async Task CloseInterruptedExecutions(RecurringJobDefinition definition, string company)
+        {
+            try
+            {
+                var closed = await _jobScheduleRepository.CloseInterruptedExecutions(definition.IdJob, company);
+
+                if (closed > 0)
+                    _logger.LogWarning("Job {IdJob} ({Target}), empresa {Company}: {Closed} execução(ões) anterior(es) sem fim gravado fechada(s) como interrompida(s).", definition.IdJob, definition.Target, company, closed);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Job {IdJob} ({Target}), empresa {Company}: não foi possível fechar as execuções interrompidas.", definition.IdJob, definition.Target, company);
             }
         }
 

@@ -74,7 +74,10 @@ namespace Application.DataWarehouse.Services
 
                 var blocked = await RunChecks();
 
-                _logger.AddMessage(blocked ? "Concluída com checagem bloqueante: veja dw_control.CheckResult." : "Concluída com sucesso!");
+                if (blocked)
+                    _logger.AddWarning("Concluída com checagem bloqueante: veja dw_control.CheckResult.");
+                else
+                    _logger.AddMessage("Concluída com sucesso!");
 
                 return !blocked;
             }
@@ -126,7 +129,10 @@ namespace Application.DataWarehouse.Services
                 // passo 7
                 var blocked = await RunChecks();
 
-                _logger.AddMessage(blocked ? "Concluída com checagem bloqueante: veja dw_control.CheckResult." : "Concluída com sucesso!");
+                if (blocked)
+                    _logger.AddWarning("Concluída com checagem bloqueante: veja dw_control.CheckResult.");
+                else
+                    _logger.AddMessage("Concluída com sucesso!");
 
                 return !blocked;
             }
@@ -250,7 +256,10 @@ namespace Application.DataWarehouse.Services
                 // passo 7: checagens
                 var blocked = await RunChecks();
 
-                _logger.AddMessage(blocked ? "Concluída com checagem bloqueante: veja dw_control.CheckResult." : "Concluída com sucesso!");
+                if (blocked)
+                    _logger.AddWarning("Concluída com checagem bloqueante: veja dw_control.CheckResult.");
+                else
+                    _logger.AddMessage("Concluída com sucesso!");
 
                 return !blocked;
             }
@@ -292,7 +301,7 @@ namespace Application.DataWarehouse.Services
 
             if (String.IsNullOrWhiteSpace(pepper))
             {
-                _logger.AddMessage($"DataWarehouse:Pepper não configurado: {procedureName} não foi executada.");
+                _logger.AddWarning($"DataWarehouse:Pepper não configurado: {procedureName} não foi executada.");
                 return;
             }
 
@@ -322,7 +331,7 @@ namespace Application.DataWarehouse.Services
 
                 if (errors > 0)
                 {
-                    _logger.AddMessage($"Checagem {name}: {errors} linha(s) com erro{(blocking ? " (bloqueia)" : String.Empty)}.");
+                    _logger.AddWarning($"Checagem {name}: {errors} linha(s) com erro{(blocking ? " (bloqueia)" : String.Empty)}.");
                     blocked |= blocking;
                 }
             }

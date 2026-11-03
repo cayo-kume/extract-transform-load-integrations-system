@@ -467,6 +467,14 @@ flowchart LR
 Os intervalos são ajustáveis por um `update` em `auditing.Jobs`, sem mudar o código. A ativação é por empresa (`IsActive` da linha da
 empresa em `auditing.Jobs`). Sem cliente da holding em `LinxCommerceParameters`, cada job só registra "Nenhum cliente" e termina.
 
+Cada mensagem de `auditing.Messages` tem um nível ([`PROPOSTA-NIVEL-MENSAGEM-AUDITING.md`](../../Shared/docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md)):
+
+| Nível | Mensagens |
+|---|---|
+| **Erro** (3) | `Erro do Linx Commerce em ...`, `Resposta inválida do Linx Commerce em ...` e `Falha ao chamar o Linx Commerce em ...` e `Get<...> do <registro> X ... devolveu outro <id>` (ou não devolveu o vendedor), que para a leitura do cliente sem gravar: o cliente ou o registro não foi carregado |
+| **Aviso** (2) | `Empresa X não cadastrada em linxcommerce.LinxCommerceParameters.`, `Cliente X de linxcommerce.LinxCommerceParameters ignorado: ...` e as inconsistências da validação |
+| **Informação** (1) | `Concluída com sucesso ...`, `Nenhum cliente em linxcommerce.LinxCommerceParameters: nada a ler.` e `<Pedido/Cliente/Produto/...> X não encontrado no Linx Commerce` (consulta sob demanda) |
+
 ---
 
 ## 🔑 Configuração
