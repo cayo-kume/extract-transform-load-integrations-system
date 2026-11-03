@@ -345,15 +345,30 @@ Com `Database:Enabled = true`, o WebApp lê e grava no banco principal com **Dap
 | `ConnectionStrings:QueryConnection` | o mesmo servidor, com o usuário `etl_query` (só para Executar Querys) |
 | `LoggedCompany:DocCompany` | CNPJ da empresa em `monitor.Company` (padrão `44065634000106`) |
 
+A tela [`tools/hosts/Invoke-HostsConfig.ps1`](../../../tools/hosts/Invoke-HostsConfig.ps1) grava essas chaves (e as dos
+hosts) de uma vez. À mão, na máquina de desenvolvimento, contra o SQL Server do Docker (troque `SEU_BANCO` e `SUA_SENHA`;
+o banco precisa dos migrators e da empresa cadastrada) e reinicie o WebApp, porque a troca entre mock e banco só acontece
+quando ele sobe:
+
 ```bash
 dotnet user-secrets set "Database:Enabled" "true" --project src/Frontend/WebApp
-dotnet user-secrets set "ConnectionStrings:Connection" "Server=localhost,1433;Database=NEWBLOOMERS;User Id=etl_monitor;Password=...;TrustServerCertificate=True" --project src/Frontend/WebApp
-dotnet user-secrets set "ConnectionStrings:QueryConnection" "Server=localhost,1433;Database=NEWBLOOMERS;User Id=etl_query;Password=...;TrustServerCertificate=True" --project src/Frontend/WebApp
 ```
 
+```bash
+dotnet user-secrets set "ConnectionStrings:Connection" "Server=localhost,1433;Database=SEU_BANCO;User Id=sa;Password=SUA_SENHA;TrustServerCertificate=True" --project src/Frontend/WebApp
+```
+
+```bash
+dotnet user-secrets set "ConnectionStrings:QueryConnection" "Server=localhost,1433;Database=SEU_BANCO;User Id=sa;Password=SUA_SENHA;TrustServerCertificate=True" --project src/Frontend/WebApp
+```
+
+Em homologação e produção, as connection strings usam os usuários próprios, nunca o `sa`: `User Id=etl_monitor` na
+`Connection` e `User Id=etl_query` na `QueryConnection`.
+
 Os usuários `etl_monitor` e `etl_query` saem das procedures `dbo.sp_Create_Monitor_User` e `dbo.sp_Grant_Query_User`
-(Script009 do Shared). A senha nunca fica em script: quem tem `ALTER ANY LOGIN` roda as procedures com ela, à mão ou pelo
-`migrator.csx` do Shared com as variáveis de ambiente `ETL_MONITOR_PASSWORD` e `ETL_QUERY_PASSWORD`. Banco criado depois:
+(Script009 do Shared). A senha nunca fica em script: quem tem `ALTER ANY LOGIN` roda as procedures com ela, à mão, pelos
+campos **Usuários de banco do WebApp** da tela `Invoke-Migrators.ps1` ou pelo `migrator.csx` do Shared com as variáveis
+de ambiente `ETL_MONITOR_PASSWORD` e `ETL_QUERY_PASSWORD`. Banco criado depois:
 `EXEC dbo.sp_Grant_Query_User @database = N'<banco>'`.
 
 > [!IMPORTANT]

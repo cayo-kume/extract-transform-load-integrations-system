@@ -69,9 +69,10 @@ flowchart LR
 | 🧩 | **Hosts.Scheduling** | `src/Backend/Hosts/Hosts.Scheduling` | Biblioteca comum aos três hosts: liga cada `IdJob` ao método do módulo | — |
 | 🟣 | **Módulos** | `src/Backend/Modules/*` | Totvs, LinxMicrovix, LinxCommerce, Movidesk, AfterSale e DataWarehouse (bibliotecas, não sobem sozinhos) | [README](README.md#-módulos) |
 | ⚫ | **Shared** | `src/Backend/Shared` | Auditoria, cliente HTTP, repositório comum, trava de concorrência e empresa da execução | — |
-| 🖥️ | **WebApp** | `src/Frontend/WebApp` | Painel Monitor de Integrações (Blazor), hoje com dados mockados | [📖](src/Frontend/WebApp/README.md) |
+| 🖥️ | **WebApp** | `src/Frontend/WebApp` | Painel Monitor de Integrações (Blazor): dados mockados por padrão, ou o banco com `Database:Enabled` | [📖](src/Frontend/WebApp/README.md) |
 | 📱 | **MobileApp** | `src/Mobile/MobileApp` | App .NET MAUI, em construção | — |
 | 🗄️ | **Invoke-Migrators** | `tools/migrators` | Tela (ou console) que sobe as tabelas de todas as aplicações na ordem certa | [MIGRATOR-CSX](docs/MIGRATOR-CSX.md) |
+| 🎛️ | **Invoke-HostsConfig** | `tools/hosts` | Tela que liga e desliga os jobs da empresa e grava os User Secrets dos hosts e do WebApp | [passo 3](#️-configurar-jobs-e-user-secrets-invoke-hostsconfig) |
 | 🧪 | **Import-TestSeeds** | `tools/seeds` | Carrega uma empresa de teste: parâmetros, CNPJs e jobs | [plano](docs/PLANO-TELA-CADASTRO-EMPRESA.md#3-script-ps1-de-dados-de-teste--feito-em-42) |
 
 ---
@@ -125,6 +126,7 @@ senha como `****` no log. O banco é criado pelo DbUp se não existir.
 | 🔑 | **Usuário e Senha** | login do SQL Server; o botão **Testar conexão** confere antes de rodar |
 | ⏱️ | **Host de agenda** | o host que vai agendar neste banco: **WebApi (Hangfire)**, **WebJob (Azure)** ou **Worker (Quartz.NET)**. Só o Worker tem tabelas próprias (schema `quartz`) |
 | 🧪 | **Banco de teste** | marcado, roda o `Import-TestSeeds.ps1` no fim, com o CNPJ e a razão social da tela (passo 3). **Ativar os jobs** liga os jobs da empresa: eles chamam as APIs reais |
+| 👤 | **Usuários de banco do WebApp** | opcional: com a senha do `etl_monitor` e/ou do `etl_query`, o migrator do Shared cria os logins e dá as permissões (procedures do Script009) |
 | ☑️ | **Catálogo** | as aplicações a subir; o **Shared** é obrigatório |
 
 Sem tela, no console:
@@ -132,7 +134,11 @@ Sem tela, no console:
 ```powershell
 ./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -SchedulingHost WebApi
 ./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -Apps Totvs,DataWarehouse -SchedulingHost Worker -TestSeeds
+./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -SchedulingHost Worker -MonitorPassword (Read-Host -AsSecureString) -QueryPassword (Read-Host -AsSecureString)
 ```
+
+O migrator só cria a estrutura. Quais jobs rodam e a configuração dos projetos ficam na segunda tela,
+[`Invoke-HostsConfig.ps1`](#️-configurar-jobs-e-user-secrets-invoke-hostsconfig) (passo 3).
 
 <details>
 <summary><b>🔧 Um migrator à mão</b></summary>
@@ -190,7 +196,27 @@ EXEC auditing.sp_Add_Holding_Company @company = '44065634000106', @docCompany = 
 EXEC auditing.sp_Add_Company_App @company = '44065634000106', @idParent = 30;  -- 30 = Movidesk
 ```
 
-**Ligar e desligar jobs** é um `UPDATE` na linha da empresa:
+### 🎛️ Configurar jobs e User Secrets (Invoke-HostsConfig)
+
+Com o banco migrado e a empresa cadastrada, a tela [`tools/hosts/Invoke-HostsConfig.ps1`](tools/hosts/Invoke-HostsConfig.ps1)
+faz o resto, sem SQL nem `dotnet user-secrets` à mão:
+
+```powershell
+./tools/hosts/Invoke-HostsConfig.ps1
+./tools/hosts/Invoke-HostsConfig.ps1 -Database EtlTeste -SchedulingHost Worker
+```
+
+| | Parte da tela | O que faz |
+|:---:|---|---|
+| 🖧 | **Banco** | servidor, porta, banco, usuário e senha; **Carregar empresas** lê `monitor.Company` |
+| ⏱️ | **Host de agenda** | WebApi (Hangfire), Worker (Quartz.NET) ou WebJob (Azure): o escolhido fica ligado e os outros desligados |
+| ⚙️ | **Configuração dos projetos** | opcional, grava os User Secrets do WebApi, Worker, WebJob e WebApp: connection strings deste banco, **APIs desligadas** (`BaseUrl` em `http://127.0.0.1:9/`, marcado por padrão), usuário e senha do dashboard do Hangfire, pepper do DataWarehouse, `Admin:Enabled`, chave do assistente e as senhas do `etl_monitor` e do `etl_query` |
+| ☑️ | **Jobs** | os jobs da empresa agrupados por aplicação (marcado é `IsActive = 1`), com filtro e botões para ativar ou desativar a aplicação ou a lista filtrada |
+
+**Salvar** grava os jobs alterados numa transação e depois os User Secrets. O log mostra só os nomes das chaves. Com jobs
+ativos e as APIs de verdade, a tela pede confirmação. Reinicie o host e o WebApp depois de salvar.
+
+**Ligar e desligar jobs à mão** é um `UPDATE` na linha da empresa:
 
 ```sql
 -- um job
@@ -242,12 +268,12 @@ A agenda é a mesma (`auditing.Jobs`, uma linha por job e empresa) e **só um ho
 
 | Host | Ligar | Desligar |
 |---|---|---|
-| 🌐 **WebApi (Hangfire)** | `Hangfire__Enabled=true` + usuário e senha do dashboard por variável de ambiente ou user-secrets; dashboard em `/hangfire` | `Hangfire:Enabled = false` (padrão) |
+| 🌐 **WebApi (Hangfire)** | `Hangfire__Enabled=true` + usuário e senha do dashboard por variável de ambiente ou user-secrets; dashboard em `http://localhost:5252/hangfire` | `Hangfire:Enabled = false` (padrão) |
 | ☁️ **WebJob (Azure)** | `dotnet run --project src/Backend/Hosts/WebJob -- --job 9002` no local; na Azure, `Publish/publish-webjob.ps1 -Profile <perfil>` | parar os WebJobs no App Service |
 | 🪟 **Worker (Quartz.NET)** | `dotnet run --project src/Backend/Hosts/Worker` no local; serviço com `Publish/publish-worker.ps1 -Profile <perfil>` (como administrador) | `Stop-Service EtlWorker` ou `Quartz:Enabled = false` |
 
 ```powershell
-# WebApi com o Hangfire
+# WebApi com o Hangfire (dashboard em http://localhost:5252/hangfire)
 $env:Hangfire__Enabled = 'true'; $env:Hangfire__Dashboard__UserName = '<usuário>'; $env:Hangfire__Dashboard__Password = '<senha>'
 dotnet run --project src/Backend/Hosts/WebApi --launch-profile http
 
@@ -256,7 +282,8 @@ dotnet run --project src/Backend/Hosts/WebJob -- --list-jobs
 ```
 
 > [!TIP]
-> A connection string do WebJob e do Worker fica fora do `appsettings.json`:
+> A tela [`Invoke-HostsConfig.ps1`](#️-configurar-jobs-e-user-secrets-invoke-hostsconfig) grava tudo isso nos User Secrets
+> de cada host. À mão, a connection string do WebJob e do Worker fica fora do `appsettings.json`:
 > `dotnet user-secrets set "ConnectionStrings:Connection" "<connection string>" --project src/Backend/Hosts/Worker`.
 
 **Carga inicial limitada (testes).** Com o banco vazio, alguns jobs leem o histórico inteiro (Totvs e Linx Microvix
@@ -283,7 +310,7 @@ aviso: o job não fica em erro). No ciclo seguinte, os dados vêm. Para ter tudo
 dotnet run --project src/Frontend/WebApp --launch-profile http
 ```
 
-Abre em **`http://localhost:5067`**, sem banco nem API: os dados são **mockados**.
+Abre em **`http://localhost:5067`**, sem API. Por padrão, os dados são **mockados**; para ler o banco, veja abaixo.
 
 <div align="center">
 
@@ -301,6 +328,26 @@ Abre em **`http://localhost:5067`**, sem banco nem API: os dados são **mockados
 ```bash
 dotnet user-secrets set "Admin:Enabled" "true" --project src/Frontend/WebApp
 ```
+
+**Painel com o banco.** A tela [`Invoke-HostsConfig.ps1`](#️-configurar-jobs-e-user-secrets-invoke-hostsconfig) grava as
+chaves abaixo. À mão, na máquina de desenvolvimento, contra o SQL Server do Docker (troque `SEU_BANCO` e `SUA_SENHA`; o
+banco precisa dos migrators e da empresa cadastrada), e reinicie o WebApp depois:
+
+```bash
+dotnet user-secrets set "Database:Enabled" "true" --project src/Frontend/WebApp
+```
+
+```bash
+dotnet user-secrets set "ConnectionStrings:Connection" "Server=localhost,1433;Database=SEU_BANCO;User Id=sa;Password=SUA_SENHA;TrustServerCertificate=True" --project src/Frontend/WebApp
+```
+
+```bash
+dotnet user-secrets set "ConnectionStrings:QueryConnection" "Server=localhost,1433;Database=SEU_BANCO;User Id=sa;Password=SUA_SENHA;TrustServerCertificate=True" --project src/Frontend/WebApp
+```
+
+Em homologação e produção, use os usuários `etl_monitor` (`Connection`) e `etl_query` (`QueryConnection`), criados pelas
+procedures do Script009 do Shared quando a tela do `Invoke-Migrators.ps1` recebe as senhas deles
+([README do WebApp](src/Frontend/WebApp/README.md#️-banco-de-dados-fase-5)).
 
 ---
 

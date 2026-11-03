@@ -111,7 +111,7 @@ flowchart TB
 | 🗃️ **Acesso a dados** | **Dapper** e bulk insert (`ISharedRepository`), SQL montado nos *command handlers* |
 | 🗄️ **Banco** | **SQL Server** (dados, auditoria e DW); scripts para MySQL e PostgreSQL existem só como `migrator.csx` |
 | 🔁 **Migrações** | **DbUp** executado por `dotnet-script` (`migrator.csx` em cada módulo): só estrutura e catálogo do produto |
-| 🧰 **Ferramentas** | `tools/migrators/Invoke-Migrators.ps1` (tela Windows Forms ou console) sobe as tabelas de todas as aplicações; `tools/seeds/Import-TestSeeds.ps1` (PowerShell 7 + `sqlcmd`) carrega empresa, parâmetros e jobs num banco de teste; `tools/azure/New-AzureTestResources.ps1` (az cli) cria e apaga o grupo `rg-etl-teste` dos testes na Azure |
+| 🧰 **Ferramentas** | `tools/migrators/Invoke-Migrators.ps1` (tela Windows Forms ou console) sobe as tabelas de todas as aplicações; `tools/hosts/Invoke-HostsConfig.ps1` (tela Windows Forms) liga e desliga os jobs da empresa e grava os User Secrets dos hosts e do WebApp; `tools/seeds/Import-TestSeeds.ps1` (PowerShell 7 + `sqlcmd`) carrega empresa, parâmetros e jobs num banco de teste; `tools/azure/New-AzureTestResources.ps1` (az cli) cria e apaga o grupo `rg-etl-teste` dos testes na Azure |
 | ✅ **Validação** | **FluentValidation** (um validador por DTO) |
 | 🔌 **HTTP e JSON** | `IHttpClientFactory` (`IApiClient` nomeado por módulo), **Newtonsoft.Json**, XML (`System.Xml.Linq`) no Linx Microvix |
 | ⚡ **Cache** | `IMemoryCache` ([padrão](docs/PADRAO-CACHE-INTEGRACOES.md)) |
@@ -145,6 +145,7 @@ extract-transform-load-integrations-system/
 │   └── Mobile/MobileApp/                 app MAUI
 ├── 🧰 tools/
 │   ├── azure/                            New-AzureTestResources.ps1: cria e apaga os recursos da Azure dos testes de hospedagem
+│   ├── hosts/                            Invoke-HostsConfig.ps1: tela para ativar jobs e gravar os User Secrets dos projetos
 │   ├── migrators/                        Invoke-Migrators.ps1: tela para rodar os migrators na ordem certa
 │   └── seeds/                            Import-TestSeeds.ps1: carrega uma empresa de teste (parâmetros e jobs)
 └── 🧪 tests/                                (vazio)
@@ -392,7 +393,7 @@ O `Hosts.Scheduling` liga cada `IdJob` ao método do service e é usado pelos tr
 
 | Host | Como agenda | Onde roda | README |
 |---|---|---|:---:|
-| 🌐 `WebApi` | Hangfire, com `Hangfire:Enabled = true` (padrão `false`: só API) e dashboard em `/hangfire` | junto das rotas | [📖](src/Backend/Hosts/WebApi/README.md) |
+| 🌐 `WebApi` | Hangfire, com `Hangfire:Enabled = true` (padrão `false`: só API) e dashboard em `http://localhost:5252/hangfire` | junto das rotas | [📖](src/Backend/Hosts/WebApi/README.md) |
 | ☁️ `WebJob` | um processo por job (`--job <IdJob>`), que atende todas as empresas ativas, uma de cada vez, lendo a agenda a cada ciclo | WebJobs contínuos na Azure (`Publish/publish-webjob.ps1`) | [📖](src/Backend/Hosts/WebJob/README.md) |
 | 🪟 `Worker` | Quartz.NET com `AdoJobStore` em cluster (schema `quartz`), agenda relida pelo `SchedulerRefreshJob` | serviço do Windows `EtlWorker` (`Publish/publish-worker.ps1`) | [📖](src/Backend/Hosts/Worker/README.md) |
 
@@ -640,7 +641,7 @@ agendador; ver o README de cada host):
 | `Totvs:Writes:<grupo>:Enabled` | Liga as escritas da Totvs por grupo (`AccountsPayable`, `Bonus`, `Invoices`, `People`, `Products`, `PurchaseOrders`, `SalesOrders`) |
 | `Totvs:Writes:Products:AllowedValueCodes`, `AllowedValueBranches`, `MaxValueVariationPercent` | Limites da escrita de preço e custo |
 | `DataWarehouse:Pepper` | Pepper do hash de CPF/CNPJ no DW; sem ele, as etapas com `doc_hash` são puladas |
-| `Hangfire:Enabled` e `Hangfire:Dashboard:*` | Liga o Hangfire no `WebApi`; usuário e senha do dashboard só por variável de ambiente ou user-secrets |
+| `Hangfire:Enabled` e `Hangfire:Dashboard:*` | Liga o Hangfire no `WebApi`, com o dashboard em `http://localhost:5252/hangfire`; usuário e senha do dashboard só por variável de ambiente ou user-secrets |
 
 As empresas e credenciais de cada API ficam **no banco**: a empresa em `monitor.Company` e as credenciais na tabela de
 parâmetros do módulo (`TotvsParameters`, `LinxMicrovixParameters`, `LinxCommerceParameters`, `MovideskParameters`,
@@ -670,6 +671,12 @@ como `****` no log:
 ./tools/migrators/Invoke-Migrators.ps1
 ./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -SchedulingHost Worker -TestSeeds
 ```
+
+Com as senhas do `etl_monitor` e do `etl_query` (campos opcionais da tela, ou `-MonitorPassword` e `-QueryPassword`), o
+migrator do Shared cria os dois usuários do WebApp. Depois de migrar, a tela
+[`tools/hosts/Invoke-HostsConfig.ps1`](tools/hosts/Invoke-HostsConfig.ps1) escolhe quais jobs da empresa ficam ativos e
+grava nos User Secrets do WebApi, do Worker, do WebJob e do WebApp a connection string, o host de agenda ligado, as APIs
+desligadas para teste e o resto da configuração local ([GUIA-DE-USO](GUIA-DE-USO.md#️-configurar-jobs-e-user-secrets-invoke-hostsconfig)).
 
 <div align="center">
 

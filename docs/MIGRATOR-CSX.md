@@ -165,7 +165,13 @@ O host de agenda é um só por banco (README, "Um host de agenda por vez"), e a 
 | WebJob (Azure) | Nada: o WebJob não tem tabelas, a agenda é a `auditing.Jobs` |
 | Worker (Quartz.NET) | Roda o migrator do host, por último: as tabelas do schema `quartz` |
 
-No fim, o log lista o que acertar nos outros hosts para o escolhido ser o único a agendar.
+No fim, o log lista o que acertar nos outros hosts para o escolhido ser o único a agendar. Essa parte (jobs ativos e
+User Secrets de cada projeto) é da segunda tela, [`tools/hosts/Invoke-HostsConfig.ps1`](../tools/hosts/Invoke-HostsConfig.ps1)
+([GUIA-DE-USO](../GUIA-DE-USO.md#️-configurar-jobs-e-user-secrets-invoke-hostsconfig)).
+
+Os campos opcionais **Usuários de banco do WebApp** recebem as senhas do `etl_monitor` e do `etl_query`. Com elas, o
+migrator do Shared roda com as variáveis `ETL_MONITOR_PASSWORD` e `ETL_QUERY_PASSWORD` (só no processo dele) e cria os
+logins pelas procedures do Script009. As senhas não aparecem no log.
 
 ```powershell
 ./tools/migrators/Invoke-Migrators.ps1
@@ -176,6 +182,7 @@ Com `-NoGui`, roda no console, com `-Credential`, `-Apps` (o Shared entra sempre
 
 ```powershell
 ./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -Apps Totvs,DataWarehouse -SchedulingHost WebApi
+./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -SchedulingHost WebApi -MonitorPassword (Read-Host -AsSecureString) -QueryPassword (Read-Host -AsSecureString)
 ```
 
 Num banco de teste, a opção **Banco de teste** (ou `-TestSeeds`) roda o

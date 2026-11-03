@@ -21,7 +21,13 @@
     O banco é criado pelo próprio DbUp se não existir. Os migrators não inserem dados de cliente: a empresa e os parâmetros
     entram depois, pela tela do WebApp ou, em teste, por tools/seeds/Import-TestSeeds.ps1.
 
-    A senha não aparece no log: os migrators imprimem a connection string e o script troca a senha por ****.
+    Usuários de banco do WebApp (opcional): com a senha do etl_monitor e/ou do etl_query, o migrator do Shared cria esses
+    usuários no fim (dbo.sp_Create_Monitor_User e dbo.sp_Grant_Query_User, do Script009; src/Frontend/WebApp/README.md). As
+    senhas vão só para o processo do Shared, pelas variáveis ETL_MONITOR_PASSWORD e ETL_QUERY_PASSWORD; em branco, o usuário
+    não é criado agora. Rodar de novo num banco já migrado cria quem faltar e não troca a senha de quem já existe.
+
+    A senha não aparece no log: os migrators imprimem a connection string e o script troca a senha por ****. As senhas dos
+    usuários do WebApp também são mascaradas.
 
     Pré-requisito: dotnet tool install -g dotnet-script
 
@@ -57,6 +63,12 @@
 .PARAMETER ActivateJobs
     Ativa os jobs da empresa de teste. Desligado por padrão: os jobs nascem inativos.
 
+.PARAMETER MonitorPassword
+    Com -NoGui, a senha do usuário etl_monitor (painel e cadastro do WebApp); sem ela, o usuário não é criado agora.
+
+.PARAMETER QueryPassword
+    Com -NoGui, a senha do usuário etl_query (tela Executar Querys do WebApp); sem ela, o usuário não é criado agora.
+
 .PARAMETER NoGui
     Roda sem a tela, no console, com os parâmetros acima.
 
@@ -71,6 +83,9 @@
 
 .EXAMPLE
     ./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -SchedulingHost WebApi -TestSeeds
+
+.EXAMPLE
+    ./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -SchedulingHost Worker -MonitorPassword (Read-Host -AsSecureString) -QueryPassword (Read-Host -AsSecureString)
 #>
 [CmdletBinding()]
 param(
@@ -88,6 +103,8 @@ param(
     [string]$Company = '44065634000106',
     [string]$CompanyName = 'NEWBLOOMERS',
     [switch]$ActivateJobs,
+    [securestring]$MonitorPassword,
+    [securestring]$QueryPassword,
     [switch]$NoGui
 )
 
@@ -103,7 +120,7 @@ $backend = Join-Path $PSScriptRoot '../../src/Backend' | Resolve-Path | Select-O
 
 $catalog = @(
     @{ Name = 'Shared'; Group = 'Base'; Default = $true; Required = $true; Folder = 'Shared/Infrastructure.Shared'
-        Description = 'Schemas auditing, untreated e monitor, auditoria e a sp_Create_Merge_Procedure (obrigatório)' }
+        Description = 'Schemas auditing, untreated e monitor, auditoria, a sp_Create_Merge_Procedure e as procedures dos usuários do WebApp (obrigatório)' }
     @{ Name = 'Totvs'; Group = 'Integrações'; Default = $true; Folder = 'Modules/Totvs/Infrastructure.Totvs'
         Description = 'Totvs Moda' }
     @{ Name = 'LinxMicrovix'; Group = 'Integrações'; Default = $true; Folder = 'Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/Infrastructure.LinxMicrovix.Outbound'
@@ -148,6 +165,7 @@ $schedulingHosts = [ordered]@{
         )
     }
 }
+foreach ($key in $schedulingHosts.Keys) { $schedulingHosts[$key].Key = $key }
 
 foreach ($app in @($catalog) + @($schedulingHosts.Values | Where-Object App | ForEach-Object App)) {
     $app.Path = Join-Path $backend $app.Folder 'Scripts/SQLServer'
@@ -159,7 +177,7 @@ foreach ($app in @($catalog) + @($schedulingHosts.Values | Where-Object App | Fo
 # ---------------------------------------------------------------------------------------------------------------------
 
 $worker = {
-    param($apps, [string]$connectionString, [string[]]$secrets, $queue, $state, $schedulingHost, $seeds)
+    param($apps, [string]$connectionString, [string[]]$secrets, $queue, $state, $schedulingHost, $seeds, $userPasswords)
 
     function Write-Line([string]$text, [string]$kind = 'out') {
         foreach ($secret in $secrets) {
@@ -210,6 +228,13 @@ $worker = {
             $info.RedirectStandardError = $true
             $info.StandardOutputEncoding = [Text.Encoding]::UTF8
             $info.StandardErrorEncoding = [Text.Encoding]::UTF8
+
+            # senhas dos usuários do WebApp: só o migrator do Shared as recebe (Script009); os outros nem as veem, mesmo que
+            # estejam no ambiente de quem abriu a tela
+            foreach ($variable in 'ETL_MONITOR_PASSWORD', 'ETL_QUERY_PASSWORD') {
+                $value = $app.Name -eq 'Shared' ? $userPasswords[$variable] : $null
+                if ($value) { $info.Environment[$variable] = $value } else { $null = $info.Environment.Remove($variable) }
+            }
 
             $process = [Diagnostics.Process]::Start($info)
             $state.Process = $process
@@ -291,6 +316,10 @@ $worker = {
     Write-Line "Host de agenda: $($schedulingHost.Title). Para ele ser o único a agendar:" 'step'
 
     foreach ($step in $schedulingHost.Steps) { Write-Line "  - $step" 'out' }
+    Write-Line '' 'out'
+    $builder = [Data.Common.DbConnectionStringBuilder]::new()
+    $builder.set_ConnectionString($connectionString)  # com "=", o PowerShell grava uma chave "ConnectionString" no dicionário
+    Write-Line "Jobs ativos e User Secrets dos projetos: ./tools/hosts/Invoke-HostsConfig.ps1 -Database $($builder['Database']) -SchedulingHost $($schedulingHost.Key)" 'step'
 }
 
 function New-ConnectionString([string]$server, [int]$port, [string]$database, [string]$user, [string]$password, [bool]$trust) {
@@ -314,13 +343,31 @@ function Get-Secrets([string]$password) {
     @($password, ($builder.ConnectionString -replace '^password=', '')) | Select-Object -Unique
 }
 
-function Start-Migration($apps, [string]$connectionString, [string[]]$secrets, $schedulingHost, $seeds) {
+# as senhas dos usuários do WebApp, pelo nome da variável que o migrator.csx do Shared lê; em branco fica de fora
+function New-UserPasswords([string]$monitorPassword, [string]$queryPassword) {
+    $passwords = @{}
+    if ($monitorPassword) { $passwords['ETL_MONITOR_PASSWORD'] = $monitorPassword }
+    if ($queryPassword) { $passwords['ETL_QUERY_PASSWORD'] = $queryPassword }
+    $passwords
+}
+
+# o que o log e a confirmação dizem sobre os usuários do WebApp
+function Get-UserPasswordsText($userPasswords) {
+    $users = @(
+        if ($userPasswords['ETL_MONITOR_PASSWORD']) { 'etl_monitor' }
+        if ($userPasswords['ETL_QUERY_PASSWORD']) { 'etl_query' }
+    )
+
+    $users ? "Usuários do WebApp: $($users -join ' e ') (criados pelo Shared)" : 'Usuários do WebApp: nenhum (sem senha)'
+}
+
+function Start-Migration($apps, [string]$connectionString, [string[]]$secrets, $schedulingHost, $seeds, $userPasswords) {
     $queue = [Collections.Concurrent.ConcurrentQueue[object]]::new()
     $state = [hashtable]::Synchronized(@{ Cancel = $false; Process = $null; Successful = $false })
 
     $powershell = [powershell]::Create()
     $null = $powershell.AddScript($worker).AddArgument($apps).AddArgument($connectionString).AddArgument($secrets).
-        AddArgument($queue).AddArgument($state).AddArgument($schedulingHost).AddArgument($seeds)
+        AddArgument($queue).AddArgument($state).AddArgument($schedulingHost).AddArgument($seeds).AddArgument($userPasswords)
 
     [pscustomobject]@{ PowerShell = $powershell; Handle = $powershell.BeginInvoke(); Queue = $queue; State = $state }
 }
@@ -381,10 +428,15 @@ if ($NoGui) {
     $password = $Credential.GetNetworkCredential().Password
     $connectionString = New-ConnectionString $Server $Port $Database $Credential.UserName $password $true
 
+    $userPasswords = New-UserPasswords ($MonitorPassword ? [Net.NetworkCredential]::new('', $MonitorPassword).Password : '') `
+        ($QueryPassword ? [Net.NetworkCredential]::new('', $QueryPassword).Password : '')
+
     Write-Host "Servidor $Server,$Port, banco ${Database}, host de agenda $($schedulingHostInfo.Title): $(($selected | ForEach-Object Name) -join ', ')"
+    Write-Host (Get-UserPasswordsText $userPasswords)
 
     $seeds = $TestSeeds ? (New-Seeds $Server $Port $Database $Credential.UserName $password $Company $CompanyName $ActivateJobs $selected) : $null
-    $run = Start-Migration $selected $connectionString (Get-Secrets $password) $schedulingHostInfo $seeds
+    $secrets = @(Get-Secrets $password) + @($userPasswords.Values | ForEach-Object { Get-Secrets $_ })
+    $run = Start-Migration $selected $connectionString $secrets $schedulingHostInfo $seeds $userPasswords
     $colors = @{ out = 'Gray'; step = 'Cyan'; ok = 'Green'; error = 'Red'; warn = 'Yellow' }
 
     while (-not $run.Handle.IsCompleted -or -not $run.Queue.IsEmpty) {
@@ -424,8 +476,8 @@ $font = [Drawing.Font]::new('Segoe UI', 9)
 
 $form = [Windows.Forms.Form]@{
     Text = 'Migrators: subir tabelas no SQL Server'
-    ClientSize = [Drawing.Size]::new(860, 880)
-    MinimumSize = [Drawing.Size]::new(760, 760)
+    ClientSize = [Drawing.Size]::new(860, 972)
+    MinimumSize = [Drawing.Size]::new(760, 852)
     StartPosition = 'CenterScreen'
     Font = $font
 }
@@ -503,10 +555,31 @@ foreach ($key in $schedulingHosts.Keys) {
 
 if ($SchedulingHost) { ($hostRadios | Where-Object Tag -eq $SchedulingHost).Checked = $true }
 
+# usuários de banco do WebApp: as senhas vão só para o migrator do Shared, que cria etl_monitor e etl_query (Script009)
+
+$usersGroup = [Windows.Forms.GroupBox]@{
+    Text = 'Usuários de banco do WebApp (opcional)'; Location = [Drawing.Point]::new(12, 232); Size = [Drawing.Size]::new(836, 84)
+    Anchor = 'Top, Left, Right'
+}
+
+$monitorLabel = [Windows.Forms.Label]@{ Text = 'Senha do etl_monitor (painel e cadastro)'; Location = [Drawing.Point]::new(14, 22); AutoSize = $true }
+$monitorBox = [Windows.Forms.TextBox]@{ UseSystemPasswordChar = $true; Location = [Drawing.Point]::new(14, 40); Width = 240 }
+$queryLabel = [Windows.Forms.Label]@{ Text = 'Senha do etl_query (Executar Querys)'; Location = [Drawing.Point]::new(270, 22); AutoSize = $true }
+$queryBox = [Windows.Forms.TextBox]@{ UseSystemPasswordChar = $true; Location = [Drawing.Point]::new(270, 40); Width = 240 }
+$usersHint = [Windows.Forms.Label]@{
+    Text = 'Em branco, o usuário não é criado agora. Num banco já migrado, cria quem faltar; não troca a senha de quem já existe.'
+    Location = [Drawing.Point]::new(526, 22); Size = [Drawing.Size]::new(296, 54); ForeColor = [Drawing.SystemColors]::GrayText
+}
+
+if ($MonitorPassword) { $monitorBox.Text = [Net.NetworkCredential]::new('', $MonitorPassword).Password }
+if ($QueryPassword) { $queryBox.Text = [Net.NetworkCredential]::new('', $QueryPassword).Password }
+
+$usersGroup.Controls.AddRange(@($monitorLabel, $monitorBox, $queryLabel, $queryBox, $usersHint))
+
 # banco de teste: a empresa, as credenciais e os jobs pelo tools/seeds/Import-TestSeeds.ps1, depois dos migrators
 
 $testGroup = [Windows.Forms.GroupBox]@{
-    Text = 'Banco de teste'; Location = [Drawing.Point]::new(12, 232); Size = [Drawing.Size]::new(836, 84); Anchor = 'Top, Left, Right'
+    Text = 'Banco de teste'; Location = [Drawing.Point]::new(12, 324); Size = [Drawing.Size]::new(836, 84); Anchor = 'Top, Left, Right'
 }
 
 $seedsBox = [Windows.Forms.CheckBox]@{
@@ -531,12 +604,12 @@ Update-SeedsFields
 
 $catalogLabel = [Windows.Forms.Label]@{
     Text = 'Catálogo das aplicações (rodam na ordem da lista; o Shared é obrigatório)'
-    Location = [Drawing.Point]::new(12, 326); AutoSize = $true
+    Location = [Drawing.Point]::new(12, 418); AutoSize = $true
 }
 
 $list = [Windows.Forms.ListView]@{
     View = 'Details'; CheckBoxes = $true; FullRowSelect = $true; ShowGroups = $true; HeaderStyle = 'Nonclickable'
-    Location = [Drawing.Point]::new(12, 346); Size = [Drawing.Size]::new(836, 246); Anchor = 'Top, Left, Right'
+    Location = [Drawing.Point]::new(12, 438); Size = [Drawing.Size]::new(836, 246); Anchor = 'Top, Left, Right'
 }
 $null = $list.Columns.Add('Aplicação', 150)
 $null = $list.Columns.Add('Scripts', 60, 'Right')
@@ -565,28 +638,28 @@ $list.Add_ItemCheck({
     if ($sender.Items[$e.Index].Tag.Required) { $e.NewValue = 'Checked' }
 })
 
-$checkAllButton = [Windows.Forms.Button]@{ Text = 'Marcar todas'; Location = [Drawing.Point]::new(12, 600); Size = [Drawing.Size]::new(110, 28) }
-$checkNoneButton = [Windows.Forms.Button]@{ Text = 'Desmarcar todas'; Location = [Drawing.Point]::new(128, 600); Size = [Drawing.Size]::new(120, 28) }
+$checkAllButton = [Windows.Forms.Button]@{ Text = 'Marcar todas'; Location = [Drawing.Point]::new(12, 692); Size = [Drawing.Size]::new(110, 28) }
+$checkNoneButton = [Windows.Forms.Button]@{ Text = 'Desmarcar todas'; Location = [Drawing.Point]::new(128, 692); Size = [Drawing.Size]::new(120, 28) }
 $runButton = [Windows.Forms.Button]@{
-    Text = 'Subir tabelas'; Location = [Drawing.Point]::new(616, 600); Size = [Drawing.Size]::new(120, 28); Anchor = 'Top, Right'
+    Text = 'Subir tabelas'; Location = [Drawing.Point]::new(616, 692); Size = [Drawing.Size]::new(120, 28); Anchor = 'Top, Right'
 }
 $cancelButton = [Windows.Forms.Button]@{
-    Text = 'Cancelar'; Location = [Drawing.Point]::new(742, 600); Size = [Drawing.Size]::new(106, 28); Anchor = 'Top, Right'; Enabled = $false
+    Text = 'Cancelar'; Location = [Drawing.Point]::new(742, 692); Size = [Drawing.Size]::new(106, 28); Anchor = 'Top, Right'; Enabled = $false
 }
 
 # log
 
 $log = [Windows.Forms.RichTextBox]@{
-    Location = [Drawing.Point]::new(12, 638); Size = [Drawing.Size]::new(836, 208); Anchor = 'Top, Bottom, Left, Right'
+    Location = [Drawing.Point]::new(12, 730); Size = [Drawing.Size]::new(836, 208); Anchor = 'Top, Bottom, Left, Right'
     ReadOnly = $true; BackColor = [Drawing.Color]::FromArgb(30, 30, 30); ForeColor = [Drawing.Color]::Gainsboro
     Font = [Drawing.Font]::new('Consolas', 9); WordWrap = $false
 }
 
 $status = [Windows.Forms.Label]@{
-    Text = 'Pronto.'; Location = [Drawing.Point]::new(12, 854); AutoSize = $true; Anchor = 'Bottom, Left'
+    Text = 'Pronto.'; Location = [Drawing.Point]::new(12, 946); AutoSize = $true; Anchor = 'Bottom, Left'
 }
 
-$form.Controls.AddRange(@($connection, $hostGroup, $testGroup, $catalogLabel, $list, $checkAllButton, $checkNoneButton, $runButton, $cancelButton, $log, $status))
+$form.Controls.AddRange(@($connection, $hostGroup, $usersGroup, $testGroup, $catalogLabel, $list, $checkAllButton, $checkNoneButton, $runButton, $cancelButton, $log, $status))
 
 $logColors = @{
     out = [Drawing.Color]::Gainsboro; step = [Drawing.Color]::DeepSkyBlue; ok = [Drawing.Color]::LightGreen
@@ -620,7 +693,7 @@ function Get-Fields {
 }
 
 function Set-Running([bool]$running) {
-    foreach ($control in $connection, $hostGroup, $testGroup, $list, $checkAllButton, $checkNoneButton, $runButton) { $control.Enabled = -not $running }
+    foreach ($control in $connection, $hostGroup, $usersGroup, $testGroup, $list, $checkAllButton, $checkNoneButton, $runButton) { $control.Enabled = -not $running }
     $cancelButton.Enabled = $running
 }
 
@@ -738,9 +811,12 @@ $runButton.Add_Click({
             ($activateBox.Checked ? 'ATIVOS.' : 'inativos.')
     }
 
+    $userPasswords = New-UserPasswords $monitorBox.Text $queryBox.Text
+    $usersText = Get-UserPasswordsText $userPasswords
+
     $answer = [Windows.Forms.MessageBox]::Show(
         ("Subir as tabelas no banco $($fields.Database) de $($fields.Server),$($fields.Port)?`n`n$names`n`n" +
-            "Host de agenda: $($schedulingHost.Title)$seedsText`n`nO banco é criado se não existir."),
+            "Host de agenda: $($schedulingHost.Title)`n`n$usersText$seedsText`n`nO banco é criado se não existir."),
         $form.Text, 'YesNo', 'Question')
 
     if ($answer -ne 'Yes') { return }
@@ -758,6 +834,7 @@ $runButton.Add_Click({
 
     $log.Clear()
     Write-Log "Servidor $($fields.Server),$($fields.Port), banco $($fields.Database), host de agenda $($schedulingHost.Title): $names" 'step'
+    Write-Log $usersText 'step'
     $status.Text = 'Rodando...'
     Set-Running $true
 
@@ -765,7 +842,8 @@ $runButton.Add_Click({
         (New-Seeds $fields.Server $fields.Port $fields.Database $fields.User $fields.Password $company $companyNameBox.Text.Trim() $activateBox.Checked $selected) :
         $null
 
-    $script:run = Start-Migration $selected $connectionString (Get-Secrets $fields.Password) $schedulingHost $seeds
+    $secrets = @(Get-Secrets $fields.Password) + @($userPasswords.Values | ForEach-Object { Get-Secrets $_ })
+    $script:run = Start-Migration $selected $connectionString $secrets $schedulingHost $seeds $userPasswords
     $timer.Start()
 })
 

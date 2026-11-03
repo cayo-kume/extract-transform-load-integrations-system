@@ -38,7 +38,7 @@ chamava `Hangfire`; as decisões e o histórico de cada passo estão em [docs/PL
 |:---:|---|---|
 | 💻 | **Plataforma** | .NET 10 (`net10.0`), ASP.NET Core |
 | ⏱️ | **Agendador** | Hangfire 1.8 com storage SQL Server, opcional (`Hangfire:Enabled`) |
-| 🔗 | **Endereço local** | `http://localhost:5252` (Swagger em `/swagger`, dashboard em `/hangfire`) |
+| 🔗 | **Endereço local** | `http://localhost:5252` (Swagger em `http://localhost:5252/swagger`, dashboard do Hangfire em `http://localhost:5252/hangfire`) |
 | 🏢 | **Empresa** | por (job, empresa) na agenda; nas rotas, `X-Company` ou a holding do `{docCompany}` |
 | 🔐 | **Autenticação da API** | desligada por enquanto: o `[Authorize]` dos controllers está comentado |
 
@@ -111,10 +111,19 @@ dotnet run --project src/Backend/Hosts/WebApi --launch-profile http
 Hangfire__Enabled=true Hangfire__Dashboard__UserName="<usuário>" Hangfire__Dashboard__Password="<senha>" dotnet run --project src/Backend/Hosts/WebApi --launch-profile http
 ```
 
+O dashboard abre em **`http://localhost:5252/hangfire`** (perfil `http`, a mesma porta das rotas e do Swagger) e pede
+o usuário e a senha acima. Com `Hangfire:Enabled = false` (padrão), `/hangfire` responde 404.
+
+> [!WARNING]
+> Num banco de teste carregado com o `Import-TestSeeds.ps1`, os jobs ativos têm credenciais reais: antes de ligar o
+> Hangfire, aponte `AfterSale__BaseUrl`, `Movidesk__BaseUrl`, `LinxMicrovix__BaseUrl` e `Totvs__BaseUrl` para
+> `http://127.0.0.1:9/`, senão os jobs da agenda chamam as APIs de verdade.
+
 > [!TIP]
-> Para usar user-secrets no lugar das variáveis, o projeto precisa de um `UserSecretsId`, que ainda não tem: rodar uma
-> vez `dotnet user-secrets init --project src/Backend/Hosts/WebApi` (ele grava o id no `WebApi.csproj`) e depois
-> `dotnet user-secrets set "Hangfire:Dashboard:Password" "<senha>" --project src/Backend/Hosts/WebApi`.
+> No lugar das variáveis, use user-secrets (o `WebApi.csproj` tem `UserSecretsId`):
+> `dotnet user-secrets set "Hangfire:Dashboard:Password" "<senha>" --project src/Backend/Hosts/WebApi`. A tela
+> [`tools/hosts/Invoke-HostsConfig.ps1`](../../../../tools/hosts/Invoke-HostsConfig.ps1) grava de uma vez
+> `Hangfire:Enabled`, usuário e senha do dashboard, a connection string e as `BaseUrl` em `http://127.0.0.1:9/`.
 
 > [!IMPORTANT]
 > Antes de ligar o Hangfire num banco, ele precisa ter `auditing.Jobs` com as colunas `IsActive`, `RunningDailyAt`,
@@ -125,7 +134,8 @@ Hangfire__Enabled=true Hangfire__Dashboard__UserName="<usuário>" Hangfire__Dash
 >
 > A tela [`tools/migrators/Invoke-Migrators.ps1`](../../../../tools/migrators/Invoke-Migrators.ps1) com o host
 > **WebApi (Hangfire)** marcado sobe as tabelas na ordem certa e, com a opção **Banco de teste**, já carrega a empresa; no
-> fim, o log lembra de ligar `Hangfire:Enabled` aqui e parar os outros hosts.
+> fim, o log lembra de ligar `Hangfire:Enabled` aqui e parar os outros hosts. A tela
+> [`tools/hosts/Invoke-HostsConfig.ps1`](../../../../tools/hosts/Invoke-HostsConfig.ps1) faz isso e escolhe os jobs ativos.
 
 > [!CAUTION]
 > O [WebApi.http](WebApi.http) tem exemplos de rotas de cada módulo. Cada chamada roda a integração **de verdade** contra
