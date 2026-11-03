@@ -22,9 +22,10 @@
     podem ser criados um de cada vez. O alerta de orçamento (Budget) é criado no escopo do grupo
     (só os custos dele) se -AlertEmail for passado.
 
-    O banco é sempre criado aqui, antes do migrator: o EnsureDatabase do DbUp criaria no tier padrão, que é pago. Se a
-    Azure recusar o free offer (por exemplo, limite de bancos gratuitos na assinatura), o script para: nunca cai para um
-    banco pago.
+    O banco é sempre criado aqui, antes do migrator, já com a collation Latin1_General_100_CI_AS_SC_UTF8 (no Azure SQL ela
+    não muda depois de criado, e o Script001 do Shared não a altera lá) e no free offer: o EnsureDatabase do DbUp criaria
+    no tier padrão, que é pago. Se a Azure recusar o free offer (por exemplo, limite de bancos gratuitos na assinatura),
+    o script para: nunca cai para um banco pago.
 
     Senhas não aparecem no console: o administrador do SQL vem de -SqlAdminCredential (ou Get-Credential), e as senhas do
     etl_monitor/etl_query, das mesmas variáveis que o migrator usa (ETL_MONITOR_PASSWORD e ETL_QUERY_PASSWORD).
@@ -204,8 +205,9 @@ if ($Remove) {
     }
 
     Write-Host "Apagando o Budget $budgetName..."
+    # sem Budget (não houve -AlertEmail) ou sem acesso ao Cost Management: avisa e segue, porque o grupo tem de sair
     try { Invoke-Az rest --method delete --url $budgetUrl -o none | Out-Null }
-    catch { if ($_.Exception.Message -notmatch 'NotFound|404') { throw } }
+    catch { Write-Warning "Budget $budgetName não foi apagado (não existe ou falta acesso ao Cost Management); o grupo será apagado assim mesmo." }
 
     Write-Host "Apagando $resourceGroup (leva alguns minutos)..." -ForegroundColor Yellow
     Invoke-Az group delete --name $resourceGroup --yes | Out-Null
@@ -313,7 +315,7 @@ foreach ($name in $Scenario) {
     try {
         Invoke-Az sql db create --resource-group $resourceGroup --server $sqlServer --name $database `
             --edition GeneralPurpose --family Gen5 --capacity 2 --compute-model Serverless --min-capacity 0.5 `
-            --auto-pause-delay 60 --backup-storage-redundancy Local `
+            --auto-pause-delay 60 --backup-storage-redundancy Local --collation Latin1_General_100_CI_AS_SC_UTF8 `
             --use-free-limit true --free-limit-exhaustion-behavior AutoPause -o none | Out-Null
     }
     catch {
@@ -389,7 +391,18 @@ if ('C7' -in $Scenario) {
     # a recuperação lista, para e inicia os WebJobs pela identidade gerenciada do próprio App Service
     Write-Host "Identidade gerenciada de $appWebJobs (Website Contributor nele mesmo)..."
     $scope = if ($DryRun) { "<id de $appWebJobs>" } else { Invoke-Az webapp show --resource-group $resourceGroup --name $appWebJobs --query id -o tsv }
-    Invoke-Az webapp identity assign --resource-group $resourceGroup --name $appWebJobs --role 'Website Contributor' --scope $scope -o none | Out-Null
+    $principal = Invoke-Az webapp identity assign --resource-group $resourceGroup --name $appWebJobs --query principalId -o tsv
+
+    # dar o papel pede Microsoft.Authorization/roleAssignments/write (Owner ou User Access Administrator); sem ele, os
+    # recursos seguem e só o reinício real da recuperação fica sem teste
+    try {
+        Invoke-Az role assignment create --assignee-object-id $principal --assignee-principal-type ServicePrincipal `
+            --role 'Website Contributor' --scope $scope -o none | Out-Null
+    }
+    catch {
+        if ($_.Exception.Message -notmatch 'AuthorizationFailed') { throw }
+        Write-Warning "Sem permissão para dar o papel Website Contributor à identidade de ${appWebJobs}: a recuperação (Recovery) não consegue listar nem reiniciar os WebJobs. Peça a um Owner da assinatura."
+    }
 
     # o painel lê com etl_monitor/etl_query (usuários contidos que o migrator cria com as mesmas variáveis)
     $panelConnections = @{}

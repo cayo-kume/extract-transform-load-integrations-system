@@ -374,10 +374,12 @@ Riscos de custo e como cobrir:
   *free offer* (há 10 por assinatura) em vez de mudar para "continuar cobrando".
 * **Budget recomendado**: R$ 100 no grupo `rg-etl-teste`, com alertas em 50%, 80% e 100% (o Budget só avisa, não
   desliga nada). Cobre o previsto com folga de mais de 2 vezes.
-* **Um banco gratuito só?** A documentação atual da Microsoft fala em até 10 bancos no *free offer* por assinatura, mas a
-  ajuda do `az sql db create --use-free-limit` (az cli 2.86) ainda diz "um banco por assinatura". Se a Azure recusar o
-  segundo, o script para sem criar banco pago, e os cenários rodam um de cada vez no mesmo limite mensal (C3 e C6
-  somam ≈ 12 h; o C7 então cabe em ≈ 40 h no mesmo mês, ou fica para o mês seguinte).
+* **Um banco gratuito só?** A ajuda do `az sql db create --use-free-limit` (az cli 2.86) diz "um banco por
+  assinatura", mas a Azure aceitou os **quatro** bancos dos testes no *free offer* na mesma assinatura (03/11/2026),
+  como diz a documentação da Microsoft (até 10).
+* **Custo real dos testes (03/11/2026)**: o plano B1 existiu de 23:53 a 01:24 (≈ 1,5 h ≈ US$ 0,14 ≈ R$ 0,75); os
+  quatro bancos ficaram no *free offer* (C3 gastou ≈ 2.300 e C6 ≈ 2.050 vCore-segundos dos 100.000 do mês). O teste
+  ficou bem abaixo do previsto porque o C7 rodou ≈ 1 h, não 2 dias.
 
 ### 5.2 Criação e exclusão dos recursos pelo az cli
 
@@ -415,13 +417,14 @@ Ordem sugerida, do mais simples para o mais distante, para que uma falha de cód
 | 2 | C4 (+ C4b), A1, A2, A4, A5, A6, A7 | 1 |
 | 3 | C2, C5 (nginx no Docker) | imagens `aspnet:10.0` e `nginx` baixadas |
 | 4 | A3 (cluster Quartz) | 2 |
-| 5 | C3, C6, A8 — **em espera**. Recursos pelo `New-AzureTestResources.ps1 -Scenario C3,C6` (seção 5.2) | liberação do Cayo (custo da Azure) |
-| 6 | C7, A9 (+ A10 se aprovado) — **em espera**. Recursos pelo `New-AzureTestResources.ps1 -Scenario C7` (e `A10`) | 5 |
+| 5 | C3, C6, A8 — **feito** em 03/11/2026 (seção 6.5). Recursos pelo `New-AzureTestResources.ps1 -Scenario C3,C6` (seção 5.2) | liberação do Cayo (custo da Azure) |
+| 6 | C7, A9, A10 — **feito** em 03/11/2026 (seção 6.5). Recursos pelo `New-AzureTestResources.ps1 -Scenario C7,A10` | 5 |
 | 7 | **Exclusão do resource group `rg-etl-teste`** no fim dos testes na Azure: `./tools/azure/New-AzureTestResources.ps1 -Remove` (apaga o Budget e o grupo, só se o grupo tiver a tag `finalidade=etl-teste`, e confere sozinho). Conferir de novo à mão: `az group exists --name rg-etl-teste --subscription f65c8654-2630-4bda-aba5-4c2a8eba4cf0` precisa dar `false`, e `az resource list --subscription f65c8654-2630-4bda-aba5-4c2a8eba4cf0 --query "[?contains(name,'etl-teste')]"` precisa voltar vazio. Só então os testes da Azure contam como encerrados | 6 (ou ao interromper os testes da Azure por qualquer motivo) |
 
 > [!IMPORTANT]
-> Os cenários com Azure (C3, C6, C7, A8, A9, A10) ficam **por último e em espera**: geram custo, e o Cayo vai definir
-> a melhor forma de pagar. Nenhum recurso é criado na Azure até essa liberação.
+> Os cenários com Azure (C3, C6, C7, A8, A9, A10) rodaram por último, em 03/11/2026, na assinatura da NEWBLOOMERS
+> (seção 5). A etapa 7 foi feita no fim: `rg-etl-teste` apagado às 01:24, `az group exists` = `false`, nenhum recurso
+> `etl-teste` na assinatura e a lista de grupos igual à de antes dos testes.
 
 Registro dos resultados (preenchido na execução):
 
@@ -430,13 +433,13 @@ Registro dos resultados (preenchido na execução):
 | C1 (fase A) | OK¹ | OK | OK | OK | — ² | OK | OK | OK | OK³ | OK | ver 6.1 |
 | C1 (fase B) | — | — | OK | OK | OK⁵ | OK | OK | OK⁶ | — | OK | ver 6.2 |
 | C2 (fases A e B) | OK | OK | OK | OK | OK | OK | OK | OK⁸ | OK | OK | ver 6.4 |
-| C3 | | | | | | | | | | | |
+| C3 (fases A e B) | OK | OK | OK | OK | OK | OK | OK | OK¹⁰ | — | OK | ver 6.5 |
 | C4 (fase A) | OK | OK | OK | OK | — | OK | OK | OK | OK⁷ | OK | ver 6.3 |
 | C4 (fase B) | — | — | OK | OK | OK | OK | OK | OK | — | OK | ver 6.3 |
 | C4b (fase A, serviço) | OK | — | OK | OK | — | OK | — | OK | OK | OK | ver 6.3 |
 | C5 (fases A e B) | OK | OK | OK | OK | OK | OK | OK⁹ | OK | — | OK | ver 6.4 |
-| C6 | | | | | | | | | | | |
-| C7 | | | | | | | | | | | |
+| C6 (fases A e B) | OK | OK | OK | OK | OK | OK | — | OK | — | OK | ver 6.5 |
+| C7 (fases A e B) | OK | OK | OK | OK | OK¹¹ | OK | OK⁹ | OK¹² | OK | OK | ver 6.5 |
 
 ### 6.1 C1, fase A (02/11/2026)
 
@@ -570,6 +573,44 @@ Pontos para decidir, além dos anteriores:
    um log que já entrou; avaliar a causa do deadlock no bulk insert de `auditing.Messages` com vários jobs gravando juntos.
 10. Fuso do painel em servidor fora de Brasília: `TZ=America/Sao_Paulo` no container/App Service, ou o painel usar o
     horário de Brasília em vez de `DateTime.Now`.
+
+### 6.5 Azure: C3, C6, A8, C7, A9 e A10 (02 e 03/11/2026)
+
+Assinatura da NEWBLOOMERS, grupo `rg-etl-teste` criado pelo `New-AzureTestResources.ps1` às 23:05 e apagado às 01:24
+(etapa 7). Servidor `sql-etl-teste-f65c86`, quatro bancos no *free offer* (`EtlTeste_C3`, `_C6`, `_C7`, `_A10`), senhas
+de teste geradas na hora e apagadas no fim, os mesmos 12 jobs a cada 5 min. Sem Budget: a conta usada não tem acesso ao
+Cost Management (o `-Remove` agora só avisa quando não consegue apagar o Budget, e segue com o grupo).
+
+| | O que se viu |
+|---|---|
+| Criação | O script criou o grupo com a tag, o servidor e os bancos de primeira. **Corrigido antes de rodar**: o banco precisa nascer com a collation `Latin1_General_100_CI_AS_SC_UTF8` (no Azure SQL o `Script001` não a altera), e o script passou a usar `--collation`. **Achado**: a conta não tem `roleAssignments/write`, então a identidade gerenciada dos WebJobs ficou sem o papel Website Contributor (o script avisa e segue) |
+| Migrator | Shared e módulos em ≈ 1 min por banco, usuários `etl_monitor`/`etl_query` criados como **usuários contidos** (`authentication_type = DATABASE`), seeds da empresa de teste. **OK** |
+| C3, fase A | WebApi local com Hangfire: schema `HangFire` (11 tabelas) criado no Azure SQL; ciclos de 23:15, 23:20 e 23:25 com os 12 jobs, 7 com o erro esperado. Painel local lendo pelo `etl_monitor`: 36 execuções e 7 falhas ativas, igual ao banco. ¹⁰ **Achado**: no 1º ciclo, uma execução ficou **sem mensagens** (`Insert bulk failed due to a schema change of the target table` no bulk insert de `auditing.Messages`), e o `CommitError` bateu na PK de `auditing.Logs` (o mesmo caminho do achado ⁸ do C2, com outra causa) |
+| C3, fase B | APIs reais: 1.864 tickets (673 s, contra 602 s com o banco local), 1.271 pessoas, 1.054 notas, 194 movimentos, 69 trocas; nada antes de 02/08, nenhuma duplicidade, nenhum erro. Carga completa em 2 ciclos (ponto 5) |
+| C6, fases A e B | Worker local (Quartz) no Azure SQL: 11 tabelas `quartz`, ciclos com os 12 jobs; fase B com os mesmos números do C3, sem erro nem duplicidade |
+| A8 | O banco gratuito **pausa ≈ 15 min** depois da última conexão (C6: 17 min depois de criado; C3: às 00:02, 15 min depois de desligar os hosts), embora o `autoPauseDelay` diga 60, e **não deixa mudar** esse tempo ("Only default value for auto pause delay is allowed for Free Limit database"). O despertar levou de **≈ 15 s a ≈ 90 s**. Migrator com o banco pausado: **falhou** (`Connection Timeout Expired` em 15 s) e passou na segunda tentativa. WebApi (Hangfire) com o banco pausado: o instalador do schema recebeu `Database ... is not currently available`, **repetiu sozinho**, subiu, rodou os atrasados uma vez (00:52) e seguiu às 00:55. Worker (Quartz): só o `SchedulingHostGuard` avisou que não conseguiu conferir o Hangfire; o Quartz subiu e o ciclo das 01:00 foi normal. **OK** |
+| C7, fase A | 12 WebJobs publicados pelo perfil `teste` (≈ 1 min cada), todos `Running`; ciclos de 00:15 e 00:20 com os 12 jobs (no App Service o erro esperado é "An attempt was made to access a socket in a way forbidden by its access permissions", da sandbox). Painel no App Service pelo `etl_monitor`, WebSockets ligados: **OK** |
+| A9 | O App Service roda em UTC e os WebJobs gravam `auditing.Logs` em horário de Brasília (ciclos às 00:15 e 00:20 locais). **OK**. O painel no App Service mostra "Atualizado às 03:18" quando eram 00:18: o achado ⁹ do C5 se repete (ponto 10) |
+| A10 | WebApi com Hangfire no mesmo plano B1: schema `HangFire` criado e o ciclo das 00:20 com os 12 jobs. Mas o HTTP do WebApi **não respondeu** em 60 s (`/`, `/swagger`, `/hangfire`): o plano estava em **100% de CPU e 96% de memória**. Parado às 00:30 para liberar o plano |
+| C7, fase B | ¹² O `TotvsPostSearchInvoices` rodou de 00:40 a 01:08 (1.690 s, contra 211 a 372 s no local) e caiu com `The operation was canceled` (tempo limite da chamada, com o plano saturado); as janelas lidas ficaram gravadas (403 notas) e a execução das 01:10 completou (1.054). ¹¹ **Achado de dado perdido**: na carga inicial de tickets, a Movidesk respondeu `{"message":"An error has occurred."}` para o bloco 68355 a 68459; o job parou nesse bloco, gravou a mensagem como aviso e terminou **"Concluída com sucesso"** com 900 tickets. A execução seguinte partiu do maior `lastUpdate` gravado − 1 h e não voltou aos tickets acima do bloco com `lastUpdate` mais antigo: o C7 terminou com **1.190 tickets, contra 1.864** do C3/C6 (574 a menos só acima do bloco). Notas, movimento e o resto iguais aos outros cenários |
+| Reinício do App Service | `az webapp restart` às 01:15:03, no meio do ciclo: os 12 WebJobs voltaram sozinhos, 2 execuções interrompidas ficaram sem registro (achado do V9) e o ciclo das 01:20 foi normal. **OK** |
+| Recuperação (`Recovery`) | **Não testada**: sem o papel na identidade gerenciada (ver Criação), ela não lista nem reinicia WebJobs. Precisa de um Owner da assinatura |
+| Limpeza | `-Remove` apagou o grupo e conferiu (`az group exists` = `false`); nenhum recurso `etl-teste`; os 13 grupos da assinatura iguais aos de antes. Senhas, zips e pastas de publicação apagados |
+
+Pontos para decidir, além dos anteriores:
+
+11. Movidesk (tickets): um bloco com resposta inválida da API faz o job terminar "com sucesso" e a marca d'água
+    (`MAX(lastUpdate)` − 1 h) passar por cima dos tickets não gravados, que nunca voltam. Tratar a falha como erro da
+    execução e não avançar a marca d'água além do último bloco gravado (ou reprocessar a partir do bloco que falhou).
+12. Tamanho do plano: 12 WebJobs contínuos + painel + WebApi saturam o B1 (1 núcleo, 1,75 GB): HTTP sem resposta e
+    leitura de notas 5 vezes mais lenta, até cancelar. Para produção, um plano maior (B2/S1/P0v3) ou menos processos
+    por plano (o painel em outro plano, ou um WebJob agendando vários jobs).
+13. Recuperação dos WebJobs: dar o papel Website Contributor à identidade gerenciada pede Owner ou User Access
+    Administrator; combinar quem faz isso em produção e testar antes de contar com ela.
+14. Migrator com Azure SQL serverless: usar `Connect Timeout` maior (≥ 120 s) ou nova tentativa, porque o primeiro
+    acesso a um banco pausado leva até ≈ 90 s.
+15. `Insert bulk failed due to a schema change of the target table` no bulk insert de `auditing.Messages` (Azure SQL):
+    entra na correção do ponto 9 (log em transação e nova tentativa no bulk insert).
 
 ---
 
