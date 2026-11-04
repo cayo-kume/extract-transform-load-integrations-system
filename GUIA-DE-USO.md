@@ -211,7 +211,7 @@ faz o resto, sem SQL nem `dotnet user-secrets` à mão:
 | 🖧 | **Banco** | servidor, porta, banco, usuário e senha; **Carregar empresas** lê `monitor.Company` |
 | ⏱️ | **Host de agenda** | WebApi (Hangfire), Worker (Quartz.NET) ou WebJob (Azure): o escolhido fica ligado e os outros desligados |
 | ⚙️ | **Configuração dos projetos** | opcional, grava os User Secrets do WebApi, Worker, WebJob e WebApp: connection strings deste banco, **APIs desligadas** (`BaseUrl` em `http://127.0.0.1:9/`, marcado por padrão), usuário e senha do dashboard do Hangfire, pepper do DataWarehouse, `Admin:Enabled`, chave do assistente e as senhas do `etl_monitor` e do `etl_query` |
-| ☑️ | **Jobs** | os jobs da empresa agrupados por aplicação (marcado é `IsActive = 1`), com filtro e botões para ativar ou desativar a aplicação ou a lista filtrada |
+| ☑️ | **Jobs** | as integrações da empresa (as procedures ficam fora: rodam dentro do job que as chama), numa árvore por aplicação; marcado é `IsActive = 1`. Cada aplicação tem, à esquerda do nome, a seta que abre e fecha e uma caixa que marca ou desmarca todos os jobs dela; há filtro e botões para a lista filtrada |
 
 **Salvar** grava os jobs alterados numa transação e depois os User Secrets. O log mostra só os nomes das chaves. Com jobs
 ativos e as APIs de verdade, a tela pede confirmação. Reinicie o host e o WebApp depois de salvar.

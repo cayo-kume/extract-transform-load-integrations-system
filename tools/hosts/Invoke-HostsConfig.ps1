@@ -8,8 +8,10 @@
     É a segunda parte do tools/migrators/Invoke-Migrators.ps1: aquele sobe as tabelas; este escolhe o que roda.
 
     1. Conecta no banco (servidor, porta, banco, usuário e senha) e lista as empresas de monitor.Company.
-    2. Mostra os jobs da empresa em auditing.Jobs, agrupados por aplicação (a árvore de auditing.fn_JobCatalogTree, com as
-       procedures debaixo da integração que as chama), com uma caixa por job: marcada é IsActive = 1.
+    2. Mostra as integrações da empresa em auditing.Jobs (IdType = 2, as que os hosts agendam; as procedures rodam dentro
+       do job que as chama e ficam fora), agrupadas por aplicação (auditing.fn_JobCatalogTree), com uma caixa por job:
+       marcada é IsActive = 1. Numa árvore: à esquerda do nome de cada aplicação, a seta abre e fecha e a caixa marca ou
+       desmarca todos os jobs dela.
     3. Escolhe o host de agenda (um só por banco): WebApi com o Hangfire, Worker com o Quartz.NET ou WebJob na Azure.
     4. Opcional: grava nos User Secrets do WebApi, do Worker, do WebJob e do WebApp o que depende desta máquina. São as
        connection strings deste banco, o host escolhido ligado e os outros desligados, usuário e senha do dashboard do
@@ -129,7 +131,8 @@ function Get-Companies($fields) {
         }
 }
 
-# os jobs da empresa com a aplicação de cada um: a integração está na árvore do módulo, e a procedure na do job que a chama
+# as integrações da empresa (IdType = 2, as únicas que os hosts agendam; as procedures rodam dentro do job que as chama)
+# com a aplicação de cada uma, pela árvore do módulo
 function Get-Jobs($fields, [string]$company) {
     if ($company -notmatch '^\d+$') { throw "CNPJ inválido: $company" }
 
@@ -158,8 +161,9 @@ FROM
     LEFT JOIN [auditing].[Apps] a ON a.IdParent = COALESCE(ja.IdApp, j.IdParent)
 WHERE
     j.Company = '$company'
+    AND j.IdType = 2
 ORDER BY
-    2, j.IdType DESC, j.IdJob;
+    2, j.IdJob;
 "@ | ForEach-Object {
         $columns = $_ -split '\|', 10
         [pscustomobject]@{
@@ -420,24 +424,43 @@ $companyBox = Add-Field $jobsGroup 'Empresa (monitor.Company)' 14 18 360 ([Windo
 $filterBox = Add-Field $jobsGroup 'Filtro (IdJob, título ou aplicação)' 386 18 250 ([Windows.Forms.TextBox]@{})
 $changesLabel = [Windows.Forms.Label]@{ Text = ''; Location = [Drawing.Point]::new(648, 40); AutoSize = $true; ForeColor = [Drawing.Color]::DarkOrange }
 
-$list = [Windows.Forms.ListView]@{
-    View = 'Details'; CheckBoxes = $true; FullRowSelect = $true; ShowGroups = $true; HeaderStyle = 'Nonclickable'
-    Location = [Drawing.Point]::new(14, 70); Size = [Drawing.Size]::new(808, 278); Anchor = 'Top, Bottom, Left, Right'
+# árvore: cada aplicação com a seta e a caixa à esquerda do nome (a caixa marca ou desmarca os jobs dela) e, dentro, os
+# jobs, com as colunas desenhadas no DrawNode; Agenda e Fila ficam a uma distância fixa da borda direita
+$tree = [Windows.Forms.TreeView]@{
+    CheckBoxes = $true; DrawMode = 'OwnerDrawText'; ShowLines = $false; HideSelection = $false; ItemHeight = 20
+    Location = [Drawing.Point]::new(14, 90); Size = [Drawing.Size]::new(808, 258); Anchor = 'Top, Bottom, Left, Right'
 }
-$null = $list.Columns.Add('IdJob', 70, 'Right')
-$null = $list.Columns.Add('Tipo', 90)
-$null = $list.Columns.Add('Título', 360)
-$null = $list.Columns.Add('Agenda', 130)
-$null = $list.Columns.Add('Fila', 120)
+$scheduleColumn = 250
+$queueColumn = 120
+
+function New-ColumnLabel([string]$text, [int]$x, [string]$anchor) {
+    [Windows.Forms.Label]@{ Text = $text; Location = [Drawing.Point]::new($x, 72); AutoSize = $true; Anchor = $anchor; ForeColor = [Drawing.SystemColors]::GrayText; BackColor = [Drawing.Color]::Transparent }
+}
+$idColumnLabel = New-ColumnLabel 'IdJob' 74 'Top, Left'
+$titleColumnLabel = New-ColumnLabel 'Título' 134 'Top, Left'
+$scheduleColumnLabel = New-ColumnLabel 'Agenda' ($tree.Right - $scheduleColumn) 'Top, Left'
+$queueColumnLabel = New-ColumnLabel 'Fila' ($tree.Right - $queueColumn) 'Top, Left'
+
+# os títulos acompanham as colunas desenhadas: x é onde começa o texto do job (o da aplicação + um recuo), e Agenda e
+# Fila contam da largura útil, que muda com a barra de rolagem
+function Set-ColumnLabels([int]$x) {
+    $positions = @(
+        @{ Label = $idColumnLabel; Left = $tree.Left + $x + 2 }
+        @{ Label = $titleColumnLabel; Left = $tree.Left + $x + 62 }
+        @{ Label = $scheduleColumnLabel; Left = $tree.Left + $tree.ClientSize.Width - $scheduleColumn + 2 }
+        @{ Label = $queueColumnLabel; Left = $tree.Left + $tree.ClientSize.Width - $queueColumn + 2 }
+    )
+    foreach ($position in $positions) {
+        if ($position.Label.Left -ne $position.Left) { $position.Label.Left = $position.Left }
+    }
+}
 
 function New-Button([string]$text, [int]$x, [int]$width) {
     [Windows.Forms.Button]@{ Text = $text; Location = [Drawing.Point]::new($x, 356); Size = [Drawing.Size]::new($width, 28); Anchor = 'Bottom, Left' }
 }
-$checkAppButton = New-Button 'Ativar a aplicação' 14 140
-$uncheckAppButton = New-Button 'Desativar a aplicação' 160 150
-$checkAllButton = New-Button 'Ativar os da lista' 316 130
-$uncheckAllButton = New-Button 'Desativar os da lista' 452 140
-$jobsGroup.Controls.AddRange(@($changesLabel, $list, $checkAppButton, $uncheckAppButton, $checkAllButton, $uncheckAllButton))
+$checkAllButton = New-Button 'Ativar os da lista' 14 130
+$uncheckAllButton = New-Button 'Desativar os da lista' 150 140
+$jobsGroup.Controls.AddRange(@($changesLabel, $idColumnLabel, $titleColumnLabel, $scheduleColumnLabel, $queueColumnLabel, $tree, $checkAllButton, $uncheckAllButton))
 
 # salvar, log e status
 
@@ -475,6 +498,9 @@ $script:companies = @()
 $script:checked = @{}
 $script:loadedFields = $null
 $script:rebuilding = $false
+$script:syncing = $false
+$script:collapsed = @{}
+$script:filtered = $false
 
 function Get-Fields {
     $missing = @()
@@ -503,11 +529,17 @@ function Format-Schedule($job) {
     "a cada $($job.Interval) min"
 }
 
-# cabeçalho do grupo com a contagem da aplicação inteira, não só do filtro
-function Get-GroupHeader([int]$idApp) {
-    $appJobs = @($script:jobs | Where-Object IdApp -eq $idApp)
+# nó da aplicação: o nome com a contagem da aplicação inteira (não só do filtro) e a caixa marcada se algum job dela na
+# lista estiver marcado; desmarcar a caixa desmarca todos, marcar marca todos
+function Update-AppNode($node) {
+    $appJobs = @($script:jobs | Where-Object IdApp -eq $node.Tag)
     $active = @($appJobs | Where-Object { $script:checked[$_.Key] }).Count
-    "$($appJobs[0].AppTitle) ($active de $($appJobs.Count) ativos)"
+    $node.Text = "$($appJobs[0].AppTitle) ($active de $($appJobs.Count) ativos)"
+
+    $syncing = $script:syncing
+    $script:syncing = $true
+    $node.Checked = [bool]@($node.Nodes | Where-Object Checked)
+    $script:syncing = $syncing
 }
 
 function Update-ChangesLabel {
@@ -518,66 +550,129 @@ function Update-ChangesLabel {
 
 function Update-JobList {
     $filter = $filterBox.Text.Trim()
-    $script:rebuilding = $true
-    $list.BeginUpdate()
+    $script:syncing = $true
+    $tree.BeginUpdate()
 
     try {
-        $list.Items.Clear()
-        $list.Groups.Clear()
-        $groups = @{}
+        # guarda o que estava aberto ou fechado; com filtro, as aplicações abrem para mostrar o que achou
+        if (-not $script:filtered) {
+            foreach ($node in $tree.Nodes) { $script:collapsed[$node.Tag] = -not $node.IsExpanded }
+        }
+        $script:filtered = [bool]$filter
+
+        $tree.Nodes.Clear()
+        $apps = [ordered]@{}
 
         foreach ($job in $script:jobs) {
             if ($filter -and -not ("$($job.IdJob)".Contains($filter) -or $job.Title -like "*$filter*" -or $job.AppTitle -like "*$filter*")) { continue }
 
-            if (-not $groups.ContainsKey($job.IdApp)) {
-                $groups[$job.IdApp] = [Windows.Forms.ListViewGroup]::new((Get-GroupHeader $job.IdApp))
-                $groups[$job.IdApp].Tag = $job.IdApp
-                $null = $list.Groups.Add($groups[$job.IdApp])
+            # chave em texto: no [ordered], um inteiro no índice é a posição, não a chave
+            $app = "$($job.IdApp)"
+            if (-not $apps.Contains($app)) {
+                $apps[$app] = [Windows.Forms.TreeNode]@{ Tag = $job.IdApp }
+                $null = $tree.Nodes.Add($apps[$app])
             }
 
-            $item = [Windows.Forms.ListViewItem]::new([string[]]@("$($job.IdJob)", $job.JobType, $job.Title, (Format-Schedule $job), $job.Queue), $groups[$job.IdApp])
-            $item.Tag = $job
-            $item.Checked = [bool]$script:checked[$job.Key]
-            $null = $list.Items.Add($item)
+            $null = $apps[$app].Nodes.Add([Windows.Forms.TreeNode]@{ Text = $job.Title; Tag = $job; Checked = [bool]$script:checked[$job.Key] })
+        }
+
+        foreach ($node in $apps.Values) {
+            Update-AppNode $node
+            if ($filter -or $script:collapsed[$node.Tag] -eq $false) { $node.Expand() }
         }
     }
     finally {
-        $list.EndUpdate()
-        $script:rebuilding = $false
+        $tree.EndUpdate()
+        $script:syncing = $false
     }
 
     Update-ChangesLabel
 }
 
-$list.Add_ItemChecked({
+# as colunas do job; a aplicação usa o desenho padrão
+$tree.Add_DrawNode({
     param($sender, $e)
 
-    if ($script:rebuilding) { return }
+    if ($e.Bounds.IsEmpty -or -not $e.Node.IsVisible) { return }
 
-    $job = $e.Item.Tag
-    $script:checked[$job.Key] = $e.Item.Checked
-    $e.Item.Group.Header = Get-GroupHeader $job.IdApp
+    if ($e.Node.Level -eq 0) {
+        Set-ColumnLabels ($e.Bounds.X + $tree.Indent)
+        $e.DrawDefault = $true
+        return
+    }
+
+    $job = $e.Node.Tag
+    $x = $e.Bounds.X
+    $width = $tree.ClientSize.Width
+    $height = $e.Bounds.Height
+    $flags = [Windows.Forms.TextFormatFlags]'VerticalCenter, SingleLine, EndEllipsis, NoPrefix'
+
+    Set-ColumnLabels $x
+    $e.Graphics.FillRectangle([Drawing.SystemBrushes]::Window, $x, $e.Bounds.Y, $width - $x, $height)
+    $cells = @(
+        @{ Text = "$($job.IdJob)"; X = $x; Width = 56 }
+        @{ Text = $job.Title; X = $x + 60; Width = $width - $scheduleColumn - $x - 68 }
+        @{ Text = Format-Schedule $job; X = $width - $scheduleColumn; Width = $scheduleColumn - $queueColumn - 8 }
+        @{ Text = $job.Queue; X = $width - $queueColumn; Width = $queueColumn - 4 }
+    )
+    foreach ($cell in $cells) {
+        $bounds = [Drawing.Rectangle]::new($cell.X, $e.Bounds.Y, [Math]::Max($cell.Width, 0), $height)
+        [Windows.Forms.TextRenderer]::DrawText($e.Graphics, $cell.Text, $tree.Font, $bounds, [Drawing.SystemColors]::WindowText, $flags)
+    }
+})
+
+$tree.Add_AfterCheck({
+    param($sender, $e)
+
+    if ($script:syncing) { return }
+
+    $node = $e.Node
+    $script:syncing = $true
+
+    try {
+        if ($node.Level -eq 0) {
+            foreach ($child in $node.Nodes) {
+                $child.Checked = $node.Checked
+                $script:checked[$child.Tag.Key] = $node.Checked
+            }
+            Update-AppNode $node
+        }
+        else {
+            $script:checked[$node.Tag.Key] = $node.Checked
+            Update-AppNode $node.Parent
+        }
+    }
+    finally {
+        $script:syncing = $false
+    }
+
     Update-ChangesLabel
 })
 
-function Set-Items($items, [bool]$value) {
-    foreach ($item in @($items)) { $item.Checked = $value }
-}
+# marca ou desmarca todos os jobs que estão na lista (com filtro, só os que aparecem)
+function Set-AllJobs([bool]$value) {
+    $script:syncing = $true
+    $tree.BeginUpdate()
 
-function Get-SelectedGroupItems {
-    $group = @($list.SelectedItems)[0].Group
-    if (-not $group) {
-        $null = [Windows.Forms.MessageBox]::Show('Selecione um job da aplicação na lista.', $form.Text, 'OK', 'Information')
-        return @()
+    try {
+        foreach ($node in $tree.Nodes) {
+            foreach ($child in $node.Nodes) {
+                $child.Checked = $value
+                $script:checked[$child.Tag.Key] = $value
+            }
+            Update-AppNode $node
+        }
+    }
+    finally {
+        $tree.EndUpdate()
+        $script:syncing = $false
     }
 
-    @($list.Items | Where-Object { $_.Group -eq $group })
+    Update-ChangesLabel
 }
 
-$checkAppButton.Add_Click({ Set-Items (Get-SelectedGroupItems) $true })
-$uncheckAppButton.Add_Click({ Set-Items (Get-SelectedGroupItems) $false })
-$checkAllButton.Add_Click({ Set-Items $list.Items $true })
-$uncheckAllButton.Add_Click({ Set-Items $list.Items $false })
+$checkAllButton.Add_Click({ Set-AllJobs $true })
+$uncheckAllButton.Add_Click({ Set-AllJobs $false })
 $filterBox.Add_TextChanged({ Update-JobList })
 
 function Import-Jobs {
