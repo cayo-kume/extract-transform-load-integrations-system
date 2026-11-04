@@ -87,16 +87,16 @@ flowchart LR
 ```
 
 1. **Banco.** A tela [`tools/migrators/Invoke-Migrators.ps1`](tools/migrators/Invoke-Migrators.ps1) sobe as tabelas, com o
-   host de agenda escolhido (o Worker tem tabelas próprias, schema `quartz`) e as senhas do `etl_monitor` e do `etl_query`
-   para o painel. **No Azure SQL**, crie o banco antes, com a collation `Latin1_General_100_CI_AS_SC_UTF8`: o DbUp
+   host de agenda escolhido (o Worker tem tabelas próprias, schema `quartz`). **No Azure SQL**, crie o banco antes, com a collation `Latin1_General_100_CI_AS_SC_UTF8`: o DbUp
    criaria no tier padrão, que é pago, e a collation não muda depois ([MIGRATOR-CSX](docs/MIGRATOR-CSX.md)).
 2. **Empresa.** **Nova empresa…** na tela [`tools/hosts/Invoke-HostsConfig.ps1`](tools/hosts/Invoke-HostsConfig.ps1)
    (ou `auditing.sp_Add_Company` e `auditing.sp_Add_Company_App` à mão, [GUIA-DE-USO, passo 3](GUIA-DE-USO.md#-3-empresa-e-parâmetros)).
    Os jobs nascem inativos.
 3. **Credenciais e jobs ativos.** Na mesma tela: um módulo com API externa só ativa jobs com a credencial dele, que a
    tela pede e grava na tabela `<Módulo>Parameters` junto com os jobs, direto no banco. Vale para qualquer ambiente com
-   acesso ao banco. A parte de **configuração dos projetos** dela grava só User Secrets: serve para a máquina de
-   desenvolvimento, não para servidor.
+   acesso ao banco. Com as senhas do `etl_monitor` e do `etl_query`, ela também cria os dois usuários do painel no banco.
+   A parte de **configuração dos projetos** dela grava só User Secrets: serve para a máquina de desenvolvimento, não para
+   servidor.
 4. **Um host de agenda por banco.** Hangfire (WebApi), Quartz (Worker) ou WebJobs: dois agendadores no mesmo banco rodam
    os jobs em dobro (teste A2). Antes de ligar um, pare os outros.
 5. **Publicar**, conforme o ambiente abaixo.

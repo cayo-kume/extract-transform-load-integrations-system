@@ -21,7 +21,9 @@
     4. Opcional: grava nos User Secrets do WebApi, do Worker, do WebJob e do WebApp o que depende desta máquina. São as
        connection strings deste banco, o host escolhido ligado e os outros desligados, usuário e senha do dashboard do
        Hangfire, as BaseUrl das APIs numa porta local fechada, o pepper do DataWarehouse e, no WebApp, Database:Enabled, a
-       empresa logada, Admin:Enabled, a chave do assistente e os usuários etl_monitor e etl_query.
+       empresa logada, Admin:Enabled, a chave do assistente e os usuários etl_monitor e etl_query. Com a senha deles, o
+       Salvar também cria os dois no banco (dbo.sp_Create_Monitor_User e dbo.sp_Grant_Query_User, do Script009; quem já
+       existe mantém a senha).
 
     Salvar grava numa transação as credenciais e os jobs alterados (só UPDATE de IsActive, na linha da empresa) e depois
     os User Secrets. Os valores das credenciais não passam pelo arquivo do sqlcmd nem pela linha de comando: o script tem
@@ -303,6 +305,30 @@ SELECT CONCAT('JOBS=', @@ROWCOUNT);
     $jobs ? [int]$jobs.Substring(5) : 0
 }
 
+# cria os usuários de banco do WebApp pelas procedures do Script009 do Shared: etl_monitor (painel e cadastro) e
+# etl_query (Executar Querys, só neste banco). Quem já existe fica com a senha que tem: as procedures não trocam senha.
+# A senha vai como $(ETL_MONITOR_PASSWORD) e $(ETL_QUERY_PASSWORD), por variável de ambiente; devolve os usuários tratados
+function Add-WebAppUsers($fields, [string]$monitorPassword, [string]$queryPassword) {
+    $statements = @()
+    $variables = @{}
+    $database = $fields.Database.Replace("'", "''")
+
+    if ($monitorPassword) {
+        $variables['ETL_MONITOR_PASSWORD'] = $monitorPassword.Replace("'", "''")
+        $statements += "EXEC [dbo].[sp_Create_Monitor_User] @password = N'`$(ETL_MONITOR_PASSWORD)';"
+    }
+
+    if ($queryPassword) {
+        $variables['ETL_QUERY_PASSWORD'] = $queryPassword.Replace("'", "''")
+        $statements += "EXEC [dbo].[sp_Grant_Query_User] @password = N'`$(ETL_QUERY_PASSWORD)', @database = N'$database';"
+    }
+
+    if (-not $statements) { return @() }
+
+    $null = Invoke-Sql $fields ($statements -join "`n") -variables $variables
+    @(if ($monitorPassword) { 'etl_monitor' }; if ($queryPassword) { 'etl_query' })
+}
+
 # cadastra a empresa (auditing.sp_Add_Company, que já cria os jobs dos hosts) e os módulos contratados, numa transação
 function Add-Company($fields, [string]$company, [string]$name, [int[]]$idApps) {
     if ($company -notmatch '^\d+$') { throw "CNPJ inválido: $company" }
@@ -520,8 +546,8 @@ $assistantBox = Add-Field $configGroup 'Chave da API Anthropic (assistente)' 566
 $monitorBox = Add-Field $configGroup 'Senha do etl_monitor (WebApp)' 30 118 200 ([Windows.Forms.TextBox]@{ UseSystemPasswordChar = $true })
 $queryBox = Add-Field $configGroup 'Senha do etl_query (WebApp)' 242 118 200 ([Windows.Forms.TextBox]@{ UseSystemPasswordChar = $true })
 $configGroup.Controls.Add([Windows.Forms.Label]@{
-    Text = 'Em branco: o WebApp usa o usuário desta conexão; pepper e chave em branco ficam como estão.'
-    Location = [Drawing.Point]::new(454, 120); Size = [Drawing.Size]::new(368, 40); ForeColor = [Drawing.SystemColors]::GrayText
+    Text = 'etl_monitor e etl_query: criados no banco ao Salvar (quem já existe mantém a senha). Em branco, o WebApp usa o usuário desta conexão; pepper e chave em branco ficam como estão.'
+    Location = [Drawing.Point]::new(454, 116); Size = [Drawing.Size]::new(368, 52); ForeColor = [Drawing.SystemColors]::GrayText
 })
 
 $configFields = @($configGroup.Controls | Where-Object { $_ -ne $configBox })
@@ -1144,6 +1170,9 @@ $saveButton.Add_Click({
     if ($configBox.Checked) {
         $text += "`n`nUser Secrets do WebApi, Worker, WebJob e WebApp: este banco e esta empresa, host $($schedulingHosts[$hostRadio.Tag].Title)."
         $text += $apisOffBox.Checked ? ' APIs externas desligadas.' : ''
+
+        $users = @(if ($monitorBox.Text) { 'etl_monitor' }; if ($queryBox.Text) { 'etl_query' })
+        if ($users) { $text += "`n`nUsuários do WebApp no banco: $($users -join ' e ') (criados se não existirem; quem já existe mantém a senha)." }
     }
 
     # com as APIs de verdade, os jobs ativos chamam Totvs, Movidesk e as outras assim que um host subir
@@ -1165,6 +1194,10 @@ $saveButton.Add_Click({
             $script:pending.Clear()
             $script:credentials = Get-Credentials $fields $company.Company
             Update-JobList
+        }
+
+        if ($configBox.Checked -and ($users = Add-WebAppUsers $fields $monitorBox.Text $queryBox.Text)) {
+            Write-Log "Usuários do WebApp no banco: $($users -join ' e ') (criados se não existiam; quem já existia manteve a senha)." 'ok'
         }
 
         if ($configBox.Checked) {

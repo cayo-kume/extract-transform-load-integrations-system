@@ -366,9 +366,9 @@ Em homologação e produção, as connection strings usam os usuários próprios
 `Connection` e `User Id=etl_query` na `QueryConnection`.
 
 Os usuários `etl_monitor` e `etl_query` saem das procedures `dbo.sp_Create_Monitor_User` e `dbo.sp_Grant_Query_User`
-(Script009 do Shared). A senha nunca fica em script: quem tem `ALTER ANY LOGIN` roda as procedures com ela, à mão, pelos
-campos **Usuários de banco do WebApp** da tela `Invoke-Migrators.ps1` ou pelo `migrator.csx` do Shared com as variáveis
-de ambiente `ETL_MONITOR_PASSWORD` e `ETL_QUERY_PASSWORD`. Banco criado depois:
+(Script009 do Shared). A senha nunca fica em script: quem tem `ALTER ANY LOGIN` roda as procedures com ela, à mão, pelas
+senhas do `etl_monitor` e do `etl_query` na tela `tools/hosts/Invoke-HostsConfig.ps1` (que cria os dois no Salvar) ou
+pelo `migrator.csx` do Shared rodado à mão, com as variáveis de ambiente `ETL_MONITOR_PASSWORD` e `ETL_QUERY_PASSWORD`. Banco criado depois:
 `EXEC dbo.sp_Grant_Query_User @database = N'<banco>'`.
 
 > [!IMPORTANT]

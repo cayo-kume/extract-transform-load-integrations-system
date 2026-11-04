@@ -125,7 +125,6 @@ senha como `****` no log. O banco é criado pelo DbUp se não existir.
 | 🖧 | **Servidor, Porta, Banco** | ex.: `localhost`, `1433`, `EtlTeste` |
 | 🔑 | **Usuário e Senha** | login do SQL Server; o botão **Testar conexão** confere antes de rodar |
 | ⏱️ | **Host de agenda** | o host que vai agendar neste banco: **WebApi (Hangfire)**, **WebJob (Azure)** ou **Worker (Quartz.NET)**. Só o Worker tem tabelas próprias (schema `quartz`) |
-| 👤 | **Usuários de banco do WebApp** | opcional: com a senha do `etl_monitor` e/ou do `etl_query`, o migrator do Shared cria os logins e dá as permissões (procedures do Script009) |
 | ☑️ | **Catálogo** | as aplicações a subir; o **Shared** é obrigatório |
 
 Sem tela, no console:
@@ -133,10 +132,9 @@ Sem tela, no console:
 ```powershell
 ./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -SchedulingHost WebApi
 ./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -Apps Totvs,DataWarehouse -SchedulingHost Worker
-./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -SchedulingHost Worker -MonitorPassword (Read-Host -AsSecureString) -QueryPassword (Read-Host -AsSecureString)
 ```
 
-O migrator só cria a estrutura. Empresa, credenciais dos módulos, quais jobs rodam e a configuração dos projetos ficam na segunda tela,
+O migrator só cria a estrutura. Empresa, credenciais dos módulos, quais jobs rodam, os usuários do WebApp e a configuração dos projetos ficam na segunda tela,
 [`Invoke-HostsConfig.ps1`](#️-configurar-jobs-e-user-secrets-invoke-hostsconfig) (passo 3).
 
 <details>
@@ -213,7 +211,7 @@ SQL nem `dotnet user-secrets` à mão:
 | 🖧 | **Banco** | servidor, porta, banco, usuário e senha; **Carregar empresas** lê `monitor.Company` (sem empresa, oferece cadastrar) |
 | 🏢 | **Nova empresa…** | CNPJ da holding, razão social e os módulos contratados: grava na hora com `auditing.sp_Add_Company` e `auditing.sp_Add_Company_App`, com os jobs inativos |
 | ⏱️ | **Host de agenda** | WebApi (Hangfire), Worker (Quartz.NET) ou WebJob (Azure): o escolhido fica ligado e os outros desligados |
-| ⚙️ | **Configuração dos projetos** | opcional, grava os User Secrets do WebApi, Worker, WebJob e WebApp: connection strings deste banco, **APIs desligadas** (`BaseUrl` em `http://127.0.0.1:9/`, marcado por padrão), usuário e senha do dashboard do Hangfire, pepper do DataWarehouse, `Admin:Enabled`, chave do assistente e as senhas do `etl_monitor` e do `etl_query` |
+| ⚙️ | **Configuração dos projetos** | opcional, grava os User Secrets do WebApi, Worker, WebJob e WebApp: connection strings deste banco, **APIs desligadas** (`BaseUrl` em `http://127.0.0.1:9/`, marcado por padrão), usuário e senha do dashboard do Hangfire, pepper do DataWarehouse, `Admin:Enabled`, chave do assistente e as senhas do `etl_monitor` e do `etl_query`. Com essas senhas, o Salvar também cria os dois usuários no banco (procedures do Script009; quem já existe mantém a senha) |
 | ☑️ | **Jobs** | as integrações da empresa (as procedures ficam fora: rodam dentro do job que as chama), numa árvore por aplicação; marcado é `IsActive = 1`. Cada aplicação tem, à esquerda do nome, a seta que abre e fecha e uma caixa que marca ou desmarca todos os jobs dela, e ao lado do nome, se o módulo tem a chave da API. Há filtro e botões para a lista filtrada |
 | 🔑 | **Credenciais do módulo** | Totvs, LinxMicrovix, LinxCommerce, Movidesk e AfterSale só ativam jobs com a credencial da API de ao menos um CNPJ da empresa. Marcar um job sem ela abre o diálogo da credencial (o botão **Credenciais do módulo…** abre para trocar ou incluir um CNPJ). DataWarehouse e Hosts não pedem |
 
@@ -352,7 +350,7 @@ dotnet user-secrets set "ConnectionStrings:QueryConnection" "Server=localhost,14
 ```
 
 Em homologação e produção, use os usuários `etl_monitor` (`Connection`) e `etl_query` (`QueryConnection`), criados pelas
-procedures do Script009 do Shared quando a tela do `Invoke-Migrators.ps1` recebe as senhas deles
+procedures do Script009 do Shared quando a tela do `Invoke-HostsConfig.ps1` recebe as senhas deles
 ([README do WebApp](src/Frontend/WebApp/README.md#️-banco-de-dados-fase-5)).
 
 ---

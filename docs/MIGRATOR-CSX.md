@@ -169,9 +169,9 @@ No fim, o log lista o que acertar nos outros hosts para o escolhido ser o único
 User Secrets de cada projeto) é da segunda tela, [`tools/hosts/Invoke-HostsConfig.ps1`](../tools/hosts/Invoke-HostsConfig.ps1)
 ([GUIA-DE-USO](../GUIA-DE-USO.md#️-configurar-jobs-e-user-secrets-invoke-hostsconfig)).
 
-Os campos opcionais **Usuários de banco do WebApp** recebem as senhas do `etl_monitor` e do `etl_query`. Com elas, o
-migrator do Shared roda com as variáveis `ETL_MONITOR_PASSWORD` e `ETL_QUERY_PASSWORD` (só no processo dele) e cria os
-logins pelas procedures do Script009. As senhas não aparecem no log.
+Os usuários de banco do WebApp (`etl_monitor` e `etl_query`) também são da segunda tela: o Shared só cria as procedures
+do Script009, e o `Invoke-Migrators.ps1` não repassa `ETL_MONITOR_PASSWORD` nem `ETL_QUERY_PASSWORD` a nenhum migrator.
+Rodando o `migrator.csx` do Shared à mão, as variáveis continuam valendo.
 
 ```powershell
 ./tools/migrators/Invoke-Migrators.ps1
@@ -182,7 +182,6 @@ Com `-NoGui`, roda no console, com `-Credential`, `-Apps` (o Shared entra sempre
 
 ```powershell
 ./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -Apps Totvs,DataWarehouse -SchedulingHost WebApi
-./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -SchedulingHost WebApi -MonitorPassword (Read-Host -AsSecureString) -QueryPassword (Read-Host -AsSecureString)
 ```
 
 O migrator não grava empresa, credencial nem job. Quem faz isso é a tela

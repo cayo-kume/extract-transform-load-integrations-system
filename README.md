@@ -672,17 +672,16 @@ como `****` no log:
 ./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -SchedulingHost Worker
 ```
 
-Com as senhas do `etl_monitor` e do `etl_query` (campos opcionais da tela, ou `-MonitorPassword` e `-QueryPassword`), o
-migrator do Shared cria os dois usuários do WebApp. O migrator só cria a estrutura: depois dele, a tela
-[`tools/hosts/Invoke-HostsConfig.ps1`](tools/hosts/Invoke-HostsConfig.ps1) cadastra a empresa, pede a credencial da API
-de cada módulo antes de ativar os jobs dele, escolhe quais jobs ficam ativos e grava nos User Secrets do WebApi, do Worker, do WebJob e do WebApp a connection string, o host de agenda ligado, as APIs
+O migrator só cria a estrutura: depois dele, a tela [`tools/hosts/Invoke-HostsConfig.ps1`](tools/hosts/Invoke-HostsConfig.ps1)
+cadastra a empresa, pede a credencial da API de cada módulo antes de ativar os jobs dele, escolhe quais jobs ficam
+ativos, cria os usuários `etl_monitor` e `etl_query` do WebApp e grava nos User Secrets do WebApi, do Worker, do WebJob e do WebApp a connection string, o host de agenda ligado, as APIs
 desligadas para teste e o resto da configuração local ([GUIA-DE-USO](GUIA-DE-USO.md#️-configurar-jobs-e-user-secrets-invoke-hostsconfig)).
 
 <div align="center">
 
 ![Tela do Invoke-Migrators](docs/images/tools/invoke-migrators.png)
 
-<sub><b>Invoke-Migrators</b> — banco, host de agenda, usuários do WebApp e o catálogo das aplicações (a imagem ainda mostra o grupo Banco de teste, que saiu)</sub>
+<sub><b>Invoke-Migrators</b> — banco, host de agenda e o catálogo das aplicações (a imagem ainda mostra os grupos Usuários do WebApp e Banco de teste, que saíram)</sub>
 
 </div>
 
