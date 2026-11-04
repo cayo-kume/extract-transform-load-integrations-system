@@ -938,6 +938,7 @@ As regras de organização valem para todos os módulos e estão em
 | 📐 [PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md](docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md) | Padrão de código e scripts |
 | ⚡ [PADRAO-CACHE-INTEGRACOES.md](docs/PADRAO-CACHE-INTEGRACOES.md) | Padrão de cache |
 | 🚀 [GUIA-DE-USO.md](GUIA-DE-USO.md) | Passo a passo para subir o banco, carregar uma empresa e usar cada projeto |
+| 🚢 [DEPLOY.md](DEPLOY.md) | Deploy dos quatro projetos em cada ambiente testado (Docker com nginx, serviço do Windows, App Service, IIS), com a configuração fora do repositório |
 | 🔁 [MIGRATOR-CSX.md](docs/MIGRATOR-CSX.md) | Como rodar o `migrator.csx` e a tela `Invoke-Migrators.ps1` |
 | 🧪 [PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md](docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md) | Testes de hospedagem (C1 a C7, A1 a A10): roteiro, resultados, diferenças entre os hosts e pontos em aberto; recursos da Azure de teste pelo [`tools/azure/New-AzureTestResources.ps1`](tools/azure/New-AzureTestResources.ps1) |
 | 🔍 [REVISAO-PADRAO-CODIGO-E-SCRIPTS.md](docs/REVISAO-PADRAO-CODIGO-E-SCRIPTS.md) | Revisão dos módulos contra o padrão (todos os módulos do host e o Shared já seguem) |

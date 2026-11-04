@@ -174,7 +174,7 @@ Os mapas `IdJob → método` (`RecurringJobs/`), o `JobCron` e o `ScheduledJobRu
 
 | Seção | Uso |
 |---|---|
-| `ConnectionStrings:Connection` | banco das integrações (módulos, `auditing`, `monitor` e, por padrão, o storage do Hangfire e a trava de concorrência) |
+| `ConnectionStrings:Connection` | banco das integrações (módulos, `auditing`, `monitor` e, por padrão, o storage do Hangfire e a trava de concorrência). Fica fora do `appsettings.json`: User Secrets na máquina de desenvolvimento (a tela `tools/hosts/Invoke-HostsConfig.ps1` grava) e variável de ambiente `ConnectionStrings__Connection` no servidor |
 | `ConnectionStrings:AuditingConnection` | opcional: banco de `auditing`. Sem ela, o Shared usa a `Connection` trocando `NEWBLOOMERS` por `AUDITING` no nome |
 | `Hangfire` | tudo do Hangfire (tabela abaixo) |
 | `AfterSale`, `Movidesk`, `LinxMicrovix`, `Totvs`... | `BaseUrl` e as opções de cada módulo (ver o README do módulo) |

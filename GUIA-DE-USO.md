@@ -283,7 +283,7 @@ dotnet run --project src/Backend/Hosts/WebJob -- --list-jobs
 
 > [!TIP]
 > A tela [`Invoke-HostsConfig.ps1`](#️-configurar-jobs-e-user-secrets-invoke-hostsconfig) grava tudo isso nos User Secrets
-> de cada host. À mão, a connection string do WebJob e do Worker fica fora do `appsettings.json`:
+> de cada host. Nenhum `appsettings.json` tem credencial: à mão, a connection string dos três hosts vai para os User Secrets:
 > `dotnet user-secrets set "ConnectionStrings:Connection" "<connection string>" --project src/Backend/Hosts/Worker`.
 
 **Carga inicial limitada (testes).** Com o banco vazio, alguns jobs leem o histórico inteiro (Totvs e Linx Microvix
@@ -406,6 +406,7 @@ ORDER BY L.StartDate DESC;
 | Cadastro de empresas | [docs/PLANO-TELA-CADASTRO-EMPRESA.md](docs/PLANO-TELA-CADASTRO-EMPRESA.md) |
 | Padrões de código, scripts e cache | [docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md](docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md) · [docs/PADRAO-CACHE-INTEGRACOES.md](docs/PADRAO-CACHE-INTEGRACOES.md) |
 | Data warehouse | [src/Backend/Modules/DataWarehouse/docs](src/Backend/Modules/DataWarehouse/docs/00-ordem-de-leitura.md) |
+| Deploy dos projetos e a configuração de cada ambiente | [DEPLOY.md](DEPLOY.md) |
 | Hospedagem testada (Docker, nginx, serviço do Windows, Azure) e pontos em aberto | [docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md](docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md) |
 
 ---
