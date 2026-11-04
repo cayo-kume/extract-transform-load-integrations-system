@@ -14,12 +14,14 @@
        de um CNPJ que já tinha parâmetros no módulo é descartada (a regra é uma linha por CNPJ em cada *Parameters);
     4. liga cada CNPJ (doc_company) do script de parâmetros à empresa em monitor.HoldingCompanies, com
        auditing.sp_Add_Holding_Company: os parâmetros não mudam, a holding só entra se tiver parâmetros com o CNPJ dela;
-    5. para cada módulo, chama auditing.sp_Add_Company_App, que copia os jobs do catálogo para a empresa, inativos;
-    6. com -ActivateJobs, ativa os jobs da empresa nos módulos pedidos (os dos hosts continuam como estão).
+    5. para cada módulo, chama auditing.sp_Add_Company_App, que copia os jobs do catálogo para a empresa, inativos.
+
+    Ativar jobs não é com este script: é na tela tools/hosts/Invoke-HostsConfig.ps1, que só ativa os jobs de um módulo com
+    a credencial dele cadastrada.
 
     No fim, avisa sobre CNPJs das tabelas *Parameters que não estão em monitor.HoldingCompanies (nenhum serviço os lê).
 
-    Os scripts de parâmetros têm credenciais reais. Os jobs nascem inativos e, antes de subir um host contra o banco de
+    Os scripts de parâmetros têm credenciais reais. Os jobs ficam inativos e, antes de subir um host contra o banco de
     teste, aponte <Módulo>__BaseUrl para http://127.0.0.1:9/ para nenhum job chamar a API de verdade.
 
     A senha vai para o sqlcmd pela variável SQLCMDPASSWORD, nunca pela linha de comando, e não aparece na saída.
@@ -42,9 +44,6 @@
 .PARAMETER Modules
     Só estes módulos (Totvs, LinxMicrovix, LinxCommerce, Movidesk, AfterSale, DataWarehouse); sem ele, todos.
 
-.PARAMETER ActivateJobs
-    Ativa os jobs da empresa nos módulos pedidos. Desligado por padrão: os jobs nascem inativos.
-
 .PARAMETER Force
     Aceita um banco fora da regra de nome de -Database (por exemplo, a primeira carga de um ambiente novo).
 
@@ -52,7 +51,7 @@
     ./tools/seeds/Import-TestSeeds.ps1 -Database EtlTeste
 
 .EXAMPLE
-    ./tools/seeds/Import-TestSeeds.ps1 -Database EtlTeste -Modules Totvs,DataWarehouse -ActivateJobs
+    ./tools/seeds/Import-TestSeeds.ps1 -Database EtlTeste -Modules Totvs,DataWarehouse
 #>
 [CmdletBinding()]
 param(
@@ -65,7 +64,6 @@ param(
     [string]$CompanyName = 'NEWBLOOMERS',
     [ValidateSet('Totvs', 'LinxMicrovix', 'LinxCommerce', 'Movidesk', 'AfterSale', 'DataWarehouse')]
     [string[]]$Modules,
-    [switch]$ActivateJobs,
     [switch]$Force
 )
 
@@ -246,10 +244,6 @@ DECLARE @r TABLE (JobsCreated INT);
 INSERT INTO @r EXEC auditing.sp_Add_Company_App @company = '$Company', @idParent = $($module.IdParent);
 SELECT CONCAT('CREATED=', JobsCreated) FROM @r;
 "@) 'CREATED'
-
-    if ($ActivateJobs) {
-        $null = Invoke-Sql -Query "UPDATE j SET IsActive = 1 FROM auditing.Jobs j JOIN auditing.fn_JobCatalogTree($($module.IdParent)) t ON t.IdJob = j.IdJob AND t.IdType = j.IdType WHERE j.Company = '$Company';"
-    }
 
     $state = Invoke-Sql -Query @"
 SELECT CONCAT('TOTAL=', COUNT(*)) FROM auditing.Jobs j JOIN auditing.fn_JobCatalogTree($($module.IdParent)) t ON t.IdJob = j.IdJob AND t.IdType = j.IdType WHERE j.Company = '$Company';

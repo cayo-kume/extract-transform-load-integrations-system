@@ -1,24 +1,31 @@
 #Requires -Version 7
 <#
 .SYNOPSIS
-    Configura, num banco já migrado, quais jobs de uma empresa ficam ativos e o que os hosts de agenda e o WebApp precisam
-    para rodar contra ele, por uma tela Windows Forms.
+    Configura, num banco já migrado, a empresa, as credenciais das APIs dos módulos, quais jobs ficam ativos e o que os
+    hosts de agenda e o WebApp precisam para rodar contra ele, por uma tela Windows Forms.
 
 .DESCRIPTION
-    É a segunda parte do tools/migrators/Invoke-Migrators.ps1: aquele sobe as tabelas; este escolhe o que roda.
+    É a segunda parte do tools/migrators/Invoke-Migrators.ps1: aquele sobe as tabelas; este cadastra e escolhe o que roda.
 
-    1. Conecta no banco (servidor, porta, banco, usuário e senha) e lista as empresas de monitor.Company.
+    1. Conecta no banco (servidor, porta, banco, usuário e senha) e lista as empresas de monitor.Company. Nova empresa
+       cadastra uma (auditing.sp_Add_Company e auditing.sp_Add_Company_App dos módulos contratados, jobs inativos).
     2. Mostra as integrações da empresa em auditing.Jobs (IdType = 2, as que os hosts agendam; as procedures rodam dentro
        do job que as chama e ficam fora), agrupadas por aplicação (auditing.fn_JobCatalogTree), com uma caixa por job:
        marcada é IsActive = 1. Numa árvore: à esquerda do nome de cada aplicação, a seta abre e fecha e a caixa marca ou
        desmarca todos os jobs dela.
+       Os módulos com API externa (Totvs, LinxMicrovix, LinxCommerce, Movidesk e AfterSale) só ativam jobs com a
+       credencial de ao menos um CNPJ da empresa na tabela <Módulo>Parameters: marcar sem ela abre o diálogo da
+       credencial, que entra no Salvar (INSERT ou UPDATE na tabela e o CNPJ ligado à empresa por
+       auditing.sp_Add_Holding_Company).
     3. Escolhe o host de agenda (um só por banco): WebApi com o Hangfire, Worker com o Quartz.NET ou WebJob na Azure.
     4. Opcional: grava nos User Secrets do WebApi, do Worker, do WebJob e do WebApp o que depende desta máquina. São as
        connection strings deste banco, o host escolhido ligado e os outros desligados, usuário e senha do dashboard do
        Hangfire, as BaseUrl das APIs numa porta local fechada, o pepper do DataWarehouse e, no WebApp, Database:Enabled, a
        empresa logada, Admin:Enabled, a chave do assistente e os usuários etl_monitor e etl_query.
 
-    Salvar grava os jobs alterados numa transação (só UPDATE de IsActive, na linha da empresa) e depois os User Secrets.
+    Salvar grava numa transação as credenciais e os jobs alterados (só UPDATE de IsActive, na linha da empresa) e depois
+    os User Secrets. Os valores das credenciais não passam pelo arquivo do sqlcmd nem pela linha de comando: o script tem
+    $(ETL_CRED_n), e o sqlcmd lê os valores de variáveis de ambiente do próprio processo, apagadas em seguida.
     Jobs ativos com as APIs de verdade chamam as APIs de verdade quando um host subir: a tela pede confirmação.
 
     Os User Secrets são só da máquina de desenvolvimento: em produção os valores vêm de variável de ambiente. Gravar é
@@ -90,15 +97,49 @@ $projects = [ordered]@{
 # APIs que os jobs dos hosts chamam; o Linx Commerce não tem BaseUrl (o endereço é de cada cliente, nos parâmetros)
 $apiBaseUrls = 'AfterSale:BaseUrl', 'Movidesk:BaseUrl', 'LinxMicrovix:BaseUrl', 'Totvs:BaseUrl'
 
+# a credencial da API de cada módulo, pelo IdApp (auditing.Apps): a tabela de parâmetros e as colunas que a tela pede. Os
+# jobs de um módulo daqui só são ativados com a credencial de ao menos um CNPJ da empresa; DataWarehouse e Hosts não
+# chamam API externa e ficam de fora. Chave em texto: no [ordered], um inteiro no índice é a posição, não a chave
+$credentialModules = [ordered]@{
+    '130' = @{ Name = 'Totvs'; Table = '[totvs].[TotvsParameters]'; Fields = @(
+            @{ Column = 'client_id'; Required = $true }
+            @{ Column = 'client_secret'; Required = $true; Secret = $true }
+            @{ Column = 'username'; Required = $true }
+            @{ Column = 'password'; Required = $true; Secret = $true }) }
+    '80' = @{ Name = 'LinxMicrovix'; Table = '[linxmicrovix].[LinxMicrovixParameters]'; AnyOf = 'erp_chave', 'b2c_chave'; Fields = @(
+            @{ Column = 'grupo' }
+            @{ Column = 'erp_chave'; Guid = $true; Secret = $true }
+            @{ Column = 'erp_user_name' }
+            @{ Column = 'erp_password'; Secret = $true }
+            @{ Column = 'b2c_chave'; Guid = $true; Secret = $true }
+            @{ Column = 'b2c_user_name' }
+            @{ Column = 'b2c_password'; Secret = $true }) }
+    '70' = @{ Name = 'LinxCommerce'; Table = '[linxcommerce].[LinxCommerceParameters]'; Fields = @(
+            @{ Column = 'base_url'; Required = $true }
+            @{ Column = 'user_name'; Required = $true }
+            @{ Column = 'api_key'; Required = $true; Secret = $true }) }
+    '30' = @{ Name = 'Movidesk'; Table = '[movidesk].[MovideskParameters]'; Fields = @(
+            @{ Column = 'token'; Required = $true; Guid = $true; Secret = $true }) }
+    '50' = @{ Name = 'AfterSale'; Table = '[aftersale].[AfterSaleParameters]'; Fields = @(
+            @{ Column = 'token'; Required = $true; Guid = $true; Secret = $true }) }
+}
+
+# módulos que uma empresa nova pode contratar (auditing.sp_Add_Company_App cria os jobs deles, inativos)
+$companyModules = [ordered]@{ Totvs = 130; LinxMicrovix = 80; LinxCommerce = 70; Movidesk = 30; AfterSale = 50; DataWarehouse = 90 }
+
 # ---------------------------------------------------------------------------------------------------------------------
 # banco
 # ---------------------------------------------------------------------------------------------------------------------
 
-# roda um script no banco e devolve as linhas, colunas separadas por |; -b faz o sqlcmd sair com erro no primeiro erro de SQL
-function Invoke-Sql($fields, [string]$query, [string]$database = $fields.Database) {
+# roda um script no banco e devolve as linhas, colunas separadas por |; -b faz o sqlcmd sair com erro no primeiro erro de SQL.
+# $variables vira variável de ambiente só durante a chamada: o script usa $(NOME) e o sqlcmd troca pelo valor, então
+# valores de credencial não passam pelo arquivo temporário nem pela linha de comando
+function Invoke-Sql($fields, [string]$query, [string]$database = $fields.Database, [hashtable]$variables = @{}) {
     $file = New-TemporaryFile
 
     try {
+        foreach ($name in $variables.Keys) { Set-Item -LiteralPath "Env:$name" -Value $variables[$name] }
+
         Set-Content -LiteralPath $file -Value "SET NOCOUNT ON;`n$query" -Encoding utf8
 
         $arguments = @('-S', "$($fields.Server),$($fields.Port)", '-d', $database, '-U', $fields.User, '-b', '-I', '-f', '65001',
@@ -120,6 +161,7 @@ function Invoke-Sql($fields, [string]$query, [string]$database = $fields.Databas
     }
     finally {
         Remove-Item -LiteralPath $file -ErrorAction SilentlyContinue
+        foreach ($name in $variables.Keys) { Remove-Item -LiteralPath "Env:$name" -ErrorAction SilentlyContinue }
     }
 }
 
@@ -174,34 +216,106 @@ ORDER BY
     }
 }
 
-# grava só os jobs que mudaram, numa transação, na linha da empresa; devolve as linhas alteradas
-function Save-Jobs($fields, [string]$company, $changes) {
+# os CNPJs com credencial em cada módulo, da própria empresa ou das marcas dela (monitor.HoldingCompanies), e as tabelas
+# de parâmetros que existem no banco (sem a tabela, o migrator do módulo não rodou e a credencial não tem onde entrar)
+function Get-Credentials($fields, [string]$company) {
     if ($company -notmatch '^\d+$') { throw "CNPJ inválido: $company" }
 
-    $values = ($changes | ForEach-Object { "($($_.IdJob), $($_.IdType), $([int]$_.IsActive))" }) -join ",`n    "
+    $query = ($credentialModules.Keys | ForEach-Object {
+            $table = $credentialModules[$_].Table
+            @"
+IF OBJECT_ID('$table') IS NOT NULL
+BEGIN
+    SELECT 'TABLE|$_';
+    SELECT CONCAT('DOC|$_|', doc_company) FROM $table
+    WHERE doc_company = '$company' OR doc_company IN (SELECT Company FROM [monitor].[HoldingCompanies] WHERE Holding = '$company');
+END
+"@
+        }) -join "`n"
 
-    Invoke-Sql $fields @"
-SET XACT_ABORT ON;
-BEGIN TRANSACTION;
+    $credentials = @{ Tables = [Collections.Generic.HashSet[string]]::new(); Docs = @{} }
 
+    foreach ($line in (Invoke-Sql $fields $query)) {
+        $columns = $line -split '\|'
+        if ($columns[0] -eq 'TABLE') { $null = $credentials.Tables.Add($columns[1]) }
+        elseif ($columns[0] -eq 'DOC' -and $columns[2]) { $credentials.Docs[$columns[1]] = @($credentials.Docs[$columns[1]] | Where-Object { $_ }) + $columns[2] }
+    }
+
+    $credentials
+}
+
+# grava numa transação só: cada credencial nova ou trocada (INSERT ou UPDATE na tabela do módulo, o CNPJ ligado à
+# empresa e os jobs do módulo criados se faltarem, inativos) e depois os jobs alterados. Os valores das credenciais vão
+# como $(ETL_CRED_n) no script e chegam ao sqlcmd por variável de ambiente; devolve as linhas de auditing.Jobs alteradas
+function Save-Changes($fields, [string]$company, $credentials, $changes) {
+    if ($company -notmatch '^\d+$') { throw "CNPJ inválido: $company" }
+
+    $sql = [Text.StringBuilder]::new()
+    $variables = @{}
+    $null = $sql.AppendLine('SET XACT_ABORT ON;').AppendLine('BEGIN TRANSACTION;')
+
+    foreach ($credential in @($credentials)) {
+        $doc = $credential.Doc
+        if ($doc -notmatch '^\d+$') { throw "CNPJ inválido: $doc" }
+
+        $table = $credentialModules["$($credential.IdApp)"].Table
+        $columns = @()
+        $values = @()
+
+        foreach ($column in $credential.Values.Keys) {
+            $name = "ETL_CRED_$($variables.Count + 1)"
+            $variables[$name] = $credential.Values[$column].Replace("'", "''")
+            $columns += "[$column]"
+            $values += "N'`$($name)'"
+        }
+
+        if ($columns) {
+            $sets = for ($i = 0; $i -lt $columns.Count; $i++) { "$($columns[$i]) = $($values[$i])" }
+            $null = $sql.AppendLine("IF EXISTS (SELECT 1 FROM $table WHERE doc_company = '$doc')").
+                AppendLine("    UPDATE $table SET $($sets -join ', '), integrated_or_updated_at = GETDATE() WHERE doc_company = '$doc';").
+                AppendLine('ELSE').
+                AppendLine("    INSERT INTO $table (integrated_or_updated_at, doc_company, $($columns -join ', ')) VALUES (GETDATE(), '$doc', $($values -join ', '));")
+        }
+
+        $null = $sql.AppendLine("EXEC [auditing].[sp_Add_Holding_Company] @company = '$company', @docCompany = '$doc';").
+            AppendLine("EXEC [auditing].[sp_Add_Company_App] @company = '$company', @idParent = $($credential.IdApp);")
+    }
+
+    if ($changes) {
+        $rows = ($changes | ForEach-Object { "($($_.IdJob), $($_.IdType), $([int]$_.IsActive))" }) -join ",`n    "
+        $null = $sql.AppendLine(@"
 UPDATE j
 SET IsActive = v.IsActive
 FROM
     [auditing].[Jobs] j
     JOIN (VALUES
-    $values
+    $rows
     ) v (IdJob, IdType, IsActive) ON v.IdJob = j.IdJob AND v.IdType = j.IdType
 WHERE
     j.Company = '$company';
+SELECT CONCAT('JOBS=', @@ROWCOUNT);
+"@)
+    }
 
-SELECT @@ROWCOUNT;
-COMMIT TRANSACTION;
-"@ | Select-Object -First 1
+    $null = $sql.AppendLine('COMMIT TRANSACTION;')
+    $output = Invoke-Sql $fields $sql.ToString() -variables $variables
+    $jobs = @($output | Where-Object { $_ -like 'JOBS=*' }) | Select-Object -Last 1
+    $jobs ? [int]$jobs.Substring(5) : 0
 }
 
-# ---------------------------------------------------------------------------------------------------------------------
-# User Secrets
-# ---------------------------------------------------------------------------------------------------------------------
+# cadastra a empresa (auditing.sp_Add_Company, que já cria os jobs dos hosts) e os módulos contratados, numa transação
+function Add-Company($fields, [string]$company, [string]$name, [int[]]$idApps) {
+    if ($company -notmatch '^\d+$') { throw "CNPJ inválido: $company" }
+
+    $apps = ($idApps | ForEach-Object { "EXEC [auditing].[sp_Add_Company_App] @company = '$company', @idParent = $_;" }) -join "`n"
+    $null = Invoke-Sql $fields @"
+SET XACT_ABORT ON;
+BEGIN TRANSACTION;
+EXEC [auditing].[sp_Add_Company] @company = '$company', @name = N'`$(ETL_COMPANY_NAME)';
+$apps
+COMMIT TRANSACTION;
+"@ -variables @{ ETL_COMPANY_NAME = $name.Replace("'", "''") }
+}
 
 function New-ConnectionString([string]$server, [int]$port, [string]$database, [string]$user, [string]$password, [bool]$trust) {
     $builder = [Data.Common.DbConnectionStringBuilder]::new()
@@ -420,9 +534,12 @@ $jobsGroup = [Windows.Forms.GroupBox]@{
     Text = 'Empresa e jobs (marcado = ativo)'; Location = [Drawing.Point]::new(12, 388); Size = [Drawing.Size]::new(836, 396)
     Anchor = 'Top, Bottom, Left, Right'
 }
-$companyBox = Add-Field $jobsGroup 'Empresa (monitor.Company)' 14 18 360 ([Windows.Forms.ComboBox]@{ DropDownStyle = 'DropDownList' })
-$filterBox = Add-Field $jobsGroup 'Filtro (IdJob, título ou aplicação)' 386 18 250 ([Windows.Forms.TextBox]@{})
-$changesLabel = [Windows.Forms.Label]@{ Text = ''; Location = [Drawing.Point]::new(648, 40); AutoSize = $true; ForeColor = [Drawing.Color]::DarkOrange }
+$companyBox = Add-Field $jobsGroup 'Empresa (monitor.Company)' 14 18 300 ([Windows.Forms.ComboBox]@{ DropDownStyle = 'DropDownList' })
+$newCompanyButton = [Windows.Forms.Button]@{ Text = 'Nova empresa…'; Location = [Drawing.Point]::new(320, 35); Size = [Drawing.Size]::new(110, 25) }
+$filterBox = Add-Field $jobsGroup 'Filtro (IdJob, título ou aplicação)' 442 18 250 ([Windows.Forms.TextBox]@{})
+$changesLabel = [Windows.Forms.Label]@{
+    Text = ''; Location = [Drawing.Point]::new(484, 362); AutoSize = $true; ForeColor = [Drawing.Color]::DarkOrange; Anchor = 'Bottom, Left'
+}
 
 # árvore: cada aplicação com a seta e a caixa à esquerda do nome (a caixa marca ou desmarca os jobs dela) e, dentro, os
 # jobs, com as colunas desenhadas no DrawNode; Agenda e Fila ficam a uma distância fixa da borda direita
@@ -460,7 +577,9 @@ function New-Button([string]$text, [int]$x, [int]$width) {
 }
 $checkAllButton = New-Button 'Ativar os da lista' 14 130
 $uncheckAllButton = New-Button 'Desativar os da lista' 150 140
-$jobsGroup.Controls.AddRange(@($changesLabel, $idColumnLabel, $titleColumnLabel, $scheduleColumnLabel, $queueColumnLabel, $tree, $checkAllButton, $uncheckAllButton))
+$credentialsButton = New-Button 'Credenciais do módulo…' 296 170
+$jobsGroup.Controls.AddRange(@($newCompanyButton, $changesLabel, $idColumnLabel, $titleColumnLabel, $scheduleColumnLabel, $queueColumnLabel, $tree,
+    $checkAllButton, $uncheckAllButton, $credentialsButton))
 
 # salvar, log e status
 
@@ -501,6 +620,9 @@ $script:rebuilding = $false
 $script:syncing = $false
 $script:collapsed = @{}
 $script:filtered = $false
+# credenciais: as do banco (Get-Credentials) e as digitadas e ainda não salvas, uma por módulo e CNPJ
+$script:credentials = @{ Tables = [Collections.Generic.HashSet[string]]::new(); Docs = @{} }
+$script:pending = [Collections.Generic.List[object]]::new()
 
 function Get-Fields {
     $missing = @()
@@ -522,6 +644,173 @@ function Get-Fields {
 
 function Get-Changes { @($script:jobs | Where-Object { $script:checked[$_.Key] -ne $_.IsActive }) }
 
+function Test-Unsaved { [bool](Get-Changes) -or $script:pending.Count -gt 0 }
+# os CNPJs com credencial de um módulo: os do banco e os digitados ainda não salvos
+function Get-CredentialDocs([string]$idApp) {
+    @(@($script:credentials.Docs[$idApp]) + @($script:pending | Where-Object IdApp -eq $idApp | ForEach-Object Doc) |
+        Where-Object { $_ } | Select-Object -Unique)
+}
+
+# módulo sem API externa (DataWarehouse, Hosts) não precisa de credencial
+function Test-HasCredential([string]$idApp) {
+    -not $credentialModules.Contains($idApp) -or [bool](Get-CredentialDocs $idApp)
+}
+
+# o que o nome da aplicação mostra sobre a credencial
+function Get-CredentialText([string]$idApp) {
+    if (-not $credentialModules.Contains($idApp)) { return '' }
+
+    $docs = Get-CredentialDocs $idApp
+    if (-not $docs) { return '  ·  sem chave da API' }
+
+    $toSave = @($script:pending | Where-Object IdApp -eq $idApp).Count
+    "  ·  chave da API: $($docs.Count) CNPJ$($docs.Count -eq 1 ? '' : 's')$($toSave ? ' (a gravar)' : '')"
+}
+
+# o resumo das credenciais a gravar, sem valores: módulo e CNPJ
+function Get-PendingText {
+    ($script:pending | Group-Object { $credentialModules[$_.IdApp].Name } | ForEach-Object {
+            "$($_.Name) ($(($_.Group | ForEach-Object Doc) -join ', '))"
+        }) -join '; '
+}
+
+# diálogo da credencial de um módulo: o CNPJ (da empresa, de uma marca já cadastrada ou novo) e as colunas da tabela de
+# parâmetros. Num CNPJ que já tem credencial, campo em branco fica como está. Não grava: entra em $script:pending, que vai
+# para o banco no Salvar, na mesma transação dos jobs. Devolve $true se a credencial entrou
+function Show-CredentialDialog([string]$idApp) {
+    $module = $credentialModules[$idApp]
+
+    if (-not $script:credentials.Tables.Contains($idApp)) {
+        $null = [Windows.Forms.MessageBox]::Show("A tabela $($module.Table) não existe neste banco: rode o migrator do $($module.Name) antes.", $form.Text, 'OK', 'Warning')
+        return $false
+    }
+
+    $company = $script:companies[$companyBox.SelectedIndex].Company
+    $existing = @($script:credentials.Docs[$idApp] | Where-Object { $_ })
+    $rows = [Math]::Ceiling($module.Fields.Count / 2)
+
+    $dialog = [Windows.Forms.Form]@{
+        Text = "Credenciais do $($module.Name)"; FormBorderStyle = 'FixedDialog'; MaximizeBox = $false; MinimizeBox = $false
+        StartPosition = 'CenterParent'; Font = $form.Font; ClientSize = [Drawing.Size]::new(500, 170 + 48 * $rows)
+    }
+    $dialog.Controls.Add([Windows.Forms.Label]@{
+            Text = "Os jobs do $($module.Name) só são ativados com a credencial da API. Ela entra em $($module.Table -replace '[\[\]]', '') ao Salvar, com o CNPJ ligado à empresa. Num CNPJ que já tem credencial, campo em branco fica como está."
+            Location = [Drawing.Point]::new(14, 12); Size = [Drawing.Size]::new(472, 48)
+        })
+
+    $docBox = Add-Field $dialog 'CNPJ (doc_company, só dígitos)' 14 64 230 ([Windows.Forms.ComboBox]@{ DropDownStyle = 'DropDown' })
+    foreach ($doc in (@($company) + $existing | Select-Object -Unique)) { $null = $docBox.Items.Add($doc) }
+    $docBox.Text = $existing ? $existing[0] : $company
+
+    $boxes = [ordered]@{}
+    for ($i = 0; $i -lt $module.Fields.Count; $i++) {
+        $field = $module.Fields[$i]
+        $label = "$($field.Column)$($field.Required ? ' *' : '')"
+        $boxes[$field.Column] = Add-Field $dialog $label (14 + 242 * ($i % 2)) (112 + 48 * [Math]::Floor($i / 2)) 230 `
+            ([Windows.Forms.TextBox]@{ UseSystemPasswordChar = [bool]$field.Secret })
+    }
+
+    $hint = $module.AnyOf ? "Preencha ao menos um de: $($module.AnyOf -join ', '). " : ''
+    $dialog.Controls.Add([Windows.Forms.Label]@{
+            Text = "$hint* obrigatório num CNPJ novo."; Location = [Drawing.Point]::new(14, 120 + 48 * $rows); AutoSize = $true
+            ForeColor = [Drawing.SystemColors]::GrayText
+        })
+    $okButton = [Windows.Forms.Button]@{
+        Text = 'Gravar credencial'; DialogResult = 'OK'; Location = [Drawing.Point]::new(260, 132 + 48 * $rows); Size = [Drawing.Size]::new(130, 28)
+    }
+    $cancelButton = [Windows.Forms.Button]@{
+        Text = 'Cancelar'; DialogResult = 'Cancel'; Location = [Drawing.Point]::new(396, 132 + 48 * $rows); Size = [Drawing.Size]::new(90, 28)
+    }
+    $dialog.Controls.AddRange(@($okButton, $cancelButton))
+    $dialog.CancelButton = $cancelButton
+
+    try {
+        # o diálogo reabre com o que foi digitado até a credencial passar na conferência
+        while ($true) {
+            if ($dialog.ShowDialog($form) -ne 'OK') { return $false }
+
+            $doc = $docBox.Text.Trim()
+            $isNew = $doc -notin $existing
+            $values = [ordered]@{}
+            foreach ($column in $boxes.Keys) { if ($boxes[$column].Text.Trim()) { $values[$column] = $boxes[$column].Text.Trim() } }
+
+            $problems = @(
+                if ($doc -notmatch '^\d+$') { 'o CNPJ precisa ter só dígitos' }
+                foreach ($field in $module.Fields) {
+                    if ($isNew -and $field.Required -and -not $values.Contains($field.Column)) { "$($field.Column) é obrigatório num CNPJ novo" }
+                    if ($field.Guid -and $values.Contains($field.Column) -and -not [guid]::TryParse($values[$field.Column], [ref][guid]::Empty)) {
+                        "$($field.Column) precisa ser um GUID (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)"
+                    }
+                }
+                if ($isNew -and $module.AnyOf -and -not ($module.AnyOf | Where-Object { $values.Contains($_) })) { "preencha ao menos um de: $($module.AnyOf -join ', ')" }
+                if (-not $isNew -and -not $values.Count) { 'nenhum campo preenchido para trocar' }
+            )
+
+            if (-not $problems) { break }
+            $null = [Windows.Forms.MessageBox]::Show("Confira: $($problems -join '; ').", $dialog.Text, 'OK', 'Warning')
+        }
+
+        $null = $script:pending.RemoveAll([Predicate[object]] { param($item) $item.IdApp -eq $idApp -and $item.Doc -eq $doc })
+        $script:pending.Add([pscustomobject]@{ IdApp = $idApp; Doc = $doc; Values = $values })
+        Write-Log "Credencial do $($module.Name) para o CNPJ $doc pronta para gravar no Salvar." 'step'
+        $true
+    }
+    finally {
+        $dialog.Dispose()
+    }
+}
+
+# diálogo da empresa nova: CNPJ da holding, razão social e os módulos contratados (jobs criados inativos). Grava na hora
+# e recarrega as empresas com a nova escolhida
+function Show-CompanyDialog {
+    $dialog = [Windows.Forms.Form]@{
+        Text = 'Nova empresa'; FormBorderStyle = 'FixedDialog'; MaximizeBox = $false; MinimizeBox = $false
+        StartPosition = 'CenterParent'; Font = $form.Font; ClientSize = [Drawing.Size]::new(440, 330)
+    }
+    $cnpjBox = Add-Field $dialog 'CNPJ da holding (só dígitos)' 14 12 190 ([Windows.Forms.TextBox]@{})
+    $nameBox = Add-Field $dialog 'Razão social' 216 12 210 ([Windows.Forms.TextBox]@{})
+    $modulesBox = Add-Field $dialog 'Módulos contratados (os jobs são criados inativos)' 14 62 412 ([Windows.Forms.CheckedListBox]@{ CheckOnClick = $true; Height = 130 })
+    foreach ($name in $companyModules.Keys) { $null = $modulesBox.Items.Add($name, $true) }
+    $dialog.Controls.Add([Windows.Forms.Label]@{
+            Text = 'Grava com auditing.sp_Add_Company e auditing.sp_Add_Company_App. As credenciais entram depois, ao ativar os jobs de cada módulo.'
+            Location = [Drawing.Point]::new(14, 230); Size = [Drawing.Size]::new(412, 36); ForeColor = [Drawing.SystemColors]::GrayText
+        })
+    $okButton = [Windows.Forms.Button]@{ Text = 'Cadastrar'; DialogResult = 'OK'; Location = [Drawing.Point]::new(240, 288); Size = [Drawing.Size]::new(90, 28) }
+    $cancelButton = [Windows.Forms.Button]@{ Text = 'Cancelar'; DialogResult = 'Cancel'; Location = [Drawing.Point]::new(336, 288); Size = [Drawing.Size]::new(90, 28) }
+    $dialog.Controls.AddRange(@($okButton, $cancelButton))
+    $dialog.CancelButton = $cancelButton
+
+    try {
+        while ($true) {
+            if ($dialog.ShowDialog($form) -ne 'OK') { return }
+
+            $company = $cnpjBox.Text.Trim()
+            $name = $nameBox.Text.Trim()
+            $problems = @(
+                if ($company -notmatch '^\d+$') { 'o CNPJ precisa ter só dígitos' }
+                if (-not $name) { 'preencha a razão social' }
+                if ($company -in $script:companies.Company) { "a empresa $company já existe" }
+            )
+
+            if (-not $problems) { break }
+            $null = [Windows.Forms.MessageBox]::Show("Confira: $($problems -join '; ').", $dialog.Text, 'OK', 'Warning')
+        }
+
+        $idApps = @($modulesBox.CheckedItems | ForEach-Object { $companyModules[$_] })
+        $form.Cursor = 'WaitCursor'
+        Add-Company $script:loadedFields $company $name $idApps
+        Write-Log "Empresa $name - $company cadastrada, com os jobs inativos de: $(@($modulesBox.CheckedItems) -join ', ')." 'ok'
+        Import-Companies $company
+    }
+    catch {
+        Write-Log "Falha ao cadastrar a empresa: $($_.Exception.Message)" 'error'
+    }
+    finally {
+        $form.Cursor = 'Default'
+        $dialog.Dispose()
+    }
+}
+
 function Format-Schedule($job) {
     if ($job.DailyAt) { return "diário às $($job.DailyAt)" }
     if ($job.Interval -eq 0) { return 'sob demanda' }
@@ -534,7 +823,7 @@ function Format-Schedule($job) {
 function Update-AppNode($node) {
     $appJobs = @($script:jobs | Where-Object IdApp -eq $node.Tag)
     $active = @($appJobs | Where-Object { $script:checked[$_.Key] }).Count
-    $node.Text = "$($appJobs[0].AppTitle) ($active de $($appJobs.Count) ativos)"
+    $node.Text = "$($appJobs[0].AppTitle) ($active de $($appJobs.Count) ativos)$(Get-CredentialText "$($node.Tag)")"
 
     $syncing = $script:syncing
     $script:syncing = $true
@@ -545,7 +834,11 @@ function Update-AppNode($node) {
 function Update-ChangesLabel {
     $changes = Get-Changes
     $on = @($changes | Where-Object { $script:checked[$_.Key] }).Count
-    $changesLabel.Text = $changes ? "Alterações: $on a ativar, $($changes.Count - $on) a desativar" : ''
+    $parts = @(
+        if ($changes) { "$on a ativar, $($changes.Count - $on) a desativar" }
+        if ($script:pending.Count) { "$($script:pending.Count) credencia$($script:pending.Count -eq 1 ? 'l' : 'is')" }
+    )
+    $changesLabel.Text = $parts ? "Alterações: $($parts -join ', ')" : ''
 }
 
 function Update-JobList {
@@ -621,6 +914,19 @@ $tree.Add_DrawNode({
     }
 })
 
+# marcar um job (ou a aplicação) de um módulo sem credencial pede a credencial antes; sem ela, a caixa não marca.
+# Desmarcar sempre pode
+$tree.Add_BeforeCheck({
+    param($sender, $e)
+
+    if ($script:syncing -or $e.Node.Checked) { return }
+
+    $idApp = $e.Node.Level -eq 0 ? "$($e.Node.Tag)" : "$($e.Node.Tag.IdApp)"
+    if (Test-HasCredential $idApp) { return }
+
+    if (-not (Show-CredentialDialog $idApp)) { $e.Cancel = $true }
+})
+
 $tree.Add_AfterCheck({
     param($sender, $e)
 
@@ -654,8 +960,15 @@ function Set-AllJobs([bool]$value) {
     $script:syncing = $true
     $tree.BeginUpdate()
 
+    $skipped = @()
+
     try {
         foreach ($node in $tree.Nodes) {
+            if ($value -and -not (Test-HasCredential "$($node.Tag)")) {
+                $skipped += $node.Text -replace ' \(.*$', ''
+                continue
+            }
+
             foreach ($child in $node.Nodes) {
                 $child.Checked = $value
                 $script:checked[$child.Tag.Key] = $value
@@ -668,8 +981,44 @@ function Set-AllJobs([bool]$value) {
         $script:syncing = $false
     }
 
+    if ($skipped) { Write-Log "Sem a chave da API, ficaram desativados: $($skipped -join ', '). Marque a aplicação ou use Credenciais do módulo." 'warn' }
     Update-ChangesLabel
 }
+
+$credentialsButton.Add_Click({
+    $node = $tree.SelectedNode
+
+    if (-not $node) {
+        $null = [Windows.Forms.MessageBox]::Show('Selecione a aplicação na lista.', $form.Text, 'OK', 'Information')
+        return
+    }
+
+    if ($node.Level -gt 0) { $node = $node.Parent }
+
+    if (-not $credentialModules.Contains("$($node.Tag)")) {
+        $appName = $node.Text -replace ' \(.*$', ''
+        $null = [Windows.Forms.MessageBox]::Show("$appName não chama API externa: não tem credencial.", $form.Text, 'OK', 'Information')
+        return
+    }
+
+    if (Show-CredentialDialog "$($node.Tag)") {
+        Update-AppNode $node
+        Update-ChangesLabel
+    }
+})
+
+$newCompanyButton.Add_Click({
+    if (-not $script:loadedFields) {
+        $null = [Windows.Forms.MessageBox]::Show('Carregue as empresas antes (conecta no banco).', $form.Text, 'OK', 'Information')
+        return
+    }
+
+    if ((Test-Unsaved) -and [Windows.Forms.MessageBox]::Show('Há jobs ou credenciais alterados e não salvos. Cadastrar outra empresa descarta as alterações. Continuar?', $form.Text, 'YesNo', 'Warning') -ne 'Yes') {
+        return
+    }
+
+    Show-CompanyDialog
+})
 
 $checkAllButton.Add_Click({ Set-AllJobs $true })
 $uncheckAllButton.Add_Click({ Set-AllJobs $false })
@@ -683,6 +1032,8 @@ function Import-Jobs {
         $script:jobs = @(Get-Jobs $script:loadedFields $company)
         $script:checked = @{}
         foreach ($job in $script:jobs) { $script:checked[$job.Key] = $job.IsActive }
+        $script:credentials = Get-Credentials $script:loadedFields $company
+        $script:pending.Clear()
 
         $active = @($script:jobs | Where-Object IsActive).Count
         Write-Log "Empresa $company`: $($script:jobs.Count) jobs, $active ativos." 'step'
@@ -700,23 +1051,21 @@ function Import-Jobs {
 $companyBox.Add_SelectedIndexChanged({
     if ($script:rebuilding -or $companyBox.SelectedIndex -lt 0) { return }
 
-    if (Get-Changes) {
-        $answer = [Windows.Forms.MessageBox]::Show('Há jobs alterados e não salvos. Trocar de empresa descarta as alterações. Continuar?', $form.Text, 'YesNo', 'Warning')
+    if (Test-Unsaved) {
+        $answer = [Windows.Forms.MessageBox]::Show('Há jobs ou credenciais alterados e não salvos. Trocar de empresa descarta as alterações. Continuar?', $form.Text, 'YesNo', 'Warning')
         if ($answer -ne 'Yes') { return }
     }
 
     Import-Jobs
 })
 
-$loadButton.Add_Click({
-    $fields = Get-Fields
-    if (-not $fields) { return }
-
+# lê as empresas e escolhe a pedida (ou a primeira); com o banco sem empresa, oferece cadastrar uma
+function Import-Companies([string]$select) {
     $form.Cursor = 'WaitCursor'
 
     try {
-        $companies = @(Get-Companies $fields)
-        $script:loadedFields = $fields
+        $companies = @(Get-Companies $script:loadedFields)
+        $fields = $script:loadedFields
 
         # a lista mostra o texto; a empresa de cada linha fica em $script:companies, no mesmo índice
         $script:rebuilding = $true
@@ -729,8 +1078,18 @@ $loadButton.Add_Click({
 
         Write-Log "Conectado em $($fields.Server),$($fields.Port), banco $($fields.Database): $($companies.Count) empresa(s)." 'ok'
 
-        if ($companies) { $companyBox.SelectedIndex = 0 }
-        else { Write-Log 'Nenhuma empresa em monitor.Company: cadastre com o Import-TestSeeds.ps1 ou pela tela do WebApp.' 'warn' }
+        if ($companies) {
+            $index = [Array]::IndexOf(@($companies.Company), $select)
+            $companyBox.SelectedIndex = [Math]::Max($index, 0)
+        }
+        else {
+            $script:jobs = @()
+            $script:pending.Clear()
+            Update-JobList
+            Write-Log 'Nenhuma empresa em monitor.Company: cadastre em Nova empresa.' 'warn'
+            $answer = [Windows.Forms.MessageBox]::Show('O banco não tem empresa. Cadastrar uma agora?', $form.Text, 'YesNo', 'Question')
+            if ($answer -eq 'Yes') { Show-CompanyDialog }
+        }
     }
     catch {
         $script:rebuilding = $false
@@ -739,6 +1098,14 @@ $loadButton.Add_Click({
     finally {
         $form.Cursor = 'Default'
     }
+}
+
+$loadButton.Add_Click({
+    $fields = Get-Fields
+    if (-not $fields) { return }
+
+    $script:loadedFields = $fields
+    Import-Companies
 })
 
 $saveButton.Add_Click({
@@ -761,15 +1128,17 @@ $saveButton.Add_Click({
     $fields = $script:loadedFields
     $company = $script:companies[$companyBox.SelectedIndex]
     $changes = Get-Changes
+    $pending = @($script:pending)
     $on = @($changes | Where-Object { $script:checked[$_.Key] }).Count
     $activeTotal = @($script:jobs | Where-Object { $script:checked[$_.Key] }).Count
 
-    if (-not $changes -and -not $configBox.Checked) {
-        $null = [Windows.Forms.MessageBox]::Show('Nada a salvar: nenhum job alterado e a configuração desmarcada.', $form.Text, 'OK', 'Information')
+    if (-not $changes -and -not $pending -and -not $configBox.Checked) {
+        $null = [Windows.Forms.MessageBox]::Show('Nada a salvar: nenhum job ou credencial alterado e a configuração desmarcada.', $form.Text, 'OK', 'Information')
         return
     }
 
     $text = "Banco $($fields.Database) de $($fields.Server),$($fields.Port), empresa $($company.Name) - $($company.Company).`n`n"
+    if ($pending) { $text += "Credenciais: $(Get-PendingText).`n" }
     $text += $changes ? "Jobs: $on a ativar e $($changes.Count - $on) a desativar ($activeTotal ativos depois)." : 'Jobs: nenhuma alteração.'
 
     if ($configBox.Checked) {
@@ -788,10 +1157,13 @@ $saveButton.Add_Click({
     $form.Cursor = 'WaitCursor'
 
     try {
-        if ($changes) {
-            $updated = Save-Jobs $fields $company.Company $changes
-            Write-Log "Jobs gravados em auditing.Jobs: $updated linha(s) ($on ativados, $($changes.Count - $on) desativados)." 'ok'
+        if ($changes -or $pending) {
+            $updated = Save-Changes $fields $company.Company $pending $changes
+            if ($pending) { Write-Log "Credenciais gravadas (só módulo e CNPJ): $(Get-PendingText)." 'ok' }
+            if ($changes) { Write-Log "Jobs gravados em auditing.Jobs: $updated linha(s) ($on ativados, $($changes.Count - $on) desativados)." 'ok' }
             foreach ($job in $script:jobs) { $job.IsActive = $script:checked[$job.Key] }
+            $script:pending.Clear()
+            $script:credentials = Get-Credentials $fields $company.Company
             Update-JobList
         }
 
@@ -822,9 +1194,9 @@ $closeButton.Add_Click({ $form.Close() })
 $form.Add_FormClosing({
     param($sender, $e)
 
-    if (-not (Get-Changes)) { return }
+    if (-not (Test-Unsaved)) { return }
 
-    $answer = [Windows.Forms.MessageBox]::Show('Há jobs alterados e não salvos. Fechar mesmo assim?', $form.Text, 'YesNo', 'Warning')
+    $answer = [Windows.Forms.MessageBox]::Show('Há jobs ou credenciais alterados e não salvos. Fechar mesmo assim?', $form.Text, 'YesNo', 'Warning')
     if ($answer -ne 'Yes') { $e.Cancel = $true }
 })
 

@@ -73,7 +73,7 @@ flowchart LR
 | 📱 | **MobileApp** | `src/Mobile/MobileApp` | App .NET MAUI, em construção | — |
 | 🗄️ | **Invoke-Migrators** | `tools/migrators` | Tela (ou console) que sobe as tabelas de todas as aplicações na ordem certa | [MIGRATOR-CSX](docs/MIGRATOR-CSX.md) |
 | 🎛️ | **Invoke-HostsConfig** | `tools/hosts` | Tela que liga e desliga os jobs da empresa e grava os User Secrets dos hosts e do WebApp | [passo 3](#️-configurar-jobs-e-user-secrets-invoke-hostsconfig) |
-| 🧪 | **Import-TestSeeds** | `tools/seeds` | Carrega uma empresa de teste: parâmetros, CNPJs e jobs | [plano](docs/PLANO-TELA-CADASTRO-EMPRESA.md#3-script-ps1-de-dados-de-teste--feito-em-42) |
+| 🧪 | **Import-TestSeeds** | `tools/seeds` | Script avulso: carrega uma empresa de teste com as credenciais de `Seeds/SQLServer` (jobs inativos) | [plano](docs/PLANO-TELA-CADASTRO-EMPRESA.md#3-script-ps1-de-dados-de-teste--feito-em-42) |
 
 ---
 
@@ -125,7 +125,6 @@ senha como `****` no log. O banco é criado pelo DbUp se não existir.
 | 🖧 | **Servidor, Porta, Banco** | ex.: `localhost`, `1433`, `EtlTeste` |
 | 🔑 | **Usuário e Senha** | login do SQL Server; o botão **Testar conexão** confere antes de rodar |
 | ⏱️ | **Host de agenda** | o host que vai agendar neste banco: **WebApi (Hangfire)**, **WebJob (Azure)** ou **Worker (Quartz.NET)**. Só o Worker tem tabelas próprias (schema `quartz`) |
-| 🧪 | **Banco de teste** | marcado, roda o `Import-TestSeeds.ps1` no fim, com o CNPJ e a razão social da tela (passo 3). **Ativar os jobs** liga os jobs da empresa: eles chamam as APIs reais |
 | 👤 | **Usuários de banco do WebApp** | opcional: com a senha do `etl_monitor` e/ou do `etl_query`, o migrator do Shared cria os logins e dá as permissões (procedures do Script009) |
 | ☑️ | **Catálogo** | as aplicações a subir; o **Shared** é obrigatório |
 
@@ -133,11 +132,11 @@ Sem tela, no console:
 
 ```powershell
 ./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -SchedulingHost WebApi
-./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -Apps Totvs,DataWarehouse -SchedulingHost Worker -TestSeeds
+./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -Apps Totvs,DataWarehouse -SchedulingHost Worker
 ./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -SchedulingHost Worker -MonitorPassword (Read-Host -AsSecureString) -QueryPassword (Read-Host -AsSecureString)
 ```
 
-O migrator só cria a estrutura. Quais jobs rodam e a configuração dos projetos ficam na segunda tela,
+O migrator só cria a estrutura. Empresa, credenciais dos módulos, quais jobs rodam e a configuração dos projetos ficam na segunda tela,
 [`Invoke-HostsConfig.ps1`](#️-configurar-jobs-e-user-secrets-invoke-hostsconfig) (passo 3).
 
 <details>
@@ -173,12 +172,15 @@ flowchart TB
     class E warm
 ```
 
-**Num banco de teste**, o [`tools/seeds/Import-TestSeeds.ps1`](tools/seeds/Import-TestSeeds.ps1) faz tudo isso com os
-scripts de `Infrastructure.<Módulo>/Seeds/SQLServer` (ou marque **Banco de teste** na tela do passo 2):
+**Pela tela**, o [`Invoke-HostsConfig.ps1`](#️-configurar-jobs-e-user-secrets-invoke-hostsconfig) faz tudo isso: **Nova
+empresa…** cadastra a empresa e os módulos, e a credencial de cada módulo entra quando você ativa os jobs dele.
+
+**Num banco de teste**, o script avulso [`tools/seeds/Import-TestSeeds.ps1`](tools/seeds/Import-TestSeeds.ps1) carrega
+de uma vez a empresa e as credenciais dos scripts de `Infrastructure.<Módulo>/Seeds/SQLServer`, com os jobs inativos:
 
 ```powershell
 ./tools/seeds/Import-TestSeeds.ps1 -Database 'EtlTeste'
-./tools/seeds/Import-TestSeeds.ps1 -Database 'EtlTeste' -Modules Totvs,Movidesk -ActivateJobs
+./tools/seeds/Import-TestSeeds.ps1 -Database 'EtlTeste' -Modules Totvs,Movidesk
 ```
 
 > [!CAUTION]
@@ -186,8 +188,8 @@ scripts de `Infrastructure.<Módulo>/Seeds/SQLServer` (ou marque **Banco de test
 > nome (salvo `-Force`). Os scripts de LinxMicrovix e LinxCommerce ficam fora do git: sem eles, o módulo fica sem
 > parâmetros e o script avisa.
 
-**Fora de teste**, a empresa vai entrar pela tela de cadastro do WebApp (em construção, fase 4.6 do
-[plano](docs/PLANO-TELA-CADASTRO-EMPRESA.md)). Até lá, pelas procedures:
+**À mão**, pelas procedures (a tela de cadastro do WebApp segue em construção, fase 4.6 do
+[plano](docs/PLANO-TELA-CADASTRO-EMPRESA.md)):
 
 ```sql
 EXEC auditing.sp_Add_Company @company = '44065634000106', @name = N'NEWBLOOMERS';
@@ -198,8 +200,8 @@ EXEC auditing.sp_Add_Company_App @company = '44065634000106', @idParent = 30;  -
 
 ### 🎛️ Configurar jobs e User Secrets (Invoke-HostsConfig)
 
-Com o banco migrado e a empresa cadastrada, a tela [`tools/hosts/Invoke-HostsConfig.ps1`](tools/hosts/Invoke-HostsConfig.ps1)
-faz o resto, sem SQL nem `dotnet user-secrets` à mão:
+Com o banco migrado, a tela [`tools/hosts/Invoke-HostsConfig.ps1`](tools/hosts/Invoke-HostsConfig.ps1) faz o resto, sem
+SQL nem `dotnet user-secrets` à mão:
 
 ```powershell
 ./tools/hosts/Invoke-HostsConfig.ps1
@@ -208,13 +210,17 @@ faz o resto, sem SQL nem `dotnet user-secrets` à mão:
 
 | | Parte da tela | O que faz |
 |:---:|---|---|
-| 🖧 | **Banco** | servidor, porta, banco, usuário e senha; **Carregar empresas** lê `monitor.Company` |
+| 🖧 | **Banco** | servidor, porta, banco, usuário e senha; **Carregar empresas** lê `monitor.Company` (sem empresa, oferece cadastrar) |
+| 🏢 | **Nova empresa…** | CNPJ da holding, razão social e os módulos contratados: grava na hora com `auditing.sp_Add_Company` e `auditing.sp_Add_Company_App`, com os jobs inativos |
 | ⏱️ | **Host de agenda** | WebApi (Hangfire), Worker (Quartz.NET) ou WebJob (Azure): o escolhido fica ligado e os outros desligados |
 | ⚙️ | **Configuração dos projetos** | opcional, grava os User Secrets do WebApi, Worker, WebJob e WebApp: connection strings deste banco, **APIs desligadas** (`BaseUrl` em `http://127.0.0.1:9/`, marcado por padrão), usuário e senha do dashboard do Hangfire, pepper do DataWarehouse, `Admin:Enabled`, chave do assistente e as senhas do `etl_monitor` e do `etl_query` |
-| ☑️ | **Jobs** | as integrações da empresa (as procedures ficam fora: rodam dentro do job que as chama), numa árvore por aplicação; marcado é `IsActive = 1`. Cada aplicação tem, à esquerda do nome, a seta que abre e fecha e uma caixa que marca ou desmarca todos os jobs dela; há filtro e botões para a lista filtrada |
+| ☑️ | **Jobs** | as integrações da empresa (as procedures ficam fora: rodam dentro do job que as chama), numa árvore por aplicação; marcado é `IsActive = 1`. Cada aplicação tem, à esquerda do nome, a seta que abre e fecha e uma caixa que marca ou desmarca todos os jobs dela, e ao lado do nome, se o módulo tem a chave da API. Há filtro e botões para a lista filtrada |
+| 🔑 | **Credenciais do módulo** | Totvs, LinxMicrovix, LinxCommerce, Movidesk e AfterSale só ativam jobs com a credencial da API de ao menos um CNPJ da empresa. Marcar um job sem ela abre o diálogo da credencial (o botão **Credenciais do módulo…** abre para trocar ou incluir um CNPJ). DataWarehouse e Hosts não pedem |
 
-**Salvar** grava os jobs alterados numa transação e depois os User Secrets. O log mostra só os nomes das chaves. Com jobs
-ativos e as APIs de verdade, a tela pede confirmação. Reinicie o host e o WebApp depois de salvar.
+**Salvar** grava, numa transação só, as credenciais (`INSERT` ou `UPDATE` na tabela `<Módulo>Parameters`, o CNPJ ligado
+à empresa por `auditing.sp_Add_Holding_Company`) e os jobs alterados; depois, os User Secrets. Os valores das credenciais
+não aparecem no log nem passam por arquivo: o `sqlcmd` recebe por variável de ambiente. Com jobs ativos e as APIs de
+verdade, a tela pede confirmação. Reinicie o host e o WebApp depois de salvar.
 
 **Ligar e desligar jobs à mão** é um `UPDATE` na linha da empresa:
 

@@ -82,7 +82,7 @@ Arquivo: [`tools/seeds/Import-TestSeeds.ps1`](../tools/seeds/Import-TestSeeds.ps
 
 ```powershell
 ./tools/seeds/Import-TestSeeds.ps1 -Database 'EtlTeste'
-./tools/seeds/Import-TestSeeds.ps1 -Database 'EtlTeste' -Modules Totvs,DataWarehouse -ActivateJobs
+./tools/seeds/Import-TestSeeds.ps1 -Database 'EtlTeste' -Modules Totvs,DataWarehouse
 ```
 
 | Parâmetro | Padrão | Uso |
@@ -93,7 +93,6 @@ Arquivo: [`tools/seeds/Import-TestSeeds.ps1`](../tools/seeds/Import-TestSeeds.ps
 | `-Company` | `44065634000106` | empresa dos jobs (holding NEWBLOOMERS), só dígitos |
 | `-CompanyName` | `NEWBLOOMERS` | razão social gravada em `monitor.Company` quando a empresa ainda não existe |
 | `-Modules` | todos | `Totvs`, `LinxMicrovix`, `LinxCommerce`, `Movidesk`, `AfterSale`, `DataWarehouse` (só jobs) |
-| `-ActivateJobs` | desligado | ativa os jobs da empresa nos módulos pedidos; sem ele, nascem inativos |
 | `-Force` | desligado | aceita um banco fora da regra de nome |
 
 O que ele faz, em ordem:
@@ -109,7 +108,8 @@ O que ele faz, em ordem:
    CNPJ que já é de outra holding é recusado pela procedure e vira aviso.
 5. Para cada módulo, chama `auditing.sp_Add_Company_App @company, @idParent`, que copia o catálogo de jobs do módulo para
    `auditing.Jobs` com `Company = @company`.
-6. Com `-ActivateJobs`, faz o `UPDATE auditing.Jobs SET IsActive = 1` só da empresa e dos módulos pedidos.
+6. (Até 04/11/2026, com `-ActivateJobs`, ativava os jobs. Saiu: os jobs ficam inativos e quem ativa é a tela
+   `tools/hosts/Invoke-HostsConfig.ps1`, que só ativa os de um módulo com a credencial dele.)
 7. Imprime um resumo por módulo: parâmetros inseridos, CNPJs, jobs novos, jobs da empresa, jobs ativos e avisos. No fim,
    avisa sobre CNPJs de qualquer `*Parameters` que não estão em `monitor.HoldingCompanies` (nenhum serviço os lê).
 

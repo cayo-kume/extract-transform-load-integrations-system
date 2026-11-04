@@ -133,9 +133,9 @@ o usuário e a senha acima. Com `Hangfire:Enabled = false` (padrão), `/hangfire
 > agenda fica vazia. Um banco que rodou os scripts antes de 30/10/2026 precisa do ajuste descrito no plano, §4.8.
 >
 > A tela [`tools/migrators/Invoke-Migrators.ps1`](../../../../tools/migrators/Invoke-Migrators.ps1) com o host
-> **WebApi (Hangfire)** marcado sobe as tabelas na ordem certa e, com a opção **Banco de teste**, já carrega a empresa; no
-> fim, o log lembra de ligar `Hangfire:Enabled` aqui e parar os outros hosts. A tela
-> [`tools/hosts/Invoke-HostsConfig.ps1`](../../../../tools/hosts/Invoke-HostsConfig.ps1) faz isso e escolhe os jobs ativos.
+> **WebApi (Hangfire)** marcado sobe as tabelas na ordem certa; no fim, o log lembra de ligar `Hangfire:Enabled` aqui e
+> parar os outros hosts. A tela [`tools/hosts/Invoke-HostsConfig.ps1`](../../../../tools/hosts/Invoke-HostsConfig.ps1)
+> cadastra a empresa, grava as credenciais dos módulos, escolhe os jobs ativos e liga o Hangfire.
 
 > [!CAUTION]
 > O [WebApi.http](WebApi.http) tem exemplos de rotas de cada módulo. Cada chamada roda a integração **de verdade** contra

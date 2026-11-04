@@ -111,7 +111,7 @@ flowchart TB
 | 🗃️ **Acesso a dados** | **Dapper** e bulk insert (`ISharedRepository`), SQL montado nos *command handlers* |
 | 🗄️ **Banco** | **SQL Server** (dados, auditoria e DW); scripts para MySQL e PostgreSQL existem só como `migrator.csx` |
 | 🔁 **Migrações** | **DbUp** executado por `dotnet-script` (`migrator.csx` em cada módulo): só estrutura e catálogo do produto |
-| 🧰 **Ferramentas** | `tools/migrators/Invoke-Migrators.ps1` (tela Windows Forms ou console) sobe as tabelas de todas as aplicações; `tools/hosts/Invoke-HostsConfig.ps1` (tela Windows Forms) liga e desliga os jobs da empresa e grava os User Secrets dos hosts e do WebApp; `tools/seeds/Import-TestSeeds.ps1` (PowerShell 7 + `sqlcmd`) carrega empresa, parâmetros e jobs num banco de teste; `tools/azure/New-AzureTestResources.ps1` (az cli) cria e apaga o grupo `rg-etl-teste` dos testes na Azure |
+| 🧰 **Ferramentas** | `tools/migrators/Invoke-Migrators.ps1` (tela Windows Forms ou console) sobe as tabelas de todas as aplicações; `tools/hosts/Invoke-HostsConfig.ps1` (tela Windows Forms) cadastra a empresa, grava as credenciais das APIs dos módulos, liga e desliga os jobs e grava os User Secrets dos hosts e do WebApp; `tools/seeds/Import-TestSeeds.ps1` (PowerShell 7 + `sqlcmd`) carrega empresa, parâmetros e jobs num banco de teste; `tools/azure/New-AzureTestResources.ps1` (az cli) cria e apaga o grupo `rg-etl-teste` dos testes na Azure |
 | ✅ **Validação** | **FluentValidation** (um validador por DTO) |
 | 🔌 **HTTP e JSON** | `IHttpClientFactory` (`IApiClient` nomeado por módulo), **Newtonsoft.Json**, XML (`System.Xml.Linq`) no Linx Microvix |
 | ⚡ **Cache** | `IMemoryCache` ([padrão](docs/PADRAO-CACHE-INTEGRACOES.md)) |
@@ -669,20 +669,20 @@ como `****` no log:
 
 ```powershell
 ./tools/migrators/Invoke-Migrators.ps1
-./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -SchedulingHost Worker -TestSeeds
+./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -SchedulingHost Worker
 ```
 
 Com as senhas do `etl_monitor` e do `etl_query` (campos opcionais da tela, ou `-MonitorPassword` e `-QueryPassword`), o
-migrator do Shared cria os dois usuários do WebApp. Depois de migrar, a tela
-[`tools/hosts/Invoke-HostsConfig.ps1`](tools/hosts/Invoke-HostsConfig.ps1) escolhe quais jobs da empresa ficam ativos e
-grava nos User Secrets do WebApi, do Worker, do WebJob e do WebApp a connection string, o host de agenda ligado, as APIs
+migrator do Shared cria os dois usuários do WebApp. O migrator só cria a estrutura: depois dele, a tela
+[`tools/hosts/Invoke-HostsConfig.ps1`](tools/hosts/Invoke-HostsConfig.ps1) cadastra a empresa, pede a credencial da API
+de cada módulo antes de ativar os jobs dele, escolhe quais jobs ficam ativos e grava nos User Secrets do WebApi, do Worker, do WebJob e do WebApp a connection string, o host de agenda ligado, as APIs
 desligadas para teste e o resto da configuração local ([GUIA-DE-USO](GUIA-DE-USO.md#️-configurar-jobs-e-user-secrets-invoke-hostsconfig)).
 
 <div align="center">
 
 ![Tela do Invoke-Migrators](docs/images/tools/invoke-migrators.png)
 
-<sub><b>Invoke-Migrators</b> — banco, host de agenda, banco de teste e o catálogo das aplicações</sub>
+<sub><b>Invoke-Migrators</b> — banco, host de agenda, usuários do WebApp e o catálogo das aplicações (a imagem ainda mostra o grupo Banco de teste, que saiu)</sub>
 
 </div>
 
@@ -701,13 +701,14 @@ argumento e não imprime usuário nem senha.
 
 </details>
 
-**2. 🏢 Empresa de teste** — a opção **Banco de teste** da tela (ou `-TestSeeds`) já faz este passo. Sozinho, ele cadastra a empresa, liga os CNPJs dos parâmetros, carrega os parâmetros de
-`Seeds/SQLServer` e cria os jobs (inativos, salvo `-ActivateJobs`). Só aceita banco com `Test`/`Teste` no nome (ou
-`-Force`):
+**2. 🏢 Empresa e credenciais** — na tela do `Invoke-HostsConfig.ps1`: **Nova empresa…** cadastra a empresa e os
+módulos contratados (jobs inativos), e marcar os jobs de um módulo sem credencial pede a chave da API dele, gravada no
+Salvar junto com os jobs. Num banco de teste, o script avulso `tools/seeds/Import-TestSeeds.ps1` carrega de uma vez a
+empresa e as credenciais de `Seeds/SQLServer` (jobs inativos). Só aceita banco com `Test`/`Teste` no nome (ou `-Force`):
 
 ```powershell
 ./tools/seeds/Import-TestSeeds.ps1 -Database 'EtlTeste'
-./tools/seeds/Import-TestSeeds.ps1 -Database 'EtlTeste' -Modules Totvs,DataWarehouse -ActivateJobs
+./tools/seeds/Import-TestSeeds.ps1 -Database 'EtlTeste' -Modules Totvs,DataWarehouse
 ```
 
 **3. 🌐 Host**

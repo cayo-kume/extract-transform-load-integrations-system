@@ -185,15 +185,12 @@ Com `-NoGui`, roda no console, com `-Credential`, `-Apps` (o Shared entra sempre
 ./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -SchedulingHost WebApi -MonitorPassword (Read-Host -AsSecureString) -QueryPassword (Read-Host -AsSecureString)
 ```
 
-Num banco de teste, a opção **Banco de teste** (ou `-TestSeeds`) roda o
-[`tools/seeds/Import-TestSeeds.ps1`](../tools/seeds/Import-TestSeeds.ps1) depois dos migrators, para os módulos marcados:
-a empresa (CNPJ e razão social da tela, ou `-Company` e `-CompanyName`), os parâmetros com as credenciais e os jobs dela,
-inativos a menos que se marque "Ativar os jobs" (`-ActivateJobs`). Vale a trava daquele script, conferida antes de rodar
-os migrators: o nome do banco precisa ter `Test` ou `Teste` e não pode ser `Company`. Precisa do `sqlcmd` no PATH.
-
-```powershell
-./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -SchedulingHost WebApi -TestSeeds
-```
+O migrator não grava empresa, credencial nem job. Quem faz isso é a tela
+[`tools/hosts/Invoke-HostsConfig.ps1`](../tools/hosts/Invoke-HostsConfig.ps1): cadastra a empresa, pede a credencial da
+API de cada módulo antes de ativar os jobs dele e grava tudo numa transação. Num banco de teste, o script avulso
+[`tools/seeds/Import-TestSeeds.ps1`](../tools/seeds/Import-TestSeeds.ps1) carrega de uma vez a empresa e as credenciais
+de `Seeds/SQLServer`, com os jobs inativos. A opção **Banco de teste** da tela do migrator (`-TestSeeds`, `-Company`,
+`-CompanyName` e `-ActivateJobs`) saiu em 04/11/2026.
 
 Os módulos fora do host (Dootax, FlashCourier etc.) não estão no catálogo: o FlashCourier grava os mesmos ids do
 DataWarehouse em `auditing.Apps` (90) e `auditing.JobCatalog` (9000 a 9004), e os dois no mesmo banco quebram a chave.

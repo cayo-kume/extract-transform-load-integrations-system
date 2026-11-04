@@ -71,7 +71,9 @@ WebApi, os WebJobs publicados ou o serviço do Worker.
 > [!TIP]
 > O banco precisa das tabelas (Shared e módulos) e de uma empresa ativa com os módulos contratados. A tela
 > [`tools/migrators/Invoke-Migrators.ps1`](../../../../tools/migrators/Invoke-Migrators.ps1) com o host **WebJob (Azure)**
-> marcado faz as duas coisas num banco de teste (opção **Banco de teste**); o WebJob não tem tabelas próprias.
+> marcado sobe as tabelas (o WebJob não tem tabelas próprias), e a tela
+> [`tools/hosts/Invoke-HostsConfig.ps1`](../../../../tools/hosts/Invoke-HostsConfig.ps1) cadastra a empresa, as credenciais
+> dos módulos e os jobs ativos.
 
 O job vem da linha de comando. A connection string fica fora do `appsettings.json`: user-secrets (o projeto já tem o
 `UserSecretsId`) ou variável de ambiente.
