@@ -808,8 +808,9 @@ $catalogLabel = [Windows.Forms.Label]@{
 }
 
 # uma linha por aplicação, abaixo uma por service (as pastas de Scripts/SQLServer) e, nas integrações, uma por job com
-# tabela. A aplicação marcada roda o migrator dela; nas integrações, só os jobs marcados ganham tabelas, e os que já têm
-# as tabelas no banco ficam marcados em cinza ("já criado"). No DataWarehouse, a escolha continua por service (camada)
+# tabela. A aplicação marcada roda o migrator dela, e marcá-la marca tudo abaixo; nas integrações, só os jobs marcados
+# ganham tabelas, e os que já têm as tabelas no banco ficam marcados em cinza ("já criado"). No DataWarehouse, a escolha
+# continua por service (camada)
 $list = [Windows.Forms.TreeView]@{
     CheckBoxes = $true; ShowLines = $true; HideSelection = $false
     Location = [Drawing.Point]::new(12, 420); Size = [Drawing.Size]::new(836, 246); Anchor = 'Top, Left, Right'
@@ -823,7 +824,8 @@ function Test-CreatedNode($node) { $node.Level -eq 2 -and $script:createdJobs.Co
 foreach ($app in $catalog) {
     $node = [Windows.Forms.TreeNode]::new("[$($app.Group)] $($app.Name) ($($app.Scripts) scripts): $($app.Description)")
     $node.Tag = $app
-    $node.Checked = [bool]$app.Default
+    # a integração começa desmarcada, com os jobs: um clique nela marca tudo abaixo
+    $node.Checked = [bool]$app.Default -and -not $app.HasJobs
 
     if ($app.Required) { $node.ForeColor = [Drawing.SystemColors]::GrayText }
 
@@ -871,10 +873,10 @@ $list.Add_AfterCheck({
 
     switch ($node.Level) {
         0 {
-            # integração: marcar só roda o migrator (os jobs são marcados um a um); desmarcar desmarca tudo dela
+            # a aplicação marca ou desmarca tudo abaixo dela: os services e, nas integrações, os jobs (os já criados ficam)
             foreach ($service in $node.Nodes) {
-                if (-not $hasJobs -or -not $node.Checked) { Set-Checked $service $node.Checked }
-                foreach ($job in $service.Nodes) { if (-not $node.Checked) { Set-Checked $job $false } }
+                Set-Checked $service $node.Checked
+                foreach ($job in $service.Nodes) { Set-Checked $job $node.Checked }
             }
         }
         1 {

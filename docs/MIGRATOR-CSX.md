@@ -169,7 +169,8 @@ log. Precisa do PowerShell 7 e do `dotnet-script`.
 
 O catálogo é uma árvore: aplicação, abaixo os services dela (as pastas de `Scripts/SQLServer`, como `People` no Totvs
 ou `Erp/Customers` no LinxMicrovix) e, nas integrações, abaixo de cada service os **jobs** que têm tabela (ex.: `8135
-LinxMovimentoRemessas (1 tabela: LinxMovimentoRemessas)`). A aplicação marcada roda o migrator dela; `Parameters`, os
+LinxMovimentoRemessas (1 tabela: LinxMovimentoRemessas)`). A aplicação marcada roda o migrator dela, e marcá-la marca
+todos os services e jobs abaixo (as integrações começam desmarcadas); `Parameters`, os
 scripts da raiz e o catálogo dos jobs (`auditing.Catalog`) sobem sempre, com todos os jobs. No DataWarehouse, a escolha é
 por service (camada), como antes.
 
