@@ -1,6 +1,8 @@
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
 /****** Filiais: tabelas untreated e totvs (src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.2.2) ******/
 --tamanhos do swagger da API Person (BranchListModel e ViewAddressModel)
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsBranches') = 1
 create table [untreated].TotvsBranches (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14),
@@ -15,6 +17,7 @@ create table [untreated].TotvsBranches (
 	maxChangeFilterDate      datetime       --só vem com StartChangeDate/EndChangeDate na chamada
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsBranches') = 1
 create table [totvs].TotvsBranches (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14) not null,
@@ -32,6 +35,7 @@ constraint [PK_TotvsBranches] primary key (
 	code asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsBranchesAddresses') = 1
 create table [untreated].TotvsBranchesAddresses (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14),
@@ -54,6 +58,7 @@ create table [untreated].TotvsBranchesAddresses (
 	reference                nvarchar(60)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsBranchesAddresses') = 1
 create table [totvs].TotvsBranchesAddresses (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14) not null,
@@ -83,6 +88,7 @@ constraint [PK_TotvsBranchesAddresses] primary key (
 
 /****** Chave estrangeira: endereços -> filial ******/
 
+if object_id(N'[totvs].[FK_TotvsBranchesAddresses]') is null and object_id(N'[totvs].TotvsBranchesAddresses') is not null and object_id(N'[totvs].TotvsBranches') is not null
 alter table [totvs].TotvsBranchesAddresses add constraint [FK_TotvsBranchesAddresses] foreign key (doc_company, branchCode) references [totvs].TotvsBranches (doc_company, code);
 
 go
@@ -91,6 +97,7 @@ go
 --tamanhos do swagger da API Person; objetos 1:1 (shippingCompany, preferences, individualAdditionals) como colunas do pai
 --com o nome do objeto como prefixo (5.2.8). As filhas usam a mesma estrutura nas duas pessoas.
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsPeople') = 1
 create table [untreated].TotvsPeople (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14),
@@ -210,6 +217,7 @@ create table [untreated].TotvsPeople (
 	individualAdditionalsHomeTown                         int
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsPeople') = 1
 create table [totvs].TotvsPeople (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14) not null,
@@ -332,6 +340,7 @@ constraint [PK_TotvsPeople] primary key (
 	[code] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsPeopleAddresses') = 1
 create table [untreated].TotvsPeopleAddresses (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14),
@@ -354,6 +363,7 @@ create table [untreated].TotvsPeopleAddresses (
 	[reference]                                           nvarchar(60)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsPeopleAddresses') = 1
 create table [totvs].TotvsPeopleAddresses (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14) not null,
@@ -381,6 +391,7 @@ constraint [PK_TotvsPeopleAddresses] primary key (
 	sequenceCode asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsPeoplePhones') = 1
 create table [untreated].TotvsPeoplePhones (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14),
@@ -393,6 +404,7 @@ create table [untreated].TotvsPeoplePhones (
 	isDefault                                             bit
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsPeoplePhones') = 1
 create table [totvs].TotvsPeoplePhones (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14) not null,
@@ -409,6 +421,7 @@ constraint [PK_TotvsPeoplePhones] primary key (
 	[sequence] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsPeopleEmails') = 1
 create table [untreated].TotvsPeopleEmails (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14),
@@ -420,6 +433,7 @@ create table [untreated].TotvsPeopleEmails (
 	isDefault                                             bit
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsPeopleEmails') = 1
 create table [totvs].TotvsPeopleEmails (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14) not null,
@@ -435,6 +449,7 @@ constraint [PK_TotvsPeopleEmails] primary key (
 	[sequence] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsPeopleObservations') = 1
 create table [untreated].TotvsPeopleObservations (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14),
@@ -444,6 +459,7 @@ create table [untreated].TotvsPeopleObservations (
 	isMaintenance                                         bit
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsPeopleObservations') = 1
 create table [totvs].TotvsPeopleObservations (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14) not null,
@@ -457,6 +473,7 @@ constraint [PK_TotvsPeopleObservations] primary key (
 	[sequence] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsPeopleCustomerObservations') = 1
 create table [untreated].TotvsPeopleCustomerObservations (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14),
@@ -467,6 +484,7 @@ create table [untreated].TotvsPeopleCustomerObservations (
 	lastChangeDate                                        datetime
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsPeopleCustomerObservations') = 1
 create table [totvs].TotvsPeopleCustomerObservations (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14) not null,
@@ -481,6 +499,7 @@ constraint [PK_TotvsPeopleCustomerObservations] primary key (
 	[sequence] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsPeopleAdditionalFields') = 1
 create table [untreated].TotvsPeopleAdditionalFields (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14),
@@ -491,6 +510,7 @@ create table [untreated].TotvsPeopleAdditionalFields (
 	[value]                                               nvarchar(60)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsPeopleAdditionalFields') = 1
 create table [totvs].TotvsPeopleAdditionalFields (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14) not null,
@@ -505,6 +525,7 @@ constraint [PK_TotvsPeopleAdditionalFields] primary key (
 	[code] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsPeopleClassifications') = 1
 create table [untreated].TotvsPeopleClassifications (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14),
@@ -515,6 +536,7 @@ create table [untreated].TotvsPeopleClassifications (
 	[name]                                                nvarchar(60)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsPeopleClassifications') = 1
 create table [totvs].TotvsPeopleClassifications (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14) not null,
@@ -530,6 +552,7 @@ constraint [PK_TotvsPeopleClassifications] primary key (
 	[code] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsPeopleReferences') = 1
 create table [untreated].TotvsPeopleReferences (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14),
@@ -542,6 +565,7 @@ create table [untreated].TotvsPeopleReferences (
 	isInactive                                            bit
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsPeopleReferences') = 1
 create table [totvs].TotvsPeopleReferences (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14) not null,
@@ -558,6 +582,7 @@ constraint [PK_TotvsPeopleReferences] primary key (
 	[sequence] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsPeopleRelateds') = 1
 create table [untreated].TotvsPeopleRelateds (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14),
@@ -567,6 +592,7 @@ create table [untreated].TotvsPeopleRelateds (
 	[name]                                                nvarchar(60)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsPeopleRelateds') = 1
 create table [totvs].TotvsPeopleRelateds (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14) not null,
@@ -580,6 +606,7 @@ constraint [PK_TotvsPeopleRelateds] primary key (
 	[code] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsPeopleStatistics') = 1
 create table [untreated].TotvsPeopleStatistics (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14),
@@ -604,6 +631,7 @@ create table [untreated].TotvsPeopleStatistics (
 	totalPurchase                                         decimal(18,4)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsPeopleStatistics') = 1
 create table [totvs].TotvsPeopleStatistics (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14) not null,
@@ -633,6 +661,7 @@ constraint [PK_TotvsPeopleStatistics] primary key (
 	customerCode asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsPeopleRepresentatives') = 1
 create table [untreated].TotvsPeopleRepresentatives (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14),
@@ -643,6 +672,7 @@ create table [untreated].TotvsPeopleRepresentatives (
 	classificationTypeCode                                int
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsPeopleRepresentatives') = 1
 create table [totvs].TotvsPeopleRepresentatives (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14) not null,
@@ -657,6 +687,7 @@ constraint [PK_TotvsPeopleRepresentatives] primary key (
 	representativeCode asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsPeopleFamiliars') = 1
 create table [untreated].TotvsPeopleFamiliars (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14),
@@ -668,6 +699,7 @@ create table [untreated].TotvsPeopleFamiliars (
 	kinshipDescription                                    nvarchar(60)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsPeopleFamiliars') = 1
 create table [totvs].TotvsPeopleFamiliars (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14) not null,
@@ -683,6 +715,7 @@ constraint [PK_TotvsPeopleFamiliars] primary key (
 	[sequence] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsLegalEntities') = 1
 create table [untreated].TotvsLegalEntities (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14),
@@ -742,6 +775,7 @@ create table [untreated].TotvsLegalEntities (
 	preferencesBearerName                                 nvarchar(40)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsLegalEntities') = 1
 create table [totvs].TotvsLegalEntities (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14) not null,
@@ -804,6 +838,7 @@ constraint [PK_TotvsLegalEntities] primary key (
 	[code] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsLegalEntitiesAddresses') = 1
 create table [untreated].TotvsLegalEntitiesAddresses (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14),
@@ -826,6 +861,7 @@ create table [untreated].TotvsLegalEntitiesAddresses (
 	[reference]                                           nvarchar(60)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsLegalEntitiesAddresses') = 1
 create table [totvs].TotvsLegalEntitiesAddresses (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14) not null,
@@ -853,6 +889,7 @@ constraint [PK_TotvsLegalEntitiesAddresses] primary key (
 	sequenceCode asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsLegalEntitiesPhones') = 1
 create table [untreated].TotvsLegalEntitiesPhones (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14),
@@ -865,6 +902,7 @@ create table [untreated].TotvsLegalEntitiesPhones (
 	isDefault                                             bit
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsLegalEntitiesPhones') = 1
 create table [totvs].TotvsLegalEntitiesPhones (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14) not null,
@@ -881,6 +919,7 @@ constraint [PK_TotvsLegalEntitiesPhones] primary key (
 	[sequence] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsLegalEntitiesEmails') = 1
 create table [untreated].TotvsLegalEntitiesEmails (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14),
@@ -892,6 +931,7 @@ create table [untreated].TotvsLegalEntitiesEmails (
 	isDefault                                             bit
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsLegalEntitiesEmails') = 1
 create table [totvs].TotvsLegalEntitiesEmails (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14) not null,
@@ -907,6 +947,7 @@ constraint [PK_TotvsLegalEntitiesEmails] primary key (
 	[sequence] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsLegalEntitiesObservations') = 1
 create table [untreated].TotvsLegalEntitiesObservations (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14),
@@ -916,6 +957,7 @@ create table [untreated].TotvsLegalEntitiesObservations (
 	isMaintenance                                         bit
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsLegalEntitiesObservations') = 1
 create table [totvs].TotvsLegalEntitiesObservations (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14) not null,
@@ -929,6 +971,7 @@ constraint [PK_TotvsLegalEntitiesObservations] primary key (
 	[sequence] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsLegalEntitiesCustomerObservations') = 1
 create table [untreated].TotvsLegalEntitiesCustomerObservations (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14),
@@ -939,6 +982,7 @@ create table [untreated].TotvsLegalEntitiesCustomerObservations (
 	lastChangeDate                                        datetime
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsLegalEntitiesCustomerObservations') = 1
 create table [totvs].TotvsLegalEntitiesCustomerObservations (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14) not null,
@@ -953,6 +997,7 @@ constraint [PK_TotvsLegalEntitiesCustomerObservations] primary key (
 	[sequence] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsLegalEntitiesAdditionalFields') = 1
 create table [untreated].TotvsLegalEntitiesAdditionalFields (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14),
@@ -963,6 +1008,7 @@ create table [untreated].TotvsLegalEntitiesAdditionalFields (
 	[value]                                               nvarchar(60)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsLegalEntitiesAdditionalFields') = 1
 create table [totvs].TotvsLegalEntitiesAdditionalFields (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14) not null,
@@ -977,6 +1023,7 @@ constraint [PK_TotvsLegalEntitiesAdditionalFields] primary key (
 	[code] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsLegalEntitiesClassifications') = 1
 create table [untreated].TotvsLegalEntitiesClassifications (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14),
@@ -987,6 +1034,7 @@ create table [untreated].TotvsLegalEntitiesClassifications (
 	[name]                                                nvarchar(60)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsLegalEntitiesClassifications') = 1
 create table [totvs].TotvsLegalEntitiesClassifications (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14) not null,
@@ -1002,6 +1050,7 @@ constraint [PK_TotvsLegalEntitiesClassifications] primary key (
 	[code] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsLegalEntitiesReferences') = 1
 create table [untreated].TotvsLegalEntitiesReferences (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14),
@@ -1014,6 +1063,7 @@ create table [untreated].TotvsLegalEntitiesReferences (
 	isInactive                                            bit
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsLegalEntitiesReferences') = 1
 create table [totvs].TotvsLegalEntitiesReferences (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14) not null,
@@ -1030,6 +1080,7 @@ constraint [PK_TotvsLegalEntitiesReferences] primary key (
 	[sequence] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsLegalEntitiesRelateds') = 1
 create table [untreated].TotvsLegalEntitiesRelateds (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14),
@@ -1039,6 +1090,7 @@ create table [untreated].TotvsLegalEntitiesRelateds (
 	[name]                                                nvarchar(60)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsLegalEntitiesRelateds') = 1
 create table [totvs].TotvsLegalEntitiesRelateds (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14) not null,
@@ -1052,6 +1104,7 @@ constraint [PK_TotvsLegalEntitiesRelateds] primary key (
 	[code] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsLegalEntitiesPartners') = 1
 create table [untreated].TotvsLegalEntitiesPartners (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14),
@@ -1062,6 +1115,7 @@ create table [untreated].TotvsLegalEntitiesPartners (
 	percentageParticipation                               decimal(18,4)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsLegalEntitiesPartners') = 1
 create table [totvs].TotvsLegalEntitiesPartners (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14) not null,
@@ -1076,6 +1130,7 @@ constraint [PK_TotvsLegalEntitiesPartners] primary key (
 	[code] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsLegalEntitiesContacts') = 1
 create table [untreated].TotvsLegalEntitiesContacts (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14),
@@ -1092,6 +1147,7 @@ create table [untreated].TotvsLegalEntitiesContacts (
 	isDefault                                             bit
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsLegalEntitiesContacts') = 1
 create table [totvs].TotvsLegalEntitiesContacts (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14) not null,
@@ -1112,6 +1168,7 @@ constraint [PK_TotvsLegalEntitiesContacts] primary key (
 	[sequence] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsLegalEntitiesStatistics') = 1
 create table [untreated].TotvsLegalEntitiesStatistics (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14),
@@ -1136,6 +1193,7 @@ create table [untreated].TotvsLegalEntitiesStatistics (
 	totalPurchase                                         decimal(18,4)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsLegalEntitiesStatistics') = 1
 create table [totvs].TotvsLegalEntitiesStatistics (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14) not null,
@@ -1165,6 +1223,7 @@ constraint [PK_TotvsLegalEntitiesStatistics] primary key (
 	customerCode asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsLegalEntitiesSocialNetworks') = 1
 create table [untreated].TotvsLegalEntitiesSocialNetworks (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14),
@@ -1175,6 +1234,7 @@ create table [untreated].TotvsLegalEntitiesSocialNetworks (
 	[address]                                             nvarchar(20)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsLegalEntitiesSocialNetworks') = 1
 create table [totvs].TotvsLegalEntitiesSocialNetworks (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14) not null,
@@ -1189,6 +1249,7 @@ constraint [PK_TotvsLegalEntitiesSocialNetworks] primary key (
 	[sequence] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsLegalEntitiesRepresentatives') = 1
 create table [untreated].TotvsLegalEntitiesRepresentatives (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14),
@@ -1199,6 +1260,7 @@ create table [untreated].TotvsLegalEntitiesRepresentatives (
 	classificationTypeCode                                int
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsLegalEntitiesRepresentatives') = 1
 create table [totvs].TotvsLegalEntitiesRepresentatives (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14) not null,
@@ -1213,6 +1275,7 @@ constraint [PK_TotvsLegalEntitiesRepresentatives] primary key (
 	representativeCode asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsLegalEntitiesPaymentMethods') = 1
 create table [untreated].TotvsLegalEntitiesPaymentMethods (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14),
@@ -1220,6 +1283,7 @@ create table [untreated].TotvsLegalEntitiesPaymentMethods (
 	paymentMethod                                         int
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsLegalEntitiesPaymentMethods') = 1
 create table [totvs].TotvsLegalEntitiesPaymentMethods (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14) not null,
@@ -1233,30 +1297,57 @@ constraint [PK_TotvsLegalEntitiesPaymentMethods] primary key (
 
 /****** Chaves estrangeiras: filhas -> pessoa ******/
 
+if object_id(N'[totvs].[FK_TotvsPeopleAddresses]') is null and object_id(N'[totvs].TotvsPeopleAddresses') is not null and object_id(N'[totvs].TotvsPeople') is not null
 alter table [totvs].TotvsPeopleAddresses add constraint [FK_TotvsPeopleAddresses] foreign key (doc_company, personCode) references [totvs].TotvsPeople (doc_company, code);
+if object_id(N'[totvs].[FK_TotvsPeoplePhones]') is null and object_id(N'[totvs].TotvsPeoplePhones') is not null and object_id(N'[totvs].TotvsPeople') is not null
 alter table [totvs].TotvsPeoplePhones add constraint [FK_TotvsPeoplePhones] foreign key (doc_company, personCode) references [totvs].TotvsPeople (doc_company, code);
+if object_id(N'[totvs].[FK_TotvsPeopleEmails]') is null and object_id(N'[totvs].TotvsPeopleEmails') is not null and object_id(N'[totvs].TotvsPeople') is not null
 alter table [totvs].TotvsPeopleEmails add constraint [FK_TotvsPeopleEmails] foreign key (doc_company, personCode) references [totvs].TotvsPeople (doc_company, code);
+if object_id(N'[totvs].[FK_TotvsPeopleObservations]') is null and object_id(N'[totvs].TotvsPeopleObservations') is not null and object_id(N'[totvs].TotvsPeople') is not null
 alter table [totvs].TotvsPeopleObservations add constraint [FK_TotvsPeopleObservations] foreign key (doc_company, personCode) references [totvs].TotvsPeople (doc_company, code);
+if object_id(N'[totvs].[FK_TotvsPeopleCustomerObservations]') is null and object_id(N'[totvs].TotvsPeopleCustomerObservations') is not null and object_id(N'[totvs].TotvsPeople') is not null
 alter table [totvs].TotvsPeopleCustomerObservations add constraint [FK_TotvsPeopleCustomerObservations] foreign key (doc_company, personCode) references [totvs].TotvsPeople (doc_company, code);
+if object_id(N'[totvs].[FK_TotvsPeopleAdditionalFields]') is null and object_id(N'[totvs].TotvsPeopleAdditionalFields') is not null and object_id(N'[totvs].TotvsPeople') is not null
 alter table [totvs].TotvsPeopleAdditionalFields add constraint [FK_TotvsPeopleAdditionalFields] foreign key (doc_company, personCode) references [totvs].TotvsPeople (doc_company, code);
+if object_id(N'[totvs].[FK_TotvsPeopleClassifications]') is null and object_id(N'[totvs].TotvsPeopleClassifications') is not null and object_id(N'[totvs].TotvsPeople') is not null
 alter table [totvs].TotvsPeopleClassifications add constraint [FK_TotvsPeopleClassifications] foreign key (doc_company, personCode) references [totvs].TotvsPeople (doc_company, code);
+if object_id(N'[totvs].[FK_TotvsPeopleReferences]') is null and object_id(N'[totvs].TotvsPeopleReferences') is not null and object_id(N'[totvs].TotvsPeople') is not null
 alter table [totvs].TotvsPeopleReferences add constraint [FK_TotvsPeopleReferences] foreign key (doc_company, personCode) references [totvs].TotvsPeople (doc_company, code);
+if object_id(N'[totvs].[FK_TotvsPeopleRelateds]') is null and object_id(N'[totvs].TotvsPeopleRelateds') is not null and object_id(N'[totvs].TotvsPeople') is not null
 alter table [totvs].TotvsPeopleRelateds add constraint [FK_TotvsPeopleRelateds] foreign key (doc_company, personCode) references [totvs].TotvsPeople (doc_company, code);
+if object_id(N'[totvs].[FK_TotvsPeopleStatistics]') is null and object_id(N'[totvs].TotvsPeopleStatistics') is not null and object_id(N'[totvs].TotvsPeople') is not null
 alter table [totvs].TotvsPeopleStatistics add constraint [FK_TotvsPeopleStatistics] foreign key (doc_company, personCode) references [totvs].TotvsPeople (doc_company, code);
+if object_id(N'[totvs].[FK_TotvsPeopleRepresentatives]') is null and object_id(N'[totvs].TotvsPeopleRepresentatives') is not null and object_id(N'[totvs].TotvsPeople') is not null
 alter table [totvs].TotvsPeopleRepresentatives add constraint [FK_TotvsPeopleRepresentatives] foreign key (doc_company, personCode) references [totvs].TotvsPeople (doc_company, code);
+if object_id(N'[totvs].[FK_TotvsPeopleFamiliars]') is null and object_id(N'[totvs].TotvsPeopleFamiliars') is not null and object_id(N'[totvs].TotvsPeople') is not null
 alter table [totvs].TotvsPeopleFamiliars add constraint [FK_TotvsPeopleFamiliars] foreign key (doc_company, personCode) references [totvs].TotvsPeople (doc_company, code);
+if object_id(N'[totvs].[FK_TotvsLegalEntitiesAddresses]') is null and object_id(N'[totvs].TotvsLegalEntitiesAddresses') is not null and object_id(N'[totvs].TotvsLegalEntities') is not null
 alter table [totvs].TotvsLegalEntitiesAddresses add constraint [FK_TotvsLegalEntitiesAddresses] foreign key (doc_company, personCode) references [totvs].TotvsLegalEntities (doc_company, code);
+if object_id(N'[totvs].[FK_TotvsLegalEntitiesPhones]') is null and object_id(N'[totvs].TotvsLegalEntitiesPhones') is not null and object_id(N'[totvs].TotvsLegalEntities') is not null
 alter table [totvs].TotvsLegalEntitiesPhones add constraint [FK_TotvsLegalEntitiesPhones] foreign key (doc_company, personCode) references [totvs].TotvsLegalEntities (doc_company, code);
+if object_id(N'[totvs].[FK_TotvsLegalEntitiesEmails]') is null and object_id(N'[totvs].TotvsLegalEntitiesEmails') is not null and object_id(N'[totvs].TotvsLegalEntities') is not null
 alter table [totvs].TotvsLegalEntitiesEmails add constraint [FK_TotvsLegalEntitiesEmails] foreign key (doc_company, personCode) references [totvs].TotvsLegalEntities (doc_company, code);
+if object_id(N'[totvs].[FK_TotvsLegalEntitiesObservations]') is null and object_id(N'[totvs].TotvsLegalEntitiesObservations') is not null and object_id(N'[totvs].TotvsLegalEntities') is not null
 alter table [totvs].TotvsLegalEntitiesObservations add constraint [FK_TotvsLegalEntitiesObservations] foreign key (doc_company, personCode) references [totvs].TotvsLegalEntities (doc_company, code);
+if object_id(N'[totvs].[FK_TotvsLegalEntitiesCustomerObservations]') is null and object_id(N'[totvs].TotvsLegalEntitiesCustomerObservations') is not null and object_id(N'[totvs].TotvsLegalEntities') is not null
 alter table [totvs].TotvsLegalEntitiesCustomerObservations add constraint [FK_TotvsLegalEntitiesCustomerObservations] foreign key (doc_company, personCode) references [totvs].TotvsLegalEntities (doc_company, code);
+if object_id(N'[totvs].[FK_TotvsLegalEntitiesAdditionalFields]') is null and object_id(N'[totvs].TotvsLegalEntitiesAdditionalFields') is not null and object_id(N'[totvs].TotvsLegalEntities') is not null
 alter table [totvs].TotvsLegalEntitiesAdditionalFields add constraint [FK_TotvsLegalEntitiesAdditionalFields] foreign key (doc_company, personCode) references [totvs].TotvsLegalEntities (doc_company, code);
+if object_id(N'[totvs].[FK_TotvsLegalEntitiesClassifications]') is null and object_id(N'[totvs].TotvsLegalEntitiesClassifications') is not null and object_id(N'[totvs].TotvsLegalEntities') is not null
 alter table [totvs].TotvsLegalEntitiesClassifications add constraint [FK_TotvsLegalEntitiesClassifications] foreign key (doc_company, personCode) references [totvs].TotvsLegalEntities (doc_company, code);
+if object_id(N'[totvs].[FK_TotvsLegalEntitiesReferences]') is null and object_id(N'[totvs].TotvsLegalEntitiesReferences') is not null and object_id(N'[totvs].TotvsLegalEntities') is not null
 alter table [totvs].TotvsLegalEntitiesReferences add constraint [FK_TotvsLegalEntitiesReferences] foreign key (doc_company, personCode) references [totvs].TotvsLegalEntities (doc_company, code);
+if object_id(N'[totvs].[FK_TotvsLegalEntitiesRelateds]') is null and object_id(N'[totvs].TotvsLegalEntitiesRelateds') is not null and object_id(N'[totvs].TotvsLegalEntities') is not null
 alter table [totvs].TotvsLegalEntitiesRelateds add constraint [FK_TotvsLegalEntitiesRelateds] foreign key (doc_company, personCode) references [totvs].TotvsLegalEntities (doc_company, code);
+if object_id(N'[totvs].[FK_TotvsLegalEntitiesPartners]') is null and object_id(N'[totvs].TotvsLegalEntitiesPartners') is not null and object_id(N'[totvs].TotvsLegalEntities') is not null
 alter table [totvs].TotvsLegalEntitiesPartners add constraint [FK_TotvsLegalEntitiesPartners] foreign key (doc_company, personCode) references [totvs].TotvsLegalEntities (doc_company, code);
+if object_id(N'[totvs].[FK_TotvsLegalEntitiesContacts]') is null and object_id(N'[totvs].TotvsLegalEntitiesContacts') is not null and object_id(N'[totvs].TotvsLegalEntities') is not null
 alter table [totvs].TotvsLegalEntitiesContacts add constraint [FK_TotvsLegalEntitiesContacts] foreign key (doc_company, personCode) references [totvs].TotvsLegalEntities (doc_company, code);
+if object_id(N'[totvs].[FK_TotvsLegalEntitiesStatistics]') is null and object_id(N'[totvs].TotvsLegalEntitiesStatistics') is not null and object_id(N'[totvs].TotvsLegalEntities') is not null
 alter table [totvs].TotvsLegalEntitiesStatistics add constraint [FK_TotvsLegalEntitiesStatistics] foreign key (doc_company, personCode) references [totvs].TotvsLegalEntities (doc_company, code);
+if object_id(N'[totvs].[FK_TotvsLegalEntitiesSocialNetworks]') is null and object_id(N'[totvs].TotvsLegalEntitiesSocialNetworks') is not null and object_id(N'[totvs].TotvsLegalEntities') is not null
 alter table [totvs].TotvsLegalEntitiesSocialNetworks add constraint [FK_TotvsLegalEntitiesSocialNetworks] foreign key (doc_company, personCode) references [totvs].TotvsLegalEntities (doc_company, code);
+if object_id(N'[totvs].[FK_TotvsLegalEntitiesRepresentatives]') is null and object_id(N'[totvs].TotvsLegalEntitiesRepresentatives') is not null and object_id(N'[totvs].TotvsLegalEntities') is not null
 alter table [totvs].TotvsLegalEntitiesRepresentatives add constraint [FK_TotvsLegalEntitiesRepresentatives] foreign key (doc_company, personCode) references [totvs].TotvsLegalEntities (doc_company, code);
+if object_id(N'[totvs].[FK_TotvsLegalEntitiesPaymentMethods]') is null and object_id(N'[totvs].TotvsLegalEntitiesPaymentMethods') is not null and object_id(N'[totvs].TotvsLegalEntities') is not null
 alter table [totvs].TotvsLegalEntitiesPaymentMethods add constraint [FK_TotvsLegalEntitiesPaymentMethods] foreign key (doc_company, personCode) references [totvs].TotvsLegalEntities (doc_company, code);

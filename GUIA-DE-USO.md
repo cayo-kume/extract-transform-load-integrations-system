@@ -124,14 +124,14 @@ senha como `****` no log. O banco é criado pelo DbUp se não existir.
 | 🖧 | **Servidor, Porta, Banco** | ex.: `localhost`, `1433`, `EtlTeste` |
 | 🔑 | **Usuário e Senha** | login do SQL Server; o botão **Testar conexão** confere antes de rodar |
 | ⏱️ | **Host de agenda** | o host que vai agendar neste banco: **WebApi (Hangfire)**, **WebJob (Azure)** ou **Worker (Quartz.NET)**. Só o Worker tem tabelas próprias (schema `quartz`) |
-| ☑️ | **Catálogo** | as aplicações e, abaixo de cada uma, os services (pastas de scripts) a subir; o **Shared** é obrigatório e `Parameters` sobe sempre |
+| ☑️ | **Catálogo** | as aplicações, os services e, nas integrações, os **jobs** que vão ter tabelas (só os marcados ganham tabelas; os já criados aparecem em cinza, e rodar de novo com mais jobs só cria as que faltam); o **Shared** é obrigatório, e `Parameters` e o catálogo dos jobs sobem sempre |
 
 Sem tela, no console:
 
 ```powershell
 ./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -SchedulingHost WebApi
 ./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -Apps Totvs,DataWarehouse -SchedulingHost Worker
-./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -Apps Totvs -Services Totvs/People,Totvs/Products -SchedulingHost Worker
+./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -Apps Totvs -Jobs 13007,13002 -SchedulingHost Worker
 ```
 
 O migrator só cria a estrutura e o catálogo de jobs (`auditing.Catalog`). Holding, empresas, credenciais dos módulos e

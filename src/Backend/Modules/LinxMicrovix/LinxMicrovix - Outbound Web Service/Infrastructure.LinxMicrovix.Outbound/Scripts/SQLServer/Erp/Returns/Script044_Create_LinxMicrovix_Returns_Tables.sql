@@ -1,8 +1,10 @@
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
 /****** Trocas e devoluções (LinxMicrovixReturnsService): tabelas untreated e linxmicrovix (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 5.2) ******/
 --colunas com o nome da resposta real da API (27/10/2026) e tamanhos da v274; respostas planas: uma tabela por método, sem filhas
 
 /*LinxMovimentoTrocas: os valores e números das trocas realizadas nas vendas*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxMovimentoTrocas') = 1
 create table [untreated].LinxMovimentoTrocas (
 	[integrated_or_updated_at]      datetime,
 	[doc_company]                   nvarchar(14),
@@ -32,6 +34,7 @@ create table [untreated].LinxMovimentoTrocas (
 	[obs_troca]                     nvarchar(180)
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxMovimentoTrocas') = 1
 create table [linxmicrovix].LinxMovimentoTrocas (
 	[integrated_or_updated_at]      datetime,
 	[doc_company]                   nvarchar(14) not null,
@@ -68,6 +71,7 @@ constraint [PK_LinxMovimentoTrocas] primary key (
 
 /*LinxMovimentoTrocafone: os valores e números dos vouchers Trocafone realizadas nas vendas Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxMovimentoTrocafone') = 1
 create table [untreated].LinxMovimentoTrocafone (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -83,6 +87,7 @@ create table [untreated].LinxMovimentoTrocafone (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxMovimentoTrocafone') = 1
 create table [linxmicrovix].LinxMovimentoTrocafone (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -105,6 +110,7 @@ constraint [PK_LinxMovimentoTrocafone] primary key (
 
 /*LinxMovimentoDevolucoesItens: os dados da tabela movimento_devolucoes_itens cadastrados no portal.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxMovimentoDevolucoesItens') = 1
 create table [untreated].LinxMovimentoDevolucoesItens (
 	[integrated_or_updated_at]      datetime,
 	[doc_company]                   nvarchar(14),
@@ -120,6 +126,7 @@ create table [untreated].LinxMovimentoDevolucoesItens (
 	[timestamp]                     bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxMovimentoDevolucoesItens') = 1
 create table [linxmicrovix].LinxMovimentoDevolucoesItens (
 	[integrated_or_updated_at]      datetime,
 	[doc_company]                   nvarchar(14) not null,
@@ -141,6 +148,7 @@ constraint [PK_LinxMovimentoDevolucoesItens] primary key (
 
 /*LinxMovimentoOrigemDevolucoes: os documentos de origem relacionados as devoluções*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxMovimentoOrigemDevolucoes') = 1
 create table [untreated].LinxMovimentoOrigemDevolucoes (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -155,6 +163,7 @@ create table [untreated].LinxMovimentoOrigemDevolucoes (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxMovimentoOrigemDevolucoes') = 1
 create table [linxmicrovix].LinxMovimentoOrigemDevolucoes (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -176,6 +185,7 @@ constraint [PK_LinxMovimentoOrigemDevolucoes] primary key (
 
 /*LinxMotivoDevolucao: os motivos de devoluções cadastrados no ERP. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxMotivoDevolucao') = 1
 create table [untreated].LinxMotivoDevolucao (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -187,6 +197,7 @@ create table [untreated].LinxMotivoDevolucao (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxMotivoDevolucao') = 1
 create table [linxmicrovix].LinxMotivoDevolucao (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -204,6 +215,7 @@ constraint [PK_LinxMotivoDevolucao] primary key (
 
 /*LinxTrocaUnificadaResumoVendas: as vendas do troca unificada.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxTrocaUnificadaResumoVendas') = 1
 create table [untreated].LinxTrocaUnificadaResumoVendas (
 	[integrated_or_updated_at]         datetime,
 	[doc_company]                      nvarchar(14),
@@ -221,6 +233,7 @@ create table [untreated].LinxTrocaUnificadaResumoVendas (
 	[timestamp]                        bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxTrocaUnificadaResumoVendas') = 1
 create table [linxmicrovix].LinxTrocaUnificadaResumoVendas (
 	[integrated_or_updated_at]         datetime,
 	[doc_company]                      nvarchar(14) not null,
@@ -244,6 +257,7 @@ constraint [PK_LinxTrocaUnificadaResumoVendas] primary key (
 
 /*LinxTrocaUnificadaResumoVendasItens: */
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxTrocaUnificadaResumoVendasItens') = 1
 create table [untreated].LinxTrocaUnificadaResumoVendasItens (
 	[integrated_or_updated_at]               datetime,
 	[doc_company]                            nvarchar(14),
@@ -261,6 +275,7 @@ create table [untreated].LinxTrocaUnificadaResumoVendasItens (
 	[timestamp]                              bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxTrocaUnificadaResumoVendasItens') = 1
 create table [linxmicrovix].LinxTrocaUnificadaResumoVendasItens (
 	[integrated_or_updated_at]               datetime,
 	[doc_company]                            nvarchar(14) not null,
@@ -284,6 +299,7 @@ constraint [PK_LinxTrocaUnificadaResumoVendasItens] primary key (
 
 /*LinxTrocaUnificadaResumoBaixa: os dados do resumo baixa do troca unificada*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxTrocaUnificadaResumoBaixa') = 1
 create table [untreated].LinxTrocaUnificadaResumoBaixa (
 	[integrated_or_updated_at]               datetime,
 	[doc_company]                            nvarchar(14),
@@ -299,6 +315,7 @@ create table [untreated].LinxTrocaUnificadaResumoBaixa (
 	[timestamp]                              bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxTrocaUnificadaResumoBaixa') = 1
 create table [linxmicrovix].LinxTrocaUnificadaResumoBaixa (
 	[integrated_or_updated_at]               datetime,
 	[doc_company]                            nvarchar(14) not null,
@@ -320,6 +337,7 @@ constraint [PK_LinxTrocaUnificadaResumoBaixa] primary key (
 
 /*LinxTradeinParceiro: os registros cadastrados na tabela tradein_parceiro do portal Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxTradeinParceiro') = 1
 create table [untreated].LinxTradeinParceiro (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -329,6 +347,7 @@ create table [untreated].LinxTradeinParceiro (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxTradeinParceiro') = 1
 create table [linxmicrovix].LinxTradeinParceiro (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -344,6 +363,7 @@ constraint [PK_LinxTradeinParceiro] primary key (
 
 /*LinxDevolucaoRemanejoFabrica: as devoluções e remanejos de fábrica. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxDevolucaoRemanejoFabrica') = 1
 create table [untreated].LinxDevolucaoRemanejoFabrica (
 	[integrated_or_updated_at]             datetime,
 	[doc_company]                          nvarchar(14),
@@ -364,6 +384,7 @@ create table [untreated].LinxDevolucaoRemanejoFabrica (
 	[portal_2]                             nvarchar(1000) --fora da documentação
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxDevolucaoRemanejoFabrica') = 1
 create table [linxmicrovix].LinxDevolucaoRemanejoFabrica (
 	[integrated_or_updated_at]             datetime,
 	[doc_company]                          nvarchar(14) not null,
@@ -390,6 +411,7 @@ constraint [PK_LinxDevolucaoRemanejoFabrica] primary key (
 
 /*LinxDevolucaoRemanejoFabricaItem: os itens das devoluções e remanejos de fábrica. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxDevolucaoRemanejoFabricaItem') = 1
 create table [untreated].LinxDevolucaoRemanejoFabricaItem (
 	[integrated_or_updated_at]           datetime,
 	[doc_company]                        nvarchar(14),
@@ -405,6 +427,7 @@ create table [untreated].LinxDevolucaoRemanejoFabricaItem (
 	[portal]                             int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxDevolucaoRemanejoFabricaItem') = 1
 create table [linxmicrovix].LinxDevolucaoRemanejoFabricaItem (
 	[integrated_or_updated_at]           datetime,
 	[doc_company]                        nvarchar(14) not null,
@@ -426,6 +449,7 @@ constraint [PK_LinxDevolucaoRemanejoFabricaItem] primary key (
 
 /*LinxDevolucaoRemanejoFabricaStatus: o cadastro de status da rotina devoluções e remanejos de fábrica. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxDevolucaoRemanejoFabricaStatus') = 1
 create table [untreated].LinxDevolucaoRemanejoFabricaStatus (
 	[integrated_or_updated_at]             datetime,
 	[doc_company]                          nvarchar(14),
@@ -436,6 +460,7 @@ create table [untreated].LinxDevolucaoRemanejoFabricaStatus (
 	[portal]                               int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxDevolucaoRemanejoFabricaStatus') = 1
 create table [linxmicrovix].LinxDevolucaoRemanejoFabricaStatus (
 	[integrated_or_updated_at]             datetime,
 	[doc_company]                          nvarchar(14) not null,
@@ -452,6 +477,7 @@ constraint [PK_LinxDevolucaoRemanejoFabricaStatus] primary key (
 
 /*LinxDevolucaoRemanejoFabricaTipo: o cadastro de tipos da rotina devoluções e remanejos de fábrica. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxDevolucaoRemanejoFabricaTipo') = 1
 create table [untreated].LinxDevolucaoRemanejoFabricaTipo (
 	[integrated_or_updated_at]           datetime,
 	[doc_company]                        nvarchar(14),
@@ -461,6 +487,7 @@ create table [untreated].LinxDevolucaoRemanejoFabricaTipo (
 	[portal]                             int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxDevolucaoRemanejoFabricaTipo') = 1
 create table [linxmicrovix].LinxDevolucaoRemanejoFabricaTipo (
 	[integrated_or_updated_at]           datetime,
 	[doc_company]                        nvarchar(14) not null,

@@ -1,7 +1,9 @@
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
 /****** Contas a pagar: tabelas untreated e totvs (src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.2.7) ******/
 --tamanhos do swagger da API Accounts Payable. Duplicata: uma linha por parcela (o mesmo duplicateCode volta uma vez por
 --parcela). Comissão: uma linha por comissionado do fechamento (a rota não tem filtro de alteração nem maxChangeFilterDate).
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsDuplicates') = 1
 create table [untreated].TotvsDuplicates (
 	integrated_or_updated_at       datetime,
 	doc_company                    nvarchar(14),
@@ -27,6 +29,7 @@ create table [untreated].TotvsDuplicates (
 	userInclusionName              nvarchar(60)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsDuplicates') = 1
 create table [totvs].TotvsDuplicates (
 	integrated_or_updated_at       datetime,
 	doc_company                    nvarchar(14) not null,
@@ -58,6 +61,7 @@ constraint [PK_TotvsDuplicates] primary key (
 	installmentCode asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsDuplicatesExpenses') = 1
 create table [untreated].TotvsDuplicatesExpenses (
 	integrated_or_updated_at       datetime,
 	doc_company                    nvarchar(14),
@@ -72,6 +76,7 @@ create table [untreated].TotvsDuplicatesExpenses (
 	proratedValue                  decimal(18,6)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsDuplicatesExpenses') = 1
 create table [totvs].TotvsDuplicatesExpenses (
 	integrated_or_updated_at       datetime,
 	doc_company                    nvarchar(14) not null,
@@ -94,6 +99,7 @@ constraint [PK_TotvsDuplicatesExpenses] primary key (
 	costCenterCode asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsDuplicatesClassifications') = 1
 create table [untreated].TotvsDuplicatesClassifications (
 	integrated_or_updated_at       datetime,
 	doc_company                    nvarchar(14),
@@ -107,6 +113,7 @@ create table [untreated].TotvsDuplicatesClassifications (
 	classificationDescription      nvarchar(60)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsDuplicatesClassifications') = 1
 create table [totvs].TotvsDuplicatesClassifications (
 	integrated_or_updated_at       datetime,
 	doc_company                    nvarchar(14) not null,
@@ -128,6 +135,7 @@ constraint [PK_TotvsDuplicatesClassifications] primary key (
 	classificationCode asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsCommissionsPaid') = 1
 create table [untreated].TotvsCommissionsPaid (
 	integrated_or_updated_at       datetime,
 	doc_company                    nvarchar(14),
@@ -153,6 +161,7 @@ create table [untreated].TotvsCommissionsPaid (
 	returnValue                    decimal(18,6)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsCommissionsPaid') = 1
 create table [totvs].TotvsCommissionsPaid (
 	integrated_or_updated_at       datetime,
 	doc_company                    nvarchar(14) not null,
@@ -183,6 +192,7 @@ constraint [PK_TotvsCommissionsPaid] primary key (
 	commissionedCpfCnpj asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsCommissionsPaidAccountMovements') = 1
 create table [untreated].TotvsCommissionsPaidAccountMovements (
 	integrated_or_updated_at       datetime,
 	doc_company                    nvarchar(14),
@@ -198,6 +208,7 @@ create table [untreated].TotvsCommissionsPaidAccountMovements (
 	launchValue                    decimal(18,6)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsCommissionsPaidAccountMovements') = 1
 create table [totvs].TotvsCommissionsPaidAccountMovements (
 	integrated_or_updated_at       datetime,
 	doc_company                    nvarchar(14) not null,
@@ -221,6 +232,9 @@ constraint [PK_TotvsCommissionsPaidAccountMovements] primary key (
 
 /****** Chaves estrangeiras: filhas -> registro ******/
 
+if object_id(N'[totvs].[FK_TotvsDuplicatesExpenses]') is null and object_id(N'[totvs].TotvsDuplicatesExpenses') is not null and object_id(N'[totvs].TotvsDuplicates') is not null
 alter table [totvs].TotvsDuplicatesExpenses add constraint [FK_TotvsDuplicatesExpenses] foreign key (doc_company, branchCode, supplierCode, duplicateCode, installmentCode) references [totvs].TotvsDuplicates (doc_company, branchCode, supplierCode, duplicateCode, installmentCode);
+if object_id(N'[totvs].[FK_TotvsDuplicatesClassifications]') is null and object_id(N'[totvs].TotvsDuplicatesClassifications') is not null and object_id(N'[totvs].TotvsDuplicates') is not null
 alter table [totvs].TotvsDuplicatesClassifications add constraint [FK_TotvsDuplicatesClassifications] foreign key (doc_company, branchCode, supplierCode, duplicateCode, installmentCode) references [totvs].TotvsDuplicates (doc_company, branchCode, supplierCode, duplicateCode, installmentCode);
+if object_id(N'[totvs].[FK_TotvsCommissionsPaidAccountMovements]') is null and object_id(N'[totvs].TotvsCommissionsPaidAccountMovements') is not null and object_id(N'[totvs].TotvsCommissionsPaid') is not null
 alter table [totvs].TotvsCommissionsPaidAccountMovements add constraint [FK_TotvsCommissionsPaidAccountMovements] foreign key (doc_company, closingBranchCode, closingCode, commissionedCpfCnpj) references [totvs].TotvsCommissionsPaid (doc_company, closingBranchCode, closingCode, commissionedCpfCnpj);

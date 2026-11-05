@@ -1,6 +1,8 @@
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
 /****** Pedidos de compra: tabelas untreated e totvs (src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.2.6) ******/
 --o swagger da API Purchase Order não traz tamanhos: os do código antigo, conferidos numa amostra real; objetos 1:1 como colunas do pai com o nome do objeto como prefixo (5.2.8).
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsPurchaseOrders') = 1
 create table [untreated].TotvsPurchaseOrders (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14),
@@ -32,6 +34,7 @@ create table [untreated].TotvsPurchaseOrders (
 	totalAmountOrder          decimal(18,6)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsPurchaseOrders') = 1
 create table [totvs].TotvsPurchaseOrders (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14) not null,
@@ -67,6 +70,7 @@ constraint [PK_TotvsPurchaseOrders] primary key (
 	orderCode asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsPurchaseOrdersProducts') = 1
 create table [untreated].TotvsPurchaseOrdersProducts (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14),
@@ -94,6 +98,7 @@ create table [untreated].TotvsPurchaseOrdersProducts (
 	conversionQuantity        decimal(18,6)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsPurchaseOrdersProducts') = 1
 create table [totvs].TotvsPurchaseOrdersProducts (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14) not null,
@@ -126,6 +131,7 @@ constraint [PK_TotvsPurchaseOrdersProducts] primary key (
 	productCode asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsPurchaseOrdersRequests') = 1
 create table [untreated].TotvsPurchaseOrdersRequests (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14),
@@ -136,6 +142,7 @@ create table [untreated].TotvsPurchaseOrdersRequests (
 	requestDate               datetime
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsPurchaseOrdersRequests') = 1
 create table [totvs].TotvsPurchaseOrdersRequests (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14) not null,
@@ -155,5 +162,7 @@ constraint [PK_TotvsPurchaseOrdersRequests] primary key (
 /****** Chaves estrangeiras ******/
 --cascade só nas netas: um item que sai do pedido leva junto os itens de lote (o merge dos itens roda antes)
 
+if object_id(N'[totvs].[FK_TotvsPurchaseOrdersProducts]') is null and object_id(N'[totvs].TotvsPurchaseOrdersProducts') is not null and object_id(N'[totvs].TotvsPurchaseOrders') is not null
 alter table [totvs].TotvsPurchaseOrdersProducts add constraint [FK_TotvsPurchaseOrdersProducts] foreign key (doc_company, branchCode, orderCode) references [totvs].TotvsPurchaseOrders (doc_company, branchCode, orderCode);
+if object_id(N'[totvs].[FK_TotvsPurchaseOrdersRequests]') is null and object_id(N'[totvs].TotvsPurchaseOrdersRequests') is not null and object_id(N'[totvs].TotvsPurchaseOrders') is not null
 alter table [totvs].TotvsPurchaseOrdersRequests add constraint [FK_TotvsPurchaseOrdersRequests] foreign key (doc_company, branchCode, orderCode) references [totvs].TotvsPurchaseOrders (doc_company, branchCode, orderCode);

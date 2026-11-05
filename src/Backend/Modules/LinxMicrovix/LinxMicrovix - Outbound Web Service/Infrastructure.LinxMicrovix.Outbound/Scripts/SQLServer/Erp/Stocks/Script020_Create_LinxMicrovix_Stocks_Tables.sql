@@ -1,8 +1,10 @@
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
 /****** Estoque e balanços (LinxMicrovixStocksService): tabelas untreated e linxmicrovix (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 5.2) ******/
 --colunas com o nome da resposta real da API (27/10/2026) e tamanhos da v274; respostas planas: uma tabela por método, sem filhas
 
 /*LinxProdutosDetalhes: informações dos produtos de acordo com a loja pesquisada*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxProdutosDetalhes') = 1
 create table [untreated].LinxProdutosDetalhes (
 	[integrated_or_updated_at]  datetime,
 	[doc_company]               nvarchar(14),
@@ -27,6 +29,7 @@ create table [untreated].LinxProdutosDetalhes (
 	[localizacao]               nvarchar(50)
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxProdutosDetalhes') = 1
 create table [linxmicrovix].LinxProdutosDetalhes (
 	[integrated_or_updated_at]  datetime,
 	[doc_company]               nvarchar(14) not null,
@@ -57,6 +60,7 @@ constraint [PK_LinxProdutosDetalhes] primary key (
 
 /*LinxProdutosDetalhesSimplificado: os dados adicionais de produtos de forma simplificada*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxProdutosDetalhesSimplificado') = 1
 create table [untreated].LinxProdutosDetalhesSimplificado (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -69,6 +73,7 @@ create table [untreated].LinxProdutosDetalhesSimplificado (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxProdutosDetalhesSimplificado') = 1
 create table [linxmicrovix].LinxProdutosDetalhesSimplificado (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -87,6 +92,7 @@ constraint [PK_LinxProdutosDetalhesSimplificado] primary key (
 
 /*LinxProdutosDetalhesDepositos: os saldos dos produtos por depósito.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxProdutosDetalhesDepositos') = 1
 create table [untreated].LinxProdutosDetalhesDepositos (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -99,6 +105,7 @@ create table [untreated].LinxProdutosDetalhesDepositos (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxProdutosDetalhesDepositos') = 1
 create table [linxmicrovix].LinxProdutosDetalhesDepositos (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -118,6 +125,7 @@ constraint [PK_LinxProdutosDetalhesDepositos] primary key (
 
 /*LinxProdutosDepositos: os depósitos cadastrados no ERP*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxProdutosDepositos') = 1
 create table [untreated].LinxProdutosDepositos (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -130,6 +138,7 @@ create table [untreated].LinxProdutosDepositos (
 	[outlet]                   bit --fora da documentação
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxProdutosDepositos') = 1
 create table [linxmicrovix].LinxProdutosDepositos (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -148,6 +157,7 @@ constraint [PK_LinxProdutosDepositos] primary key (
 
 /*LinxProdutosInventario: informações do saldo do produto na data pesquisada*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxProdutosInventario') = 1
 create table [untreated].LinxProdutosInventario (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -160,6 +170,7 @@ create table [untreated].LinxProdutosInventario (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxProdutosInventario') = 1
 create table [linxmicrovix].LinxProdutosInventario (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -178,6 +189,7 @@ constraint [PK_LinxProdutosInventario] primary key (
 
 /*LinxListagemBalanco: a listagem de balanços.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxListagemBalanco') = 1
 create table [untreated].LinxListagemBalanco (
 	[integrated_or_updated_at]  datetime,
 	[doc_company]               nvarchar(14),
@@ -193,6 +205,7 @@ create table [untreated].LinxListagemBalanco (
 	[portal]                    int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxListagemBalanco') = 1
 create table [linxmicrovix].LinxListagemBalanco (
 	[integrated_or_updated_at]  datetime,
 	[doc_company]               nvarchar(14) not null,
@@ -214,6 +227,7 @@ constraint [PK_LinxListagemBalanco] primary key (
 
 /*LinxBalancos: os balanços. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxBalancos') = 1
 create table [untreated].LinxBalancos (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -228,6 +242,7 @@ create table [untreated].LinxBalancos (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxBalancos') = 1
 create table [linxmicrovix].LinxBalancos (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -248,6 +263,7 @@ constraint [PK_LinxBalancos] primary key (
 
 /*LinxBalancosArquivos: os dados dos arquivos de balanços. Colunas da documentação: a chave da Newbloomers não tem acesso ao método. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxBalancosArquivos') = 1
 create table [untreated].LinxBalancosArquivos (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -260,6 +276,7 @@ create table [untreated].LinxBalancosArquivos (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxBalancosArquivos') = 1
 create table [linxmicrovix].LinxBalancosArquivos (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -278,6 +295,7 @@ constraint [PK_LinxBalancosArquivos] primary key (
 
 /*LinxBalancosSecoes: as seções dos balanços. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxBalancosSecoes') = 1
 create table [untreated].LinxBalancosSecoes (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -289,6 +307,7 @@ create table [untreated].LinxBalancosSecoes (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxBalancosSecoes') = 1
 create table [linxmicrovix].LinxBalancosSecoes (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,

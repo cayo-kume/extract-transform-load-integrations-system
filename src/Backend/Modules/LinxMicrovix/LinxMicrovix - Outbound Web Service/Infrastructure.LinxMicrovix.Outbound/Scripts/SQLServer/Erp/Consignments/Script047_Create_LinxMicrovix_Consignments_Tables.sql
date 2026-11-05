@@ -1,8 +1,10 @@
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
 /****** Remessas (LinxMicrovixConsignmentsService): tabelas untreated e linxmicrovix (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 5.2) ******/
 --colunas com o nome da resposta real da API (27/10/2026) e tamanhos da v274; respostas planas: uma tabela por método, sem filhas
 
 /*LinxMovimentoRemessas: os dados da tabela remessas no portal.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxMovimentoRemessas') = 1
 create table [untreated].LinxMovimentoRemessas (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -17,6 +19,7 @@ create table [untreated].LinxMovimentoRemessas (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxMovimentoRemessas') = 1
 create table [linxmicrovix].LinxMovimentoRemessas (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -37,6 +40,7 @@ constraint [PK_LinxMovimentoRemessas] primary key (
 
 /*LinxMovimentoRemessasItens: os dados da tabela remessas_itens no portal.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxMovimentoRemessasItens') = 1
 create table [untreated].LinxMovimentoRemessasItens (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -54,6 +58,7 @@ create table [untreated].LinxMovimentoRemessasItens (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxMovimentoRemessasItens') = 1
 create table [linxmicrovix].LinxMovimentoRemessasItens (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -77,6 +82,7 @@ constraint [PK_LinxMovimentoRemessasItens] primary key (
 
 /*LinxMovimentoRemessasAcertos: os dados da tabela remessas_acertos no portal.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxMovimentoRemessasAcertos') = 1
 create table [untreated].LinxMovimentoRemessasAcertos (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -94,6 +100,7 @@ create table [untreated].LinxMovimentoRemessasAcertos (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxMovimentoRemessasAcertos') = 1
 create table [linxmicrovix].LinxMovimentoRemessasAcertos (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -117,6 +124,7 @@ constraint [PK_LinxMovimentoRemessasAcertos] primary key (
 
 /*LinxMovimentoRemessasAcertosItens: os dados da tabela remessas_acertos_itens no portal.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxMovimentoRemessasAcertosItens') = 1
 create table [untreated].LinxMovimentoRemessasAcertosItens (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -131,6 +139,7 @@ create table [untreated].LinxMovimentoRemessasAcertosItens (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxMovimentoRemessasAcertosItens') = 1
 create table [linxmicrovix].LinxMovimentoRemessasAcertosItens (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -151,6 +160,7 @@ constraint [PK_LinxMovimentoRemessasAcertosItens] primary key (
 
 /*LinxRemessasIdentificadores: recebe o identificador da venda e retorna a relação com os identificadores das notas dos itens da remessa. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxRemessasIdentificadores') = 1
 create table [untreated].LinxRemessasIdentificadores (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -167,6 +177,7 @@ create table [untreated].LinxRemessasIdentificadores (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxRemessasIdentificadores') = 1
 create table [linxmicrovix].LinxRemessasIdentificadores (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -191,6 +202,7 @@ constraint [PK_LinxRemessasIdentificadores] primary key (
 
 /*LinxRemessasOperacoes: os dados da tabela remessa_operacoes no portal. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxRemessasOperacoes') = 1
 create table [untreated].LinxRemessasOperacoes (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -200,6 +212,7 @@ create table [untreated].LinxRemessasOperacoes (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxRemessasOperacoes') = 1
 create table [linxmicrovix].LinxRemessasOperacoes (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -215,6 +228,7 @@ constraint [PK_LinxRemessasOperacoes] primary key (
 
 /*LinxRemessasRetornoTipos: os dados da tabela remessa_retorno_tipos no portal. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxRemessasRetornoTipos') = 1
 create table [untreated].LinxRemessasRetornoTipos (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -224,6 +238,7 @@ create table [untreated].LinxRemessasRetornoTipos (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxRemessasRetornoTipos') = 1
 create table [linxmicrovix].LinxRemessasRetornoTipos (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,

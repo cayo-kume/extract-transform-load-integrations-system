@@ -1,8 +1,10 @@
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
 /****** Ótica (LinxMicrovixOpticsService): tabelas untreated e linxmicrovix (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 5.2) ******/
 --colunas com o nome da resposta real da API (27/10/2026) e tamanhos da v274; respostas planas: uma tabela por método, sem filhas
 
 /*LinxProdutosOpticosTipo: os tipos de produtos opticos. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxProdutosOpticosTipo') = 1
 create table [untreated].LinxProdutosOpticosTipo (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -12,6 +14,7 @@ create table [untreated].LinxProdutosOpticosTipo (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxProdutosOpticosTipo') = 1
 create table [linxmicrovix].LinxProdutosOpticosTipo (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -27,6 +30,7 @@ constraint [PK_LinxProdutosOpticosTipo] primary key (
 
 /*LinxProdutosOpticosTipoAro: os tipos de aros Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxProdutosOpticosTipoAro') = 1
 create table [untreated].LinxProdutosOpticosTipoAro (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -36,6 +40,7 @@ create table [untreated].LinxProdutosOpticosTipoAro (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxProdutosOpticosTipoAro') = 1
 create table [linxmicrovix].LinxProdutosOpticosTipoAro (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -51,6 +56,7 @@ constraint [PK_LinxProdutosOpticosTipoAro] primary key (
 
 /*LinxProdutosOpticosFormatoAro: os formatos de aros Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxProdutosOpticosFormatoAro') = 1
 create table [untreated].LinxProdutosOpticosFormatoAro (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -61,6 +67,7 @@ create table [untreated].LinxProdutosOpticosFormatoAro (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxProdutosOpticosFormatoAro') = 1
 create table [linxmicrovix].LinxProdutosOpticosFormatoAro (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -77,6 +84,7 @@ constraint [PK_LinxProdutosOpticosFormatoAro] primary key (
 
 /*LinxDadosOpticosDav: os dados ópticos dos produtos da DAV*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxDadosOpticosDav') = 1
 create table [untreated].LinxDadosOpticosDav (
 	[integrated_or_updated_at]                     datetime,
 	[doc_company]                                  nvarchar(14),
@@ -200,6 +208,7 @@ create table [untreated].LinxDadosOpticosDav (
 	[vendedor]                                     int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxDadosOpticosDav') = 1
 create table [linxmicrovix].LinxDadosOpticosDav (
 	[integrated_or_updated_at]                     datetime,
 	[doc_company]                                  nvarchar(14) not null,
@@ -329,6 +338,7 @@ constraint [PK_LinxDadosOpticosDav] primary key (
 
 /*LinxOticoPrismaDescricao: descrição de prismas óticos. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxOticoPrismaDescricao') = 1
 create table [untreated].LinxOticoPrismaDescricao (
 	[integrated_or_updated_at]  datetime,
 	[doc_company]               nvarchar(14),
@@ -338,6 +348,7 @@ create table [untreated].LinxOticoPrismaDescricao (
 	[portal]                    int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxOticoPrismaDescricao') = 1
 create table [linxmicrovix].LinxOticoPrismaDescricao (
 	[integrated_or_updated_at]  datetime,
 	[doc_company]               nvarchar(14) not null,
@@ -353,6 +364,7 @@ constraint [PK_LinxOticoPrismaDescricao] primary key (
 
 /*LinxOticoReceitas: receitas óticas. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxOticoReceitas') = 1
 create table [untreated].LinxOticoReceitas (
 	[integrated_or_updated_at]        datetime,
 	[doc_company]                     nvarchar(14),
@@ -447,6 +459,7 @@ create table [untreated].LinxOticoReceitas (
 	[timestamp]                       bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxOticoReceitas') = 1
 create table [linxmicrovix].LinxOticoReceitas (
 	[integrated_or_updated_at]        datetime,
 	[doc_company]                     nvarchar(14) not null,
@@ -547,6 +560,7 @@ constraint [PK_LinxOticoReceitas] primary key (
 
 /*LinxPosicaoOsRamoOptico: o cadastro da posição da OS do Ramo Optico Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxPosicaoOsRamoOptico') = 1
 create table [untreated].LinxPosicaoOsRamoOptico (
 	[integrated_or_updated_at]  datetime,
 	[doc_company]               nvarchar(14),
@@ -558,6 +572,7 @@ create table [untreated].LinxPosicaoOsRamoOptico (
 	[portal]                    int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxPosicaoOsRamoOptico') = 1
 create table [linxmicrovix].LinxPosicaoOsRamoOptico (
 	[integrated_or_updated_at]  datetime,
 	[doc_company]               nvarchar(14) not null,
@@ -575,6 +590,7 @@ constraint [PK_LinxPosicaoOsRamoOptico] primary key (
 
 /*LinxOrdensServicoPosicaoOsRamoOpticoHistorico: o histórico das posições das ordens de serviço do ramo optico Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxOrdensServicoPosicaoOsRamoOpticoHistorico') = 1
 create table [untreated].LinxOrdensServicoPosicaoOsRamoOpticoHistorico (
 	[integrated_or_updated_at]                           datetime,
 	[doc_company]                                        nvarchar(14),
@@ -589,6 +605,7 @@ create table [untreated].LinxOrdensServicoPosicaoOsRamoOpticoHistorico (
 	[portal]                                             int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxOrdensServicoPosicaoOsRamoOpticoHistorico') = 1
 create table [linxmicrovix].LinxOrdensServicoPosicaoOsRamoOpticoHistorico (
 	[integrated_or_updated_at]                           datetime,
 	[doc_company]                                        nvarchar(14) not null,
@@ -609,6 +626,7 @@ constraint [PK_LinxOrdensServicoPosicaoOsRamoOpticoHistorico] primary key (
 
 /*LinxOrcamentoComponenteFormula: os componentes de fórmulas relacionados ao orçamento. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxOrcamentoComponenteFormula') = 1
 create table [untreated].LinxOrcamentoComponenteFormula (
 	[integrated_or_updated_at]        datetime,
 	[doc_company]                     nvarchar(14),
@@ -628,6 +646,7 @@ create table [untreated].LinxOrcamentoComponenteFormula (
 	[portal]                          int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxOrcamentoComponenteFormula') = 1
 create table [linxmicrovix].LinxOrcamentoComponenteFormula (
 	[integrated_or_updated_at]        datetime,
 	[doc_company]                     nvarchar(14) not null,
@@ -653,6 +672,7 @@ constraint [PK_LinxOrcamentoComponenteFormula] primary key (
 
 /*LinxComponenteFormulaDav: os componentes de fórmulas relacionados ao Dav. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxComponenteFormulaDav') = 1
 create table [untreated].LinxComponenteFormulaDav (
 	[integrated_or_updated_at]  datetime,
 	[doc_company]               nvarchar(14),
@@ -672,6 +692,7 @@ create table [untreated].LinxComponenteFormulaDav (
 	[portal]                    int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxComponenteFormulaDav') = 1
 create table [linxmicrovix].LinxComponenteFormulaDav (
 	[integrated_or_updated_at]  datetime,
 	[doc_company]               nvarchar(14) not null,

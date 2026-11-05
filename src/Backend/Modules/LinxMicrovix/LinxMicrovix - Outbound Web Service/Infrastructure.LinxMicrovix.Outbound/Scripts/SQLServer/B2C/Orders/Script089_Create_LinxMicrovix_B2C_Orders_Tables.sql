@@ -1,8 +1,10 @@
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
 /****** Pedidos e notas do B2C (LinxMicrovixB2COrdersService): tabelas untreated e linxmicrovix (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 5.2) ******/
 --colunas com o nome da resposta real da API (27/10/2026) e tamanhos da V64; respostas planas: uma tabela por método, sem filhas
 
 /*B2CConsultaPedidos: */
 
+if dbo.fn_Migrator_Creates(N'[untreated].B2CConsultaPedidos') = 1
 create table [untreated].B2CConsultaPedidos (
 	[integrated_or_updated_at]   datetime,
 	[doc_company]                nvarchar(14),
@@ -44,6 +46,7 @@ create table [untreated].B2CConsultaPedidos (
 	[marketplace_full]           bit
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].B2CConsultaPedidos') = 1
 create table [linxmicrovix].B2CConsultaPedidos (
 	[integrated_or_updated_at]   datetime,
 	[doc_company]                nvarchar(14) not null,
@@ -91,6 +94,7 @@ constraint [PK_B2CConsultaPedidos] primary key (
 
 /*B2CConsultaPedidosItens: */
 
+if dbo.fn_Migrator_Creates(N'[untreated].B2CConsultaPedidosItens') = 1
 create table [untreated].B2CConsultaPedidosItens (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -103,6 +107,7 @@ create table [untreated].B2CConsultaPedidosItens (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].B2CConsultaPedidosItens') = 1
 create table [linxmicrovix].B2CConsultaPedidosItens (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -121,6 +126,7 @@ constraint [PK_B2CConsultaPedidosItens] primary key (
 
 /*B2CConsultaPedidosPlanos: */
 
+if dbo.fn_Migrator_Creates(N'[untreated].B2CConsultaPedidosPlanos') = 1
 create table [untreated].B2CConsultaPedidosPlanos (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -136,6 +142,7 @@ create table [untreated].B2CConsultaPedidosPlanos (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].B2CConsultaPedidosPlanos') = 1
 create table [linxmicrovix].B2CConsultaPedidosPlanos (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -157,6 +164,7 @@ constraint [PK_B2CConsultaPedidosPlanos] primary key (
 
 /*B2CConsultaPedidosStatus: */
 
+if dbo.fn_Migrator_Creates(N'[untreated].B2CConsultaPedidosStatus') = 1
 create table [untreated].B2CConsultaPedidosStatus (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -169,6 +177,7 @@ create table [untreated].B2CConsultaPedidosStatus (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].B2CConsultaPedidosStatus') = 1
 create table [linxmicrovix].B2CConsultaPedidosStatus (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -187,6 +196,7 @@ constraint [PK_B2CConsultaPedidosStatus] primary key (
 
 /*B2CConsultaPedidosIdentificador: os registro da tabela B2C_vendas*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].B2CConsultaPedidosIdentificador') = 1
 create table [untreated].B2CConsultaPedidosIdentificador (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -201,6 +211,7 @@ create table [untreated].B2CConsultaPedidosIdentificador (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].B2CConsultaPedidosIdentificador') = 1
 create table [linxmicrovix].B2CConsultaPedidosIdentificador (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -221,6 +232,7 @@ constraint [PK_B2CConsultaPedidosIdentificador] primary key (
 
 /*B2CConsultaPedidosTipos:  Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].B2CConsultaPedidosTipos') = 1
 create table [untreated].B2CConsultaPedidosTipos (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -230,6 +242,7 @@ create table [untreated].B2CConsultaPedidosTipos (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].B2CConsultaPedidosTipos') = 1
 create table [linxmicrovix].B2CConsultaPedidosTipos (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -245,6 +258,7 @@ constraint [PK_B2CConsultaPedidosTipos] primary key (
 
 /*B2CConsultaStatus:  Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].B2CConsultaStatus') = 1
 create table [untreated].B2CConsultaStatus (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -254,6 +268,7 @@ create table [untreated].B2CConsultaStatus (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].B2CConsultaStatus') = 1
 create table [linxmicrovix].B2CConsultaStatus (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -269,6 +284,7 @@ constraint [PK_B2CConsultaStatus] primary key (
 
 /*B2CConsultaCodigoRastreio: */
 
+if dbo.fn_Migrator_Creates(N'[untreated].B2CConsultaCodigoRastreio') = 1
 create table [untreated].B2CConsultaCodigoRastreio (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -281,6 +297,7 @@ create table [untreated].B2CConsultaCodigoRastreio (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].B2CConsultaCodigoRastreio') = 1
 create table [linxmicrovix].B2CConsultaCodigoRastreio (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -300,6 +317,7 @@ constraint [PK_B2CConsultaCodigoRastreio] primary key (
 
 /*B2CConsultaNFe:  Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].B2CConsultaNFe') = 1
 create table [untreated].B2CConsultaNFe (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -325,6 +343,7 @@ create table [untreated].B2CConsultaNFe (
 	[tpAmb]                    int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].B2CConsultaNFe') = 1
 create table [linxmicrovix].B2CConsultaNFe (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -356,6 +375,7 @@ constraint [PK_B2CConsultaNFe] primary key (
 
 /*B2CConsultaNFeSituacao:  Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].B2CConsultaNFeSituacao') = 1
 create table [untreated].B2CConsultaNFeSituacao (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -365,6 +385,7 @@ create table [untreated].B2CConsultaNFeSituacao (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].B2CConsultaNFeSituacao') = 1
 create table [linxmicrovix].B2CConsultaNFeSituacao (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,

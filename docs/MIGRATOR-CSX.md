@@ -102,7 +102,8 @@ Cria o banco se ele ainda não existir.
 ```csharp
 var upgrader = DeployChanges.To
     .SqlDatabase(connectionString)
-    .WithScriptsFromFileSystem(".", new FileSystemScriptOptions { IncludeSubDirectories = true, Filter = IsSelected })
+    .WithScriptsFromFileSystem(".", new FileSystemScriptOptions { IncludeSubDirectories = true, Filter = path => !RunsAlways(path) })
+    .WithScriptsFromFileSystem(".", new FileSystemScriptOptions { IncludeSubDirectories = true, Filter = RunsAlways }, new SqlScriptOptions { ScriptType = ScriptType.RunAlways })
     .WithScriptSorter(scripts => scripts.OrderBy(s => s.Name.Split('.')[^2], StringComparer.Ordinal))
     .LogToConsole()
     .Build();
@@ -111,7 +112,11 @@ var upgrader = DeployChanges.To
 * **`WithScriptsFromFileSystem(".", ... IncludeSubDirectories = true)`**: lê todos os `.sql` da pasta atual **e das
   subpastas**. O DbUp nomeia cada script pelo caminho, com pontos no lugar das barras (ex.:
   `People.Script005_Create_Totvs_People_Tables.sql`).
-* **`Filter = IsSelected`** (nos módulos): com a variável `ETL_MIGRATOR_SERVICES`, só os scripts das pastas listadas,
+* **`RunsAlways`** (nas integrações: Totvs, LinxMicrovix, LinxCommerce, Movidesk e AfterSale): os scripts de tabelas
+  (`*_Tables.sql`) e de procedures de sincronização (`*_Sync_Procedures.sql`) dos services rodam em **toda** migração
+  (`ScriptType.RunAlways`, fora do `dbo.SchemaVersions`); os outros (`Parameters`, a raiz e o catálogo dos jobs de cada
+  service) rodam uma vez, como sempre. Ver "Escolha por job", abaixo.
+* No **DataWarehouse**, `Filter = IsSelected`: com a variável `ETL_MIGRATOR_SERVICES`, só os scripts das camadas listadas,
   mais `Parameters` e a raiz; sem ela, todos. Quem passa a variável é o `Invoke-Migrators.ps1` (catálogo da tela ou
   `-Services`).
 * **`WithScriptSorter(...)`**: ordena pelo **nome do arquivo**, sem a pasta. Sem ele, a ordem seria alfabética pelo nome
@@ -162,12 +167,33 @@ Totvs, LinxMicrovix, LinxCommerce, Movidesk, AfterSale e DataWarehouse. Ele roda
 um a partir de uma unidade `subst` (sem o problema de MAX_PATH), e para no primeiro erro. A senha aparece como `****` no
 log. Precisa do PowerShell 7 e do `dotnet-script`.
 
-O catálogo é uma árvore: abaixo de cada aplicação, os services dela (as pastas de `Scripts/SQLServer`, como `People` no
-Totvs ou `Erp/Customers` no LinxMicrovix), cada um com uma caixa. Marcar ou desmarcar a aplicação marca ou desmarca todos
-os services, e a aplicação fica marcada enquanto algum estiver. `Parameters` (e os scripts da raiz, como os do Shared)
-sobe sempre. A escolha vai para o `migrator.csx` do módulo pela variável `ETL_MIGRATOR_SERVICES` (pastas separadas por
-`;`); sem a variável, sobem todos os services, como ao rodar o `migrator.csx` à mão. Rodar de novo com outros services
-sobe só os que faltam: o DbUp aplica os scripts que ainda não estão em `dbo.SchemaVersions`.
+O catálogo é uma árvore: aplicação, abaixo os services dela (as pastas de `Scripts/SQLServer`, como `People` no Totvs
+ou `Erp/Customers` no LinxMicrovix) e, nas integrações, abaixo de cada service os **jobs** que têm tabela (ex.: `8135
+LinxMovimentoRemessas (1 tabela: LinxMovimentoRemessas)`). A aplicação marcada roda o migrator dela; `Parameters`, os
+scripts da raiz e o catálogo dos jobs (`auditing.Catalog`) sobem sempre, com todos os jobs. No DataWarehouse, a escolha é
+por service (camada), como antes.
+
+#### Escolha por job
+
+Um service tem vários jobs, e a empresa usa um ou dois: as tabelas dos outros ficariam sem uso. Por isso, nas integrações
+só os **jobs marcados** ganham tabelas:
+
+* as tabelas de um job são as das procedures de sincronização dele no catálogo (`sp_<Tabela>_Sync`, filhas da
+  integração), a untreated e a trusted; as que a FK delas exige vêm junto (o `13092` traz o `TotvsPriceTables`, do
+  `13090`). As tabelas de apoio sem job (tipos do Movidesk, `AfterSaleHistoriesReverses`) sobem sempre;
+* o `Invoke-Migrators.ps1` passa os nomes para o `migrator.csx` do módulo pela variável `ETL_MIGRATOR_TABLES` (separados
+  por `;`), e ele os grava em `dbo.MigratorTables` (Shared, `Script010`) antes de rodar os scripts. Sem a variável (o
+  migrator rodado à mão), `*`: todas as tabelas;
+* cada `create table` dos scripts de tabelas vem depois de `if dbo.fn_Migrator_Creates(N'[schema].Tabela') = 1`, que só
+  deixa criar a tabela que **não existe e está na seleção**; a FK só entra com as duas tabelas criadas, e a procedure de
+  sincronização só com a tabela criada e se ainda não existe;
+* como esses scripts rodam em toda migração, **rodar de novo com mais jobs só cria as tabelas que faltam**, e as que já
+  existem ficam como estão. No **Testar conexão** e no fim de cada migração, a tela lê o banco e mostra os jobs com as
+  tabelas já criadas marcados em cinza, com "já criado".
+
+Um script de tabela continua sendo corrigido no próprio script de criação, com `if dbo.fn_Migrator_Creates(...) = 1`
+antes do `create table` novo. Coluna nova numa tabela que já existe não chega pela migração (o `create table` é pulado):
+num banco de teste, recrie o banco.
 
 O host de agenda é um só por banco (README, "Um host de agenda por vez"), e a escolha é obrigatória:
 
@@ -213,10 +239,12 @@ Com `-NoGui`, roda no console, com `-Credential`, `-Apps` (o Shared entra sempre
 ./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -Apps Totvs,DataWarehouse -SchedulingHost WebApi
 ```
 
-`-Services` escolhe os services, no formato `Aplicação/service`; a aplicação sem nenhum na lista sobe todos os dela:
+`-Jobs` escolhe os jobs das integrações que vão ter tabelas (IdJob); a integração sem nenhum na lista só sobe
+`Parameters` e o catálogo, e sem `-Jobs` sobem todas as tabelas. `-Services` escolhe as camadas do DataWarehouse
+(`DataWarehouse/camada`):
 
 ```powershell
-./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -Apps Totvs,LinxMicrovix -Services Totvs/People,LinxMicrovix/Erp/Customers -SchedulingHost WebApi
+./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -Apps Totvs,LinxMicrovix -Jobs 13007,8135 -SchedulingHost WebApi
 ```
 
 O migrator não grava holding, empresa, credencial nem job. Quem faz isso é o WebApp: na tela inicial, **Cadastrar

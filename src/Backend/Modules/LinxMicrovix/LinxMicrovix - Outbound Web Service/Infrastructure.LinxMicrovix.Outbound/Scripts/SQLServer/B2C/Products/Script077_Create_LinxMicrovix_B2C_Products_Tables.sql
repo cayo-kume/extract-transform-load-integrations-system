@@ -1,8 +1,10 @@
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
 /****** Produtos do B2C (LinxMicrovixB2CProductsService): tabelas untreated e linxmicrovix (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 5.2) ******/
 --colunas com o nome da resposta real da API (27/10/2026) e tamanhos da V64; respostas planas: uma tabela por método, sem filhas
 
 /*B2CConsultaProdutos: */
 
+if dbo.fn_Migrator_Creates(N'[untreated].B2CConsultaProdutos') = 1
 create table [untreated].B2CConsultaProdutos (
 	[integrated_or_updated_at]    datetime,
 	[doc_company]                 nvarchar(14),
@@ -44,6 +46,7 @@ create table [untreated].B2CConsultaProdutos (
 	[codigo_adicional_reshop]     nvarchar(100)
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].B2CConsultaProdutos') = 1
 create table [linxmicrovix].B2CConsultaProdutos (
 	[integrated_or_updated_at]    datetime,
 	[doc_company]                 nvarchar(14) not null,
@@ -91,6 +94,7 @@ constraint [PK_B2CConsultaProdutos] primary key (
 
 /*B2CConsultaProdutosAssociados:  Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].B2CConsultaProdutosAssociados') = 1
 create table [untreated].B2CConsultaProdutosAssociados (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -105,6 +109,7 @@ create table [untreated].B2CConsultaProdutosAssociados (
 	[item_obrigatorio]         bit
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].B2CConsultaProdutosAssociados') = 1
 create table [linxmicrovix].B2CConsultaProdutosAssociados (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -125,6 +130,7 @@ constraint [PK_B2CConsultaProdutosAssociados] primary key (
 
 /*B2CConsultaProdutosCampanhas:  Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].B2CConsultaProdutosCampanhas') = 1
 create table [untreated].B2CConsultaProdutosCampanhas (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -139,6 +145,7 @@ create table [untreated].B2CConsultaProdutosCampanhas (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].B2CConsultaProdutosCampanhas') = 1
 create table [linxmicrovix].B2CConsultaProdutosCampanhas (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -159,6 +166,7 @@ constraint [PK_B2CConsultaProdutosCampanhas] primary key (
 
 /*B2CConsultaProdutosCodebar: */
 
+if dbo.fn_Migrator_Creates(N'[untreated].B2CConsultaProdutosCodebar') = 1
 create table [untreated].B2CConsultaProdutosCodebar (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -172,6 +180,7 @@ create table [untreated].B2CConsultaProdutosCodebar (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].B2CConsultaProdutosCodebar') = 1
 create table [linxmicrovix].B2CConsultaProdutosCodebar (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -191,6 +200,7 @@ constraint [PK_B2CConsultaProdutosCodebar] primary key (
 
 /*B2CConsultaProdutosDimensoes: */
 
+if dbo.fn_Migrator_Creates(N'[untreated].B2CConsultaProdutosDimensoes') = 1
 create table [untreated].B2CConsultaProdutosDimensoes (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -202,6 +212,7 @@ create table [untreated].B2CConsultaProdutosDimensoes (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].B2CConsultaProdutosDimensoes') = 1
 create table [linxmicrovix].B2CConsultaProdutosDimensoes (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -219,6 +230,7 @@ constraint [PK_B2CConsultaProdutosDimensoes] primary key (
 
 /*B2CConsultaProdutosInformacoes:  Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].B2CConsultaProdutosInformacoes') = 1
 create table [untreated].B2CConsultaProdutosInformacoes (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -229,6 +241,7 @@ create table [untreated].B2CConsultaProdutosInformacoes (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].B2CConsultaProdutosInformacoes') = 1
 create table [linxmicrovix].B2CConsultaProdutosInformacoes (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -245,6 +258,7 @@ constraint [PK_B2CConsultaProdutosInformacoes] primary key (
 
 /*B2CConsultaProdutosStatus: */
 
+if dbo.fn_Migrator_Creates(N'[untreated].B2CConsultaProdutosStatus') = 1
 create table [untreated].B2CConsultaProdutosStatus (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -256,6 +270,7 @@ create table [untreated].B2CConsultaProdutosStatus (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].B2CConsultaProdutosStatus') = 1
 create table [linxmicrovix].B2CConsultaProdutosStatus (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -273,6 +288,7 @@ constraint [PK_B2CConsultaProdutosStatus] primary key (
 
 /*B2CConsultaProdutosFlags:  Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].B2CConsultaProdutosFlags') = 1
 create table [untreated].B2CConsultaProdutosFlags (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -285,6 +301,7 @@ create table [untreated].B2CConsultaProdutosFlags (
 	[descricao_b2c_flags]      nvarchar(300)
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].B2CConsultaProdutosFlags') = 1
 create table [linxmicrovix].B2CConsultaProdutosFlags (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -303,6 +320,7 @@ constraint [PK_B2CConsultaProdutosFlags] primary key (
 
 /*B2CConsultaProdutosTags:  Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].B2CConsultaProdutosTags') = 1
 create table [untreated].B2CConsultaProdutosTags (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -315,6 +333,7 @@ create table [untreated].B2CConsultaProdutosTags (
 	[descricao_b2c_tags]       nvarchar(300)
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].B2CConsultaProdutosTags') = 1
 create table [linxmicrovix].B2CConsultaProdutosTags (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -333,6 +352,7 @@ constraint [PK_B2CConsultaProdutosTags] primary key (
 
 /*B2CConsultaProdutosPalavrasChavePesquisa:  Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].B2CConsultaProdutosPalavrasChavePesquisa') = 1
 create table [untreated].B2CConsultaProdutosPalavrasChavePesquisa (
 	[integrated_or_updated_at]                datetime,
 	[doc_company]                             nvarchar(14),
@@ -345,6 +365,7 @@ create table [untreated].B2CConsultaProdutosPalavrasChavePesquisa (
 	[descricao_b2c_palavras_chave_pesquisa]   nvarchar(max)
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].B2CConsultaProdutosPalavrasChavePesquisa') = 1
 create table [linxmicrovix].B2CConsultaProdutosPalavrasChavePesquisa (
 	[integrated_or_updated_at]                datetime,
 	[doc_company]                             nvarchar(14) not null,

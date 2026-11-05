@@ -1,8 +1,10 @@
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
 /****** Clientes e fornecedores (LinxMicrovixCustomersService): tabelas untreated e linxmicrovix (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 5.2) ******/
 --colunas com o nome da resposta real da API (27/10/2026) e tamanhos da v274; respostas planas: uma tabela por método, sem filhas
 
 /*LinxClientesFornec: os Clientes/Fornecedores cadastrados na loja e data pesquisada*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxClientesFornec') = 1
 create table [untreated].LinxClientesFornec (
 	[integrated_or_updated_at]               datetime,
 	[doc_company]                            nvarchar(14),
@@ -60,6 +62,7 @@ create table [untreated].LinxClientesFornec (
 	[fone_2]                                 nvarchar(20)
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxClientesFornec') = 1
 create table [linxmicrovix].LinxClientesFornec (
 	[integrated_or_updated_at]               datetime,
 	[doc_company]                            nvarchar(14) not null,
@@ -123,6 +126,7 @@ constraint [PK_LinxClientesFornec] primary key (
 
 /*LinxClientesFornecCamposAdicionais: os campos adicionais preenchidos dos Clientes/Fornecedores cadastrados no portal Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxClientesFornecCamposAdicionais') = 1
 create table [untreated].LinxClientesFornecCamposAdicionais (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -134,6 +138,7 @@ create table [untreated].LinxClientesFornecCamposAdicionais (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxClientesFornecCamposAdicionais') = 1
 create table [linxmicrovix].LinxClientesFornecCamposAdicionais (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -152,6 +157,7 @@ constraint [PK_LinxClientesFornecCamposAdicionais] primary key (
 
 /*LinxClientesFornecClasses: todas as classes vinculadas a um cliente/fornecedor Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxClientesFornecClasses') = 1
 create table [untreated].LinxClientesFornecClasses (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -163,6 +169,7 @@ create table [untreated].LinxClientesFornecClasses (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxClientesFornecClasses') = 1
 create table [linxmicrovix].LinxClientesFornecClasses (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -181,6 +188,7 @@ constraint [PK_LinxClientesFornecClasses] primary key (
 
 /*LinxClientesFornecContatos: os campos referentes ao contato do cadastro dos Clientes/Fornecedores cadastrados no portal*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxClientesFornecContatos') = 1
 create table [untreated].LinxClientesFornecContatos (
 	[integrated_or_updated_at]     datetime,
 	[doc_company]                  nvarchar(14),
@@ -198,6 +206,7 @@ create table [untreated].LinxClientesFornecContatos (
 	[timestamp]                    bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxClientesFornecContatos') = 1
 create table [linxmicrovix].LinxClientesFornecContatos (
 	[integrated_or_updated_at]     datetime,
 	[doc_company]                  nvarchar(14) not null,
@@ -223,6 +232,7 @@ constraint [PK_LinxClientesFornecContatos] primary key (
 
 /*LinxClientesFornecContatosParentesco: os parentescos cadastrados Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxClientesFornecContatosParentesco') = 1
 create table [untreated].LinxClientesFornecContatosParentesco (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -232,6 +242,7 @@ create table [untreated].LinxClientesFornecContatosParentesco (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxClientesFornecContatosParentesco') = 1
 create table [linxmicrovix].LinxClientesFornecContatosParentesco (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -247,6 +258,7 @@ constraint [PK_LinxClientesFornecContatosParentesco] primary key (
 
 /*LinxClientesFornecCreditoAvulso: os dados de crédito avulso dos clientes e fornecedores. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxClientesFornecCreditoAvulso') = 1
 create table [untreated].LinxClientesFornecCreditoAvulso (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -263,6 +275,7 @@ create table [untreated].LinxClientesFornecCreditoAvulso (
 	[identificador]            uniqueidentifier
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxClientesFornecCreditoAvulso') = 1
 create table [linxmicrovix].LinxClientesFornecCreditoAvulso (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -286,6 +299,7 @@ constraint [PK_LinxClientesFornecCreditoAvulso] primary key (
 
 /*LinxClientesFornecVendedores: o código do vendedor associado ao cadastro do cliente, conforme a tabela clientes_fornec_vendedores. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxClientesFornecVendedores') = 1
 create table [untreated].LinxClientesFornecVendedores (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -296,6 +310,7 @@ create table [untreated].LinxClientesFornecVendedores (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxClientesFornecVendedores') = 1
 create table [linxmicrovix].LinxClientesFornecVendedores (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -313,6 +328,7 @@ constraint [PK_LinxClientesFornecVendedores] primary key (
 
 /*LinxClientesEnderecosEntrega: endereço de entrega do cliente.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxClientesEnderecosEntrega') = 1
 create table [untreated].LinxClientesEnderecosEntrega (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -333,6 +349,7 @@ create table [untreated].LinxClientesEnderecosEntrega (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxClientesEnderecosEntrega') = 1
 create table [linxmicrovix].LinxClientesEnderecosEntrega (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -359,6 +376,7 @@ constraint [PK_LinxClientesEnderecosEntrega] primary key (
 
 /*LinxClientesRede: os registros da tabela clientes_rede no portal centralizador. Colunas da documentação: a chave da Newbloomers não tem acesso ao método. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxClientesRede') = 1
 create table [untreated].LinxClientesRede (
 	[integrated_or_updated_at]          datetime,
 	[doc_company]                       nvarchar(14),
@@ -415,6 +433,7 @@ create table [untreated].LinxClientesRede (
 	[timestamp]                         bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxClientesRede') = 1
 create table [linxmicrovix].LinxClientesRede (
 	[integrated_or_updated_at]          datetime,
 	[doc_company]                       nvarchar(14) not null,
@@ -477,6 +496,7 @@ constraint [PK_LinxClientesRede] primary key (
 
 /*LinxRamosAtividade: os ramos de atividades cadastrados. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxRamosAtividade') = 1
 create table [untreated].LinxRamosAtividade (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -488,6 +508,7 @@ create table [untreated].LinxRamosAtividade (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxRamosAtividade') = 1
 create table [linxmicrovix].LinxRamosAtividade (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,

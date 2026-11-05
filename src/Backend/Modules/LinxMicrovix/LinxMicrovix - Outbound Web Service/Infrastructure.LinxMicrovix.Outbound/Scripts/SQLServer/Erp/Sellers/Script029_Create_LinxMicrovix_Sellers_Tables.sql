@@ -1,8 +1,10 @@
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
 /****** Vendedores e funcionários (LinxMicrovixSellersService): tabelas untreated e linxmicrovix (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 5.2) ******/
 --colunas com o nome da resposta real da API (27/10/2026) e tamanhos da v274; respostas planas: uma tabela por método, sem filhas
 
 /*LinxVendedores: os Vendedores cadastrados na loja*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxVendedores') = 1
 create table [untreated].LinxVendedores (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -37,6 +39,7 @@ create table [untreated].LinxVendedores (
 	[meta_peso]                decimal(19,4)
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxVendedores') = 1
 create table [linxmicrovix].LinxVendedores (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -77,6 +80,7 @@ constraint [PK_LinxVendedores] primary key (
 
 /*LinxVendedoresFerias: as férias cadatradas para os vendedores. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxVendedoresFerias') = 1
 create table [untreated].LinxVendedoresFerias (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -88,6 +92,7 @@ create table [untreated].LinxVendedoresFerias (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxVendedoresFerias') = 1
 create table [linxmicrovix].LinxVendedoresFerias (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -106,6 +111,7 @@ constraint [PK_LinxVendedoresFerias] primary key (
 
 /*LinxMetasVendedores: as Metas de Vendedores das lojas Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxMetasVendedores') = 1
 create table [untreated].LinxMetasVendedores (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -121,6 +127,7 @@ create table [untreated].LinxMetasVendedores (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxMetasVendedores') = 1
 create table [linxmicrovix].LinxMetasVendedores (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -143,6 +150,7 @@ constraint [PK_LinxMetasVendedores] primary key (
 
 /*LinxMetasVendedoresDia: as Metas de Vendedores das lojas por dia Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxMetasVendedoresDia') = 1
 create table [untreated].LinxMetasVendedoresDia (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -158,6 +166,7 @@ create table [untreated].LinxMetasVendedoresDia (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxMetasVendedoresDia') = 1
 create table [linxmicrovix].LinxMetasVendedoresDia (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -181,6 +190,7 @@ constraint [PK_LinxMetasVendedoresDia] primary key (
 
 /*LinxComissoesVendedores: as comissões do vendedores*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxComissoesVendedores') = 1
 create table [untreated].LinxComissoesVendedores (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -196,6 +206,7 @@ create table [untreated].LinxComissoesVendedores (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxComissoesVendedores') = 1
 create table [linxmicrovix].LinxComissoesVendedores (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -222,6 +233,7 @@ constraint [PK_LinxComissoesVendedores] primary key (
 
 /*LinxListaDaVez: os registros gerados na rotina de Lista da Vez*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxListaDaVez') = 1
 create table [untreated].LinxListaDaVez (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -239,6 +251,7 @@ create table [untreated].LinxListaDaVez (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxListaDaVez') = 1
 create table [linxmicrovix].LinxListaDaVez (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -264,6 +277,7 @@ constraint [PK_LinxListaDaVez] primary key (
 
 /*LinxFuncionariosFuncoes: o cadastro da funções de funcionários. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxFuncionariosFuncoes') = 1
 create table [untreated].LinxFuncionariosFuncoes (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -274,6 +288,7 @@ create table [untreated].LinxFuncionariosFuncoes (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxFuncionariosFuncoes') = 1
 create table [linxmicrovix].LinxFuncionariosFuncoes (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -290,6 +305,7 @@ constraint [PK_LinxFuncionariosFuncoes] primary key (
 
 /*LinxRegistroProfissional: os registros da tabela tipo_registro_profissional. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxRegistroProfissional') = 1
 create table [untreated].LinxRegistroProfissional (
 	[integrated_or_updated_at]             datetime,
 	[doc_company]                          nvarchar(14),
@@ -302,6 +318,7 @@ create table [untreated].LinxRegistroProfissional (
 	[timestamp]                            bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxRegistroProfissional') = 1
 create table [linxmicrovix].LinxRegistroProfissional (
 	[integrated_or_updated_at]             datetime,
 	[doc_company]                          nvarchar(14) not null,

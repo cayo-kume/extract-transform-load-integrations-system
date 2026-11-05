@@ -1,8 +1,10 @@
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
 /****** Preços, promoções e cupons (LinxMicrovixPricesService): tabelas untreated e linxmicrovix (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 5.2) ******/
 --colunas com o nome da resposta real da API (27/10/2026) e tamanhos da v274; respostas planas: uma tabela por método, sem filhas
 
 /*LinxProdutosTabelas: o cadastro de Tabelas de Preços Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxProdutosTabelas') = 1
 create table [untreated].LinxProdutosTabelas (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -16,6 +18,7 @@ create table [untreated].LinxProdutosTabelas (
 	[codigo_integracao_ws]     nvarchar(50)
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxProdutosTabelas') = 1
 create table [linxmicrovix].LinxProdutosTabelas (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -35,6 +38,7 @@ constraint [PK_LinxProdutosTabelas] primary key (
 
 /*LinxProdutosTabelasPrecos: a relação dos produtos por tabela de preço*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxProdutosTabelasPrecos') = 1
 create table [untreated].LinxProdutosTabelasPrecos (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -46,6 +50,7 @@ create table [untreated].LinxProdutosTabelasPrecos (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxProdutosTabelasPrecos') = 1
 create table [linxmicrovix].LinxProdutosTabelasPrecos (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -64,6 +69,7 @@ constraint [PK_LinxProdutosTabelasPrecos] primary key (
 
 /*LinxProdutosPromocoes: informações das promoções dos produtos de acordo com a loja pesquisada*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxProdutosPromocoes') = 1
 create table [untreated].LinxProdutosPromocoes (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -82,6 +88,7 @@ create table [untreated].LinxProdutosPromocoes (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxProdutosPromocoes') = 1
 create table [linxmicrovix].LinxProdutosPromocoes (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -108,6 +115,7 @@ constraint [PK_LinxProdutosPromocoes] primary key (
 
 /*LinxAcoesPromocionais: as Ações Promocionais cadastradas no Microvix Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxAcoesPromocionais') = 1
 create table [untreated].LinxAcoesPromocionais (
 	[integrated_or_updated_at]     datetime,
 	[doc_company]                  nvarchar(14),
@@ -127,6 +135,7 @@ create table [untreated].LinxAcoesPromocionais (
 	[timestamp]                    bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxAcoesPromocionais') = 1
 create table [linxmicrovix].LinxAcoesPromocionais (
 	[integrated_or_updated_at]     datetime,
 	[doc_company]                  nvarchar(14) not null,
@@ -152,6 +161,7 @@ constraint [PK_LinxAcoesPromocionais] primary key (
 
 /*LinxAcoesPromocionaisCombinacaoProdutosItens: os itens da combinação de produtos de ações promocionais.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxAcoesPromocionaisCombinacaoProdutosItens') = 1
 create table [untreated].LinxAcoesPromocionaisCombinacaoProdutosItens (
 	[integrated_or_updated_at]                        datetime,
 	[doc_company]                                     nvarchar(14),
@@ -162,6 +172,7 @@ create table [untreated].LinxAcoesPromocionaisCombinacaoProdutosItens (
 	[portal]                                          int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxAcoesPromocionaisCombinacaoProdutosItens') = 1
 create table [linxmicrovix].LinxAcoesPromocionaisCombinacaoProdutosItens (
 	[integrated_or_updated_at]                        datetime,
 	[doc_company]                                     nvarchar(14) not null,
@@ -178,6 +189,7 @@ constraint [PK_LinxAcoesPromocionaisCombinacaoProdutosItens] primary key (
 
 /*LinxAcoesPromocionaisProdutosCortesia: os produtos de cortesia de ações promocionais.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxAcoesPromocionaisProdutosCortesia') = 1
 create table [untreated].LinxAcoesPromocionaisProdutosCortesia (
 	[integrated_or_updated_at]                datetime,
 	[doc_company]                             nvarchar(14),
@@ -189,6 +201,7 @@ create table [untreated].LinxAcoesPromocionaisProdutosCortesia (
 	[portal]                                  int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxAcoesPromocionaisProdutosCortesia') = 1
 create table [linxmicrovix].LinxAcoesPromocionaisProdutosCortesia (
 	[integrated_or_updated_at]                datetime,
 	[doc_company]                             nvarchar(14) not null,
@@ -206,6 +219,7 @@ constraint [PK_LinxAcoesPromocionaisProdutosCortesia] primary key (
 
 /*LinxMovimentoAcoesPromocionais: as Ações Promocionais realizadas nas movimentações*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxMovimentoAcoesPromocionais') = 1
 create table [untreated].LinxMovimentoAcoesPromocionais (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -219,6 +233,7 @@ create table [untreated].LinxMovimentoAcoesPromocionais (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxMovimentoAcoesPromocionais') = 1
 create table [linxmicrovix].LinxMovimentoAcoesPromocionais (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -240,6 +255,7 @@ constraint [PK_LinxMovimentoAcoesPromocionais] primary key (
 
 /*LinxCupomDesconto: os registros do cadastro de cupons de desconto.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxCupomDesconto') = 1
 create table [untreated].LinxCupomDesconto (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -259,6 +275,7 @@ create table [untreated].LinxCupomDesconto (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxCupomDesconto') = 1
 create table [linxmicrovix].LinxCupomDesconto (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -284,6 +301,7 @@ constraint [PK_LinxCupomDesconto] primary key (
 
 /*LinxCupomDescontoVendas: o id do cupom de desconto, o valor do cupom e identificador das vendas que utilizaram cupons de desconto. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxCupomDescontoVendas') = 1
 create table [untreated].LinxCupomDescontoVendas (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -298,6 +316,7 @@ create table [untreated].LinxCupomDescontoVendas (
 	[id_vendas_pos]            int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxCupomDescontoVendas') = 1
 create table [linxmicrovix].LinxCupomDescontoVendas (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -318,6 +337,7 @@ constraint [PK_LinxCupomDescontoVendas] primary key (
 
 /*LinxMotivoDesconto: os motivos de desconto cadastrados no portal Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxMotivoDesconto') = 1
 create table [untreated].LinxMotivoDesconto (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -329,6 +349,7 @@ create table [untreated].LinxMotivoDesconto (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxMotivoDesconto') = 1
 create table [linxmicrovix].LinxMotivoDesconto (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,

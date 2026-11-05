@@ -1,8 +1,10 @@
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
 /****** Vendedores: tabelas untreated e linxcommerce (src/Backend/Modules/LinxCommerce/docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md 5.2) ******/
 --colunas e tamanhos tirados do código antigo, sem resposta real da API: a conferir antes de ligar o job (§9).
 --datas da API em datetimeoffset (o Linx Commerce manda o fuso); integrated_or_updated_at é o horário do lote, em Brasília
 
 --vendedor (POST Sales/API.svc/web/GetSalesRepresentative), com os objetos 1:1 em colunas e as listas de ids como texto
+if dbo.fn_Migrator_Creates(N'[untreated].LinxCommerceSalesRepresentatives') = 1
 create table [untreated].LinxCommerceSalesRepresentatives (
 	integrated_or_updated_at            datetime,
 	[doc_company]                       nvarchar(14),
@@ -35,6 +37,7 @@ create table [untreated].LinxCommerceSalesRepresentatives (
 	[PortfolioPortfolioAssociationType] nvarchar(50)
 );
 
+if dbo.fn_Migrator_Creates(N'[linxcommerce].LinxCommerceSalesRepresentatives') = 1
 create table [linxcommerce].LinxCommerceSalesRepresentatives (
 	integrated_or_updated_at            datetime,
 	[doc_company]                       nvarchar(14) not null,
@@ -71,6 +74,7 @@ constraint [PK_LinxCommerceSalesRepresentatives] primary key (
 ));
 
 --endereço do vendedor (a API não tem id do endereço: a chave é a posição na lista)
+if dbo.fn_Migrator_Creates(N'[untreated].LinxCommerceSalesRepresentativesAddresses') = 1
 create table [untreated].LinxCommerceSalesRepresentativesAddresses (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14),
@@ -91,6 +95,7 @@ create table [untreated].LinxCommerceSalesRepresentativesAddresses (
 	[Longitude]              decimal(12,8)
 );
 
+if dbo.fn_Migrator_Creates(N'[linxcommerce].LinxCommerceSalesRepresentativesAddresses') = 1
 create table [linxcommerce].LinxCommerceSalesRepresentativesAddresses (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14) not null,
@@ -116,6 +121,7 @@ constraint [PK_LinxCommerceSalesRepresentativesAddresses] primary key (
 ));
 
 --cliente da carteira do vendedor (Portfolio.Customers)
+if dbo.fn_Migrator_Creates(N'[untreated].LinxCommerceSalesRepresentativesCustomers') = 1
 create table [untreated].LinxCommerceSalesRepresentativesCustomers (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14),
@@ -125,6 +131,7 @@ create table [untreated].LinxCommerceSalesRepresentativesCustomers (
 	[IsMaxDiscountEnabled]   nvarchar(10)
 );
 
+if dbo.fn_Migrator_Creates(N'[linxcommerce].LinxCommerceSalesRepresentativesCustomers') = 1
 create table [linxcommerce].LinxCommerceSalesRepresentativesCustomers (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14) not null,
@@ -140,5 +147,7 @@ constraint [PK_LinxCommerceSalesRepresentativesCustomers] primary key (
 
 /****** Chaves estrangeiras: filhas -> pai ******/
 
+if object_id(N'[linxcommerce].[FK_LinxCommerceSalesRepresentativesAddresses]') is null and object_id(N'[linxcommerce].LinxCommerceSalesRepresentativesAddresses') is not null and object_id(N'[linxcommerce].LinxCommerceSalesRepresentatives') is not null
 alter table [linxcommerce].LinxCommerceSalesRepresentativesAddresses add constraint [FK_LinxCommerceSalesRepresentativesAddresses] foreign key (doc_company, SalesRepresentativeID) references [linxcommerce].LinxCommerceSalesRepresentatives (doc_company, SalesRepresentativeID);
+if object_id(N'[linxcommerce].[FK_LinxCommerceSalesRepresentativesCustomers]') is null and object_id(N'[linxcommerce].LinxCommerceSalesRepresentativesCustomers') is not null and object_id(N'[linxcommerce].LinxCommerceSalesRepresentatives') is not null
 alter table [linxcommerce].LinxCommerceSalesRepresentativesCustomers add constraint [FK_LinxCommerceSalesRepresentativesCustomers] foreign key (doc_company, SalesRepresentativeID) references [linxcommerce].LinxCommerceSalesRepresentatives (doc_company, SalesRepresentativeID);

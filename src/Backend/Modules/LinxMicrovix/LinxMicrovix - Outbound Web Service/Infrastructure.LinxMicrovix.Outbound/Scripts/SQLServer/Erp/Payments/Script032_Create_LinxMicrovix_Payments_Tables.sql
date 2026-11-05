@@ -1,8 +1,10 @@
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
 /****** Pagamentos e caixa (LinxMicrovixPaymentsService): tabelas untreated e linxmicrovix (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 5.2) ******/
 --colunas com o nome da resposta real da API (27/10/2026) e tamanhos da v274; respostas planas: uma tabela por método, sem filhas
 
 /*LinxMovimentoCartoes: informações dos cartões de acordo com a loja pesquisada*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxMovimentoCartoes') = 1
 create table [untreated].LinxMovimentoCartoes (
 	[integrated_or_updated_at]                  datetime,
 	[doc_company]                               nvarchar(14),
@@ -33,6 +35,7 @@ create table [untreated].LinxMovimentoCartoes (
 	[data_hora_cancelamento_transacao_smartpos] datetime
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxMovimentoCartoes') = 1
 create table [linxmicrovix].LinxMovimentoCartoes (
 	[integrated_or_updated_at]                  datetime,
 	[doc_company]                               nvarchar(14) not null,
@@ -70,6 +73,7 @@ constraint [PK_LinxMovimentoCartoes] primary key (
 
 /*LinxMovimentoPlanos: os Planos de Pagamentos realizados nas movimentações*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxMovimentoPlanos') = 1
 create table [untreated].LinxMovimentoPlanos (
 	[integrated_or_updated_at]   datetime,
 	[doc_company]                nvarchar(14),
@@ -91,6 +95,7 @@ create table [untreated].LinxMovimentoPlanos (
 	[gerado_config_receb_vendas] bit
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxMovimentoPlanos') = 1
 create table [linxmicrovix].LinxMovimentoPlanos (
 	[integrated_or_updated_at]   datetime,
 	[doc_company]                nvarchar(14) not null,
@@ -120,6 +125,7 @@ constraint [PK_LinxMovimentoPlanos] primary key (
 
 /*LinxPlanos: o cadastro dos Planos de Pagamentos do portal*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxPlanos') = 1
 create table [untreated].LinxPlanos (
 	[integrated_or_updated_at]   datetime,
 	[doc_company]                nvarchar(14),
@@ -144,6 +150,7 @@ create table [untreated].LinxPlanos (
 	[gerado_config_receb_vendas] bit
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxPlanos') = 1
 create table [linxmicrovix].LinxPlanos (
 	[integrated_or_updated_at]   datetime,
 	[doc_company]                nvarchar(14) not null,
@@ -174,6 +181,7 @@ constraint [PK_LinxPlanos] primary key (
 
 /*LinxPlanosParcelas: */
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxPlanosParcelas') = 1
 create table [untreated].LinxPlanosParcelas (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -185,6 +193,7 @@ create table [untreated].LinxPlanosParcelas (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxPlanosParcelas') = 1
 create table [linxmicrovix].LinxPlanosParcelas (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -202,6 +211,7 @@ constraint [PK_LinxPlanosParcelas] primary key (
 
 /*LinxPlanosBandeiras: o cadastro de bandeiras de cartões vinculadas aos Planos de Pagamento do Portal*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxPlanosBandeiras') = 1
 create table [untreated].LinxPlanosBandeiras (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -216,6 +226,7 @@ create table [untreated].LinxPlanosBandeiras (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxPlanosBandeiras') = 1
 create table [linxmicrovix].LinxPlanosBandeiras (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -237,6 +248,7 @@ constraint [PK_LinxPlanosBandeiras] primary key (
 
 /*LinxMovimentoGiftCard: os registro de giftcard Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxMovimentoGiftCard') = 1
 create table [untreated].LinxMovimentoGiftCard (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -261,6 +273,7 @@ create table [untreated].LinxMovimentoGiftCard (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxMovimentoGiftCard') = 1
 create table [linxmicrovix].LinxMovimentoGiftCard (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -292,6 +305,7 @@ constraint [PK_LinxMovimentoGiftCard] primary key (
 
 /*LinxValesComprasEnviadosAPI: vale Compras importado via API. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxValesComprasEnviadosAPI') = 1
 create table [untreated].LinxValesComprasEnviadosAPI (
 	[integrated_or_updated_at]    datetime,
 	[doc_company]                 nvarchar(14),
@@ -311,6 +325,7 @@ create table [untreated].LinxValesComprasEnviadosAPI (
 	[portal]                      int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxValesComprasEnviadosAPI') = 1
 create table [linxmicrovix].LinxValesComprasEnviadosAPI (
 	[integrated_or_updated_at]    datetime,
 	[doc_company]                 nvarchar(14) not null,
@@ -336,6 +351,7 @@ constraint [PK_LinxValesComprasEnviadosAPI] primary key (
 
 /*LinxSangriaSuprimentos: as informações das Sangrias ou Suprimentos feitos no caixa Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxSangriaSuprimentos') = 1
 create table [untreated].LinxSangriaSuprimentos (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -353,6 +369,7 @@ create table [untreated].LinxSangriaSuprimentos (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxSangriaSuprimentos') = 1
 create table [linxmicrovix].LinxSangriaSuprimentos (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -376,6 +393,7 @@ constraint [PK_LinxSangriaSuprimentos] primary key (
 
 /*LinxFechamentoCaixa:  Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxFechamentoCaixa') = 1
 create table [untreated].LinxFechamentoCaixa (
 	[integrated_or_updated_at]     datetime,
 	[doc_company]                  nvarchar(14),
@@ -421,6 +439,7 @@ create table [untreated].LinxFechamentoCaixa (
 	[portal]                       int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxFechamentoCaixa') = 1
 create table [linxmicrovix].LinxFechamentoCaixa (
 	[integrated_or_updated_at]     datetime,
 	[doc_company]                  nvarchar(14) not null,

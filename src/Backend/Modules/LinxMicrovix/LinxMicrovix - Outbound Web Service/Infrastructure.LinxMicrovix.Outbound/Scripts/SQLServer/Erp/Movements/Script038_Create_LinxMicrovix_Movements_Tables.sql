@@ -1,8 +1,10 @@
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
 /****** Movimento (LinxMicrovixMovementsService): tabelas untreated e linxmicrovix (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 5.2) ******/
 --colunas com o nome da resposta real da API (27/10/2026) e tamanhos da v274; respostas planas: uma tabela por método, sem filhas
 
 /*LinxMovimento: as movimentações de entradas e saídas de acordo com a loja e data pesquisada*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxMovimento') = 1
 create table [untreated].LinxMovimento (
 	[integrated_or_updated_at]              datetime,
 	[doc_company]                           nvarchar(14),
@@ -124,6 +126,7 @@ create table [untreated].LinxMovimento (
 	[conhecimento]                          int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxMovimento') = 1
 create table [linxmicrovix].LinxMovimento (
 	[integrated_or_updated_at]              datetime,
 	[doc_company]                           nvarchar(14) not null,
@@ -251,6 +254,7 @@ constraint [PK_LinxMovimento] primary key (
 
 /*LinxMovimentoPrincipal: dados da movimento principal.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxMovimentoPrincipal') = 1
 create table [untreated].LinxMovimentoPrincipal (
 	[integrated_or_updated_at]   datetime,
 	[doc_company]                nvarchar(14),
@@ -272,6 +276,7 @@ create table [untreated].LinxMovimentoPrincipal (
 	[nota_aguardou_sefaz]        bit
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxMovimentoPrincipal') = 1
 create table [linxmicrovix].LinxMovimentoPrincipal (
 	[integrated_or_updated_at]   datetime,
 	[doc_company]                nvarchar(14) not null,
@@ -299,6 +304,7 @@ constraint [PK_LinxMovimentoPrincipal] primary key (
 
 /*LinxMovimentoExtensao: as informações adicionais da venda*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxMovimentoExtensao') = 1
 create table [untreated].LinxMovimentoExtensao (
 	[integrated_or_updated_at]               datetime,
 	[doc_company]                            nvarchar(14),
@@ -359,6 +365,7 @@ create table [untreated].LinxMovimentoExtensao (
 	[custo_aquisicao_item]                   decimal(19,4)
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxMovimentoExtensao') = 1
 create table [linxmicrovix].LinxMovimentoExtensao (
 	[integrated_or_updated_at]               datetime,
 	[doc_company]                            nvarchar(14) not null,
@@ -425,6 +432,7 @@ constraint [PK_LinxMovimentoExtensao] primary key (
 
 /*LinxMovimentoCamposAdicionais: os campos adicionais da movimentação Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxMovimentoCamposAdicionais') = 1
 create table [untreated].LinxMovimentoCamposAdicionais (
 	[integrated_or_updated_at]        datetime,
 	[doc_company]                     nvarchar(14),
@@ -529,6 +537,7 @@ create table [untreated].LinxMovimentoCamposAdicionais (
 	[cod_cliente_clinica]             int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxMovimentoCamposAdicionais') = 1
 create table [linxmicrovix].LinxMovimentoCamposAdicionais (
 	[integrated_or_updated_at]        datetime,
 	[doc_company]                     nvarchar(14) not null,
@@ -639,6 +648,7 @@ constraint [PK_LinxMovimentoCamposAdicionais] primary key (
 
 /*LinxMovimentoObservacoes: o conteúdo da tabela movimento_observacoes Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxMovimentoObservacoes') = 1
 create table [untreated].LinxMovimentoObservacoes (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -649,6 +659,7 @@ create table [untreated].LinxMovimentoObservacoes (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxMovimentoObservacoes') = 1
 create table [linxmicrovix].LinxMovimentoObservacoes (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -665,6 +676,7 @@ constraint [PK_LinxMovimentoObservacoes] primary key (
 
 /*LinxMovimentoObservacaoCF: as observações do cupom fiscal.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxMovimentoObservacaoCF') = 1
 create table [untreated].LinxMovimentoObservacaoCF (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -674,6 +686,7 @@ create table [untreated].LinxMovimentoObservacaoCF (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxMovimentoObservacaoCF') = 1
 create table [linxmicrovix].LinxMovimentoObservacaoCF (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -689,6 +702,7 @@ constraint [PK_LinxMovimentoObservacaoCF] primary key (
 
 /*LinxMovimentoIndicacoes: o cliente indicador da venda. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxMovimentoIndicacoes') = 1
 create table [untreated].LinxMovimentoIndicacoes (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -699,6 +713,7 @@ create table [untreated].LinxMovimentoIndicacoes (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxMovimentoIndicacoes') = 1
 create table [linxmicrovix].LinxMovimentoIndicacoes (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -716,6 +731,7 @@ constraint [PK_LinxMovimentoIndicacoes] primary key (
 
 /*LinxMovimentoSerial: os Código de Seriais realizadas nas movimentações Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxMovimentoSerial') = 1
 create table [untreated].LinxMovimentoSerial (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -727,6 +743,7 @@ create table [untreated].LinxMovimentoSerial (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxMovimentoSerial') = 1
 create table [linxmicrovix].LinxMovimentoSerial (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -746,6 +763,7 @@ constraint [PK_LinxMovimentoSerial] primary key (
 
 /*LinxSerialVenda: os registros da tabela serial_venda Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxSerialVenda') = 1
 create table [untreated].LinxSerialVenda (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -758,6 +776,7 @@ create table [untreated].LinxSerialVenda (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxSerialVenda') = 1
 create table [linxmicrovix].LinxSerialVenda (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -776,6 +795,7 @@ constraint [PK_LinxSerialVenda] primary key (
 
 /*LinxMovimentoVendaConjugada: movimento da venda conjugada Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxMovimentoVendaConjugada') = 1
 create table [untreated].LinxMovimentoVendaConjugada (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -786,6 +806,7 @@ create table [untreated].LinxMovimentoVendaConjugada (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxMovimentoVendaConjugada') = 1
 create table [linxmicrovix].LinxMovimentoVendaConjugada (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -803,6 +824,7 @@ constraint [PK_LinxMovimentoVendaConjugada] primary key (
 
 /*LinxPerguntaVenda: as perguntas realizadas no final da venda cadastradas no portal. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxPerguntaVenda') = 1
 create table [untreated].LinxPerguntaVenda (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -813,6 +835,7 @@ create table [untreated].LinxPerguntaVenda (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxPerguntaVenda') = 1
 create table [linxmicrovix].LinxPerguntaVenda (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -829,6 +852,7 @@ constraint [PK_LinxPerguntaVenda] primary key (
 
 /*LinxRespostaVenda: o cadastro das perguntas realizadas no final da venda no portal. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxRespostaVenda') = 1
 create table [untreated].LinxRespostaVenda (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -840,6 +864,7 @@ create table [untreated].LinxRespostaVenda (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxRespostaVenda') = 1
 create table [linxmicrovix].LinxRespostaVenda (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,

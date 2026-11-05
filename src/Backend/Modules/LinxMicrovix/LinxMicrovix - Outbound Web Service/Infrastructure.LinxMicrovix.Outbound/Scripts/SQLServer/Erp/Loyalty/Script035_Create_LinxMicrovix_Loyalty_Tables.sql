@@ -1,8 +1,10 @@
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
 /****** Fidelidade (LinxMicrovixLoyaltyService): tabelas untreated e linxmicrovix (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 5.2) ******/
 --colunas com o nome da resposta real da API (27/10/2026) e tamanhos da v274; respostas planas: uma tabela por método, sem filhas
 
 /*LinxFidelidade: os dados da tabela fidelidade_parceiro_log cadastrados no portal. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxFidelidade') = 1
 create table [untreated].LinxFidelidade (
 	[integrated_or_updated_at]   datetime,
 	[doc_company]                nvarchar(14),
@@ -18,6 +20,7 @@ create table [untreated].LinxFidelidade (
 	[timestamp]                  bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxFidelidade') = 1
 create table [linxmicrovix].LinxFidelidade (
 	[integrated_or_updated_at]   datetime,
 	[doc_company]                nvarchar(14) not null,
@@ -39,6 +42,7 @@ constraint [PK_LinxFidelidade] primary key (
 
 /*LinxMovimentoReshop: movimento_campanha_reshop.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxMovimentoReshop') = 1
 create table [untreated].LinxMovimentoReshop (
 	[integrated_or_updated_at]     datetime,
 	[doc_company]                  nvarchar(14),
@@ -54,6 +58,7 @@ create table [untreated].LinxMovimentoReshop (
 	[portal]                       int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxMovimentoReshop') = 1
 create table [linxmicrovix].LinxMovimentoReshop (
 	[integrated_or_updated_at]     datetime,
 	[doc_company]                  nvarchar(14) not null,
@@ -75,6 +80,7 @@ constraint [PK_LinxMovimentoReshop] primary key (
 
 /*LinxMovimentoReshopItens: movimento_campanha_reshop_item.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxMovimentoReshopItens') = 1
 create table [untreated].LinxMovimentoReshopItens (
 	[integrated_or_updated_at]          datetime,
 	[doc_company]                       nvarchar(14),
@@ -91,6 +97,7 @@ create table [untreated].LinxMovimentoReshopItens (
 	[portal]                            int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxMovimentoReshopItens') = 1
 create table [linxmicrovix].LinxMovimentoReshopItens (
 	[integrated_or_updated_at]          datetime,
 	[doc_company]                       nvarchar(14) not null,

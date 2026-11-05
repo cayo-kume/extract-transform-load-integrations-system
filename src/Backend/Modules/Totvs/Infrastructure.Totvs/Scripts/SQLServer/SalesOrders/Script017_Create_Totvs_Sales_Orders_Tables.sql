@@ -1,6 +1,8 @@
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
 /****** Pedidos de venda: tabelas untreated e totvs (src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.2.1 e 5.2.6) ******/
 --tamanhos do swagger da API Sales Order; objetos 1:1 como colunas do pai com o nome do objeto como prefixo (5.2.8).
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsSaleOrders') = 1
 create table [untreated].TotvsSaleOrders (
 	integrated_or_updated_at             datetime,
 	doc_company                          nvarchar(14),
@@ -80,6 +82,7 @@ create table [untreated].TotvsSaleOrders (
 	shippingAddressReference             nvarchar(60)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsSaleOrders') = 1
 create table [totvs].TotvsSaleOrders (
 	integrated_or_updated_at             datetime,
 	doc_company                          nvarchar(14) not null,
@@ -163,6 +166,7 @@ constraint [PK_TotvsSaleOrders] primary key (
 	orderCode asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsSaleOrdersProducts') = 1
 create table [untreated].TotvsSaleOrdersProducts (
 	integrated_or_updated_at             datetime,
 	doc_company                          nvarchar(14),
@@ -198,6 +202,7 @@ create table [untreated].TotvsSaleOrdersProducts (
 	customerProductCode                  nvarchar(20)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsSaleOrdersProducts') = 1
 create table [totvs].TotvsSaleOrdersProducts (
 	integrated_or_updated_at             datetime,
 	doc_company                          nvarchar(14) not null,
@@ -238,6 +243,7 @@ constraint [PK_TotvsSaleOrdersProducts] primary key (
 	productCode asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsSaleOrdersProductsBatchItems') = 1
 create table [untreated].TotvsSaleOrdersProductsBatchItems (
 	integrated_or_updated_at             datetime,
 	doc_company                          nvarchar(14),
@@ -250,6 +256,7 @@ create table [untreated].TotvsSaleOrdersProductsBatchItems (
 	[quantity]                           decimal(18,6)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsSaleOrdersProductsBatchItems') = 1
 create table [totvs].TotvsSaleOrdersProductsBatchItems (
 	integrated_or_updated_at             datetime,
 	doc_company                          nvarchar(14) not null,
@@ -268,6 +275,7 @@ constraint [PK_TotvsSaleOrdersProductsBatchItems] primary key (
 	[sequence] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsSaleOrdersInvoices') = 1
 create table [untreated].TotvsSaleOrdersInvoices (
 	integrated_or_updated_at             datetime,
 	doc_company                          nvarchar(14),
@@ -300,6 +308,7 @@ create table [untreated].TotvsSaleOrdersInvoices (
 	electronicReceivementDate            datetime
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsSaleOrdersInvoices') = 1
 create table [totvs].TotvsSaleOrdersInvoices (
 	integrated_or_updated_at             datetime,
 	doc_company                          nvarchar(14) not null,
@@ -338,6 +347,7 @@ constraint [PK_TotvsSaleOrdersInvoices] primary key (
 	serial asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsSaleOrdersObservations') = 1
 create table [untreated].TotvsSaleOrdersObservations (
 	integrated_or_updated_at             datetime,
 	doc_company                          nvarchar(14),
@@ -347,6 +357,7 @@ create table [untreated].TotvsSaleOrdersObservations (
 	observation                          nvarchar(80)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsSaleOrdersObservations') = 1
 create table [totvs].TotvsSaleOrdersObservations (
 	integrated_or_updated_at             datetime,
 	doc_company                          nvarchar(14) not null,
@@ -361,6 +372,7 @@ constraint [PK_TotvsSaleOrdersObservations] primary key (
 	[sequence] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsSaleOrdersInvoiceObservations') = 1
 create table [untreated].TotvsSaleOrdersInvoiceObservations (
 	integrated_or_updated_at             datetime,
 	doc_company                          nvarchar(14),
@@ -370,6 +382,7 @@ create table [untreated].TotvsSaleOrdersInvoiceObservations (
 	observation                          nvarchar(80)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsSaleOrdersInvoiceObservations') = 1
 create table [totvs].TotvsSaleOrdersInvoiceObservations (
 	integrated_or_updated_at             datetime,
 	doc_company                          nvarchar(14) not null,
@@ -384,6 +397,7 @@ constraint [PK_TotvsSaleOrdersInvoiceObservations] primary key (
 	[sequence] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsSaleOrdersRepresentativeObservations') = 1
 create table [untreated].TotvsSaleOrdersRepresentativeObservations (
 	integrated_or_updated_at             datetime,
 	doc_company                          nvarchar(14),
@@ -394,6 +408,7 @@ create table [untreated].TotvsSaleOrdersRepresentativeObservations (
 	visualizationType                    nvarchar(30)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsSaleOrdersRepresentativeObservations') = 1
 create table [totvs].TotvsSaleOrdersRepresentativeObservations (
 	integrated_or_updated_at             datetime,
 	doc_company                          nvarchar(14) not null,
@@ -409,6 +424,7 @@ constraint [PK_TotvsSaleOrdersRepresentativeObservations] primary key (
 	[sequence] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsSaleOrdersClassifications') = 1
 create table [untreated].TotvsSaleOrdersClassifications (
 	integrated_or_updated_at             datetime,
 	doc_company                          nvarchar(14),
@@ -420,6 +436,7 @@ create table [untreated].TotvsSaleOrdersClassifications (
 	[name]                               nvarchar(40)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsSaleOrdersClassifications') = 1
 create table [totvs].TotvsSaleOrdersClassifications (
 	integrated_or_updated_at             datetime,
 	doc_company                          nvarchar(14) not null,
@@ -437,6 +454,7 @@ constraint [PK_TotvsSaleOrdersClassifications] primary key (
 	[code] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsSaleOrdersDiscounts') = 1
 create table [untreated].TotvsSaleOrdersDiscounts (
 	integrated_or_updated_at             datetime,
 	doc_company                          nvarchar(14),
@@ -448,6 +466,7 @@ create table [untreated].TotvsSaleOrdersDiscounts (
 	discountValue                        decimal(18,6)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsSaleOrdersDiscounts') = 1
 create table [totvs].TotvsSaleOrdersDiscounts (
 	integrated_or_updated_at             datetime,
 	doc_company                          nvarchar(14) not null,
@@ -464,6 +483,7 @@ constraint [PK_TotvsSaleOrdersDiscounts] primary key (
 	typeDiscountCode asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsSaleOrdersCommissioneds') = 1
 create table [untreated].TotvsSaleOrdersCommissioneds (
 	integrated_or_updated_at             datetime,
 	doc_company                          nvarchar(14),
@@ -476,6 +496,7 @@ create table [untreated].TotvsSaleOrdersCommissioneds (
 	commissionedType                     nvarchar(30)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsSaleOrdersCommissioneds') = 1
 create table [totvs].TotvsSaleOrdersCommissioneds (
 	integrated_or_updated_at             datetime,
 	doc_company                          nvarchar(14) not null,
@@ -493,6 +514,7 @@ constraint [PK_TotvsSaleOrdersCommissioneds] primary key (
 	representativeCode asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsSaleOrdersCounts') = 1
 create table [untreated].TotvsSaleOrdersCounts (
 	integrated_or_updated_at             datetime,
 	doc_company                          nvarchar(14),
@@ -508,6 +530,7 @@ create table [untreated].TotvsSaleOrdersCounts (
 	separatorName                        nvarchar(60)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsSaleOrdersCounts') = 1
 create table [totvs].TotvsSaleOrdersCounts (
 	integrated_or_updated_at             datetime,
 	doc_company                          nvarchar(14) not null,
@@ -532,15 +555,25 @@ constraint [PK_TotvsSaleOrdersCounts] primary key (
 /****** Chaves estrangeiras ******/
 --cascade só nas netas: um item que sai do pedido leva junto os itens de lote (o merge dos itens roda antes)
 
+if object_id(N'[totvs].[FK_TotvsSaleOrdersProducts]') is null and object_id(N'[totvs].TotvsSaleOrdersProducts') is not null and object_id(N'[totvs].TotvsSaleOrders') is not null
 alter table [totvs].TotvsSaleOrdersProducts add constraint [FK_TotvsSaleOrdersProducts] foreign key (doc_company, branchCode, orderCode) references [totvs].TotvsSaleOrders (doc_company, branchCode, orderCode);
+if object_id(N'[totvs].[FK_TotvsSaleOrdersProductsBatchItems]') is null and object_id(N'[totvs].TotvsSaleOrdersProductsBatchItems') is not null and object_id(N'[totvs].TotvsSaleOrdersProducts') is not null
 alter table [totvs].TotvsSaleOrdersProductsBatchItems add constraint [FK_TotvsSaleOrdersProductsBatchItems] foreign key (doc_company, branchCode, orderCode, productCode) references [totvs].TotvsSaleOrdersProducts (doc_company, branchCode, orderCode, productCode) on delete cascade;
+if object_id(N'[totvs].[FK_TotvsSaleOrdersInvoices]') is null and object_id(N'[totvs].TotvsSaleOrdersInvoices') is not null and object_id(N'[totvs].TotvsSaleOrders') is not null
 alter table [totvs].TotvsSaleOrdersInvoices add constraint [FK_TotvsSaleOrdersInvoices] foreign key (doc_company, branchCode, orderCode) references [totvs].TotvsSaleOrders (doc_company, branchCode, orderCode);
+if object_id(N'[totvs].[FK_TotvsSaleOrdersObservations]') is null and object_id(N'[totvs].TotvsSaleOrdersObservations') is not null and object_id(N'[totvs].TotvsSaleOrders') is not null
 alter table [totvs].TotvsSaleOrdersObservations add constraint [FK_TotvsSaleOrdersObservations] foreign key (doc_company, branchCode, orderCode) references [totvs].TotvsSaleOrders (doc_company, branchCode, orderCode);
+if object_id(N'[totvs].[FK_TotvsSaleOrdersInvoiceObservations]') is null and object_id(N'[totvs].TotvsSaleOrdersInvoiceObservations') is not null and object_id(N'[totvs].TotvsSaleOrders') is not null
 alter table [totvs].TotvsSaleOrdersInvoiceObservations add constraint [FK_TotvsSaleOrdersInvoiceObservations] foreign key (doc_company, branchCode, orderCode) references [totvs].TotvsSaleOrders (doc_company, branchCode, orderCode);
+if object_id(N'[totvs].[FK_TotvsSaleOrdersRepresentativeObservations]') is null and object_id(N'[totvs].TotvsSaleOrdersRepresentativeObservations') is not null and object_id(N'[totvs].TotvsSaleOrders') is not null
 alter table [totvs].TotvsSaleOrdersRepresentativeObservations add constraint [FK_TotvsSaleOrdersRepresentativeObservations] foreign key (doc_company, branchCode, orderCode) references [totvs].TotvsSaleOrders (doc_company, branchCode, orderCode);
+if object_id(N'[totvs].[FK_TotvsSaleOrdersClassifications]') is null and object_id(N'[totvs].TotvsSaleOrdersClassifications') is not null and object_id(N'[totvs].TotvsSaleOrders') is not null
 alter table [totvs].TotvsSaleOrdersClassifications add constraint [FK_TotvsSaleOrdersClassifications] foreign key (doc_company, branchCode, orderCode) references [totvs].TotvsSaleOrders (doc_company, branchCode, orderCode);
+if object_id(N'[totvs].[FK_TotvsSaleOrdersDiscounts]') is null and object_id(N'[totvs].TotvsSaleOrdersDiscounts') is not null and object_id(N'[totvs].TotvsSaleOrders') is not null
 alter table [totvs].TotvsSaleOrdersDiscounts add constraint [FK_TotvsSaleOrdersDiscounts] foreign key (doc_company, branchCode, orderCode) references [totvs].TotvsSaleOrders (doc_company, branchCode, orderCode);
+if object_id(N'[totvs].[FK_TotvsSaleOrdersCommissioneds]') is null and object_id(N'[totvs].TotvsSaleOrdersCommissioneds') is not null and object_id(N'[totvs].TotvsSaleOrders') is not null
 alter table [totvs].TotvsSaleOrdersCommissioneds add constraint [FK_TotvsSaleOrdersCommissioneds] foreign key (doc_company, branchCode, orderCode) references [totvs].TotvsSaleOrders (doc_company, branchCode, orderCode);
+if object_id(N'[totvs].[FK_TotvsSaleOrdersCounts]') is null and object_id(N'[totvs].TotvsSaleOrdersCounts') is not null and object_id(N'[totvs].TotvsSaleOrders') is not null
 alter table [totvs].TotvsSaleOrdersCounts add constraint [FK_TotvsSaleOrdersCounts] foreign key (doc_company, branchCode, orderCode) references [totvs].TotvsSaleOrders (doc_company, branchCode, orderCode);
 
 go
@@ -548,6 +581,7 @@ go
 /****** Catálogos e sugestões de faturamento da API Sales Order: tabelas untreated e totvs (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §7.1 e §7.2, fase SO-1) ******/
 --tamanhos do swagger da API Sales Order; os sem tamanho seguem as outras tabelas. Lidos pela janela de alteração (T9)
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsSaleDiscountTypes') = 1
 create table [untreated].TotvsSaleDiscountTypes (
 	integrated_or_updated_at            datetime,
 	doc_company                         nvarchar(14),
@@ -557,6 +591,7 @@ create table [untreated].TotvsSaleDiscountTypes (
 	maxChangeFilterDate                 datetime
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsSaleDiscountTypes') = 1
 create table [totvs].TotvsSaleDiscountTypes (
 	integrated_or_updated_at            datetime,
 	doc_company                         nvarchar(14) not null,
@@ -569,6 +604,7 @@ constraint [PK_TotvsSaleDiscountTypes] primary key (
 	[code] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsSaleClassifications') = 1
 create table [untreated].TotvsSaleClassifications (
 	integrated_or_updated_at            datetime,
 	doc_company                         nvarchar(14),
@@ -580,6 +616,7 @@ create table [untreated].TotvsSaleClassifications (
 	maxChangeFilterDate                 datetime
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsSaleClassifications') = 1
 create table [totvs].TotvsSaleClassifications (
 	integrated_or_updated_at            datetime,
 	doc_company                         nvarchar(14) not null,
@@ -595,6 +632,7 @@ constraint [PK_TotvsSaleClassifications] primary key (
 	[code] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsSaleOrderBatches') = 1
 create table [untreated].TotvsSaleOrderBatches (
 	integrated_or_updated_at            datetime,
 	doc_company                         nvarchar(14),
@@ -607,6 +645,7 @@ create table [untreated].TotvsSaleOrderBatches (
 	maxChangeFilterDate                 datetime
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsSaleOrderBatches') = 1
 create table [totvs].TotvsSaleOrderBatches (
 	integrated_or_updated_at            datetime,
 	doc_company                         nvarchar(14) not null,
@@ -622,6 +661,7 @@ constraint [PK_TotvsSaleOrderBatches] primary key (
 	[code] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsBillingSuggestions') = 1
 create table [untreated].TotvsBillingSuggestions (
 	integrated_or_updated_at            datetime,
 	doc_company                         nvarchar(14),
@@ -632,6 +672,7 @@ create table [untreated].TotvsBillingSuggestions (
 	maxChangeFilterDate                 datetime
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsBillingSuggestions') = 1
 create table [totvs].TotvsBillingSuggestions (
 	integrated_or_updated_at            datetime,
 	doc_company                         nvarchar(14) not null,
@@ -646,6 +687,7 @@ constraint [PK_TotvsBillingSuggestions] primary key (
 	suggestionCode asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsBillingSuggestionsOrders') = 1
 create table [untreated].TotvsBillingSuggestionsOrders (
 	integrated_or_updated_at            datetime,
 	doc_company                         nvarchar(14),
@@ -661,6 +703,7 @@ create table [untreated].TotvsBillingSuggestionsOrders (
 	pendingValue                        decimal(18,6)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsBillingSuggestionsOrders') = 1
 create table [totvs].TotvsBillingSuggestionsOrders (
 	integrated_or_updated_at            datetime,
 	doc_company                         nvarchar(14) not null,
@@ -682,6 +725,7 @@ constraint [PK_TotvsBillingSuggestionsOrders] primary key (
 	orderCode asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsBillingSuggestionsOrdersItems') = 1
 create table [untreated].TotvsBillingSuggestionsOrdersItems (
 	integrated_or_updated_at            datetime,
 	doc_company                         nvarchar(14),
@@ -700,6 +744,7 @@ create table [untreated].TotvsBillingSuggestionsOrdersItems (
 	[price]                             decimal(18,6)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsBillingSuggestionsOrdersItems') = 1
 create table [totvs].TotvsBillingSuggestionsOrdersItems (
 	integrated_or_updated_at            datetime,
 	doc_company                         nvarchar(14) not null,
@@ -726,5 +771,7 @@ constraint [PK_TotvsBillingSuggestionsOrdersItems] primary key (
 ));
 
 /****** Chaves estrangeiras ******/
+if object_id(N'[totvs].[FK_TotvsBillingSuggestionsOrders]') is null and object_id(N'[totvs].TotvsBillingSuggestionsOrders') is not null and object_id(N'[totvs].TotvsBillingSuggestions') is not null
 alter table [totvs].TotvsBillingSuggestionsOrders add constraint [FK_TotvsBillingSuggestionsOrders] foreign key (doc_company, branchCode, suggestionCode) references [totvs].TotvsBillingSuggestions (doc_company, branchCode, suggestionCode);
+if object_id(N'[totvs].[FK_TotvsBillingSuggestionsOrdersItems]') is null and object_id(N'[totvs].TotvsBillingSuggestionsOrdersItems') is not null and object_id(N'[totvs].TotvsBillingSuggestionsOrders') is not null
 alter table [totvs].TotvsBillingSuggestionsOrdersItems add constraint [FK_TotvsBillingSuggestionsOrdersItems] foreign key (doc_company, branchCode, suggestionCode, orderBranchCode, orderCode) references [totvs].TotvsBillingSuggestionsOrders (doc_company, branchCode, suggestionCode, orderBranchCode, orderCode);

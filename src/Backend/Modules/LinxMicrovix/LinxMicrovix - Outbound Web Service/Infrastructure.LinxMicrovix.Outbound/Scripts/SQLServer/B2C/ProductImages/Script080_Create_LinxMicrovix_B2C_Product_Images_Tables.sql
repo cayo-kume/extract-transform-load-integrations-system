@@ -1,8 +1,10 @@
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
 /****** Imagens de produto do B2C (LinxMicrovixB2CProductImagesService): tabelas untreated e linxmicrovix (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 5.2) ******/
 --colunas com o nome da resposta real da API (27/10/2026) e tamanhos da V64; respostas planas: uma tabela por método, sem filhas
 
 /*B2CConsultaProdutosImagens: */
 
+if dbo.fn_Migrator_Creates(N'[untreated].B2CConsultaProdutosImagens') = 1
 create table [untreated].B2CConsultaProdutosImagens (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -14,6 +16,7 @@ create table [untreated].B2CConsultaProdutosImagens (
 	[principal]                bit
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].B2CConsultaProdutosImagens') = 1
 create table [linxmicrovix].B2CConsultaProdutosImagens (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -31,6 +34,7 @@ constraint [PK_B2CConsultaProdutosImagens] primary key (
 
 /*B2CConsultaProdutosImagensURL:  Colunas da documentação: a chave da Newbloomers não tem acesso ao método. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].B2CConsultaProdutosImagensURL') = 1
 create table [untreated].B2CConsultaProdutosImagensURL (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -42,6 +46,7 @@ create table [untreated].B2CConsultaProdutosImagensURL (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].B2CConsultaProdutosImagensURL') = 1
 create table [linxmicrovix].B2CConsultaProdutosImagensURL (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -60,6 +65,7 @@ constraint [PK_B2CConsultaProdutosImagensURL] primary key (
 
 /*B2CConsultaImagens:  Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].B2CConsultaImagens') = 1
 create table [untreated].B2CConsultaImagens (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -72,6 +78,7 @@ create table [untreated].B2CConsultaImagens (
 	[url_imagem_blob]          nvarchar(1000) --fora da documentação
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].B2CConsultaImagens') = 1
 create table [linxmicrovix].B2CConsultaImagens (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -90,6 +97,7 @@ constraint [PK_B2CConsultaImagens] primary key (
 
 /*B2CConsultaImagensHD:  Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].B2CConsultaImagensHD') = 1
 create table [untreated].B2CConsultaImagensHD (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -102,6 +110,7 @@ create table [untreated].B2CConsultaImagensHD (
 	[url_imagem_blob]          nvarchar(200)
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].B2CConsultaImagensHD') = 1
 create table [linxmicrovix].B2CConsultaImagensHD (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,

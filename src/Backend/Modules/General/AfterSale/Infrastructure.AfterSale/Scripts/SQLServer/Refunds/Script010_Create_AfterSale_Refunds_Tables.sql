@@ -1,3 +1,5 @@
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
+if dbo.fn_Migrator_Creates(N'[untreated].AfterSaleRefunds') = 1
 create table [untreated].AfterSaleRefunds (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14),
@@ -58,6 +60,7 @@ create table [untreated].AfterSaleRefunds (
 	product_price_type_label nvarchar(50)
 );
 
+if dbo.fn_Migrator_Creates(N'[aftersale].AfterSaleRefunds') = 1
 create table [aftersale].AfterSaleRefunds (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
@@ -121,6 +124,7 @@ constraint [PK_AfterSaleRefunds] primary key (
 	id asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].AfterSaleRefundsCouldChangeStatusFor') = 1
 create table [untreated].AfterSaleRefundsCouldChangeStatusFor (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14),
@@ -129,6 +133,7 @@ create table [untreated].AfterSaleRefundsCouldChangeStatusFor (
 	[description] nvarchar(50)
 );
 
+if dbo.fn_Migrator_Creates(N'[aftersale].AfterSaleRefundsCouldChangeStatusFor') = 1
 create table [aftersale].AfterSaleRefundsCouldChangeStatusFor (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
@@ -141,6 +146,7 @@ constraint [PK_AfterSaleRefundsCouldChangeStatusFor] primary key (
 	id asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].AfterSaleRefundsOrdersPaymentsMethods') = 1
 create table [untreated].AfterSaleRefundsOrdersPaymentsMethods (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14),
@@ -149,6 +155,7 @@ create table [untreated].AfterSaleRefundsOrdersPaymentsMethods (
 	payment_method nvarchar(50)
 );
 
+if dbo.fn_Migrator_Creates(N'[aftersale].AfterSaleRefundsOrdersPaymentsMethods') = 1
 create table [aftersale].AfterSaleRefundsOrdersPaymentsMethods (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
@@ -161,6 +168,7 @@ constraint [PK_AfterSaleRefundsOrdersPaymentsMethods] primary key (
 	id asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].AfterSaleRefundsStatusHistories') = 1
 create table [untreated].AfterSaleRefundsStatusHistories (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14),
@@ -183,6 +191,7 @@ create table [untreated].AfterSaleRefundsStatusHistories (
 );
 
 --o mesmo status pode se repetir no histórico: a data entra na chave
+if dbo.fn_Migrator_Creates(N'[aftersale].AfterSaleRefundsStatusHistories') = 1
 create table [aftersale].AfterSaleRefundsStatusHistories (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
@@ -209,6 +218,7 @@ constraint [PK_AfterSaleRefundsStatusHistories] primary key (
 	[date] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].AfterSaleRefundsTotalAmountHistories') = 1
 create table [untreated].AfterSaleRefundsTotalAmountHistories (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14),
@@ -224,6 +234,7 @@ create table [untreated].AfterSaleRefundsTotalAmountHistories (
 	type_description nvarchar(150)
 );
 
+if dbo.fn_Migrator_Creates(N'[aftersale].AfterSaleRefundsTotalAmountHistories') = 1
 create table [aftersale].AfterSaleRefundsTotalAmountHistories (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
@@ -243,6 +254,7 @@ constraint [PK_AfterSaleRefundsTotalAmountHistories] primary key (
 	id asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].AfterSaleRefundsProducts') = 1
 create table [untreated].AfterSaleRefundsProducts (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14),
@@ -298,6 +310,7 @@ create table [untreated].AfterSaleRefundsProducts (
 	original_qty int
 );
 
+if dbo.fn_Migrator_Creates(N'[aftersale].AfterSaleRefundsProducts') = 1
 create table [aftersale].AfterSaleRefundsProducts (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
@@ -357,6 +370,7 @@ constraint [PK_AfterSaleRefundsProducts] primary key (
 	id asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].AfterSaleRefundsProductsImages') = 1
 create table [untreated].AfterSaleRefundsProductsImages (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14),
@@ -369,6 +383,7 @@ create table [untreated].AfterSaleRefundsProductsImages (
 );
 
 --refund_product_id: id do produto do reembolso dono da imagem (product_id é o código do produto vindo da API)
+if dbo.fn_Migrator_Creates(N'[aftersale].AfterSaleRefundsProductsImages') = 1
 create table [aftersale].AfterSaleRefundsProductsImages (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
@@ -385,6 +400,7 @@ constraint [PK_AfterSaleRefundsProductsImages] primary key (
 	id asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].AfterSaleRefundsProductsImagesUrls') = 1
 create table [untreated].AfterSaleRefundsProductsImagesUrls (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14),
@@ -395,6 +411,7 @@ create table [untreated].AfterSaleRefundsProductsImagesUrls (
 );
 
 --product_id: id do produto do reembolso dono da imagem
+if dbo.fn_Migrator_Creates(N'[aftersale].AfterSaleRefundsProductsImagesUrls') = 1
 create table [aftersale].AfterSaleRefundsProductsImagesUrls (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
@@ -409,14 +426,22 @@ constraint [PK_AfterSaleRefundsProductsImagesUrls] primary key (
 	id asc
 ));
 
+if object_id(N'[aftersale].[FK_AfterSaleRefundsCouldChangeStatusFor]') is null and object_id(N'[aftersale].AfterSaleRefundsCouldChangeStatusFor') is not null and object_id(N'[aftersale].AfterSaleRefunds') is not null
 alter table [aftersale].AfterSaleRefundsCouldChangeStatusFor add constraint [FK_AfterSaleRefundsCouldChangeStatusFor] foreign key (doc_company, refund_id) references [aftersale].AfterSaleRefunds (doc_company, id);
+if object_id(N'[aftersale].[FK_AfterSaleRefundsOrdersPaymentsMethods]') is null and object_id(N'[aftersale].AfterSaleRefundsOrdersPaymentsMethods') is not null and object_id(N'[aftersale].AfterSaleRefunds') is not null
 alter table [aftersale].AfterSaleRefundsOrdersPaymentsMethods add constraint [FK_AfterSaleRefundsOrdersPaymentsMethods] foreign key (doc_company, refund_id) references [aftersale].AfterSaleRefunds (doc_company, id);
+if object_id(N'[aftersale].[FK_AfterSaleRefundsStatusHistories]') is null and object_id(N'[aftersale].AfterSaleRefundsStatusHistories') is not null and object_id(N'[aftersale].AfterSaleRefunds') is not null
 alter table [aftersale].AfterSaleRefundsStatusHistories add constraint [FK_AfterSaleRefundsStatusHistories] foreign key (doc_company, refund_id) references [aftersale].AfterSaleRefunds (doc_company, id);
+if object_id(N'[aftersale].[FK_AfterSaleRefundsTotalAmountHistories]') is null and object_id(N'[aftersale].AfterSaleRefundsTotalAmountHistories') is not null and object_id(N'[aftersale].AfterSaleRefunds') is not null
 alter table [aftersale].AfterSaleRefundsTotalAmountHistories add constraint [FK_AfterSaleRefundsTotalAmountHistories] foreign key (doc_company, refund_id) references [aftersale].AfterSaleRefunds (doc_company, id);
+if object_id(N'[aftersale].[FK_AfterSaleRefundsProducts]') is null and object_id(N'[aftersale].AfterSaleRefundsProducts') is not null and object_id(N'[aftersale].AfterSaleRefunds') is not null
 alter table [aftersale].AfterSaleRefundsProducts add constraint [FK_AfterSaleRefundsProducts] foreign key (doc_company, refund_id) references [aftersale].AfterSaleRefunds (doc_company, id);
+if object_id(N'[aftersale].[FK_AfterSaleRefundsProductsImages]') is null and object_id(N'[aftersale].AfterSaleRefundsProductsImages') is not null and object_id(N'[aftersale].AfterSaleRefundsProducts') is not null
 alter table [aftersale].AfterSaleRefundsProductsImages add constraint [FK_AfterSaleRefundsProductsImages] foreign key (doc_company, refund_id, refund_product_id) references [aftersale].AfterSaleRefundsProducts (doc_company, refund_id, id);
+if object_id(N'[aftersale].[FK_AfterSaleRefundsProductsImagesUrls]') is null and object_id(N'[aftersale].AfterSaleRefundsProductsImagesUrls') is not null and object_id(N'[aftersale].AfterSaleRefundsProducts') is not null
 alter table [aftersale].AfterSaleRefundsProductsImagesUrls add constraint [FK_AfterSaleRefundsProductsImagesUrls] foreign key (doc_company, refund_id, product_id) references [aftersale].AfterSaleRefundsProducts (doc_company, refund_id, id);
 
+if dbo.fn_Migrator_Creates(N'[untreated].AfterSaleSummarizedRefunds') = 1
 create table [untreated].AfterSaleSummarizedRefunds (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14),
@@ -450,6 +475,7 @@ create table [untreated].AfterSaleSummarizedRefunds (
 	last_status_history_date datetime
 );
 
+if dbo.fn_Migrator_Creates(N'[aftersale].AfterSaleSummarizedRefunds') = 1
 create table [aftersale].AfterSaleSummarizedRefunds (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
@@ -486,6 +512,7 @@ constraint [PK_AfterSaleSummarizedRefunds] primary key (
 	id asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].AfterSaleStatusRefunds') = 1
 create table [untreated].AfterSaleStatusRefunds (
 	integrated_or_updated_at datetime,
 	id int,
@@ -494,6 +521,7 @@ create table [untreated].AfterSaleStatusRefunds (
 	[description] nvarchar(250)
 );
 
+if dbo.fn_Migrator_Creates(N'[aftersale].AfterSaleStatusRefunds') = 1
 create table [aftersale].AfterSaleStatusRefunds (
 	integrated_or_updated_at datetime,
 	id int not null,
@@ -505,6 +533,7 @@ constraint [PK_AfterSaleStatusRefunds] primary key (
 	doc_company asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].AfterSaleActionsRefunds') = 1
 create table [untreated].AfterSaleActionsRefunds (
 	integrated_or_updated_at datetime,
 	id int,
@@ -513,6 +542,7 @@ create table [untreated].AfterSaleActionsRefunds (
 	[description] nvarchar(250)
 );
 
+if dbo.fn_Migrator_Creates(N'[aftersale].AfterSaleActionsRefunds') = 1
 create table [aftersale].AfterSaleActionsRefunds (
 	integrated_or_updated_at datetime,
 	id int not null,
@@ -524,6 +554,7 @@ constraint [PK_AfterSaleActionsRefunds] primary key (
 	doc_company asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].AfterSaleBanksRefunds') = 1
 create table [untreated].AfterSaleBanksRefunds (
 	integrated_or_updated_at datetime,
 	id int,
@@ -532,6 +563,7 @@ create table [untreated].AfterSaleBanksRefunds (
 	[description] nvarchar(250)
 );
 
+if dbo.fn_Migrator_Creates(N'[aftersale].AfterSaleBanksRefunds') = 1
 create table [aftersale].AfterSaleBanksRefunds (
 	integrated_or_updated_at datetime,
 	id int not null,
@@ -543,6 +575,7 @@ constraint [PK_AfterSaleBanksRefunds] primary key (
 	doc_company asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].AfterSaleTypesRefunds') = 1
 create table [untreated].AfterSaleTypesRefunds (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14),
@@ -551,6 +584,7 @@ create table [untreated].AfterSaleTypesRefunds (
 );
 
 --a API não devolve id para os tipos de reembolso: a chave é o nome dentro da empresa
+if dbo.fn_Migrator_Creates(N'[aftersale].AfterSaleTypesRefunds') = 1
 create table [aftersale].AfterSaleTypesRefunds (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,

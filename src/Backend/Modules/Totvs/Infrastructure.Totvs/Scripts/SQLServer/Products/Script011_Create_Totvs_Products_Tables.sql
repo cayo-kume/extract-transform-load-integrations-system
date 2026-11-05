@@ -1,8 +1,10 @@
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
 /****** Produtos: tabelas untreated e totvs (src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.2.4) ******/
 --branchInfoCode (empresa base da chamada: uma por marca) entra em todas as chaves; as filhas do produto usam o código
 --do produto, único no cadastro. Tamanhos do swagger da API Product onde ele informa; senão, os do código antigo,
 --conferidos numa amostra real das duas marcas (23/10/2026).
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsSkus') = 1
 create table [untreated].TotvsSkus (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14),
@@ -26,6 +28,7 @@ create table [untreated].TotvsSkus (
 	packLength                decimal(18,4)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsSkus') = 1
 create table [totvs].TotvsSkus (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14) not null,
@@ -53,6 +56,7 @@ constraint [PK_TotvsSkus] primary key (
 	referenceId asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsSkusGrids') = 1
 create table [untreated].TotvsSkusGrids (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14),
@@ -62,6 +66,7 @@ create table [untreated].TotvsSkusGrids (
 	[grid]                    nvarchar(60)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsSkusGrids') = 1
 create table [totvs].TotvsSkusGrids (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14) not null,
@@ -76,6 +81,7 @@ constraint [PK_TotvsSkusGrids] primary key (
 	[sequence] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsSkusObservations') = 1
 create table [untreated].TotvsSkusObservations (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14),
@@ -85,6 +91,7 @@ create table [untreated].TotvsSkusObservations (
 	observation               nvarchar(max)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsSkusObservations') = 1
 create table [totvs].TotvsSkusObservations (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14) not null,
@@ -99,6 +106,7 @@ constraint [PK_TotvsSkusObservations] primary key (
 	[sequence] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsSkusDetails') = 1
 create table [untreated].TotvsSkusDetails (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14),
@@ -112,6 +120,7 @@ create table [untreated].TotvsSkusDetails (
 	[description]             nvarchar(max)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsSkusDetails') = 1
 create table [totvs].TotvsSkusDetails (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14) not null,
@@ -130,6 +139,7 @@ constraint [PK_TotvsSkusDetails] primary key (
 	[sequence] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsSkusCompositions') = 1
 create table [untreated].TotvsSkusCompositions (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14),
@@ -140,6 +150,7 @@ create table [untreated].TotvsSkusCompositions (
 	percentage                decimal(18,4)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsSkusCompositions') = 1
 create table [totvs].TotvsSkusCompositions (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14) not null,
@@ -155,6 +166,7 @@ constraint [PK_TotvsSkusCompositions] primary key (
 	[sequence] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsSkusReferenceCategories') = 1
 create table [untreated].TotvsSkusReferenceCategories (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14),
@@ -165,6 +177,7 @@ create table [untreated].TotvsSkusReferenceCategories (
 	[type]                    nvarchar(20)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsSkusReferenceCategories') = 1
 create table [totvs].TotvsSkusReferenceCategories (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14) not null,
@@ -180,6 +193,7 @@ constraint [PK_TotvsSkusReferenceCategories] primary key (
 	[code] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsSkusIntegrationGroupCodes') = 1
 create table [untreated].TotvsSkusIntegrationGroupCodes (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14),
@@ -188,6 +202,7 @@ create table [untreated].TotvsSkusIntegrationGroupCodes (
 	[code]                    int
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsSkusIntegrationGroupCodes') = 1
 create table [totvs].TotvsSkusIntegrationGroupCodes (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14) not null,
@@ -201,6 +216,7 @@ constraint [PK_TotvsSkusIntegrationGroupCodes] primary key (
 	[code] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsSkusColors') = 1
 create table [untreated].TotvsSkusColors (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14),
@@ -215,6 +231,7 @@ create table [untreated].TotvsSkusColors (
 	configurableField         nvarchar(60)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsSkusColors') = 1
 create table [totvs].TotvsSkusColors (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14) not null,
@@ -234,6 +251,7 @@ constraint [PK_TotvsSkusColors] primary key (
 	colorCode asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsSkusColorsMeasurementsTableOmni') = 1
 create table [untreated].TotvsSkusColorsMeasurementsTableOmni (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14),
@@ -244,6 +262,7 @@ create table [untreated].TotvsSkusColorsMeasurementsTableOmni (
 	tamanho                   nvarchar(60)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsSkusColorsMeasurementsTableOmni') = 1
 create table [totvs].TotvsSkusColorsMeasurementsTableOmni (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14) not null,
@@ -260,6 +279,7 @@ constraint [PK_TotvsSkusColorsMeasurementsTableOmni] primary key (
 	sku asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsSkusColorsMeasurementsTableOmniMedidas') = 1
 create table [untreated].TotvsSkusColorsMeasurementsTableOmniMedidas (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14),
@@ -271,6 +291,7 @@ create table [untreated].TotvsSkusColorsMeasurementsTableOmniMedidas (
 	[valor]                   nvarchar(60)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsSkusColorsMeasurementsTableOmniMedidas') = 1
 create table [totvs].TotvsSkusColorsMeasurementsTableOmniMedidas (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14) not null,
@@ -289,6 +310,7 @@ constraint [PK_TotvsSkusColorsMeasurementsTableOmniMedidas] primary key (
 	[chave] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsSkusColorsProducts') = 1
 create table [untreated].TotvsSkusColorsProducts (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14),
@@ -324,6 +346,7 @@ create table [untreated].TotvsSkusColorsProducts (
 	balanceValidationType     nvarchar(60)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsSkusColorsProducts') = 1
 create table [totvs].TotvsSkusColorsProducts (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14) not null,
@@ -363,6 +386,7 @@ constraint [PK_TotvsSkusColorsProducts] primary key (
 	[code] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsProductsBarCodes') = 1
 create table [untreated].TotvsProductsBarCodes (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14),
@@ -373,6 +397,7 @@ create table [untreated].TotvsProductsBarCodes (
 	isMainCode                bit
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsProductsBarCodes') = 1
 create table [totvs].TotvsProductsBarCodes (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14) not null,
@@ -388,6 +413,7 @@ constraint [PK_TotvsProductsBarCodes] primary key (
 	[code] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsProductsClassifications') = 1
 create table [untreated].TotvsProductsClassifications (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14),
@@ -401,6 +427,7 @@ create table [untreated].TotvsProductsClassifications (
 	nameAux                   nvarchar(60)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsProductsClassifications') = 1
 create table [totvs].TotvsProductsClassifications (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14) not null,
@@ -419,6 +446,7 @@ constraint [PK_TotvsProductsClassifications] primary key (
 	typeCode asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsProductsAdditionalFields') = 1
 create table [untreated].TotvsProductsAdditionalFields (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14),
@@ -430,6 +458,7 @@ create table [untreated].TotvsProductsAdditionalFields (
 	[value]                   nvarchar(max)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsProductsAdditionalFields') = 1
 create table [totvs].TotvsProductsAdditionalFields (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14) not null,
@@ -446,6 +475,7 @@ constraint [PK_TotvsProductsAdditionalFields] primary key (
 	[code] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsProductsSuppliers') = 1
 create table [untreated].TotvsProductsSuppliers (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14),
@@ -458,6 +488,7 @@ create table [untreated].TotvsProductsSuppliers (
 	isDefault                 bit
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsProductsSuppliers') = 1
 create table [totvs].TotvsProductsSuppliers (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14) not null,
@@ -475,6 +506,7 @@ constraint [PK_TotvsProductsSuppliers] primary key (
 	[code] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsProductsManufacturers') = 1
 create table [untreated].TotvsProductsManufacturers (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14),
@@ -485,6 +517,7 @@ create table [untreated].TotvsProductsManufacturers (
 	[name]                    nvarchar(250)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsProductsManufacturers') = 1
 create table [totvs].TotvsProductsManufacturers (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14) not null,
@@ -500,6 +533,7 @@ constraint [PK_TotvsProductsManufacturers] primary key (
 	[code] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsProductsReferenceCodeSequences') = 1
 create table [untreated].TotvsProductsReferenceCodeSequences (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14),
@@ -511,6 +545,7 @@ create table [untreated].TotvsProductsReferenceCodeSequences (
 	[name]                    nvarchar(250)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsProductsReferenceCodeSequences') = 1
 create table [totvs].TotvsProductsReferenceCodeSequences (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14) not null,
@@ -528,6 +563,7 @@ constraint [PK_TotvsProductsReferenceCodeSequences] primary key (
 	parentCode asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsProductsWebData') = 1
 create table [untreated].TotvsProductsWebData (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14),
@@ -555,6 +591,7 @@ create table [untreated].TotvsProductsWebData (
 	bonusQuantity             int
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsProductsWebData') = 1
 create table [totvs].TotvsProductsWebData (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14) not null,
@@ -587,6 +624,7 @@ constraint [PK_TotvsProductsWebData] primary key (
 	[index] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsProductsWebDetails') = 1
 create table [untreated].TotvsProductsWebDetails (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14),
@@ -598,6 +636,7 @@ create table [untreated].TotvsProductsWebDetails (
 	[description]             nvarchar(max)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsProductsWebDetails') = 1
 create table [totvs].TotvsProductsWebDetails (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14) not null,
@@ -614,6 +653,7 @@ constraint [PK_TotvsProductsWebDetails] primary key (
 	descriptionType asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsProductsBranchesBlocked') = 1
 create table [untreated].TotvsProductsBranchesBlocked (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14),
@@ -623,6 +663,7 @@ create table [untreated].TotvsProductsBranchesBlocked (
 	isBlocked                 bit
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsProductsBranchesBlocked') = 1
 create table [totvs].TotvsProductsBranchesBlocked (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14) not null,
@@ -637,6 +678,7 @@ constraint [PK_TotvsProductsBranchesBlocked] primary key (
 	branchCode asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsProductsConservationInstructions') = 1
 create table [untreated].TotvsProductsConservationInstructions (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14),
@@ -648,6 +690,7 @@ create table [untreated].TotvsProductsConservationInstructions (
 	grouperCode               int
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsProductsConservationInstructions') = 1
 create table [totvs].TotvsProductsConservationInstructions (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14) not null,
@@ -664,6 +707,7 @@ constraint [PK_TotvsProductsConservationInstructions] primary key (
 	[code] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsProductsConservationInstructionsItems') = 1
 create table [untreated].TotvsProductsConservationInstructionsItems (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14),
@@ -674,6 +718,7 @@ create table [untreated].TotvsProductsConservationInstructionsItems (
 	[item]                    int
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsProductsConservationInstructionsItems') = 1
 create table [totvs].TotvsProductsConservationInstructionsItems (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14) not null,
@@ -695,26 +740,47 @@ constraint [PK_TotvsProductsConservationInstructionsItems] primary key (
 --antes do merge dos produtos (sem cascade a FK impediria apagar a cor). As filhas diretas da referência não precisam:
 --a referência nunca é apagada por este fluxo.
 
+if object_id(N'[totvs].[FK_TotvsSkusGrids]') is null and object_id(N'[totvs].TotvsSkusGrids') is not null and object_id(N'[totvs].TotvsSkus') is not null
 alter table [totvs].TotvsSkusGrids add constraint [FK_TotvsSkusGrids] foreign key (doc_company, branchInfoCode, referenceId) references [totvs].TotvsSkus (doc_company, branchInfoCode, referenceId);
+if object_id(N'[totvs].[FK_TotvsSkusObservations]') is null and object_id(N'[totvs].TotvsSkusObservations') is not null and object_id(N'[totvs].TotvsSkus') is not null
 alter table [totvs].TotvsSkusObservations add constraint [FK_TotvsSkusObservations] foreign key (doc_company, branchInfoCode, referenceId) references [totvs].TotvsSkus (doc_company, branchInfoCode, referenceId);
+if object_id(N'[totvs].[FK_TotvsSkusDetails]') is null and object_id(N'[totvs].TotvsSkusDetails') is not null and object_id(N'[totvs].TotvsSkus') is not null
 alter table [totvs].TotvsSkusDetails add constraint [FK_TotvsSkusDetails] foreign key (doc_company, branchInfoCode, referenceId) references [totvs].TotvsSkus (doc_company, branchInfoCode, referenceId);
+if object_id(N'[totvs].[FK_TotvsSkusCompositions]') is null and object_id(N'[totvs].TotvsSkusCompositions') is not null and object_id(N'[totvs].TotvsSkus') is not null
 alter table [totvs].TotvsSkusCompositions add constraint [FK_TotvsSkusCompositions] foreign key (doc_company, branchInfoCode, referenceId) references [totvs].TotvsSkus (doc_company, branchInfoCode, referenceId);
+if object_id(N'[totvs].[FK_TotvsSkusReferenceCategories]') is null and object_id(N'[totvs].TotvsSkusReferenceCategories') is not null and object_id(N'[totvs].TotvsSkus') is not null
 alter table [totvs].TotvsSkusReferenceCategories add constraint [FK_TotvsSkusReferenceCategories] foreign key (doc_company, branchInfoCode, referenceId) references [totvs].TotvsSkus (doc_company, branchInfoCode, referenceId);
+if object_id(N'[totvs].[FK_TotvsSkusIntegrationGroupCodes]') is null and object_id(N'[totvs].TotvsSkusIntegrationGroupCodes') is not null and object_id(N'[totvs].TotvsSkus') is not null
 alter table [totvs].TotvsSkusIntegrationGroupCodes add constraint [FK_TotvsSkusIntegrationGroupCodes] foreign key (doc_company, branchInfoCode, referenceId) references [totvs].TotvsSkus (doc_company, branchInfoCode, referenceId);
+if object_id(N'[totvs].[FK_TotvsSkusColors]') is null and object_id(N'[totvs].TotvsSkusColors') is not null and object_id(N'[totvs].TotvsSkus') is not null
 alter table [totvs].TotvsSkusColors add constraint [FK_TotvsSkusColors] foreign key (doc_company, branchInfoCode, referenceId) references [totvs].TotvsSkus (doc_company, branchInfoCode, referenceId);
+if object_id(N'[totvs].[FK_TotvsSkusColorsMeasurementsTableOmni]') is null and object_id(N'[totvs].TotvsSkusColorsMeasurementsTableOmni') is not null and object_id(N'[totvs].TotvsSkusColors') is not null
 alter table [totvs].TotvsSkusColorsMeasurementsTableOmni add constraint [FK_TotvsSkusColorsMeasurementsTableOmni] foreign key (doc_company, branchInfoCode, referenceId, colorCode) references [totvs].TotvsSkusColors (doc_company, branchInfoCode, referenceId, colorCode) on delete cascade;
+if object_id(N'[totvs].[FK_TotvsSkusColorsMeasurementsTableOmniMedidas]') is null and object_id(N'[totvs].TotvsSkusColorsMeasurementsTableOmniMedidas') is not null and object_id(N'[totvs].TotvsSkusColorsMeasurementsTableOmni') is not null
 alter table [totvs].TotvsSkusColorsMeasurementsTableOmniMedidas add constraint [FK_TotvsSkusColorsMeasurementsTableOmniMedidas] foreign key (doc_company, branchInfoCode, referenceId, colorCode, sku) references [totvs].TotvsSkusColorsMeasurementsTableOmni (doc_company, branchInfoCode, referenceId, colorCode, sku) on delete cascade;
+if object_id(N'[totvs].[FK_TotvsSkusColorsProducts]') is null and object_id(N'[totvs].TotvsSkusColorsProducts') is not null and object_id(N'[totvs].TotvsSkusColors') is not null
 alter table [totvs].TotvsSkusColorsProducts add constraint [FK_TotvsSkusColorsProducts] foreign key (doc_company, branchInfoCode, referenceId, colorCode) references [totvs].TotvsSkusColors (doc_company, branchInfoCode, referenceId, colorCode) on delete cascade;
+if object_id(N'[totvs].[FK_TotvsProductsBarCodes]') is null and object_id(N'[totvs].TotvsProductsBarCodes') is not null and object_id(N'[totvs].TotvsSkusColorsProducts') is not null
 alter table [totvs].TotvsProductsBarCodes add constraint [FK_TotvsProductsBarCodes] foreign key (doc_company, branchInfoCode, productCode) references [totvs].TotvsSkusColorsProducts (doc_company, branchInfoCode, [code]) on delete cascade;
+if object_id(N'[totvs].[FK_TotvsProductsClassifications]') is null and object_id(N'[totvs].TotvsProductsClassifications') is not null and object_id(N'[totvs].TotvsSkusColorsProducts') is not null
 alter table [totvs].TotvsProductsClassifications add constraint [FK_TotvsProductsClassifications] foreign key (doc_company, branchInfoCode, productCode) references [totvs].TotvsSkusColorsProducts (doc_company, branchInfoCode, [code]) on delete cascade;
+if object_id(N'[totvs].[FK_TotvsProductsAdditionalFields]') is null and object_id(N'[totvs].TotvsProductsAdditionalFields') is not null and object_id(N'[totvs].TotvsSkusColorsProducts') is not null
 alter table [totvs].TotvsProductsAdditionalFields add constraint [FK_TotvsProductsAdditionalFields] foreign key (doc_company, branchInfoCode, productCode) references [totvs].TotvsSkusColorsProducts (doc_company, branchInfoCode, [code]) on delete cascade;
+if object_id(N'[totvs].[FK_TotvsProductsSuppliers]') is null and object_id(N'[totvs].TotvsProductsSuppliers') is not null and object_id(N'[totvs].TotvsSkusColorsProducts') is not null
 alter table [totvs].TotvsProductsSuppliers add constraint [FK_TotvsProductsSuppliers] foreign key (doc_company, branchInfoCode, productCode) references [totvs].TotvsSkusColorsProducts (doc_company, branchInfoCode, [code]) on delete cascade;
+if object_id(N'[totvs].[FK_TotvsProductsManufacturers]') is null and object_id(N'[totvs].TotvsProductsManufacturers') is not null and object_id(N'[totvs].TotvsSkusColorsProducts') is not null
 alter table [totvs].TotvsProductsManufacturers add constraint [FK_TotvsProductsManufacturers] foreign key (doc_company, branchInfoCode, productCode) references [totvs].TotvsSkusColorsProducts (doc_company, branchInfoCode, [code]) on delete cascade;
+if object_id(N'[totvs].[FK_TotvsProductsReferenceCodeSequences]') is null and object_id(N'[totvs].TotvsProductsReferenceCodeSequences') is not null and object_id(N'[totvs].TotvsSkusColorsProducts') is not null
 alter table [totvs].TotvsProductsReferenceCodeSequences add constraint [FK_TotvsProductsReferenceCodeSequences] foreign key (doc_company, branchInfoCode, productCode) references [totvs].TotvsSkusColorsProducts (doc_company, branchInfoCode, [code]) on delete cascade;
+if object_id(N'[totvs].[FK_TotvsProductsWebData]') is null and object_id(N'[totvs].TotvsProductsWebData') is not null and object_id(N'[totvs].TotvsSkusColorsProducts') is not null
 alter table [totvs].TotvsProductsWebData add constraint [FK_TotvsProductsWebData] foreign key (doc_company, branchInfoCode, productCode) references [totvs].TotvsSkusColorsProducts (doc_company, branchInfoCode, [code]) on delete cascade;
+if object_id(N'[totvs].[FK_TotvsProductsWebDetails]') is null and object_id(N'[totvs].TotvsProductsWebDetails') is not null and object_id(N'[totvs].TotvsSkusColorsProducts') is not null
 alter table [totvs].TotvsProductsWebDetails add constraint [FK_TotvsProductsWebDetails] foreign key (doc_company, branchInfoCode, productCode) references [totvs].TotvsSkusColorsProducts (doc_company, branchInfoCode, [code]) on delete cascade;
+if object_id(N'[totvs].[FK_TotvsProductsBranchesBlocked]') is null and object_id(N'[totvs].TotvsProductsBranchesBlocked') is not null and object_id(N'[totvs].TotvsSkusColorsProducts') is not null
 alter table [totvs].TotvsProductsBranchesBlocked add constraint [FK_TotvsProductsBranchesBlocked] foreign key (doc_company, branchInfoCode, productCode) references [totvs].TotvsSkusColorsProducts (doc_company, branchInfoCode, [code]) on delete cascade;
+if object_id(N'[totvs].[FK_TotvsProductsConservationInstructions]') is null and object_id(N'[totvs].TotvsProductsConservationInstructions') is not null and object_id(N'[totvs].TotvsSkusColorsProducts') is not null
 alter table [totvs].TotvsProductsConservationInstructions add constraint [FK_TotvsProductsConservationInstructions] foreign key (doc_company, branchInfoCode, productCode) references [totvs].TotvsSkusColorsProducts (doc_company, branchInfoCode, [code]) on delete cascade;
+if object_id(N'[totvs].[FK_TotvsProductsConservationInstructionsItems]') is null and object_id(N'[totvs].TotvsProductsConservationInstructionsItems') is not null and object_id(N'[totvs].TotvsProductsConservationInstructions') is not null
 alter table [totvs].TotvsProductsConservationInstructionsItems add constraint [FK_TotvsProductsConservationInstructionsItems] foreign key (doc_company, branchInfoCode, productCode, instructionCode) references [totvs].TotvsProductsConservationInstructions (doc_company, branchInfoCode, productCode, [code]) on delete cascade;
 
 go
@@ -723,6 +789,7 @@ go
 --uma linha por loja + produto + código (todos os códigos de preço, custo e saldo do cadastro). branchCode vem antes do produto
 --na chave: a janela, a carga inicial e o cache de estado consultam por loja. Os dados do produto já estão em TotvsSkus.
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsBalances') = 1
 create table [untreated].TotvsBalances (
 	integrated_or_updated_at            datetime,
 	doc_company                         nvarchar(14),
@@ -742,6 +809,7 @@ create table [untreated].TotvsBalances (
 	maxChangeFilterDate                 datetime
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsBalances') = 1
 create table [totvs].TotvsBalances (
 	integrated_or_updated_at            datetime,
 	doc_company                         nvarchar(14) not null,
@@ -766,6 +834,7 @@ constraint [PK_TotvsBalances] primary key (
 	stockCode asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsBalancesLocations') = 1
 create table [untreated].TotvsBalancesLocations (
 	integrated_or_updated_at            datetime,
 	doc_company                         nvarchar(14),
@@ -775,6 +844,7 @@ create table [untreated].TotvsBalancesLocations (
 	[description]                       nvarchar(60)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsBalancesLocations') = 1
 create table [totvs].TotvsBalancesLocations (
 	integrated_or_updated_at            datetime,
 	doc_company                         nvarchar(14) not null,
@@ -797,6 +867,7 @@ go
 --sem data de alteração útil nas respostas: comparados pelo json_hash (T9). Os similares guardam em changeWindowEnd o fim da
 --janela que os trouxe, de onde a próxima leitura começa; os lotes são lidos inteiros
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsProductsSimilar') = 1
 create table [untreated].TotvsProductsSimilar (
 	integrated_or_updated_at            datetime,
 	doc_company                         nvarchar(14),
@@ -806,6 +877,7 @@ create table [untreated].TotvsProductsSimilar (
 	json_hash                           nvarchar(64)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsProductsSimilar') = 1
 create table [totvs].TotvsProductsSimilar (
 	integrated_or_updated_at            datetime,
 	doc_company                         nvarchar(14) not null,
@@ -818,6 +890,7 @@ constraint [PK_TotvsProductsSimilar] primary key (
 	productCode asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsProductsSimilarItems') = 1
 create table [untreated].TotvsProductsSimilarItems (
 	integrated_or_updated_at            datetime,
 	doc_company                         nvarchar(14),
@@ -826,6 +899,7 @@ create table [untreated].TotvsProductsSimilarItems (
 	similarProductCode                  int
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsProductsSimilarItems') = 1
 create table [totvs].TotvsProductsSimilarItems (
 	integrated_or_updated_at            datetime,
 	doc_company                         nvarchar(14) not null,
@@ -839,6 +913,7 @@ constraint [PK_TotvsProductsSimilarItems] primary key (
 	similarProductCode asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsBatches') = 1
 create table [untreated].TotvsBatches (
 	integrated_or_updated_at            datetime,
 	doc_company                         nvarchar(14),
@@ -853,6 +928,7 @@ create table [untreated].TotvsBatches (
 	json_hash                           nvarchar(64)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsBatches') = 1
 create table [totvs].TotvsBatches (
 	integrated_or_updated_at            datetime,
 	doc_company                         nvarchar(14) not null,
@@ -872,6 +948,7 @@ constraint [PK_TotvsBatches] primary key (
 	productCode asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsBatchesItems') = 1
 create table [untreated].TotvsBatchesItems (
 	integrated_or_updated_at            datetime,
 	doc_company                         nvarchar(14),
@@ -895,6 +972,7 @@ create table [untreated].TotvsBatchesItems (
 	nuance                              nvarchar(20)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsBatchesItems') = 1
 create table [totvs].TotvsBatchesItems (
 	integrated_or_updated_at            datetime,
 	doc_company                         nvarchar(14) not null,
@@ -924,6 +1002,7 @@ constraint [PK_TotvsBatchesItems] primary key (
 	batchItemSequential asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsBatchesItemsAdditionalFields') = 1
 create table [untreated].TotvsBatchesItemsAdditionalFields (
 	integrated_or_updated_at            datetime,
 	doc_company                         nvarchar(14),
@@ -936,6 +1015,7 @@ create table [untreated].TotvsBatchesItemsAdditionalFields (
 	[value]                             nvarchar(250)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsBatchesItemsAdditionalFields') = 1
 create table [totvs].TotvsBatchesItemsAdditionalFields (
 	integrated_or_updated_at            datetime,
 	doc_company                         nvarchar(14) not null,
@@ -956,6 +1036,9 @@ constraint [PK_TotvsBatchesItemsAdditionalFields] primary key (
 ));
 
 /****** Chaves estrangeiras ******/
+if object_id(N'[totvs].[FK_TotvsProductsSimilarItems]') is null and object_id(N'[totvs].TotvsProductsSimilarItems') is not null and object_id(N'[totvs].TotvsProductsSimilar') is not null
 alter table [totvs].TotvsProductsSimilarItems add constraint [FK_TotvsProductsSimilarItems] foreign key (doc_company, productCode) references [totvs].TotvsProductsSimilar (doc_company, productCode);
+if object_id(N'[totvs].[FK_TotvsBatchesItems]') is null and object_id(N'[totvs].TotvsBatchesItems') is not null and object_id(N'[totvs].TotvsBatches') is not null
 alter table [totvs].TotvsBatchesItems add constraint [FK_TotvsBatchesItems] foreign key (doc_company, branchCode, batchCode, productCode) references [totvs].TotvsBatches (doc_company, branchCode, batchCode, productCode);
+if object_id(N'[totvs].[FK_TotvsBatchesItemsAdditionalFields]') is null and object_id(N'[totvs].TotvsBatchesItemsAdditionalFields') is not null and object_id(N'[totvs].TotvsBatchesItems') is not null
 alter table [totvs].TotvsBatchesItemsAdditionalFields add constraint [FK_TotvsBatchesItemsAdditionalFields] foreign key (doc_company, branchCode, batchCode, productCode, batchItemSequential) references [totvs].TotvsBatchesItems (doc_company, branchCode, batchCode, productCode, batchItemSequential);

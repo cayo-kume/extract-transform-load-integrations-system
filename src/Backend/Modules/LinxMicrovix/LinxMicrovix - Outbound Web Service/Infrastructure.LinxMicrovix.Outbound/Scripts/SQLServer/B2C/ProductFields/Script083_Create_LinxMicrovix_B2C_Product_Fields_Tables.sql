@@ -1,8 +1,10 @@
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
 /****** Campos adicionais de produto do B2C (LinxMicrovixB2CProductFieldsService): tabelas untreated e linxmicrovix (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 5.2) ******/
 --colunas com o nome da resposta real da API (27/10/2026) e tamanhos da V64; respostas planas: uma tabela por método, sem filhas
 
 /*B2CConsultaProdutosCamposAdicionaisDetalhes: */
 
+if dbo.fn_Migrator_Creates(N'[untreated].B2CConsultaProdutosCamposAdicionaisDetalhes') = 1
 create table [untreated].B2CConsultaProdutosCamposAdicionaisDetalhes (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -15,6 +17,7 @@ create table [untreated].B2CConsultaProdutosCamposAdicionaisDetalhes (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].B2CConsultaProdutosCamposAdicionaisDetalhes') = 1
 create table [linxmicrovix].B2CConsultaProdutosCamposAdicionaisDetalhes (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -33,6 +36,7 @@ constraint [PK_B2CConsultaProdutosCamposAdicionaisDetalhes] primary key (
 
 /*B2CConsultaProdutosCamposAdicionaisNomes:  Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].B2CConsultaProdutosCamposAdicionaisNomes') = 1
 create table [untreated].B2CConsultaProdutosCamposAdicionaisNomes (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -44,6 +48,7 @@ create table [untreated].B2CConsultaProdutosCamposAdicionaisNomes (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].B2CConsultaProdutosCamposAdicionaisNomes') = 1
 create table [linxmicrovix].B2CConsultaProdutosCamposAdicionaisNomes (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -61,6 +66,7 @@ constraint [PK_B2CConsultaProdutosCamposAdicionaisNomes] primary key (
 
 /*B2CConsultaProdutosCamposAdicionaisValores: */
 
+if dbo.fn_Migrator_Creates(N'[untreated].B2CConsultaProdutosCamposAdicionaisValores') = 1
 create table [untreated].B2CConsultaProdutosCamposAdicionaisValores (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -71,6 +77,7 @@ create table [untreated].B2CConsultaProdutosCamposAdicionaisValores (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].B2CConsultaProdutosCamposAdicionaisValores') = 1
 create table [linxmicrovix].B2CConsultaProdutosCamposAdicionaisValores (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -88,6 +95,7 @@ constraint [PK_B2CConsultaProdutosCamposAdicionaisValores] primary key (
 
 /*B2CConsultaB2CProdutosCamposAdicionais:  Colunas da documentação: a chave da Newbloomers não tem acesso ao método. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].B2CConsultaB2CProdutosCamposAdicionais') = 1
 create table [untreated].B2CConsultaB2CProdutosCamposAdicionais (
 	[integrated_or_updated_at]          datetime,
 	[doc_company]                       nvarchar(14),
@@ -105,6 +113,7 @@ create table [untreated].B2CConsultaB2CProdutosCamposAdicionais (
 	[portal]                            int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].B2CConsultaB2CProdutosCamposAdicionais') = 1
 create table [linxmicrovix].B2CConsultaB2CProdutosCamposAdicionais (
 	[integrated_or_updated_at]          datetime,
 	[doc_company]                       nvarchar(14) not null,
@@ -128,6 +137,7 @@ constraint [PK_B2CConsultaB2CProdutosCamposAdicionais] primary key (
 
 /*B2CConsultaB2CProdutosCamposAdicionaisDados:  Colunas da documentação: a chave da Newbloomers não tem acesso ao método. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].B2CConsultaB2CProdutosCamposAdicionaisDados') = 1
 create table [untreated].B2CConsultaB2CProdutosCamposAdicionaisDados (
 	[integrated_or_updated_at]                 datetime,
 	[doc_company]                              nvarchar(14),
@@ -141,6 +151,7 @@ create table [untreated].B2CConsultaB2CProdutosCamposAdicionaisDados (
 	[portal]                                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].B2CConsultaB2CProdutosCamposAdicionaisDados') = 1
 create table [linxmicrovix].B2CConsultaB2CProdutosCamposAdicionaisDados (
 	[integrated_or_updated_at]                 datetime,
 	[doc_company]                              nvarchar(14) not null,
@@ -160,6 +171,7 @@ constraint [PK_B2CConsultaB2CProdutosCamposAdicionaisDados] primary key (
 
 /*B2CConsultaB2CProdutosCamposAdicionaisMedia:  Colunas da documentação: a chave da Newbloomers não tem acesso ao método. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].B2CConsultaB2CProdutosCamposAdicionaisMedia') = 1
 create table [untreated].B2CConsultaB2CProdutosCamposAdicionaisMedia (
 	[integrated_or_updated_at]                datetime,
 	[doc_company]                             nvarchar(14),
@@ -174,6 +186,7 @@ create table [untreated].B2CConsultaB2CProdutosCamposAdicionaisMedia (
 	[timestamp]                               bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].B2CConsultaB2CProdutosCamposAdicionaisMedia') = 1
 create table [linxmicrovix].B2CConsultaB2CProdutosCamposAdicionaisMedia (
 	[integrated_or_updated_at]                datetime,
 	[doc_company]                             nvarchar(14) not null,
@@ -194,6 +207,7 @@ constraint [PK_B2CConsultaB2CProdutosCamposAdicionaisMedia] primary key (
 
 /*B2CConsultaB2CProdutosCamposAdicionaisMediaDados:  Colunas da documentação: a chave da Newbloomers não tem acesso ao método. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].B2CConsultaB2CProdutosCamposAdicionaisMediaDados') = 1
 create table [untreated].B2CConsultaB2CProdutosCamposAdicionaisMediaDados (
 	[integrated_or_updated_at]                      datetime,
 	[doc_company]                                   nvarchar(14),
@@ -205,6 +219,7 @@ create table [untreated].B2CConsultaB2CProdutosCamposAdicionaisMediaDados (
 	[portal]                                        int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].B2CConsultaB2CProdutosCamposAdicionaisMediaDados') = 1
 create table [linxmicrovix].B2CConsultaB2CProdutosCamposAdicionaisMediaDados (
 	[integrated_or_updated_at]                      datetime,
 	[doc_company]                                   nvarchar(14) not null,
@@ -222,6 +237,7 @@ constraint [PK_B2CConsultaB2CProdutosCamposAdicionaisMediaDados] primary key (
 
 /*B2CConsultaB2CProdutosCamposAdicionaisOpcoes:  Colunas da documentação: a chave da Newbloomers não tem acesso ao método. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].B2CConsultaB2CProdutosCamposAdicionaisOpcoes') = 1
 create table [untreated].B2CConsultaB2CProdutosCamposAdicionaisOpcoes (
 	[integrated_or_updated_at]                 datetime,
 	[doc_company]                              nvarchar(14),
@@ -236,6 +252,7 @@ create table [untreated].B2CConsultaB2CProdutosCamposAdicionaisOpcoes (
 	[portal]                                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].B2CConsultaB2CProdutosCamposAdicionaisOpcoes') = 1
 create table [linxmicrovix].B2CConsultaB2CProdutosCamposAdicionaisOpcoes (
 	[integrated_or_updated_at]                 datetime,
 	[doc_company]                              nvarchar(14) not null,

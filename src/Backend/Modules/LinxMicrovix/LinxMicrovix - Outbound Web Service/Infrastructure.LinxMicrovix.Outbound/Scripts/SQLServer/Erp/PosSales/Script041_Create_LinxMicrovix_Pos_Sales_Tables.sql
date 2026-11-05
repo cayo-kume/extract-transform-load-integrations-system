@@ -1,8 +1,10 @@
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
 /****** Vendas POS temporárias (LinxMicrovixPosSalesService): tabelas untreated e linxmicrovix (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 5.2) ******/
 --colunas com o nome da resposta real da API (27/10/2026) e tamanhos da v274; respostas planas: uma tabela por método, sem filhas
 
 /*LinxVendasPosTmp: os registros da tabela vendas_pos_tmp*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxVendasPosTmp') = 1
 create table [untreated].LinxVendasPosTmp (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -22,6 +24,7 @@ create table [untreated].LinxVendasPosTmp (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxVendasPosTmp') = 1
 create table [linxmicrovix].LinxVendasPosTmp (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -47,6 +50,7 @@ constraint [PK_LinxVendasPosTmp] primary key (
 
 /*LinxVendasPosProdutosTmp: os registros da tabela vendas_pos_produtos_tmp.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxVendasPosProdutosTmp') = 1
 create table [untreated].LinxVendasPosProdutosTmp (
 	[integrated_or_updated_at]    datetime,
 	[doc_company]                 nvarchar(14),
@@ -93,6 +97,7 @@ create table [untreated].LinxVendasPosProdutosTmp (
 	[timestamp]                   bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxVendasPosProdutosTmp') = 1
 create table [linxmicrovix].LinxVendasPosProdutosTmp (
 	[integrated_or_updated_at]    datetime,
 	[doc_company]                 nvarchar(14) not null,
@@ -145,6 +150,7 @@ constraint [PK_LinxVendasPosProdutosTmp] primary key (
 
 /*LinxVendasPosAgrupamentoTmp: os registros da tabela vendas_pos_agrupamento_tmp Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxVendasPosAgrupamentoTmp') = 1
 create table [untreated].LinxVendasPosAgrupamentoTmp (
 	[integrated_or_updated_at]      datetime,
 	[doc_company]                   nvarchar(14),
@@ -155,6 +161,7 @@ create table [untreated].LinxVendasPosAgrupamentoTmp (
 	[timestamp]                     bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxVendasPosAgrupamentoTmp') = 1
 create table [linxmicrovix].LinxVendasPosAgrupamentoTmp (
 	[integrated_or_updated_at]      datetime,
 	[doc_company]                   nvarchar(14) not null,

@@ -53,8 +53,14 @@
     Com -NoGui, só estas aplicações (o Shared entra sempre); sem ele, as marcadas por padrão na tela.
 
 .PARAMETER Services
-    Com -NoGui, só estes services, no formato Aplicação/service (ex.: Totvs/People, LinxMicrovix/Erp/Customers); a
-    aplicação sem nenhum na lista sobe todos os services dela. Parameters sobe sempre.
+    Com -NoGui, só estas camadas do DataWarehouse, no formato DataWarehouse/camada (ex.: DataWarehouse/Landing); sem
+    nenhuma na lista, sobem todas. Parameters sobe sempre. Nas integrações, a escolha é por job (-Jobs).
+
+.PARAMETER Jobs
+    Com -NoGui, os IdJob das integrações que vão ter tabelas (ex.: 8135, 13007). Cada integração cria só as tabelas dos
+    jobs dela que estão na lista (com as que as FKs delas exigem); a que não tem nenhum na lista só sobe Parameters e o
+    catálogo. Sem -Jobs, todas as tabelas. As tabelas que já existem ficam como estão: rodar de novo com mais jobs só cria
+    as que faltam.
 
 .PARAMETER SchedulingHost
     Host que agenda as integrações: WebApi (Hangfire), WebJob (Azure) ou Worker (Quartz.NET). Obrigatório com -NoGui; na
@@ -90,6 +96,9 @@
     ./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -Apps Totvs,DataWarehouse -SchedulingHost Worker
 
 .EXAMPLE
+    ./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -Apps Totvs,LinxMicrovix -Jobs 13007,8135 -SchedulingHost Worker
+
+.EXAMPLE
     ./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -SchedulingHost Worker -MonitorPassword (Read-Host -AsSecureString) -QueryPassword (Read-Host -AsSecureString)
 #>
 [CmdletBinding()]
@@ -102,6 +111,7 @@ param(
     [ValidateSet('Totvs', 'LinxMicrovix', 'LinxCommerce', 'Movidesk', 'AfterSale', 'DataWarehouse')]
     [string[]]$Apps,
     [string[]]$Services,
+    [int[]]$Jobs,
     [ValidateSet('WebApi', 'WebJob', 'Worker')]
     [string]$SchedulingHost,
     [securestring]$MonitorPassword,
@@ -176,12 +186,81 @@ foreach ($app in @($catalog) + @($schedulingHosts.Values | Where-Object App | Fo
     $app.Scripts = @(Get-ChildItem -LiteralPath $app.Path -Filter '*.sql' -Recurse -File -ErrorAction SilentlyContinue).Count
 
     # services: as pastas com scripts abaixo de Scripts/SQLServer (ex.: People, Erp/Customers), menos Parameters, que sobe
-    # sempre, e a raiz. A tela e -Services escolhem quais sobem; o migrator.csx do módulo filtra pela ETL_MIGRATOR_SERVICES
+    # sempre, e a raiz. No DataWarehouse, a tela e -Services escolhem quais sobem (o migrator.csx filtra pela
+    # ETL_MIGRATOR_SERVICES); nas integrações, a escolha é por job (abaixo)
     $app.Services = @(Get-ChildItem -LiteralPath $app.Path -Filter '*.sql' -Recurse -File -ErrorAction SilentlyContinue |
         ForEach-Object { [IO.Path]::GetRelativePath($app.Path, $_.DirectoryName).Replace('\', '/') } |
         Where-Object { $_ -ne '.' -and $_ -ne 'Parameters' } |
         Group-Object | Sort-Object Name |
-        ForEach-Object { [pscustomobject]@{ Name = $_.Name; Scripts = $_.Count } })
+        ForEach-Object { [pscustomobject]@{ Name = $_.Name; Scripts = $_.Count; Jobs = @() } })
+}
+
+# jobs das integrações: o catálogo de cada service (o script *_Jobs_Into_Jobs_Table.sql) tem as integrações e as
+# procedures de sincronização delas (sp_<Tabela>_Sync, filhas da integração); as tabelas de um job são as das procedures
+# dele. A tela e -Jobs escolhem os jobs, e o migrator.csx do módulo só cria as tabelas deles (ETL_MIGRATOR_TABLES): os
+# scripts de tabelas rodam em toda migração e pulam a tabela que já existe (docs/MIGRATOR-CSX.md, "Escolha por job")
+$jobRow = [regex]"\(\s*(\d+)\s*,\s*(\d+)\s*,\s*'((?:[^']|'')*)'\s*,\s*'(?:[^']|'')*'\s*,\s*(\d+)\s*,\s*[01]\s*\)"
+$foreignKey = [regex]'(?im)^\s*alter\s+table\s+\[?\w+\]?\.\[?(\w+)\]?\s+add\s+constraint\b.*?\breferences\s+\[?\w+\]?\.\[?(\w+)\]?'
+
+foreach ($app in $catalog | Where-Object { $_.Group -eq 'Integrações' }) {
+    $app.HasJobs = $true
+    # tabela -> tabelas que a FK dela exige (TotvsPriceTablesItems exige TotvsPriceTables, de outro job)
+    $app.ForeignKeys = @{}
+
+    foreach ($service in $app.Services) {
+        $rows = foreach ($file in Get-ChildItem -LiteralPath (Join-Path $app.Path $service.Name) -Filter '*.sql' -File) {
+            $text = Get-Content -LiteralPath $file.FullName -Raw
+
+            foreach ($match in $foreignKey.Matches($text)) {
+                $app.ForeignKeys[$match.Groups[1].Value] = @($app.ForeignKeys[$match.Groups[1].Value]) + $match.Groups[2].Value | Where-Object { $_ }
+            }
+
+            foreach ($match in $jobRow.Matches($text)) {
+                [pscustomobject]@{
+                    IdParent = [int]$match.Groups[1].Value; IdJob = [int]$match.Groups[2].Value
+                    Title = $match.Groups[3].Value.Replace("''", "'"); IdType = [int]$match.Groups[4].Value
+                }
+            }
+        }
+
+        # só as integrações com tabela: as outras não têm nada a criar
+        $service.Jobs = @($rows | Where-Object IdType -eq 2 | ForEach-Object {
+                $job = $_
+                $tables = @($rows | Where-Object { $_.IdType -eq 1 -and $_.IdParent -eq $job.IdJob } | ForEach-Object {
+                        if ($_.Title -match '^sp_(\w+)_Sync$') { $Matches[1] }
+                    })
+                if ($tables.Count -gt 0) { [pscustomobject]@{ IdJob = $job.IdJob; Title = $job.Title; Tables = $tables } }
+            } | Sort-Object IdJob)
+    }
+}
+
+# as tabelas dos jobs, com as que as FKs delas exigem
+function Get-JobTables($app, $jobs) {
+    $tables = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    $pending = [Collections.Generic.Queue[string]]::new()
+
+    foreach ($table in @($jobs | ForEach-Object Tables)) {
+        if ($tables.Add($table)) { $pending.Enqueue($table) }
+    }
+
+    while ($pending.Count -gt 0) {
+        foreach ($required in @($app.ForeignKeys[$pending.Dequeue()])) {
+            if ($required -and $tables.Add($required)) { $pending.Enqueue($required) }
+        }
+    }
+
+    @($tables | Sort-Object)
+}
+
+# o resumo de uma aplicação no log e na confirmação
+function Get-AppSummary($app) {
+    if ($null -ne $app.SelectedTables) {
+        return "$($app.Name) ($(@($app.SelectedJobs).Count) job(s), $(@($app.SelectedTables).Count) tabela(s))"
+    }
+
+    if ($null -ne $app.SelectedServices) { return "$($app.Name) ($(@($app.SelectedServices) -join ', '))" }
+
+    $app.HasJobs ? "$($app.Name) (todas as tabelas)" : $app.Name
 }
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -285,7 +364,9 @@ $worker = {
         }
 
         Write-Line '' 'out'
-        Write-Line "[$index/$($apps.Count)] $($app.Name) ($($app.Scripts) scripts$($null -ne $app.SelectedServices ? ", services: $(@($app.SelectedServices).Count) de $($app.Services.Count)" : ''))" 'step'
+        $choice = $null -ne $app.SelectedTables ? ", jobs: $(@($app.SelectedJobs).Count), tabelas: $(@($app.SelectedTables).Count)" :
+            $null -ne $app.SelectedServices ? ", services: $(@($app.SelectedServices).Count) de $($app.Services.Count)" : ''
+        Write-Line "[$index/$($apps.Count)] $($app.Name) ($($app.Scripts) scripts$choice)" 'step'
 
         # unidade livre para o subst, de Z: para trás
         $used = @([IO.DriveInfo]::GetDrives() | ForEach-Object { $_.Name.Substring(0, 1) })
@@ -322,10 +403,15 @@ $worker = {
                 if ($value) { $info.Environment[$variable] = $value } else { $null = $info.Environment.Remove($variable) }
             }
 
-            # services escolhidos (migrator.csx dos módulos): sem escolha, todos; com ela, as pastas separadas por ";" (o ";" no
-            # fim garante a variável mesmo sem nenhum service: aí só Parameters)
+            # services escolhidos (migrator.csx do DataWarehouse): sem escolha, todos; com ela, as pastas separadas por ";" (o
+            # ";" no fim garante a variável mesmo sem nenhum service: aí só Parameters)
             if ($null -ne $app.SelectedServices) { $info.Environment['ETL_MIGRATOR_SERVICES'] = (@($app.SelectedServices) -join ';') + ';' }
             else { $null = $info.Environment.Remove('ETL_MIGRATOR_SERVICES') }
+
+            # tabelas dos jobs escolhidos (migrator.csx das integrações): sem escolha, todas; com ela, os nomes separados por ";"
+            # (o ";" no fim garante a variável mesmo sem nenhuma tabela: aí só Parameters e o catálogo)
+            if ($null -ne $app.SelectedTables) { $info.Environment['ETL_MIGRATOR_TABLES'] = (@($app.SelectedTables) -join ';') + ';' }
+            else { $null = $info.Environment.Remove('ETL_MIGRATOR_TABLES') }
 
             $process = [Diagnostics.Process]::Start($info)
             $state.Process = $process
@@ -510,16 +596,29 @@ if ($NoGui) {
     $selected = @($catalog | Where-Object { $_.Required -or ($Apps ? $_.Name -in $Apps : $_.Default) } | ForEach-Object { $_.Clone() }) +
         @($schedulingHostInfo.App | Where-Object { $_ })
 
-    # -Services: "Aplicação/service" (ex.: Totvs/People, LinxMicrovix/Erp/Customers); a aplicação sem nenhum na lista sobe
-    # todos os services dela
+    # -Services (só o DataWarehouse): "DataWarehouse/camada" (ex.: DataWarehouse/Landing); sem nenhum na lista, sobem todas
     foreach ($service in $Services) {
         $name, $folder = $service.Replace('\', '/').Split('/', 2)
         $app = $selected | Where-Object { $_.Name -eq $name } | Select-Object -First 1
 
         if (-not $app) { throw "-Services $service`: a aplicação $name não está entre as que vão subir." }
+        if ($app.HasJobs) { throw "-Services $service`: nas integrações, a escolha é por job (-Jobs)." }
         if ($folder -notin $app.Services.Name) { throw "-Services $service`: $name não tem o service $folder ($(($app.Services.Name) -join ', '))." }
 
         $app.SelectedServices = @($app.SelectedServices) + $folder | Where-Object { $_ }
+    }
+
+    # -Jobs: os IdJob das integrações que vão ter tabelas (ex.: 8135, 13007). Com -Jobs, cada integração cria só as tabelas
+    # dos jobs dela que estão na lista (nenhuma, se não tiver nenhum: só Parameters e o catálogo); sem -Jobs, todas
+    if ($Jobs) {
+        $withJobs = @($selected | Where-Object HasJobs)
+        $unknown = @($Jobs | Where-Object { $_ -notin @($withJobs | ForEach-Object { $_.Services.Jobs.IdJob }) })
+        if ($unknown) { throw "-Jobs $($unknown -join ', '): nenhum job com tabelas com esse IdJob nas aplicações que vão subir." }
+
+        foreach ($app in $withJobs) {
+            $app.SelectedJobs = @($app.Services.Jobs | Where-Object { $_.IdJob -in $Jobs })
+            $app.SelectedTables = @(Get-JobTables $app $app.SelectedJobs)
+        }
     }
 
     if (-not $Credential) { $Credential = Get-Credential -Message "SQL Server $Server,$Port" }
@@ -529,7 +628,7 @@ if ($NoGui) {
     $userPasswords = New-UserPasswords ($MonitorPassword ? [Net.NetworkCredential]::new('', $MonitorPassword).Password : '') `
         ($QueryPassword ? [Net.NetworkCredential]::new('', $QueryPassword).Password : '')
 
-    Write-Host "Servidor $Server,$Port, banco ${Database}, host de agenda $($schedulingHostInfo.Title): $(($selected | ForEach-Object { $null -ne $_.SelectedServices ? "$($_.Name) ($(@($_.SelectedServices) -join ', '))" : $_.Name }) -join ', ')"
+    Write-Host "Servidor $Server,$Port, banco ${Database}, host de agenda $($schedulingHostInfo.Title): $(($selected | ForEach-Object { Get-AppSummary $_ }) -join ', ')"
     Write-Host (Get-UserPasswordsText $userPasswords)
 
     $appSettings = $SkipAppSettings ? $null : @(New-AppSettingsTargets $Server $Port $Database $Credential.UserName $password $true $userPasswords `
@@ -704,16 +803,22 @@ $appSettingsBox = [Windows.Forms.CheckBox]@{
 # catálogo
 
 $catalogLabel = [Windows.Forms.Label]@{
-    Text = 'Catálogo das aplicações e dos services (rodam na ordem da lista; o Shared é obrigatório; Parameters sobe sempre)'
+    Text = 'Catálogo (na ordem da lista; Shared obrigatório; Parameters e o catálogo dos jobs sobem sempre): nas integrações, marque os jobs que vão ter tabelas'
     Location = [Drawing.Point]::new(12, 400); AutoSize = $true
 }
 
-# uma linha por aplicação e, abaixo, uma por service (as pastas de Scripts/SQLServer): marcar ou desmarcar a aplicação
-# marca ou desmarca os services dela, e a aplicação fica marcada enquanto algum service estiver
+# uma linha por aplicação, abaixo uma por service (as pastas de Scripts/SQLServer) e, nas integrações, uma por job com
+# tabela. A aplicação marcada roda o migrator dela; nas integrações, só os jobs marcados ganham tabelas, e os que já têm
+# as tabelas no banco ficam marcados em cinza ("já criado"). No DataWarehouse, a escolha continua por service (camada)
 $list = [Windows.Forms.TreeView]@{
     CheckBoxes = $true; ShowLines = $true; HideSelection = $false
     Location = [Drawing.Point]::new(12, 420); Size = [Drawing.Size]::new(836, 246); Anchor = 'Top, Left, Right'
 }
+
+# IdJob dos jobs com todas as tabelas já no banco (lidos no Testar conexão e no fim de cada migração)
+$script:createdJobs = [Collections.Generic.HashSet[int]]::new()
+
+function Test-CreatedNode($node) { $node.Level -eq 2 -and $script:createdJobs.Contains($node.Tag.IdJob) }
 
 foreach ($app in $catalog) {
     $node = [Windows.Forms.TreeNode]::new("[$($app.Group)] $($app.Name) ($($app.Scripts) scripts): $($app.Description)")
@@ -723,20 +828,37 @@ foreach ($app in $catalog) {
     if ($app.Required) { $node.ForeColor = [Drawing.SystemColors]::GrayText }
 
     foreach ($service in $app.Services) {
-        $child = [Windows.Forms.TreeNode]::new("$($service.Name) ($($service.Scripts) scripts)")
-        $child.Tag = $service.Name
-        $child.Checked = $node.Checked
+        $jobsText = $app.HasJobs ? ", $($service.Jobs.Count) job(s) com tabela" : ''
+        $child = [Windows.Forms.TreeNode]::new("$($service.Name) ($($service.Scripts) scripts$jobsText)")
+        $child.Tag = $service
+        $child.Checked = -not $app.HasJobs -and $node.Checked
+
+        foreach ($job in $service.Jobs) {
+            $text = "$($job.IdJob) $($job.Title) ($($job.Tables.Count) tabela$($job.Tables.Count -eq 1 ? '' : 's'): $($job.Tables -join ', '))"
+            $jobNode = [Windows.Forms.TreeNode]::new($text)
+            $jobNode.Name = $text
+            $jobNode.Tag = $job
+            $null = $child.Nodes.Add($jobNode)
+        }
+
         $null = $node.Nodes.Add($child)
     }
 
     $null = $list.Nodes.Add($node)
 }
 
+# o Shared não desmarca, e o job já criado fica marcado (as tabelas dele existem)
 $list.Add_BeforeCheck({
     param($sender, $e)
 
+    if ($e.Action -eq 'Unknown') { return }
     if ($e.Node.Tag -is [hashtable] -and $e.Node.Tag.Required -and $e.Node.Checked) { $e.Cancel = $true }
+    if (Test-CreatedNode $e.Node) { $e.Cancel = $true }
 })
+
+function Set-Checked($node, [bool]$checked) {
+    if (-not (Test-CreatedNode $node) -and $node.Checked -ne $checked) { $node.Checked = $checked }
+}
 
 # só o clique (ou o teclado) propaga: as mudanças feitas aqui chegam com Action = Unknown e param
 $list.Add_AfterCheck({
@@ -744,22 +866,94 @@ $list.Add_AfterCheck({
 
     if ($e.Action -eq 'Unknown') { return }
 
-    if ($e.Node.Parent) {
-        $parent = $e.Node.Parent
-        $any = @($parent.Nodes | Where-Object Checked).Count -gt 0
-        if ($parent.Checked -ne $any) { $parent.Checked = $any }
-    }
-    else {
-        foreach ($child in $e.Node.Nodes) { $child.Checked = $e.Node.Checked }
+    $node = $e.Node
+    $hasJobs = [bool]($node.Level -eq 0 ? $node.Tag.HasJobs : $node.Level -eq 1 ? $node.Parent.Tag.HasJobs : $true)
+
+    switch ($node.Level) {
+        0 {
+            # integração: marcar só roda o migrator (os jobs são marcados um a um); desmarcar desmarca tudo dela
+            foreach ($service in $node.Nodes) {
+                if (-not $hasJobs -or -not $node.Checked) { Set-Checked $service $node.Checked }
+                foreach ($job in $service.Nodes) { if (-not $node.Checked) { Set-Checked $job $false } }
+            }
+        }
+        1 {
+            foreach ($job in $node.Nodes) { Set-Checked $job $node.Checked }
+
+            if ($hasJobs) { if ($node.Checked) { Set-Checked $node.Parent $true } }
+            else { Set-Checked $node.Parent (@($node.Parent.Nodes | Where-Object Checked).Count -gt 0) }
+        }
+        2 {
+            Set-Checked $node.Parent (@($node.Parent.Nodes | Where-Object Checked).Count -gt 0)
+            if ($node.Checked) { Set-Checked $node.Parent.Parent $true }
+        }
     }
 })
 
-# as aplicações marcadas, cada uma com os services escolhidos (nulo: todos)
+# marca os jobs que já têm todas as tabelas no banco (nulo: não deu para ler, e nada muda)
+function Update-CreatedJobs($existing) {
+    if ($null -eq $existing) { return }
+
+    $script:createdJobs.Clear()
+
+    foreach ($serviceNode in @($list.Nodes | ForEach-Object { @($_.Nodes) })) {
+        foreach ($jobNode in $serviceNode.Nodes) {
+            $wasCreated = $jobNode.Text -ne $jobNode.Name
+            $created = @($jobNode.Tag.Tables | Where-Object { -not $existing.Contains($_) }).Count -eq 0
+            if ($created) { $null = $script:createdJobs.Add($jobNode.Tag.IdJob) }
+
+            $jobNode.Text = $created ? "$($jobNode.Name) · já criado" : $jobNode.Name
+            $jobNode.ForeColor = $created ? [Drawing.SystemColors]::GrayText : [Drawing.SystemColors]::WindowText
+
+            # o criado fica marcado; o que deixou de estar criado (outro banco) volta desmarcado
+            if ($created) { $jobNode.Checked = $true }
+            elseif ($wasCreated) { $jobNode.Checked = $false }
+        }
+
+        if ($serviceNode.Nodes.Count -gt 0) { $serviceNode.Checked = @($serviceNode.Nodes | Where-Object Checked).Count -gt 0 }
+    }
+}
+
+# as tabelas que já existem no banco (o nome, sem o schema); vazio se o banco ainda não existe, nulo sem o sqlcmd ou com erro
+function Get-ExistingTables($fields) {
+    if (-not (Get-Command sqlcmd -ErrorAction SilentlyContinue)) { return $null }
+
+    $database = $fields.Database.Replace("'", "''")
+    $query = "SET NOCOUNT ON; IF DB_ID(N'$database') IS NOT NULL EXEC (N'SELECT name FROM ' + QUOTENAME(N'$database') + N'.sys.tables')"
+    $arguments = @('-S', "$($fields.Server),$($fields.Port)", '-U', $fields.User, '-d', 'master', '-l', '10', '-b', '-h', '-1', '-W', '-Q', $query)
+    if ($fields.Trust) { $arguments += '-C' }
+
+    $env:SQLCMDPASSWORD = $fields.Password
+
+    try {
+        $output = & sqlcmd @arguments 2>&1
+    }
+    finally {
+        Remove-Item Env:SQLCMDPASSWORD -ErrorAction SilentlyContinue
+    }
+
+    if ($LASTEXITCODE -ne 0) { return $null }
+
+    $tables = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    foreach ($line in $output) { if ("$line".Trim()) { $null = $tables.Add("$line".Trim()) } }
+    , $tables
+}
+
+# as aplicações marcadas: no DataWarehouse, com os services escolhidos (nulo: todos); nas integrações, com os jobs
+# marcados que ainda não estão criados e as tabelas deles
 function Get-SelectedApps {
     @($list.Nodes | Where-Object Checked | ForEach-Object {
             $app = $_.Tag.Clone()
-            $chosen = @($_.Nodes | Where-Object Checked | ForEach-Object Tag)
-            if ($app.Services.Count -gt 0 -and $chosen.Count -lt $app.Services.Count) { $app.SelectedServices = $chosen }
+
+            if ($app.HasJobs) {
+                $app.SelectedJobs = @($_.Nodes | ForEach-Object { @($_.Nodes) } | Where-Object { $_.Checked -and -not (Test-CreatedNode $_) } | ForEach-Object Tag)
+                $app.SelectedTables = @(Get-JobTables $app $app.SelectedJobs)
+            }
+            else {
+                $chosen = @($_.Nodes | Where-Object Checked | ForEach-Object { $_.Tag.Name })
+                if ($app.Services.Count -gt 0 -and $chosen.Count -lt $app.Services.Count) { $app.SelectedServices = $chosen }
+            }
+
             $app
         })
 }
@@ -823,12 +1017,20 @@ function Set-Running([bool]$running) {
     $cancelButton.Enabled = $running
 }
 
-$checkAllButton.Add_Click({ foreach ($node in $list.Nodes) { $node.Checked = $true; foreach ($child in $node.Nodes) { $child.Checked = $true } } })
+$checkAllButton.Add_Click({
+    foreach ($node in $list.Nodes) {
+        $node.Checked = $true
+        foreach ($child in $node.Nodes) { $child.Checked = $true; foreach ($job in $child.Nodes) { $job.Checked = $true } }
+    }
+})
 $checkNoneButton.Add_Click({
     foreach ($node in $list.Nodes) {
-        # o obrigatório (Shared) continua marcado
+        # o obrigatório (Shared) e os jobs já criados continuam marcados
         if (-not $node.Tag.Required) { $node.Checked = $false }
-        foreach ($child in $node.Nodes) { $child.Checked = $false }
+        foreach ($child in $node.Nodes) {
+            foreach ($job in $child.Nodes) { Set-Checked $job $false }
+            $child.Checked = $child.Nodes.Count -gt 0 -and @($child.Nodes | Where-Object Checked).Count -gt 0
+        }
     }
 })
 
@@ -877,6 +1079,11 @@ $testButton.Add_Click({
 
         if ($LASTEXITCODE -eq 0) {
             Write-Log "Conectado em $($fields.Server),$($fields.Port) como $($fields.User): $((@($output) | Select-Object -First 1).ToString().Trim())" 'ok'
+
+            # os jobs que já têm as tabelas neste banco ficam marcados como criados
+            $existing = Get-ExistingTables $fields
+            Update-CreatedJobs $existing
+            if ($null -ne $existing) { Write-Log "Banco $($fields.Database): $($existing.Count) tabela(s), $($script:createdJobs.Count) job(s) com as tabelas já criadas." 'ok' }
         }
         else {
             Write-Log "Falha no login em $($fields.Server),$($fields.Port): $(($output | Where-Object { "$_".Trim() }) -join ' ')" 'error'
@@ -888,8 +1095,9 @@ $testButton.Add_Click({
 })
 
 $script:run = $null
+$script:runFields = $null
 
-$timer = [Windows.Forms.Timer]@{ Interval = 150 }
+$timer =[Windows.Forms.Timer]@{ Interval = 150 }
 $timer.Add_Tick({
     if (-not $script:run) { return }
 
@@ -912,6 +1120,9 @@ $timer.Add_Tick({
     $script:run = $null
     $timer.Stop()
     Set-Running $false
+
+    # os jobs que ganharam tabelas passam a aparecer como criados
+    if ($script:runFields) { Update-CreatedJobs (Get-ExistingTables $script:runFields) }
 })
 
 $runButton.Add_Click({
@@ -932,7 +1143,7 @@ $runButton.Add_Click({
 
     $schedulingHost = $schedulingHosts[$hostRadio.Tag]
     $selected = @(Get-SelectedApps) + @($schedulingHost.App | Where-Object { $_ })
-    $names = ($selected | ForEach-Object { $null -ne $_.SelectedServices ? "$($_.Name) ($(@($_.SelectedServices).Count) de $($_.Services.Count) services)" : $_.Name }) -join ', '
+    $names = ($selected | ForEach-Object { Get-AppSummary $_ }) -join ', '
     $userPasswords = New-UserPasswords $monitorBox.Text $queryBox.Text
     $usersText = Get-UserPasswordsText $userPasswords
 
@@ -965,6 +1176,7 @@ $runButton.Add_Click({
     $appSettings = $appSettingsBox.Checked ? @(New-AppSettingsTargets $fields.Server $fields.Port $fields.Database $fields.User $fields.Password $fields.Trust $userPasswords `
         $hostRadio.Tag $hangfireUserBox.Text.Trim() $hangfirePasswordBox.Text) : $null
     $secrets = @(Get-Secrets $fields.Password) + @($userPasswords.Values | ForEach-Object { Get-Secrets $_ }) + @(Get-Secrets $hangfirePasswordBox.Text)
+    $script:runFields = $fields
     $script:run = Start-Migration $selected $connectionString $secrets $schedulingHost $userPasswords $appSettings
     $timer.Start()
 })

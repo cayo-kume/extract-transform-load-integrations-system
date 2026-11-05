@@ -1,8 +1,10 @@
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
 /****** Pedidos e status de pedido: tabelas untreated e linxcommerce (src/Backend/Modules/LinxCommerce/docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md 5.2) ******/
 --colunas e tamanhos tirados do código antigo, sem resposta real da API: a conferir antes de ligar o job (§9).
 --datas da API em datetimeoffset (o Linx Commerce manda o fuso); integrated_or_updated_at é o horário do lote, em Brasília
 
 --pedido (POST Sales/API.svc/web/GetOrder)
+if dbo.fn_Migrator_Creates(N'[untreated].LinxCommerceOrders') = 1
 create table [untreated].LinxCommerceOrders (
 	integrated_or_updated_at             datetime,
 	[doc_company]                        nvarchar(14),
@@ -77,6 +79,7 @@ create table [untreated].LinxCommerceOrders (
 	[OrderTypeRequireInventory]          bit
 );
 
+if dbo.fn_Migrator_Creates(N'[linxcommerce].LinxCommerceOrders') = 1
 create table [linxcommerce].LinxCommerceOrders (
 	integrated_or_updated_at             datetime,
 	[doc_company]                        nvarchar(14) not null,
@@ -155,6 +158,7 @@ constraint [PK_LinxCommerceOrders] primary key (
 ));
 
 --item do pedido
+if dbo.fn_Migrator_Creates(N'[untreated].LinxCommerceOrdersItems') = 1
 create table [untreated].LinxCommerceOrdersItems (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14),
@@ -203,6 +207,7 @@ create table [untreated].LinxCommerceOrdersItems (
 	[UPC]                    nvarchar(50)
 );
 
+if dbo.fn_Migrator_Creates(N'[linxcommerce].LinxCommerceOrdersItems') = 1
 create table [linxcommerce].LinxCommerceOrdersItems (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14) not null,
@@ -256,6 +261,7 @@ constraint [PK_LinxCommerceOrdersItems] primary key (
 ));
 
 --etiqueta do pedido
+if dbo.fn_Migrator_Creates(N'[untreated].LinxCommerceOrdersTags') = 1
 create table [untreated].LinxCommerceOrdersTags (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14),
@@ -267,6 +273,7 @@ create table [untreated].LinxCommerceOrdersTags (
 	[IsDeleted]              bit
 );
 
+if dbo.fn_Migrator_Creates(N'[linxcommerce].LinxCommerceOrdersTags') = 1
 create table [linxcommerce].LinxCommerceOrdersTags (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14) not null,
@@ -283,6 +290,7 @@ constraint [PK_LinxCommerceOrdersTags] primary key (
 ));
 
 --endereço do pedido
+if dbo.fn_Migrator_Creates(N'[untreated].LinxCommerceOrdersAddresses') = 1
 create table [untreated].LinxCommerceOrdersAddresses (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14),
@@ -304,6 +312,7 @@ create table [untreated].LinxCommerceOrdersAddresses (
 	[PointOfSaleID]          int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxcommerce].LinxCommerceOrdersAddresses') = 1
 create table [linxcommerce].LinxCommerceOrdersAddresses (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14) not null,
@@ -330,6 +339,7 @@ constraint [PK_LinxCommerceOrdersAddresses] primary key (
 ));
 
 --pagamento do pedido, com o PaymentInfo (1:1) em colunas e sem os dados do cartão e do PIX
+if dbo.fn_Migrator_Creates(N'[untreated].LinxCommerceOrdersPaymentMethods') = 1
 create table [untreated].LinxCommerceOrdersPaymentMethods (
 	integrated_or_updated_at            datetime,
 	[doc_company]                       nvarchar(14),
@@ -369,6 +379,7 @@ create table [untreated].LinxCommerceOrdersPaymentMethods (
 	[PaymentInfoProviderDocumentNumber] nvarchar(20)
 );
 
+if dbo.fn_Migrator_Creates(N'[linxcommerce].LinxCommerceOrdersPaymentMethods') = 1
 create table [linxcommerce].LinxCommerceOrdersPaymentMethods (
 	integrated_or_updated_at            datetime,
 	[doc_company]                       nvarchar(14) not null,
@@ -413,6 +424,7 @@ constraint [PK_LinxCommerceOrdersPaymentMethods] primary key (
 ));
 
 --forma de entrega do pedido
+if dbo.fn_Migrator_Creates(N'[untreated].LinxCommerceOrdersDeliveryMethods') = 1
 create table [untreated].LinxCommerceOrdersDeliveryMethods (
 	integrated_or_updated_at   datetime,
 	[doc_company]              nvarchar(14),
@@ -446,6 +458,7 @@ create table [untreated].LinxCommerceOrdersDeliveryMethods (
 	[DeliveryEstimatedDate]    datetimeoffset
 );
 
+if dbo.fn_Migrator_Creates(N'[linxcommerce].LinxCommerceOrdersDeliveryMethods') = 1
 create table [linxcommerce].LinxCommerceOrdersDeliveryMethods (
 	integrated_or_updated_at   datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -484,6 +497,7 @@ constraint [PK_LinxCommerceOrdersDeliveryMethods] primary key (
 ));
 
 --desconto do pedido
+if dbo.fn_Migrator_Creates(N'[untreated].LinxCommerceOrdersDiscounts') = 1
 create table [untreated].LinxCommerceOrdersDiscounts (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14),
@@ -495,6 +509,7 @@ create table [untreated].LinxCommerceOrdersDiscounts (
 	[Type]                   nvarchar(50)
 );
 
+if dbo.fn_Migrator_Creates(N'[linxcommerce].LinxCommerceOrdersDiscounts') = 1
 create table [linxcommerce].LinxCommerceOrdersDiscounts (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14) not null,
@@ -511,6 +526,7 @@ constraint [PK_LinxCommerceOrdersDiscounts] primary key (
 ));
 
 --remessa do pedido
+if dbo.fn_Migrator_Creates(N'[untreated].LinxCommerceOrdersShipments') = 1
 create table [untreated].LinxCommerceOrdersShipments (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14),
@@ -524,6 +540,7 @@ create table [untreated].LinxCommerceOrdersShipments (
 	[DockID]                 int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxcommerce].LinxCommerceOrdersShipments') = 1
 create table [linxcommerce].LinxCommerceOrdersShipments (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14) not null,
@@ -542,6 +559,7 @@ constraint [PK_LinxCommerceOrdersShipments] primary key (
 ));
 
 --pacote da remessa (OrderID na chave para o merge apagar pelo pedido)
+if dbo.fn_Migrator_Creates(N'[untreated].LinxCommerceOrdersShipmentsPackages') = 1
 create table [untreated].LinxCommerceOrdersShipmentsPackages (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14),
@@ -564,6 +582,7 @@ create table [untreated].LinxCommerceOrdersShipmentsPackages (
 	[Weight]                 decimal(19,6)
 );
 
+if dbo.fn_Migrator_Creates(N'[linxcommerce].LinxCommerceOrdersShipmentsPackages') = 1
 create table [linxcommerce].LinxCommerceOrdersShipmentsPackages (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14) not null,
@@ -592,6 +611,7 @@ constraint [PK_LinxCommerceOrdersShipmentsPackages] primary key (
 ));
 
 --nota do pedido (OrderInvoice, 1:1 com chave própria)
+if dbo.fn_Migrator_Creates(N'[untreated].LinxCommerceOrdersInvoices') = 1
 create table [untreated].LinxCommerceOrdersInvoices (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14),
@@ -614,6 +634,7 @@ create table [untreated].LinxCommerceOrdersInvoices (
 	[CreatedAt]              datetimeoffset
 );
 
+if dbo.fn_Migrator_Creates(N'[linxcommerce].LinxCommerceOrdersInvoices') = 1
 create table [linxcommerce].LinxCommerceOrdersInvoices (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14) not null,
@@ -641,6 +662,7 @@ constraint [PK_LinxCommerceOrdersInvoices] primary key (
 ));
 
 --propriedade do pedido
+if dbo.fn_Migrator_Creates(N'[untreated].LinxCommerceOrdersProperties') = 1
 create table [untreated].LinxCommerceOrdersProperties (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14),
@@ -654,6 +676,7 @@ create table [untreated].LinxCommerceOrdersProperties (
 	[XmlExtended]            nvarchar(max)
 );
 
+if dbo.fn_Migrator_Creates(N'[linxcommerce].LinxCommerceOrdersProperties') = 1
 create table [linxcommerce].LinxCommerceOrdersProperties (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14) not null,
@@ -672,6 +695,7 @@ constraint [PK_LinxCommerceOrdersProperties] primary key (
 ));
 
 --status de pedido (POST Sales/API.svc/web/SearchOrderStatus)
+if dbo.fn_Migrator_Creates(N'[untreated].LinxCommerceOrderStatus') = 1
 create table [untreated].LinxCommerceOrderStatus (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14),
@@ -682,6 +706,7 @@ create table [untreated].LinxCommerceOrderStatus (
 	[IntegrationID]          nvarchar(100)
 );
 
+if dbo.fn_Migrator_Creates(N'[linxcommerce].LinxCommerceOrderStatus') = 1
 create table [linxcommerce].LinxCommerceOrderStatus (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14) not null,
@@ -697,13 +722,23 @@ constraint [PK_LinxCommerceOrderStatus] primary key (
 
 /****** Chaves estrangeiras: filhas -> pai ******/
 
+if object_id(N'[linxcommerce].[FK_LinxCommerceOrdersItems]') is null and object_id(N'[linxcommerce].LinxCommerceOrdersItems') is not null and object_id(N'[linxcommerce].LinxCommerceOrders') is not null
 alter table [linxcommerce].LinxCommerceOrdersItems add constraint [FK_LinxCommerceOrdersItems] foreign key (doc_company, OrderID) references [linxcommerce].LinxCommerceOrders (doc_company, OrderID);
+if object_id(N'[linxcommerce].[FK_LinxCommerceOrdersTags]') is null and object_id(N'[linxcommerce].LinxCommerceOrdersTags') is not null and object_id(N'[linxcommerce].LinxCommerceOrders') is not null
 alter table [linxcommerce].LinxCommerceOrdersTags add constraint [FK_LinxCommerceOrdersTags] foreign key (doc_company, OrderID) references [linxcommerce].LinxCommerceOrders (doc_company, OrderID);
+if object_id(N'[linxcommerce].[FK_LinxCommerceOrdersAddresses]') is null and object_id(N'[linxcommerce].LinxCommerceOrdersAddresses') is not null and object_id(N'[linxcommerce].LinxCommerceOrders') is not null
 alter table [linxcommerce].LinxCommerceOrdersAddresses add constraint [FK_LinxCommerceOrdersAddresses] foreign key (doc_company, OrderID) references [linxcommerce].LinxCommerceOrders (doc_company, OrderID);
+if object_id(N'[linxcommerce].[FK_LinxCommerceOrdersPaymentMethods]') is null and object_id(N'[linxcommerce].LinxCommerceOrdersPaymentMethods') is not null and object_id(N'[linxcommerce].LinxCommerceOrders') is not null
 alter table [linxcommerce].LinxCommerceOrdersPaymentMethods add constraint [FK_LinxCommerceOrdersPaymentMethods] foreign key (doc_company, OrderID) references [linxcommerce].LinxCommerceOrders (doc_company, OrderID);
+if object_id(N'[linxcommerce].[FK_LinxCommerceOrdersDeliveryMethods]') is null and object_id(N'[linxcommerce].LinxCommerceOrdersDeliveryMethods') is not null and object_id(N'[linxcommerce].LinxCommerceOrders') is not null
 alter table [linxcommerce].LinxCommerceOrdersDeliveryMethods add constraint [FK_LinxCommerceOrdersDeliveryMethods] foreign key (doc_company, OrderID) references [linxcommerce].LinxCommerceOrders (doc_company, OrderID);
+if object_id(N'[linxcommerce].[FK_LinxCommerceOrdersDiscounts]') is null and object_id(N'[linxcommerce].LinxCommerceOrdersDiscounts') is not null and object_id(N'[linxcommerce].LinxCommerceOrders') is not null
 alter table [linxcommerce].LinxCommerceOrdersDiscounts add constraint [FK_LinxCommerceOrdersDiscounts] foreign key (doc_company, OrderID) references [linxcommerce].LinxCommerceOrders (doc_company, OrderID);
+if object_id(N'[linxcommerce].[FK_LinxCommerceOrdersShipments]') is null and object_id(N'[linxcommerce].LinxCommerceOrdersShipments') is not null and object_id(N'[linxcommerce].LinxCommerceOrders') is not null
 alter table [linxcommerce].LinxCommerceOrdersShipments add constraint [FK_LinxCommerceOrdersShipments] foreign key (doc_company, OrderID) references [linxcommerce].LinxCommerceOrders (doc_company, OrderID);
+if object_id(N'[linxcommerce].[FK_LinxCommerceOrdersShipmentsPackages]') is null and object_id(N'[linxcommerce].LinxCommerceOrdersShipmentsPackages') is not null and object_id(N'[linxcommerce].LinxCommerceOrders') is not null
 alter table [linxcommerce].LinxCommerceOrdersShipmentsPackages add constraint [FK_LinxCommerceOrdersShipmentsPackages] foreign key (doc_company, OrderID) references [linxcommerce].LinxCommerceOrders (doc_company, OrderID);
+if object_id(N'[linxcommerce].[FK_LinxCommerceOrdersInvoices]') is null and object_id(N'[linxcommerce].LinxCommerceOrdersInvoices') is not null and object_id(N'[linxcommerce].LinxCommerceOrders') is not null
 alter table [linxcommerce].LinxCommerceOrdersInvoices add constraint [FK_LinxCommerceOrdersInvoices] foreign key (doc_company, OrderID) references [linxcommerce].LinxCommerceOrders (doc_company, OrderID);
+if object_id(N'[linxcommerce].[FK_LinxCommerceOrdersProperties]') is null and object_id(N'[linxcommerce].LinxCommerceOrdersProperties') is not null and object_id(N'[linxcommerce].LinxCommerceOrders') is not null
 alter table [linxcommerce].LinxCommerceOrdersProperties add constraint [FK_LinxCommerceOrdersProperties] foreign key (doc_company, OrderID) references [linxcommerce].LinxCommerceOrders (doc_company, OrderID);

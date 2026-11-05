@@ -1,7 +1,9 @@
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
 /****** Representantes: tabelas untreated e totvs (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §3.1.1, fase PE-2) ******/
 --chave: doc_company + code (o representante é uma pessoa do PESFM010). As filhas comuns com a PF têm as mesmas colunas das
 --TotvsPeople* (Script013), com personCode = código do representante. Sem tamanho no swagger: nomes com 100.
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsRepresentatives') = 1
 create table [untreated].TotvsRepresentatives (
 	integrated_or_updated_at          datetime,
 	doc_company                       nvarchar(14),
@@ -15,6 +17,7 @@ create table [untreated].TotvsRepresentatives (
 	maxChangeFilterDate               datetime
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsRepresentatives') = 1
 create table [totvs].TotvsRepresentatives (
 	integrated_or_updated_at          datetime,
 	doc_company                       nvarchar(14) not null,
@@ -31,6 +34,7 @@ constraint [PK_TotvsRepresentatives] primary key (
 	[code] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsRepresentativesAddresses') = 1
 create table [untreated].TotvsRepresentativesAddresses (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14),
@@ -53,6 +57,7 @@ create table [untreated].TotvsRepresentativesAddresses (
 	[reference]                                           nvarchar(60)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsRepresentativesAddresses') = 1
 create table [totvs].TotvsRepresentativesAddresses (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14) not null,
@@ -80,6 +85,7 @@ constraint [PK_TotvsRepresentativesAddresses] primary key (
 	sequenceCode asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsRepresentativesPhones') = 1
 create table [untreated].TotvsRepresentativesPhones (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14),
@@ -92,6 +98,7 @@ create table [untreated].TotvsRepresentativesPhones (
 	isDefault                                             bit
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsRepresentativesPhones') = 1
 create table [totvs].TotvsRepresentativesPhones (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14) not null,
@@ -108,6 +115,7 @@ constraint [PK_TotvsRepresentativesPhones] primary key (
 	[sequence] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsRepresentativesEmails') = 1
 create table [untreated].TotvsRepresentativesEmails (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14),
@@ -119,6 +127,7 @@ create table [untreated].TotvsRepresentativesEmails (
 	isDefault                                             bit
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsRepresentativesEmails') = 1
 create table [totvs].TotvsRepresentativesEmails (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14) not null,
@@ -134,6 +143,7 @@ constraint [PK_TotvsRepresentativesEmails] primary key (
 	[sequence] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsRepresentativesObservations') = 1
 create table [untreated].TotvsRepresentativesObservations (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14),
@@ -143,6 +153,7 @@ create table [untreated].TotvsRepresentativesObservations (
 	isMaintenance                                         bit
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsRepresentativesObservations') = 1
 create table [totvs].TotvsRepresentativesObservations (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14) not null,
@@ -156,6 +167,7 @@ constraint [PK_TotvsRepresentativesObservations] primary key (
 	[sequence] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsRepresentativesAdditionalFields') = 1
 create table [untreated].TotvsRepresentativesAdditionalFields (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14),
@@ -166,6 +178,7 @@ create table [untreated].TotvsRepresentativesAdditionalFields (
 	[value]                                               nvarchar(60)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsRepresentativesAdditionalFields') = 1
 create table [totvs].TotvsRepresentativesAdditionalFields (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14) not null,
@@ -180,6 +193,7 @@ constraint [PK_TotvsRepresentativesAdditionalFields] primary key (
 	[code] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsRepresentativesClassifications') = 1
 create table [untreated].TotvsRepresentativesClassifications (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14),
@@ -190,6 +204,7 @@ create table [untreated].TotvsRepresentativesClassifications (
 	[name]                                                nvarchar(60)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsRepresentativesClassifications') = 1
 create table [totvs].TotvsRepresentativesClassifications (
 	integrated_or_updated_at                              datetime,
 	doc_company                                           nvarchar(14) not null,
@@ -205,6 +220,7 @@ constraint [PK_TotvsRepresentativesClassifications] primary key (
 	[code] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsRepresentativesCustomers') = 1
 create table [untreated].TotvsRepresentativesCustomers (
 	integrated_or_updated_at          datetime,
 	doc_company                       nvarchar(14),
@@ -214,6 +230,7 @@ create table [untreated].TotvsRepresentativesCustomers (
 	cpfCnpj                           nvarchar(14)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsRepresentativesCustomers') = 1
 create table [totvs].TotvsRepresentativesCustomers (
 	integrated_or_updated_at          datetime,
 	doc_company                       nvarchar(14) not null,
@@ -227,6 +244,7 @@ constraint [PK_TotvsRepresentativesCustomers] primary key (
 	customerCode asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsRepresentativesPriceTables') = 1
 create table [untreated].TotvsRepresentativesPriceTables (
 	integrated_or_updated_at          datetime,
 	doc_company                       nvarchar(14),
@@ -235,6 +253,7 @@ create table [untreated].TotvsRepresentativesPriceTables (
 	[name]                            nvarchar(100)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsRepresentativesPriceTables') = 1
 create table [totvs].TotvsRepresentativesPriceTables (
 	integrated_or_updated_at          datetime,
 	doc_company                       nvarchar(14) not null,
@@ -247,6 +266,7 @@ constraint [PK_TotvsRepresentativesPriceTables] primary key (
 	priceTableCode asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsRepresentativesSalesRegions') = 1
 create table [untreated].TotvsRepresentativesSalesRegions (
 	integrated_or_updated_at          datetime,
 	doc_company                       nvarchar(14),
@@ -259,6 +279,7 @@ create table [untreated].TotvsRepresentativesSalesRegions (
 	salesOrderClassificationName      nvarchar(100)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsRepresentativesSalesRegions') = 1
 create table [totvs].TotvsRepresentativesSalesRegions (
 	integrated_or_updated_at          datetime,
 	doc_company                       nvarchar(14) not null,
@@ -277,6 +298,7 @@ constraint [PK_TotvsRepresentativesSalesRegions] primary key (
 	salesOrderClassificationCode asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsRepresentativesParameters') = 1
 create table [untreated].TotvsRepresentativesParameters (
 	integrated_or_updated_at          datetime,
 	doc_company                       nvarchar(14),
@@ -286,6 +308,7 @@ create table [untreated].TotvsRepresentativesParameters (
 	parameterValue                    nvarchar(2000)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsRepresentativesParameters') = 1
 create table [totvs].TotvsRepresentativesParameters (
 	integrated_or_updated_at          datetime,
 	doc_company                       nvarchar(14) not null,
@@ -301,15 +324,25 @@ constraint [PK_TotvsRepresentativesParameters] primary key (
 ));
 
 /****** Chaves estrangeiras ******/
+if object_id(N'[totvs].[FK_TotvsRepresentativesAddresses]') is null and object_id(N'[totvs].TotvsRepresentativesAddresses') is not null and object_id(N'[totvs].TotvsRepresentatives') is not null
 alter table [totvs].TotvsRepresentativesAddresses add constraint [FK_TotvsRepresentativesAddresses] foreign key (doc_company, personCode) references [totvs].TotvsRepresentatives (doc_company, [code]);
+if object_id(N'[totvs].[FK_TotvsRepresentativesPhones]') is null and object_id(N'[totvs].TotvsRepresentativesPhones') is not null and object_id(N'[totvs].TotvsRepresentatives') is not null
 alter table [totvs].TotvsRepresentativesPhones add constraint [FK_TotvsRepresentativesPhones] foreign key (doc_company, personCode) references [totvs].TotvsRepresentatives (doc_company, [code]);
+if object_id(N'[totvs].[FK_TotvsRepresentativesEmails]') is null and object_id(N'[totvs].TotvsRepresentativesEmails') is not null and object_id(N'[totvs].TotvsRepresentatives') is not null
 alter table [totvs].TotvsRepresentativesEmails add constraint [FK_TotvsRepresentativesEmails] foreign key (doc_company, personCode) references [totvs].TotvsRepresentatives (doc_company, [code]);
+if object_id(N'[totvs].[FK_TotvsRepresentativesObservations]') is null and object_id(N'[totvs].TotvsRepresentativesObservations') is not null and object_id(N'[totvs].TotvsRepresentatives') is not null
 alter table [totvs].TotvsRepresentativesObservations add constraint [FK_TotvsRepresentativesObservations] foreign key (doc_company, personCode) references [totvs].TotvsRepresentatives (doc_company, [code]);
+if object_id(N'[totvs].[FK_TotvsRepresentativesAdditionalFields]') is null and object_id(N'[totvs].TotvsRepresentativesAdditionalFields') is not null and object_id(N'[totvs].TotvsRepresentatives') is not null
 alter table [totvs].TotvsRepresentativesAdditionalFields add constraint [FK_TotvsRepresentativesAdditionalFields] foreign key (doc_company, personCode) references [totvs].TotvsRepresentatives (doc_company, [code]);
+if object_id(N'[totvs].[FK_TotvsRepresentativesClassifications]') is null and object_id(N'[totvs].TotvsRepresentativesClassifications') is not null and object_id(N'[totvs].TotvsRepresentatives') is not null
 alter table [totvs].TotvsRepresentativesClassifications add constraint [FK_TotvsRepresentativesClassifications] foreign key (doc_company, personCode) references [totvs].TotvsRepresentatives (doc_company, [code]);
+if object_id(N'[totvs].[FK_TotvsRepresentativesCustomers]') is null and object_id(N'[totvs].TotvsRepresentativesCustomers') is not null and object_id(N'[totvs].TotvsRepresentatives') is not null
 alter table [totvs].TotvsRepresentativesCustomers add constraint [FK_TotvsRepresentativesCustomers] foreign key (doc_company, personCode) references [totvs].TotvsRepresentatives (doc_company, [code]);
+if object_id(N'[totvs].[FK_TotvsRepresentativesPriceTables]') is null and object_id(N'[totvs].TotvsRepresentativesPriceTables') is not null and object_id(N'[totvs].TotvsRepresentatives') is not null
 alter table [totvs].TotvsRepresentativesPriceTables add constraint [FK_TotvsRepresentativesPriceTables] foreign key (doc_company, personCode) references [totvs].TotvsRepresentatives (doc_company, [code]);
+if object_id(N'[totvs].[FK_TotvsRepresentativesSalesRegions]') is null and object_id(N'[totvs].TotvsRepresentativesSalesRegions') is not null and object_id(N'[totvs].TotvsRepresentatives') is not null
 alter table [totvs].TotvsRepresentativesSalesRegions add constraint [FK_TotvsRepresentativesSalesRegions] foreign key (doc_company, personCode) references [totvs].TotvsRepresentatives (doc_company, [code]);
+if object_id(N'[totvs].[FK_TotvsRepresentativesParameters]') is null and object_id(N'[totvs].TotvsRepresentativesParameters') is not null and object_id(N'[totvs].TotvsRepresentatives') is not null
 alter table [totvs].TotvsRepresentativesParameters add constraint [FK_TotvsRepresentativesParameters] foreign key (doc_company, personCode) references [totvs].TotvsRepresentatives (doc_company, [code]);
 
 go
@@ -318,6 +351,7 @@ go
 --chave: doc_company + branchCode + movementDate + sequence. A resposta não tem data de alteração: json_hash (SHA-256 do JSON
 --recebido) diz se a recepção mudou (T9). Sem tamanho no swagger para nomes, tipo e observação.
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsReceptionSales') = 1
 create table [untreated].TotvsReceptionSales (
 	integrated_or_updated_at          datetime,
 	doc_company                       nvarchar(14),
@@ -338,6 +372,7 @@ create table [untreated].TotvsReceptionSales (
 	json_hash                         nvarchar(64)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsReceptionSales') = 1
 create table [totvs].TotvsReceptionSales (
 	integrated_or_updated_at          datetime,
 	doc_company                       nvarchar(14) not null,
@@ -363,6 +398,7 @@ constraint [PK_TotvsReceptionSales] primary key (
 	[sequence] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsReceptionSalesDocumentTypes') = 1
 create table [untreated].TotvsReceptionSalesDocumentTypes (
 	integrated_or_updated_at          datetime,
 	doc_company                       nvarchar(14),
@@ -372,6 +408,7 @@ create table [untreated].TotvsReceptionSalesDocumentTypes (
 	documentType                      int
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsReceptionSalesDocumentTypes') = 1
 create table [totvs].TotvsReceptionSalesDocumentTypes (
 	integrated_or_updated_at          datetime,
 	doc_company                       nvarchar(14) not null,
@@ -388,4 +425,5 @@ constraint [PK_TotvsReceptionSalesDocumentTypes] primary key (
 ));
 
 /****** Chaves estrangeiras ******/
+if object_id(N'[totvs].[FK_TotvsReceptionSalesDocumentTypes]') is null and object_id(N'[totvs].TotvsReceptionSalesDocumentTypes') is not null and object_id(N'[totvs].TotvsReceptionSales') is not null
 alter table [totvs].TotvsReceptionSalesDocumentTypes add constraint [FK_TotvsReceptionSalesDocumentTypes] foreign key (doc_company, branchCode, movementDate, [sequence]) references [totvs].TotvsReceptionSales (doc_company, branchCode, movementDate, [sequence]);

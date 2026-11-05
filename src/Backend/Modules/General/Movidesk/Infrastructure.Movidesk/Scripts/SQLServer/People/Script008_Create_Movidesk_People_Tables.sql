@@ -1,5 +1,7 @@
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
 /****** Pessoas: tabelas untreated e movidesk (src/Backend/Modules/General/Movidesk/docs/MOVIDESK-MODELAGEM-PESSOAS.md) ******/
 
+if dbo.fn_Migrator_Creates(N'[untreated].MovideskPeople') = 1
 create table [untreated].MovideskPeople (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14),
@@ -28,6 +30,7 @@ create table [untreated].MovideskPeople (
 	observations             nvarchar(max)
 );
 
+if dbo.fn_Migrator_Creates(N'[movidesk].MovideskPeople') = 1
 create table [movidesk].MovideskPeople (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14) not null,
@@ -59,6 +62,7 @@ constraint [PK_MovideskPeople] primary key (
 	id asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].MovideskPeopleAddresses') = 1
 create table [untreated].MovideskPeopleAddresses (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14),
@@ -78,6 +82,7 @@ create table [untreated].MovideskPeopleAddresses (
 	isDefault                bit
 );
 
+if dbo.fn_Migrator_Creates(N'[movidesk].MovideskPeopleAddresses') = 1
 create table [movidesk].MovideskPeopleAddresses (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14) not null,
@@ -101,6 +106,7 @@ constraint [PK_MovideskPeopleAddresses] primary key (
 	id asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].MovideskPeopleContacts') = 1
 create table [untreated].MovideskPeopleContacts (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14),
@@ -111,6 +117,7 @@ create table [untreated].MovideskPeopleContacts (
 	isDefault                bit
 );
 
+if dbo.fn_Migrator_Creates(N'[movidesk].MovideskPeopleContacts') = 1
 create table [movidesk].MovideskPeopleContacts (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14) not null,
@@ -125,6 +132,7 @@ constraint [PK_MovideskPeopleContacts] primary key (
 	id asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].MovideskPeopleEmails') = 1
 create table [untreated].MovideskPeopleEmails (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14),
@@ -135,6 +143,7 @@ create table [untreated].MovideskPeopleEmails (
 	isDefault                bit
 );
 
+if dbo.fn_Migrator_Creates(N'[movidesk].MovideskPeopleEmails') = 1
 create table [movidesk].MovideskPeopleEmails (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14) not null,
@@ -149,6 +158,7 @@ constraint [PK_MovideskPeopleEmails] primary key (
 	id asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].MovideskPeopleTeams') = 1
 create table [untreated].MovideskPeopleTeams (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14),
@@ -156,6 +166,7 @@ create table [untreated].MovideskPeopleTeams (
 	team                     nvarchar(128)
 );
 
+if dbo.fn_Migrator_Creates(N'[movidesk].MovideskPeopleTeams') = 1
 create table [movidesk].MovideskPeopleTeams (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14) not null,
@@ -167,6 +178,7 @@ constraint [PK_MovideskPeopleTeams] primary key (
 	team asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].MovideskPeopleRelationships') = 1
 create table [untreated].MovideskPeopleRelationships (
 	integrated_or_updated_at         datetime,
 	[doc_company]                    nvarchar(14),
@@ -180,6 +192,7 @@ create table [untreated].MovideskPeopleRelationships (
 	loadChildOrganizations           bit
 );
 
+if dbo.fn_Migrator_Creates(N'[movidesk].MovideskPeopleRelationships') = 1
 create table [movidesk].MovideskPeopleRelationships (
 	integrated_or_updated_at         datetime,
 	[doc_company]                    nvarchar(14) not null,
@@ -197,6 +210,7 @@ constraint [PK_MovideskPeopleRelationships] primary key (
 	id asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].MovideskPeopleRelationshipsServices') = 1
 create table [untreated].MovideskPeopleRelationshipsServices (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14),
@@ -207,6 +221,7 @@ create table [untreated].MovideskPeopleRelationshipsServices (
 	copyToChildren           bit
 );
 
+if dbo.fn_Migrator_Creates(N'[movidesk].MovideskPeopleRelationshipsServices') = 1
 create table [movidesk].MovideskPeopleRelationshipsServices (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14) not null,
@@ -222,6 +237,7 @@ constraint [PK_MovideskPeopleRelationshipsServices] primary key (
 	id asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].MovideskPeopleCustomFieldValues') = 1
 create table [untreated].MovideskPeopleCustomFieldValues (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14),
@@ -232,6 +248,7 @@ create table [untreated].MovideskPeopleCustomFieldValues (
 	[value]                  nvarchar(max)
 );
 
+if dbo.fn_Migrator_Creates(N'[movidesk].MovideskPeopleCustomFieldValues') = 1
 create table [movidesk].MovideskPeopleCustomFieldValues (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14) not null,
@@ -248,6 +265,7 @@ constraint [PK_MovideskPeopleCustomFieldValues] primary key (
 	line asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].MovideskPeopleCustomFieldValuesItems') = 1
 create table [untreated].MovideskPeopleCustomFieldValuesItems (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14),
@@ -264,6 +282,7 @@ create table [untreated].MovideskPeopleCustomFieldValuesItems (
 	[fileName]               nvarchar(255) --idem
 );
 
+if dbo.fn_Migrator_Creates(N'[movidesk].MovideskPeopleCustomFieldValuesItems') = 1
 create table [movidesk].MovideskPeopleCustomFieldValuesItems (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14) not null,
@@ -287,6 +306,7 @@ constraint [PK_MovideskPeopleCustomFieldValuesItems] primary key (
 	id asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].MovideskPeopleAssets') = 1
 create table [untreated].MovideskPeopleAssets (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14),
@@ -296,6 +316,7 @@ create table [untreated].MovideskPeopleAssets (
 	label                    nvarchar(64)
 );
 
+if dbo.fn_Migrator_Creates(N'[movidesk].MovideskPeopleAssets') = 1
 create table [movidesk].MovideskPeopleAssets (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14) not null,
@@ -311,45 +332,58 @@ constraint [PK_MovideskPeopleAssets] primary key (
 
 /****** Chaves estrangeiras: filhas -> pessoa (sem cascade, a pessoa nunca é apagada pela sincronização) ******/
 
+if object_id(N'[movidesk].[FK_MovideskPeopleAddresses]') is null and object_id(N'[movidesk].MovideskPeopleAddresses') is not null and object_id(N'[movidesk].MovideskPeople') is not null
 alter table [movidesk].MovideskPeopleAddresses add constraint [FK_MovideskPeopleAddresses] foreign key (doc_company, personId) references [movidesk].MovideskPeople (doc_company, id);
 
+if object_id(N'[movidesk].[FK_MovideskPeopleContacts]') is null and object_id(N'[movidesk].MovideskPeopleContacts') is not null and object_id(N'[movidesk].MovideskPeople') is not null
 alter table [movidesk].MovideskPeopleContacts add constraint [FK_MovideskPeopleContacts] foreign key (doc_company, personId) references [movidesk].MovideskPeople (doc_company, id);
 
+if object_id(N'[movidesk].[FK_MovideskPeopleEmails]') is null and object_id(N'[movidesk].MovideskPeopleEmails') is not null and object_id(N'[movidesk].MovideskPeople') is not null
 alter table [movidesk].MovideskPeopleEmails add constraint [FK_MovideskPeopleEmails] foreign key (doc_company, personId) references [movidesk].MovideskPeople (doc_company, id);
 
+if object_id(N'[movidesk].[FK_MovideskPeopleTeams]') is null and object_id(N'[movidesk].MovideskPeopleTeams') is not null and object_id(N'[movidesk].MovideskPeople') is not null
 alter table [movidesk].MovideskPeopleTeams add constraint [FK_MovideskPeopleTeams] foreign key (doc_company, personId) references [movidesk].MovideskPeople (doc_company, id);
 
+if object_id(N'[movidesk].[FK_MovideskPeopleRelationships]') is null and object_id(N'[movidesk].MovideskPeopleRelationships') is not null and object_id(N'[movidesk].MovideskPeople') is not null
 alter table [movidesk].MovideskPeopleRelationships add constraint [FK_MovideskPeopleRelationships] foreign key (doc_company, personId) references [movidesk].MovideskPeople (doc_company, id);
 
+if object_id(N'[movidesk].[FK_MovideskPeopleCustomFieldValues]') is null and object_id(N'[movidesk].MovideskPeopleCustomFieldValues') is not null and object_id(N'[movidesk].MovideskPeople') is not null
 alter table [movidesk].MovideskPeopleCustomFieldValues add constraint [FK_MovideskPeopleCustomFieldValues] foreign key (doc_company, personId) references [movidesk].MovideskPeople (doc_company, id);
 
+if object_id(N'[movidesk].[FK_MovideskPeopleAssets]') is null and object_id(N'[movidesk].MovideskPeopleAssets') is not null and object_id(N'[movidesk].MovideskPeople') is not null
 alter table [movidesk].MovideskPeopleAssets add constraint [FK_MovideskPeopleAssets] foreign key (doc_company, personId) references [movidesk].MovideskPeople (doc_company, id);
 
 
 /****** Chaves estrangeiras: netas -> nível do meio (on delete cascade) ******/
 
+if object_id(N'[movidesk].[FK_MovideskPeopleRelationshipsServices]') is null and object_id(N'[movidesk].MovideskPeopleRelationshipsServices') is not null and object_id(N'[movidesk].MovideskPeopleRelationships') is not null
 alter table [movidesk].MovideskPeopleRelationshipsServices add constraint [FK_MovideskPeopleRelationshipsServices] foreign key (doc_company, personId, relationshipId) references [movidesk].MovideskPeopleRelationships (doc_company, personId, id) on delete cascade;
 
+if object_id(N'[movidesk].[FK_MovideskPeopleCustomFieldValuesItems]') is null and object_id(N'[movidesk].MovideskPeopleCustomFieldValuesItems') is not null and object_id(N'[movidesk].MovideskPeopleCustomFieldValues') is not null
 alter table [movidesk].MovideskPeopleCustomFieldValuesItems add constraint [FK_MovideskPeopleCustomFieldValuesItems] foreign key (doc_company, personId, customFieldId, customFieldRuleId, line) references [movidesk].MovideskPeopleCustomFieldValues (doc_company, personId, customFieldId, customFieldRuleId, line) on delete cascade;
 
 
 /****** Tabelas de valores (iguais para qualquer conta Movidesk, sem doc_company e sem merge) ******/
+if object_id(N'[movidesk].MovideskPersonTypes') is null
 create table [movidesk].MovideskPersonTypes (
 	id				int not null primary key,
 	[description]	nvarchar(60) not null
 );
 
+if object_id(N'[movidesk].MovideskProfileTypes') is null
 create table [movidesk].MovideskProfileTypes (
 	id				int not null primary key,
 	[description]	nvarchar(60) not null
 );
 
+if not exists (select 1 from [movidesk].MovideskPersonTypes)
 insert into [movidesk].MovideskPersonTypes (id, [description])
 values
 (1, N'Pessoa'),
 (2, N'Empresa'),
 (4, N'Departamento');
 
+if not exists (select 1 from [movidesk].MovideskProfileTypes)
 insert into [movidesk].MovideskProfileTypes (id, [description])
 values
 (1, N'Agente'),

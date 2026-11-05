@@ -1,6 +1,8 @@
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
 /****** Catálogos da API Person: tabelas untreated e totvs (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §3.2, fase PE-1) ******/
 --tamanhos do swagger da API Person. Catálogos pequenos: lidos pela janela de alteração (T9), como as filiais; nada é apagado
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsPersonClassifications') = 1
 create table [untreated].TotvsPersonClassifications (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14),
@@ -11,6 +13,7 @@ create table [untreated].TotvsPersonClassifications (
 	maxChangeFilterDate       datetime
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsPersonClassifications') = 1
 create table [totvs].TotvsPersonClassifications (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14) not null,
@@ -25,6 +28,7 @@ constraint [PK_TotvsPersonClassifications] primary key (
 	[code] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsEmailTypes') = 1
 create table [untreated].TotvsEmailTypes (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14),
@@ -34,6 +38,7 @@ create table [untreated].TotvsEmailTypes (
 	maxChangeFilterDate       datetime
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsEmailTypes') = 1
 create table [totvs].TotvsEmailTypes (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14) not null,
@@ -46,6 +51,7 @@ constraint [PK_TotvsEmailTypes] primary key (
 	[code] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsPhoneTypes') = 1
 create table [untreated].TotvsPhoneTypes (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14),
@@ -55,6 +61,7 @@ create table [untreated].TotvsPhoneTypes (
 	maxChangeFilterDate       datetime
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsPhoneTypes') = 1
 create table [totvs].TotvsPhoneTypes (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14) not null,
@@ -67,6 +74,7 @@ constraint [PK_TotvsPhoneTypes] primary key (
 	[code] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsContactTypes') = 1
 create table [untreated].TotvsContactTypes (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14),
@@ -75,6 +83,7 @@ create table [untreated].TotvsContactTypes (
 	maxChangeFilterDate       datetime
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsContactTypes') = 1
 create table [totvs].TotvsContactTypes (
 	integrated_or_updated_at  datetime,
 	doc_company               nvarchar(14) not null,

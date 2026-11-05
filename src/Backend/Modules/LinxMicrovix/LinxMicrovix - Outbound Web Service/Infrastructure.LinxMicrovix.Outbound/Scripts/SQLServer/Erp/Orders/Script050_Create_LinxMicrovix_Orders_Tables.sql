@@ -1,8 +1,10 @@
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
 /****** Pedidos de venda (LinxMicrovixOrdersService): tabelas untreated e linxmicrovix (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 5.2) ******/
 --colunas com o nome da resposta real da API (27/10/2026) e tamanhos da v274; respostas planas: uma tabela por método, sem filhas
 
 /*LinxPedidosVenda: informações de pedidos de venda de acordo com a loja pesquisada*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxPedidosVenda') = 1
 create table [untreated].LinxPedidosVenda (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -56,6 +58,7 @@ create table [untreated].LinxPedidosVenda (
 	[encerrado]                bit
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxPedidosVenda') = 1
 create table [linxmicrovix].LinxPedidosVenda (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -115,6 +118,7 @@ constraint [PK_LinxPedidosVenda] primary key (
 
 /*LinxPlanosPedidoVenda: os Planos de Pagamentos realizados nos pedidos de vendas Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxPlanosPedidoVenda') = 1
 create table [untreated].LinxPlanosPedidoVenda (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -132,6 +136,7 @@ create table [untreated].LinxPlanosPedidoVenda (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxPlanosPedidoVenda') = 1
 create table [linxmicrovix].LinxPlanosPedidoVenda (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -156,6 +161,7 @@ constraint [PK_LinxPlanosPedidoVenda] primary key (
 
 /*LinxPedidosVendaChecklistEntregaLocal: os tipos de locais cadastrados no checklist de entrega do pedido de venda. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxPedidosVendaChecklistEntregaLocal') = 1
 create table [untreated].LinxPedidosVendaChecklistEntregaLocal (
 	[integrated_or_updated_at]   datetime,
 	[doc_company]                nvarchar(14),
@@ -166,6 +172,7 @@ create table [untreated].LinxPedidosVendaChecklistEntregaLocal (
 	[portal]                     int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxPedidosVendaChecklistEntregaLocal') = 1
 create table [linxmicrovix].LinxPedidosVendaChecklistEntregaLocal (
 	[integrated_or_updated_at]   datetime,
 	[doc_company]                nvarchar(14) not null,
@@ -182,6 +189,7 @@ constraint [PK_LinxPedidosVendaChecklistEntregaLocal] primary key (
 
 /*LinxPedidosVendaChecklistEntregaArmazenamento: os tipos de armazenamentos cadastrados no checklist de entrega do pedido de venda. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxPedidosVendaChecklistEntregaArmazenamento') = 1
 create table [untreated].LinxPedidosVendaChecklistEntregaArmazenamento (
 	[integrated_or_updated_at]           datetime,
 	[doc_company]                        nvarchar(14),
@@ -192,6 +200,7 @@ create table [untreated].LinxPedidosVendaChecklistEntregaArmazenamento (
 	[portal]                             int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxPedidosVendaChecklistEntregaArmazenamento') = 1
 create table [linxmicrovix].LinxPedidosVendaChecklistEntregaArmazenamento (
 	[integrated_or_updated_at]           datetime,
 	[doc_company]                        nvarchar(14) not null,
@@ -208,6 +217,7 @@ constraint [PK_LinxPedidosVendaChecklistEntregaArmazenamento] primary key (
 
 /*LinxPedidosVendaChecklistEntregaDificuldade: os tipos de dificuldades cadastradas no checklist de entrega do pedido de venda. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxPedidosVendaChecklistEntregaDificuldade') = 1
 create table [untreated].LinxPedidosVendaChecklistEntregaDificuldade (
 	[integrated_or_updated_at]         datetime,
 	[doc_company]                      nvarchar(14),
@@ -218,6 +228,7 @@ create table [untreated].LinxPedidosVendaChecklistEntregaDificuldade (
 	[portal]                           int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxPedidosVendaChecklistEntregaDificuldade') = 1
 create table [linxmicrovix].LinxPedidosVendaChecklistEntregaDificuldade (
 	[integrated_or_updated_at]         datetime,
 	[doc_company]                      nvarchar(14) not null,
@@ -234,6 +245,7 @@ constraint [PK_LinxPedidosVendaChecklistEntregaDificuldade] primary key (
 
 /*LinxOrcamentoPosicao: os dados das posições cadastradas para os orçamentos. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxOrcamentoPosicao') = 1
 create table [untreated].LinxOrcamentoPosicao (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -244,6 +256,7 @@ create table [untreated].LinxOrcamentoPosicao (
 	[portal]                   int --fora da documentação
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxOrcamentoPosicao') = 1
 create table [linxmicrovix].LinxOrcamentoPosicao (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -260,6 +273,7 @@ constraint [PK_LinxOrcamentoPosicao] primary key (
 
 /*LinxB2CPedidos: os pedidos de B2C*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxB2CPedidos') = 1
 create table [untreated].LinxB2CPedidos (
 	[integrated_or_updated_at]   datetime,
 	[doc_company]                nvarchar(14),
@@ -298,6 +312,7 @@ create table [untreated].LinxB2CPedidos (
 	[identificador]              uniqueidentifier
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxB2CPedidos') = 1
 create table [linxmicrovix].LinxB2CPedidos (
 	[integrated_or_updated_at]   datetime,
 	[doc_company]                nvarchar(14) not null,
@@ -342,6 +357,7 @@ constraint [PK_LinxB2CPedidos] primary key (
 
 /*LinxB2CPedidosItens: os itens dos pedidos de B2C*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxB2CPedidosItens') = 1
 create table [untreated].LinxB2CPedidosItens (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -354,6 +370,7 @@ create table [untreated].LinxB2CPedidosItens (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxB2CPedidosItens') = 1
 create table [linxmicrovix].LinxB2CPedidosItens (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -372,6 +389,7 @@ constraint [PK_LinxB2CPedidosItens] primary key (
 
 /*LinxB2CPedidosStatus: o status dos pedidos de B2C*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxB2CPedidosStatus') = 1
 create table [untreated].LinxB2CPedidosStatus (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -384,6 +402,7 @@ create table [untreated].LinxB2CPedidosStatus (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxB2CPedidosStatus') = 1
 create table [linxmicrovix].LinxB2CPedidosStatus (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -402,6 +421,7 @@ constraint [PK_LinxB2CPedidosStatus] primary key (
 
 /*LinxB2CStatus: o cadastro dos status de B2C Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxB2CStatus') = 1
 create table [untreated].LinxB2CStatus (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -411,6 +431,7 @@ create table [untreated].LinxB2CStatus (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxB2CStatus') = 1
 create table [linxmicrovix].LinxB2CStatus (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,

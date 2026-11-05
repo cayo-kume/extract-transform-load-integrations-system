@@ -1,8 +1,10 @@
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
 /****** Produtos (LinxMicrovixProductsService): tabelas untreated e linxmicrovix (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 5.2) ******/
 --colunas com o nome da resposta real da API (27/10/2026) e tamanhos da v274; respostas planas: uma tabela por método, sem filhas
 
 /*LinxProdutos: o cadastro de produtos de acordo com a loja pesquisada ou dados da estrutura mercadológica*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxProdutos') = 1
 create table [untreated].LinxProdutos (
 	[integrated_or_updated_at]          datetime,
 	[doc_company]                       nvarchar(14),
@@ -64,6 +66,7 @@ create table [untreated].LinxProdutos (
 	[unidade_compra]                    nvarchar(50)
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxProdutos') = 1
 create table [linxmicrovix].LinxProdutos (
 	[integrated_or_updated_at]          datetime,
 	[doc_company]                       nvarchar(14) not null,
@@ -131,6 +134,7 @@ constraint [PK_LinxProdutos] primary key (
 
 /*LinxProdutosAssociados: a associação entre produtos. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxProdutosAssociados') = 1
 create table [untreated].LinxProdutosAssociados (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -144,6 +148,7 @@ create table [untreated].LinxProdutosAssociados (
 	[item_obrigatorio]         bit
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxProdutosAssociados') = 1
 create table [linxmicrovix].LinxProdutosAssociados (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -164,6 +169,7 @@ constraint [PK_LinxProdutosAssociados] primary key (
 
 /*LinxProdutosCamposAdicionais: os campos adicionais preenchidos dos Produtos cadastrados no portal*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxProdutosCamposAdicionais') = 1
 create table [untreated].LinxProdutosCamposAdicionais (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -176,6 +182,7 @@ create table [untreated].LinxProdutosCamposAdicionais (
 	[id_campo_valor]           int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxProdutosCamposAdicionais') = 1
 create table [linxmicrovix].LinxProdutosCamposAdicionais (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -195,6 +202,7 @@ constraint [PK_LinxProdutosCamposAdicionais] primary key (
 
 /*LinxProdutosCodBar: o cadastro de códigos de barras dos produtos*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxProdutosCodBar') = 1
 create table [untreated].LinxProdutosCodBar (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -204,6 +212,7 @@ create table [untreated].LinxProdutosCodBar (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxProdutosCodBar') = 1
 create table [linxmicrovix].LinxProdutosCodBar (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -220,6 +229,7 @@ constraint [PK_LinxProdutosCodBar] primary key (
 
 /*LinxProdutosFornec: os registros de produtos x fornecedores*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxProdutosFornec') = 1
 create table [untreated].LinxProdutosFornec (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -251,6 +261,7 @@ create table [untreated].LinxProdutosFornec (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxProdutosFornec') = 1
 create table [linxmicrovix].LinxProdutosFornec (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -288,6 +299,7 @@ constraint [PK_LinxProdutosFornec] primary key (
 
 /*LinxProdutosInformacoes: informações dos produtos (características). Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxProdutosInformacoes') = 1
 create table [untreated].LinxProdutosInformacoes (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -297,6 +309,7 @@ create table [untreated].LinxProdutosInformacoes (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxProdutosInformacoes') = 1
 create table [linxmicrovix].LinxProdutosInformacoes (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -312,6 +325,7 @@ constraint [PK_LinxProdutosInformacoes] primary key (
 
 /*LinxProdutosImagensURL: as URLs das imagens dos produtos.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxProdutosImagensURL') = 1
 create table [untreated].LinxProdutosImagensURL (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -322,6 +336,7 @@ create table [untreated].LinxProdutosImagensURL (
 	[id_imagem]                int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxProdutosImagensURL') = 1
 create table [linxmicrovix].LinxProdutosImagensURL (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -339,6 +354,7 @@ constraint [PK_LinxProdutosImagensURL] primary key (
 
 /*LinxProdutosLotes: o saldo do lotes de produtos. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxProdutosLotes') = 1
 create table [untreated].LinxProdutosLotes (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -352,6 +368,7 @@ create table [untreated].LinxProdutosLotes (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxProdutosLotes') = 1
 create table [linxmicrovix].LinxProdutosLotes (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -374,6 +391,7 @@ constraint [PK_LinxProdutosLotes] primary key (
 
 /*LinxLotesProdutos: os dados dos lotes dos produtos. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxLotesProdutos') = 1
 create table [untreated].LinxLotesProdutos (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -389,6 +407,7 @@ create table [untreated].LinxLotesProdutos (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxLotesProdutos') = 1
 create table [linxmicrovix].LinxLotesProdutos (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -410,6 +429,7 @@ constraint [PK_LinxLotesProdutos] primary key (
 
 /*LinxProdutosSerial: o saldo atual dos seriais cadastrados no portal. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxProdutosSerial') = 1
 create table [untreated].LinxProdutosSerial (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -423,6 +443,7 @@ create table [untreated].LinxProdutosSerial (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxProdutosSerial') = 1
 create table [linxmicrovix].LinxProdutosSerial (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,

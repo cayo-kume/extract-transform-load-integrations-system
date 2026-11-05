@@ -1,8 +1,10 @@
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
 /****** Lojas (LinxMicrovixStoresService): tabelas untreated e linxmicrovix (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 5.2) ******/
 --colunas com o nome da resposta real da API (26/10/2026) e tamanhos da v274; respostas planas: uma tabela por método, sem filhas
 
 /*LinxGrupoLojas: lojas do grupo; sem timestamp: o grupo é relido inteiro a cada execução. Chave portal + empresa (uma loja vem sem CNPJ, testado)*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxGrupoLojas') = 1
 create table [untreated].LinxGrupoLojas (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14),
@@ -18,6 +20,7 @@ create table [untreated].LinxGrupoLojas (
 	emp_mod_linx_promo       bit --fora da v274
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxGrupoLojas') = 1
 create table [linxmicrovix].LinxGrupoLojas (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14) not null,
@@ -39,6 +42,7 @@ constraint [PK_LinxGrupoLojas] primary key (
 
 /*LinxLojas: cadastro de cada loja, consultada pelo CNPJ*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxLojas') = 1
 create table [untreated].LinxLojas (
 	integrated_or_updated_at   datetime,
 	[doc_company]              nvarchar(14),
@@ -76,6 +80,7 @@ create table [untreated].LinxLojas (
 	id_grupo                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxLojas') = 1
 create table [linxmicrovix].LinxLojas (
 	integrated_or_updated_at   datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -118,6 +123,7 @@ constraint [PK_LinxLojas] primary key (
 
 /*LinxLojasParametros: parâmetros do portal para cada loja; a resposta não traz o CNPJ: cnpj_emp é a loja consultada*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxLojasParametros') = 1
 create table [untreated].LinxLojasParametros (
 	integrated_or_updated_at      datetime,
 	[doc_company]                 nvarchar(14),
@@ -128,6 +134,7 @@ create table [untreated].LinxLojasParametros (
 	[timestamp]                   bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxLojasParametros') = 1
 create table [linxmicrovix].LinxLojasParametros (
 	integrated_or_updated_at      datetime,
 	[doc_company]                 nvarchar(14) not null,
@@ -143,6 +150,7 @@ constraint [PK_LinxLojasParametros] primary key (
 
 /*LinxUsuarios: usuários do portal (método de portal, sem cnpjEmp; 100 por chamada, testado)*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxUsuarios') = 1
 create table [untreated].LinxUsuarios (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14),
@@ -162,6 +170,7 @@ create table [untreated].LinxUsuarios (
 	[timestamp]              bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxUsuarios') = 1
 create table [linxmicrovix].LinxUsuarios (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14) not null,
@@ -187,6 +196,7 @@ constraint [PK_LinxUsuarios] primary key (
 
 /*LinxMetodos: catálogo de métodos da API (o mesmo para qualquer chave); sem timestamp: relido inteiro a cada execução*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxMetodos') = 1
 create table [untreated].LinxMetodos (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14),
@@ -195,6 +205,7 @@ create table [untreated].LinxMetodos (
 	parametros               nvarchar(1000) --parâmetros aceitos, separados por vírgula
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxMetodos') = 1
 create table [linxmicrovix].LinxMetodos (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14) not null,
@@ -208,6 +219,7 @@ constraint [PK_LinxMetodos] primary key (
 
 /*LinxEntrantes: entrantes por período e loja, só dos últimos 2 anos (método de portal, sem cnpjEmp)*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxEntrantes') = 1
 create table [untreated].LinxEntrantes (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14),
@@ -220,6 +232,7 @@ create table [untreated].LinxEntrantes (
 	[timestamp]              bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxEntrantes') = 1
 create table [linxmicrovix].LinxEntrantes (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14) not null,

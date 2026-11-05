@@ -1,8 +1,10 @@
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
 /****** Clientes do B2C (LinxMicrovixB2CCustomersService): tabelas untreated e linxmicrovix (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 5.2) ******/
 --colunas com o nome da resposta real da API (27/10/2026) e tamanhos da V64; respostas planas: uma tabela por método, sem filhas
 
 /*B2CConsultaClientes: */
 
+if dbo.fn_Migrator_Creates(N'[untreated].B2CConsultaClientes') = 1
 create table [untreated].B2CConsultaClientes (
 	[integrated_or_updated_at]   datetime,
 	[doc_company]                nvarchar(14),
@@ -47,6 +49,7 @@ create table [untreated].B2CConsultaClientes (
 	[inscricao_cliente]          nvarchar(20)
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].B2CConsultaClientes') = 1
 create table [linxmicrovix].B2CConsultaClientes (
 	[integrated_or_updated_at]   datetime,
 	[doc_company]                nvarchar(14) not null,
@@ -97,6 +100,7 @@ constraint [PK_B2CConsultaClientes] primary key (
 
 /*B2CConsultaClientesContatos:  Colunas da documentação: a chave da Newbloomers não tem acesso ao método. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].B2CConsultaClientesContatos') = 1
 create table [untreated].B2CConsultaClientesContatos (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -115,6 +119,7 @@ create table [untreated].B2CConsultaClientesContatos (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].B2CConsultaClientesContatos') = 1
 create table [linxmicrovix].B2CConsultaClientesContatos (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -139,6 +144,7 @@ constraint [PK_B2CConsultaClientesContatos] primary key (
 
 /*B2CConsultaClientesContatosParentesco:  Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].B2CConsultaClientesContatosParentesco') = 1
 create table [untreated].B2CConsultaClientesContatosParentesco (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -148,6 +154,7 @@ create table [untreated].B2CConsultaClientesContatosParentesco (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].B2CConsultaClientesContatosParentesco') = 1
 create table [linxmicrovix].B2CConsultaClientesContatosParentesco (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -163,6 +170,7 @@ constraint [PK_B2CConsultaClientesContatosParentesco] primary key (
 
 /*B2CConsultaClientesEnderecosEntrega:  Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].B2CConsultaClientesEnderecosEntrega') = 1
 create table [untreated].B2CConsultaClientesEnderecosEntrega (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -184,6 +192,7 @@ create table [untreated].B2CConsultaClientesEnderecosEntrega (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].B2CConsultaClientesEnderecosEntrega') = 1
 create table [linxmicrovix].B2CConsultaClientesEnderecosEntrega (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -211,6 +220,7 @@ constraint [PK_B2CConsultaClientesEnderecosEntrega] primary key (
 
 /*B2CConsultaClientesEstadoCivil:  Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].B2CConsultaClientesEstadoCivil') = 1
 create table [untreated].B2CConsultaClientesEstadoCivil (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -220,6 +230,7 @@ create table [untreated].B2CConsultaClientesEstadoCivil (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].B2CConsultaClientesEstadoCivil') = 1
 create table [linxmicrovix].B2CConsultaClientesEstadoCivil (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -235,6 +246,7 @@ constraint [PK_B2CConsultaClientesEstadoCivil] primary key (
 
 /*B2CConsultaClientesSaldo:  Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].B2CConsultaClientesSaldo') = 1
 create table [untreated].B2CConsultaClientesSaldo (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -246,6 +258,7 @@ create table [untreated].B2CConsultaClientesSaldo (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].B2CConsultaClientesSaldo') = 1
 create table [linxmicrovix].B2CConsultaClientesSaldo (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -264,6 +277,7 @@ constraint [PK_B2CConsultaClientesSaldo] primary key (
 
 /*B2CConsultaClientesSaldoLinx:  Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].B2CConsultaClientesSaldoLinx') = 1
 create table [untreated].B2CConsultaClientesSaldoLinx (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -276,6 +290,7 @@ create table [untreated].B2CConsultaClientesSaldoLinx (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].B2CConsultaClientesSaldoLinx') = 1
 create table [linxmicrovix].B2CConsultaClientesSaldoLinx (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,

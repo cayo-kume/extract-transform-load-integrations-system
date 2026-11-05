@@ -1,8 +1,10 @@
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
 /****** Financeiro (LinxMicrovixFinancialService): tabelas untreated e linxmicrovix (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 5.2) ******/
 --colunas com o nome da resposta real da API (27/10/2026) e tamanhos da v274; respostas planas: uma tabela por método, sem filhas
 
 /*LinxFaturas: as faturas a receber ou a pagar de uma loja*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxFaturas') = 1
 create table [untreated].LinxFaturas (
 	[integrated_or_updated_at]      datetime,
 	[doc_company]                   nvarchar(14),
@@ -63,6 +65,7 @@ create table [untreated].LinxFaturas (
 	[plano_pagamento_baixa]         int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxFaturas') = 1
 create table [linxmicrovix].LinxFaturas (
 	[integrated_or_updated_at]      datetime,
 	[doc_company]                   nvarchar(14) not null,
@@ -130,6 +133,7 @@ constraint [PK_LinxFaturas] primary key (
 
 /*LinxFaturasOrigem: as faturas de origem Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxFaturasOrigem') = 1
 create table [untreated].LinxFaturasOrigem (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -140,6 +144,7 @@ create table [untreated].LinxFaturasOrigem (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxFaturasOrigem') = 1
 create table [linxmicrovix].LinxFaturasOrigem (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -157,6 +162,7 @@ constraint [PK_LinxFaturasOrigem] primary key (
 
 /*LinxPortadores: os dados dos portadores. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxPortadores') = 1
 create table [untreated].LinxPortadores (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -169,6 +175,7 @@ create table [untreated].LinxPortadores (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxPortadores') = 1
 create table [linxmicrovix].LinxPortadores (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -187,6 +194,7 @@ constraint [PK_LinxPortadores] primary key (
 
 /*LinxAntecipacoesFinanceiras: informações das antecipações financeiras do portal Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxAntecipacoesFinanceiras') = 1
 create table [untreated].LinxAntecipacoesFinanceiras (
 	[integrated_or_updated_at]             datetime,
 	[doc_company]                          nvarchar(14),
@@ -215,6 +223,7 @@ create table [untreated].LinxAntecipacoesFinanceiras (
 	[identificador_faturamento_antecipado] uniqueidentifier
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxAntecipacoesFinanceiras') = 1
 create table [linxmicrovix].LinxAntecipacoesFinanceiras (
 	[integrated_or_updated_at]             datetime,
 	[doc_company]                          nvarchar(14) not null,
@@ -250,6 +259,7 @@ constraint [PK_LinxAntecipacoesFinanceiras] primary key (
 
 /*LinxAntecipacoesFinanceirasPlanos: os dados da tabela antecipacoes_financeiras  e antecipacoes_financeiras_planos no portal. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxAntecipacoesFinanceirasPlanos') = 1
 create table [untreated].LinxAntecipacoesFinanceirasPlanos (
 	[integrated_or_updated_at]       datetime,
 	[doc_company]                    nvarchar(14),
@@ -267,6 +277,7 @@ create table [untreated].LinxAntecipacoesFinanceirasPlanos (
 	[data_criacao_antecipacao_plano] datetime
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxAntecipacoesFinanceirasPlanos') = 1
 create table [linxmicrovix].LinxAntecipacoesFinanceirasPlanos (
 	[integrated_or_updated_at]       datetime,
 	[doc_company]                    nvarchar(14) not null,
@@ -292,6 +303,7 @@ constraint [PK_LinxAntecipacoesFinanceirasPlanos] primary key (
 
 /*LinxDesfazimentosAntecipacoes: os valores registrados na tabela desfazimentos_antecipacoes Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxDesfazimentosAntecipacoes') = 1
 create table [untreated].LinxDesfazimentosAntecipacoes (
 	[integrated_or_updated_at]      datetime,
 	[doc_company]                   nvarchar(14),
@@ -308,6 +320,7 @@ create table [untreated].LinxDesfazimentosAntecipacoes (
 	[timestamp]                     bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxDesfazimentosAntecipacoes') = 1
 create table [linxmicrovix].LinxDesfazimentosAntecipacoes (
 	[integrated_or_updated_at]      datetime,
 	[doc_company]                   nvarchar(14) not null,
@@ -330,6 +343,7 @@ constraint [PK_LinxDesfazimentosAntecipacoes] primary key (
 
 /*LinxDesfazimentosAntecipacoesDocumento: os valores registrados na tabela desfazimentos_antecipacoes_documento Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxDesfazimentosAntecipacoesDocumento') = 1
 create table [untreated].LinxDesfazimentosAntecipacoesDocumento (
 	[integrated_or_updated_at]         datetime,
 	[doc_company]                      nvarchar(14),
@@ -346,6 +360,7 @@ create table [untreated].LinxDesfazimentosAntecipacoesDocumento (
 	[timestamp]                        bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxDesfazimentosAntecipacoesDocumento') = 1
 create table [linxmicrovix].LinxDesfazimentosAntecipacoesDocumento (
 	[integrated_or_updated_at]         datetime,
 	[doc_company]                      nvarchar(14) not null,
@@ -368,6 +383,7 @@ constraint [PK_LinxDesfazimentosAntecipacoesDocumento] primary key (
 
 /*LinxDesfazimentosAntecipacoesItens: os valores registrados na tabela desfazimentos_antecipacoes_itens Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxDesfazimentosAntecipacoesItens') = 1
 create table [untreated].LinxDesfazimentosAntecipacoesItens (
 	[integrated_or_updated_at]            datetime,
 	[doc_company]                         nvarchar(14),
@@ -385,6 +401,7 @@ create table [untreated].LinxDesfazimentosAntecipacoesItens (
 	[timestamp]                           bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxDesfazimentosAntecipacoesItens') = 1
 create table [linxmicrovix].LinxDesfazimentosAntecipacoesItens (
 	[integrated_or_updated_at]            datetime,
 	[doc_company]                         nvarchar(14) not null,
@@ -408,6 +425,7 @@ constraint [PK_LinxDesfazimentosAntecipacoesItens] primary key (
 
 /*LinxCategoriasFinanceiras: categoria financeira*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxCategoriasFinanceiras') = 1
 create table [untreated].LinxCategoriasFinanceiras (
 	[integrated_or_updated_at]  datetime,
 	[doc_company]               nvarchar(14),
@@ -419,6 +437,7 @@ create table [untreated].LinxCategoriasFinanceiras (
 	[portal]                    int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxCategoriasFinanceiras') = 1
 create table [linxmicrovix].LinxCategoriasFinanceiras (
 	[integrated_or_updated_at]  datetime,
 	[doc_company]               nvarchar(14) not null,
@@ -436,6 +455,7 @@ constraint [PK_LinxCategoriasFinanceiras] primary key (
 
 /*LinxCentroCusto: as informações dos centros de custos cadastrados no portal*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxCentroCusto') = 1
 create table [untreated].LinxCentroCusto (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -449,6 +469,7 @@ create table [untreated].LinxCentroCusto (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxCentroCusto') = 1
 create table [linxmicrovix].LinxCentroCusto (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -469,6 +490,7 @@ constraint [PK_LinxCentroCusto] primary key (
 
 /*LinxPlanoContas: as informações do plano de contas cadastrado no portal*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxPlanoContas') = 1
 create table [untreated].LinxPlanoContas (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -488,6 +510,7 @@ create table [untreated].LinxPlanoContas (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxPlanoContas') = 1
 create table [linxmicrovix].LinxPlanoContas (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -514,6 +537,7 @@ constraint [PK_LinxPlanoContas] primary key (
 
 /*LinxLancContabil: informações dos Lançamentos Contábeis por conta e empresa Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxLancContabil') = 1
 create table [untreated].LinxLancContabil (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -540,6 +564,7 @@ create table [untreated].LinxLancContabil (
 	[cancelado]                nvarchar(1)
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxLancContabil') = 1
 create table [linxmicrovix].LinxLancContabil (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -572,6 +597,7 @@ constraint [PK_LinxLancContabil] primary key (
 
 /*LinxHistoricosContabeis: os dados dos históricos contábeis.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxHistoricosContabeis') = 1
 create table [untreated].LinxHistoricosContabeis (
 	[integrated_or_updated_at]           datetime,
 	[doc_company]                        nvarchar(14),
@@ -589,6 +615,7 @@ create table [untreated].LinxHistoricosContabeis (
 	[portal]                             int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxHistoricosContabeis') = 1
 create table [linxmicrovix].LinxHistoricosContabeis (
 	[integrated_or_updated_at]           datetime,
 	[doc_company]                        nvarchar(14) not null,
@@ -612,6 +639,7 @@ constraint [PK_LinxHistoricosContabeis] primary key (
 
 /*LinxExtratoBancarioLancamentos: os registros da tabela extrato_bancario_lancamentos.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxExtratoBancarioLancamentos') = 1
 create table [untreated].LinxExtratoBancarioLancamentos (
 	[integrated_or_updated_at]        datetime,
 	[doc_company]                     nvarchar(14),
@@ -626,6 +654,7 @@ create table [untreated].LinxExtratoBancarioLancamentos (
 	[timestamp]                       bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxExtratoBancarioLancamentos') = 1
 create table [linxmicrovix].LinxExtratoBancarioLancamentos (
 	[integrated_or_updated_at]        datetime,
 	[doc_company]                     nvarchar(14) not null,
@@ -646,6 +675,7 @@ constraint [PK_LinxExtratoBancarioLancamentos] primary key (
 
 /*LinxExtratoBancarioConciliacoes: os registros da tabela extrato_bancario_conciliacoes.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxExtratoBancarioConciliacoes') = 1
 create table [untreated].LinxExtratoBancarioConciliacoes (
 	[integrated_or_updated_at]         datetime,
 	[doc_company]                      nvarchar(14),
@@ -657,6 +687,7 @@ create table [untreated].LinxExtratoBancarioConciliacoes (
 	[timestamp]                        bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxExtratoBancarioConciliacoes') = 1
 create table [linxmicrovix].LinxExtratoBancarioConciliacoes (
 	[integrated_or_updated_at]         datetime,
 	[doc_company]                      nvarchar(14) not null,

@@ -1,8 +1,10 @@
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
 /****** Ordens de serviço (LinxMicrovixServiceOrdersService): tabelas untreated e linxmicrovix (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 5.2) ******/
 --colunas com o nome da resposta real da API (27/10/2026) e tamanhos da v274; respostas planas: uma tabela por método, sem filhas
 
 /*LinxOrdensServico: as ordens de serviço Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxOrdensServico') = 1
 create table [untreated].LinxOrdensServico (
 	[integrated_or_updated_at]                 datetime,
 	[doc_company]                              nvarchar(14),
@@ -24,6 +26,7 @@ create table [untreated].LinxOrdensServico (
 	[previsao_entrega_os]                      datetime
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxOrdensServico') = 1
 create table [linxmicrovix].LinxOrdensServico (
 	[integrated_or_updated_at]                 datetime,
 	[doc_company]                              nvarchar(14) not null,
@@ -51,6 +54,7 @@ constraint [PK_LinxOrdensServico] primary key (
 
 /*LinxOrdensServicoProdutos: os produtos das ordens de serviço Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxOrdensServicoProdutos') = 1
 create table [untreated].LinxOrdensServicoProdutos (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -62,6 +66,7 @@ create table [untreated].LinxOrdensServicoProdutos (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxOrdensServicoProdutos') = 1
 create table [linxmicrovix].LinxOrdensServicoProdutos (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -79,6 +84,7 @@ constraint [PK_LinxOrdensServicoProdutos] primary key (
 
 /*LinxServicos: o cadastro de serviços de acordo com a loja pesquisada ou dados da estrutura mercadológica Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxServicos') = 1
 create table [untreated].LinxServicos (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -103,6 +109,7 @@ create table [untreated].LinxServicos (
 	[codigo_ws]                nvarchar(50)
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxServicos') = 1
 create table [linxmicrovix].LinxServicos (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -133,6 +140,7 @@ constraint [PK_LinxServicos] primary key (
 
 /*LinxServicosDetalhes: informações dos serviços de acordo com a loja pesquisada Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxServicosDetalhes') = 1
 create table [untreated].LinxServicosDetalhes (
 	[integrated_or_updated_at]   datetime,
 	[doc_company]                nvarchar(14),
@@ -154,6 +162,7 @@ create table [untreated].LinxServicosDetalhes (
 	[timestamp]                  bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxServicosDetalhes') = 1
 create table [linxmicrovix].LinxServicosDetalhes (
 	[integrated_or_updated_at]   datetime,
 	[doc_company]                nvarchar(14) not null,
@@ -181,6 +190,7 @@ constraint [PK_LinxServicosDetalhes] primary key (
 
 /*LinxServicoClientes: os dados dos clientes do serviço. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxServicoClientes') = 1
 create table [untreated].LinxServicoClientes (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -203,6 +213,7 @@ create table [untreated].LinxServicoClientes (
 	[identificador]            nvarchar(1000) --fora da documentação
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxServicoClientes') = 1
 create table [linxmicrovix].LinxServicoClientes (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -233,6 +244,7 @@ constraint [PK_LinxServicoClientes] primary key (
 
 /*LinxServicoAgendaComandas: a agenda das comandas dos serviços. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxServicoAgendaComandas') = 1
 create table [untreated].LinxServicoAgendaComandas (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -251,6 +263,7 @@ create table [untreated].LinxServicoAgendaComandas (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxServicoAgendaComandas') = 1
 create table [linxmicrovix].LinxServicoAgendaComandas (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -275,6 +288,7 @@ constraint [PK_LinxServicoAgendaComandas] primary key (
 
 /*LinxServicoAgendaEventos: a agenda dos eventos dos serviços. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxServicoAgendaEventos') = 1
 create table [untreated].LinxServicoAgendaEventos (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -297,6 +311,7 @@ create table [untreated].LinxServicoAgendaEventos (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxServicoAgendaEventos') = 1
 create table [linxmicrovix].LinxServicoAgendaEventos (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -325,6 +340,7 @@ constraint [PK_LinxServicoAgendaEventos] primary key (
 
 /*LinxOrdemServicoExternaDav: as ordens de serviço externas das DAVs Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxOrdemServicoExternaDav') = 1
 create table [untreated].LinxOrdemServicoExternaDav (
 	[integrated_or_updated_at]                datetime,
 	[doc_company]                             nvarchar(14),
@@ -336,6 +352,7 @@ create table [untreated].LinxOrdemServicoExternaDav (
 	[portal]                                  int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxOrdemServicoExternaDav') = 1
 create table [linxmicrovix].LinxOrdemServicoExternaDav (
 	[integrated_or_updated_at]                datetime,
 	[doc_company]                             nvarchar(14) not null,
@@ -353,6 +370,7 @@ constraint [PK_LinxOrdemServicoExternaDav] primary key (
 
 /*LinxMovimentoOrdemServicoExterna: a ordem de serviço externa da movimentação. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxMovimentoOrdemServicoExterna') = 1
 create table [untreated].LinxMovimentoOrdemServicoExterna (
 	[integrated_or_updated_at]           datetime,
 	[doc_company]                        nvarchar(14),
@@ -364,6 +382,7 @@ create table [untreated].LinxMovimentoOrdemServicoExterna (
 	[portal]                             int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxMovimentoOrdemServicoExterna') = 1
 create table [linxmicrovix].LinxMovimentoOrdemServicoExterna (
 	[integrated_or_updated_at]           datetime,
 	[doc_company]                        nvarchar(14) not null,
@@ -381,6 +400,7 @@ constraint [PK_LinxMovimentoOrdemServicoExterna] primary key (
 
 /*LinxValeOrdemServicoExterna: os dados de vale ordem de serviço externa. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxValeOrdemServicoExterna') = 1
 create table [untreated].LinxValeOrdemServicoExterna (
 	[integrated_or_updated_at]      datetime,
 	[doc_company]                   nvarchar(14),
@@ -391,6 +411,7 @@ create table [untreated].LinxValeOrdemServicoExterna (
 	[timestamp]                     bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxValeOrdemServicoExterna') = 1
 create table [linxmicrovix].LinxValeOrdemServicoExterna (
 	[integrated_or_updated_at]      datetime,
 	[doc_company]                   nvarchar(14) not null,
@@ -407,6 +428,7 @@ constraint [PK_LinxValeOrdemServicoExterna] primary key (
 
 /*LinxPagamentoParcialDav: os pagamentos parciais da DAVs*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxPagamentoParcialDav') = 1
 create table [untreated].LinxPagamentoParcialDav (
 	[integrated_or_updated_at]       datetime,
 	[doc_company]                    nvarchar(14),
@@ -424,6 +446,7 @@ create table [untreated].LinxPagamentoParcialDav (
 	[portal]                         int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxPagamentoParcialDav') = 1
 create table [linxmicrovix].LinxPagamentoParcialDav (
 	[integrated_or_updated_at]       datetime,
 	[doc_company]                    nvarchar(14) not null,

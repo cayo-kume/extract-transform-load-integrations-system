@@ -1,7 +1,9 @@
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
 /****** Preços e custos: tabelas untreated e totvs (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.9, fase PR-2) ******/
 --uma linha por loja + produto + código (todos os códigos de preço, custo e saldo do cadastro). branchCode vem antes do produto
 --na chave: a janela, a carga inicial e o cache de estado consultam por loja. Os dados do produto já estão em TotvsSkus.
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsPrices') = 1
 create table [untreated].TotvsPrices (
 	integrated_or_updated_at            datetime,
 	doc_company                         nvarchar(14),
@@ -19,6 +21,7 @@ create table [untreated].TotvsPrices (
 	maxChangeFilterDate                 datetime
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsPrices') = 1
 create table [totvs].TotvsPrices (
 	integrated_or_updated_at            datetime,
 	doc_company                         nvarchar(14) not null,
@@ -41,6 +44,7 @@ constraint [PK_TotvsPrices] primary key (
 	priceCode asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsPricesOtherPromotions') = 1
 create table [untreated].TotvsPricesOtherPromotions (
 	integrated_or_updated_at            datetime,
 	doc_company                         nvarchar(14),
@@ -55,6 +59,7 @@ create table [untreated].TotvsPricesOtherPromotions (
 	[price]                             decimal(18,6)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsPricesOtherPromotions') = 1
 create table [totvs].TotvsPricesOtherPromotions (
 	integrated_or_updated_at            datetime,
 	doc_company                         nvarchar(14) not null,
@@ -76,6 +81,7 @@ constraint [PK_TotvsPricesOtherPromotions] primary key (
 	promotionCode asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsCosts') = 1
 create table [untreated].TotvsCosts (
 	integrated_or_updated_at            datetime,
 	doc_company                         nvarchar(14),
@@ -87,6 +93,7 @@ create table [untreated].TotvsCosts (
 	maxChangeFilterDate                 datetime
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsCosts') = 1
 create table [totvs].TotvsCosts (
 	integrated_or_updated_at            datetime,
 	doc_company                         nvarchar(14) not null,
@@ -104,6 +111,7 @@ constraint [PK_TotvsCosts] primary key (
 ));
 
 /****** Chaves estrangeiras ******/
+if object_id(N'[totvs].[FK_TotvsPricesOtherPromotions]') is null and object_id(N'[totvs].TotvsPricesOtherPromotions') is not null and object_id(N'[totvs].TotvsPrices') is not null
 alter table [totvs].TotvsPricesOtherPromotions add constraint [FK_TotvsPricesOtherPromotions] foreign key (doc_company, branchCode, productCode, priceCode) references [totvs].TotvsPrices (doc_company, branchCode, productCode, priceCode);
 
 go
@@ -111,6 +119,7 @@ go
 /****** Tabelas de preço (itens) e promoções: tabelas untreated e totvs (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.2, fase PR-2) ******/
 --itens das tabelas de PEDFM011 (o cabeçalho é a TotvsPriceTables, do Script045) e itens de promoção de PRDFM002/PRDFM319
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsPriceTablesItems') = 1
 create table [untreated].TotvsPriceTablesItems (
 	integrated_or_updated_at             datetime,
 	doc_company                          nvarchar(14),
@@ -120,6 +129,7 @@ create table [untreated].TotvsPriceTablesItems (
 	maxChangeFilterDate                  datetime
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsPriceTablesItems') = 1
 create table [totvs].TotvsPriceTablesItems (
 	integrated_or_updated_at             datetime,
 	doc_company                          nvarchar(14) not null,
@@ -133,6 +143,7 @@ constraint [PK_TotvsPriceTablesItems] primary key (
 	productCode asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsPriceTablesItemsPrices') = 1
 create table [untreated].TotvsPriceTablesItemsPrices (
 	integrated_or_updated_at             datetime,
 	doc_company                          nvarchar(14),
@@ -144,6 +155,7 @@ create table [untreated].TotvsPriceTablesItemsPrices (
 	[price]                              decimal(18,6)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsPriceTablesItemsPrices') = 1
 create table [totvs].TotvsPriceTablesItemsPrices (
 	integrated_or_updated_at             datetime,
 	doc_company                          nvarchar(14) not null,
@@ -161,6 +173,7 @@ constraint [PK_TotvsPriceTablesItemsPrices] primary key (
 	scaleCode asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsPromotions') = 1
 create table [untreated].TotvsPromotions (
 	integrated_or_updated_at             datetime,
 	doc_company                          nvarchar(14),
@@ -177,6 +190,7 @@ create table [untreated].TotvsPromotions (
 	json_hash                            nvarchar(64)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsPromotions') = 1
 create table [totvs].TotvsPromotions (
 	integrated_or_updated_at             datetime,
 	doc_company                          nvarchar(14) not null,
@@ -199,5 +213,7 @@ constraint [PK_TotvsPromotions] primary key (
 ));
 
 /****** Chaves estrangeiras ******/
+if object_id(N'[totvs].[FK_TotvsPriceTablesItems]') is null and object_id(N'[totvs].TotvsPriceTablesItems') is not null and object_id(N'[totvs].TotvsPriceTables') is not null
 alter table [totvs].TotvsPriceTablesItems add constraint [FK_TotvsPriceTablesItems] foreign key (doc_company, priceTableCode) references [totvs].TotvsPriceTables (doc_company, [code]);
+if object_id(N'[totvs].[FK_TotvsPriceTablesItemsPrices]') is null and object_id(N'[totvs].TotvsPriceTablesItemsPrices') is not null and object_id(N'[totvs].TotvsPriceTablesItems') is not null
 alter table [totvs].TotvsPriceTablesItemsPrices add constraint [FK_TotvsPriceTablesItemsPrices] foreign key (doc_company, priceTableCode, productCode) references [totvs].TotvsPriceTablesItems (doc_company, priceTableCode, productCode);

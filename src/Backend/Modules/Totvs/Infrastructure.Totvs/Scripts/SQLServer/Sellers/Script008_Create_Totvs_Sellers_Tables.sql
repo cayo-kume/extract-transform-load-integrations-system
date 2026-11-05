@@ -1,6 +1,8 @@
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
 /****** Vendedores: tabelas untreated e totvs (src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.2.3) ******/
 --o swagger da API Seller não traz tamanhos: valem os do código antigo
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsSellers') = 1
 create table [untreated].TotvsSellers (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14),
@@ -11,6 +13,7 @@ create table [untreated].TotvsSellers (
 	maxChangeFilterDate      datetime
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsSellers') = 1
 create table [totvs].TotvsSellers (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14) not null,
@@ -24,6 +27,7 @@ constraint [PK_TotvsSellers] primary key (
 	sellerCode asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsSellersBranchInformations') = 1
 create table [untreated].TotvsSellersBranchInformations (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14),
@@ -35,6 +39,7 @@ create table [untreated].TotvsSellersBranchInformations (
 	sellerTypeDescription    nvarchar(60)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsSellersBranchInformations') = 1
 create table [totvs].TotvsSellersBranchInformations (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14) not null,
@@ -50,6 +55,7 @@ constraint [PK_TotvsSellersBranchInformations] primary key (
 	branchCode asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsSellersCustomers') = 1
 create table [untreated].TotvsSellersCustomers (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14),
@@ -59,6 +65,7 @@ create table [untreated].TotvsSellersCustomers (
 	[name]                   nvarchar(250)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsSellersCustomers') = 1
 create table [totvs].TotvsSellersCustomers (
 	integrated_or_updated_at datetime,
 	[doc_company]            nvarchar(14) not null,
@@ -74,7 +81,9 @@ constraint [PK_TotvsSellersCustomers] primary key (
 
 /****** Chaves estrangeiras: filhas -> vendedor ******/
 
+if object_id(N'[totvs].[FK_TotvsSellersBranchInformations]') is null and object_id(N'[totvs].TotvsSellersBranchInformations') is not null and object_id(N'[totvs].TotvsSellers') is not null
 alter table [totvs].TotvsSellersBranchInformations add constraint [FK_TotvsSellersBranchInformations] foreign key (doc_company, sellerCode) references [totvs].TotvsSellers (doc_company, sellerCode);
+if object_id(N'[totvs].[FK_TotvsSellersCustomers]') is null and object_id(N'[totvs].TotvsSellersCustomers') is not null and object_id(N'[totvs].TotvsSellers') is not null
 alter table [totvs].TotvsSellersCustomers add constraint [FK_TotvsSellersCustomers] foreign key (doc_company, sellerCode) references [totvs].TotvsSellers (doc_company, sellerCode);
 
 go
@@ -83,6 +92,7 @@ go
 --chave: doc_company + operationalAreaCode; as filhas (estados, CEPs e cidades) levam o código da região. Sem tamanho no swagger
 --para os textos. Sem maxChangeFilterDate: a leitura é inteira, e json_hash diz se a região mudou (T9).
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsOperationalAreas') = 1
 create table [untreated].TotvsOperationalAreas (
 	integrated_or_updated_at          datetime,
 	doc_company                       nvarchar(14),
@@ -95,6 +105,7 @@ create table [untreated].TotvsOperationalAreas (
 	json_hash                         nvarchar(64)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsOperationalAreas') = 1
 create table [totvs].TotvsOperationalAreas (
 	integrated_or_updated_at          datetime,
 	doc_company                       nvarchar(14) not null,
@@ -110,6 +121,7 @@ constraint [PK_TotvsOperationalAreas] primary key (
 	operationalAreaCode asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsOperationalAreasStates') = 1
 create table [untreated].TotvsOperationalAreasStates (
 	integrated_or_updated_at          datetime,
 	doc_company                       nvarchar(14),
@@ -118,6 +130,7 @@ create table [untreated].TotvsOperationalAreasStates (
 	stateName                         nvarchar(60)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsOperationalAreasStates') = 1
 create table [totvs].TotvsOperationalAreasStates (
 	integrated_or_updated_at          datetime,
 	doc_company                       nvarchar(14) not null,
@@ -130,6 +143,7 @@ constraint [PK_TotvsOperationalAreasStates] primary key (
 	stateCode asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsOperationalAreasCeps') = 1
 create table [untreated].TotvsOperationalAreasCeps (
 	integrated_or_updated_at          datetime,
 	doc_company                       nvarchar(14),
@@ -137,6 +151,7 @@ create table [untreated].TotvsOperationalAreasCeps (
 	cep                               nvarchar(10)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsOperationalAreasCeps') = 1
 create table [totvs].TotvsOperationalAreasCeps (
 	integrated_or_updated_at          datetime,
 	doc_company                       nvarchar(14) not null,
@@ -148,6 +163,7 @@ constraint [PK_TotvsOperationalAreasCeps] primary key (
 	cep asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsOperationalAreasCities') = 1
 create table [untreated].TotvsOperationalAreasCities (
 	integrated_or_updated_at          datetime,
 	doc_company                       nvarchar(14),
@@ -159,6 +175,7 @@ create table [untreated].TotvsOperationalAreasCities (
 	stateName                         nvarchar(60)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsOperationalAreasCities') = 1
 create table [totvs].TotvsOperationalAreasCities (
 	integrated_or_updated_at          datetime,
 	doc_company                       nvarchar(14) not null,
@@ -175,6 +192,9 @@ constraint [PK_TotvsOperationalAreasCities] primary key (
 ));
 
 /****** Chaves estrangeiras ******/
+if object_id(N'[totvs].[FK_TotvsOperationalAreasStates]') is null and object_id(N'[totvs].TotvsOperationalAreasStates') is not null and object_id(N'[totvs].TotvsOperationalAreas') is not null
 alter table [totvs].TotvsOperationalAreasStates add constraint [FK_TotvsOperationalAreasStates] foreign key (doc_company, operationalAreaCode) references [totvs].TotvsOperationalAreas (doc_company, operationalAreaCode);
+if object_id(N'[totvs].[FK_TotvsOperationalAreasCeps]') is null and object_id(N'[totvs].TotvsOperationalAreasCeps') is not null and object_id(N'[totvs].TotvsOperationalAreas') is not null
 alter table [totvs].TotvsOperationalAreasCeps add constraint [FK_TotvsOperationalAreasCeps] foreign key (doc_company, operationalAreaCode) references [totvs].TotvsOperationalAreas (doc_company, operationalAreaCode);
+if object_id(N'[totvs].[FK_TotvsOperationalAreasCities]') is null and object_id(N'[totvs].TotvsOperationalAreasCities') is not null and object_id(N'[totvs].TotvsOperationalAreas') is not null
 alter table [totvs].TotvsOperationalAreasCities add constraint [FK_TotvsOperationalAreasCities] foreign key (doc_company, operationalAreaCode) references [totvs].TotvsOperationalAreas (doc_company, operationalAreaCode);

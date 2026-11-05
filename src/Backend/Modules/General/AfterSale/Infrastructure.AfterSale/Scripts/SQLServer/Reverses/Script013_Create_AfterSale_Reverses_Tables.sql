@@ -1,3 +1,5 @@
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
+if dbo.fn_Migrator_Creates(N'[untreated].AfterSaleCourierAttributes') = 1
 create table [untreated].AfterSaleCourierAttributes (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14),
@@ -5,6 +7,7 @@ create table [untreated].AfterSaleCourierAttributes (
 	fill_form_from_file nvarchar(max)
 );
 
+if dbo.fn_Migrator_Creates(N'[aftersale].AfterSaleCourierAttributes') = 1
 create table [aftersale].AfterSaleCourierAttributes (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
@@ -15,6 +18,7 @@ constraint [PK_AfterSaleCourierAttributes] primary key (
 	reverse_id asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].AfterSaleCourierAttributesFields') = 1
 create table [untreated].AfterSaleCourierAttributesFields (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14),
@@ -27,6 +31,7 @@ create table [untreated].AfterSaleCourierAttributesFields (
 	reverse_id bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[aftersale].AfterSaleCourierAttributesFields') = 1
 create table [aftersale].AfterSaleCourierAttributesFields (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
@@ -43,12 +48,14 @@ constraint [PK_AfterSaleCourierAttributesFields] primary key (
 	reverse_id asc
 )); 
 
+if dbo.fn_Migrator_Creates(N'[untreated].AfterSaleTransportationsReverses') = 1
 create table [untreated].AfterSaleTransportationsReverses (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14),
 	transportation nvarchar(50)
 );
 
+if dbo.fn_Migrator_Creates(N'[aftersale].AfterSaleTransportationsReverses') = 1
 create table [aftersale].AfterSaleTransportationsReverses (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
@@ -58,6 +65,7 @@ constraint [PK_AfterSaleTransportationsReverses] primary key (
 	transportation asc
 ));
 
+if object_id(N'[untreated].AfterSaleHistoriesReverses') is null
 create table [untreated].AfterSaleHistoriesReverses(
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14),
@@ -66,6 +74,7 @@ create table [untreated].AfterSaleHistoriesReverses(
 	link nvarchar(250)
 );
 
+if object_id(N'[aftersale].AfterSaleHistoriesReverses') is null
 create table [aftersale].AfterSaleHistoriesReverses(
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
@@ -77,6 +86,7 @@ constraint [PK_AfterSaleHistoriesReverses] primary key (
 	id asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].AfterSaleStatusReverses') = 1
 create table [untreated].AfterSaleStatusReverses (
 	integrated_or_updated_at datetime,
 	id int,
@@ -85,6 +95,7 @@ create table [untreated].AfterSaleStatusReverses (
 	[description] nvarchar(250)
 );
 
+if dbo.fn_Migrator_Creates(N'[aftersale].AfterSaleStatusReverses') = 1
 create table [aftersale].AfterSaleStatusReverses (
 	integrated_or_updated_at datetime,
 	id int not null,
@@ -96,6 +107,7 @@ constraint [PK_AfterSaleStatusReverses] primary key (
 	doc_company asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].AfterSaleSummarizedReverses') = 1
 create table [untreated].AfterSaleSummarizedReverses (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14),
@@ -120,6 +132,7 @@ create table [untreated].AfterSaleSummarizedReverses (
 	tracking_code nvarchar(50)
 );
 
+if dbo.fn_Migrator_Creates(N'[aftersale].AfterSaleSummarizedReverses') = 1
 create table [aftersale].AfterSaleSummarizedReverses (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
@@ -147,6 +160,7 @@ constraint [PK_AfterSaleSummarizedReverses] primary key (
 	id asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].AfterSaleReverses') = 1
 create table [untreated].[AfterSaleReverses] (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14),
@@ -216,6 +230,7 @@ create table [untreated].[AfterSaleReverses] (
 	retry_options_can_retry bit
 );
 
+if dbo.fn_Migrator_Creates(N'[aftersale].AfterSaleReverses') = 1
 create table [aftersale].[AfterSaleReverses] (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
@@ -288,6 +303,7 @@ constraint [PK_AfterSaleReverses] primary key (
 	id asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].AfterSaleReversesCustomers') = 1
 create table [untreated].[AfterSaleReversesCustomers] (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14),
@@ -345,6 +361,7 @@ create table [untreated].[AfterSaleReversesCustomers] (
 	shipping_address_is_erased bit
 );
 
+if dbo.fn_Migrator_Creates(N'[aftersale].AfterSaleReversesCustomers') = 1
 create table [aftersale].[AfterSaleReversesCustomers] (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
@@ -409,6 +426,7 @@ constraint [UQ_AfterSaleReversesCustomers] unique (
 	id asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].AfterSaleReversesDestinationsData') = 1
 create table [untreated].[AfterSaleReversesDestinationsData] (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14),
@@ -437,6 +455,7 @@ create table [untreated].[AfterSaleReversesDestinationsData] (
 	[label] nvarchar(300)
 );
 
+if dbo.fn_Migrator_Creates(N'[aftersale].AfterSaleReversesDestinationsData') = 1
 create table [aftersale].[AfterSaleReversesDestinationsData] (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
@@ -472,6 +491,7 @@ constraint [UQ_AfterSaleReversesDestinationsData] unique (
 	id asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].AfterSaleReversesTrackings') = 1
 create table [untreated].[AfterSaleReversesTrackings] (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14),
@@ -500,6 +520,7 @@ create table [untreated].[AfterSaleReversesTrackings] (
 	deleted_at datetime
 );
 
+if dbo.fn_Migrator_Creates(N'[aftersale].AfterSaleReversesTrackings') = 1
 create table [aftersale].[AfterSaleReversesTrackings] (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
@@ -535,6 +556,7 @@ constraint [UQ_AfterSaleReversesTrackings] unique (
 	id asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].AfterSaleReversesTrackingHistories') = 1
 create table [untreated].[AfterSaleReversesTrackingHistories] (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14),
@@ -549,6 +571,7 @@ create table [untreated].[AfterSaleReversesTrackingHistories] (
 	deleted_at datetime
 );
 
+if dbo.fn_Migrator_Creates(N'[aftersale].AfterSaleReversesTrackingHistories') = 1
 create table [aftersale].[AfterSaleReversesTrackingHistories] (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
@@ -568,6 +591,7 @@ constraint [PK_AfterSaleReversesTrackingHistories] primary key (
 	tracking_id asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].AfterSaleReversesDestinations') = 1
 create table [untreated].[AfterSaleReversesDestinations] (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14),
@@ -591,6 +615,7 @@ create table [untreated].[AfterSaleReversesDestinations] (
 	address_deleted_at datetime
 );
 
+if dbo.fn_Migrator_Creates(N'[aftersale].AfterSaleReversesDestinations') = 1
 create table [aftersale].[AfterSaleReversesDestinations] (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
@@ -621,6 +646,7 @@ constraint [UQ_AfterSaleReversesDestinations] unique (
 	id asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].AfterSaleReversesEcommerceOrders') = 1
 create table [untreated].[AfterSaleReversesEcommerceOrders] (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14),
@@ -645,6 +671,7 @@ create table [untreated].[AfterSaleReversesEcommerceOrders] (
 	is_restrict bit
 );
 
+if dbo.fn_Migrator_Creates(N'[aftersale].AfterSaleReversesEcommerceOrders') = 1
 create table [aftersale].[AfterSaleReversesEcommerceOrders] (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
@@ -676,6 +703,7 @@ constraint [UQ_AfterSaleReversesEcommerceOrders] unique (
 	id asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].AfterSaleReversesEcommerceOrdersPaymentsMethods') = 1
 create table [untreated].[AfterSaleReversesEcommerceOrdersPaymentsMethods] (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14),
@@ -685,6 +713,7 @@ create table [untreated].[AfterSaleReversesEcommerceOrdersPaymentsMethods] (
 	payment_method nvarchar(50)
 );
 
+if dbo.fn_Migrator_Creates(N'[aftersale].AfterSaleReversesEcommerceOrdersPaymentsMethods') = 1
 create table [aftersale].[AfterSaleReversesEcommerceOrdersPaymentsMethods] (
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
@@ -699,6 +728,7 @@ constraint [PK_AfterSaleReversesEcommerceOrdersPaymentsMethods] primary key (
 	ecommerce_order_id asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].AfterSaleReversesProducts') = 1
 create table [untreated].[AfterSaleReversesProducts](
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14),
@@ -752,6 +782,7 @@ create table [untreated].[AfterSaleReversesProducts](
     original_qty int
 );
 
+if dbo.fn_Migrator_Creates(N'[aftersale].AfterSaleReversesProducts') = 1
 create table [aftersale].[AfterSaleReversesProducts](
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
@@ -809,6 +840,7 @@ constraint [PK_AfterSaleReversesProducts] primary key (
 	reverse_id asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].AfterSaleReversesProductsImages') = 1
 create table [untreated].[AfterSaleReversesProductsImages](
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14),
@@ -820,6 +852,7 @@ create table [untreated].[AfterSaleReversesProductsImages](
 	image_url nvarchar(300)
 );
 
+if dbo.fn_Migrator_Creates(N'[aftersale].AfterSaleReversesProductsImages') = 1
 create table [aftersale].[AfterSaleReversesProductsImages](
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
@@ -836,6 +869,7 @@ constraint [PK_AfterSaleReversesProductsImages] primary key (
 	reverse_product_id asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].AfterSaleReversesStatusHistories') = 1
 create table [untreated].[AfterSaleReversesStatusHistories](
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14),
@@ -862,6 +896,7 @@ create table [untreated].[AfterSaleReversesStatusHistories](
 	user_wallet nvarchar(50)
 );
 
+if dbo.fn_Migrator_Creates(N'[aftersale].AfterSaleReversesStatusHistories') = 1
 create table [aftersale].[AfterSaleReversesStatusHistories](
 	integrated_or_updated_at datetime,
 	[doc_company] nvarchar(14) not null,
@@ -890,14 +925,25 @@ constraint [PK_AfterSaleReversesStatusHistories] primary key (
 	reverse_id asc
 ));
 
+if object_id(N'[aftersale].[FK_AfterSaleCourierAttributesFields]') is null and object_id(N'[aftersale].AfterSaleCourierAttributesFields') is not null and object_id(N'[aftersale].AfterSaleCourierAttributes') is not null
 alter table [aftersale].AfterSaleCourierAttributesFields add constraint [FK_AfterSaleCourierAttributesFields] foreign key (doc_company, reverse_id) references [aftersale].[AfterSaleCourierAttributes] (doc_company, reverse_id);
+if object_id(N'[aftersale].[FK_AfterSaleReversesCustomers]') is null and object_id(N'[aftersale].AfterSaleReversesCustomers') is not null and object_id(N'[aftersale].AfterSaleReverses') is not null
 alter table [aftersale].[AfterSaleReversesCustomers] add constraint [FK_AfterSaleReversesCustomers] foreign key (doc_company, reverse_id) references [aftersale].[AfterSaleReverses] (doc_company, id);
+if object_id(N'[aftersale].[FK_AfterSaleReversesDestinationsData]') is null and object_id(N'[aftersale].AfterSaleReversesDestinationsData') is not null and object_id(N'[aftersale].AfterSaleReverses') is not null
 alter table [aftersale].[AfterSaleReversesDestinationsData] add constraint [FK_AfterSaleReversesDestinationsData] foreign key (doc_company, reverse_id) references [aftersale].[AfterSaleReverses] (doc_company, id);
+if object_id(N'[aftersale].[FK_AfterSaleReversesTrackings]') is null and object_id(N'[aftersale].AfterSaleReversesTrackings') is not null and object_id(N'[aftersale].AfterSaleReverses') is not null
 alter table [aftersale].[AfterSaleReversesTrackings] add constraint [FK_AfterSaleReversesTrackings] foreign key (doc_company, reverse_id) references [aftersale].[AfterSaleReverses] (doc_company, id);
+if object_id(N'[aftersale].[FK_AfterSaleReversesTrackingHistories]') is null and object_id(N'[aftersale].AfterSaleReversesTrackingHistories') is not null and object_id(N'[aftersale].AfterSaleReversesTrackings') is not null
 alter table [aftersale].[AfterSaleReversesTrackingHistories] add constraint [FK_AfterSaleReversesTrackingHistories] foreign key (doc_company, tracking_id) references [aftersale].[AfterSaleReversesTrackings] (doc_company, id);
+if object_id(N'[aftersale].[FK_AfterSaleReversesDestinations]') is null and object_id(N'[aftersale].AfterSaleReversesDestinations') is not null and object_id(N'[aftersale].AfterSaleReverses') is not null
 alter table [aftersale].[AfterSaleReversesDestinations] add constraint [FK_AfterSaleReversesDestinations] foreign key (doc_company, reverse_id) references [aftersale].[AfterSaleReverses] (doc_company, id);
+if object_id(N'[aftersale].[FK_AfterSaleReversesEcommerceOrders]') is null and object_id(N'[aftersale].AfterSaleReversesEcommerceOrders') is not null and object_id(N'[aftersale].AfterSaleReverses') is not null
 alter table [aftersale].[AfterSaleReversesEcommerceOrders] add constraint [FK_AfterSaleReversesEcommerceOrders] foreign key (doc_company, reverse_id) references [aftersale].[AfterSaleReverses] (doc_company, id);
+if object_id(N'[aftersale].[FK_AfterSaleReversesEcommerceOrdersPaymentsMethods]') is null and object_id(N'[aftersale].AfterSaleReversesEcommerceOrdersPaymentsMethods') is not null and object_id(N'[aftersale].AfterSaleReversesEcommerceOrders') is not null
 alter table [aftersale].[AfterSaleReversesEcommerceOrdersPaymentsMethods] add constraint [FK_AfterSaleReversesEcommerceOrdersPaymentsMethods] foreign key (doc_company, ecommerce_order_id) references [aftersale].[AfterSaleReversesEcommerceOrders] (doc_company, id);
+if object_id(N'[aftersale].[FK_AfterSaleReversesProducts]') is null and object_id(N'[aftersale].AfterSaleReversesProducts') is not null and object_id(N'[aftersale].AfterSaleReverses') is not null
 alter table [aftersale].[AfterSaleReversesProducts] add constraint [FK_AfterSaleReversesProducts] foreign key (doc_company, reverse_id) references [aftersale].[AfterSaleReverses] (doc_company, id);
+if object_id(N'[aftersale].[FK_AfterSaleReversesProductsImages]') is null and object_id(N'[aftersale].AfterSaleReversesProductsImages') is not null and object_id(N'[aftersale].AfterSaleReversesProducts') is not null
 alter table [aftersale].[AfterSaleReversesProductsImages] add constraint [FK_AfterSaleReversesProductsImages] foreign key (doc_company, reverse_product_id, reverse_id) references [aftersale].[AfterSaleReversesProducts] (doc_company, id, reverse_id);
+if object_id(N'[aftersale].[FK_AfterSaleReversesStatusHistories]') is null and object_id(N'[aftersale].AfterSaleReversesStatusHistories') is not null and object_id(N'[aftersale].AfterSaleReverses') is not null
 alter table [aftersale].[AfterSaleReversesStatusHistories] add constraint [FK_AfterSaleReversesStatusHistories] foreign key (doc_company, reverse_id) references [aftersale].[AfterSaleReverses] (doc_company, id);

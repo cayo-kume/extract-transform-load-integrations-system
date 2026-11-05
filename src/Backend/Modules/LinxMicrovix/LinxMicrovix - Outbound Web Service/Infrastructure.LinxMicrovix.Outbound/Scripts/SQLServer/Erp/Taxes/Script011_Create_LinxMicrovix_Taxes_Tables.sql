@@ -1,8 +1,10 @@
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
 /****** Tabelas fiscais (LinxMicrovixTaxesService): tabelas untreated e linxmicrovix (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 5.2) ******/
 --colunas com o nome da resposta real da API (27/10/2026) e tamanhos da v274; respostas planas: uma tabela por método, sem filhas
 
 /*LinxNaturezaOperacao: as naturezas de operação.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxNaturezaOperacao') = 1
 create table [untreated].LinxNaturezaOperacao (
 	[integrated_or_updated_at]   datetime,
 	[doc_company]                nvarchar(14),
@@ -44,6 +46,7 @@ create table [untreated].LinxNaturezaOperacao (
 	[codigo_ws]                  nvarchar(50)
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxNaturezaOperacao') = 1
 create table [linxmicrovix].LinxNaturezaOperacao (
 	[integrated_or_updated_at]   datetime,
 	[doc_company]                nvarchar(14) not null,
@@ -91,6 +94,7 @@ constraint [PK_LinxNaturezaOperacao] primary key (
 
 /*LinxCfopFiscal: o cadastro da CFOP Fiscal*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxCfopFiscal') = 1
 create table [untreated].LinxCfopFiscal (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -102,6 +106,7 @@ create table [untreated].LinxCfopFiscal (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxCfopFiscal') = 1
 create table [linxmicrovix].LinxCfopFiscal (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -119,6 +124,7 @@ constraint [PK_LinxCfopFiscal] primary key (
 
 /*LinxCstIcmsFiscal: o cadastro de cst icms fiscal*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxCstIcmsFiscal') = 1
 create table [untreated].LinxCstIcmsFiscal (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -131,6 +137,7 @@ create table [untreated].LinxCstIcmsFiscal (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxCstIcmsFiscal') = 1
 create table [linxmicrovix].LinxCstIcmsFiscal (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -149,6 +156,7 @@ constraint [PK_LinxCstIcmsFiscal] primary key (
 
 /*LinxCstIpiFiscal: o conteúdo da tabela cst_ipi_fiscal Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxCstIpiFiscal') = 1
 create table [untreated].LinxCstIpiFiscal (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -163,6 +171,7 @@ create table [untreated].LinxCstIpiFiscal (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxCstIpiFiscal') = 1
 create table [linxmicrovix].LinxCstIpiFiscal (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -183,6 +192,7 @@ constraint [PK_LinxCstIpiFiscal] primary key (
 
 /*LinxCstPisFiscal: o conteúdo da tabela cst_pis_fiscal*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxCstPisFiscal') = 1
 create table [untreated].LinxCstPisFiscal (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -196,6 +206,7 @@ create table [untreated].LinxCstPisFiscal (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxCstPisFiscal') = 1
 create table [linxmicrovix].LinxCstPisFiscal (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -215,6 +226,7 @@ constraint [PK_LinxCstPisFiscal] primary key (
 
 /*LinxCstCofinsFiscal: o conteúdo da tabela cst_cofins_fiscal*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxCstCofinsFiscal') = 1
 create table [untreated].LinxCstCofinsFiscal (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -228,6 +240,7 @@ create table [untreated].LinxCstCofinsFiscal (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxCstCofinsFiscal') = 1
 create table [linxmicrovix].LinxCstCofinsFiscal (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -247,6 +260,7 @@ constraint [PK_LinxCstCofinsFiscal] primary key (
 
 /*LinxCsosnFiscal: o cadastro de csosn fiscal*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxCsosnFiscal') = 1
 create table [untreated].LinxCsosnFiscal (
 	[integrated_or_updated_at]     datetime,
 	[doc_company]                  nvarchar(14),
@@ -258,6 +272,7 @@ create table [untreated].LinxCsosnFiscal (
 	[timestamp]                    bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxCsosnFiscal') = 1
 create table [linxmicrovix].LinxCsosnFiscal (
 	[integrated_or_updated_at]     datetime,
 	[doc_company]                  nvarchar(14) not null,
@@ -275,6 +290,7 @@ constraint [PK_LinxCsosnFiscal] primary key (
 
 /*LinxClasseFiscal: o cadastro da classe fiscal.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxClasseFiscal') = 1
 create table [untreated].LinxClasseFiscal (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -285,6 +301,7 @@ create table [untreated].LinxClasseFiscal (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxClasseFiscal') = 1
 create table [linxmicrovix].LinxClasseFiscal (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -301,6 +318,7 @@ constraint [PK_LinxClasseFiscal] primary key (
 
 /*LinxCest: o conteúdo da tabela classificacao_cest_produto*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxCest') = 1
 create table [untreated].LinxCest (
 	[integrated_or_updated_at]   datetime,
 	[doc_company]                nvarchar(14),
@@ -313,6 +331,7 @@ create table [untreated].LinxCest (
 	[timestamp]                  bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxCest') = 1
 create table [linxmicrovix].LinxCest (
 	[integrated_or_updated_at]   datetime,
 	[doc_company]                nvarchar(14) not null,
@@ -331,6 +350,7 @@ constraint [PK_LinxCest] primary key (
 
 /*LinxNcm: o conteúdo da tabela classificacao_ncm_produto.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxNcm') = 1
 create table [untreated].LinxNcm (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -343,6 +363,7 @@ create table [untreated].LinxNcm (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxNcm') = 1
 create table [linxmicrovix].LinxNcm (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -361,6 +382,7 @@ constraint [PK_LinxNcm] primary key (
 
 /*LinxEnquadramentoIpi: o conteúdo da tabela enquadramento_ipi*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxEnquadramentoIpi') = 1
 create table [untreated].LinxEnquadramentoIpi (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -371,6 +393,7 @@ create table [untreated].LinxEnquadramentoIpi (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxEnquadramentoIpi') = 1
 create table [linxmicrovix].LinxEnquadramentoIpi (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -387,6 +410,7 @@ constraint [PK_LinxEnquadramentoIpi] primary key (
 
 /*LinxMotivosDesoneracaoIcms: o conteúdo da tabela motivos_desoneracao_icms Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxMotivosDesoneracaoIcms') = 1
 create table [untreated].LinxMotivosDesoneracaoIcms (
 	[integrated_or_updated_at]    datetime,
 	[doc_company]                 nvarchar(14),
@@ -396,6 +420,7 @@ create table [untreated].LinxMotivosDesoneracaoIcms (
 	[timestamp]                   bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxMotivosDesoneracaoIcms') = 1
 create table [linxmicrovix].LinxMotivosDesoneracaoIcms (
 	[integrated_or_updated_at]    datetime,
 	[doc_company]                 nvarchar(14) not null,
@@ -411,6 +436,7 @@ constraint [PK_LinxMotivosDesoneracaoIcms] primary key (
 
 /*LinxSpedTipoItem: dados do Sped tipo item. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxSpedTipoItem') = 1
 create table [untreated].LinxSpedTipoItem (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -421,6 +447,7 @@ create table [untreated].LinxSpedTipoItem (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxSpedTipoItem') = 1
 create table [linxmicrovix].LinxSpedTipoItem (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -437,6 +464,7 @@ constraint [PK_LinxSpedTipoItem] primary key (
 
 /*LinxSpedTipoBaseCredito: o conteúdo da tabela sped_tipo_base_credito. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxSpedTipoBaseCredito') = 1
 create table [untreated].LinxSpedTipoBaseCredito (
 	[integrated_or_updated_at]      datetime,
 	[doc_company]                   nvarchar(14),
@@ -447,6 +475,7 @@ create table [untreated].LinxSpedTipoBaseCredito (
 	[timestamp]                     bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxSpedTipoBaseCredito') = 1
 create table [linxmicrovix].LinxSpedTipoBaseCredito (
 	[integrated_or_updated_at]      datetime,
 	[doc_company]                   nvarchar(14) not null,
@@ -463,6 +492,7 @@ constraint [PK_LinxSpedTipoBaseCredito] primary key (
 
 /*LinxRotinaOrigem: retornas as rotinas origem cadastradas.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxRotinaOrigem') = 1
 create table [untreated].LinxRotinaOrigem (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -472,6 +502,7 @@ create table [untreated].LinxRotinaOrigem (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxRotinaOrigem') = 1
 create table [linxmicrovix].LinxRotinaOrigem (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -487,6 +518,7 @@ constraint [PK_LinxRotinaOrigem] primary key (
 
 /*LinxNfeIbgeMunicipio: dados do IBGE sobre municípios.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxNfeIbgeMunicipio') = 1
 create table [untreated].LinxNfeIbgeMunicipio (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -498,6 +530,7 @@ create table [untreated].LinxNfeIbgeMunicipio (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxNfeIbgeMunicipio') = 1
 create table [linxmicrovix].LinxNfeIbgeMunicipio (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,

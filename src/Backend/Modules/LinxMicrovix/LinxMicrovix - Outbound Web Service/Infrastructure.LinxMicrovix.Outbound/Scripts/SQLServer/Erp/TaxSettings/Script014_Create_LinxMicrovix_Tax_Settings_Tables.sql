@@ -1,8 +1,10 @@
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
 /****** Configurações tributárias (LinxMicrovixTaxSettingsService): tabelas untreated e linxmicrovix (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 5.2) ******/
 --colunas com o nome da resposta real da API (27/10/2026) e tamanhos da v274; respostas planas: uma tabela por método, sem filhas
 
 /*LinxConfiguracoesTributarias: o cadastro de configurações tributárias da empresa Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxConfiguracoesTributarias') = 1
 create table [untreated].LinxConfiguracoesTributarias (
 	[integrated_or_updated_at]      datetime,
 	[doc_company]                   nvarchar(14),
@@ -22,6 +24,7 @@ create table [untreated].LinxConfiguracoesTributarias (
 	[codigo_ws]                     nvarchar(50)
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxConfiguracoesTributarias') = 1
 create table [linxmicrovix].LinxConfiguracoesTributarias (
 	[integrated_or_updated_at]      datetime,
 	[doc_company]                   nvarchar(14) not null,
@@ -47,6 +50,7 @@ constraint [PK_LinxConfiguracoesTributarias] primary key (
 
 /*LinxConfiguracoesTributariasDetalhes: o detalhamento das configurações tributárias da empresa Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxConfiguracoesTributariasDetalhes') = 1
 create table [untreated].LinxConfiguracoesTributariasDetalhes (
 	[integrated_or_updated_at]                     datetime,
 	[doc_company]                                  nvarchar(14),
@@ -153,6 +157,7 @@ create table [untreated].LinxConfiguracoesTributariasDetalhes (
 	[aliquota_diferimento_fcp]                     decimal(19,4)
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxConfiguracoesTributariasDetalhes') = 1
 create table [linxmicrovix].LinxConfiguracoesTributariasDetalhes (
 	[integrated_or_updated_at]                     datetime,
 	[doc_company]                                  nvarchar(14) not null,
@@ -267,6 +272,7 @@ constraint [PK_LinxConfiguracoesTributariasDetalhes] primary key (
 
 /*LinxConfiguracoesTributariasDetalhesSimplificado: o detalhamento das configurações tributarias de forma simplificada.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxConfiguracoesTributariasDetalhesSimplificado') = 1
 create table [untreated].LinxConfiguracoesTributariasDetalhesSimplificado (
 	[integrated_or_updated_at]     datetime,
 	[doc_company]                  nvarchar(14),
@@ -287,6 +293,7 @@ create table [untreated].LinxConfiguracoesTributariasDetalhesSimplificado (
 	[timestamp]                    bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxConfiguracoesTributariasDetalhesSimplificado') = 1
 create table [linxmicrovix].LinxConfiguracoesTributariasDetalhesSimplificado (
 	[integrated_or_updated_at]     datetime,
 	[doc_company]                  nvarchar(14) not null,
@@ -313,6 +320,7 @@ constraint [PK_LinxConfiguracoesTributariasDetalhesSimplificado] primary key (
 
 /*LinxConfiguracoesTributariasEmpresas: o conteúdo da tabela config_tributaria_empresa.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxConfiguracoesTributariasEmpresas') = 1
 create table [untreated].LinxConfiguracoesTributariasEmpresas (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -323,6 +331,7 @@ create table [untreated].LinxConfiguracoesTributariasEmpresas (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxConfiguracoesTributariasEmpresas') = 1
 create table [linxmicrovix].LinxConfiguracoesTributariasEmpresas (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,

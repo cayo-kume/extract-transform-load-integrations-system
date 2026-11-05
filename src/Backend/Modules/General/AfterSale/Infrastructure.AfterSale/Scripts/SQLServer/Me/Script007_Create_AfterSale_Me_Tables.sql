@@ -1,3 +1,5 @@
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
+if dbo.fn_Migrator_Creates(N'[untreated].AfterSaleEcommerces') = 1
 create table [untreated].AfterSaleEcommerces (
 	integrated_or_updated_at datetime,
 	id int,
@@ -112,6 +114,7 @@ create table [untreated].AfterSaleEcommerces (
 	address_deleted_at datetime
 );
 
+if dbo.fn_Migrator_Creates(N'[aftersale].AfterSaleEcommerces') = 1
 create table [aftersale].AfterSaleEcommerces (
 	integrated_or_updated_at datetime,
 	id int primary key not null,
@@ -226,6 +229,7 @@ create table [aftersale].AfterSaleEcommerces (
 	address_deleted_at datetime
 );
 
+if dbo.fn_Migrator_Creates(N'[untreated].AfterSaleEcommercesMessagesPages') = 1
 create table [untreated].AfterSaleEcommercesMessagesPages (
 	integrated_or_updated_at datetime,
 	id int, --gerar no c-sharp
@@ -307,6 +311,7 @@ create table [untreated].AfterSaleEcommercesMessagesPages (
     refund_nps_required_commentary bit,
 );
 
+if dbo.fn_Migrator_Creates(N'[aftersale].AfterSaleEcommercesMessagesPages') = 1
 create table [aftersale].AfterSaleEcommercesMessagesPages (
 	integrated_or_updated_at datetime,
 	id int not null, --gerar no c-sharp
@@ -390,6 +395,7 @@ constraint [PK_AfterSaleEcommercesMessagesPages] primary key(
     ecommerce_id asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].AfterSaleEcommercesMessagesMails') = 1
 create table [untreated].AfterSaleEcommercesMessagesMails (
 	integrated_or_updated_at datetime,
     id int, --gerar no c-sharp
@@ -761,6 +767,7 @@ create table [untreated].AfterSaleEcommercesMessagesMails (
     compensation_wire_transfer_ask_transfer_bank_account_info_from_agent_origin_enabled bit
 );
 
+if dbo.fn_Migrator_Creates(N'[aftersale].AfterSaleEcommercesMessagesMails') = 1
 create table [aftersale].AfterSaleEcommercesMessagesMails (
 	integrated_or_updated_at datetime,
     id int not null, --gerar no c-sharp
@@ -1134,6 +1141,7 @@ constraint [PK_AfterSaleEcommercesMessagesMails] primary key (
     ecommerce_id asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].AfterSaleEcommercesReasons') = 1
 create table [untreated].AfterSaleEcommercesReasons (
 	integrated_or_updated_at datetime,
     id int,
@@ -1149,6 +1157,7 @@ create table [untreated].AfterSaleEcommercesReasons (
     deleted_at datetime
 );
 
+if dbo.fn_Migrator_Creates(N'[aftersale].AfterSaleEcommercesReasons') = 1
 create table [aftersale].AfterSaleEcommercesReasons (
 	integrated_or_updated_at datetime,
     id int not null,
@@ -1167,6 +1176,7 @@ constraint [PK_AfterSaleEcommercesReason] primary key (
 	ecommerce_id asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].AfterSaleEcommercesSubReasons') = 1
 create table [untreated].AfterSaleEcommercesSubReasons (
 	integrated_or_updated_at datetime,
     id int,
@@ -1179,6 +1189,7 @@ create table [untreated].AfterSaleEcommercesSubReasons (
     deleted_at datetime
 );
 
+if dbo.fn_Migrator_Creates(N'[aftersale].AfterSaleEcommercesSubReasons') = 1
 create table [aftersale].AfterSaleEcommercesSubReasons (
 	integrated_or_updated_at datetime,
     id int not null,
@@ -1195,6 +1206,7 @@ constraint [PK_AfterSaleEcommercesSubReasons] primary key (
     ecommerce_id asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].AfterSaleEcommercesStringValues') = 1
 create table [untreated].AfterSaleEcommercesStringValues (
 	integrated_or_updated_at datetime,
     id bigint, --gerar no c-sharp
@@ -1202,6 +1214,7 @@ create table [untreated].AfterSaleEcommercesStringValues (
     [value] nvarchar(300)
 );
 
+if dbo.fn_Migrator_Creates(N'[aftersale].AfterSaleEcommercesStringValues') = 1
 create table [aftersale].AfterSaleEcommercesStringValues (
 	integrated_or_updated_at datetime,
     id bigint not null,
@@ -1212,8 +1225,13 @@ constraint [PK_AfterSaleEcommercesStringValues] primary key (
     ecommerce_id asc
 ));
 
+if object_id(N'[aftersale].[FK_AfterSaleEcommercesMessagesPages]') is null and object_id(N'[aftersale].AfterSaleEcommercesMessagesPages') is not null and object_id(N'[aftersale].AfterSaleEcommerces') is not null
 alter table [aftersale].AfterSaleEcommercesMessagesPages add constraint [FK_AfterSaleEcommercesMessagesPages] foreign key (ecommerce_id) references [aftersale].AfterSaleEcommerces (id);
+if object_id(N'[aftersale].[FK_AfterSaleEcommercesMessagesMails]') is null and object_id(N'[aftersale].AfterSaleEcommercesMessagesMails') is not null and object_id(N'[aftersale].AfterSaleEcommerces') is not null
 alter table [aftersale].AfterSaleEcommercesMessagesMails add constraint [FK_AfterSaleEcommercesMessagesMails] foreign key (ecommerce_id) references [aftersale].AfterSaleEcommerces (id);
+if object_id(N'[aftersale].[FK_AfterSaleEcommercesStringValues]') is null and object_id(N'[aftersale].AfterSaleEcommercesStringValues') is not null and object_id(N'[aftersale].AfterSaleEcommerces') is not null
 alter table [aftersale].AfterSaleEcommercesStringValues add constraint [FK_AfterSaleEcommercesStringValues] foreign key (ecommerce_id) references [aftersale].AfterSaleEcommerces (id);
+if object_id(N'[aftersale].[FK_AfterSaleEcommercesReasons]') is null and object_id(N'[aftersale].AfterSaleEcommercesReasons') is not null and object_id(N'[aftersale].AfterSaleEcommerces') is not null
 alter table [aftersale].AfterSaleEcommercesReasons add constraint [FK_AfterSaleEcommercesReasons] foreign key (ecommerce_id) references [aftersale].AfterSaleEcommerces (id);
+if object_id(N'[aftersale].[FK_AfterSaleEcommercesSubReasons]') is null and object_id(N'[aftersale].AfterSaleEcommercesSubReasons') is not null and object_id(N'[aftersale].AfterSaleEcommercesReasons') is not null
 alter table [aftersale].AfterSaleEcommercesSubReasons add constraint [FK_AfterSaleEcommercesSubReasons] foreign key (reason_id, ecommerce_id) references [aftersale].AfterSaleEcommercesReasons (id, ecommerce_id);

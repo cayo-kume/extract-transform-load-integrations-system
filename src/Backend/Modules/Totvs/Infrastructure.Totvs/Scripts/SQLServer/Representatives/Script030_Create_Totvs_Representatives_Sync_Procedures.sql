@@ -1,18 +1,30 @@
+-- roda em toda migração: cada procedure só é criada com a tabela já criada e se ainda não existe (docs/MIGRATOR-CSX.md)
 /****** Representantes: procedures de sincronização (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §3.1.1) ******/
 --Os representantes nunca são apagados por este fluxo; as filhas que saíram de um representante que veio no lote são apagadas.
 --A condição depende do mesmo integrated_or_updated_at no lote e do merge de TotvsRepresentatives rodar antes.
 declare @delete_by_representative nvarchar(max) = 'exists (select 1 from [totvs].TotvsRepresentatives p where p.doc_company = target.doc_company and p.code = target.personCode and p.integrated_or_updated_at > target.integrated_or_updated_at)';
 
+if object_id(N'[totvs].TotvsRepresentatives') is not null and object_id(N'[totvs].[sp_TotvsRepresentatives_Sync]') is null
 exec dbo.sp_Create_Merge_Procedure @schema_name = 'totvs', @table_name = 'TotvsRepresentatives', @execute = 1;
+if object_id(N'[totvs].TotvsRepresentativesAddresses') is not null and object_id(N'[totvs].[sp_TotvsRepresentativesAddresses_Sync]') is null
 exec dbo.sp_Create_Merge_Procedure @schema_name = 'totvs', @table_name = 'TotvsRepresentativesAddresses', @execute = 1, @delete_condition = @delete_by_representative;
+if object_id(N'[totvs].TotvsRepresentativesPhones') is not null and object_id(N'[totvs].[sp_TotvsRepresentativesPhones_Sync]') is null
 exec dbo.sp_Create_Merge_Procedure @schema_name = 'totvs', @table_name = 'TotvsRepresentativesPhones', @execute = 1, @delete_condition = @delete_by_representative;
+if object_id(N'[totvs].TotvsRepresentativesEmails') is not null and object_id(N'[totvs].[sp_TotvsRepresentativesEmails_Sync]') is null
 exec dbo.sp_Create_Merge_Procedure @schema_name = 'totvs', @table_name = 'TotvsRepresentativesEmails', @execute = 1, @delete_condition = @delete_by_representative;
+if object_id(N'[totvs].TotvsRepresentativesObservations') is not null and object_id(N'[totvs].[sp_TotvsRepresentativesObservations_Sync]') is null
 exec dbo.sp_Create_Merge_Procedure @schema_name = 'totvs', @table_name = 'TotvsRepresentativesObservations', @execute = 1, @delete_condition = @delete_by_representative;
+if object_id(N'[totvs].TotvsRepresentativesAdditionalFields') is not null and object_id(N'[totvs].[sp_TotvsRepresentativesAdditionalFields_Sync]') is null
 exec dbo.sp_Create_Merge_Procedure @schema_name = 'totvs', @table_name = 'TotvsRepresentativesAdditionalFields', @execute = 1, @delete_condition = @delete_by_representative;
+if object_id(N'[totvs].TotvsRepresentativesClassifications') is not null and object_id(N'[totvs].[sp_TotvsRepresentativesClassifications_Sync]') is null
 exec dbo.sp_Create_Merge_Procedure @schema_name = 'totvs', @table_name = 'TotvsRepresentativesClassifications', @execute = 1, @delete_condition = @delete_by_representative;
+if object_id(N'[totvs].TotvsRepresentativesCustomers') is not null and object_id(N'[totvs].[sp_TotvsRepresentativesCustomers_Sync]') is null
 exec dbo.sp_Create_Merge_Procedure @schema_name = 'totvs', @table_name = 'TotvsRepresentativesCustomers', @execute = 1, @delete_condition = @delete_by_representative;
+if object_id(N'[totvs].TotvsRepresentativesPriceTables') is not null and object_id(N'[totvs].[sp_TotvsRepresentativesPriceTables_Sync]') is null
 exec dbo.sp_Create_Merge_Procedure @schema_name = 'totvs', @table_name = 'TotvsRepresentativesPriceTables', @execute = 1, @delete_condition = @delete_by_representative;
+if object_id(N'[totvs].TotvsRepresentativesSalesRegions') is not null and object_id(N'[totvs].[sp_TotvsRepresentativesSalesRegions_Sync]') is null
 exec dbo.sp_Create_Merge_Procedure @schema_name = 'totvs', @table_name = 'TotvsRepresentativesSalesRegions', @execute = 1, @delete_condition = @delete_by_representative;
+if object_id(N'[totvs].TotvsRepresentativesParameters') is not null and object_id(N'[totvs].[sp_TotvsRepresentativesParameters_Sync]') is null
 exec dbo.sp_Create_Merge_Procedure @schema_name = 'totvs', @table_name = 'TotvsRepresentativesParameters', @execute = 1, @delete_condition = @delete_by_representative;
 
 go
@@ -21,5 +33,7 @@ go
 --As recepções nunca são apagadas por este fluxo; as formas de pagamento que saíram de uma recepção que veio no lote são apagadas.
 declare @delete_by_reception nvarchar(max) = 'exists (select 1 from [totvs].TotvsReceptionSales p where p.doc_company = target.doc_company and p.branchCode = target.branchCode and p.movementDate = target.movementDate and p.sequence = target.sequence and p.integrated_or_updated_at > target.integrated_or_updated_at)';
 
+if object_id(N'[totvs].TotvsReceptionSales') is not null and object_id(N'[totvs].[sp_TotvsReceptionSales_Sync]') is null
 exec dbo.sp_Create_Merge_Procedure @schema_name = 'totvs', @table_name = 'TotvsReceptionSales', @execute = 1;
+if object_id(N'[totvs].TotvsReceptionSalesDocumentTypes') is not null and object_id(N'[totvs].[sp_TotvsReceptionSalesDocumentTypes_Sync]') is null
 exec dbo.sp_Create_Merge_Procedure @schema_name = 'totvs', @table_name = 'TotvsReceptionSalesDocumentTypes', @execute = 1, @delete_condition = @delete_by_reception;

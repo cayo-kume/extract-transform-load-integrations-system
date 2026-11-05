@@ -1,8 +1,10 @@
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
 /****** Notas fiscais: tabelas untreated e totvs (src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.2.1) ******/
 --chave da nota: doc_company + branchCode + invoiceSequence + invoiceDate; todas as filhas levam a chave inteira. Objetos 1:1
 --(eletronic, ecf, sat, shippingCompany, person, productionOrder, rateDifferential, cardInformation, digitalWalletInformation)
 --como colunas do pai com o nome do objeto como prefixo (5.2.8). Tamanhos do swagger onde ele informa; senão, os de uma amostra real.
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsInvoices') = 1
 create table [untreated].TotvsInvoices (
 	integrated_or_updated_at                        datetime,
 	doc_company                                     nvarchar(14),
@@ -116,6 +118,7 @@ create table [untreated].TotvsInvoices (
 	productionOrderOrderRelationshipType            nvarchar(10)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsInvoices') = 1
 create table [totvs].TotvsInvoices (
 	integrated_or_updated_at                        datetime,
 	doc_company                                     nvarchar(14) not null,
@@ -234,6 +237,7 @@ constraint [PK_TotvsInvoices] primary key (
 	invoiceDate asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsInvoicesItems') = 1
 create table [untreated].TotvsInvoicesItems (
 	integrated_or_updated_at                        datetime,
 	doc_company                                     nvarchar(14),
@@ -267,6 +271,7 @@ create table [untreated].TotvsInvoicesItems (
 	rateDifferentialSenderRateDifferentialValue     decimal(18,6)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsInvoicesItems') = 1
 create table [totvs].TotvsInvoicesItems (
 	integrated_or_updated_at                        datetime,
 	doc_company                                     nvarchar(14) not null,
@@ -306,6 +311,7 @@ constraint [PK_TotvsInvoicesItems] primary key (
 	[sequence] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsInvoicesItemsProducts') = 1
 create table [untreated].TotvsInvoicesItemsProducts (
 	integrated_or_updated_at                        datetime,
 	doc_company                                     nvarchar(14),
@@ -325,6 +331,7 @@ create table [untreated].TotvsInvoicesItemsProducts (
 	netValue                                        decimal(18,6)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsInvoicesItemsProducts') = 1
 create table [totvs].TotvsInvoicesItemsProducts (
 	integrated_or_updated_at                        datetime,
 	doc_company                                     nvarchar(14) not null,
@@ -351,6 +358,7 @@ constraint [PK_TotvsInvoicesItemsProducts] primary key (
 	productCode asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsInvoicesItemsProductsReferenced') = 1
 create table [untreated].TotvsInvoicesItemsProductsReferenced (
 	integrated_or_updated_at                        datetime,
 	doc_company                                     nvarchar(14),
@@ -373,6 +381,7 @@ create table [untreated].TotvsInvoicesItemsProductsReferenced (
 	terminalCode                                    int
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsInvoicesItemsProductsReferenced') = 1
 create table [totvs].TotvsInvoicesItemsProductsReferenced (
 	integrated_or_updated_at                        datetime,
 	doc_company                                     nvarchar(14) not null,
@@ -403,6 +412,7 @@ constraint [PK_TotvsInvoicesItemsProductsReferenced] primary key (
 	invoiceSequenceItem asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsInvoicesItemsTaxes') = 1
 create table [untreated].TotvsInvoicesItemsTaxes (
 	integrated_or_updated_at                        datetime,
 	doc_company                                     nvarchar(14),
@@ -427,6 +437,7 @@ create table [untreated].TotvsInvoicesItemsTaxes (
 	taxClassificationCode                           nvarchar(10)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsInvoicesItemsTaxes') = 1
 create table [totvs].TotvsInvoicesItemsTaxes (
 	integrated_or_updated_at                        datetime,
 	doc_company                                     nvarchar(14) not null,
@@ -458,6 +469,7 @@ constraint [PK_TotvsInvoicesItemsTaxes] primary key (
 	[code] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsInvoicesItemsBarCodes') = 1
 create table [untreated].TotvsInvoicesItemsBarCodes (
 	integrated_or_updated_at                        datetime,
 	doc_company                                     nvarchar(14),
@@ -468,6 +480,7 @@ create table [untreated].TotvsInvoicesItemsBarCodes (
 	barcode                                         nvarchar(60)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsInvoicesItemsBarCodes') = 1
 create table [totvs].TotvsInvoicesItemsBarCodes (
 	integrated_or_updated_at                        datetime,
 	doc_company                                     nvarchar(14) not null,
@@ -485,6 +498,7 @@ constraint [PK_TotvsInvoicesItemsBarCodes] primary key (
 	barcode asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsInvoicesPayments') = 1
 create table [untreated].TotvsInvoicesPayments (
 	integrated_or_updated_at                        datetime,
 	doc_company                                     nvarchar(14),
@@ -511,6 +525,7 @@ create table [untreated].TotvsInvoicesPayments (
 	digitalWalletInformationProcessorId             nvarchar(100)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsInvoicesPayments') = 1
 create table [totvs].TotvsInvoicesPayments (
 	integrated_or_updated_at                        datetime,
 	doc_company                                     nvarchar(14) not null,
@@ -544,6 +559,7 @@ constraint [PK_TotvsInvoicesPayments] primary key (
 	installment asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsInvoicesSalesOrders') = 1
 create table [untreated].TotvsInvoicesSalesOrders (
 	integrated_or_updated_at                        datetime,
 	doc_company                                     nvarchar(14),
@@ -556,6 +572,7 @@ create table [untreated].TotvsInvoicesSalesOrders (
 	customerOrderCode                               nvarchar(100)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsInvoicesSalesOrders') = 1
 create table [totvs].TotvsInvoicesSalesOrders (
 	integrated_or_updated_at                        datetime,
 	doc_company                                     nvarchar(14) not null,
@@ -575,6 +592,7 @@ constraint [PK_TotvsInvoicesSalesOrders] primary key (
 	orderCode asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsInvoicesObservationsNF') = 1
 create table [untreated].TotvsInvoicesObservationsNF (
 	integrated_or_updated_at                        datetime,
 	doc_company                                     nvarchar(14),
@@ -585,6 +603,7 @@ create table [untreated].TotvsInvoicesObservationsNF (
 	observation                                     nvarchar(100)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsInvoicesObservationsNF') = 1
 create table [totvs].TotvsInvoicesObservationsNF (
 	integrated_or_updated_at                        datetime,
 	doc_company                                     nvarchar(14) not null,
@@ -601,6 +620,7 @@ constraint [PK_TotvsInvoicesObservationsNF] primary key (
 	[sequence] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsInvoicesReferencedTaxes') = 1
 create table [untreated].TotvsInvoicesReferencedTaxes (
 	integrated_or_updated_at                        datetime,
 	doc_company                                     nvarchar(14),
@@ -616,6 +636,7 @@ create table [untreated].TotvsInvoicesReferencedTaxes (
 	branchCnpj                                      nvarchar(14)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsInvoicesReferencedTaxes') = 1
 create table [totvs].TotvsInvoicesReferencedTaxes (
 	integrated_or_updated_at                        datetime,
 	doc_company                                     nvarchar(14) not null,
@@ -642,14 +663,23 @@ constraint [PK_TotvsInvoicesReferencedTaxes] primary key (
 /****** Chaves estrangeiras ******/
 --cascade a partir dos itens: um item que sai da nota leva junto produtos, impostos, códigos de barras e notas referenciadas
 
+if object_id(N'[totvs].[FK_TotvsInvoicesItems]') is null and object_id(N'[totvs].TotvsInvoicesItems') is not null and object_id(N'[totvs].TotvsInvoices') is not null
 alter table [totvs].TotvsInvoicesItems add constraint [FK_TotvsInvoicesItems] foreign key (doc_company, branchCode, invoiceSequence, invoiceDate) references [totvs].TotvsInvoices (doc_company, branchCode, invoiceSequence, invoiceDate);
+if object_id(N'[totvs].[FK_TotvsInvoicesItemsProducts]') is null and object_id(N'[totvs].TotvsInvoicesItemsProducts') is not null and object_id(N'[totvs].TotvsInvoicesItems') is not null
 alter table [totvs].TotvsInvoicesItemsProducts add constraint [FK_TotvsInvoicesItemsProducts] foreign key (doc_company, branchCode, invoiceSequence, invoiceDate, itemSequence) references [totvs].TotvsInvoicesItems (doc_company, branchCode, invoiceSequence, invoiceDate, [sequence]) on delete cascade;
+if object_id(N'[totvs].[FK_TotvsInvoicesItemsProductsReferenced]') is null and object_id(N'[totvs].TotvsInvoicesItemsProductsReferenced') is not null and object_id(N'[totvs].TotvsInvoicesItemsProducts') is not null
 alter table [totvs].TotvsInvoicesItemsProductsReferenced add constraint [FK_TotvsInvoicesItemsProductsReferenced] foreign key (doc_company, branchCode, invoiceSequence, invoiceDate, itemSequence, productCode) references [totvs].TotvsInvoicesItemsProducts (doc_company, branchCode, invoiceSequence, invoiceDate, itemSequence, productCode) on delete cascade;
+if object_id(N'[totvs].[FK_TotvsInvoicesItemsTaxes]') is null and object_id(N'[totvs].TotvsInvoicesItemsTaxes') is not null and object_id(N'[totvs].TotvsInvoicesItems') is not null
 alter table [totvs].TotvsInvoicesItemsTaxes add constraint [FK_TotvsInvoicesItemsTaxes] foreign key (doc_company, branchCode, invoiceSequence, invoiceDate, itemSequence) references [totvs].TotvsInvoicesItems (doc_company, branchCode, invoiceSequence, invoiceDate, [sequence]) on delete cascade;
+if object_id(N'[totvs].[FK_TotvsInvoicesItemsBarCodes]') is null and object_id(N'[totvs].TotvsInvoicesItemsBarCodes') is not null and object_id(N'[totvs].TotvsInvoicesItems') is not null
 alter table [totvs].TotvsInvoicesItemsBarCodes add constraint [FK_TotvsInvoicesItemsBarCodes] foreign key (doc_company, branchCode, invoiceSequence, invoiceDate, itemSequence) references [totvs].TotvsInvoicesItems (doc_company, branchCode, invoiceSequence, invoiceDate, [sequence]) on delete cascade;
+if object_id(N'[totvs].[FK_TotvsInvoicesPayments]') is null and object_id(N'[totvs].TotvsInvoicesPayments') is not null and object_id(N'[totvs].TotvsInvoices') is not null
 alter table [totvs].TotvsInvoicesPayments add constraint [FK_TotvsInvoicesPayments] foreign key (doc_company, branchCode, invoiceSequence, invoiceDate) references [totvs].TotvsInvoices (doc_company, branchCode, invoiceSequence, invoiceDate);
+if object_id(N'[totvs].[FK_TotvsInvoicesSalesOrders]') is null and object_id(N'[totvs].TotvsInvoicesSalesOrders') is not null and object_id(N'[totvs].TotvsInvoices') is not null
 alter table [totvs].TotvsInvoicesSalesOrders add constraint [FK_TotvsInvoicesSalesOrders] foreign key (doc_company, branchCode, invoiceSequence, invoiceDate) references [totvs].TotvsInvoices (doc_company, branchCode, invoiceSequence, invoiceDate);
+if object_id(N'[totvs].[FK_TotvsInvoicesObservationsNF]') is null and object_id(N'[totvs].TotvsInvoicesObservationsNF') is not null and object_id(N'[totvs].TotvsInvoices') is not null
 alter table [totvs].TotvsInvoicesObservationsNF add constraint [FK_TotvsInvoicesObservationsNF] foreign key (doc_company, branchCode, invoiceSequence, invoiceDate) references [totvs].TotvsInvoices (doc_company, branchCode, invoiceSequence, invoiceDate);
+if object_id(N'[totvs].[FK_TotvsInvoicesReferencedTaxes]') is null and object_id(N'[totvs].TotvsInvoicesReferencedTaxes') is not null and object_id(N'[totvs].TotvsInvoices') is not null
 alter table [totvs].TotvsInvoicesReferencedTaxes add constraint [FK_TotvsInvoicesReferencedTaxes] foreign key (doc_company, branchCode, invoiceSequence, invoiceDate) references [totvs].TotvsInvoices (doc_company, branchCode, invoiceSequence, invoiceDate);
 
 go
@@ -657,6 +687,7 @@ go
 /****** Inutilizações e centros de custo da API Fiscal: tabelas untreated e totvs (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §8.2 e §8.3, fase FI-1) ******/
 --inutilizações pela janela de alteração (T9); centros de custo, sem data na resposta, lidos inteiros e comparados pelo json_hash (F5)
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsInvoicesDisable') = 1
 create table [untreated].TotvsInvoicesDisable (
 	integrated_or_updated_at          datetime,
 	doc_company                       nvarchar(14),
@@ -671,6 +702,7 @@ create table [untreated].TotvsInvoicesDisable (
 	maxChangeFilterDate               datetime
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsInvoicesDisable') = 1
 create table [totvs].TotvsInvoicesDisable (
 	integrated_or_updated_at          datetime,
 	doc_company                       nvarchar(14) not null,
@@ -691,6 +723,7 @@ constraint [PK_TotvsInvoicesDisable] primary key (
 	initialInvoiceNumber asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsCostCenters') = 1
 create table [untreated].TotvsCostCenters (
 	integrated_or_updated_at          datetime,
 	doc_company                       nvarchar(14),
@@ -703,6 +736,7 @@ create table [untreated].TotvsCostCenters (
 	json_hash                         nvarchar(64)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsCostCenters') = 1
 create table [totvs].TotvsCostCenters (
 	integrated_or_updated_at          datetime,
 	doc_company                       nvarchar(14) not null,
@@ -718,6 +752,7 @@ constraint [PK_TotvsCostCenters] primary key (
 	[code] asc
 ));
 
+if dbo.fn_Migrator_Creates(N'[untreated].TotvsCostCentersClassifications') = 1
 create table [untreated].TotvsCostCentersClassifications (
 	integrated_or_updated_at          datetime,
 	doc_company                       nvarchar(14),
@@ -728,6 +763,7 @@ create table [untreated].TotvsCostCentersClassifications (
 	[description]                     nvarchar(60)
 );
 
+if dbo.fn_Migrator_Creates(N'[totvs].TotvsCostCentersClassifications') = 1
 create table [totvs].TotvsCostCentersClassifications (
 	integrated_or_updated_at          datetime,
 	doc_company                       nvarchar(14) not null,
@@ -744,4 +780,5 @@ constraint [PK_TotvsCostCentersClassifications] primary key (
 ));
 
 /****** Chaves estrangeiras ******/
+if object_id(N'[totvs].[FK_TotvsCostCentersClassifications]') is null and object_id(N'[totvs].TotvsCostCentersClassifications') is not null and object_id(N'[totvs].TotvsCostCenters') is not null
 alter table [totvs].TotvsCostCentersClassifications add constraint [FK_TotvsCostCentersClassifications] foreign key (doc_company, costCenterCode) references [totvs].TotvsCostCenters (doc_company, [code]);

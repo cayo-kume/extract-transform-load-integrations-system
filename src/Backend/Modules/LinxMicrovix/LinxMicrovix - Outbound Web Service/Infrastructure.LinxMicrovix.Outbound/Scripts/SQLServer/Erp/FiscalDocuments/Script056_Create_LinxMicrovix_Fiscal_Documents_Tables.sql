@@ -1,8 +1,10 @@
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
 /****** Documentos fiscais (LinxMicrovixFiscalDocumentsService): tabelas untreated e linxmicrovix (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 5.2) ******/
 --colunas com o nome da resposta real da API (27/10/2026) e tamanhos da v274; respostas planas: uma tabela por método, sem filhas
 
 /*LinxXMLDocumentos: o XML dos documentos.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxXMLDocumentos') = 1
 create table [untreated].LinxXMLDocumentos (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -28,6 +30,7 @@ create table [untreated].LinxXMLDocumentos (
 	[cod_cliente]              int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxXMLDocumentos') = 1
 create table [linxmicrovix].LinxXMLDocumentos (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -59,6 +62,7 @@ constraint [PK_LinxXMLDocumentos] primary key (
 
 /*LinxNFeEvento: os dados eventos da NFe.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxNFeEvento') = 1
 create table [untreated].LinxNFeEvento (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -73,6 +77,7 @@ create table [untreated].LinxNFeEvento (
 	[hora_emissao]             nvarchar(20) --5 na documentação; a resposta real tem até 8
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxNFeEvento') = 1
 create table [linxmicrovix].LinxNFeEvento (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -93,6 +98,7 @@ constraint [PK_LinxNFeEvento] primary key (
 
 /*LinxNfse: nota Fiscal de Serviços Eletrônica Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxNfse') = 1
 create table [untreated].LinxNfse (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -107,6 +113,7 @@ create table [untreated].LinxNfse (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxNfse') = 1
 create table [linxmicrovix].LinxNfse (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -127,6 +134,7 @@ constraint [PK_LinxNfse] primary key (
 
 /*LinxEntradaNFe: dados de NFes de entrada.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxEntradaNFe') = 1
 create table [untreated].LinxEntradaNFe (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -146,6 +154,7 @@ create table [untreated].LinxEntradaNFe (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxEntradaNFe') = 1
 create table [linxmicrovix].LinxEntradaNFe (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -171,6 +180,7 @@ constraint [PK_LinxEntradaNFe] primary key (
 
 /*LinxEntradaNFeProdutos: dados de itens de NFes de entrada.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxEntradaNFeProdutos') = 1
 create table [untreated].LinxEntradaNFeProdutos (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -186,6 +196,7 @@ create table [untreated].LinxEntradaNFeProdutos (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxEntradaNFeProdutos') = 1
 create table [linxmicrovix].LinxEntradaNFeProdutos (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -207,6 +218,7 @@ constraint [PK_LinxEntradaNFeProdutos] primary key (
 
 /*LinxConhecimentoFretes: dados de conhecimento de fretes. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxConhecimentoFretes') = 1
 create table [untreated].LinxConhecimentoFretes (
 	[integrated_or_updated_at]      datetime,
 	[doc_company]                   nvarchar(14),
@@ -243,6 +255,7 @@ create table [untreated].LinxConhecimentoFretes (
 	[portal]                        int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxConhecimentoFretes') = 1
 create table [linxmicrovix].LinxConhecimentoFretes (
 	[integrated_or_updated_at]      datetime,
 	[doc_company]                   nvarchar(14) not null,
@@ -285,6 +298,7 @@ constraint [PK_LinxConhecimentoFretes] primary key (
 
 /*LinxFreteTipos: tipos de frete. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxFreteTipos') = 1
 create table [untreated].LinxFreteTipos (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -299,6 +313,7 @@ create table [untreated].LinxFreteTipos (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxFreteTipos') = 1
 create table [linxmicrovix].LinxFreteTipos (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -319,6 +334,7 @@ constraint [PK_LinxFreteTipos] primary key (
 
 /*LinxReducoesZ: as ReduçõesZ de acordo com a loja pesquisada, somente para clientes que ainda utilizam a impressora fiscal Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxReducoesZ') = 1
 create table [untreated].LinxReducoesZ (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -347,6 +363,7 @@ create table [untreated].LinxReducoesZ (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxReducoesZ') = 1
 create table [linxmicrovix].LinxReducoesZ (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -383,6 +400,7 @@ constraint [PK_LinxReducoesZ] primary key (
 
 /*LinxECF: as ECFs cadastradas para a empresa. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxECF') = 1
 create table [untreated].LinxECF (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -404,6 +422,7 @@ create table [untreated].LinxECF (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxECF') = 1
 create table [linxmicrovix].LinxECF (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -431,6 +450,7 @@ constraint [PK_LinxECF] primary key (
 
 /*LinxECFFormasPagamento: as formas de pagamento da ECF. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxECFFormasPagamento') = 1
 create table [untreated].LinxECFFormasPagamento (
 	[integrated_or_updated_at]   datetime,
 	[doc_company]                nvarchar(14),
@@ -443,6 +463,7 @@ create table [untreated].LinxECFFormasPagamento (
 	[portal]                     int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxECFFormasPagamento') = 1
 create table [linxmicrovix].LinxECFFormasPagamento (
 	[integrated_or_updated_at]   datetime,
 	[doc_company]                nvarchar(14) not null,
@@ -461,6 +482,7 @@ constraint [PK_LinxECFFormasPagamento] primary key (
 
 /*LinxNfceEstacao: cadastro de estações. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxNfceEstacao') = 1
 create table [untreated].LinxNfceEstacao (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -474,6 +496,7 @@ create table [untreated].LinxNfceEstacao (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxNfceEstacao') = 1
 create table [linxmicrovix].LinxNfceEstacao (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -493,6 +516,7 @@ constraint [PK_LinxNfceEstacao] primary key (
 
 /*LinxSeries: as séries cadastradas no portal. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxSeries') = 1
 create table [untreated].LinxSeries (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -503,6 +527,7 @@ create table [untreated].LinxSeries (
 	[timestamp]                bigint
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxSeries') = 1
 create table [linxmicrovix].LinxSeries (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,

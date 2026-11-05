@@ -1,8 +1,10 @@
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
 /****** Atributos de produto (LinxMicrovixProductAttributesService): tabelas untreated e linxmicrovix (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 5.2) ******/
 --colunas com o nome da resposta real da API (27/10/2026) e tamanhos da v274; respostas planas: uma tabela por método, sem filhas
 
 /*LinxSetores: os setores cadastrados Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxSetores') = 1
 create table [untreated].LinxSetores (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -14,6 +16,7 @@ create table [untreated].LinxSetores (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxSetores') = 1
 create table [linxmicrovix].LinxSetores (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -31,6 +34,7 @@ constraint [PK_LinxSetores] primary key (
 
 /*LinxLinhas: todos os registros do cadastro auxiliar linha*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxLinhas') = 1
 create table [untreated].LinxLinhas (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -42,6 +46,7 @@ create table [untreated].LinxLinhas (
 	[coeficiente_comissao]     decimal(28,8)
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxLinhas') = 1
 create table [linxmicrovix].LinxLinhas (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -59,6 +64,7 @@ constraint [PK_LinxLinhas] primary key (
 
 /*LinxMarcas: as marcas cadastradas.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxMarcas') = 1
 create table [untreated].LinxMarcas (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -69,6 +75,7 @@ create table [untreated].LinxMarcas (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxMarcas') = 1
 create table [linxmicrovix].LinxMarcas (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -85,6 +92,7 @@ constraint [PK_LinxMarcas] primary key (
 
 /*LinxColecoes: as coleções cadastradas.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxColecoes') = 1
 create table [untreated].LinxColecoes (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -95,6 +103,7 @@ create table [untreated].LinxColecoes (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxColecoes') = 1
 create table [linxmicrovix].LinxColecoes (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -111,6 +120,7 @@ constraint [PK_LinxColecoes] primary key (
 
 /*LinxTamanhos: os tamanhos cadastrados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxTamanhos') = 1
 create table [untreated].LinxTamanhos (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -122,6 +132,7 @@ create table [untreated].LinxTamanhos (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxTamanhos') = 1
 create table [linxmicrovix].LinxTamanhos (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -139,6 +150,7 @@ constraint [PK_LinxTamanhos] primary key (
 
 /*LinxCores: as cores cadastradas.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxCores') = 1
 create table [untreated].LinxCores (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -150,6 +162,7 @@ create table [untreated].LinxCores (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxCores') = 1
 create table [linxmicrovix].LinxCores (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -167,6 +180,7 @@ constraint [PK_LinxCores] primary key (
 
 /*LinxEspessuras: as espessuras cadastradas.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxEspessuras') = 1
 create table [untreated].LinxEspessuras (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -178,6 +192,7 @@ create table [untreated].LinxEspessuras (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxEspessuras') = 1
 create table [linxmicrovix].LinxEspessuras (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -195,6 +210,7 @@ constraint [PK_LinxEspessuras] primary key (
 
 /*LinxUnidades: as unidades cadastradas.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxUnidades') = 1
 create table [untreated].LinxUnidades (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -204,6 +220,7 @@ create table [untreated].LinxUnidades (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxUnidades') = 1
 create table [linxmicrovix].LinxUnidades (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -219,6 +236,7 @@ constraint [PK_LinxUnidades] primary key (
 
 /*LinxClassificacoes: as classificacoes cadastradas.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxClassificacoes') = 1
 create table [untreated].LinxClassificacoes (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -230,6 +248,7 @@ create table [untreated].LinxClassificacoes (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxClassificacoes') = 1
 create table [linxmicrovix].LinxClassificacoes (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
@@ -247,6 +266,7 @@ constraint [PK_LinxClassificacoes] primary key (
 
 /*LinxSubClasses: o cadastro das Sub Classes dos clientes e fornecedores. Chave a confirmar com uma resposta real com dados.*/
 
+if dbo.fn_Migrator_Creates(N'[untreated].LinxSubClasses') = 1
 create table [untreated].LinxSubClasses (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
@@ -258,6 +278,7 @@ create table [untreated].LinxSubClasses (
 	[portal]                   int
 );
 
+if dbo.fn_Migrator_Creates(N'[linxmicrovix].LinxSubClasses') = 1
 create table [linxmicrovix].LinxSubClasses (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
