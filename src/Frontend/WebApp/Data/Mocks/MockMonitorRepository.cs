@@ -1,4 +1,3 @@
-using WebApp.Components.Cards;
 using WebApp.Models;
 
 namespace WebApp.Data.Mocks
@@ -691,11 +690,10 @@ namespace WebApp.Data.Mocks
         {
             lock (_stateLock)
             {
-                if (_images.TryGetValue(idApp, out var image))
-                    return $"data:{image.ContentType};base64,{Convert.ToBase64String(image.Data)}";
+                return _images.TryGetValue(idApp, out var image)
+                    ? $"data:{image.ContentType};base64,{Convert.ToBase64String(image.Data)}"
+                    : null;
             }
-
-            return AppLogos.For(idApp);
         }
 
         private string AppTitle(MockJob job) => _timeline.Apps[job.IdApp].Title;

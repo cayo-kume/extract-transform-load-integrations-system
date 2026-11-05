@@ -1,7 +1,6 @@
 using System.Data;
 using Dapper;
 using Microsoft.Extensions.Caching.Memory;
-using WebApp.Components.Cards;
 using WebApp.Models;
 
 namespace WebApp.Data.Sql
@@ -899,11 +898,11 @@ namespace WebApp.Data.Sql
 
         private static TimeOnly? DailyAt(TimeSpan? value) => value is TimeSpan time ? TimeOnly.FromTimeSpan(time) : null;
 
-        // a imagem própria da empresa, a padrão do módulo ('*') ou a do pacote
+        // a imagem própria da empresa ou a padrão do módulo ('*'); sem nenhuma, o card mostra as iniciais
         private static string? ImageUrlOf(int idApp, IReadOnlyList<ImageRow> images)
         {
             var image = images.FirstOrDefault(x => x.IdParent == idApp && x.Holder != "*") ?? images.FirstOrDefault(x => x.IdParent == idApp);
-            return image is null ? AppLogos.For(idApp) : $"data:{image.ContentType};base64,{Convert.ToBase64String(image.Data)}";
+            return image is null ? null : $"data:{image.ContentType};base64,{Convert.ToBase64String(image.Data)}";
         }
 
         private static DateTime MinuteOf(DateTime now) => now.AddTicks(-(now.Ticks % TimeSpan.TicksPerMinute));
