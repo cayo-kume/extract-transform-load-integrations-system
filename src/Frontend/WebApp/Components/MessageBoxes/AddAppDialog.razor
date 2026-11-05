@@ -27,7 +27,7 @@
                                 <MudText Typo="Typo.caption" Class="d-block">@app.Description</MudText>
                                 <MudText Typo="Typo.caption" Class="d-block mud-text-secondary">contratada · @(app.ActiveJobs > 0 ? $"{app.ActiveJobs} job(s) ativo(s)" : "nenhum job ativo")</MudText>
                             </div>
-                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" Disabled="_busy" OnClick="@(() => Show(app))">Mostrar</MudButton>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" Class="add-app-action" Disabled="_busy" OnClick="@(() => Show(app))">Mostrar</MudButton>
                         </div>
                     </MudListItem>
                 }
@@ -54,7 +54,7 @@
                                 <MudText Typo="Typo.subtitle2">@app.Title</MudText>
                                 <MudText Typo="Typo.caption" Class="d-block">@app.Description</MudText>
                             </div>
-                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" Disabled="_busy" OnClick="@(() => Add(available))">Adicionar</MudButton>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" Class="add-app-action" Disabled="_busy" OnClick="@(() => Add(available))">Adicionar</MudButton>
                         </div>
                     </MudListItem>
                 }

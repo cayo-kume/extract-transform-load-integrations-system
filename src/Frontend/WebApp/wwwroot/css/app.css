@@ -191,6 +191,12 @@ code {
     background-color: rgba(246, 78, 98, 0.12);
 }
 
+/* Adicionar aplicação: Adicionar e Mostrar com a mesma largura, sem encolher ao lado de descrições longas */
+.add-app-action {
+    flex-shrink: 0;
+    min-width: 96px;
+}
+
 .app-card-title {
     overflow: hidden;
     text-overflow: ellipsis;
