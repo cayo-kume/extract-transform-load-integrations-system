@@ -1,7 +1,10 @@
 @* Adicionar aplicação monitorada, na Visão Geral: as aplicações do catálogo que a empresa do seletor ainda não contratou.
    Adicionar abre a contratação (AppContractDialog), com a agenda dos jobs; eles nascem inativos, e o card entra na Visão
-   Geral como Inativa. As outras empresas da holding contratam pela aba Contrato da engrenagem do card. *@
+   Geral como Inativa. As outras empresas da holding contratam pela aba Contrato da engrenagem do card. As removidas da
+   Visão Geral (o ✕ do card) aparecem primeiro, com o Mostrar, que só devolve o card. *@
 @inject LoggedCompany LoggedCompany
+@inject ICompanyRepository CompanyRepository
+@inject ILogger<AddAppDialog> Logger
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 
@@ -10,12 +13,36 @@
         <MudText Typo="Typo.h6">Adicionar aplicação monitorada</MudText>
     </TitleContent>
     <DialogContent>
-        @if (_remaining.Count == 0)
+        @if (_hidden.Count > 0)
+        {
+            <MudText Typo="Typo.overline" Class="d-block mud-text-secondary">Removidas da Visão Geral</MudText>
+            <MudList T="string" Dense="true" Class="add-app-list mb-2">
+                @foreach (var app in _hidden)
+                {
+                    <MudListItem T="string" @key="app.IdParent" Class="add-app-item">
+                        <div class="d-flex align-center gap-3">
+                            <MudAvatar Rounded="true" Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Medium">@AppLogos.Initials(app.Title)</MudAvatar>
+                            <div class="flex-grow-1" style="min-width: 0">
+                                <MudText Typo="Typo.subtitle2">@app.Title</MudText>
+                                <MudText Typo="Typo.caption" Class="d-block">@app.Description</MudText>
+                                <MudText Typo="Typo.caption" Class="d-block mud-text-secondary">contratada · @(app.ActiveJobs > 0 ? $"{app.ActiveJobs} job(s) ativo(s)" : "nenhum job ativo")</MudText>
+                            </div>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" Disabled="_busy" OnClick="@(() => Show(app))">Mostrar</MudButton>
+                        </div>
+                    </MudListItem>
+                }
+            </MudList>
+        }
+        @if (_remaining.Count == 0 && _hidden.Count == 0)
         {
             <MudText Typo="Typo.body2">Todas as aplicações do catálogo já estão na Visão Geral de @LoggedCompany.Name.</MudText>
         }
-        else
+        else if (_remaining.Count > 0)
         {
+            @if (_hidden.Count > 0)
+            {
+                <MudText Typo="Typo.overline" Class="d-block mud-text-secondary">Do catálogo, ainda não contratadas</MudText>
+            }
             <MudList T="string" Dense="true" Class="add-app-list">
                 @foreach (var available in _remaining)
                 {
@@ -33,7 +60,7 @@
                 }
             </MudList>
         }
-        <MudText Typo="Typo.caption" Class="d-block mt-3">Os jobs nascem inativos: depois de adicionar, ligue a aplicação pelo chip Inativa do card.</MudText>
+        <MudText Typo="Typo.caption" Class="d-block mt-3">@(_hidden.Count > 0 ? "Mostrar só devolve o card à Visão Geral. " : "")Os jobs nascem inativos: depois de adicionar, ligue a aplicação pelo chip Inativa do card.</MudText>
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Close">Fechar</MudButton>
@@ -45,11 +72,41 @@
 
     [Parameter, EditorRequired] public IReadOnlyList<AvailableApp> Apps { get; set; } = [];
 
+    /// <summary>
+    /// Contratadas e removidas da Visão Geral da empresa escolhida.
+    /// </summary>
+    [Parameter] public IReadOnlyList<AppSummaryModel> Hidden { get; set; } = [];
+
     private List<AvailableApp> _remaining = [];
+    private List<AppSummaryModel> _hidden = [];
     private bool _added;
     private bool _busy;
 
-    protected override void OnInitialized() => _remaining = Apps.ToList();
+    protected override void OnInitialized()
+    {
+        _remaining = Apps.ToList();
+        _hidden = Hidden.ToList();
+    }
+
+    // devolve o card à Visão Geral da empresa escolhida
+    private async Task Show(AppSummaryModel app)
+    {
+        _busy = true;
+
+        try
+        {
+            if (await Snackbar.TryAsync(Logger, () => CompanyRepository.SetAppHiddenAsync(LoggedCompany.DocCompany, app.IdParent, hidden: false), $"Não foi possível mostrar {app.Title}."))
+            {
+                Snackbar.Add($"{app.Title} de volta à Visão Geral.", Severity.Success);
+                _hidden.Remove(app);
+                _added = true;
+            }
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
 
     private async Task Add(AvailableApp available)
     {
@@ -74,11 +131,11 @@
     private void Close() => MudDialog?.Close(DialogResult.Ok(_added));
 
     /// <summary>
-    /// Abre a lista; devolve se alguma aplicação foi adicionada (contratada).
+    /// Abre a lista; devolve se alguma aplicação foi adicionada (contratada) ou devolvida à Visão Geral.
     /// </summary>
-    public static async Task<bool> ShowAsync(IDialogService dialogService, IReadOnlyList<AvailableApp> apps)
+    public static async Task<bool> ShowAsync(IDialogService dialogService, IReadOnlyList<AvailableApp> apps, IReadOnlyList<AppSummaryModel>? hidden = null)
     {
-        var parameters = new DialogParameters<AddAppDialog> { { x => x.Apps, apps } };
+        var parameters = new DialogParameters<AddAppDialog> { { x => x.Apps, apps }, { x => x.Hidden, hidden ?? [] } };
 
         // sem X e sem fechar pelo fundo: só o Fechar, que devolve se algo foi adicionado (cancelar perderia isso)
         var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, BackdropClick = false, CloseOnEscapeKey = false };

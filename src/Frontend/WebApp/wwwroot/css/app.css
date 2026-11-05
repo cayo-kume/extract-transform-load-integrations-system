@@ -177,6 +177,18 @@ code {
 
 .app-card-header .mud-card-header-actions {
     flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+}
+
+/* o ✕ "Remover da Visão Geral": cinza, vermelho ao passar o mouse */
+.app-card-remove {
+    color: var(--mud-palette-text-secondary);
+}
+
+.app-card-remove:hover {
+    color: var(--mud-palette-error);
+    background-color: rgba(246, 78, 98, 0.12);
 }
 
 .app-card-title {

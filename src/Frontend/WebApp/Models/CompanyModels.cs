@@ -65,6 +65,11 @@ namespace WebApp.Models
         /// contratado ou removido; o banco não distingue os dois.
         /// </summary>
         public bool IsContracted => Jobs > 0;
+
+        /// <summary>
+        /// Removido da Visão Geral da empresa (monitor.HiddenApps): o card some de lá, e o resto continua como está.
+        /// </summary>
+        public bool IsHidden { get; set; }
     }
 
     /// <summary>

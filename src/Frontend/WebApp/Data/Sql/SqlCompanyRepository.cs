@@ -140,11 +140,13 @@ namespace WebApp.Data.Sql
                     a.Title,
                     a.[Description],
                     COUNT(j.IdJob) AS Jobs,
-                    COALESCE(SUM(CASE WHEN j.IsActive = 1 THEN 1 ELSE 0 END), 0) AS ActiveJobs
+                    COALESCE(SUM(CASE WHEN j.IsActive = 1 THEN 1 ELSE 0 END), 0) AS ActiveJobs,
+                    CAST(MAX(CASE WHEN h.IdParent IS NULL THEN 0 ELSE 1 END) AS bit) AS IsHidden
                 FROM
                     [auditing].[Apps] a
                     OUTER APPLY [auditing].[fn_CatalogTree](a.IdParent) t
                     LEFT JOIN [auditing].[Jobs] j ON j.IdJob = t.IdJob AND j.IdType = t.IdType AND j.Company = @company
+                    LEFT JOIN [monitor].[HiddenApps] h ON h.IdParent = a.IdParent AND h.Company = @company
                 GROUP BY
                     a.IdParent, a.Title, a.[Description]
                 ORDER BY
@@ -192,6 +194,18 @@ namespace WebApp.Data.Sql
                 JOIN [auditing].[fn_CatalogTree](@idParent) t ON t.IdJob = j.IdJob AND t.IdType = j.IdType
                 WHERE j.Company = @company
                 """, new { company = Ansi(ModuleDefinitions.Digits(company)), idParent }, cancellationToken: cancellationToken));
+        }
+
+        public async Task SetAppHiddenAsync(string company, int idParent, bool hidden, CancellationToken cancellationToken = default)
+        {
+            await using var connection = await database.OpenAsync(cancellationToken);
+            await connection.ExecuteAsync(new CommandDefinition(hidden
+                ? $"""
+                    IF NOT EXISTS (SELECT 1 FROM [monitor].[HiddenApps] WHERE Company = @company AND IdParent = @idParent)
+                        INSERT INTO [monitor].[HiddenApps] (Company, IdParent, HiddenAt) VALUES (@company, @idParent, {MainDatabase.Now});
+                    """
+                : "DELETE FROM [monitor].[HiddenApps] WHERE Company = @company AND IdParent = @idParent",
+                new { company = Ansi(ModuleDefinitions.Digits(company)), idParent }, cancellationToken: cancellationToken));
         }
 
         private static async Task<List<CatalogJobModel>> CatalogJobsAsync(SqlConnection connection, IDbTransaction? transaction, int idParent, CancellationToken cancellationToken)

@@ -48,6 +48,12 @@ namespace WebApp.Models
         public bool IsContracted { get; set; } = true;
 
         /// <summary>
+        /// Removida da Visão Geral pela empresa escolhida (monitor.HiddenApps): o card sai de lá e volta pelo Adicionar
+        /// aplicação; Aplicações, Integrações e Logs de Erros continuam com ela.
+        /// </summary>
+        public bool IsHidden { get; set; }
+
+        /// <summary>
         /// Empresas da holding que contrataram o módulo, para os chips do card (só para quem vê a holding inteira). Na visão
         /// "Todas as empresas", os números do card são a soma delas.
         /// </summary>

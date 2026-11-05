@@ -81,6 +81,8 @@ namespace WebApp.Data
                     LastErrorAt = inScope.Max(x => x.LastErrorAt),
                     FailingJobs = inScope.Sum(x => x.FailingJobs),
                     IsContracted = inScope.Count > 0,
+                    // removida da Visão Geral pela empresa escolhida (na da holding, pela holding)
+                    IsHidden = merged.FirstOrDefault(x => x.Company.Company == loggedCompany.DocCompany).Contracts?.FirstOrDefault(a => a.IdParent == app.Key)?.IsHidden == true,
                     // ativo pela contratação (jobs ligados agora), que existe também para as empresas fora do escopo
                     Companies = merged
                         .Where(x => x.Apps.Any(a => a.IdParent == app.Key && a.IsContracted))

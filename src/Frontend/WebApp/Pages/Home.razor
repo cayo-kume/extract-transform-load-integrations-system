@@ -24,28 +24,24 @@
         <div class="d-flex align-center pa-4">
             <h3 class="ma-0 text-center">APLICAÇÕES MONITORADAS</h3>
             <MudSpacer />
-            @if (_available.Count > 0 && LoggedCompany.CanManage)
-            {
-                <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" Class="mr-4" OnClick="AddApp">Adicionar aplicação</MudButton>
-            }
             <MudLink Href="@WithPeriod("/applications")" Typo="Typo.body2">Ver em Aplicações</MudLink>
         </div>
 
         <!-- As aplicações que a empresa contratou (ativas e inativas), na ordem da gravidade: com erro, atrasadas e inativas
              primeiro; numa grade só, com quantas colunas couberem, para os cards ficarem alinhados em qualquer largura. O
-             último card adiciona as que faltam -->
+             último card adiciona as que faltam e devolve as removidas da Visão Geral (o ✕ do card) -->
         <div class="card-grid pa-4">
             @foreach (var summarizedApp in _apps)
             {
-                <AppCard @key="summarizedApp.IdParent" Summary="summarizedApp" Period="_filter.Period" OnChanged="ReloadAsync" Summed="Summed" />
+                <AppCard @key="summarizedApp.IdParent" Summary="summarizedApp" Period="_filter.Period" OnChanged="ReloadAsync" Summed="Summed" Removable="true" />
             }
-            @if (_available.Count > 0 && _filter.IdApp is null && LoggedCompany.CanManage)
+            @if ((_available.Count > 0 || _hidden.Count > 0) && _filter.IdApp is null && LoggedCompany.CanManage)
             {
                 <div class="app-card-wrapper">
                     <button type="button" class="app-card-add" @onclick="AddApp">
                         <MudIcon Icon="@Icons.Material.Filled.Add" Size="Size.Large" />
                         <MudText Typo="Typo.subtitle1">Adicionar aplicação</MudText>
-                        <MudText Typo="Typo.caption">@_available.Count @(_available.Count == 1 ? "disponível" : "disponíveis")</MudText>
+                        <MudText Typo="Typo.caption">@AddCaption</MudText>
                     </button>
                 </div>
             }
@@ -276,6 +272,15 @@
     // as do catálogo que a empresa ainda não contratou: o Adicionar aplicação
     private IReadOnlyList<AvailableApp> _available = [];
 
+    // contratadas e removidas da Visão Geral pela empresa escolhida: voltam pelo Adicionar aplicação
+    private IReadOnlyList<AppSummaryModel> _hidden = [];
+
+    private string AddCaption => string.Join(" · ", new[]
+    {
+        _available.Count > 0 ? $"{_available.Count} {(_available.Count == 1 ? "disponível" : "disponíveis")}" : null,
+        _hidden.Count > 0 ? $"{_hidden.Count} {(_hidden.Count == 1 ? "removida" : "removidas")} da Visão Geral" : null
+    }.Where(x => x is not null));
+
     // na visão "Todas as empresas", cada job vem com a empresa na frente
     // com a holding escolhida, a Visão Geral soma a holding e as empresas dela (LoggedCompany.SummedCompanies), e cada job
     // leva o nome da empresa na frente
@@ -449,7 +454,7 @@
         if (!LoggedCompany.CanManage)
             return;
 
-        if (await AddAppDialog.ShowAsync(DialogService, _available))
+        if (await AddAppDialog.ShowAsync(DialogService, _available, _hidden))
             await ReloadAsync();
     }
 
@@ -460,14 +465,18 @@
             // as aplicações que alguma empresa somada contratou, com os números somados (com a holding escolhida, ela e as
             // empresas dela); o Adicionar aplicação contrata na empresa escolhida
             var view = CompanyView.Summed;
-            var apps = (await view.SummariesAsync(_filter.Period, _disposed.Token)).Where(x => x.IsContracted).ToList();
+            var contracted = (await view.SummariesAsync(_filter.Period, _disposed.Token)).Where(x => x.IsContracted).ToList();
+            // as removidas da Visão Geral saem dela inteira: cards, jobs, falhas e métricas
+            _hidden = contracted.Where(x => x.IsHidden).ToList();
+            var hidden = _hidden.Select(x => x.IdParent).ToHashSet();
+            var apps = contracted.Where(x => !x.IsHidden).ToList();
             _available = await CompanyView.AvailableAsync(_disposed.Token);
-            var jobs = await view.JobsAsync(idApp: null, idType: null, _disposed.Token);
+            var jobs = (await view.JobsAsync(idApp: null, idType: null, _disposed.Token)).Where(x => !hidden.Contains(x.IdApp)).ToList();
             // todas as integrações ativas (o painel corta em 10 por aplicação), a semana do card de registros e a janela
             // anterior para os deltas
-            var heartbeat = await view.HeartbeatAsync(_filter.Period, top: int.MaxValue, _disposed.Token);
-            _week = await view.BucketsAsync(Period.Last7Days, buckets: 7, previousWindow: false, _disposed.Token);
-            _previousBuckets = await view.BucketsAsync(_filter.Period, buckets: 1, previousWindow: true, _disposed.Token);
+            var heartbeat = (await view.HeartbeatAsync(_filter.Period, top: int.MaxValue, _disposed.Token)).Where(x => !hidden.Contains(x.IdApp)).ToList();
+            _week = (await view.BucketsAsync(Period.Last7Days, buckets: 7, previousWindow: false, _disposed.Token)).Where(x => !hidden.Contains(x.IdApp)).ToList();
+            _previousBuckets = (await view.BucketsAsync(_filter.Period, buckets: 1, previousWindow: true, _disposed.Token)).Where(x => !hidden.Contains(x.IdApp)).ToList();
 
             _allApps = apps;
             _jobs = jobs.Where(x => _filter.IdApp is null || x.IdApp == _filter.IdApp).ToList();

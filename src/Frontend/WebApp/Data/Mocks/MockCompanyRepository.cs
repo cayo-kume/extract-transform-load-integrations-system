@@ -28,6 +28,11 @@ namespace WebApp.Data.Mocks
         public Dictionary<(string Company, int IdJob, int IdType), bool> Jobs { get; } = [];
 
         /// <summary>
+        /// Módulos removidos da Visão Geral de cada empresa (monitor.HiddenApps).
+        /// </summary>
+        public HashSet<(string Company, int IdParent)> HiddenApps { get; } = [];
+
+        /// <summary>
         /// (módulo, empresa) → colunas e quando foi gravada.
         /// </summary>
         public Dictionary<(int IdParent, string Company), (Dictionary<string, string?> Values, DateTime UpdatedAt)> Parameters { get; } = [];
@@ -193,7 +198,11 @@ namespace WebApp.Data.Mocks
                             ? (monitorJobs.Count(x => x.IdApp == app.IdParent), monitorJobs.Count(x => x.IdApp == app.IdParent && x.IsActive))
                             : (tree.Count(x => store.Jobs.ContainsKey((key, x.IdJob, x.IdType))), tree.Count(x => store.Jobs.GetValueOrDefault((key, x.IdJob, x.IdType))));
 
-                        return new CompanyAppModel { IdParent = app.IdParent, Title = app.Title, Description = app.Description, Jobs = count, ActiveJobs = active };
+                        return new CompanyAppModel
+                        {
+                            IdParent = app.IdParent, Title = app.Title, Description = app.Description, Jobs = count, ActiveJobs = active,
+                            IsHidden = store.HiddenApps.Contains((key, app.IdParent))
+                        };
                     })
                     .ToList();
             }
@@ -232,6 +241,23 @@ namespace WebApp.Data.Mocks
 
                 foreach (var job in Tree(idParent).Where(x => store.Jobs.ContainsKey((key, x.IdJob, x.IdType))))
                     store.Jobs[(key, job.IdJob, job.IdType)] = false;
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public Task SetAppHiddenAsync(string company, int idParent, bool hidden, CancellationToken cancellationToken = default)
+        {
+            var key = ModuleDefinitions.Digits(company);
+
+            lock (store.Gate)
+            {
+                Find(key);
+
+                if (hidden)
+                    store.HiddenApps.Add((key, idParent));
+                else
+                    store.HiddenApps.Remove((key, idParent));
             }
 
             return Task.CompletedTask;

@@ -56,6 +56,12 @@ namespace WebApp.Data
         /// Remove o módulo: desativa os jobs dele na empresa (não apaga, porque os logs referenciam os jobs).
         /// </summary>
         Task RemoveAppAsync(string company, int idParent, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Remove o módulo da Visão Geral da empresa (hidden) ou o devolve a ela (monitor.HiddenApps); a contratação e os
+        /// jobs ficam como estão.
+        /// </summary>
+        Task SetAppHiddenAsync(string company, int idParent, bool hidden, CancellationToken cancellationToken = default);
     }
 
     /// <summary>

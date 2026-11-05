@@ -1,0 +1,69 @@
+@* Confirmação do ✕ do card da Visão Geral: a aplicação sai da Visão Geral da empresa, e o resto continua como está. Com
+   jobs ativos, avisa que as falhas deles deixam de aparecer ali e oferece desativá-los junto (só numa empresa: na Visão
+   Geral da holding, que soma as empresas, os jobs de cada uma são desligados pela aba Contrato da engrenagem). Devolve se
+   é para desativar os jobs; cancela com o X. *@
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">Remover @Title da Visão Geral?</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText Typo="Typo.body2" Class="mb-3">
+            O card sai da Visão Geral de <strong>@Company</strong>. A contratação, a credencial e a agenda continuam como estão, e
+            @Title continua em Aplicações e Integrações. Para trazer de volta, use o Adicionar aplicação.
+        </MudText>
+        @if (ActiveJobs > 0)
+        {
+            <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-3">
+                @(ActiveJobs == 1 ? "O job ativo continua rodando" : $"Os {ActiveJobs} jobs ativos continuam rodando"), e as falhas deixam de aparecer aqui.
+            </MudAlert>
+            @if (CanDeactivate)
+            {
+                <MudCheckBox T="bool" @bind-Value="_deactivate" Color="Color.Primary" Label="@(ActiveJobs == 1 ? "Desativar também o job ativo" : $"Desativar também os {ActiveJobs} jobs ativos")" />
+            }
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="Confirm">Remover</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance? MudDialog { get; set; }
+
+    [Parameter] public string Title { get; set; } = "";
+
+    [Parameter] public string Company { get; set; } = "";
+
+    [Parameter] public int ActiveJobs { get; set; }
+
+    /// <summary>
+    /// Oferece desativar os jobs junto (desligado na Visão Geral da holding, que soma as empresas).
+    /// </summary>
+    [Parameter] public bool CanDeactivate { get; set; }
+
+    private bool _deactivate = true;
+
+    private void Cancel() => MudDialog?.Cancel();
+
+    private void Confirm() => MudDialog?.Close(DialogResult.Ok(CanDeactivate && ActiveJobs > 0 && _deactivate));
+
+    /// <summary>
+    /// Abre a confirmação; nulo se cancelada, senão se é para desativar os jobs ativos junto.
+    /// </summary>
+    public static async Task<bool?> ShowAsync(IDialogService dialogService, string title, string company, int activeJobs, bool canDeactivate)
+    {
+        var parameters = new DialogParameters<RemoveAppDialog>
+        {
+            { x => x.Title, title },
+            { x => x.Company, company },
+            { x => x.ActiveJobs, activeJobs },
+            { x => x.CanDeactivate, canDeactivate }
+        };
+
+        var reference = await dialogService.ShowAsync<RemoveAppDialog>($"Remover {title}", parameters, new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await reference.Result;
+        return result is { Canceled: false, Data: bool deactivate } ? deactivate : null;
+    }
+}

@@ -54,6 +54,9 @@ BEGIN
     GRANT INSERT, UPDATE, DELETE ON [monitor].[JobAcknowledgement] TO [etl_monitor];
     GRANT INSERT, UPDATE, DELETE ON [monitor].[AppImage] TO [etl_monitor];
     GRANT INSERT, UPDATE ON [monitor].[Users] TO [etl_monitor];
+    -- aplicações removidas da Visão Geral (Script011, que roda depois desta procedure ser criada)
+    IF OBJECT_ID(N'[monitor].[HiddenApps]') IS NOT NULL
+        GRANT INSERT, DELETE ON [monitor].[HiddenApps] TO [etl_monitor];
 
     -- parâmetros dos módulos (tela de cadastro): uma tabela *Parameters por módulo migrado neste banco
     SET @sql = N'';

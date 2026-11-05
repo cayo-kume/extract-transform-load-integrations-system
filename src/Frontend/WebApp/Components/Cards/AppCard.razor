@@ -1,5 +1,6 @@
 @inject LoggedCompany LoggedCompany
 @inject IModuleParametersRepository ParametersRepository
+@inject ICompanyRepository CompanyRepository
 @inject IDialogService DialogService
 @inject IMonitorRepository MonitorRepository
 @inject CompanyView CompanyView
@@ -48,6 +49,12 @@
                 </div>
             </CardHeaderContent>
             <CardHeaderActions>
+                @if (Removable && LoggedCompany.CanManage)
+                {
+                    <MudTooltip Text="Remover da Visão Geral">
+                        <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" Class="app-card-remove" Disabled="_saving" OnClick="RemoveFromOverview" aria-label="Remover da Visão Geral" />
+                    </MudTooltip>
+                }
                 <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Default" OnClick="OpenConfigurations" />
             </CardHeaderActions>
         </MudCardHeader>
@@ -163,6 +170,50 @@
     private bool IsHoldingApp => CompanyApps.IsHoldingApp(Summary.IdParent);
 
     private bool SummedHere => Summed && !IsHoldingApp;
+
+    /// <summary>
+    /// Visão Geral: o ✕ remove a aplicação dela (monitor.HiddenApps), para quem muda o painel.
+    /// </summary>
+    [Parameter] public bool Removable { get; set; }
+
+    // o card sai da Visão Geral da empresa escolhida (na da holding, da holding); a contratação e a agenda ficam. Com jobs
+    // ativos, a confirmação oferece desativá-los junto, menos na Visão Geral somada (cada empresa, pela aba Contrato)
+    private async Task RemoveFromOverview()
+    {
+        if (!LoggedCompany.CanManage)
+            return;
+
+        var company = LoggedCompany.DocCompany;
+        var deactivate = await RemoveAppDialog.ShowAsync(DialogService, Summary.Title ?? "", LoggedCompany.Label, Summary.ActiveJobs, canDeactivate: !SummedHere);
+        if (deactivate is null)
+            return;
+
+        _saving = true;
+
+        try
+        {
+            var removed = await Snackbar.TryAsync(Logger, async () =>
+            {
+                if (deactivate == true)
+                    await CompanyRepository.RemoveAppAsync(company, Summary.IdParent);
+
+                await CompanyRepository.SetAppHiddenAsync(company, Summary.IdParent, hidden: true);
+            }, $"Não foi possível remover {Summary.Title} da Visão Geral.");
+
+            if (!removed)
+                return;
+
+            Snackbar.Add(deactivate == true
+                ? $"{Summary.Title} removido da Visão Geral, com os {Summary.ActiveJobs} jobs desativados."
+                : $"{Summary.Title} removido da Visão Geral. Para trazer de volta, use o Adicionar aplicação.", Severity.Info);
+
+            await OnChanged.InvokeAsync();
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
 
     private string HoldingAppNote => Summary.IdParent == CompanyApps.DataWarehouseApp
         ? $"Da holding: carrega {(LoggedCompany.VisibleCompanies.Count is var count and > 1 ? $"as {count} empresas" : "a empresa")}."
