@@ -6,6 +6,7 @@
 @inject IModuleParametersRepository ParametersRepository
 @inject IDialogService DialogService
 @inject IMonitorRepository MonitorRepository
+@inject CompanyView CompanyView
 @inject NavigationManager Navigation
 @inject FilterSession FilterSession
 @inject ISnackbar Snackbar
@@ -41,6 +42,17 @@
             <div class="segment-filter">
                 <MudText Typo="Typo.caption">Tipo</MudText>
                 <TypeSegment Value="_type" ValueChanged="@(type => Go(_status, _health, type, _filter.IdApp, _filter.Period))" />
+                @if (LoggedCompany.IsAllCompanies)
+                {
+                    @* "Todas as empresas": restringe a tela a uma empresa, sem trocar o seletor do topo *@
+                    <MudSelect T="string" @bind-Value="_companyFilter" Label="Empresa" Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true" Clearable="true" Style="max-width: 260px"
+                               Placeholder="Todas" ToStringFunc="@(company => string.IsNullOrEmpty(company) ? "Todas" : LoggedCompany.CompanyLabel(company))">
+                        @foreach (var company in LoggedCompany.ScopeCompanies)
+                        {
+                            <MudSelectItem T="string" Value="@company.Company">@LoggedCompany.CompanyLabel(company.Company) · @company.Company</MudSelectItem>
+                        }
+                    </MudSelect>
+                }
             </div>
             <MudSpacer />
             <RefreshBar UpdatedAt="_updatedAt" OnRefresh="Load" />
@@ -77,125 +89,30 @@
         <div class="px-4 pb-4 pt-4">
             @foreach (var app in FilteredApps)
             {
-                var nodes = NodesOf(app.IdParent);
-                var jobs = JobsIn(nodes);
-                var expanded = IsExpanded(app.IdParent);
-                var scheduling = _scheduleApps.Contains(app.IdParent);
+                @if (LoggedCompany.IsAllCompanies)
+                {
+                    var companies = CompaniesOf(app.IdParent);
+                    var total = companies.Sum(x => JobsIn(NodesOf(app.IdParent, x.Company)).Count);
 
-                @* @key: sem ele, o Blazor reaproveita a MudTable de um grupo para outra aplicação quando o filtro muda *@
-                <div class="app-group" @key="app.IdParent">
-                    <div class="app-group-head" role="button" tabindex="0" aria-expanded="@(expanded ? "true" : "false")" @onclick="@(() => ToggleApp(app.IdParent))" @onkeydown="@(e => OnAppKeyDown(e, app.IdParent))">
-                        <MudIcon Icon="@(expanded ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)" Size="Size.Small" />
-                        <MudText Typo="Typo.subtitle2" Style="white-space: nowrap">@app.IdParent - @app.Title</MudText>
-                        <MudText Typo="Typo.caption" Class="app-group-description d-none d-md-block">@app.Description</MudText>
-                        @* no celular, os números, os chips e o botão Agenda descem para a segunda linha *@
-                        <div class="app-group-meta">
-                            <MudText Typo="Typo.caption" Style="white-space: nowrap">
-                                @(_health.Count == 0 ? $"{jobs.Count} job(s) · {jobs.Count(x => x.IsActive)} ativo(s)" : $"{jobs.Count} no filtro")
-                            </MudText>
-                            @foreach (var health in HealthCounts(jobs))
-                            {
-                                <MudTooltip Text="@health.Label">
-                                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@health.Color" Icon="@health.Icon">@health.Count</MudChip>
-                                </MudTooltip>
-                            }
-                            @* stopPropagation no clique e no teclado: o botão Agenda não abre nem fecha o grupo; a engrenagem saiu daqui
-                               (rodada 9): imagem, credenciais e parâmetros ficam na engrenagem dos cards *@
-                            @if (LoggedCompany.CanManage)
-                            {
-                                <div @onclick:stopPropagation="true" @onkeydown:stopPropagation="true">
-                                    <MudTooltip Text="@(scheduling ? "Voltar à tabela de jobs" : "Editar o intervalo, a hora diária e a fila das integrações")">
-                                        <MudButton Variant="@(scheduling ? Variant.Filled : Variant.Outlined)" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Schedule" OnClick="@(() => ToggleSchedule(app, jobs))">Agenda</MudButton>
-                                    </MudTooltip>
-                                </div>
-                            }
+                    @* "Todas as empresas": a aplicação com um bloco por empresa, cada um com a sua agenda *@
+                    <div class="app-group holding-group" @key="app.IdParent">
+                        <div class="app-group-head holding-group-head">
+                            <MudText Typo="Typo.subtitle2" Style="white-space: nowrap">@app.IdParent - @app.Title</MudText>
+                            <MudText Typo="Typo.caption" Class="app-group-description d-none d-md-block">@app.Description</MudText>
+                            <div class="app-group-meta">
+                                <MudText Typo="Typo.caption" Style="white-space: nowrap">@companies.Count empresa(s) · @total job(s)</MudText>
+                            </div>
                         </div>
+                        @foreach (var company in companies)
+                        {
+                            @Group(app, company.Company, nested: true)
+                        }
                     </div>
-
-                    @if (expanded && scheduling)
-                    {
-                        <!-- Modo agenda: intervalo, hora diária e fila das integrações; a procedure roda com a integração. Sem o
-                             modo cartão: no celular a tabela rola para o lado dentro do grupo -->
-                        <MudTable Items="@nodes" Class="compact-table" Hover="true" Dense="true" Breakpoint="Breakpoint.None" RowsPerPage="50" Elevation="0"
-                                  RowClassFunc="@((node, _) => node.IsContext ? "context-row" : _drafts.IsChanged(node.Job) ? "changed-row" : "")">
-                            <HeaderContent>
-                                <MudTh>IdJob</MudTh>
-                                <MudTh>Tipo</MudTh>
-                                <MudTh>Título</MudTh>
-                                <MudTh>Intervalo (min)</MudTh>
-                                <MudTh>Diário às</MudTh>
-                                <MudTh>Fila</MudTh>
-                                <MudTh>Ativo</MudTh>
-                            </HeaderContent>
-                            <RowTemplate>
-                                @ScheduleRow((context.Job, context))
-                            </RowTemplate>
-                            <ChildRowContent>
-                                @if (JobTree.IsExpanded(context, _toggled))
-                                {
-                                    @foreach (var child in context.Children)
-                                    {
-                                        <MudTr @key="(child.IdJob, child.IdType)" Class="child-row">
-                                            @ScheduleRow((child, null))
-                                        </MudTr>
-                                    }
-                                }
-                            </ChildRowContent>
-                            <PagerContent>
-                                <TablePager PageSizeOptions="new[] { 10, 25, 50 }" />
-                            </PagerContent>
-                        </MudTable>
-                        <div class="schedule-bar">
-                            @{ var pending = _drafts.CountOf(jobs); }
-                            @if (pending > 0)
-                            {
-                                <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Outlined">@pending alteração(ões) não salva(s)</MudChip>
-                            }
-                            <MudText Typo="Typo.caption">Intervalo mínimo de 1 min; com "Diário às", o intervalo fica 1440. Uma fila nova só roda se algum servidor do host a tiver em Hangfire:Server:Queues.</MudText>
-                            <MudSpacer />
-                            <MudButton Size="Size.Small" OnClick="@(() => _drafts.Clear(jobs))" Disabled="@(pending == 0 || _saving.Count > 0)">Descartar</MudButton>
-                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" OnClick="@(() => SaveSchedules(app, jobs))" Disabled="@(pending == 0 || _savingSchedule || _drafts.HasInvalidQueue)">Salvar alterações</MudButton>
-                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="@(() => ToggleSchedule(app, jobs))">Concluir</MudButton>
-                        </div>
-                    }
-                    else if (expanded)
-                    {
-                        <!-- Integrações na ordem do IdJob, cada uma com as procedures que chama; 50 integrações por página -->
-                        <MudTable Items="@nodes" Class="compact-table" Hover="true" Dense="true" Breakpoint="Breakpoint.Sm" RowsPerPage="50" Elevation="0" RowClassFunc="@((node, _) => node.IsContext ? "context-row" : "")">
-                            <HeaderContent>
-                                <MudTh>IdJob</MudTh>
-                                <MudTh>Tipo</MudTh>
-                                <MudTh>Título</MudTh>
-                                <MudTh>Agenda</MudTh>
-                                <MudTh>Ativo</MudTh>
-                                <MudTh>Saúde</MudTh>
-                                <MudTh>Última execução</MudTh>
-                                <MudTh>Duração</MudTh>
-                                <MudTh>Registros</MudTh>
-                                <MudTh></MudTh>
-                            </HeaderContent>
-                            <RowTemplate>
-                                @JobCells((context.Job, context))
-                            </RowTemplate>
-                            <ChildRowContent>
-                                @Executions(context.Job)
-                                @if (JobTree.IsExpanded(context, _toggled))
-                                {
-                                    @foreach (var child in context.Children)
-                                    {
-                                        <MudTr @key="(child.IdJob, child.IdType)" Class="child-row">
-                                            @JobCells((child, null))
-                                        </MudTr>
-                                        @Executions(child)
-                                    }
-                                }
-                            </ChildRowContent>
-                            <PagerContent>
-                                <TablePager PageSizeOptions="new[] { 10, 25, 50 }" />
-                            </PagerContent>
-                        </MudTable>
-                    }
-                </div>
+                }
+                else
+                {
+                    @Group(app, LoggedCompany.DocCompany, nested: false)
+                }
             }
 
             @if (!_loading && !FilteredApps.Any())
@@ -257,21 +174,32 @@
     private IReadOnlyList<AppSummaryModel> _apps = [];
     private IReadOnlyList<JobModel> _jobs = [];
 
-    // linhas abertas e chips gravando, por (IdJob, IdType)
-    private readonly HashSet<(int IdJob, int IdType)> _opened = [];
-    private readonly HashSet<(int IdJob, int IdType)> _saving = [];
+    // linhas abertas e chips gravando, por (empresa, IdJob, IdType): na visão "Todas as empresas" o mesmo job aparece em
+    // cada empresa
+    private readonly HashSet<(string Company, int IdJob, int IdType)> _opened = [];
+    private readonly HashSet<(string Company, int IdJob, int IdType)> _saving = [];
 
-    // integrações abertas ou fechadas pelo usuário (inverte o estado que o filtro escolheu)
-    private readonly HashSet<(int, int)> _toggled = [];
+    // integrações abertas ou fechadas pelo usuário (inverte o estado que o filtro escolheu), por empresa
+    private readonly Dictionary<string, HashSet<(int, int)>> _toggled = [];
 
-    // grupos em modo agenda e a agenda alterada e ainda não salva (rodada 8: a agenda saiu do diálogo nesta tela)
-    private readonly HashSet<int> _scheduleApps = [];
+    private HashSet<(int, int)> ToggledOf(string company) =>
+        _toggled.TryGetValue(company, out var set) ? set : _toggled[company] = [];
+
+    // grupos (aplicação e empresa, GroupKey) em modo agenda e a agenda alterada e ainda não salva
+    private readonly HashSet<string> _scheduleApps = [];
     private readonly ScheduleDrafts _drafts = new();
     private bool _savingSchedule;
 
-    // grupos de aplicação: abertos pelo usuário (quando começam fechados) e fechados pelo usuário (quando abrem sozinhos)
-    private readonly HashSet<int> _expandedApps = [];
-    private readonly HashSet<int> _collapsedApps = [];
+    // grupos (aplicação e empresa): abertos pelo usuário (quando começam fechados) e fechados pelo usuário (quando abrem
+    // sozinhos)
+    private readonly HashSet<string> _expandedApps = [];
+    private readonly HashSet<string> _collapsedApps = [];
+
+    private static string GroupKey(int idApp, string company) => $"{idApp}|{company}";
+
+    // as empresas do escopo com jobs da aplicação no filtro (visão "Todas as empresas")
+    private List<CompanyModel> CompaniesOf(int idApp) =>
+        LoggedCompany.ScopeCompanies.Where(x => NodesOf(idApp, x.Company).Count > 0).ToList();
 
     private static string StatusLabel(JobStatus status) => status switch
     {
@@ -321,21 +249,21 @@
     private bool OpensByItself =>
         _filter.IdApp is not null || _focusJob is not null || _health.Count > 0 || !string.IsNullOrWhiteSpace(_filter.Search);
 
-    private bool IsExpanded(int idApp) =>
-        OpensByItself ? !_collapsedApps.Contains(idApp) : _expandedApps.Contains(idApp);
+    private bool IsExpanded(string key) =>
+        OpensByItself ? !_collapsedApps.Contains(key) : _expandedApps.Contains(key);
 
-    private void ToggleApp(int idApp)
+    private void ToggleApp(string key)
     {
         var set = OpensByItself ? _collapsedApps : _expandedApps;
-        if (!set.Remove(idApp))
-            set.Add(idApp);
+        if (!set.Remove(key))
+            set.Add(key);
     }
 
     // o cabeçalho é um div clicável; Enter e espaço fazem o mesmo papel para quem navega por teclado
-    private void OnAppKeyDown(KeyboardEventArgs args, int idApp)
+    private void OnAppKeyDown(KeyboardEventArgs args, string key)
     {
         if (args.Key is "Enter" or " ")
-            ToggleApp(idApp);
+            ToggleApp(key);
     }
 
     // o job do link aparece em qualquer situação; fora isso, a situação escolhida
@@ -356,7 +284,11 @@
         (_focusJob is null || job.IdJob == _focusJob) && _filter.Matches(job.IdJob.ToString(), job.Title, job.Description);
 
     // as sob demanda ficam na tela Sob Demanda; só aparecem aqui pelo link direto (?job=), vindo dos Logs de Erros
+    // filtro Empresa da visão "Todas as empresas"; vazio, todas
+    private string? _companyFilter;
+
     private IEnumerable<JobModel> Scoped => _jobs
+        .Where(x => string.IsNullOrEmpty(_companyFilter) || x.Company == _companyFilter)
         .Where(x => !x.IsOnDemand || x.IdJob == _focusJob)
         .Where(x => _filter.IdApp is null || x.IdApp == _filter.IdApp);
 
@@ -369,8 +301,8 @@
 
     // integrações da aplicação na ordem do IdJob (decisão de 31/10/2026), cada uma com as procedures que chama; a
     // integração que não passa no filtro (situação, saúde) fica como cabeçalho em cinza das procedures que passam
-    private List<JobNode> NodesOf(int idApp) => JobTree.Build(
-        Scoped.Where(x => x.IdApp == idApp).ToList(),
+    private List<JobNode> NodesOf(int idApp, string company) => JobTree.Build(
+        Scoped.Where(x => x.IdApp == idApp && x.Company == company).ToList(),
         filter: x => StatusMatches(x) && HealthMatches(x),
         matches: SearchMatches,
         _type,
@@ -378,7 +310,7 @@
 
     private IEnumerable<AppSummaryModel> FilteredApps => _apps
         .Where(x => _filter.IdApp is null || x.IdParent == _filter.IdApp)
-        .Where(x => NodesOf(x.IdParent).Count > 0);
+        .Where(x => LoggedCompany.ScopeCompanies.Any(c => NodesOf(x.IdParent, c.Company).Count > 0));
 
     // os jobs mostrados no grupo: as integrações (sem as que só estão ali como cabeçalho) e as procedures
     private static List<JobModel> JobsIn(List<JobNode> nodes) =>
@@ -435,7 +367,7 @@
         {
             _focusJob = JobQuery;
             foreach (var job in _jobs.Where(x => x.IdJob == JobQuery && (_type is null || x.IdType == _type)))
-                _opened.Add((job.IdJob, job.IdType));
+                _opened.Add((job.Company, job.IdJob, job.IdType));
         }
     }
 
@@ -444,9 +376,10 @@
     {
         await Snackbar.TryAsync(Logger, async () =>
         {
-            _apps = await MonitorRepository.GetAppSummariesAsync(_filter.Period);
-            _jobs = await MonitorRepository.GetJobsAsync(idApp: null, idType: null);
-            _drafts.Queues = await MonitorRepository.GetQueuesAsync();
+            // as empresas da tela (todas, na visão "Todas as empresas"), cada job com a empresa dele
+            _apps = (await CompanyView.SummariesAsync(_filter.Period)).Where(x => x.IsContracted).ToList();
+            _jobs = await CompanyView.JobsAsync(idApp: null, idType: null);
+            _drafts.Queues = await CompanyView.QueuesAsync();
             _updatedAt = WebApp.Data.Sql.MainDatabase.LocalNow();
         }, "Não foi possível carregar os jobs.");
 
@@ -499,19 +432,157 @@
 
     private string? AppTitle(int idApp) => _apps.FirstOrDefault(x => x.IdParent == idApp)?.Title;
 
+    // o grupo de uma aplicação numa empresa: o de sempre (numa empresa só) ou um bloco dentro da aplicação, com o nome da
+    // empresa no lugar do da aplicação (nested, na visão "Todas as empresas")
+    private RenderFragment Group(AppSummaryModel app, string company, bool nested) => __builder =>
+    {
+        var key = GroupKey(app.IdParent, company);
+        var nodes = NodesOf(app.IdParent, company);
+        var jobs = JobsIn(nodes);
+        var expanded = IsExpanded(key);
+        var scheduling = _scheduleApps.Contains(key);
+
+            <div class="@(nested ? "app-group company-group" : "app-group")" @key="key">
+                <div class="app-group-head" role="button" tabindex="0" aria-expanded="@(expanded ? "true" : "false")" @onclick="@(() => ToggleApp(key))" @onkeydown="@(e => OnAppKeyDown(e, key))">
+                    <MudIcon Icon="@(expanded ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)" Size="Size.Small" />
+                    @if (nested)
+    {
+        <MudText Typo="Typo.subtitle2" Style="white-space: nowrap">@LoggedCompany.CompanyLabel(company)</MudText>
+        <MudText Typo="Typo.caption" Class="app-group-description">@company</MudText>
+        @if (company == LoggedCompany.Holder)
+        {
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Warning">holding</MudChip>
+        }
+    }
+    else
+    {
+        <MudText Typo="Typo.subtitle2" Style="white-space: nowrap">@app.IdParent - @app.Title</MudText>
+        <MudText Typo="Typo.caption" Class="app-group-description d-none d-md-block">@app.Description</MudText>
+    }
+                    
+                    @* no celular, os números, os chips e o botão Agenda descem para a segunda linha *@
+                    <div class="app-group-meta">
+                        <MudText Typo="Typo.caption" Style="white-space: nowrap">
+                            @(_health.Count == 0 ? $"{jobs.Count} job(s) · {jobs.Count(x => x.IsActive)} ativo(s)" : $"{jobs.Count} no filtro")
+                        </MudText>
+                        @foreach (var health in HealthCounts(jobs))
+                        {
+                            <MudTooltip Text="@health.Label">
+                                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@health.Color" Icon="@health.Icon">@health.Count</MudChip>
+                            </MudTooltip>
+                        }
+                        @* stopPropagation no clique e no teclado: o botão Agenda não abre nem fecha o grupo; a engrenagem saiu daqui
+                           (rodada 9): imagem, credenciais e parâmetros ficam na engrenagem dos cards *@
+                        @if (LoggedCompany.CanManage)
+                        {
+                            <div @onclick:stopPropagation="true" @onkeydown:stopPropagation="true">
+                                <MudTooltip Text="@(scheduling ? "Voltar à tabela de jobs" : "Editar o intervalo, a hora diária e a fila das integrações")">
+                                    <MudButton Variant="@(scheduling ? Variant.Filled : Variant.Outlined)" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Schedule" OnClick="@(() => ToggleSchedule(app, company, jobs))">Agenda</MudButton>
+                                </MudTooltip>
+                            </div>
+                        }
+                    </div>
+                </div>
+    
+                @if (expanded && scheduling)
+                {
+                    <!-- Modo agenda: intervalo, hora diária e fila das integrações; a procedure roda com a integração. Sem o
+                         modo cartão: no celular a tabela rola para o lado dentro do grupo -->
+                    <MudTable Items="@nodes" Class="compact-table" Hover="true" Dense="true" Breakpoint="Breakpoint.None" RowsPerPage="50" Elevation="0"
+                              RowClassFunc="@((node, _) => node.IsContext ? "context-row" : _drafts.IsChanged(node.Job) ? "changed-row" : "")">
+                        <HeaderContent>
+                            <MudTh>IdJob</MudTh>
+                            <MudTh>Tipo</MudTh>
+                            <MudTh>Título</MudTh>
+                            <MudTh>Intervalo (min)</MudTh>
+                            <MudTh>Diário às</MudTh>
+                            <MudTh>Fila</MudTh>
+                            <MudTh>Ativo</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            @ScheduleRow((context.Job, context))
+                        </RowTemplate>
+                        <ChildRowContent>
+                            @if (JobTree.IsExpanded(context, ToggledOf(company)))
+                            {
+                                @foreach (var child in context.Children)
+                                {
+                                    <MudTr @key="(child.IdJob, child.IdType)" Class="child-row">
+                                        @ScheduleRow((child, null))
+                                    </MudTr>
+                                }
+                            }
+                        </ChildRowContent>
+                        <PagerContent>
+                            <TablePager PageSizeOptions="new[] { 10, 25, 50 }" />
+                        </PagerContent>
+                    </MudTable>
+                    <div class="schedule-bar">
+                        @{ var pending = _drafts.CountOf(jobs); }
+                        @if (pending > 0)
+                        {
+                            <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Outlined">@pending alteração(ões) não salva(s)</MudChip>
+                        }
+                        <MudText Typo="Typo.caption">Intervalo mínimo de 1 min; com "Diário às", o intervalo fica 1440. Uma fila nova só roda se algum servidor do host a tiver em Hangfire:Server:Queues.</MudText>
+                        <MudSpacer />
+                        <MudButton Size="Size.Small" OnClick="@(() => _drafts.Clear(jobs))" Disabled="@(pending == 0 || _saving.Count > 0)">Descartar</MudButton>
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" OnClick="@(() => SaveSchedules(app, company, jobs))" Disabled="@(pending == 0 || _savingSchedule || _drafts.HasInvalidQueue)">Salvar alterações</MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="@(() => ToggleSchedule(app, company, jobs))">Concluir</MudButton>
+                    </div>
+                }
+                else if (expanded)
+                {
+                    <!-- Integrações na ordem do IdJob, cada uma com as procedures que chama; 50 integrações por página -->
+                    <MudTable Items="@nodes" Class="compact-table" Hover="true" Dense="true" Breakpoint="Breakpoint.Sm" RowsPerPage="50" Elevation="0" RowClassFunc="@((node, _) => node.IsContext ? "context-row" : "")">
+                        <HeaderContent>
+                            <MudTh>IdJob</MudTh>
+                            <MudTh>Tipo</MudTh>
+                            <MudTh>Título</MudTh>
+                            <MudTh>Agenda</MudTh>
+                            <MudTh>Ativo</MudTh>
+                            <MudTh>Saúde</MudTh>
+                            <MudTh>Última execução</MudTh>
+                            <MudTh>Duração</MudTh>
+                            <MudTh>Registros</MudTh>
+                            <MudTh></MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            @JobCells((context.Job, context))
+                        </RowTemplate>
+                        <ChildRowContent>
+                            @Executions(context.Job)
+                            @if (JobTree.IsExpanded(context, ToggledOf(company)))
+                            {
+                                @foreach (var child in context.Children)
+                                {
+                                    <MudTr @key="(child.IdJob, child.IdType)" Class="child-row">
+                                        @JobCells((child, null))
+                                    </MudTr>
+                                    @Executions(child)
+                                }
+                            }
+                        </ChildRowContent>
+                        <PagerContent>
+                            <TablePager PageSizeOptions="new[] { 10, 25, 50 }" />
+                        </PagerContent>
+                    </MudTable>
+                }
+            </div>
+    };
+
     // as células de uma linha de job, iguais para a integração (com a setinha e o resumo das procedures) e para a
     // procedure (recuada, dentro da integração)
     private RenderFragment JobCells((JobModel Job, JobNode? Node) row) => __builder =>
     {
         var job = row.Job;
-        var saving = _saving.Contains((job.IdJob, job.IdType));
+        var saving = _saving.Contains((job.Company, job.IdJob, job.IdType));
         @* a seta e o número, e o título e o resumo, num bloco só: no modo cartão do celular cada filho da célula vira um
            item ao lado do rótulo *@
         <MudTd DataLabel="IdJob" Class="@(row.Node is null ? "child-indent" : "")" Style="white-space: nowrap">
             <span class="d-inline-flex align-center">
                 @if (row.Node is { } node)
                 {
-                    <JobTreeToggle Node="node" Toggled="_toggled" OnToggle="@(() => JobTree.Toggle(node, _toggled))" />
+                    <JobTreeToggle Node="node" Toggled="ToggledOf(job.Company)" OnToggle="@(() => JobTree.Toggle(node, ToggledOf(job.Company)))" />
                 }
                 @job.IdJob
             </span>
@@ -554,7 +625,7 @@
         <MudTd Class="job-actions-cell">
             <div class="d-flex align-center gap-1 flex-wrap">
                 <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => Toggle(job))">
-                    @(_opened.Contains((job.IdJob, job.IdType)) ? "Ocultar" : "Execuções")
+                    @(_opened.Contains((job.Company, job.IdJob, job.IdType)) ? "Ocultar" : "Execuções")
                 </MudButton>
                 <JobActions Job="job" OnChanged="Load" Inline="true" />
             </div>
@@ -563,7 +634,7 @@
 
     private RenderFragment Executions(JobModel job) => __builder =>
     {
-        if (_opened.Contains((job.IdJob, job.IdType)))
+        if (_opened.Contains((job.Company, job.IdJob, job.IdType)))
         {
             <MudTr>
                 <td colspan="10">
@@ -582,10 +653,10 @@
         var isActive = !job.IsActive;
 
         // módulo com API externa: só ativa com a credencial da empresa gravada (e a confirmação de que vai chamar a API)
-        if (isActive && !await CredentialDialog.EnsureAsync(DialogService, ParametersRepository, LoggedCompany, job.IdApp, $"o {job.IdJob} {job.Title}"))
+        if (isActive && !await CredentialDialog.EnsureAsync(DialogService, ParametersRepository, LoggedCompany, job.IdApp, $"o {job.IdJob} {job.Title}", job.Company))
             return;
 
-        var key = (job.IdJob, job.IdType);
+        var key = (job.Company, job.IdJob, job.IdType);
         _saving.Add(key);
 
         try
@@ -610,7 +681,7 @@
     // grava e recarrega sem o overlay; em falha, o chip continua como estava
     private async Task<bool> SetJobActive(JobModel job, bool isActive)
     {
-        if (!await Snackbar.TryAsync(Logger, () => MonitorRepository.SetJobActiveAsync(job.IdJob, job.IdType, isActive), $"Não foi possível {(isActive ? "ativar" : "desativar")} o job {job.IdJob}."))
+        if (!await Snackbar.TryAsync(Logger, () => CompanyView.For(job.Company).SetJobActiveAsync(job.IdJob, job.IdType, isActive), $"Não foi possível {(isActive ? "ativar" : "desativar")} o job {job.IdJob}."))
             return false;
 
         await Load();
@@ -618,12 +689,13 @@
     }
 
     // entrar no modo agenda abre o grupo; sair com alteração pendente pergunta antes de descartar
-    private async Task ToggleSchedule(AppSummaryModel app, List<JobModel> jobs)
+    private async Task ToggleSchedule(AppSummaryModel app, string company, List<JobModel> jobs)
     {
         if (!LoggedCompany.CanManage)
             return;
 
-        if (_scheduleApps.Contains(app.IdParent))
+        var key = GroupKey(app.IdParent, company);
+        if (_scheduleApps.Contains(key))
         {
             var pending = _drafts.CountOf(jobs);
             if (pending > 0)
@@ -640,24 +712,24 @@
                 _drafts.Clear(jobs);
             }
 
-            _scheduleApps.Remove(app.IdParent);
+            _scheduleApps.Remove(key);
             return;
         }
 
-        _scheduleApps.Add(app.IdParent);
+        _scheduleApps.Add(key);
         if (OpensByItself)
-            _collapsedApps.Remove(app.IdParent);
+            _collapsedApps.Remove(key);
         else
-            _expandedApps.Add(app.IdParent);
+            _expandedApps.Add(key);
     }
 
-    private async Task SaveSchedules(AppSummaryModel app, List<JobModel> jobs)
+    private async Task SaveSchedules(AppSummaryModel app, string company, List<JobModel> jobs)
     {
         _savingSchedule = true;
 
         try
         {
-            if (await _drafts.ConfirmAndSaveAsync(DialogService, Snackbar, Logger, MonitorRepository, LoggedCompany.Label, app.Title, jobs) > 0)
+            if (await _drafts.ConfirmAndSaveAsync(DialogService, Snackbar, Logger, CompanyView.For(company), $"{LoggedCompany.CompanyLabel(company)} - {company}", app.Title, jobs) > 0)
                 await Load();
         }
         finally
@@ -670,11 +742,11 @@
     private RenderFragment ScheduleRow((JobModel Job, JobNode? Node) row) => __builder =>
     {
         var job = row.Job;
-        var saving = _saving.Contains((job.IdJob, job.IdType));
+        var saving = _saving.Contains((job.Company, job.IdJob, job.IdType));
         <MudTd DataLabel="IdJob" Class="@(row.Node is null ? "child-indent" : "")" Style="white-space: nowrap">
             @if (row.Node is { } node)
             {
-                <JobTreeToggle Node="node" Toggled="_toggled" OnToggle="@(() => JobTree.Toggle(node, _toggled))" />
+                <JobTreeToggle Node="node" Toggled="ToggledOf(job.Company)" OnToggle="@(() => JobTree.Toggle(node, ToggledOf(job.Company)))" />
             }
             @job.IdJob
         </MudTd>
@@ -704,7 +776,7 @@
 
     private void Toggle(JobModel job)
     {
-        if (!_opened.Remove((job.IdJob, job.IdType)))
-            _opened.Add((job.IdJob, job.IdType));
+        if (!_opened.Remove((job.Company, job.IdJob, job.IdType)))
+            _opened.Add((job.Company, job.IdJob, job.IdType));
     }
 }

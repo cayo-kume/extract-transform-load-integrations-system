@@ -122,7 +122,7 @@ else if (CanAcknowledge || Job.Acknowledgement is not null || CanRun || RunHint 
         if (result is null || result.Canceled)
             return;
 
-        var saved = await Snackbar.TryAsync(Logger, () => MonitorRepository.AcknowledgeAsync(Job.IdJob, Job.IdType, result.Data as string), "Não foi possível reconhecer a falha.");
+        var saved = await Snackbar.TryAsync(Logger, () => MonitorRepository.For(Job.Company).AcknowledgeAsync(Job.IdJob, Job.IdType, result.Data as string), "Não foi possível reconhecer a falha.");
         if (!saved)
             return;
 
@@ -132,7 +132,7 @@ else if (CanAcknowledge || Job.Acknowledgement is not null || CanRun || RunHint 
 
     private async Task RemoveAcknowledgement()
     {
-        if (await Snackbar.TryAsync(Logger, () => MonitorRepository.RemoveAcknowledgementAsync(Job.IdJob, Job.IdType), "Não foi possível desfazer o reconhecimento."))
+        if (await Snackbar.TryAsync(Logger, () => MonitorRepository.For(Job.Company).RemoveAcknowledgementAsync(Job.IdJob, Job.IdType), "Não foi possível desfazer o reconhecimento."))
             await OnChanged.InvokeAsync();
     }
 
@@ -147,7 +147,7 @@ else if (CanAcknowledge || Job.Acknowledgement is not null || CanRun || RunHint 
         if (confirmed != true)
             return;
 
-        if (await Snackbar.TryAsync(Logger, () => MonitorRepository.RequestRunAsync(Job.IdJob, Job.IdType), "Não foi possível pedir a execução."))
+        if (await Snackbar.TryAsync(Logger, () => MonitorRepository.For(Job.Company).RequestRunAsync(Job.IdJob, Job.IdType), "Não foi possível pedir a execução."))
         {
             Snackbar.Add($"Execução de {Job.IdJob} {Job.Title} solicitada.", Severity.Info);
             await OnChanged.InvokeAsync();

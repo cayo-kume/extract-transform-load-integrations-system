@@ -1,4 +1,5 @@
 ﻿@inject IMonitorRepository MonitorRepository
+@inject CompanyView CompanyView
 
 <!--Filtros (rodada 12): campos mais baixos, contorno roxo, texto em negrito e foco laranja (brand-field no app.css)-->
 <MudItem xs="12" md="@Columns">
@@ -102,8 +103,9 @@
         if (ShowType)
             _types = await MonitorRepository.GetTypesAsync();
 
+        // as aplicações contratadas por alguma empresa da tela (todas, na visão "Todas as empresas")
         if (ShowApp)
-            _apps = await MonitorRepository.GetAppSummariesAsync(Value.Period);
+            _apps = (await CompanyView.SummariesAsync(Value.Period)).Where(x => x.IsContracted).ToList();
     }
 
     private Task Change(FilterState value)

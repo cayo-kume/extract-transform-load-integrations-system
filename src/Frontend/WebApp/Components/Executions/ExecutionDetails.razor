@@ -64,7 +64,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _messages = await MonitorRepository.GetMessagesAsync(Execution.Execution);
+        _messages = await MonitorRepository.For(Execution.Company).GetMessagesAsync(Execution.Execution);
     }
 
     private void Toggle(long idExecutionMessage)
@@ -75,7 +75,7 @@
 
     private async Task<TableData<RecordModel>> LoadRecords(TableState state, CancellationToken cancellationToken)
     {
-        var page = await MonitorRepository.GetRecordsAsync(Execution.Execution, state.Page, state.PageSize, cancellationToken);
+        var page = await MonitorRepository.For(Execution.Company).GetRecordsAsync(Execution.Execution, state.Page, state.PageSize, cancellationToken);
         return new TableData<RecordModel> { Items = page.Items, TotalItems = page.TotalCount };
     }
 }

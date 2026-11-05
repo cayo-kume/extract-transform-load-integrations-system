@@ -2,6 +2,9 @@
 @inject IModuleParametersRepository ParametersRepository
 @inject IDialogService DialogService
 @inject IMonitorRepository MonitorRepository
+@inject CompanyView CompanyView
+@inject LoggedCompanyStorage CompanyStorage
+@inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 @inject ILogger<AppCard> Logger
 
@@ -17,6 +20,10 @@
                         @if (!Summary.IsContracted)
                         {
                             <MudChip T="string" Variant="Variant.Outlined" Color="Color.Default">Não contratada</MudChip>
+                        }
+                        else if (LoggedCompany.IsAllCompanies)
+                        {
+                            @* na visão "Todas as empresas", ligar e desligar é por empresa, nos chips da linha Empresas *@
                         }
                         else
                         {
@@ -56,6 +63,23 @@
             <MudTooltip Text="@Summary.Description" Placement="Placement.Top">
                 <MudText Typo="Typo.body2" Class="app-description">@Summary.Description</MudText>
             </MudTooltip>
+            @if (LoggedCompany.SeesWholeHolding && Summary.Companies.Count > 0)
+            {
+                @* as empresas da holding com o módulo: verde com algum job ligado, cinza só contratado. Em "Todas as empresas", o
+                   chip liga e desliga o módulo na empresa; numa empresa só, troca o seletor para ela *@
+                <div class="app-companies">
+                    <MudText Typo="Typo.caption" Class="app-companies-label">Empresas</MudText>
+                    @foreach (var company in Summary.Companies)
+                    {
+                        <MudTooltip Text="@CompanyTooltip(company)">
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@(company.IsActive ? Color.Success : Color.Default)"
+                                     Icon="@(company.IsActive ? Icons.Material.Filled.Circle : Icons.Material.Filled.PauseCircle)" Disabled="_saving"
+                                     OnClick="@(CanClick(company) ? EventCallback.Factory.Create<MouseEventArgs>(this, () => CompanyClick(company)) : default)">@company.Label</MudChip>
+                        </MudTooltip>
+                    }
+                    <MudText Typo="Typo.caption" Class="app-companies-sum">ativo em @Summary.Companies.Count(x => x.IsActive) de @Summary.Companies.Count</MudText>
+                </div>
+            }
             @if (Summary.IsContracted)
             {
                 <div class="d-flex flex-row gap-18 mb-2 mt-4">
@@ -73,7 +97,7 @@
             }
             else
             {
-                <MudText Typo="Typo.caption" Class="d-block mt-4 app-stat">Ainda não contratada por @LoggedCompany.Name: contrate para criar os jobs, inativos e com a agenda sugerida.</MudText>
+                <MudText Typo="Typo.caption" Class="d-block mt-4 app-stat">Ainda não contratada por @(LoggedCompany.IsAllCompanies ? "nenhuma empresa da holding" : LoggedCompany.Name): contrate para criar os jobs, inativos e com a agenda sugerida.</MudText>
             }
         </MudCardContent>
         <MudCardActions Class="pa-2">
@@ -160,13 +184,68 @@
         }
     }
 
-    // contratar cria os jobs do módulo para a empresa logada, inativos, com a agenda do diálogo
+    // contratar cria os jobs do módulo, inativos, com a agenda do diálogo: na empresa logada ou, em "Todas as empresas",
+    // nas escolhidas no diálogo
     private async Task Contract()
     {
-        if (await AppContractDialog.ShowAsync(DialogService, Summary.IdParent, Summary.Title) is { } created)
+        var companies = LoggedCompany.IsAllCompanies ? LoggedCompany.ScopeCompanies : null;
+        if (await AppContractDialog.ShowAsync(DialogService, Summary.IdParent, Summary.Title, companies) is { } created)
         {
-            Snackbar.Add($"{Summary.Title} contratado para {LoggedCompany.Name}: {created} job(s) criado(s), inativos.", Severity.Success);
+            Snackbar.Add($"{Summary.Title} contratado: {created} job(s) criado(s), inativos.", Severity.Success);
             await OnChanged.InvokeAsync();
+        }
+    }
+
+    private bool CanClick(AppCompanyModel company) => LoggedCompany.IsAllCompanies ? LoggedCompany.CanManage : company.Company != LoggedCompany.DocCompany;
+
+    private string CompanyTooltip(AppCompanyModel company) =>
+        $"{company.Company} · {(company.IsActive ? "ativo" : "contratado, desligado")}" +
+        (LoggedCompany.IsAllCompanies ? (LoggedCompany.CanManage ? $" · clique para {(company.IsActive ? "desligar" : "ligar")}" : "") : " · clique para ver esta empresa");
+
+    private async Task CompanyClick(AppCompanyModel company)
+    {
+        if (!LoggedCompany.IsAllCompanies)
+        {
+            // numa empresa só, o chip troca o seletor do topo para a empresa do chip (a tela recarrega com ela)
+            await CompanyStorage.SelectAsync(LoggedCompany.Holder, company.Company);
+            Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
+            return;
+        }
+
+        if (!LoggedCompany.CanManage)
+            return;
+
+        var activate = !company.IsActive;
+        var label = System.Net.WebUtility.HtmlEncode($"{company.Label} - {company.Company}");
+
+        if (activate && !await CredentialDialog.EnsureAsync(DialogService, ParametersRepository, LoggedCompany, Summary.IdParent, $"os jobs do {Summary.Title}", company.Company))
+            return;
+
+        if (!activate)
+        {
+            var confirmed = await DialogService.ShowMessageBoxAsync(
+                $"Desativar {Summary.Title} em {company.Label}?",
+                (MarkupString)$"<p>Os jobs do {System.Net.WebUtility.HtmlEncode(Summary.Title)} param de rodar para <strong>{label}</strong>.</p><p>Religar ativa todos os jobs do módulo nessa empresa, inclusive os que estavam desligados um a um.</p>",
+                yesText: "Desativar",
+                cancelText: "Cancelar");
+
+            if (confirmed != true)
+                return;
+        }
+
+        _saving = true;
+
+        try
+        {
+            if (!await Snackbar.TryAsync(Logger, () => CompanyView.For(company.Company).SetModuleActiveAsync(Summary.IdParent, activate), $"Não foi possível {(activate ? "ativar" : "desativar")} {Summary.Title} em {company.Label}."))
+                return;
+
+            Snackbar.Add($"{Summary.Title} {(activate ? "ativado" : "desativado")} em {company.Label}.", activate ? Severity.Success : Severity.Warning);
+            await OnChanged.InvokeAsync();
+        }
+        finally
+        {
+            _saving = false;
         }
     }
 

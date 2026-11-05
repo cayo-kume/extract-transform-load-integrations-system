@@ -46,5 +46,25 @@ namespace WebApp.Models
         /// Visão Geral, só no Adicionar aplicação.
         /// </summary>
         public bool IsContracted { get; set; } = true;
+
+        /// <summary>
+        /// Empresas da holding que contrataram o módulo, para os chips do card (só para quem vê a holding inteira). Na visão
+        /// "Todas as empresas", os números do card são a soma delas.
+        /// </summary>
+        public IReadOnlyList<AppCompanyModel> Companies { get; set; } = [];
+    }
+
+    /// <summary>
+    /// O módulo numa empresa da holding: contratado (tem jobs) e ativo (algum job ligado).
+    /// </summary>
+    public class AppCompanyModel
+    {
+        public string Company { get; set; } = "";
+
+        public string Label { get; set; } = "";
+
+        public bool IsActive { get; set; }
+
+        public bool IsHolder { get; set; }
     }
 }

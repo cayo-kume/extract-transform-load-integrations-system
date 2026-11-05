@@ -12,9 +12,10 @@ namespace WebApp.Data
         Task<IReadOnlyList<OnDemandOperation>> GetOperationsAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Chama a operação com os valores dos parâmetros (pelo nome) e o corpo JSON, quando ela espera um.
+        /// Chama a operação para a empresa (CNPJ: a credencial e os jobs são dela) com os valores dos parâmetros (pelo nome)
+        /// e o corpo JSON, quando ela espera um.
         /// </summary>
-        Task<OnDemandResult> ExecuteAsync(OnDemandOperation operation, IReadOnlyDictionary<string, string?> values, string? body, CancellationToken cancellationToken = default);
+        Task<OnDemandResult> ExecuteAsync(OnDemandOperation operation, string company, IReadOnlyDictionary<string, string?> values, string? body, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Últimas chamadas da operação feitas pelo painel, da mais recente para a mais antiga.

@@ -122,7 +122,8 @@ namespace WebApp.Data.Mocks
             return _operations.Value;
         }
 
-        public async Task<OnDemandResult> ExecuteAsync(OnDemandOperation operation, IReadOnlyDictionary<string, string?> values, string? body, CancellationToken cancellationToken = default)
+        // a empresa não muda nada no mock: as execuções geradas são todas da empresa da configuração
+        public async Task<OnDemandResult> ExecuteAsync(OnDemandOperation operation, string company, IReadOnlyDictionary<string, string?> values, string? body, CancellationToken cancellationToken = default)
         {
             var started = DateTime.Now;
             await Task.Delay(Random.Shared.Next(400, 1500), cancellationToken);

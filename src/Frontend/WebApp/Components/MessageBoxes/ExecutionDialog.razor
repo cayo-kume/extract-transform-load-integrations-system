@@ -65,7 +65,9 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await Snackbar.TryAsync(Logger, async () => _execution = await MonitorRepository.GetExecutionAsync(Message.Execution), "Não foi possível carregar a execução.");
+        await Snackbar.TryAsync(Logger, async () => _execution = await MonitorRepository.For(Message.Company).GetExecutionAsync(Message.Execution), "Não foi possível carregar a execução.");
+        if (_execution is not null)
+            _execution.Company = Message.Company;
         _loading = false;
     }
 

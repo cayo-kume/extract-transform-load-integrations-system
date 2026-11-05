@@ -1,13 +1,14 @@
-@* Contratar um módulo para a empresa do seletor: os jobs do catálogo (com as procedures) nascem inativos, com a agenda
-   sugerida (Data/JobAgenda.cs), que aqui dá para mudar nas integrações recorrentes antes de gravar. As procedures ficam com
-   a sugerida e os sob demanda, fora da agenda. Depois, a agenda muda na tela Integrações. *@
+@* Contratar um módulo para uma ou mais empresas (a do seletor ou, na visão "Todas as empresas", as que ainda não têm o
+   módulo, escolhidas aqui): os jobs do catálogo (com as procedures) nascem inativos, com a agenda sugerida
+   (Data/JobAgenda.cs), que aqui dá para mudar nas integrações recorrentes antes de gravar, e vale para todas as escolhidas.
+   As procedures ficam com a sugerida e os sob demanda, fora da agenda. Depois, a agenda muda na tela Integrações. *@
 @inject ICompanyRepository CompanyRepository
 @inject LoggedCompany LoggedCompany
 @inject ILogger<AppContractDialog> Logger
 
 <MudDialog>
     <TitleContent>
-        <MudText Typo="Typo.h6">Contratar @Title para @LoggedCompany.Name</MudText>
+        <MudText Typo="Typo.h6">Contratar @Title@(Candidates.Count == 1 ? $" para {LoggedCompany.CompanyLabel(Candidates[0].Company)}" : "")</MudText>
     </TitleContent>
     <DialogContent>
         @if (_jobs is null)
@@ -16,6 +17,17 @@
         }
         else
         {
+            @if (Candidates.Count > 1)
+            {
+                <MudText Typo="Typo.subtitle2" Class="mb-1">Empresas</MudText>
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    @foreach (var company in Candidates)
+                    {
+                        <MudCheckBox T="bool" Value="@_chosen.Contains(company.Company)" ValueChanged="@(on => Choose(company.Company, on))" Color="Color.Primary" Dense="true" Disabled="_saving"
+                                     Label="@($"{LoggedCompany.CompanyLabel(company.Company)} · {company.Company}")" />
+                    }
+                </div>
+            }
             <MudTable T="CatalogJobModel" Items="Recurring" Dense="true" Outlined="true" Elevation="0" FixedHeader="true" Height="360px">
                 <HeaderContent>
                     <MudTh>Job</MudTh>
@@ -54,7 +66,9 @@
     </DialogContent>
     <DialogActions>
         <MudButton Disabled="_saving" OnClick="Cancel">Cancelar</MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(_jobs is null || _saving)" OnClick="Save">Contratar (@(_jobs?.Count ?? 0) jobs)</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(_jobs is null || _saving || _chosen.Count == 0)" OnClick="Save">
+            Contratar (@(_jobs?.Count ?? 0) jobs@(_chosen.Count > 1 ? $" em {_chosen.Count} empresas" : ""))
+        </MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -65,6 +79,24 @@
 
     [Parameter] public string? Title { get; set; }
 
+    /// <summary>
+    /// Empresas onde contratar; nula, só a do seletor do topo.
+    /// </summary>
+    [Parameter] public IReadOnlyList<CompanyModel>? Companies { get; set; }
+
+    private IReadOnlyList<CompanyModel> Candidates =>
+        Companies is { Count: > 0 } companies ? companies : [new CompanyModel { Company = LoggedCompany.DocCompany, Holder = LoggedCompany.Holder, FantasyName = LoggedCompany.Name }];
+
+    private readonly HashSet<string> _chosen = [];
+
+    private void Choose(string company, bool on)
+    {
+        if (on)
+            _chosen.Add(company);
+        else
+            _chosen.Remove(company);
+    }
+
     private IReadOnlyList<CatalogJobModel>? _jobs;
     private string? _error;
     private bool _saving;
@@ -73,6 +105,8 @@
 
     protected override async Task OnInitializedAsync()
     {
+        _chosen.UnionWith(Candidates.Select(x => x.Company));
+
         try
         {
             _jobs = await CompanyRepository.GetCatalogJobsAsync(IdParent);
@@ -108,7 +142,11 @@
 
         try
         {
-            var created = await CompanyRepository.AddAppAsync(LoggedCompany.DocCompany, IdParent, _jobs!);
+            // a mesma agenda em cada empresa escolhida; uma que falhe para as seguintes e mostra o erro
+            var created = 0;
+            foreach (var company in Candidates.Where(x => _chosen.Contains(x.Company)))
+                created += await CompanyRepository.AddAppAsync(company.Company, IdParent, _jobs!);
+
             MudDialog?.Close(DialogResult.Ok(created));
         }
         catch (CompanyRegistrationException exception)
@@ -129,12 +167,13 @@
     /// <summary>
     /// Abre o diálogo; devolve quantos jobs foram criados, ou nulo se cancelou.
     /// </summary>
-    public static async Task<int?> ShowAsync(IDialogService dialogService, int idParent, string? title)
+    public static async Task<int?> ShowAsync(IDialogService dialogService, int idParent, string? title, IReadOnlyList<CompanyModel>? companies = null)
     {
         var parameters = new DialogParameters<AppContractDialog>
         {
             { x => x.IdParent, idParent },
-            { x => x.Title, title }
+            { x => x.Title, title },
+            { x => x.Companies, companies }
         };
 
         var reference = await dialogService.ShowAsync<AppContractDialog>("Contratar", parameters, new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });

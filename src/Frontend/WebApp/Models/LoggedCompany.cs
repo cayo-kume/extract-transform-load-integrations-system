@@ -32,6 +32,50 @@ namespace WebApp.Models
         public string Label => $"{Name} - {DocCompany}";
 
         /// <summary>
+        /// Valor do seletor do topo para a visão "Todas as empresas" da holding.
+        /// </summary>
+        public const string AllCompanies = "*";
+
+        /// <summary>
+        /// Visão "Todas as empresas": as telas mostram as empresas da holding juntas (CompanyView), e cada ação vale para a
+        /// empresa da linha. DocCompany fica sendo a própria holding, para o que é de uma empresa só (imagem, padrão).
+        /// </summary>
+        public bool IsAllCompanies { get; private set; }
+
+        /// <summary>
+        /// Empresas que o usuário logado vê na holding escolhida (as do seletor).
+        /// </summary>
+        public IReadOnlyList<CompanyModel> VisibleCompanies { get; private set; } = [];
+
+        /// <summary>
+        /// Empresas que as telas mostram agora: todas as visíveis na visão "Todas as empresas", senão só a escolhida.
+        /// </summary>
+        public IReadOnlyList<CompanyModel> ScopeCompanies =>
+            IsAllCompanies ? VisibleCompanies : VisibleCompanies.Where(x => x.Company == DocCompany).DefaultIfEmpty(new CompanyModel { Company = DocCompany, Holder = Holder, FantasyName = Name }).ToList();
+
+        /// <summary>
+        /// O valor do seletor: a empresa escolhida ou AllCompanies. As telas são recriadas quando ele muda.
+        /// </summary>
+        public string ScopeKey => IsAllCompanies ? AllCompanies : DocCompany;
+
+        /// <summary>
+        /// Nome curto de uma empresa visível, para os chips e as colunas Empresa (sem o nome da holding na frente, quando a
+        /// empresa começa com ele).
+        /// </summary>
+        public string CompanyLabel(string company)
+        {
+            var label = VisibleCompanies.FirstOrDefault(x => x.Company == company)?.Label ?? company;
+            var prefix = HolderName + " ";
+            return company != Holder && label.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) && label.Length > prefix.Length ? label[prefix.Length..] : label;
+        }
+
+        public void SetScope(bool allCompanies, IReadOnlyList<CompanyModel> visible)
+        {
+            IsAllCompanies = allCompanies;
+            VisibleCompanies = visible;
+        }
+
+        /// <summary>
         /// CNPJ da empresa do usuário logado (monitor.Users); vazio sem login (tela de cadastro).
         /// </summary>
         public string UserCompany { get; private set; } = "";

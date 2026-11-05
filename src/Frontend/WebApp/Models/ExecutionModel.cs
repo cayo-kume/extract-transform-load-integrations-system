@@ -6,6 +6,12 @@ namespace WebApp.Models
     public class ExecutionModel
     {
         public long IdExecution { get; set; }
+        /// <summary>
+        /// CNPJ da empresa da linha (auditing.Jobs.Company). Na visão "Todas as empresas" da holding, diz de qual empresa é a
+        /// linha e para qual empresa vai cada ação dela.
+        /// </summary>
+        public string Company { get; set; } = "";
+
         public int IdJob { get; set; }
         public int IdType { get; set; }
         public Guid Execution { get; set; }

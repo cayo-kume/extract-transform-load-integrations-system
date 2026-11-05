@@ -26,9 +26,19 @@
         {
             <MudText Typo="Typo.body2" Class="mr-3 logged-company">@LoggedCompany.HolderName</MudText>
         }
-        <MudSelect T="string" Value="@LoggedCompany.DocCompany" ValueChanged="SelectCompany" Label="Empresa" Dense="true" Margin="Margin.Dense"
+        <MudSelect T="string" Value="@LoggedCompany.ScopeKey" ValueChanged="SelectCompany" Label="Empresa" Dense="true" Margin="Margin.Dense"
                    Variant="Variant.Outlined" Disabled="@(CompanyStorage.Companies.Count <= 1)" Class="mr-2 company-select" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight"
-                   ToStringFunc="@(company => CompanyStorage.Companies.FirstOrDefault(x => x.Company == company) is { FantasyName.Length: > 0 } found ? $"{found.FantasyName} · {found.Company}" : company)">
+                   ToStringFunc="@(company => company == LoggedCompany.AllCompanies ? $"Todas as empresas · {CompanyStorage.Companies.Count}" : CompanyStorage.Companies.FirstOrDefault(x => x.Company == company) is { FantasyName.Length: > 0 } found ? $"{found.FantasyName} · {found.Company}" : company)">
+            @* a visão "Todas as empresas": quem vê a holding inteira mexe em todas as filiais sem trocar de empresa *@
+            @if (CompanyStorage.Companies.Count > 1)
+            {
+                <MudSelectItem T="string" Value="@LoggedCompany.AllCompanies">
+                    <div class="d-flex align-center justify-space-between gap-3">
+                        <span>Todas as empresas</span>
+                        <span class="company-select-doc">@CompanyStorage.Companies.Count empresas</span>
+                    </div>
+                </MudSelectItem>
+            }
             @foreach (var company in CompanyStorage.Companies)
             {
                 <MudSelectItem T="string" Value="@company.Company">
@@ -66,7 +76,7 @@
     <MudMainContent>
         @* Uma exceção numa tela mostra este cartão em vez de derrubar o painel; trocar de tela também limpa o erro *@
         @* a tela só aparece com a empresa lida do navegador; trocar a empresa recria a tela (a @key), que relê os dados *@
-        <ErrorBoundary @ref="_boundary" @key="LoggedCompany.DocCompany">
+        <ErrorBoundary @ref="_boundary" @key="LoggedCompany.ScopeKey">
             <ChildContent>
                 @if (_companyReady)
                 {

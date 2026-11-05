@@ -152,6 +152,13 @@
 @code {
     [Parameter, EditorRequired] public OnDemandOperation Operation { get; set; } = default!;
 
+    /// <summary>
+    /// Empresa da chamada (na visão "Todas as empresas", a escolhida na tela); nula, a do seletor do topo.
+    /// </summary>
+    [Parameter] public string? Company { get; set; }
+
+    private string Target => string.IsNullOrEmpty(Company) ? LoggedCompany.DocCompany : Company;
+
     private readonly Dictionary<string, string?> _values = [];
     private string? _body;
     private string? _bodyError;
@@ -239,7 +246,7 @@
 
         try
         {
-            await Snackbar.TryAsync(Logger, async () => _result = await OnDemandRunner.ExecuteAsync(Operation, _values, Operation.HasBody ? _body : null), $"Não foi possível chamar {Operation.Title}.");
+            await Snackbar.TryAsync(Logger, async () => _result = await OnDemandRunner.ExecuteAsync(Operation, Target, _values, Operation.HasBody ? _body : null), $"Não foi possível chamar {Operation.Title}.");
             await LoadCalls();
         }
         finally
@@ -252,7 +259,7 @@
     private async Task<bool> Confirm()
     {
         var job = System.Net.WebUtility.HtmlEncode($"{Operation.IdJob} · {Operation.Title}");
-        var company = System.Net.WebUtility.HtmlEncode(LoggedCompany.Label);
+        var company = System.Net.WebUtility.HtmlEncode($"{LoggedCompany.CompanyLabel(Target)} - {Target}");
         var app = System.Net.WebUtility.HtmlEncode(Operation.AppTitle);
         var text = $"<p><strong>{job}</strong> para <strong>{company}</strong>.</p><p>{(Operation.Verb == "DELETE" ? "Exclui" : "Escreve")} em {app}. Não há como desfazer pelo painel.</p>";
 
@@ -272,6 +279,7 @@
         ExecutionDialog.ShowAsync(DialogService, new MessageModel
         {
             Execution = execution,
+            Company = Target,
             IdApp = Operation.IdApp,
             AppTitle = Operation.AppTitle,
             IdJob = Operation.IdJob,

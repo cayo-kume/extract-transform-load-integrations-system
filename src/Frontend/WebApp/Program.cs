@@ -44,6 +44,9 @@ builder.Services.AddScoped<LoggedCompanyStorage>();
 // Último período escolhido, por aba (circuito): acompanha o usuário entre as telas quando a URL não traz ?period=
 builder.Services.AddScoped<FilterSession>();
 
+// O painel das empresas da tela: uma só ou, na visão "Todas as empresas" da holding, todas, juntadas aqui
+builder.Services.AddScoped<CompanyView>();
+
 // Dados (docs/PLANO-WEBAPP.md, fase 5): com Database:Enabled = true, o banco, com Dapper: painel e cadastro em
 // ConnectionStrings:Connection (usuário etl_monitor) e Executar Querys em ConnectionStrings:QueryConnection (etl_query),
 // as duas nos User Secrets. Sem a chave, o mock, para mexer no visual sem banco.

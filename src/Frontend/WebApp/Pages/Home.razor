@@ -1,7 +1,7 @@
 @page "/home"
 @implements IAsyncDisposable
 @inject IMonitorRepository MonitorRepository
-@inject ICompanyRepository CompanyRepository
+@inject CompanyView CompanyView
 @inject LoggedCompany LoggedCompany
 @inject IDialogService DialogService
 @inject NavigationManager Navigation
@@ -160,7 +160,7 @@
                             {
                                 <div class="failure-row">
                                     <MudIcon Icon="@MonitorDisplay.HealthIcon(job.Health)" Color="@MonitorDisplay.HealthColor(job.Health)" Size="Size.Small" />
-                                    <MudLink Href="@MonitorDisplay.JobLink(job.IdApp, job.IdJob, job.IdType, _filter.Period)" Typo="Typo.caption" Class="failure-row-title">@job.IdJob - @job.Title</MudLink>
+                                    <MudLink Href="@MonitorDisplay.JobLink(job.IdApp, job.IdJob, job.IdType, _filter.Period)" Typo="Typo.caption" Class="failure-row-title">@CompanyPrefix(job.Company)@job.IdJob - @job.Title</MudLink>
                                     <MudText Typo="Typo.caption" Class="failure-row-reason">@FailureReason(job)</MudText>
                                 </div>
                             }
@@ -224,7 +224,7 @@
                                 <MudTd DataLabel="Tipo" HideSmall="true">@context.JobType</MudTd>
                                 <MudTd DataLabel="Nome" HideSmall=false>
                                     <MudTooltip Text="Abrir o job">
-                                        <MudLink Href="@MonitorDisplay.JobLink(context.IdApp, context.IdJob, context.IdType, _filter.Period)" Typo="Typo.body2">@context.JobTitle</MudLink>
+                                        <MudLink Href="@MonitorDisplay.JobLink(context.IdApp, context.IdJob, context.IdType, _filter.Period)" Typo="Typo.body2">@CompanyPrefix(context.Company)@context.JobTitle</MudLink>
                                     </MudTooltip>
                                 </MudTd>
                                 <MudTd DataLabel="Início">@MonitorDisplay.Date(context.StartDate)</MudTd>
@@ -274,7 +274,10 @@
     private IReadOnlyList<AppSummaryModel> _apps = [];
 
     // as do catálogo que a empresa ainda não contratou: o Adicionar aplicação
-    private IReadOnlyList<AppSummaryModel> _available = [];
+    private IReadOnlyList<AvailableApp> _available = [];
+
+    // na visão "Todas as empresas", cada job vem com a empresa na frente
+    private string CompanyPrefix(string company) => LoggedCompany.IsAllCompanies ? $"{LoggedCompany.CompanyLabel(company)} · " : "";
     private IReadOnlyList<JobModel> _jobs = [];
     private IReadOnlyList<HeartbeatModel> _heartbeat = [];
     private IReadOnlyList<AppBucketsModel> _week = [];
@@ -450,19 +453,15 @@
     {
         try
         {
-            // só as aplicações que a empresa contratou; as outras vão para o Adicionar aplicação
-            var merged = CompanyApps.Merge(
-                await MonitorRepository.GetAppSummariesAsync(_filter.Period, _disposed.Token),
-                await CompanyRepository.GetAppsAsync(LoggedCompany.DocCompany, _disposed.Token),
-                LoggedCompany);
-            var apps = merged.Where(x => x.IsContracted).ToList();
-            _available = merged.Where(x => !x.IsContracted).ToList();
-            var jobs = await MonitorRepository.GetJobsAsync(idApp: null, idType: null, _disposed.Token);
+            // só as aplicações que alguma empresa do escopo contratou, somadas; as outras vão para o Adicionar aplicação
+            var apps = (await CompanyView.SummariesAsync(_filter.Period, _disposed.Token)).Where(x => x.IsContracted).ToList();
+            _available = await CompanyView.AvailableAsync(_disposed.Token);
+            var jobs = await CompanyView.JobsAsync(idApp: null, idType: null, _disposed.Token);
             // todas as integrações ativas (o painel corta em 10 por aplicação), a semana do card de registros e a janela
             // anterior para os deltas
-            var heartbeat = await MonitorRepository.GetHeartbeatAsync(_filter.Period, top: int.MaxValue, _disposed.Token);
-            _week = await MonitorRepository.GetExecutionBucketsAsync(Period.Last7Days, buckets: 7, previousWindow: false, _disposed.Token);
-            _previousBuckets = await MonitorRepository.GetExecutionBucketsAsync(_filter.Period, buckets: 1, previousWindow: true, _disposed.Token);
+            var heartbeat = await CompanyView.HeartbeatAsync(_filter.Period, top: int.MaxValue, _disposed.Token);
+            _week = await CompanyView.BucketsAsync(Period.Last7Days, buckets: 7, previousWindow: false, _disposed.Token);
+            _previousBuckets = await CompanyView.BucketsAsync(_filter.Period, buckets: 1, previousWindow: true, _disposed.Token);
 
             _allApps = apps;
             _jobs = jobs.Where(x => _filter.IdApp is null || x.IdApp == _filter.IdApp).ToList();
@@ -507,7 +506,7 @@
     }
 
     private JobModel? JobOf(HeartbeatModel heartbeat) =>
-        _jobs.FirstOrDefault(x => x.IdJob == heartbeat.IdJob && x.IdType == heartbeat.IdType);
+        _jobs.FirstOrDefault(x => x.Company == heartbeat.Company && x.IdJob == heartbeat.IdJob && x.IdType == heartbeat.IdType);
 
 
     private Color RateColor(double rate) => rate < ErrorThreshold ? Color.Error : rate < WarningThreshold ? Color.Warning : Color.Success;

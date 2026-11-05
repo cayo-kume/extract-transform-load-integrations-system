@@ -32,8 +32,14 @@ namespace WebApp.Data.Sql
         // muda a cada escrita: as chaves do cache levam a versão, e as entradas antigas expiram sozinhas
         private static int _version;
 
-        // a empresa do seletor do topo (os jobs e os logs são dela) e a holding dela (imagens e parâmetros de apresentação)
-        private string Company => loggedCompany.DocCompany;
+        // a empresa de For(empresa) ou, sem ele, a do seletor do topo (os jobs e os logs são dela) e a holding dela (imagens e
+        // parâmetros de apresentação)
+        private string? _company;
+
+        private string Company => string.IsNullOrEmpty(_company) ? loggedCompany.DocCompany : _company;
+
+        public IMonitorRepository For(string company) =>
+            new SqlMonitorRepository(database, cache, parameters, loggedCompany, logger) { _company = company };
 
         private string Holder => loggedCompany.Holder;
 
@@ -268,6 +274,7 @@ namespace WebApp.Data.Sql
                 .Where(x => idType is null || x.IdType == idType)
                 .Select(x => new JobModel
                 {
+                    Company = Company,
                     IdParent = x.IdParent ?? 0,
                     IdApp = x.IdApp ?? 0,
                     IdJob = x.IdJob,
@@ -387,6 +394,7 @@ namespace WebApp.Data.Sql
                 .Take(top)
                 .Select(x => new HeartbeatModel
                 {
+                    Company = Company,
                     IdApp = x.Job.IdApp ?? 0,
                     AppTitle = titles.GetValueOrDefault(x.Job.IdApp ?? 0),
                     IdJob = x.Job.IdJob,
@@ -465,6 +473,7 @@ namespace WebApp.Data.Sql
 
                     return new MessageJobSummaryModel
                     {
+                        Company = Company,
                         IdApp = job?.IdApp ?? 0,
                         IdJob = group.Key.IdJob,
                         IdType = group.Key.IdType,
@@ -803,7 +812,10 @@ namespace WebApp.Data.Sql
             var titles = apps.ToDictionary(x => x.IdParent, x => x.Title);
 
             foreach (var message in messages)
+            {
+                message.Company = Company;
                 message.AppTitle = message.IdApp is int idApp ? titles.GetValueOrDefault(idApp) : null;
+            }
 
             return messages;
         }

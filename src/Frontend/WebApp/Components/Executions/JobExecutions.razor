@@ -94,7 +94,11 @@
     {
         _loadedPeriod = Period;
         var page = new PagedResult<ExecutionModel>();
-        await Snackbar.TryAsync(Logger, async () => page = await MonitorRepository.GetExecutionsAsync(Job.IdJob, Job.IdType, Period, state.Page, state.PageSize, cancellationToken), "Não foi possível carregar as execuções.");
+        await Snackbar.TryAsync(Logger, async () => page = await MonitorRepository.For(Job.Company).GetExecutionsAsync(Job.IdJob, Job.IdType, Period, state.Page, state.PageSize, cancellationToken), "Não foi possível carregar as execuções.");
+
+        // as execuções são da empresa do job: os detalhes (mensagens e registros) leem dela
+        foreach (var execution in page.Items)
+            execution.Company = Job.Company;
         return new TableData<ExecutionModel> { Items = page.Items, TotalItems = page.TotalCount };
     }
 }

@@ -14,7 +14,8 @@ namespace WebApp.Components.Display
     {
         public sealed record Draft(int Interval, TimeOnly? DailyAt, string Queue);
 
-        private readonly Dictionary<(int IdJob, int IdType), Draft> _drafts = [];
+        // por (empresa, IdJob, IdType): na visão "Todas as empresas" o mesmo job aparece em cada empresa
+        private readonly Dictionary<(string Company, int IdJob, int IdType), Draft> _drafts = [];
 
         /// <summary>
         /// Filas que os jobs já usam, para sugerir no campo Fila e avisar quando a escolhida é nova.
@@ -25,20 +26,20 @@ namespace WebApp.Components.Display
 
         public bool HasInvalidQueue => _drafts.Values.Any(x => !IsValidQueue(x.Queue));
 
-        public bool IsChanged(JobModel job) => _drafts.ContainsKey((job.IdJob, job.IdType));
+        public bool IsChanged(JobModel job) => _drafts.ContainsKey((job.Company, job.IdJob, job.IdType));
 
         public int CountOf(IEnumerable<JobModel> jobs) => jobs.Count(IsChanged);
 
         public Draft Of(JobModel job) =>
-            _drafts.GetValueOrDefault((job.IdJob, job.IdType)) ?? Original(job);
+            _drafts.GetValueOrDefault((job.Company, job.IdJob, job.IdType)) ?? Original(job);
 
         // voltar ao valor de antes tira a integração da lista de alterações
         public void Change(JobModel job, Draft draft)
         {
             if (draft == Original(job))
-                _drafts.Remove((job.IdJob, job.IdType));
+                _drafts.Remove((job.Company, job.IdJob, job.IdType));
             else
-                _drafts[(job.IdJob, job.IdType)] = draft;
+                _drafts[(job.Company, job.IdJob, job.IdType)] = draft;
         }
 
         public void Clear() => _drafts.Clear();
@@ -46,7 +47,7 @@ namespace WebApp.Components.Display
         public void Clear(IEnumerable<JobModel> jobs)
         {
             foreach (var job in jobs)
-                _drafts.Remove((job.IdJob, job.IdType));
+                _drafts.Remove((job.Company, job.IdJob, job.IdType));
         }
 
         private static Draft Original(JobModel job) => new(job.IntervalTimeInMinutes, job.RunningDailyAt, job.Queue ?? "");
@@ -124,7 +125,7 @@ namespace WebApp.Components.Display
                 if (!await snackbar.TryAsync(logger, () => repository.SetJobScheduleAsync(job.IdJob, job.IdType, draft.Interval, draft.DailyAt, draft.Queue), $"Não foi possível salvar a agenda do job {job.IdJob}."))
                     continue;
 
-                _drafts.Remove((job.IdJob, job.IdType));
+                _drafts.Remove((job.Company, job.IdJob, job.IdType));
                 saved++;
             }
 

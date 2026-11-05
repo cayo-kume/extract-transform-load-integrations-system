@@ -1,6 +1,6 @@
-@* Adicionar aplicação monitorada, na Visão Geral: as aplicações do catálogo que a empresa logada ainda não contratou.
-   Adicionar abre a contratação (AppContractDialog), com a agenda dos jobs; eles nascem inativos, e o card entra na Visão
-   Geral como Inativa. *@
+@* Adicionar aplicação monitorada, na Visão Geral: as aplicações do catálogo que alguma empresa do escopo (a do seletor ou,
+   na visão "Todas as empresas", as da holding) ainda não contratou. Adicionar abre a contratação (AppContractDialog), com a
+   agenda dos jobs e as empresas que faltam; eles nascem inativos, e o card entra na Visão Geral como Inativa. *@
 @inject LoggedCompany LoggedCompany
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
@@ -17,16 +17,21 @@
         else
         {
             <MudList T="string" Dense="true" Class="add-app-list">
-                @foreach (var app in _remaining)
+                @foreach (var available in _remaining)
                 {
+                    var app = available.App;
                     <MudListItem T="string" @key="app.IdParent" Class="add-app-item">
                         <div class="d-flex align-center gap-3">
                             <MudAvatar Rounded="true" Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Medium">@AppLogos.Initials(app.Title)</MudAvatar>
                             <div class="flex-grow-1" style="min-width: 0">
                                 <MudText Typo="Typo.subtitle2">@app.Title</MudText>
                                 <MudText Typo="Typo.caption" Class="d-block">@app.Description</MudText>
+                                @if (LoggedCompany.IsAllCompanies)
+                                {
+                                    <MudText Typo="Typo.caption" Class="d-block mud-text-secondary">Falta em: @string.Join(", ", available.Missing.Select(x => LoggedCompany.CompanyLabel(x.Company)))</MudText>
+                                }
                             </div>
-                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" Disabled="_busy" OnClick="@(() => Add(app))">Adicionar</MudButton>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" Disabled="_busy" OnClick="@(() => Add(available))">Adicionar</MudButton>
                         </div>
                     </MudListItem>
                 }
@@ -42,24 +47,25 @@
 @code {
     [CascadingParameter] private IMudDialogInstance? MudDialog { get; set; }
 
-    [Parameter, EditorRequired] public IReadOnlyList<AppSummaryModel> Apps { get; set; } = [];
+    [Parameter, EditorRequired] public IReadOnlyList<AvailableApp> Apps { get; set; } = [];
 
-    private List<AppSummaryModel> _remaining = [];
+    private List<AvailableApp> _remaining = [];
     private bool _added;
     private bool _busy;
 
     protected override void OnInitialized() => _remaining = Apps.ToList();
 
-    private async Task Add(AppSummaryModel app)
+    private async Task Add(AvailableApp available)
     {
+        var app = available.App;
         _busy = true;
 
         try
         {
-            if (await AppContractDialog.ShowAsync(DialogService, app.IdParent, app.Title) is { } created)
+            if (await AppContractDialog.ShowAsync(DialogService, app.IdParent, app.Title, available.Missing) is { } created)
             {
-                Snackbar.Add($"{app.Title} adicionado à Visão Geral de {LoggedCompany.Name}: {created} job(s) criado(s), inativos.", Severity.Success);
-                _remaining.Remove(app);
+                Snackbar.Add($"{app.Title} adicionado à Visão Geral: {created} job(s) criado(s), inativos.", Severity.Success);
+                _remaining.Remove(available);
                 _added = true;
             }
         }
@@ -74,7 +80,7 @@
     /// <summary>
     /// Abre a lista; devolve se alguma aplicação foi adicionada (contratada).
     /// </summary>
-    public static async Task<bool> ShowAsync(IDialogService dialogService, IReadOnlyList<AppSummaryModel> apps)
+    public static async Task<bool> ShowAsync(IDialogService dialogService, IReadOnlyList<AvailableApp> apps)
     {
         var parameters = new DialogParameters<AddAppDialog> { { x => x.Apps, apps } };
 

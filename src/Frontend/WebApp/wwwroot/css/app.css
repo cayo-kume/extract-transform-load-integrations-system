@@ -164,6 +164,25 @@ code {
     opacity: 0.75;
 }
 
+/* Card das aplicações: a linha Empresas (usuário da holding), com um chip por empresa que contratou o módulo */
+.app-companies {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px 4px;
+    margin-top: 8px;
+}
+
+.app-companies-label {
+    color: var(--mud-palette-text-secondary);
+    margin-right: 2px;
+}
+
+.app-companies-sum {
+    color: var(--mud-palette-text-secondary);
+    margin-left: auto;
+}
+
 /* Visão Geral: o último card da grade abre o Adicionar aplicação */
 .app-card-add {
     border: 1px dashed var(--mud-palette-primary);
@@ -1528,4 +1547,16 @@ html {
 .registration-selected {
     cursor: pointer;
     background: rgba(126, 111, 255, 0.12);
+}
+
+/* Engrenagem › Contrato: uma linha por empresa, com a situação do módulo e o botão */
+.contract-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 8px 12px;
+    border: 1px solid var(--mud-palette-lines-default);
+    border-radius: 6px;
+    margin-bottom: 8px;
 }

@@ -48,7 +48,15 @@ namespace WebApp.Data.Mocks
         {
             _failureRate = configuration.GetValue<double>("MockMonitorRepository:FailureRate");
             _timeline = timeline;
+            _company = configuration["LoggedCompany:DocCompany"] is { Length: > 0 } doc ? doc : "44065634000106";
         }
+
+        // as execuções geradas são todas da empresa da configuração (a mesma do MockCompanyStore); as outras empresas da
+        // holding não têm execução no mock: For devolve uma visão vazia delas
+        private readonly string _company;
+
+        public IMonitorRepository For(string company) =>
+            string.IsNullOrEmpty(company) || company == _company ? this : new MockEmptyCompanyMonitor(this, company);
 
         public async Task<IReadOnlyList<AppSummaryModel>> GetAppSummariesAsync(Period period, CancellationToken cancellationToken = default)
         {
@@ -162,6 +170,7 @@ namespace WebApp.Data.Mocks
 
                     return new JobModel
                     {
+                        Company = _company,
                         IdParent = x.Catalog.IdParent,
                         IdApp = x.IdApp,
                         IdJob = x.Catalog.IdJob,
@@ -255,6 +264,7 @@ namespace WebApp.Data.Mocks
                 .Take(top)
                 .Select(x => new HeartbeatModel
                 {
+                    Company = _company,
                     IdApp = x.Job.IdApp,
                     AppTitle = AppTitle(x.Job),
                     IdJob = x.Job.Catalog.IdJob,
@@ -299,6 +309,7 @@ namespace WebApp.Data.Mocks
 
                     return new MessageJobSummaryModel
                     {
+                        Company = _company,
                         IdApp = job.IdApp,
                         IdJob = job.Catalog.IdJob,
                         IdType = job.Catalog.IdType,
@@ -423,6 +434,7 @@ namespace WebApp.Data.Mocks
 
             foreach (var message in MockTexts.Messages(execution, appTitle).Where(x => x.Level >= minLevel))
             {
+                message.Company = _company;
                 message.IdApp = execution.Job.IdApp;
                 message.AppTitle = appTitle;
                 message.JobTitle = execution.Job.Catalog.Title;

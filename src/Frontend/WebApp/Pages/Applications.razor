@@ -1,6 +1,6 @@
 ﻿@page "/applications"
 @inject IMonitorRepository MonitorRepository
-@inject ICompanyRepository CompanyRepository
+@inject CompanyView CompanyView
 @inject LoggedCompany LoggedCompany
 @inject NavigationManager Navigation
 @inject FilterSession FilterSession
@@ -92,8 +92,8 @@
     {
         await Snackbar.TryAsync(Logger, async () =>
         {
-            var summaries = await MonitorRepository.GetAppSummariesAsync(_filter.Period);
-            _apps = CompanyApps.Merge(summaries, await CompanyRepository.GetAppsAsync(LoggedCompany.DocCompany), LoggedCompany);
+            // na visão "Todas as empresas", os números somados e os chips de cada empresa (CompanyView)
+            _apps = await CompanyView.SummariesAsync(_filter.Period);
             _updatedAt = WebApp.Data.Sql.MainDatabase.LocalNow();
         }, "Não foi possível carregar as aplicações.");
 

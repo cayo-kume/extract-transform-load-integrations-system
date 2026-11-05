@@ -1,5 +1,6 @@
 @page "/errors"
 @inject IMonitorRepository MonitorRepository
+@inject CompanyView CompanyView
 @inject NavigationManager Navigation
 @inject FilterSession FilterSession
 @inject ISnackbar Snackbar
@@ -96,6 +97,7 @@
                                     <div class="job-group-head" role="button" tabindex="0" aria-expanded="@(nodeExpanded ? "true" : "false")" @onclick="@(() => ToggleKey(node.Key))" @onkeydown="@(e => OnKeyDown(e, node.Key))">
                                         <MudIcon Icon="@(nodeExpanded ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)" Size="Size.Small" />
                                         <HealthChip Context="node.Health" Now="_updatedAt" />
+                                        @CompanyChip(node.Key.Company)
                                         <MudText Typo="Typo.body2" Class="job-title">@node.Key.IdJob - @node.Title</MudText>
                                         @if (node.LastErrorAt is DateTime last)
                                         {
@@ -128,9 +130,9 @@
                                         }
                                         @foreach (var child in node.Children)
                                         {
-                                            <div class="job-group-child" @key="(child.Job.IdJob, child.Job.IdType)">
+                                            <div class="job-group-child" @key="(child.Job.Company, child.Job.IdJob, child.Job.IdType)">
                                                 @JobHead(child, child: true)
-                                                @if (_expandedJobs.Contains((child.Job.IdJob, child.Job.IdType)))
+                                                @if (_expandedJobs.Contains((child.Job.Company, child.Job.IdJob, child.Job.IdType)))
                                                 {
                                                     @Causes(app.IdParent, child)
                                                 }
@@ -183,10 +185,22 @@
     private readonly Dictionary<int, IReadOnlyList<MessageJobSummaryModel>> _textJobs = [];
     private readonly Dictionary<int, IReadOnlyList<JobModel>> _appJobs = [];
     private HashSet<int> _expandedApps = [];
-    private HashSet<(int IdJob, int IdType)> _expandedJobs = [];
+    // por (empresa, IdJob, IdType): na visão "Todas as empresas" o mesmo job aparece em cada empresa
+    private HashSet<(string Company, int IdJob, int IdType)> _expandedJobs = [];
 
     // os grupos abertos antes da busca, para voltar a eles quando a busca é limpa
-    private (HashSet<int> Apps, HashSet<(int, int)> Jobs)? _beforeSearch;
+    private (HashSet<int> Apps, HashSet<(string, int, int)> Jobs)? _beforeSearch;
+
+    // na visão "Todas as empresas", cada job com o chip da empresa
+    private RenderFragment CompanyChip(string company) => __builder =>
+    {
+        if (LoggedCompany.IsAllCompanies)
+        {
+            <MudTooltip Text="@company">
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@LoggedCompany.CompanyLabel(company)</MudChip>
+            </MudTooltip>
+        }
+    };
 
     private MessageLevel MinLevel => _includeWarnings ? MessageLevel.Warning : MessageLevel.Error;
 
@@ -216,8 +230,8 @@
 
         var byName = all.Where(x => _filter.Matches(x.IdJob.ToString(), x.JobTitle)).ToList();
         var byText = (_textJobs.GetValueOrDefault(idApp) ?? [])
-            .Where(x => !byName.Any(y => y.IdJob == x.IdJob && y.IdType == x.IdType))
-            .Select(x => new JobItem(x, TextSearch, all.FirstOrDefault(y => y.IdJob == x.IdJob && y.IdType == x.IdType)?.Errors));
+            .Where(x => !byName.Any(y => y.Company == x.Company && y.IdJob == x.IdJob && y.IdType == x.IdType))
+            .Select(x => new JobItem(x, TextSearch, all.FirstOrDefault(y => y.Company == x.Company && y.IdJob == x.IdJob && y.IdType == x.IdType)?.Errors));
 
         return byName.Select(x => new JobItem(x, null, null))
             .Concat(byText)
@@ -254,8 +268,8 @@
                 // procedure do link abre junto com a integração pai
                 foreach (var job in (_jobs.GetValueOrDefault(idApp) ?? []).Where(x => x.IdJob == JobQuery && (TypeQuery is null || x.IdType == TypeQuery)))
                 {
-                    _expandedJobs.Add((job.IdJob, job.IdType));
-                    _expandedJobs.Add(ParentKey(idApp, job.IdJob, job.IdType));
+                    _expandedJobs.Add((job.Company, job.IdJob, job.IdType));
+                    _expandedJobs.Add(ParentKey(idApp, job.Company, job.IdJob, job.IdType));
                 }
             }
         }
@@ -300,7 +314,7 @@
 
                 foreach (var child in node.Children.TakeWhile(_ => opened < MaxAutoExpandedJobs))
                 {
-                    _expandedJobs.Add((child.Job.IdJob, child.Job.IdType));
+                    _expandedJobs.Add((child.Job.Company, child.Job.IdJob, child.Job.IdType));
                     opened++;
                 }
             }
@@ -323,7 +337,7 @@
     {
         await Snackbar.TryAsync(Logger, async () =>
         {
-            _apps = await MonitorRepository.GetAppSummariesAsync(_filter.Period);
+            _apps = (await CompanyView.SummariesAsync(_filter.Period)).Where(x => x.IsContracted).ToList();
             _updatedAt = WebApp.Data.Sql.MainDatabase.LocalNow();
         }, "Não foi possível carregar as mensagens.");
 
@@ -355,13 +369,14 @@
         await Snackbar.TryAsync(Logger, async () =>
         {
             var query = BaseQuery with { IdApp = idApp };
-            _jobs[idApp] = await MonitorRepository.GetMessageJobsAsync(query);
+            // as empresas da tela (todas, na visão "Todas as empresas"), cada job com a empresa dele
+            _jobs[idApp] = await CompanyView.MessageJobsAsync(query);
 
             // todos os jobs da aplicação, para achar a integração pai de cada procedure e a saúde dela
-            _appJobs[idApp] = await MonitorRepository.GetJobsAsync(idApp, idType: null);
+            _appJobs[idApp] = await CompanyView.JobsAsync(idApp, idType: null);
 
             if (TextSearch is string search)
-                _textJobs[idApp] = await MonitorRepository.GetMessageJobsAsync(query with { Search = search });
+                _textJobs[idApp] = await CompanyView.MessageJobsAsync(query with { Search = search });
         }, "Não foi possível carregar os jobs da aplicação.");
     }
 
@@ -377,7 +392,7 @@
         await Load();
     }
 
-    private void ToggleKey((int IdJob, int IdType) key)
+    private void ToggleKey((string Company, int IdJob, int IdType) key)
     {
         if (!_expandedJobs.Remove(key))
             _expandedJobs.Add(key);
@@ -387,7 +402,7 @@
     private Task OnGroupKeyDown(KeyboardEventArgs args, int idApp) =>
         args.Key is "Enter" or " " ? ToggleGroup(idApp) : Task.CompletedTask;
 
-    private void OnKeyDown(KeyboardEventArgs args, (int, int) key)
+    private void OnKeyDown(KeyboardEventArgs args, (string, int, int) key)
     {
         if (args.Key is "Enter" or " ")
             ToggleKey(key);
@@ -397,7 +412,7 @@
     /// Uma integração com mensagens (Own) e as procedures dela com mensagens (Children). Integração sem mensagem própria
     /// aparece quando alguma procedure tem.
     /// </summary>
-    private sealed record ErrorNode((int IdJob, int IdType) Key, string? Title, HealthContext Health, JobItem? Own, IReadOnlyList<JobItem> Children)
+    private sealed record ErrorNode((string Company, int IdJob, int IdType) Key, string? Title, HealthContext Health, JobItem? Own, IReadOnlyList<JobItem> Children)
     {
         private IEnumerable<JobItem> All => Own is null ? Children : Children.Prepend(Own);
 
@@ -427,15 +442,15 @@
     private List<ErrorNode> NodesOf(int idApp, IReadOnlyList<JobItem> items)
     {
         return items
-            .GroupBy(x => ParentKey(idApp, x.Job.IdJob, x.Job.IdType))
+            .GroupBy(x => ParentKey(idApp, x.Job.Company, x.Job.IdJob, x.Job.IdType))
             .Select(group =>
             {
-                var own = group.FirstOrDefault(x => (x.Job.IdJob, x.Job.IdType) == group.Key);
+                var own = group.FirstOrDefault(x => (x.Job.Company, x.Job.IdJob, x.Job.IdType) == group.Key);
                 var children = group.Where(x => x != own)
                     .OrderBy(x => IsFailing(x.Job) ? 0 : 1)
                     .ThenByDescending(x => x.Job.LastErrorAt)
                     .ToList();
-                var parent = Find(idApp, group.Key.IdJob, group.Key.IdType);
+                var parent = Find(idApp, group.Key.Company, group.Key.IdJob, group.Key.IdType);
                 var health = parent is not null ? HealthContext.From(parent) : HealthContext.From(own!.Job);
 
                 return new ErrorNode(group.Key, parent?.Title ?? own?.Job.JobTitle, health, own, children);
@@ -446,23 +461,24 @@
             .ToList();
     }
 
-    private JobModel? Find(int idApp, int idJob, int idType) =>
-        _appJobs.GetValueOrDefault(idApp)?.FirstOrDefault(x => x.IdJob == idJob && x.IdType == idType);
+    private JobModel? Find(int idApp, string company, int idJob, int idType) =>
+        _appJobs.GetValueOrDefault(idApp)?.FirstOrDefault(x => x.Company == company && x.IdJob == idJob && x.IdType == idType);
 
-    private (int IdJob, int IdType) ParentKey(int idApp, int idJob, int idType) =>
-        Find(idApp, idJob, idType) is { } job && JobTree.IsProcedure(job) && Find(idApp, job.IdParent, 2) is { } parent
-            ? (parent.IdJob, parent.IdType)
-            : (idJob, idType);
+    private (string Company, int IdJob, int IdType) ParentKey(int idApp, string company, int idJob, int idType) =>
+        Find(idApp, company, idJob, idType) is { } job && JobTree.IsProcedure(job) && Find(idApp, company, job.IdParent, 2) is { } parent
+            ? (company, parent.IdJob, parent.IdType)
+            : (company, idJob, idType);
 
     // o cabeçalho de um job, igual para a integração sozinha e para a procedure dentro da integração (recuada)
     private RenderFragment JobHead(JobItem item, bool child) => __builder =>
     {
         var job = item.Job;
-        var key = (job.IdJob, job.IdType);
+        var key = (job.Company, job.IdJob, job.IdType);
         var expanded = _expandedJobs.Contains(key);
         <div class="job-group-head @(child ? "child" : "")" role="button" tabindex="0" aria-expanded="@(expanded ? "true" : "false")" @onclick="@(() => ToggleKey(key))" @onkeydown="@(e => OnKeyDown(e, key))">
             <MudIcon Icon="@(expanded ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)" Size="Size.Small" />
             <HealthChip Context="HealthContext.From(job)" Now="_updatedAt" />
+            @CompanyChip(job.Company)
             <MudText Typo="Typo.body2" Class="job-title">@job.IdJob - @job.JobTitle</MudText>
             @if (job.IsOnDemand)
             {
@@ -503,7 +519,7 @@
     private RenderFragment Causes(int idApp, JobItem item) => __builder =>
     {
         <div class="job-causes">
-            <MessageCauses Query="@(BaseQuery with { IdApp = idApp, IdJob = item.Job.IdJob, IdType = item.Job.IdType, Search = item.Search })" />
+            <MessageCauses Company="@item.Job.Company" Query="@(BaseQuery with { IdApp = idApp, IdJob = item.Job.IdJob, IdType = item.Job.IdType, Search = item.Search })" />
         </div>
     };
 }

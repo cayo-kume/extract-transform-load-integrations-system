@@ -151,6 +151,24 @@ e o grupo **Cadastros** (Cadastrar Empresas, Cadastrar Usuário), e o dono, Exec
 holdings. No topo, o usuário logado e o botão **Sair**. As integrações sob demanda (sem agenda) **não aparecem** em Integrações nem no painel de saúde: ficam na tela Sob
 Demanda.
 
+### 🏢 Visão "Todas as empresas" (holding)
+
+Para quem vê a holding inteira (o usuário da holding e o dono), o seletor do topo tem a opção **Todas as empresas**, que
+vem escolhida no primeiro acesso. Nela, as telas mostram as empresas da holding juntas, e cada ação grava na empresa da
+linha:
+
+| Tela | Na visão "Todas as empresas" |
+|---|---|
+| Visão Geral e Aplicações | os cards somam as empresas; a linha **Empresas** tem um chip por empresa que contratou o módulo (verde com algum job ligado), e o chip liga e desliga o módulo naquela empresa. Numa empresa só, o chip troca o seletor para ela. **Adicionar aplicação** e **Contratar** escolhem as empresas |
+| Integrações | cada aplicação com **um bloco por empresa**, cada um com a sua **Agenda**, o chip Ativo, Execuções, Executar agora e Reconhecer; filtro **Empresa** |
+| Logs de Erros | os jobs de todas as empresas, com o chip da empresa |
+| Engrenagem | **Credenciais** e **Parâmetros** em um painel por empresa que contratou o módulo; **Contrato** com todas as empresas (Contratar, Ativar todos, Remover) |
+| Sob Demanda | o campo **Empresa** escolhe com que empresa a chamada roda |
+
+O repositório lê uma empresa por vez (`IMonitorRepository.For(empresa)`), e o `Data/CompanyView.cs` junta as empresas da
+tela; cada linha (`JobModel`, `HeartbeatModel`, `MessageModel`...) leva o CNPJ dela em `Company`. No mock, só a empresa da
+configuração tem execuções: as outras aparecem sem jobs.
+
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
 flowchart LR

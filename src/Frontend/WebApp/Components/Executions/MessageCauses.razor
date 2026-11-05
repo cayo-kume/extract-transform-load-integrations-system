@@ -32,7 +32,7 @@ else
 
             @if (expanded)
             {
-                <MessagesTable Query="@(Query with { GroupKey = group.Key })" />
+                <MessagesTable Company="@Company" Query="@(Query with { GroupKey = group.Key })" />
             }
         </div>
     }
@@ -43,6 +43,11 @@ else
     /// Mensagens de um job: aplicação, job, período, nível e texto procurado.
     /// </summary>
     [Parameter, EditorRequired] public MessageQuery Query { get; set; } = default!;
+
+    /// <summary>
+    /// Empresa do job (na visão "Todas as empresas", a da linha); nula, a do seletor do topo.
+    /// </summary>
+    [Parameter] public string? Company { get; set; }
 
     private IReadOnlyList<MessageGroupModel>? _groups;
     private MessageQuery? _loaded;
@@ -56,7 +61,7 @@ else
 
         _loaded = Query;
         _now = WebApp.Data.Sql.MainDatabase.LocalNow();
-        await Snackbar.TryAsync(Logger, async () => _groups = await MonitorRepository.GetMessageGroupsAsync(Query), "Não foi possível carregar as causas das mensagens.");
+        await Snackbar.TryAsync(Logger, async () => _groups = await MonitorRepository.For(Company ?? "").GetMessageGroupsAsync(Query), "Não foi possível carregar as causas das mensagens.");
         _groups ??= [];
 
         // uma causa só: já abre, não há o que escolher

@@ -61,6 +61,11 @@
     /// </summary>
     [Parameter, EditorRequired] public MessageQuery Query { get; set; } = default!;
 
+    /// <summary>
+    /// Empresa do job (na visão "Todas as empresas", a da linha); nula, a do seletor do topo.
+    /// </summary>
+    [Parameter] public string? Company { get; set; }
+
     private MudTable<MessageModel>? _table;
     private MessageQuery? _loaded;
     private readonly HashSet<long> _opened = [];
@@ -85,7 +90,7 @@
     {
         _loaded = Query;
         var page = new PagedResult<MessageModel>();
-        await Snackbar.TryAsync(Logger, async () => page = await MonitorRepository.GetMessagesByLevelAsync(Query, state.Page, state.PageSize, cancellationToken), "Não foi possível carregar as mensagens.");
+        await Snackbar.TryAsync(Logger, async () => page = await MonitorRepository.For(Company ?? "").GetMessagesByLevelAsync(Query, state.Page, state.PageSize, cancellationToken), "Não foi possível carregar as mensagens.");
         return new TableData<MessageModel> { Items = page.Items, TotalItems = page.TotalCount };
     }
 }

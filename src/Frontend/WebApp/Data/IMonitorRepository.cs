@@ -9,6 +9,13 @@ namespace WebApp.Data
     public interface IMonitorRepository
     {
         /// <summary>
+        /// O mesmo repositório, lendo e gravando os jobs e os logs de outra empresa (da holding de quem está logado; quem chama
+        /// confere com LoggedCompany.CanSee). Sem ele, a empresa é a do seletor do topo. A visão "Todas as empresas" da holding
+        /// lê cada empresa por aqui (CompanyView) e grava cada ação na empresa da linha.
+        /// </summary>
+        IMonitorRepository For(string company);
+
+        /// <summary>
         /// Uma linha por aplicação: jobs, execuções, registros, avisos e erros no período.
         /// </summary>
         Task<IReadOnlyList<AppSummaryModel>> GetAppSummariesAsync(Period period, CancellationToken cancellationToken = default);

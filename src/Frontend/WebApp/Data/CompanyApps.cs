@@ -15,9 +15,9 @@ namespace WebApp.Data
         /// Os contratados, com os números do período (zerados se o resumo não trouxer o módulo), e depois os não contratados,
         /// com IsContracted falso e sem números.
         /// </summary>
-        public static List<AppSummaryModel> Merge(IReadOnlyList<AppSummaryModel> summaries, IReadOnlyList<CompanyAppModel> apps, LoggedCompany company)
+        public static List<AppSummaryModel> Merge(IReadOnlyList<AppSummaryModel> summaries, IReadOnlyList<CompanyAppModel> apps, string company, string holder)
         {
-            var visible = apps.Where(x => x.IdParent != HostsApp || company.DocCompany == company.Holder).ToList();
+            var visible = apps.Where(x => x.IdParent != HostsApp || company == holder).ToList();
             var byId = summaries.ToDictionary(x => x.IdParent);
 
             var contracted = visible
