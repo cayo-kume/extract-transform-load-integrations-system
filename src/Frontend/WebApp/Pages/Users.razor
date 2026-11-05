@@ -1,5 +1,4 @@
 @page "/users"
-@inject AdminAccess AdminAccess
 @inject IUserRepository UserRepository
 @inject LoggedCompany LoggedCompany
 @inject IDialogService DialogService
@@ -7,19 +6,21 @@
 @inject ILogger<Users> Logger
 
 @* Cadastros › Cadastrar Usuário: os usuários do painel (monitor.Users) das empresas da holding logada. O primeiro nasce com a
-   holding, na tela inicial; aqui entram os outros. Sem perfis por enquanto: todo usuário vê o painel da holding dele. *@
+   holding, na tela inicial; aqui entram os outros. O usuário da holding vê e cadastra os de todas as empresas dela; o de uma
+   empresa, só os da empresa dele. *@
 
 <PageTitle>Cadastrar Usuário</PageTitle>
 
-@if (!AdminAccess.IsAllowed)
+@if (!LoggedCompany.CanManage)
 {
-    <MudAlert Severity="Severity.Warning" Class="ma-4">Esta tela é só para administrador (Admin:Enabled em Development, até os perfis de usuário).</MudAlert>
+    <MudAlert Severity="Severity.Warning" Class="ma-4">Esta tela é só para os perfis Administrador e Gestor.</MudAlert>
 }
 else
 {
     <MudGrid>
         <MudItem xs="12" Class="d-flex align-center flex-wrap gap-3 pa-1 pl-10 pl-md-16">
-            <PageHeader Icon="@Icons.Material.Filled.People" Title="Cadastrar Usuário" Subtitle="@($"Os usuários das empresas da holding {LoggedCompany.HolderName}")" />
+            <PageHeader Icon="@Icons.Material.Filled.People" Title="Cadastrar Usuário"
+                        Subtitle="@(LoggedCompany.SeesWholeHolding ? $"Os usuários das empresas da holding {LoggedCompany.HolderName}" : $"Os usuários de {LoggedCompany.Name}")" />
             <MudSpacer />
             <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PersonAdd" Class="mr-4" OnClick="NewUser">Novo usuário</MudButton>
         </MudItem>
@@ -38,6 +39,7 @@ else
                     <MudTh>Usuário</MudTh>
                     <MudTh>E-mail</MudTh>
                     <MudTh>Empresa</MudTh>
+                    <MudTh>Perfil</MudTh>
                     <MudTh>Desde</MudTh>
                     <MudTh></MudTh>
                 </HeaderContent>
@@ -46,6 +48,9 @@ else
                     <MudTd DataLabel="Usuário">@context.UserName</MudTd>
                     <MudTd DataLabel="E-mail">@context.Email</MudTd>
                     <MudTd DataLabel="Empresa">@context.CompanyLabel</MudTd>
+                    <MudTd DataLabel="Perfil">
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@ProfileColor(context.Profile)">@context.Profile</MudChip>
+                    </MudTd>
                     <MudTd DataLabel="Desde">@context.CreatedAt.ToString("dd/MM/yyyy")</MudTd>
                     <MudTd>
                         <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" aria-label="Editar o usuário" OnClick="@(() => EditUser(context))" />
@@ -62,9 +67,16 @@ else
 @code {
     private IReadOnlyList<UserModel>? _users;
 
+    private static Color ProfileColor(string profile) => profile switch
+    {
+        UserProfiles.Administrator => Color.Warning,
+        UserProfiles.Manager => Color.Primary,
+        _ => Color.Default
+    };
+
     protected override async Task OnInitializedAsync()
     {
-        if (AdminAccess.IsAllowed)
+        if (LoggedCompany.CanManage)
             await LoadAsync();
     }
 
@@ -72,7 +84,7 @@ else
     {
         try
         {
-            _users = await UserRepository.GetUsersAsync(LoggedCompany.Holder);
+            _users = (await UserRepository.GetUsersAsync(LoggedCompany.Holder)).Where(x => LoggedCompany.CanSee(x.Company)).ToList();
         }
         catch (Exception exception)
         {

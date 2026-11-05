@@ -24,7 +24,7 @@
         <div class="d-flex align-center pa-4">
             <h3 class="ma-0 text-center">APLICAÇÕES MONITORADAS</h3>
             <MudSpacer />
-            @if (_available.Count > 0)
+            @if (_available.Count > 0 && LoggedCompany.CanManage)
             {
                 <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" Class="mr-4" OnClick="AddApp">Adicionar aplicação</MudButton>
             }
@@ -39,7 +39,7 @@
             {
                 <AppCard @key="summarizedApp.IdParent" Summary="summarizedApp" Period="_filter.Period" OnChanged="ReloadAsync" />
             }
-            @if (_available.Count > 0 && _filter.IdApp is null)
+            @if (_available.Count > 0 && _filter.IdApp is null && LoggedCompany.CanManage)
             {
                 <div class="app-card-wrapper">
                     <button type="button" class="app-card-add" @onclick="AddApp">
@@ -439,6 +439,9 @@
     // adicionar = contratar: os jobs nascem inativos, e o card aparece como Inativa até ligar pelo chip
     private async Task AddApp()
     {
+        if (!LoggedCompany.CanManage)
+            return;
+
         if (await AddAppDialog.ShowAsync(DialogService, _available))
             await ReloadAsync();
     }

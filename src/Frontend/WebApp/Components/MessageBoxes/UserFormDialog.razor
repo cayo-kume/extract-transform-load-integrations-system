@@ -12,12 +12,22 @@
     </TitleContent>
     <DialogContent>
         <MudGrid Spacing="3">
-            <MudItem xs="12">
+            <MudItem xs="12" sm="7">
                 <MudSelect T="string" @bind-Value="_input.Company" Label="Empresa" Variant="Variant.Outlined" Disabled="@(Editing || _saving)" Required="true"
                            AnchorOrigin="Origin.BottomCenter" ToStringFunc="@(company => _companies.FirstOrDefault(x => x.Company == company) is { } found ? $"{found.Label} - {found.Company}" : company)">
                     @foreach (var company in _companies)
                     {
                         <MudSelectItem T="string" Value="@company.Company">@company.Label - @company.Company</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="5">
+                @* o Gestor dá só Gestor e Visualizador e não mexe no perfil de um Administrador; ninguém muda o próprio *@
+                <MudSelect T="string" @bind-Value="_input.Profile" Label="Perfil" Variant="Variant.Outlined" Required="true" Disabled="@(!CanChangeProfile || _saving)"
+                           AnchorOrigin="Origin.BottomCenter" HelperText="@ProfileHelper">
+                    @foreach (var profile in ProfileOptions)
+                    {
+                        <MudSelectItem T="string" Value="@profile">@profile</MudSelectItem>
                     }
                 </MudSelect>
             </MudItem>
@@ -64,6 +74,16 @@
 
     private bool Editing => User is not null;
 
+    private bool CanChangeProfile =>
+        !(Editing && User!.IdUser == LoggedCompany.IdUser) && (LoggedCompany.IsAdministrator || User?.Profile != UserProfiles.Administrator);
+
+    private IEnumerable<string> ProfileOptions => LoggedCompany.IsAdministrator || User?.Profile == UserProfiles.Administrator
+        ? UserProfiles.All
+        : UserProfiles.All.Where(x => x != UserProfiles.Administrator);
+
+    private string ProfileHelper =>
+        Editing && User!.IdUser == LoggedCompany.IdUser ? "Você não muda o próprio perfil." : UserProfiles.Description(_input.Profile ?? "");
+
     private readonly UserInput _input = new();
     private IReadOnlyList<CompanyModel> _companies = [];
     private string? _error;
@@ -76,10 +96,12 @@
         _input.Name = User?.Name;
         _input.UserName = User?.UserName;
         _input.Email = User?.Email;
+        _input.Profile = User?.Profile ?? UserProfiles.Viewer;
 
         try
         {
-            _companies = await CompanyRepository.GetCompaniesAsync(LoggedCompany.Holder);
+            // o usuário de uma empresa só cadastra na empresa dele
+            _companies = (await CompanyRepository.GetCompaniesAsync(LoggedCompany.Holder)).Where(x => LoggedCompany.CanSee(x.Company)).ToList();
         }
         catch (Exception exception)
         {
@@ -97,6 +119,13 @@
 
         try
         {
+            // a tela já não oferece, mas a regra vale aqui também: só o Administrador dá o perfil Administrador, e o próprio
+            // perfil não muda
+            if (Editing && !CanChangeProfile)
+                _input.Profile = User!.Profile;
+            else if (_input.Profile == UserProfiles.Administrator && !LoggedCompany.IsAdministrator)
+                throw new CompanyRegistrationException("Só um Administrador dá o perfil Administrador.");
+
             if (Editing)
                 await UserRepository.UpdateUserAsync(User!.IdUser, _input);
             else

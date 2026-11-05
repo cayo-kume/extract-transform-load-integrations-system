@@ -44,6 +44,18 @@ namespace WebApp.Data
             return (name, userName, email);
         }
 
+        /// <summary>
+        /// O perfil informado, se for um dos de UserProfiles.
+        /// </summary>
+        public static string Profile(string? profile) =>
+            UserProfiles.All.FirstOrDefault(x => x == profile) ?? throw new CompanyRegistrationException("Escolha o perfil do usuário.");
+
+        /// <summary>
+        /// Perfil do primeiro usuário de uma holding: Administrador se o banco ainda não tem nenhum usuário (é o dono do
+        /// aplicativo), senão Gestor.
+        /// </summary>
+        public static string FirstUserProfile(bool anyUser) => anyUser ? UserProfiles.Manager : UserProfiles.Administrator;
+
         public static string Hash(string password) => Hasher.HashPassword(null!, password);
 
         public static bool Verify(string hash, string password) =>

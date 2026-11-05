@@ -101,11 +101,14 @@
                             }
                             @* stopPropagation no clique e no teclado: o botão Agenda não abre nem fecha o grupo; a engrenagem saiu daqui
                                (rodada 9): imagem, credenciais e parâmetros ficam na engrenagem dos cards *@
-                            <div @onclick:stopPropagation="true" @onkeydown:stopPropagation="true">
-                                <MudTooltip Text="@(scheduling ? "Voltar à tabela de jobs" : "Editar o intervalo, a hora diária e a fila das integrações")">
-                                    <MudButton Variant="@(scheduling ? Variant.Filled : Variant.Outlined)" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Schedule" OnClick="@(() => ToggleSchedule(app, jobs))">Agenda</MudButton>
-                                </MudTooltip>
-                            </div>
+                            @if (LoggedCompany.CanManage)
+                            {
+                                <div @onclick:stopPropagation="true" @onkeydown:stopPropagation="true">
+                                    <MudTooltip Text="@(scheduling ? "Voltar à tabela de jobs" : "Editar o intervalo, a hora diária e a fila das integrações")">
+                                        <MudButton Variant="@(scheduling ? Variant.Filled : Variant.Outlined)" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Schedule" OnClick="@(() => ToggleSchedule(app, jobs))">Agenda</MudButton>
+                                    </MudTooltip>
+                                </div>
+                            }
                         </div>
                     </div>
 
@@ -526,7 +529,7 @@
         </MudTd>
         <MudTd DataLabel="Agenda" HideSmall="true">@(JobTree.IsProcedure(job) ? $"com a {job.IdParent}" : MonitorDisplay.Schedule(job))</MudTd>
         <MudTd DataLabel="Ativo">
-            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@(job.IsActive ? Color.Success : Color.Default)" Disabled="saving" OnClick="@(() => ToggleJob(job))">
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@(job.IsActive ? Color.Success : Color.Default)" Disabled="saving" OnClick="@(LoggedCompany.CanManage ? EventCallback.Factory.Create<MouseEventArgs>(this, () => ToggleJob(job)) : default)">
                 @if (saving)
                 {
                     <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-1" Style="width: 12px; height: 12px" />
@@ -572,6 +575,10 @@
 
     private async Task ToggleJob(JobModel job)
     {
+        // o perfil Visualizador só vê
+        if (!LoggedCompany.CanManage)
+            return;
+
         var isActive = !job.IsActive;
 
         // módulo com API externa: só ativa com a credencial da empresa gravada (e a confirmação de que vai chamar a API)
@@ -613,6 +620,9 @@
     // entrar no modo agenda abre o grupo; sair com alteração pendente pergunta antes de descartar
     private async Task ToggleSchedule(AppSummaryModel app, List<JobModel> jobs)
     {
+        if (!LoggedCompany.CanManage)
+            return;
+
         if (_scheduleApps.Contains(app.IdParent))
         {
             var pending = _drafts.CountOf(jobs);
@@ -686,7 +696,7 @@
             <ScheduleCells Job="job" Drafts="_drafts" Disabled="_savingSchedule" OnChanged="StateHasChanged" />
         }
         <MudTd DataLabel="Ativo">
-            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@(job.IsActive ? Color.Success : Color.Default)" Disabled="saving" OnClick="@(() => ToggleJob(job))">
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@(job.IsActive ? Color.Success : Color.Default)" Disabled="saving" OnClick="@(LoggedCompany.CanManage ? EventCallback.Factory.Create<MouseEventArgs>(this, () => ToggleJob(job)) : default)">
                 @(job.IsActive ? "sim" : "não")
             </MudChip>
         </MudTd>

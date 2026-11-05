@@ -15,6 +15,12 @@ namespace WebApp.Data
         Task<UserModel?> ValidateAsync(string login, string password, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// O usuário pelo IdUser, com o perfil e o dono de agora: o painel relê a cada sessão, sem confiar só no cookie (um
+        /// cookie de outro banco, ou de um usuário que mudou de perfil, não vale). Null se não existe.
+        /// </summary>
+        Task<UserModel?> GetUserAsync(int idUser, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Usuários das empresas da holding.
         /// </summary>
         Task<IReadOnlyList<UserModel>> GetUsersAsync(string holder, CancellationToken cancellationToken = default);
@@ -25,7 +31,7 @@ namespace WebApp.Data
         Task CreateUserAsync(UserInput input, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Muda nome, e-mail e, preenchida, a senha. O usuário (login) não muda.
+        /// Muda nome, e-mail, perfil e, preenchida, a senha. O usuário (login) não muda.
         /// </summary>
         Task UpdateUserAsync(int idUser, UserInput input, CancellationToken cancellationToken = default);
     }

@@ -4,7 +4,7 @@
 @inject FilterSession FilterSession
 @inject ISnackbar Snackbar
 @inject ILogger<Errors> Logger
-@inject AdminAccess AdminAccess
+@inject LoggedCompany LoggedCompany
 
 <PageTitle>Logs de Erros</PageTitle>
 
@@ -496,7 +496,7 @@
 
     // a sob demanda abre na tela Sob Demanda (quando ela está liberada); as outras, na tela de Jobs
     private string JobHref(MessageJobSummaryModel job) =>
-        job.IsOnDemand && AdminAccess.IsAllowed
+        job.IsOnDemand && LoggedCompany.CanManage
             ? $"/on-demand?job={job.IdJob}"
             : MonitorDisplay.JobLink(job.IdApp, job.IdJob, job.IdType, _filter.Period);
 

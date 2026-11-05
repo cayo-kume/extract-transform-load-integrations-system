@@ -1,5 +1,5 @@
 @page "/scheduling-hosts"
-@inject AdminAccess AdminAccess
+@inject LoggedCompany LoggedCompany
 @inject IMonitorRepository MonitorRepository
 @inject ISnackbar Snackbar
 @inject ILogger<SchedulingHosts> Logger
@@ -10,9 +10,9 @@
 
 <PageTitle>Hosts de Agenda</PageTitle>
 
-@if (!AdminAccess.IsAllowed)
+@if (!LoggedCompany.IsOwner)
 {
-    <MudAlert Severity="Severity.Warning" Class="ma-4">Esta tela é só para administrador (Admin:Enabled em Development, até a autenticação).</MudAlert>
+    <MudAlert Severity="Severity.Warning" Class="ma-4">Esta tela é só para o dono do aplicativo.</MudAlert>
 }
 else
 {
@@ -98,7 +98,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        if (AdminAccess.IsAllowed)
+        if (LoggedCompany.IsOwner)
             await LoadAsync();
     }
 

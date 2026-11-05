@@ -330,7 +330,7 @@ flowchart TB
     subgraph CAD["📝 Cadastro · WebApp ou .ps1"]
         direction LR
         C1["Nova holding<br/>holding + empresa própria"] --> C2["Nova empresa<br/>CNPJs dos parâmetros"]
-        C2 --> C3["Módulos e Credenciais<br/>contrata o módulo"]
+        C2 --> C3["Aplicações › engrenagem<br/>contrata o módulo"]
     end
     CAT[("auditing.Catalog<br/>(DbUp)")] --> C3
     C3 --> JOBS[("auditing.Jobs<br/>job x empresa · inativos")]
@@ -649,7 +649,7 @@ agendador; ver o README de cada host):
 As empresas e credenciais de cada API ficam **no banco**: a holding e as empresas em `auditing.Holders` e
 `auditing.Companies` e as credenciais na tabela de parâmetros do módulo (`TotvsParameters`, `LinxMicrovixParameters`,
 `LinxCommerceParameters`, `MovideskParameters`, `AfterSaleParameters`), uma linha por CNPJ. Elas entram pelo cadastro do
-WebApp (tela inicial e **Cadastro › Módulos e Credenciais**) ou, nos testes, pelos
+WebApp (Primeiro acesso da tela inicial e a engrenagem de cada aplicação, em **Aplicações**) ou, nos testes, pelos
 scripts de `Seeds/SQLServer` via `tools/seeds/Import-TestSeeds.ps1`. O Linx Commerce não tem `BaseUrl`: o endereço é de
 cada cliente, na tabela de parâmetros.
 
@@ -706,10 +706,11 @@ argumento e não imprime usuário nem senha.
 
 </details>
 
-**2. 🏢 Holding, empresas e credenciais** — no WebApp (com `Database:Enabled` e `Admin:Enabled`): na tela inicial,
-**Cadastrar holding e empresas** cadastra a holding (com a empresa que é a própria holding e os jobs dos hosts) e as
-outras empresas; no painel, **Cadastro › Módulos e Credenciais** contrata os módulos de cada empresa (jobs inativos, com
-a agenda sugerida) e grava a credencial, e ativar um job de um módulo sem credencial abre o formulário dela antes. Num
+**2. 🏢 Holding, empresas e credenciais** — no WebApp (com `Database:Enabled`; o que cada usuário faz vem do
+[perfil](src/Frontend/WebApp/README.md#-perfis-de-acesso)): na tela inicial, **Primeiro acesso** cadastra a holding (com a empresa que é a
+própria holding, os jobs dos hosts e o primeiro usuário); no painel, **Cadastros › Cadastrar Empresas** acrescenta as
+outras empresas e a **engrenagem** de cada aplicação, em **Aplicações**, contrata o módulo (jobs inativos, com a agenda
+sugerida) e grava a credencial, e ativar um job de um módulo sem credencial abre o formulário dela antes. Num
 banco de teste, o script avulso `tools/seeds/Import-TestSeeds.ps1` carrega de uma vez a holding (`-Holder`,
 `-HolderName`), as empresas e as credenciais de `Seeds/SQLServer` (jobs inativos). Só aceita banco com `Test`/`Teste` no
 nome (ou `-Force`):
@@ -843,14 +844,16 @@ e telas responsivas para celular e tablet.
 | Tela | Rota | O que mostra |
 |---|---|---|
 | 🏠 **Visão Geral** | `/home` | Cards das aplicações, métricas e taxa de sucesso, falhas ativas, registros por dia e painel de saúde por aplicação |
-| 🧩 **Aplicações** | `/applications` | Cards por módulo com a imagem da empresa e o chip que liga ou desliga o módulo |
+| 🧩 **Aplicações** | `/applications` | Cards por módulo com a imagem da empresa, o chip que liga ou desliga o módulo e a **engrenagem** (imagem, credenciais com segredos mascarados, contrato) |
 | 🔀 **Integrações** | `/integrations` | Todos os jobs por aplicação, com as procedures dentro da integração pai, filtros de situação, tipo e saúde, Executar agora, Reconhecer e a edição da agenda |
 | ⚠️ **Logs de Erros** | `/errors` | Mensagens de erro e aviso por aplicação, integração e causa, com a execução num diálogo |
-| ▶️ **Sob Demanda** | `/on-demand` | As integrações sem agenda, no estilo do Swagger (só com `Admin:Enabled`) |
-| 💻 **Executar Querys** | `/queries` | Consultas SQL com favoritas e querys prontas (só com `Admin:Enabled`) |
-| 🏢 **Holdings e Empresas** | `/registration` | Aberta pela tela inicial (**Cadastrar holding e empresas**, só com `Admin:Enabled`): Nova holding, Nova empresa e Abrir painel |
-| 🧩 **Cadastro › Módulos e Credenciais** | `/modules` | Um cartão por módulo da empresa do seletor: contratar com a agenda sugerida (editável), credencial com segredos mascarados e remover módulo (só com `Admin:Enabled`) |
-| 🖧 **Cadastro › Hosts de Agenda** | `/scheduling-hosts` | Qual host de agenda está no ar e qual agenda; só mostra (só com `Admin:Enabled`) |
+| ▶️ **Sob Demanda** | `/on-demand` | As integrações sem agenda, no estilo do Swagger (Gestor e Administrador) |
+| 💻 **Executar Querys** | `/queries` | Consultas SQL com favoritas e querys prontas (só o dono do aplicativo) |
+| 🏢 **Holdings e Empresas** | `/registration` | O **Primeiro acesso** da tela inicial, aberto a todos: Nova holding (com o primeiro usuário), Nova empresa e Abrir painel; mostra só a holding cadastrada na visita |
+| 🏢 **Cadastros › Cadastrar Empresas** | `/companies` | As empresas da holding logada, com Nova empresa e o nome fantasia (Gestor e Administrador) |
+| 👥 **Cadastros › Cadastrar Usuário** | `/users` | Os usuários da holding, com o perfil de cada um (Gestor e Administrador) |
+| 🖧 **Hosts de Agenda** | `/scheduling-hosts` | Qual host de agenda está no ar e qual agenda; só mostra (só o dono do aplicativo) |
+| 🛡️ **Todas as holdings** | `/admin/holdings` | Todas as holdings e empresas do banco, e o painel de qualquer uma (só o dono do aplicativo) |
 
 O **cadastro** grava direto em `auditing.Holders`, `auditing.Companies`, `auditing.Jobs` e nas tabelas `*Parameters`
 ([proposta](docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)): mock por padrão e Dapper com `Database:Enabled = true`, a

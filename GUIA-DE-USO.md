@@ -174,7 +174,7 @@ Os jobs dos hosts (IdParent 140, como o 14000) são um por holding, na empresa q
 %%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
 flowchart TB
     A["Nova holding<br/>holding + empresa própria + jobs dos hosts"] --> B["Nova empresa<br/>os outros CNPJs"]
-    B --> C["Módulos e Credenciais<br/>módulo contratado, jobs inativos"]
+    B --> C["Aplicações › engrenagem<br/>módulo contratado, jobs inativos"]
     C --> D["credencial do módulo<br/>tabela *Parameters"]
     D --> E["ativar os jobs<br/>só o que deve rodar"]
 
@@ -182,14 +182,15 @@ flowchart TB
     class E warm
 ```
 
-**Pelo WebApp** (com `Database:Enabled` e, até a autenticação, `Admin:Enabled` em `Development`):
+**Pelo WebApp** (com `Database:Enabled`; o que cada usuário faz vem do [perfil](src/Frontend/WebApp/README.md#-perfis-de-acesso)):
 
 | | Onde | O que faz |
 |:---:|---|---|
-| 🏢 | Tela inicial › **Cadastrar holding e empresas** (`/registration`) | **Nova holding** grava a holding, a empresa que é a própria holding e os jobs dos hosts dela, inativos; **Nova empresa** acrescenta um CNPJ à holding; **Abrir painel** entra no painel com a empresa escolhida |
+| 🏢 | Tela inicial › **Primeiro acesso** (`/registration`), aberto a todos | **Nova holding** grava a holding, a empresa que é a própria holding, os jobs dos hosts dela, inativos, e o primeiro usuário (Gestor); **Nova empresa** acrescenta um CNPJ à holding; **Abrir painel** entra no painel com a empresa escolhida |
 | 🔀 | Seletor de empresa no topo do painel | troca a empresa entre as da holding (a escolha fica no navegador) |
-| 🧩 | **Cadastro › Módulos e Credenciais** (`/modules`) | um cartão por módulo da empresa: contratar (jobs com a agenda sugerida, editável, inativos), a credencial (segredos mascarados) e remover o módulo |
-| ⏱️ | **Cadastro › Hosts de Agenda** (`/scheduling-hosts`) | qual host de agenda está no ar e qual agenda; só mostra: ligar e desligar host continua na configuração de cada um |
+| 🧩 | **Aplicações** › engrenagem de cada aplicação (`/applications`) | contratar o módulo (jobs com a agenda sugerida, editável, inativos), a credencial (segredos mascarados) e remover o módulo |
+| 👥 | **Cadastros** › Cadastrar Empresas (`/companies`) e Cadastrar Usuário (`/users`) | as empresas da holding e os usuários, com o perfil de cada um (Gestor e Administrador) |
+| ⏱️ | **Hosts de Agenda** (`/scheduling-hosts`) | qual host de agenda está no ar e qual agenda; só mostra: ligar e desligar host continua na configuração de cada um (só o dono do aplicativo) |
 | ☑️ | Tela **Integrações** | liga e desliga os jobs da empresa |
 
 Totvs, LinxMicrovix, LinxCommerce, Movidesk e AfterSale só ativam jobs com a credencial da empresa: ativar sem ela abre
@@ -324,14 +325,15 @@ Abre em **`http://localhost:5067`**, sem API. Por padrão, os dados são **mocka
 
 | Chave (user-secrets do WebApp) | Efeito |
 |---|---|
-| `Admin:Enabled = true` | mostra as telas **Sob Demanda** e **Executar Querys**, o botão **Cadastrar holding e empresas** da tela inicial e o grupo **Cadastro** do menu (só em `Development`, até a autenticação) |
 | `Assistant:ApiKey` | liga o **assistente de IA** (Claude); as perguntas e os dados consultados vão para a API da Anthropic |
 | `Database:Enabled = true` | troca os mocks pelo banco: painel e cadastro em `ConnectionStrings:Connection` (usuário `etl_monitor`) e Executar Querys em `ConnectionStrings:QueryConnection` (`etl_query`) |
 | `LoggedCompany:DocCompany` | só a primeira escolha de empresa (padrão `44065634000106`); o seletor do topo troca a holding e a empresa em cada aba do navegador |
 
-```bash
-dotnet user-secrets set "Admin:Enabled" "true" --project src/Frontend/WebApp
-```
+O acesso às telas vem do **perfil** do usuário em `monitor.Users`, não de chave: **Visualizador** só vê o painel,
+**Gestor** muda o painel da empresa (inclusive Sob Demanda e Cadastros) e **Administrador** faz o mesmo e dá o perfil
+Administrador, sempre dentro da holding dele. O **primeiro usuário do banco** nasce Administrador e **dono do
+aplicativo**: só o dono vê Executar Querys, Hosts de Agenda e Todas as holdings. O primeiro usuário de cada holding
+nova nasce Gestor ([README do WebApp](src/Frontend/WebApp/README.md#-perfis-de-acesso)).
 
 **Painel com o banco.** À mão, na máquina de desenvolvimento, contra o SQL Server do Docker (troque `SEU_BANCO` e
 `SUA_SENHA`; o banco precisa dos migrators; a holding e as empresas entram depois, pela tela inicial), e reinicie o
@@ -380,7 +382,7 @@ ORDER BY L.StartDate DESC;
 | Nada roda na agenda | nenhuma empresa ativa, ou jobs com `IsActive = 0` | passo 3: cadastrar a holding e as empresas e ligar os jobs |
 | `sp_Log_Start` recusa com **50005** | execução sem empresa | informar `X-Company` na rota (ou usar uma rota com `{docCompany}`) |
 | `sp_Log_Start` recusa com **50002** | empresa fora de `auditing.Companies` | cadastrar a empresa na holding (passo 3) |
-| **50001** ao abrir o log | a empresa não tem aquele job | contratar o módulo para a empresa em Cadastro › Módulos e Credenciais |
+| **50001** ao abrir o log | a empresa não tem aquele job | contratar o módulo para a empresa na engrenagem da aplicação, em Aplicações |
 | **400** numa rota | CNPJ fora de `auditing.Companies` ou `X-Company` diferente do `{docCompany}` da rota | cadastrar a empresa (passo 3) ou corrigir o cabeçalho |
 | Migrator falha ao carregar a DLL do SQL Client | caminho com mais de 260 caracteres | usar o `Invoke-Migrators.ps1` (já usa `subst`) |
 | `Skipped: previous execution ... still running` | a execução anterior da mesma empresa ainda roda | normal; se for sempre, aumentar o intervalo do job |

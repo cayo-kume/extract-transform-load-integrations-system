@@ -8,7 +8,11 @@
    de "Execuções" (rodada 9); no painel de saúde da Visão geral, um menu de três pontos. Nunca no clique do chip de saúde,
    porque o chip também aparece nos cabeçalhos e nos contadores, onde o clique seria ambíguo. *@
 
-@if (Inline)
+@* o perfil Visualizador só vê: sem Executar agora nem Reconhecer *@
+@if (!LoggedCompany.CanManage)
+{
+}
+else if (Inline)
 {
     <div class="d-flex align-center gap-1 flex-wrap">
         @if (Schedulable)

@@ -1,4 +1,6 @@
-﻿@inject AdminAccess AdminAccess
+﻿@inject LoggedCompany LoggedCompany
+
+@* O menu só mostra o que o perfil do usuário abre; as telas conferem o perfil de novo (abrir o endereço direto não passa) *@
 
 <MudNavMenu>
     <MudImage ObjectFit="ObjectFit.Cover" Height="150" Width="240" Src="/images/logos/logo_150x300.png" />
@@ -7,16 +9,17 @@
     <MudNavLink Href="/applications" Match="NavLinkMatch.All">Aplicações</MudNavLink>
     @* Jobs e Integrações viraram uma tela só, com o nome Integrações (rodadas 7 e 9) *@
     <MudNavLink Href="/integrations" Match="NavLinkMatch.Prefix">Integrações</MudNavLink>
-    @if (AdminAccess.IsAllowed)
+    @if (LoggedCompany.CanManage)
     {
         <MudNavLink Href="/on-demand" Match="NavLinkMatch.Prefix">Sob Demanda</MudNavLink>
     }
     <MudNavLink Href="/errors" Match="NavLinkMatch.Prefix">Logs de Erros</MudNavLink>
-    @if (AdminAccess.IsAllowed)
+    @* Executar Querys, Hosts de Agenda e Todas as holdings leem o banco inteiro: só o dono do aplicativo *@
+    @if (LoggedCompany.IsOwner)
     {
         <MudNavLink Href="/queries" Match="NavLinkMatch.Prefix">Executar Querys</MudNavLink>
     }
-    @if (AdminAccess.IsAllowed)
+    @if (LoggedCompany.CanManage)
     {
         @* a holding nasce na tela inicial (Primeiro acesso); aqui, as empresas e os usuários da holding logada. Módulos e
            credenciais ficam na engrenagem de cada aplicação, na tela Aplicações *@
@@ -24,6 +27,11 @@
             <MudNavLink Href="/companies" Match="NavLinkMatch.Prefix">Cadastrar Empresas</MudNavLink>
             <MudNavLink Href="/users" Match="NavLinkMatch.Prefix">Cadastrar Usuário</MudNavLink>
         </MudNavGroup>
+    }
+    @if (LoggedCompany.IsOwner)
+    {
         <MudNavLink Href="/scheduling-hosts" Match="NavLinkMatch.Prefix">Hosts de Agenda</MudNavLink>
+        @* fora do painel (BlankLayout): abre na mesma aba, com o Voltar à tela inicial *@
+        <MudNavLink Href="/admin/holdings" Match="NavLinkMatch.Prefix">Todas as holdings</MudNavLink>
     }
 </MudNavMenu>

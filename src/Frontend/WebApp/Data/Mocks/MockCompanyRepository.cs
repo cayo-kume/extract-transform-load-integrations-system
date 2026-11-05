@@ -5,7 +5,7 @@ namespace WebApp.Data.Mocks
     /// <summary>
     /// Holdings, empresas, contratações e parâmetros em memória, compartilhados pelos dois repositórios falsos do cadastro.
     /// Segredos e hashes de senha ficam aqui, mas nunca saem pelos repositórios. Começa com a holding da configuração
-    /// (NEWBLOOMERS), duas marcas, a holding fictícia Abacartes, de uma empresa só, e o usuário admin (senha admin1234) na
+    /// (NEWBLOOMERS), duas marcas, a holding fictícia Abacartes, de uma empresa só, e o usuário admin (senha admin1234, dono do aplicativo) na
     /// holding da configuração, para entrar no painel com o mock.
     /// </summary>
     public class MockCompanyStore
@@ -57,7 +57,7 @@ namespace WebApp.Data.Mocks
             Holders["33333333000133"] = "Abacartes";
             Add("33333333000133", "33333333000133", "Abacartes");
 
-            Users.Add((new UserModel { IdUser = 1, Company = holder, Name = "Administrador", UserName = "admin", Email = "admin@exemplo.com.br", CreatedAt = now.AddDays(-30) },
+            Users.Add((new UserModel { IdUser = 1, Company = holder, Name = "Administrador", UserName = "admin", Email = "admin@exemplo.com.br", Profile = UserProfiles.Administrator, IsOwner = true, CreatedAt = now.AddDays(-30) },
                 UserAccounts.Hash("admin1234")));
 
             Parameters[(130, holder)] = (new() { ["client_id"] = "newbloomers-api", ["client_secret"] = "mock", ["username"] = "integracao", ["password"] = "mock" }, now.AddDays(-30));
@@ -99,7 +99,7 @@ namespace WebApp.Data.Mocks
             lock (store.Gate)
             {
                 EnsureFree(key);
-                var user = MockUserRepository.NewUser(store, firstUser, key);
+                var user = MockUserRepository.NewUser(store, firstUser, key, profile: null);
 
                 store.Holders[key] = Blank(fantasyName);
                 store.Companies[key] = new CompanyModel { Company = key, Holder = key, FantasyName = Blank(fantasyName) };

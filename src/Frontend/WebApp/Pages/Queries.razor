@@ -2,7 +2,7 @@
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @using ResultRow = object?[]
 @implements IAsyncDisposable
-@inject AdminAccess AdminAccess
+@inject LoggedCompany LoggedCompany
 @inject IQueryRunner QueryRunner
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
@@ -13,7 +13,7 @@
 
 <PageTitle>Executar Querys</PageTitle>
 
-@if (AdminAccess.IsAllowed)
+@if (LoggedCompany.IsOwner)
 {
     <div class="queries-layout">
         <div class="queries-main">
@@ -344,7 +344,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        if (!AdminAccess.IsAllowed)
+        if (!LoggedCompany.IsOwner)
         {
             Navigation.NotFound();
             return;
@@ -363,7 +363,7 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender || !AdminAccess.IsAllowed)
+        if (!firstRender || !LoggedCompany.IsOwner)
             return;
 
         // o histórico e as favoritas ficam no navegador; se não der para ler (aba anônima, dados limpos), começam vazios

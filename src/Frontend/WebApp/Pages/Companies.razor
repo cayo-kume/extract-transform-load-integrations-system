@@ -1,5 +1,4 @@
 @page "/companies"
-@inject AdminAccess AdminAccess
 @inject ICompanyRepository CompanyRepository
 @inject LoggedCompany LoggedCompany
 @inject LoggedCompanyStorage CompanyStorage
@@ -8,21 +7,26 @@
 @inject ILogger<Companies> Logger
 
 @* Cadastros › Cadastrar Empresas: as empresas da holding logada. A holding nasce na tela inicial (Primeiro acesso), com a
-   empresa que é ela mesma; aqui entram as outras. O CNPJ não muda (é a chave dos jobs e dos logs): a edição é só do nome. *@
+   empresa que é ela mesma; aqui entram as outras. O CNPJ não muda (é a chave dos jobs e dos logs): a edição é só do nome.
+   O usuário de uma empresa vê só a empresa dele, sem Nova empresa: nem as outras nem a holding. *@
 
 <PageTitle>Cadastrar Empresas</PageTitle>
 
-@if (!AdminAccess.IsAllowed)
+@if (!LoggedCompany.CanManage)
 {
-    <MudAlert Severity="Severity.Warning" Class="ma-4">Esta tela é só para administrador (Admin:Enabled em Development, até os perfis de usuário).</MudAlert>
+    <MudAlert Severity="Severity.Warning" Class="ma-4">Esta tela é só para os perfis Administrador e Gestor.</MudAlert>
 }
 else
 {
     <MudGrid>
         <MudItem xs="12" Class="d-flex align-center flex-wrap gap-3 pa-1 pl-10 pl-md-16">
-            <PageHeader Icon="@Icons.Material.Filled.Domain" Title="Cadastrar Empresas" Subtitle="@($"As empresas (CNPJs) da holding {LoggedCompany.HolderName}")" />
+            <PageHeader Icon="@Icons.Material.Filled.Domain" Title="Cadastrar Empresas"
+                        Subtitle="@(LoggedCompany.SeesWholeHolding ? $"As empresas (CNPJs) da holding {LoggedCompany.HolderName}" : "A empresa do seu usuário")" />
             <MudSpacer />
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Class="mr-4" OnClick="NewCompany">Nova empresa</MudButton>
+            @if (LoggedCompany.SeesWholeHolding)
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Class="mr-4" OnClick="NewCompany">Nova empresa</MudButton>
+            }
         </MudItem>
     </MudGrid>
 
@@ -60,7 +64,9 @@ else
                     </MudTd>
                 </RowTemplate>
             </MudTable>
-            <MudText Typo="Typo.caption" Class="mt-2 d-block">Os módulos e as credenciais de cada empresa ficam na tela Aplicações, na engrenagem da aplicação. O seletor do topo troca de empresa.</MudText>
+            <MudText Typo="Typo.caption" Class="mt-2 d-block">
+                Os módulos e as credenciais de cada empresa ficam na tela Aplicações, na engrenagem da aplicação.@(LoggedCompany.SeesWholeHolding ? " O seletor do topo troca de empresa." : "")
+            </MudText>
         }
     </div>
 }
@@ -70,7 +76,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        if (AdminAccess.IsAllowed)
+        if (LoggedCompany.CanManage)
             await LoadAsync();
     }
 
@@ -78,7 +84,7 @@ else
     {
         try
         {
-            _companies = await CompanyRepository.GetCompaniesAsync(LoggedCompany.Holder);
+            _companies = (await CompanyRepository.GetCompaniesAsync(LoggedCompany.Holder)).Where(x => LoggedCompany.CanSee(x.Company)).ToList();
         }
         catch (Exception exception)
         {

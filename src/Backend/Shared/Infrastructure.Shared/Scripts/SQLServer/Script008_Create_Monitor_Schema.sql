@@ -76,7 +76,11 @@ REFERENCES [auditing].[Jobs] ([IdJob], [IdType], [Holder], [Company])
 GO
 
 -- usuários do painel (WebApp): login por usuário ou e-mail; a senha só como hash (PBKDF2, PasswordHasher do ASP.NET Core).
--- O primeiro usuário de uma holding nasce com ela, na tela de cadastro; os outros, em Cadastros › Cadastrar Usuário
+-- O primeiro usuário de uma holding nasce com ela, na tela de cadastro; os outros, em Cadastros › Cadastrar Usuário.
+-- Profile é o perfil de acesso dentro da holding: Administrador (tudo da holding, dá qualquer perfil), Gestor (muda o que é
+-- da empresa dele) ou Visualizador (só vê). Uma holding nunca vê outra, qualquer que seja o perfil. IsOwner marca o dono do
+-- aplicativo, o único que vê todas as holdings, o Executar Querys e os Hosts de Agenda; não se muda pelo painel. O primeiro
+-- usuário do banco nasce Administrador e dono; o de cada holding nova, Gestor
 CREATE TABLE [monitor].[Users](
     [IdUser] [int] IDENTITY(1,1) NOT NULL,
     [Company] [varchar](20) NOT NULL,
@@ -84,13 +88,16 @@ CREATE TABLE [monitor].[Users](
     [UserName] [nvarchar](100) NOT NULL,
     [Email] [nvarchar](200) NOT NULL,
     [PasswordHash] [nvarchar](500) NOT NULL,
+    [Profile] [varchar](20) NOT NULL CONSTRAINT [DF_Users_Profile] DEFAULT ('Visualizador'),
+    [IsOwner] [bit] NOT NULL CONSTRAINT [DF_Users_IsOwner] DEFAULT (0),
     [CreatedAt] [datetime] NOT NULL CONSTRAINT [DF_Users_CreatedAt] DEFAULT (SYSUTCDATETIME() AT TIME ZONE 'UTC' AT TIME ZONE 'E. South America Standard Time'),
  CONSTRAINT [PK_Users] PRIMARY KEY CLUSTERED
 (
     [IdUser] ASC
 )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
  CONSTRAINT [UQ_Users_UserName] UNIQUE ([UserName] ASC),
- CONSTRAINT [UQ_Users_Email] UNIQUE ([Email] ASC)
+ CONSTRAINT [UQ_Users_Email] UNIQUE ([Email] ASC),
+ CONSTRAINT [CK_Users_Profile] CHECK ([Profile] IN ('Administrador', 'Gestor', 'Visualizador'))
 ) ON [PRIMARY]
 GO
 

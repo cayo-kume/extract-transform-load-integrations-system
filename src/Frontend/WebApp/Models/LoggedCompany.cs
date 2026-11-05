@@ -32,6 +32,62 @@ namespace WebApp.Models
         public string Label => $"{Name} - {DocCompany}";
 
         /// <summary>
+        /// CNPJ da empresa do usuário logado (monitor.Users); vazio sem login (tela de cadastro).
+        /// </summary>
+        public string UserCompany { get; private set; } = "";
+
+        /// <summary>
+        /// O usuário é da própria holding: vê todas as empresas dela. O de uma empresa só vê a empresa dele, nem as outras
+        /// empresas nem a holding.
+        /// </summary>
+        public bool IsHoldingUser => UserCompany.Length > 0 && UserCompany == Holder;
+
+        /// <summary>
+        /// Vê todas as empresas da holding escolhida: o usuário da holding e o dono do aplicativo (que vê todas as holdings).
+        /// O perfil não muda isso: um Administrador de uma empresa só vê a empresa dele.
+        /// </summary>
+        public bool SeesWholeHolding => IsOwner || IsHoldingUser;
+
+        /// <summary>
+        /// Empresa da holding escolhida que o usuário logado pode ver.
+        /// </summary>
+        public bool CanSee(string company) => SeesWholeHolding || company == UserCompany;
+
+        /// <summary>
+        /// Perfil de acesso do usuário logado (UserProfiles); vazio sem login.
+        /// </summary>
+        public string Profile { get; private set; } = "";
+
+        /// <summary>
+        /// Administrador da holding: dá o perfil Administrador. Não vê outras holdings.
+        /// </summary>
+        public bool IsAdministrator => Profile == UserProfiles.Administrator;
+
+        /// <summary>
+        /// Dono do aplicativo: todas as holdings, Executar Querys, Registros no SQL e Hosts de Agenda (que leem o banco inteiro).
+        /// </summary>
+        public bool IsOwner { get; private set; }
+
+        /// <summary>
+        /// Administrador ou Gestor: muda o painel (ativação, agenda, execução, reconhecimento, contratação, credenciais), abre
+        /// o Sob Demanda e os cadastros. O Visualizador só vê.
+        /// </summary>
+        public bool CanManage => Profile is UserProfiles.Administrator or UserProfiles.Manager;
+
+        /// <summary>
+        /// Usuário logado (monitor.Users.IdUser): ninguém muda o próprio perfil.
+        /// </summary>
+        public int IdUser { get; private set; }
+
+        public void SetUser(int idUser, string userCompany, string profile, bool isOwner)
+        {
+            IdUser = idUser;
+            UserCompany = userCompany;
+            Profile = profile;
+            IsOwner = isOwner;
+        }
+
+        /// <summary>
         /// Troca a holding e a empresa da aba. Nome vazio vira o CNPJ.
         /// </summary>
         public void Set(string holder, string? holderName, string company, string? companyName)

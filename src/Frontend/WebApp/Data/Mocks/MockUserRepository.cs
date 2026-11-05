@@ -20,6 +20,15 @@ namespace WebApp.Data.Mocks
             }
         }
 
+        public Task<UserModel?> GetUserAsync(int idUser, CancellationToken cancellationToken = default)
+        {
+            lock (store.Gate)
+            {
+                var found = store.Users.FirstOrDefault(x => x.User.IdUser == idUser);
+                return Task.FromResult(found.User is null ? null : WithCompany(found.User));
+            }
+        }
+
         public Task<IReadOnlyList<UserModel>> GetUsersAsync(string holder, CancellationToken cancellationToken = default)
         {
             var key = ModuleDefinitions.Digits(holder);
@@ -45,7 +54,7 @@ namespace WebApp.Data.Mocks
                 if (!store.Companies.ContainsKey(company))
                     throw new CompanyRegistrationException($"A empresa {input.Company} não está cadastrada.", 50002);
 
-                store.Users.Add(NewUser(store, input, company));
+                store.Users.Add(NewUser(store, input, company, UserAccounts.Profile(input.Profile)));
             }
 
             return Task.CompletedTask;
@@ -69,6 +78,7 @@ namespace WebApp.Data.Mocks
 
                 user.Name = name;
                 user.Email = email;
+                user.Profile = UserAccounts.Profile(input.Profile);
                 store.Users[index] = (user, string.IsNullOrEmpty(input.Password) ? hash : UserAccounts.Hash(input.Password));
             }
 
@@ -76,9 +86,10 @@ namespace WebApp.Data.Mocks
         }
 
         /// <summary>
-        /// Confere o usuário novo e devolve a linha para gravar. Dentro do lock do MockCompanyStore.
+        /// Confere o usuário novo e devolve a linha para gravar. Dentro do lock do MockCompanyStore. Perfil nulo: o do primeiro
+        /// usuário de uma holding (UserAccounts.FirstUserProfile).
         /// </summary>
-        internal static (UserModel User, string PasswordHash) NewUser(MockCompanyStore store, UserInput input, string company)
+        internal static (UserModel User, string PasswordHash) NewUser(MockCompanyStore store, UserInput input, string company, string? profile)
         {
             var (name, userName, email) = UserAccounts.Validate(input, passwordRequired: true);
 
@@ -94,6 +105,8 @@ namespace WebApp.Data.Mocks
                 Name = name,
                 UserName = userName,
                 Email = email,
+                Profile = profile ?? UserAccounts.FirstUserProfile(store.Users.Count > 0),
+                IsOwner = profile is null && store.Users.Count == 0,
                 CreatedAt = DateTime.Now
             };
 
@@ -114,6 +127,8 @@ namespace WebApp.Data.Mocks
                 Name = user.Name,
                 UserName = user.UserName,
                 Email = user.Email,
+                Profile = user.Profile,
+                IsOwner = user.IsOwner,
                 CreatedAt = user.CreatedAt
             };
         }

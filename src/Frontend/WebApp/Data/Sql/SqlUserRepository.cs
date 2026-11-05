@@ -12,7 +12,7 @@ namespace WebApp.Data.Sql
     public class SqlUserRepository(MainDatabase database) : IUserRepository
     {
         private const string SelectUsers = """
-            SELECT u.IdUser, u.Company, c.Holder, c.FantasyName AS CompanyName, u.Name, u.UserName, u.Email, u.CreatedAt, u.PasswordHash
+            SELECT u.IdUser, u.Company, c.Holder, c.FantasyName AS CompanyName, u.Name, u.UserName, u.Email, u.Profile, u.IsOwner, u.CreatedAt, u.PasswordHash
             FROM [monitor].[Users] u
             JOIN [auditing].[Companies] c ON c.Company = u.Company
             """;
@@ -24,6 +24,13 @@ namespace WebApp.Data.Sql
                 SelectUsers + " WHERE u.UserName = @login OR u.Email = @login", new { login = login.Trim() }, cancellationToken: cancellationToken));
 
             return row is not null && UserAccounts.Verify(row.PasswordHash, password) ? row : null;
+        }
+
+        public async Task<UserModel?> GetUserAsync(int idUser, CancellationToken cancellationToken = default)
+        {
+            await using var connection = await database.OpenAsync(cancellationToken);
+            return await connection.QueryFirstOrDefaultAsync<UserRow>(new CommandDefinition(
+                SelectUsers + " WHERE u.IdUser = @idUser", new { idUser }, cancellationToken: cancellationToken));
         }
 
         public async Task<IReadOnlyList<UserModel>> GetUsersAsync(string holder, CancellationToken cancellationToken = default)
@@ -49,7 +56,7 @@ namespace WebApp.Data.Sql
             if (exists == 0)
                 throw new CompanyRegistrationException($"A empresa {input.Company} não está cadastrada.", 50002);
 
-            await InsertAsync(connection, transaction, input, company, cancellationToken);
+            await InsertAsync(connection, transaction, input, company, UserAccounts.Profile(input.Profile), cancellationToken);
             await transaction.CommitAsync(cancellationToken);
         }
 
@@ -63,15 +70,16 @@ namespace WebApp.Data.Sql
                 ?? throw new CompanyRegistrationException("O usuário não está cadastrado.");
 
             var (name, _, email) = UserAccounts.Validate(input, passwordRequired: false);
+            var profile = UserAccounts.Profile(input.Profile);
             var hash = string.IsNullOrEmpty(input.Password) ? null : UserAccounts.Hash(input.Password);
 
             try
             {
                 await connection.ExecuteAsync(new CommandDefinition("""
                     UPDATE [monitor].[Users]
-                    SET Name = @name, Email = @email, PasswordHash = COALESCE(@hash, PasswordHash)
+                    SET Name = @name, Email = @email, Profile = @profile, PasswordHash = COALESCE(@hash, PasswordHash)
                     WHERE IdUser = @idUser
-                    """, new { idUser, name, email, hash }, cancellationToken: cancellationToken));
+                    """, new { idUser, name, email, profile = new DbString { Value = profile, IsAnsi = true, Length = 20 }, hash }, cancellationToken: cancellationToken));
             }
             catch (SqlException exception) when (exception.Number is 2627 or 2601)
             {
@@ -80,11 +88,22 @@ namespace WebApp.Data.Sql
         }
 
         /// <summary>
-        /// Confere e grava um usuário novo na transação de quem chama (o cadastro da holding também usa).
+        /// Confere e grava um usuário novo na transação de quem chama (o cadastro da holding também usa). Perfil nulo: o do
+        /// primeiro usuário de uma holding (UserAccounts.FirstUserProfile).
         /// </summary>
-        internal static async Task InsertAsync(SqlConnection connection, IDbTransaction transaction, UserInput input, string company, CancellationToken cancellationToken)
+        internal static async Task InsertAsync(SqlConnection connection, IDbTransaction transaction, UserInput input, string company, string? profile, CancellationToken cancellationToken)
         {
             var (name, userName, email) = UserAccounts.Validate(input, passwordRequired: true);
+
+            // o primeiro usuário do banco é o dono do aplicativo (e Administrador da holding dele)
+            var owner = false;
+            if (profile is null)
+            {
+                var anyUser = await connection.ExecuteScalarAsync<bool>(new CommandDefinition(
+                    "SELECT CASE WHEN EXISTS (SELECT 1 FROM [monitor].[Users]) THEN 1 ELSE 0 END", transaction: transaction, cancellationToken: cancellationToken));
+                profile = UserAccounts.FirstUserProfile(anyUser);
+                owner = !anyUser;
+            }
 
             var taken = await connection.QueryFirstOrDefaultAsync<string?>(new CommandDefinition("""
                 SELECT TOP (1) CASE WHEN UserName = @userName THEN 'user' ELSE 'email' END
@@ -98,9 +117,9 @@ namespace WebApp.Data.Sql
                 throw new CompanyRegistrationException($"O e-mail {email} já é de outro usuário.");
 
             await connection.ExecuteAsync(new CommandDefinition("""
-                INSERT INTO [monitor].[Users] (Company, Name, UserName, Email, PasswordHash)
-                VALUES (@company, @name, @userName, @email, @hash)
-                """, new { company = new DbString { Value = company, IsAnsi = true, Length = 20 }, name, userName, email, hash = UserAccounts.Hash(input.Password!) },
+                INSERT INTO [monitor].[Users] (Company, Name, UserName, Email, Profile, IsOwner, PasswordHash)
+                VALUES (@company, @name, @userName, @email, @profile, @owner, @hash)
+                """, new { company = new DbString { Value = company, IsAnsi = true, Length = 20 }, name, userName, email, profile = new DbString { Value = profile, IsAnsi = true, Length = 20 }, owner, hash = UserAccounts.Hash(input.Password!) },
                 transaction, cancellationToken: cancellationToken));
         }
 

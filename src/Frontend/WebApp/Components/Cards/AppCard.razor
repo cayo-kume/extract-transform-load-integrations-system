@@ -26,7 +26,7 @@
                                      Color="@(Summary.IsActive ? Color.Success : Color.Default)"
                                      Icon="@(_saving ? null : Summary.IsActive ? null : Icons.Material.Filled.PauseCircle)"
                                      Disabled="_saving"
-                                     OnClick="ToggleModule">
+                                     OnClick="@(LoggedCompany.CanManage ? EventCallback.Factory.Create<MouseEventArgs>(this, ToggleModule) : default)">
                                 @if (_saving)
                                 {
                                     <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-1" Style="width: 14px; height: 14px" />
@@ -83,7 +83,10 @@
             }
             else
             {
-                <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="Contract">Contratar</MudButton>
+                @if (LoggedCompany.CanManage)
+                {
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="Contract">Contratar</MudButton>
+                }
             }
         </MudCardActions>
     </MudCard>
@@ -115,6 +118,10 @@
     // inclusive os que estavam desligados um a um (o chip só mostra "Inativa" com nenhum job ativo)
     private async Task ToggleModule()
     {
+        // o perfil Visualizador só vê
+        if (!LoggedCompany.CanManage)
+            return;
+
         var activate = !Summary.IsActive;
         var company = System.Net.WebUtility.HtmlEncode(LoggedCompany.Label);
 

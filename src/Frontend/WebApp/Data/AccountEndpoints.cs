@@ -9,7 +9,8 @@ using WebApp.Models;
 namespace WebApp.Data
 {
     /// <summary>
-    /// Claims do cookie de login, lidas pelo MainLayout (holding e empresa do usuário) e pelo topo (nome).
+    /// Claims do cookie de login: só quem é o usuário. Empresa, holding, perfil e dono o MainLayout relê do banco a cada
+    /// sessão (IUserRepository.GetUserAsync), então uma troca de perfil vale na hora e um cookie de outro banco não abre nada.
     /// </summary>
     public static class UserClaims
     {

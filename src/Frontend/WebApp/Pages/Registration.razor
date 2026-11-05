@@ -1,6 +1,5 @@
 @page "/registration"
 @layout BlankLayout
-@inject AdminAccess AdminAccess
 @inject ICompanyRepository CompanyRepository
 @inject LoggedCompanyStorage CompanyStorage
 @inject IDialogService DialogService
@@ -24,11 +23,7 @@
 
     <PageHeader Icon="@Icons.Material.Filled.Domain" Title="Holdings e Empresas" Subtitle="Cadastre a sua holding, as empresas dela e o primeiro usuário" />
 
-    @if (!AdminAccess.IsAllowed)
-    {
-        <MudAlert Severity="Severity.Warning" Class="mt-4">O cadastro é só para administrador (Admin:Enabled em Development, até a autenticação).</MudAlert>
-    }
-    else if (_loading)
+    @if (_loading)
     {
         <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mt-4" />
     }

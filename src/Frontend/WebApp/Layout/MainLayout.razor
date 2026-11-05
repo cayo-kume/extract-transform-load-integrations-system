@@ -3,6 +3,7 @@
 @implements IDisposable
 @inject LoggedCompany LoggedCompany
 @inject LoggedCompanyStorage CompanyStorage
+@inject IUserRepository UserRepository
 @inject ProtectedLocalStorage LocalStorage
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
@@ -20,7 +21,11 @@
         </MudTooltip>
         <MudSpacer />
         @* a holding e, ao lado, a empresa dela: todas as telas mostram só a empresa escolhida (a escolha fica no navegador) *@
-        <MudText Typo="Typo.body2" Class="mr-3 logged-company">@LoggedCompany.HolderName</MudText>
+        @* o usuário de uma empresa não vê a holding: o seletor tem só a empresa dele *@
+        @if (LoggedCompany.SeesWholeHolding)
+        {
+            <MudText Typo="Typo.body2" Class="mr-3 logged-company">@LoggedCompany.HolderName</MudText>
+        }
         <MudSelect T="string" Value="@LoggedCompany.DocCompany" ValueChanged="SelectCompany" Label="Empresa" Dense="true" Margin="Margin.Dense"
                    Variant="Variant.Outlined" Disabled="@(CompanyStorage.Companies.Count <= 1)" Class="mr-2 company-select" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight"
                    ToStringFunc="@(company => CompanyStorage.Companies.FirstOrDefault(x => x.Company == company) is { FantasyName.Length: > 0 } found ? $"{found.FantasyName} · {found.Company}" : company)">
@@ -52,7 +57,11 @@
         </form>
     </MudAppBar>
     <MudDrawer @bind-Open="_drawerOpen" Elevation="8" ClipMode="DrawerClipMode.Never">
-        <NavMenu/>
+        @* só depois de ler o usuário do banco: o menu depende do perfil e do dono, e não se redesenha sozinho *@
+        @if (_userLoaded)
+        {
+            <NavMenu />
+        }
     </MudDrawer>
     <MudMainContent>
         @* Uma exceção numa tela mostra este cartão em vez de derrubar o painel; trocar de tela também limpa o erro *@
@@ -116,8 +125,32 @@
         }
 
         _userName = user.Identity.Name;
-        _userHolder = user.FindFirst(UserClaims.Holder)?.Value ?? "";
-        _userCompany = user.FindFirst(UserClaims.Company)?.Value ?? "";
+
+        // o cookie diz quem é; empresa, holding, perfil e dono vêm do banco, relidos a cada sessão: um cookie de outro banco
+        // (o do mock, por exemplo) ou de um usuário apagado não abre o painel, e uma troca de perfil vale na hora
+        try
+        {
+            var idUser = int.TryParse(user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out var id) ? id : 0;
+            var stored = await UserRepository.GetUserAsync(idUser);
+            if (stored is null || stored.UserName != user.FindFirst(UserClaims.UserName)?.Value)
+            {
+                _blocked = "O seu login não vale neste banco (o usuário não existe mais ou é de outro banco). Saia e entre de novo.";
+                return;
+            }
+
+            _userName = stored.Name;
+            _userHolder = stored.Holder;
+            _userCompany = stored.Company;
+
+            // valem antes do primeiro render: o menu e as telas leem daqui
+            LoggedCompany.SetUser(stored.IdUser, stored.Company, stored.Profile, stored.IsOwner);
+            _userLoaded = true;
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Não foi possível ler o usuário logado.");
+            _blocked = "Não foi possível ler o seu usuário. Recarregue a página; se continuar, veja o log do WebApp.";
+        }
     }
 
     private const string DarkModeKey = "dark-mode";
@@ -125,7 +158,7 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         // sem login, o OnInitializedAsync já mandou para a tela inicial: nenhuma tela aparece
-        if (!firstRender || _userName is null)
+        if (!firstRender || _userName is null || _blocked is not null)
             return;
 
         // a empresa da aba: a última escolhida neste navegador (o armazenamento só existe depois do primeiro render)
@@ -136,7 +169,7 @@
             if (await CompanyStorage.RestoreAsync(_userHolder, _userCompany))
                 _companyReady = true;
             else
-                _blocked = $"A holding do seu usuário ({_userHolder}) não está cadastrada neste banco. Saia e entre com outro usuário.";
+                _blocked = $"A holding ou a empresa do seu usuário ({_userCompany}) não está cadastrada neste banco. Saia e entre com outro usuário.";
         }
         catch (Exception exception)
         {
@@ -163,6 +196,7 @@
 
     private bool _companyReady;
     private string? _blocked;
+    private bool _userLoaded;
 
     private async Task SelectCompany(string company)
     {

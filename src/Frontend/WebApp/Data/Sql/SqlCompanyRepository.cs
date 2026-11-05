@@ -45,8 +45,9 @@ namespace WebApp.Data.Sql
             var jobs = await CatalogJobsAsync(connection, transaction, HostsApp, cancellationToken);
             await InsertJobsAsync(connection, transaction, key, key, HostsApp, jobs, cancellationToken);
 
-            // o primeiro usuário do painel, na empresa que é a própria holding: sem ele, ninguém entraria
-            await SqlUserRepository.InsertAsync(connection, transaction, firstUser, key, cancellationToken);
+            // o primeiro usuário do painel, na empresa que é a própria holding: sem ele, ninguém entraria. Nasce Gestor (ou
+            // Administrador, se for o primeiro do banco)
+            await SqlUserRepository.InsertAsync(connection, transaction, firstUser, key, profile: null, cancellationToken);
 
             await transaction.CommitAsync(cancellationToken);
         }

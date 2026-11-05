@@ -1,7 +1,6 @@
 ﻿@page "/"
 @layout BlankLayout
 @inject NavigationManager Navigation
-@inject AdminAccess AdminAccess
 @inject IUserRepository UserRepository
 @inject SignInTickets SignInTickets
 @inject ILogger<Login> Logger
@@ -26,11 +25,8 @@
                        Size="Size.Large" FullWidth="true" Disabled="@(_signingIn || string.IsNullOrWhiteSpace(_login) || string.IsNullOrEmpty(_password))" Class="mt-4">Entrar</MudButton>
         </form>
 
-        @if (AdminAccess.IsAllowed)
-        {
-            @* cadastro da holding, com o primeiro usuário (só administrador, como o resto do cadastro) *@
-            <MudButton Href="/registration" StartIcon="@Icons.Material.Filled.Domain" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Large" FullWidth="true" Class="mt-3">Primeiro acesso</MudButton>
-        }
+        @* cadastro da holding, com o primeiro usuário; aberto a todos, porque a tela não mostra nenhuma holding do banco *@
+        <MudButton Href="/registration" StartIcon="@Icons.Material.Filled.Domain" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Large" FullWidth="true" Class="mt-3">Primeiro acesso</MudButton>
 
         @if (_error is not null)
         {

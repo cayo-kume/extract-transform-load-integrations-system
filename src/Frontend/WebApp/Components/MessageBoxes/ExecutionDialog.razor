@@ -1,5 +1,5 @@
 @inject IMonitorRepository MonitorRepository
-@inject AdminAccess AdminAccess
+@inject LoggedCompany LoggedCompany
 @inject ISnackbar Snackbar
 @inject ILogger<ExecutionDialog> Logger
 
@@ -36,7 +36,7 @@
         {
             <MudButton Href="@MonitorDisplay.JobLink(idApp, Message.IdJob, Message.IdType, Period)" StartIcon="@Icons.Material.Filled.OpenInNew">Ir para o job</MudButton>
         }
-        @if (AdminAccess.IsAllowed)
+        @if (LoggedCompany.IsOwner)
         {
             <MudButton Href="@($"/queries?ready={ReadyQueries.ExecutionRecordsKey}&execution={Message.Execution}")" StartIcon="@Icons.Material.Filled.Storage">Registros no SQL</MudButton>
         }

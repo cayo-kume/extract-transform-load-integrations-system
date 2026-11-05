@@ -34,11 +34,14 @@
                             {
                                 <div class="app-config-image app-config-image-empty">sem imagem própria</div>
                             }
-                            <label class="upload-label">
-                                <InputFile OnChange="OnImageSelected" accept=".png,.jpg,.jpeg" style="display:none" />
-                                Adicionar / trocar
-                            </label>
-                            <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" Disabled="_imageUrl is null" OnClick="RemoveImage">Remover</MudButton>
+                            @if (LoggedCompany.CanManage)
+                            {
+                                <label class="upload-label">
+                                    <InputFile OnChange="OnImageSelected" accept=".png,.jpg,.jpeg" style="display:none" />
+                                    Adicionar / trocar
+                                </label>
+                                <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" Disabled="_imageUrl is null" OnClick="RemoveImage">Remover</MudButton>
+                            }
                         </div>
                         <MudText Typo="Typo.caption" Class="mt-2">PNG ou JPG, até 300 KB. Nesta fase a imagem fica só no mock.</MudText>
                     </div>
@@ -49,7 +52,7 @@
                         @if (ModuleDefinitions.Find(IdApp) is { } definition)
                         {
                             <MudText Typo="Typo.caption" Class="d-block mb-3">Credencial de @LoggedCompany.Label. Segredo gravado não volta para a tela: clique no lápis para substituir.</MudText>
-                            <CredentialForm Definition="definition" />
+                            <CredentialForm Definition="definition" ReadOnly="@(!LoggedCompany.CanManage)" />
                         }
                         else
                         {
@@ -98,7 +101,10 @@
                                 }
                             </MudAlert>
                             <div class="d-flex justify-end">
-                                @if (_app.IsContracted)
+                                @if (!LoggedCompany.CanManage)
+                                {
+                                }
+                                else if (_app.IsContracted)
                                 {
                                     <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" Disabled="@(_app.ActiveJobs == 0 || _changing)" OnClick="RemoveApp">Remover módulo</MudButton>
                                 }
@@ -115,6 +121,10 @@
         }
     </DialogContent>
     <DialogActions>
+        @if (!LoggedCompany.CanManage)
+        {
+            <MudText Typo="Typo.caption" Class="mr-auto ml-2">Só para ver: o perfil Visualizador não muda as configurações.</MudText>
+        }
         <MudButton OnClick="Close">Fechar</MudButton>
     </DialogActions>
 </MudDialog>

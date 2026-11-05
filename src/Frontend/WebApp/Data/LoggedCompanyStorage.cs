@@ -6,7 +6,7 @@ namespace WebApp.Data
     /// <summary>
     /// A holding e a empresa escolhidas, guardadas no navegador como o tema (ProtectedLocalStorage): o MainLayout lê antes de
     /// mostrar a primeira tela, e o seletor do topo e o "Abrir painel" do cadastro gravam. Uma escolha que não existe mais
-    /// (empresa apagada, outro banco) cai na primeira empresa da primeira holding.
+    /// (empresa apagada, outro banco) cai na primeira empresa que o usuário logado pode ver.
     /// </summary>
     public class LoggedCompanyStorage(ProtectedLocalStorage storage, ICompanyRepository companies, LoggedCompany loggedCompany)
     {
@@ -19,8 +19,9 @@ namespace WebApp.Data
 
         /// <summary>
         /// Lê a escolha do navegador e informa ao LoggedCompany da aba. O usuário logado só vê a holding dele: uma escolha de
-        /// outra holding (ou nenhuma: aba anônima, dados limpos) vira a empresa do usuário. Falso se a holding do usuário não
-        /// está mais cadastrada: aí nenhuma empresa é escolhida, para o painel não cair na holding de outro.
+        /// outra holding (ou nenhuma: aba anônima, dados limpos) vira a empresa do usuário. O usuário da holding escolhe
+        /// qualquer empresa dela; o de uma empresa, só a dele. Falso se a holding ou a empresa do usuário não está mais
+        /// cadastrada: aí nenhuma empresa é escolhida, para o painel não cair nos dados de outro.
         /// </summary>
         public async Task<bool> RestoreAsync(string userHolder, string userCompany, CancellationToken cancellationToken = default)
         {
@@ -40,37 +41,42 @@ namespace WebApp.Data
             {
             }
 
+            // o dono do aplicativo abre qualquer holding (a escolhida em Todas as holdings); os outros, só a deles, qualquer
+            // que seja o perfil
             var parts = (stored ?? "").Split('|');
-            if (parts[0] != userHolder)
+            if (parts[0] != userHolder && !loggedCompany.IsOwner)
                 parts = [userHolder, userCompany];
 
-            await SelectAsync(parts[0], parts.ElementAtOrDefault(1), persist: false, cancellationToken);
-            return true;
+            return await SelectAsync(parts[0], parts.ElementAtOrDefault(1), persist: false, cancellationToken);
         }
 
         /// <summary>
-        /// Troca a holding e a empresa da aba e guarda no navegador. Empresa nula ou de outra holding vira a primeira da holding
-        /// (a própria holding vem primeiro).
+        /// Troca a holding e a empresa da aba e guarda no navegador. Empresa nula, de outra holding ou que o usuário logado não
+        /// pode ver vira a primeira que ele pode (a própria holding vem primeiro). Falso se não sobrar nenhuma.
         /// </summary>
-        public async Task SelectAsync(string holder, string? company, bool persist = true, CancellationToken cancellationToken = default)
+        public async Task<bool> SelectAsync(string holder, string? company, bool persist = true, CancellationToken cancellationToken = default)
         {
             var holders = await companies.GetHoldersAsync(cancellationToken);
             var selectedHolder = holders.FirstOrDefault(x => x.Holder == holder) ?? holders.FirstOrDefault();
             if (selectedHolder is null)
             {
                 Companies = [];
-                return;
+                return false;
             }
 
-            Companies = await companies.GetCompaniesAsync(selectedHolder.Holder, cancellationToken);
+            // o usuário de uma empresa só tem a dele no seletor; sem login (o Abrir painel do cadastro), todas
+            var user = loggedCompany.UserCompany;
+            Companies = (await companies.GetCompaniesAsync(selectedHolder.Holder, cancellationToken))
+                .Where(x => user.Length == 0 || loggedCompany.IsOwner || user == selectedHolder.Holder || x.Company == user)
+                .ToList();
             var selected = Companies.FirstOrDefault(x => x.Company == company) ?? Companies.FirstOrDefault();
             if (selected is null)
-                return;
+                return false;
 
             loggedCompany.Set(selectedHolder.Holder, selectedHolder.FantasyName, selected.Company, selected.FantasyName);
 
             if (!persist)
-                return;
+                return true;
 
             try
             {
@@ -79,6 +85,8 @@ namespace WebApp.Data
             catch (Exception)
             {
             }
+
+            return true;
         }
     }
 }
