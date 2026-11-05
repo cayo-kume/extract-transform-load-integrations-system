@@ -14,7 +14,9 @@
 
 @* Integrações (era Jobs e Integrações, rodadas 7 e 9): situação (ativos, inativos ou todos), tipo, saúde e busca, com um
    grupo recolhível por aplicação, as procedures dentro da integração e o botão Agenda de cada aplicação, o único lugar onde
-   a agenda se edita. As rotas /jobs, /applications/jobs e /applications/{id}/jobs caem aqui, para nenhum link salvo quebrar. *@
+   a agenda se edita. As rotas /jobs, /applications/jobs e /applications/{id}/jobs caem aqui, para nenhum link salvo quebrar.
+   Com a holding escolhida, a tela soma a holding e as filiais (como a Visão Geral): a aplicação de mais de uma empresa tem
+   um bloco por empresa, cada um com a sua agenda, e o filtro Empresa restringe a tela a uma delas. *@
 
 <PageTitle>Integrações</PageTitle>
 
@@ -23,7 +25,7 @@
         <PageHeader Icon="@Icons.Material.Filled.SyncAlt" Title="@(_filter.IdApp is int id && AppTitle(id) is string title ? $"Integrações · {title}" : "Integrações")" Subtitle="Jobs, agenda e execuções" />
     </MudItem>
 
-    <Filters Value="_filter" ValueChanged="OnFilterChanged" ShowType="false" />
+    <Filters Value="_filter" ValueChanged="OnFilterChanged" ShowType="false" Summed="Summed" />
 
     <MudItem xs="12" Class="loading-container">
         <SpaceLoading Overlay="true" Visible="_loading" Label="Carregando os jobs" />
@@ -43,6 +45,17 @@
                 <MudText Typo="Typo.caption">Tipo</MudText>
                 <TypeSegment Value="_type" ValueChanged="@(type => Go(_status, _health, type, _filter.IdApp, _filter.Period))" />
             </div>
+            @if (Summed)
+            {
+                @* holding escolhida: restringe a tela a uma empresa, sem trocar o seletor do topo *@
+                <MudSelect T="string" @bind-Value="_companyFilter" Label="Empresa" Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true" Clearable="true" Style="max-width: 260px"
+                           Placeholder="Todas" ToStringFunc="@(company => string.IsNullOrEmpty(company) ? "Todas" : LoggedCompany.CompanyLabel(company))">
+                    @foreach (var company in Companies)
+                    {
+                        <MudSelectItem T="string" Value="@company.Company">@LoggedCompany.CompanyLabel(company.Company) · @company.Company</MudSelectItem>
+                    }
+                </MudSelect>
+            }
             <MudSpacer />
             <RefreshBar UpdatedAt="_updatedAt" OnRefresh="Load" />
         </div>
@@ -78,7 +91,49 @@
         <div class="px-4 pb-4 pt-4">
             @foreach (var app in FilteredApps)
             {
-                @Group(app, LoggedCompany.DocCompany)
+                var companies = CompaniesOf(app.IdParent);
+
+                @if (companies.Count == 1)
+                {
+                    @Group(app, companies[0].Company, nested: false)
+                }
+                else
+                {
+                    var total = companies.Sum(x => JobsIn(NodesOf(app.IdParent, x.Company)).Count);
+
+                    var holdingKey = HoldingKey(app.IdParent);
+                    var holdingOpen = !_collapsedHoldingApps.Contains(holdingKey);
+
+                    @* holding escolhida: a aplicação com um bloco por empresa, cada um com a sua agenda. Recolhível como os
+                       outros grupos, mas abre sozinha; fechada, mostra a soma da saúde das empresas *@
+                    <div class="app-group holding-group" @key="app.IdParent">
+                        <div class="app-group-head holding-group-head" style="cursor: pointer" role="button" tabindex="0" aria-expanded="@(holdingOpen ? "true" : "false")"
+                             @onclick="@(() => ToggleHoldingApp(holdingKey))" @onkeydown="@(e => OnHoldingAppKeyDown(e, holdingKey))">
+                            <MudIcon Icon="@(holdingOpen ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)" Size="Size.Small" />
+                            <MudText Typo="Typo.subtitle2" Style="white-space: nowrap">@app.IdParent - @app.Title</MudText>
+                            <MudText Typo="Typo.caption" Class="app-group-description d-none d-md-block">@app.Description</MudText>
+                            <div class="app-group-meta">
+                                <MudText Typo="Typo.caption" Style="white-space: nowrap">@companies.Count empresa(s) · @total job(s)</MudText>
+                                @if (!holdingOpen)
+                                {
+                                    @foreach (var health in HealthCounts(companies.SelectMany(x => JobsIn(NodesOf(app.IdParent, x.Company))).ToList()))
+                                    {
+                                        <MudTooltip Text="@health.Label">
+                                            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@health.Color" Icon="@health.Icon">@health.Count</MudChip>
+                                        </MudTooltip>
+                                    }
+                                }
+                            </div>
+                        </div>
+                        @if (holdingOpen)
+                        {
+                            @foreach (var company in companies)
+                            {
+                                @Group(app, company.Company, nested: true)
+                            }
+                        }
+                    </div>
+                }
             }
 
             @if (!_loading && !FilteredApps.Any())
@@ -107,7 +162,7 @@
     [SupplyParameterFromQuery(Name = "period")] public string? PeriodQuery { get; set; }
 
     /// <summary>
-    /// Situação: active, inactive ou all. Sem ela, Ativos (o menu, /integrations e /jobs) ou Todos (as rotas antigas /applications/...).
+    /// Situação: active, inactive ou all. Sem ela, Todos.
     /// </summary>
     [SupplyParameterFromQuery(Name = "status")] public string? StatusQuery { get; set; }
 
@@ -127,7 +182,7 @@
     [SupplyParameterFromQuery(Name = "job")] public int? JobQuery { get; set; }
 
     private FilterState _filter = new();
-    private JobStatus _status = JobStatus.Active;
+    private JobStatus _status = JobStatus.All;
     private int? _type;
     // estados marcados nos contadores de saúde; vazio = todos
     private static readonly IReadOnlySet<JobHealth> NoHealth = new HashSet<JobHealth>();
@@ -140,8 +195,8 @@
     private IReadOnlyList<AppSummaryModel> _apps = [];
     private IReadOnlyList<JobModel> _jobs = [];
 
-    // linhas abertas e chips gravando, por (empresa, IdJob, IdType): na visão "Todas as empresas" o mesmo job aparece em
-    // cada empresa
+    // linhas abertas e chips gravando, por (empresa, IdJob, IdType): com a holding escolhida o mesmo job aparece em cada
+    // empresa
     private readonly HashSet<(string Company, int IdJob, int IdType)> _opened = [];
     private readonly HashSet<(string Company, int IdJob, int IdType)> _saving = [];
 
@@ -162,6 +217,42 @@
     private readonly HashSet<string> _collapsedApps = [];
 
     private static string GroupKey(int idApp, string company) => $"{idApp}|{company}";
+
+    // aplicações de mais de uma empresa (holding escolhida) fechadas pelo usuário: abrem sozinhas, como antes da seta
+    private readonly HashSet<string> _collapsedHoldingApps = [];
+
+    private static string HoldingKey(int idApp) => $"{idApp}|*";
+
+    private void ToggleHoldingApp(string key)
+    {
+        if (!_collapsedHoldingApps.Remove(key))
+            _collapsedHoldingApps.Add(key);
+    }
+
+    private void OnHoldingAppKeyDown(KeyboardEventArgs args, string key)
+    {
+        if (args.Key is "Enter" or " ")
+            ToggleHoldingApp(key);
+    }
+
+    // com a holding escolhida, a holding e as filiais que o usuário vê (LoggedCompany.SummedCompanies); senão, a escolhida
+    private bool Summed => LoggedCompany.SummedCompanies.Count > 1;
+
+    private CompanyView View => Summed ? CompanyView.Summed : CompanyView;
+
+    // as empresas da tela, a holding primeiro
+    private IEnumerable<CompanyModel> Companies =>
+        Summed ? LoggedCompany.SummedCompanies.OrderBy(x => x.Company == LoggedCompany.Holder ? 0 : 1) : LoggedCompany.ScopeCompanies;
+
+    // filtro Empresa da holding; vazio, todas
+    private string? _companyFilter;
+
+    private bool IsContracted(int idApp, string company) =>
+        _apps.FirstOrDefault(x => x.IdParent == idApp)?.Companies.Any(x => x.Company == company) == true;
+
+    // as empresas com jobs da aplicação no filtro (só as que contrataram, por Scoped)
+    private List<CompanyModel> CompaniesOf(int idApp) =>
+        Companies.Where(x => string.IsNullOrEmpty(_companyFilter) || x.Company == _companyFilter).Where(x => NodesOf(idApp, x.Company).Count > 0).ToList();
 
     private static string StatusLabel(JobStatus status) => status switch
     {
@@ -245,8 +336,11 @@
     private bool SearchMatches(JobModel job) =>
         (_focusJob is null || job.IdJob == _focusJob) && _filter.Matches(job.IdJob.ToString(), job.Title, job.Description);
 
-    // as sob demanda ficam na tela Sob Demanda; só aparecem aqui pelo link direto (?job=), vindo dos Logs de Erros
+    // as sob demanda ficam na tela Sob Demanda; só aparecem aqui pelo link direto (?job=), vindo dos Logs de Erros. Só os jobs
+    // das empresas que contrataram a aplicação: os de antes do contrato, ou de um contrato cancelado, continuam gravados
     private IEnumerable<JobModel> Scoped => _jobs
+        .Where(x => string.IsNullOrEmpty(_companyFilter) || x.Company == _companyFilter)
+        .Where(x => IsContracted(x.IdApp, x.Company))
         .Where(x => !x.IsOnDemand || x.IdJob == _focusJob)
         .Where(x => _filter.IdApp is null || x.IdApp == _filter.IdApp);
 
@@ -268,7 +362,7 @@
 
     private IEnumerable<AppSummaryModel> FilteredApps => _apps
         .Where(x => _filter.IdApp is null || x.IdParent == _filter.IdApp)
-        .Where(x => NodesOf(x.IdParent, LoggedCompany.DocCompany).Count > 0);
+        .Where(x => CompaniesOf(x.IdParent).Count > 0);
 
     // os jobs mostrados no grupo: as integrações (sem as que só estão ali como cabeçalho) e as procedures
     private static List<JobModel> JobsIn(List<JobNode> nodes) =>
@@ -294,14 +388,12 @@
         _filter = _filter with { Period = period, IdApp = AppQuery ?? IdApp };
         _type = TypeQuery is 1 or 2 ? TypeQuery : null;
 
-        // sem situação na URL: as rotas antigas /applications/... mostravam todos; o menu, /integrations e /jobs, só os ativos
-        var oldJobsRoute = new Uri(Navigation.Uri).AbsolutePath.StartsWith("/applications", StringComparison.OrdinalIgnoreCase);
+        // sem situação na URL (o menu, /integrations, /jobs e as rotas antigas /applications/...): todos
         _status = StatusQuery switch
         {
             "active" => JobStatus.Active,
             "inactive" => JobStatus.Inactive,
-            "all" => JobStatus.All,
-            _ => oldJobsRoute ? JobStatus.All : JobStatus.Active
+            _ => JobStatus.All
         };
 
         var health = ParseHealth(HealthQuery);
@@ -334,10 +426,10 @@
     {
         await Snackbar.TryAsync(Logger, async () =>
         {
-            // as empresas da tela (todas, na visão "Todas as empresas"), cada job com a empresa dele
-            _apps = (await CompanyView.SummariesAsync(_filter.Period)).Where(x => x.IsContracted).ToList();
-            _jobs = await CompanyView.JobsAsync(idApp: null, idType: null);
-            _drafts.Queues = await CompanyView.QueuesAsync();
+            // as empresas da tela (a holding e as filiais, com a holding escolhida), cada job com a empresa dele
+            _apps = (await View.SummariesAsync(_filter.Period)).Where(x => x.IsContracted).ToList();
+            _jobs = await View.JobsAsync(idApp: null, idType: null);
+            _drafts.Queues = await View.QueuesAsync();
             _updatedAt = WebApp.Data.Sql.MainDatabase.LocalNow();
         }, "Não foi possível carregar os jobs.");
 
@@ -390,8 +482,9 @@
 
     private string? AppTitle(int idApp) => _apps.FirstOrDefault(x => x.IdParent == idApp)?.Title;
 
-    // o grupo de uma aplicação na empresa escolhida, com a agenda dela
-    private RenderFragment Group(AppSummaryModel app, string company) => __builder =>
+    // o grupo de uma aplicação numa empresa, com a agenda dela: o de sempre ou um bloco dentro da aplicação, com o nome da
+    // empresa no lugar do da aplicação (nested, com a holding escolhida e a aplicação em mais de uma empresa)
+    private RenderFragment Group(AppSummaryModel app, string company, bool nested) => __builder =>
     {
         var key = GroupKey(app.IdParent, company);
         var nodes = NodesOf(app.IdParent, company);
@@ -399,11 +492,30 @@
         var expanded = IsExpanded(key);
         var scheduling = _scheduleApps.Contains(key);
 
-            <div class="app-group" @key="key">
+            <div class="@(nested ? "app-group company-group" : "app-group")" @key="key">
                 <div class="app-group-head" role="button" tabindex="0" aria-expanded="@(expanded ? "true" : "false")" @onclick="@(() => ToggleApp(key))" @onkeydown="@(e => OnAppKeyDown(e, key))">
                     <MudIcon Icon="@(expanded ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)" Size="Size.Small" />
-                    <MudText Typo="Typo.subtitle2" Style="white-space: nowrap">@app.IdParent - @app.Title</MudText>
-                    <MudText Typo="Typo.caption" Class="app-group-description d-none d-md-block">@app.Description</MudText>
+                    @if (nested)
+                    {
+                        <MudText Typo="Typo.subtitle2" Style="white-space: nowrap">@LoggedCompany.CompanyLabel(company)</MudText>
+                        <MudText Typo="Typo.caption" Class="app-group-description">@company</MudText>
+                        @if (company == LoggedCompany.Holder)
+                        {
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Warning">holding</MudChip>
+                        }
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.subtitle2" Style="white-space: nowrap">@app.IdParent - @app.Title</MudText>
+                        <MudText Typo="Typo.caption" Class="app-group-description d-none d-md-block">@app.Description</MudText>
+                        @* holding escolhida e a aplicação numa filial só: o nome da filial ao lado *@
+                        @if (Summed && company != LoggedCompany.Holder)
+                        {
+                            <MudTooltip Text="@company">
+                                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary">@LoggedCompany.CompanyLabel(company)</MudChip>
+                            </MudTooltip>
+                        }
+                    }
 
                     @* no celular, os números, os chips e o botão Agenda descem para a segunda linha *@
                     <div class="app-group-meta">
