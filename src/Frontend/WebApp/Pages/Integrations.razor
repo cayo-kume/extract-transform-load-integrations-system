@@ -2,6 +2,8 @@
 @page "/jobs"
 @page "/applications/jobs"
 @page "/applications/{IdApp:int}/jobs"
+@inject LoggedCompany LoggedCompany
+@inject IModuleParametersRepository ParametersRepository
 @inject IDialogService DialogService
 @inject IMonitorRepository MonitorRepository
 @inject NavigationManager Navigation
@@ -571,6 +573,11 @@
     private async Task ToggleJob(JobModel job)
     {
         var isActive = !job.IsActive;
+
+        // módulo com API externa: só ativa com a credencial da empresa gravada (e a confirmação de que vai chamar a API)
+        if (isActive && !await CredentialDialog.EnsureAsync(DialogService, ParametersRepository, LoggedCompany, job.IdApp, $"o {job.IdJob} {job.Title}"))
+            return;
+
         var key = (job.IdJob, job.IdType);
         _saving.Add(key);
 
@@ -640,7 +647,7 @@
 
         try
         {
-            if (await _drafts.ConfirmAndSaveAsync(DialogService, Snackbar, Logger, MonitorRepository, app.Title, jobs) > 0)
+            if (await _drafts.ConfirmAndSaveAsync(DialogService, Snackbar, Logger, MonitorRepository, LoggedCompany.Label, app.Title, jobs) > 0)
                 await Load();
         }
         finally

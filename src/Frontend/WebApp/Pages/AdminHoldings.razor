@@ -1,0 +1,187 @@
+@page "/admin/holdings"
+@layout BlankLayout
+@inject AdminAccess AdminAccess
+@inject ICompanyRepository CompanyRepository
+@inject LoggedCompanyStorage CompanyStorage
+@inject IDialogService DialogService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject ILogger<AdminHoldings> Logger
+
+@* Visão do administrador: todas as holdings e as empresas de cada uma, fora do painel (sem menu e sem o seletor do topo).
+   É a cópia do Primeiro acesso de 05/11/2026, guardada para o futuro perfil de administrador; enquanto ele não existe, abre
+   só com Admin:Enabled e não tem link em nenhuma tela. O Primeiro acesso (/registration) mostra só a holding cadastrada
+   nele. docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md. Módulos, credenciais e jobs ficam no painel, por empresa. *@
+
+<PageTitle>Holdings e Empresas</PageTitle>
+
+<div class="registration-page">
+    <div class="d-flex align-center flex-wrap gap-3 mb-4">
+        <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack" Href="/">Voltar à tela inicial</MudButton>
+        <MudSpacer />
+        <MudText Typo="Typo.caption">Administrador · todas as holdings</MudText>
+    </div>
+
+    <PageHeader Icon="@Icons.Material.Filled.Domain" Title="Holdings e Empresas" Subtitle="As holdings clientes e as empresas (CNPJs) de cada uma" />
+
+    @if (!AdminAccess.IsAllowed)
+    {
+        <MudAlert Severity="Severity.Warning" Class="mt-4">O cadastro é só para administrador (Admin:Enabled em Development, até a autenticação).</MudAlert>
+    }
+    else if (_loading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mt-4" />
+    }
+    else
+    {
+        <MudGrid Class="mt-2">
+            <MudItem xs="12" md="5">
+                <div class="d-flex align-center mb-2">
+                    <MudText Typo="Typo.h6">Holdings</MudText>
+                    <MudSpacer />
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="NewHolder">Nova holding</MudButton>
+                </div>
+                <MudTable T="HolderModel" Items="_holders" Hover="true" Dense="true" Outlined="true" Elevation="0" OnRowClick="@(args => SelectHolder(args.Item!))"
+                          RowClassFunc="@((holder, _) => holder.Holder == _holder?.Holder ? "registration-selected" : "registration-row")">
+                    <HeaderContent>
+                        <MudTh>Holding</MudTh>
+                        <MudTh>CNPJ</MudTh>
+                        <MudTh>Empresas</MudTh>
+                        <MudTh></MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Holding"><b>@context.Label</b></MudTd>
+                        <MudTd DataLabel="CNPJ">@context.Holder</MudTd>
+                        <MudTd DataLabel="Empresas">@context.Companies</MudTd>
+                        <MudTd>
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" aria-label="Editar a holding" OnClick="@(() => EditHolder(context))" />
+                        </MudTd>
+                    </RowTemplate>
+                    <NoRecordsContent>
+                        <MudText Typo="Typo.body2">Nenhuma holding cadastrada: comece por <b>Nova holding</b>.</MudText>
+                    </NoRecordsContent>
+                </MudTable>
+            </MudItem>
+
+            <MudItem xs="12" md="7">
+                @if (_holder is not null)
+                {
+                    <div class="d-flex align-center flex-wrap gap-2 mb-2">
+                        <MudText Typo="Typo.h6">Empresas da @_holder.Label</MudText>
+                        <MudSpacer />
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="NewCompany">Nova empresa</MudButton>
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" EndIcon="@Icons.Material.Filled.ArrowForward" Disabled="_company is null" OnClick="OpenPanel">Abrir painel</MudButton>
+                    </div>
+                    <MudTable T="CompanyModel" Items="_companies" Hover="true" Dense="true" Outlined="true" Elevation="0" OnRowClick="@(args => _company = args.Item)"
+                              RowClassFunc="@((company, _) => company.Company == _company?.Company ? "registration-selected" : "registration-row")">
+                        <HeaderContent>
+                            <MudTh>Empresa</MudTh>
+                            <MudTh>CNPJ</MudTh>
+                            <MudTh>Credenciais</MudTh>
+                            <MudTh></MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="Empresa">
+                                <b>@context.Label</b>
+                                @if (context.IsHolder)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Warning" Class="ml-2">holding</MudChip>
+                                }
+                            </MudTd>
+                            <MudTd DataLabel="CNPJ">@context.Company</MudTd>
+                            <MudTd DataLabel="Credenciais">
+                                @foreach (var idParent in context.Modules)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@(ModuleDefinitions.Find(idParent)?.Title ?? idParent.ToString())</MudChip>
+                                }
+                            </MudTd>
+                            <MudTd>
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" aria-label="Editar a empresa" OnClick="@(() => EditCompany(context))" />
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                    <MudText Typo="Typo.caption" Class="mt-2 d-block">Escolha a empresa na lista e clique em <b>Abrir painel</b>. No painel, o seletor do topo troca de empresa.</MudText>
+                }
+            </MudItem>
+        </MudGrid>
+    }
+</div>
+
+@code {
+    private bool _loading = true;
+    private IReadOnlyList<HolderModel> _holders = [];
+    private IReadOnlyList<CompanyModel> _companies = [];
+    private HolderModel? _holder;
+    private CompanyModel? _company;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AdminAccess.IsAllowed)
+            await LoadAsync(selectHolder: null);
+    }
+
+    private async Task LoadAsync(string? selectHolder, string? selectCompany = null)
+    {
+        try
+        {
+            _holders = await CompanyRepository.GetHoldersAsync();
+            var holder = _holders.FirstOrDefault(x => x.Holder == (selectHolder ?? _holder?.Holder)) ?? _holders.FirstOrDefault();
+            await SelectHolder(holder, selectCompany);
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Não foi possível ler as holdings.");
+            Snackbar.Add("Não foi possível ler as holdings.", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task SelectHolder(HolderModel? holder, string? selectCompany = null)
+    {
+        _holder = holder;
+        _companies = holder is null ? [] : await CompanyRepository.GetCompaniesAsync(holder.Holder);
+        _company = _companies.FirstOrDefault(x => x.Company == selectCompany) ?? _companies.FirstOrDefault();
+    }
+
+    private async Task NewHolder()
+    {
+        if (await CompanyFormDialog.ShowAsync(DialogService) is { } holder)
+        {
+            Snackbar.Add($"Holding {holder} cadastrada, com os jobs dos hosts (inativos) e o primeiro usuário, que já pode entrar.", Severity.Success);
+            await LoadAsync(holder);
+        }
+    }
+
+    private async Task EditHolder(HolderModel holder)
+    {
+        if (await CompanyFormDialog.ShowAsync(DialogService, document: holder.Holder, fantasyName: holder.FantasyName) is not null)
+            await LoadAsync(holder.Holder, _company?.Company);
+    }
+
+    private async Task NewCompany()
+    {
+        if (_holder is not null && await CompanyFormDialog.ShowAsync(DialogService, _holder.Holder, _holder.Label) is { } company)
+        {
+            Snackbar.Add($"Empresa {company} cadastrada na {_holder.Label}.", Severity.Success);
+            await LoadAsync(_holder.Holder, company);
+        }
+    }
+
+    private async Task EditCompany(CompanyModel company)
+    {
+        if (await CompanyFormDialog.ShowAsync(DialogService, company.Holder, _holder?.Label, company.Company, company.FantasyName) is not null)
+            await LoadAsync(company.Holder, company.Company);
+    }
+
+    private async Task OpenPanel()
+    {
+        if (_holder is null || _company is null)
+            return;
+
+        await CompanyStorage.SelectAsync(_holder.Holder, _company.Company);
+        Navigation.NavigateTo("/home", forceLoad: true);
+    }
+}

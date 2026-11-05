@@ -14,7 +14,7 @@ namespace Worker.Scheduling
     /// no máximo, no ciclo seguinte. Entra o job de integração ativo, com método no mapa e agenda que vira cron; sai o que ficou
     /// inativo, sem intervalo ou saiu do mapa. Só mexe no grupo integrations. Com dois Workers, uma releitura por vez: o
     /// [DisallowConcurrentExecution] e a trava job:scheduler-refresh, como no Hangfire (§5.3, item 4).
-    /// Um job do Quartz por (job, empresa ativa) (docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.4), com a empresa no nome e no JobDataMap
+    /// Um job do Quartz por (job, empresa) de auditing.Jobs (docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md), com a empresa no nome e no JobDataMap
     /// </summary>
     [DisallowConcurrentExecution]
     public class SchedulerRefreshJob : IJob

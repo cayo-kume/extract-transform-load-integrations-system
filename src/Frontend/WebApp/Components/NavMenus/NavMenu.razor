@@ -16,4 +16,14 @@
     {
         <MudNavLink Href="/queries" Match="NavLinkMatch.Prefix">Executar Querys</MudNavLink>
     }
+    @if (AdminAccess.IsAllowed)
+    {
+        @* a holding nasce na tela inicial (Primeiro acesso); aqui, as empresas e os usuários da holding logada. Módulos e
+           credenciais ficam na engrenagem de cada aplicação, na tela Aplicações *@
+        <MudNavGroup Title="Cadastros" Expanded="true">
+            <MudNavLink Href="/companies" Match="NavLinkMatch.Prefix">Cadastrar Empresas</MudNavLink>
+            <MudNavLink Href="/users" Match="NavLinkMatch.Prefix">Cadastrar Usuário</MudNavLink>
+        </MudNavGroup>
+        <MudNavLink Href="/scheduling-hosts" Match="NavLinkMatch.Prefix">Hosts de Agenda</MudNavLink>
+    }
 </MudNavMenu>

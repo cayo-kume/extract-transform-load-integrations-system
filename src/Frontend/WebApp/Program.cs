@@ -1,4 +1,5 @@
 using System.Globalization;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 using MudBlazor.Services;
@@ -18,10 +19,27 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddMudServices();
+
+// Login do painel (monitor.Users): a tela inicial confere usuário e senha e o /account/signin grava o cookie; sem ele, o
+// MainLayout volta para a tela inicial. Holding e empresa do usuário vão nas claims (UserClaims)
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.Cookie.Name = "etl-monitor";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.LoginPath = "/";
+        options.ExpireTimeSpan = TimeSpan.FromHours(8);
+        options.SlidingExpiration = true;
+    });
+builder.Services.AddAuthorization();
+builder.Services.AddCascadingAuthenticationState();
+builder.Services.AddSingleton<SignInTickets>();
 builder.Services.AddTransient<MudLocalizer, PortugueseMudLocalizer>();
 
-// Empresa logada (LoggedCompany:DocCompany e LoggedCompany:Name): fixa por configuração até a fase 6 (autenticação)
-WebApp.Models.LoggedCompany.Configure(builder.Configuration);
+// Holding e empresa da aba (seletor do topo); a primeira escolha vem de LoggedCompany:DocCompany e LoggedCompany:Name
+builder.Services.AddScoped<WebApp.Models.LoggedCompany>();
+builder.Services.AddScoped<LoggedCompanyStorage>();
 
 // Último período escolhido, por aba (circuito): acompanha o usuário entre as telas quando a URL não traz ?period=
 builder.Services.AddScoped<FilterSession>();
@@ -36,9 +54,10 @@ if (builder.Configuration.GetValue<bool>("Database:Enabled"))
 {
     builder.Services.AddMemoryCache();
     builder.Services.AddSingleton<WebApp.Data.Sql.MainDatabase>();
-    builder.Services.AddSingleton<IMonitorRepository, WebApp.Data.Sql.SqlMonitorRepository>();
+    builder.Services.AddScoped<IMonitorRepository, WebApp.Data.Sql.SqlMonitorRepository>();
     builder.Services.AddSingleton<IQueryRunner, WebApp.Data.Sql.SqlQueryRunner>();
     builder.Services.AddSingleton<ICompanyRepository, WebApp.Data.Sql.SqlCompanyRepository>();
+    builder.Services.AddSingleton<IUserRepository, WebApp.Data.Sql.SqlUserRepository>();
     builder.Services.AddSingleton<IModuleParametersRepository, WebApp.Data.Sql.SqlModuleParametersRepository>();
 }
 else
@@ -47,6 +66,7 @@ else
     builder.Services.AddSingleton<IQueryRunner, MockQueryRunner>();
     builder.Services.AddSingleton<MockCompanyStore>();
     builder.Services.AddSingleton<ICompanyRepository, MockCompanyRepository>();
+    builder.Services.AddSingleton<IUserRepository, MockUserRepository>();
     builder.Services.AddSingleton<IModuleParametersRepository, MockModuleParametersRepository>();
 }
 
@@ -56,8 +76,8 @@ builder.Services.AddSingleton<MockTimeline>();
 builder.Services.AddSingleton<IOnDemandRunner, MockOnDemandRunner>();
 
 // Assistente de IA (Claude, API da Anthropic): só leitura, chave em Assistant:ApiKey nos User Secrets
-builder.Services.AddSingleton<AssistantTools>();
-builder.Services.AddSingleton<ClaudeAssistant>();
+builder.Services.AddScoped<AssistantTools>();
+builder.Services.AddScoped<ClaudeAssistant>();
 
 var app = builder.Build();
 
@@ -71,11 +91,15 @@ if (!app.Environment.IsDevelopment())
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
+app.UseAuthorization();
 app.UseAntiforgery();
 
 // Arquivos da pasta wwwroot (e do MudBlazor) com endereço versionado pelo conteúdo: o App.razor usa @Assets[...], e o
 // navegador baixa o arquivo novo assim que ele muda, sem ficar com o CSS antigo em cache
 app.MapStaticAssets();
+
+app.MapAccountEndpoints();
 
 // Mapeia os componentes e define a renderização via WebSocket (Server)
 app.MapRazorComponents<App>()

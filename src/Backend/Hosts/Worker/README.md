@@ -52,7 +52,7 @@ flowchart LR
         W2["Worker B<br/>(opcional)"]
     end
     CLUSTER -- "check-in a cada 20 s" --> QZ[("schema quartz<br/>QRTZ_*")]
-    CLUSTER -- "SchedulerRefreshJob" --> AJ[("auditing.Jobs<br/>monitor.Company")]
+    CLUSTER -- "SchedulerRefreshJob" --> AJ[("auditing.Jobs<br/>auditing.Companies")]
     CLUSTER -- "IJobLock" --> LK[("sp_getapplock<br/>banco das integrações")]
     CLUSTER -- "execuções" --> LOG[("auditing.Logs<br/>Messages · Records")]
     LOG --> PANEL["🖥️ painel do WebApp"]
@@ -93,12 +93,11 @@ mas **só um agenda por vez** no mesmo banco.
 
 ## ▶️ Como rodar no local
 
-A connection string fica fora do `appsettings.json`: user-secrets (o projeto já tem o `UserSecretsId`) ou variável de
-ambiente.
-
-```bash
-dotnet user-secrets set "ConnectionStrings:Connection" "<connection string>" --project src/Backend/Hosts/Worker
-```
+A connection string (`Connection`) fica no `appsettings.json`, gravada pelo `tools/migrators/Invoke-Migrators.ps1` no
+fim da migração (em produção, variável de ambiente). Na máquina de desenvolvimento, os User Secrets do Worker são
+gravados à mão: `Quartz:Enabled` (`true` se o Worker for o host de agenda, `false` se for outro), as `BaseUrl` em `http://127.0.0.1:9/`
+para testes sem chamar as APIs (`AfterSale:BaseUrl`, `Movidesk:BaseUrl`, `LinxMicrovix:BaseUrl`, `Totvs:BaseUrl`) e,
+opcional, `DataWarehouse:Pepper`.
 
 O banco precisa das tabelas do Quartz. O migrator do host roda **depois do migrator do Shared** (ver
 [MIGRATOR-CSX.md](../../../../docs/MIGRATOR-CSX.md)). O jeito mais simples é a tela
@@ -120,8 +119,8 @@ dotnet run --project src/Backend/Hosts/Worker
 ```
 
 No console, o host sobe igual ao serviço (o `AddWindowsService` só age dentro de um serviço). Com `Quartz:Enabled = false`
-ele sobe sem agendar nada, para conferir configuração e conexão. Sem nenhuma empresa ativa em `monitor.Company` (com os
-módulos contratados), a agenda fica vazia.
+ele sobe sem agendar nada, para conferir configuração e conexão. Sem nenhuma empresa em `auditing.Companies` com os
+módulos contratados e jobs ativos, a agenda fica vazia.
 
 > [!CAUTION]
 > Testes de banco: num banco de teste na instância SQL Server do Docker, nunca no LocalDB. **Um banco carregado pelo
@@ -162,7 +161,7 @@ Os mapas `IdJob → método` (`RecurringJobs/`), o `JobCron` e o `ScheduledJobRu
 | Seção | Uso |
 |---|---|
 | `ConnectionStrings:Connection` | banco das integrações (módulos, `auditing`, `monitor`, tabelas do Quartz e a trava de concorrência) |
-| `ConnectionStrings:AuditingConnection` | opcional: banco de `auditing`. Sem ela, o Shared usa a `Connection` trocando `NEWBLOOMERS` por `AUDITING` no nome |
+| `ConnectionStrings:AuditingConnection` | opcional: banco de `auditing` em outro banco. Sem ela, o Shared usa a própria `Connection` (auditing fica no mesmo banco) |
 | `Quartz` | o agendador (tabela abaixo) |
 | `Service:Name` | nome do serviço do Windows e origem no Log de Eventos (`EtlWorker`); o script grava o do perfil |
 | `Logging:EventLog` | o que vai para o Log de Eventos (`Warning` para cima) |
@@ -205,7 +204,7 @@ A agenda vem de `auditing.Jobs`, com as mesmas colunas e regras do Hangfire do W
 | `IntervalTimeInMinutes` | intervalo; 0 = sob demanda, fora da agenda |
 | `RunningDailyAt` | preenchida, o job é diário e roda nessa hora (só com intervalo 1440) |
 | `Queue` | não usada neste host (é a fila do Hangfire) |
-| `Company` | empresa (holding) da linha; só entram as empresas ativas em `monitor.Company` |
+| `Holder`, `Company` | holding e empresa da linha: uma linha por (job, empresa) |
 
 **Do registro ao cron do Quartz:** 3 vira `0 */3 * * * ?`, 60 vira `0 0 * * * ?`, 120 vira `0 0 */2 * * ?` e um diário
 às 23:00 vira `0 0 23 * * ?`, no fuso de `Quartz:TimeZone`. Um intervalo que não divide a hora nem o dia fica fora, com
@@ -213,20 +212,20 @@ aviso no log.
 
 **O `SchedulerRefreshJob`** roda na subida e a cada `Schedule:RefreshIntervalInMinutes`: lê `auditing.Jobs` e, no grupo
 `integrations` do Quartz, agenda os jobs novos, troca o trigger dos que mudaram e apaga os que ficaram inativos, sem
-intervalo ou saíram do mapa (uma execução em andamento termina normalmente). Há **um job do Quartz por (job, empresa
-ativa em `monitor.Company`)**, chamado `<IdJob>-<Title> - V<versão> - <empresa>`, com o `IdJob` e a empresa no
-`JobDataMap`; a execução roda com essa empresa (`ScheduledJobRunner.Run(definição, empresa)`). Uma empresa desativada sai
-da agenda na releitura seguinte. Um `UPDATE` na tabela vale, no máximo, na releitura seguinte; o resumo de cada releitura
+intervalo ou saíram do mapa (uma execução em andamento termina normalmente). Há **um job do Quartz por (job, empresa)
+de `auditing.Jobs`**, chamado `<IdJob>-<Title> - V<versão> - <empresa>`, com o `IdJob` e a empresa no
+`JobDataMap`; a execução roda com essa empresa (`ScheduledJobRunner.Run(definição, empresa)`, que acha a holding em
+`auditing.Companies`). Um `UPDATE` na tabela vale, no máximo, na releitura seguinte; o resumo de cada releitura
 vai para o log (`Agenda: N job(s) na agenda...`).
 
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
 flowchart LR
-    T["⏰ SchedulerRefreshJob<br/>subida + a cada 10 min"] --> R[("auditing.Jobs<br/>empresas ativas")]
+    T["⏰ SchedulerRefreshJob<br/>subida + a cada 10 min"] --> R[("auditing.Jobs<br/>uma linha por empresa")]
     R --> D{"para cada<br/>(job, empresa)"}
     D -- "novo e ativo" --> ADD["➕ agenda<br/>IdJob-Title - Vx.y.z - empresa"]
     D -- "intervalo ou hora mudou" --> UPD["✏️ troca o trigger"]
-    D -- "inativo, sem intervalo,<br/>empresa off ou fora do mapa" --> DEL["🗑️ apaga do grupo<br/>integrations"]
+    D -- "inativo, sem intervalo<br/>ou fora do mapa" --> DEL["🗑️ apaga do grupo<br/>integrations"]
     D -- "versão nova" --> VER["🔁 troca o job antigo<br/>pelo novo"]
     ADD & UPD & DEL & VER --> SUM["📝 Agenda: N job(s)<br/>no log"]
 
@@ -238,7 +237,7 @@ flowchart LR
 
 ```sql
 -- liga um job de uma empresa
-UPDATE [auditing].[Jobs] SET IsActive = 1 WHERE IdType = 2 AND IdJob = 3000 AND Company = '<CNPJ da holding>';
+UPDATE [auditing].[Jobs] SET IsActive = 1 WHERE IdType = 2 AND IdJob = 3000 AND Company = '<CNPJ da empresa>';
 
 -- liga um módulo inteiro, pela faixa de IdJob (ex.: Movidesk, 3000 a 3499)
 UPDATE [auditing].[Jobs] SET IsActive = 1 WHERE IdType = 2 AND IdJob BETWEEN 3000 AND 3499 AND IntervalTimeInMinutes > 0;
@@ -464,11 +463,11 @@ C4, C4b, C5, C6, A1, A2, A3, A6 e A8), com os 12 jobs do conjunto mínimo a cada
 
 ## ➕ Um job ou um módulo novo
 
-* **Job recorrente novo num módulo do host:** a linha no script de jobs da service (vai para `auditing.JobCatalog`, com
-  `RunningDailyAt` e `Queue`, ver [PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md](../../../../docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md)
+* **Job recorrente novo num módulo do host:** a linha no script de jobs da service (vai para `auditing.Catalog`, sem agenda;
+  a agenda sugerida é uma linha na [`docs/AGENDA-SUGERIDA-JOBS.csv`](../../../../docs/AGENDA-SUGERIDA-JOBS.csv), ver [PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md](../../../../docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md)
   §3.1), a entrada no mapa do módulo em `src/Backend/Hosts/Hosts.Scheduling/RecurringJobs/<Módulo>RecurringJobs.cs` e
   `[JobVersion("1.0.0")]` no método da classe do service. Para as empresas que já têm o módulo,
-  `auditing.sp_Add_Company_App` de novo cria a linha em `auditing.Jobs` (inativa, sem duplicar). Ligado em
+  contratar o módulo de novo no WebApp cria a linha em `auditing.Jobs` (inativa, sem duplicar). Ligado em
   `auditing.Jobs`, ele entra na agenda na releitura seguinte, sem republicar.
 * **Módulo novo:** referência no `Worker.csproj` e registro no `ServicesExtensions.AddServices` (também no WebApi e no
   WebJob), o mapa `<Módulo>RecurringJobs.cs` incluído no `RecurringJobMap` e o script de jobs com as colunas novas.

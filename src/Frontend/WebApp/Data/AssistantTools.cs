@@ -9,7 +9,7 @@ namespace WebApp.Data
     /// Ferramentas do assistente: só leitura, em cima do IMonitorRepository (os mesmos dados das telas, da empresa logada).
     /// Nenhuma executa, reconhece, liga ou desliga nada, nem vê credenciais e parâmetros dos módulos.
     /// </summary>
-    public class AssistantTools(IMonitorRepository repository)
+    public class AssistantTools(IMonitorRepository repository, LoggedCompany loggedCompany)
     {
         // limite de itens por resposta: a ferramenta devolve o essencial e diz quantos ficaram de fora
         private const int MaxItems = 30;
@@ -117,7 +117,7 @@ namespace WebApp.Data
 
             return new
             {
-                empresa = LoggedCompany.Label,
+                empresa = loggedCompany.Label,
                 contagem = jobs.GroupBy(x => x.Health?.ToString() ?? "SemExecucao").ToDictionary(x => x.Key, x => x.Count()),
                 total = matching.Count,
                 mostrados = Math.Min(matching.Count, MaxItems),
@@ -146,7 +146,7 @@ namespace WebApp.Data
 
             return new
             {
-                empresa = LoggedCompany.Label,
+                empresa = loggedCompany.Label,
                 periodo = MonitorDisplay.PeriodQuery(period),
                 aplicacoes = apps.Select(x => new
                 {

@@ -1,25 +1,28 @@
 #Requires -Version 7
 <#
 .SYNOPSIS
-    Carrega uma empresa de teste completa num banco já migrado: a empresa, os parâmetros (credenciais) de cada módulo e os
-    jobs dela, sem passar pela tela de cadastro (docs/PLANO-TELA-CADASTRO-EMPRESA.md, seção 3 e fase 4.2).
+    Carrega uma holding de teste completa num banco já migrado: a holding, as empresas dela, os parâmetros (credenciais) de
+    cada módulo e os jobs de cada empresa, sem passar pela tela de cadastro (docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md).
 
 .DESCRIPTION
     Os migrators (migrator.csx) criam só a estrutura e o catálogo do produto. Este script faz o que a tela de cadastro vai
     fazer, a partir dos scripts que ficam em Infrastructure.<Módulo>/Seeds/SQLServer:
 
-    1. confere que o banco existe e que os migrators já rodaram (auditing.JobCatalog com jobs e monitor.Company);
-    2. cadastra a empresa com auditing.sp_Add_Company (que já cria os jobs dos hosts dela, como o 14000);
+    1. confere que o banco existe e que os migrators já rodaram (auditing.Catalog com jobs e auditing.Holders);
+    2. cadastra a holding em auditing.Holders e a empresa que é a própria holding em auditing.Companies (Company = Holder),
+       com os jobs dos hosts (IdParent 140, como o 14000);
     3. para cada módulo, roda o script de parâmetros de Seeds/SQLServer numa transação. Rodar de novo não duplica: a linha
        de um CNPJ que já tinha parâmetros no módulo é descartada (a regra é uma linha por CNPJ em cada *Parameters);
-    4. liga cada CNPJ (doc_company) do script de parâmetros à empresa em monitor.HoldingCompanies, com
-       auditing.sp_Add_Holding_Company: os parâmetros não mudam, a holding só entra se tiver parâmetros com o CNPJ dela;
-    5. para cada módulo, chama auditing.sp_Add_Company_App, que copia os jobs do catálogo para a empresa, inativos.
+    4. cadastra cada CNPJ (doc_company) do script de parâmetros como empresa da holding em auditing.Companies; um CNPJ que
+       já é de outra holding vira aviso;
+    5. para cada módulo, cria os jobs dele (auditing.fn_CatalogTree) em cada empresa da holding com parâmetros no módulo,
+       inativos e com a agenda sugerida de docs/AGENDA-SUGERIDA-JOBS.csv. O DataWarehouse, sem parâmetros, fica na empresa
+       que é a própria holding.
 
-    Ativar jobs não é com este script: é na tela tools/hosts/Invoke-HostsConfig.ps1, que só ativa os jobs de um módulo com
+    Ativar jobs não é com este script: é no WebApp (tela Integrações), que só ativa os jobs de um módulo com
     a credencial dele cadastrada.
 
-    No fim, avisa sobre CNPJs das tabelas *Parameters que não estão em monitor.HoldingCompanies (nenhum serviço os lê).
+    No fim, avisa sobre CNPJs das tabelas *Parameters que não estão em auditing.Companies (nenhum serviço os lê).
 
     Os scripts de parâmetros têm credenciais reais. Os jobs ficam inativos e, antes de subir um host contra o banco de
     teste, aponte <Módulo>__BaseUrl para http://127.0.0.1:9/ para nenhum job chamar a API de verdade.
@@ -35,11 +38,12 @@
 .PARAMETER Credential
     Usuário e senha do SQL Server; sem ele, o script pede com Get-Credential.
 
-.PARAMETER Company
-    CNPJ da empresa (só dígitos); sem ele, a holding NEWBLOOMERS (44065634000106).
+.PARAMETER Holder
+    CNPJ da holding (só dígitos); sem ele, a NEWBLOOMERS (44065634000106).
 
-.PARAMETER CompanyName
-    Razão social gravada em monitor.Company quando a empresa ainda não existe; sem ele, NEWBLOOMERS.
+.PARAMETER HolderName
+    Nome fantasia gravado em auditing.Holders (e na empresa que é a própria holding) quando ela ainda não existe; sem ele,
+    NEWBLOOMERS.
 
 .PARAMETER Modules
     Só estes módulos (Totvs, LinxMicrovix, LinxCommerce, Movidesk, AfterSale, DataWarehouse); sem ele, todos.
@@ -60,14 +64,16 @@ param(
     [string]$Server = 'localhost,1433',
     [pscredential]$Credential,
     [ValidatePattern('^[0-9]+$')]
-    [string]$Company = '44065634000106',
-    [string]$CompanyName = 'NEWBLOOMERS',
+    [string]$Holder = '44065634000106',
+    [string]$HolderName = 'NEWBLOOMERS',
     [ValidateSet('Totvs', 'LinxMicrovix', 'LinxCommerce', 'Movidesk', 'AfterSale', 'DataWarehouse')]
     [string[]]$Modules,
     [switch]$Force
 )
 
 $ErrorActionPreference = 'Stop'
+
+. (Join-Path $PSScriptRoot 'JobAgenda.ps1')
 
 # ---------------------------------------------------------------------------------------------------------------------
 # módulos: IdParent em auditing.Apps, tabela de parâmetros e pasta da infraestrutura (a partir de src/Backend/Modules)
@@ -133,6 +139,20 @@ function Invoke-Sql {
     @($output | ForEach-Object { "$_".Trim() } | Where-Object { $_ })
 }
 
+# um script grande (a agenda sugerida passa do limite da linha de comando) vai por arquivo temporário
+function Invoke-SqlScript {
+    param([string]$Script)
+
+    $file = New-TemporaryFile
+    try {
+        Set-Content -LiteralPath $file -Encoding utf8 -Value $Script
+        Invoke-Sql -InputFile $file
+    }
+    finally {
+        Remove-Item -LiteralPath $file -ErrorAction SilentlyContinue
+    }
+}
+
 # a última linha "CHAVE=valor" da saída
 function Get-Marker {
     param([string[]]$Lines, [string]$Name)
@@ -154,23 +174,29 @@ function Get-Markers {
 # ---------------------------------------------------------------------------------------------------------------------
 
 $check = Invoke-Sql -Query @"
-SELECT CONCAT('CATALOG=', CASE WHEN OBJECT_ID('auditing.JobCatalog') IS NULL THEN -1 ELSE (SELECT COUNT(*) FROM auditing.JobCatalog) END);
-SELECT CONCAT('COMPANY=', CASE WHEN OBJECT_ID('monitor.Company') IS NULL THEN 0 ELSE 1 END);
+SELECT CONCAT('CATALOG=', CASE WHEN OBJECT_ID('auditing.Catalog') IS NULL THEN -1 ELSE (SELECT COUNT(*) FROM auditing.Catalog) END);
+SELECT CONCAT('HOLDERS=', CASE WHEN OBJECT_ID('auditing.Holders') IS NULL THEN 0 ELSE 1 END);
 "@
-if ((Get-Marker $check 'CATALOG') -le 0 -or (Get-Marker $check 'COMPANY') -ne 1) {
-    throw "O banco '$Database' não tem auditing.JobCatalog com jobs ou monitor.Company: rode os migrators antes (docs/MIGRATOR-CSX.md)."
+if ((Get-Marker $check 'CATALOG') -le 0 -or (Get-Marker $check 'HOLDERS') -ne 1) {
+    throw "O banco '$Database' não tem auditing.Catalog com jobs ou auditing.Holders: rode os migrators antes (docs/MIGRATOR-CSX.md)."
 }
 
 # ---------------------------------------------------------------------------------------------------------------------
-# 2. empresa
+# 2. holding, a empresa que é a própria holding e os jobs dos hosts
 # ---------------------------------------------------------------------------------------------------------------------
 
-$safeName = $CompanyName.Replace("'", "''")
-$null = Invoke-Sql -Query "EXEC auditing.sp_Add_Company @company = '$Company', @name = N'$safeName';"
-Write-Host "Empresa $Company cadastrada (ou já existente), com os jobs dos hosts."
+$safeName = $HolderName.Replace("'", "''")
+$null = Invoke-Sql -Query @"
+IF NOT EXISTS (SELECT 1 FROM auditing.Holders WHERE Document = '$Holder')
+    INSERT INTO auditing.Holders (Document, FantasyName) VALUES ('$Holder', '$safeName');
+IF NOT EXISTS (SELECT 1 FROM auditing.Companies WHERE Company = '$Holder')
+    INSERT INTO auditing.Companies (Company, Holder, FantasyName) VALUES ('$Holder', '$Holder', '$safeName');
+"@
+$hostJobs = Get-Marker (Invoke-SqlScript (Get-AddJobsSql -Holder $Holder -Company $Holder -IdParent 140)) 'CREATED'
+Write-Host "Holding $Holder cadastrada (ou já existente), com $hostJobs job(s) novo(s) dos hosts."
 
 # ---------------------------------------------------------------------------------------------------------------------
-# 3 a 6. parâmetros, CNPJs da holding e jobs de cada módulo
+# 3 a 5. parâmetros, empresas da holding e jobs de cada módulo
 # ---------------------------------------------------------------------------------------------------------------------
 
 $summary = foreach ($name in $selected) {
@@ -225,35 +251,43 @@ GO
         }
     }
 
-    # um CNPJ de outra holding (ou que é outra empresa do painel) é recusado pela procedure e vira aviso
+    # cada CNPJ do script vira empresa da holding; um CNPJ que já é de outra holding vira aviso e fica sem jobs
     foreach ($doc in $docs) {
         if ($doc -notmatch '^[0-9]+$') {
-            $warnings.Add("doc_company '$doc' não é só dígitos: fora de monitor.HoldingCompanies")
+            $warnings.Add("doc_company '$doc' não é só dígitos: fora de auditing.Companies")
             continue
         }
-        try {
-            $null = Invoke-Sql -Query "EXEC auditing.sp_Add_Holding_Company @company = '$Company', @docCompany = '$doc';"
-        }
-        catch {
-            $warnings.Add("CNPJ $doc fora da holding: $(($_.Exception.Message -split "`n" | Where-Object { $_ -match 'holding|painel' } | Select-Object -First 1))")
-        }
+
+        $other = Invoke-Sql -Query @"
+IF NOT EXISTS (SELECT 1 FROM auditing.Companies WHERE Company = '$doc')
+    INSERT INTO auditing.Companies (Company, Holder) VALUES ('$doc', '$Holder');
+SELECT CONCAT('OTHER=', Holder) FROM auditing.Companies WHERE Company = '$doc' AND Holder <> '$Holder';
+"@
+        Get-Markers $other 'OTHER' | ForEach-Object { $warnings.Add("CNPJ $doc é da holding $_ em auditing.Companies: fica sem jobs desta") }
     }
 
-    $created = Get-Marker (Invoke-Sql -Query @"
-DECLARE @r TABLE (JobsCreated INT);
-INSERT INTO @r EXEC auditing.sp_Add_Company_App @company = '$Company', @idParent = $($module.IdParent);
-SELECT CONCAT('CREATED=', JobsCreated) FROM @r;
-"@) 'CREATED'
+    # as empresas da holding com parâmetros no módulo (as de cargas anteriores também); o DW fica na própria holding
+    $companies = if ($module.Table) {
+        Get-Markers (Invoke-Sql -Query "SELECT DISTINCT CONCAT('COMPANY=', c.Company) FROM $($module.Table) p JOIN auditing.Companies c ON c.Company = p.doc_company WHERE c.Holder = '$Holder';") 'COMPANY'
+    }
+    else {
+        @($Holder)
+    }
+
+    $created = 0
+    foreach ($company in $companies) {
+        $created += Get-Marker (Invoke-SqlScript (Get-AddJobsSql -Holder $Holder -Company $company -IdParent $module.IdParent)) 'CREATED'
+    }
 
     $state = Invoke-Sql -Query @"
-SELECT CONCAT('TOTAL=', COUNT(*)) FROM auditing.Jobs j JOIN auditing.fn_JobCatalogTree($($module.IdParent)) t ON t.IdJob = j.IdJob AND t.IdType = j.IdType WHERE j.Company = '$Company';
-SELECT CONCAT('ACTIVE=', COUNT(*)) FROM auditing.Jobs j JOIN auditing.fn_JobCatalogTree($($module.IdParent)) t ON t.IdJob = j.IdJob AND t.IdType = j.IdType WHERE j.Company = '$Company' AND IsActive = 1;
+SELECT CONCAT('TOTAL=', COUNT(*)) FROM auditing.Jobs j JOIN auditing.fn_CatalogTree($($module.IdParent)) t ON t.IdJob = j.IdJob AND t.IdType = j.IdType WHERE j.Holder = '$Holder';
+SELECT CONCAT('ACTIVE=', COUNT(*)) FROM auditing.Jobs j JOIN auditing.fn_CatalogTree($($module.IdParent)) t ON t.IdJob = j.IdJob AND t.IdType = j.IdType WHERE j.Holder = '$Holder' AND IsActive = 1;
 "@
 
     [pscustomobject]@{
         Modulo     = $name
         Parametros = if ($module.Table) { if ($null -ne $inserted) { "$inserted inserida(s)" } else { 'pulado' } } else { '-' }
-        CNPJs      = $docs -join ', '
+        Empresas   = $companies -join ', '
         JobsNovos  = $created
         Jobs       = Get-Marker $state 'TOTAL'
         Ativos     = Get-Marker $state 'ACTIVE'
@@ -261,16 +295,16 @@ SELECT CONCAT('ACTIVE=', COUNT(*)) FROM auditing.Jobs j JOIN auditing.fn_JobCata
     }
 }
 
-$summary | Select-Object Modulo, Parametros, CNPJs, JobsNovos, Jobs, Ativos | Format-Table -AutoSize | Out-String -Width 200 | Write-Host
+$summary | Select-Object Modulo, Parametros, Empresas, JobsNovos, Jobs, Ativos | Format-Table -AutoSize | Out-String -Width 200 | Write-Host
 
 $summary | ForEach-Object { $m = $_.Modulo; $_.Avisos | ForEach-Object { Write-Warning "${m}: $_" } }
 
-# CNPJs de parâmetros sem holding, em todos os módulos com tabela no banco: nenhum serviço os lê
+# CNPJs de parâmetros sem empresa, em todos os módulos com tabela no banco: nenhum serviço os lê
 $orphanQuery = ($catalog.Values | Where-Object Table | ForEach-Object {
-        "IF OBJECT_ID('$($_.Table)') IS NOT NULL SELECT DISTINCT CONCAT('ORPHAN=$($_.Table) ', p.doc_company) FROM $($_.Table) p WHERE NOT EXISTS (SELECT 1 FROM monitor.HoldingCompanies hc WHERE hc.Company = p.doc_company);"
+        "IF OBJECT_ID('$($_.Table)') IS NOT NULL SELECT DISTINCT CONCAT('ORPHAN=$($_.Table) ', p.doc_company) FROM $($_.Table) p WHERE NOT EXISTS (SELECT 1 FROM auditing.Companies c WHERE c.Company = p.doc_company);"
     }) -join "`n"
 Get-Markers (Invoke-Sql -Query $orphanQuery) 'ORPHAN' | ForEach-Object {
-    Write-Warning "CNPJ de parâmetro sem holding em monitor.HoldingCompanies (nenhum serviço lê): $_"
+    Write-Warning "CNPJ de parâmetro sem empresa em auditing.Companies (nenhum serviço lê): $_"
 }
 
 Write-Host 'Os scripts de parâmetros têm credenciais reais: antes de subir um host contra este banco, aponte' -ForegroundColor Yellow

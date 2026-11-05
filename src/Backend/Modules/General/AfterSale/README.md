@@ -59,7 +59,7 @@ Módulo do sistema de integrações (ETL) responsável por:
 | API consumida | Send4 / AfterSale — `https://api.send4.com.br/` |
 | Documentação da API | [AfterSale Public API 1.0.8 (SwaggerHub)](https://app.swaggerhub.com/apis/send42/public-api/1.0.8) |
 | Banco de dados | SQL Server (schemas `untreated`, `aftersale` e `auditing`; o `Script001` cria `aftersale` e `untreated` quando não existem) |
-| Multiempresa | Sim: cada CNPJ cadastrado em `aftersale.AfterSaleParameters` tem o seu token; o CNPJ (`doc_company`) faz parte da chave das tabelas. Cada execução é de uma **empresa do painel** (a holding, em `ICompanyContext`) e lê só os CNPJs ligados a ela em `monitor.HoldingCompanies` |
+| Multiempresa | Sim: cada CNPJ cadastrado em `aftersale.AfterSaleParameters` tem o seu token; o CNPJ (`doc_company`) faz parte da chave das tabelas. Cada execução é de uma **empresa** (`ICompanyContext`, com a holding dela em `auditing.Companies`) e lê só o token dessa empresa (`doc_company` = a empresa da execução) |
 | Host | `src/Backend/Hosts/WebApi` (controller `AfterSaleController`); agenda pelos hosts `WebApi` (Hangfire), `WebJob` ou `Worker` |
 
 ### Disclaimer sobre a documentação da API
@@ -225,7 +225,7 @@ Application.AfterSale/
 Todas as leituras seguem o mesmo desenho, documentado em [`docs/PADRAO-CACHE-INTEGRACOES.md`](../../../../../docs/PADRAO-CACHE-INTEGRACOES.md):
 
 1. abre um log em `auditing.Logs` com o job do método;
-2. para cada CNPJ da holding da execução (`AfterSaleParameters` ligado em `monitor.HoldingCompanies`), chama a API com o token da empresa (seguindo `next_page_url` nas rotas paginadas, com pausa para respeitar o limite de requisições da AfterSale);
+2. com o token da empresa da execução (`AfterSaleParameters` com `doc_company` = a empresa), chama a API (seguindo `next_page_url` nas rotas paginadas, com pausa para respeitar o limite de requisições da AfterSale);
 3. monta um cache em memória (`IMemoryCache`, 2h absoluto / 30 min deslizante) **por empresa**, com o que já está gravado no banco;
 4. descarta o que não mudou (por `updated_at` nas listas de reversas/reembolsos, ou por comparação dos campos nas tabelas de domínio);
 5. valida os DTOs (FluentValidation) e registra as inconsistências em `auditing.Messages`;
@@ -370,7 +370,7 @@ Executados uma única vez cada pelo DbUp (`Scripts/SQLServer/migrator.csx`), na 
 | `Parameters/` | `Script001_Create_AfterSale_Schema_And_Parameters_Table.sql` | Schemas `aftersale` e `untreated` (só se não existirem), `AfterSaleParameters` (CNPJ + token por empresa) e `AfterSaleErrors` |
 | `Parameters/` | `Script002_Create_AfterSale_Errors_Sync_Procedures.sql` | Procedure de merge de `AfterSaleErrors` (comum a reembolsos e reversas) |
 | `Parameters/` | `Script003_Insert_AfterSale_Values_Into_Apps_Table.sql` | App `50 - AfterSale` em `auditing.Apps` |
-| `Parameters/` | `Script004_Insert_AfterSale_Errors_Jobs_Into_Jobs_Table.sql` | Job da procedure de `AfterSaleErrors` (5536) em `auditing.JobCatalog` |
+| `Parameters/` | `Script004_Insert_AfterSale_Errors_Jobs_Into_Jobs_Table.sql` | Job da procedure de `AfterSaleErrors` (5536) em `auditing.Catalog` |
 | `Seeds/SQLServer/` (irmã de `Scripts/`) | `Script005_Insert_Values_Into_AfterSale_Parameters_Table.sql` | Empresas e tokens em `AfterSaleParameters`. **Fora do DbUp**: só o [`tools/seeds/Import-TestSeeds.ps1`](../../../../../tools/seeds/Import-TestSeeds.ps1) roda ([plano do cadastro](../../../../../docs/PLANO-TELA-CADASTRO-EMPRESA.md)) |
 | `Parameters/` | `Script006_Create_AfterSale_Requests_Table.sql` | `aftersale.AfterSaleRequests` (log das chamadas de escrita), já com `integrated_or_updated_at` |
 | `Me/` | `Script007`–`009` | `AfterSaleEcommerces`, `...MessagesPages`, `...MessagesMails`, `...Reasons`, `...SubReasons`, `...StringValues`; procedures de merge e jobs do e-commerce |
@@ -426,8 +426,9 @@ pie showData
 
 Todas exigem o cabeçalho **`X-User-Name`** (até 100 caracteres) e o CNPJ da empresa na rota
 (`{docCompany}`, 14 dígitos). Sem o cabeçalho ou com dados inválidos, a resposta é **400** antes de
-chamar a API. O cabeçalho opcional **`X-Company`** informa a holding; sem ele, vale a holding do `{docCompany}` em
-`monitor.HoldingCompanies` (CNPJ sem holding ou `X-Company` de outra holding também dão **400**).
+chamar a API. O `{docCompany}` é a empresa da execução e precisa estar em `auditing.Companies`; o cabeçalho opcional
+**`X-Company`** (CNPJ da empresa), se vier, precisa ser igual a ele (CNPJ não cadastrado ou `X-Company` diferente também
+dão **400**).
 
 | Método | Rota | Corpo | Service |
 |---|---|---|---|
@@ -461,14 +462,15 @@ Resposta: **200** quando a AfterSale devolve `success = true`, **422** quando n�
 
 ## 📝 Auditoria (jobs)
 
-O catálogo fica em `auditing.JobCatalog` (scripts de jobs de `Parameters/`, `Me/`, `Refunds/` e `Reverses/`), com `IdParent = 50` (app AfterSale), e os mesmos
-ids em `EnumJob`. Cada empresa recebe a sua cópia em `auditing.Jobs` (`Company` na chave) ao contratar o módulo
-(`auditing.sp_Add_Company_App`), com os jobs **inativos** até alguém ligar.
+O catálogo fica em `auditing.Catalog` (scripts de jobs de `Parameters/`, `Me/`, `Refunds/` e `Reverses/`, sem agenda), com `IdParent = 50` (app AfterSale), e os mesmos
+ids em `EnumJob`. Cada empresa recebe a sua cópia em `auditing.Jobs` (`Holder` e `Company` na chave) ao contratar o módulo
+no WebApp (Cadastro › Módulos e Credenciais), com a agenda sugerida
+([`AGENDA-SUGERIDA-JOBS.csv`](../../../../../docs/AGENDA-SUGERIDA-JOBS.csv)) e os jobs **inativos** até alguém ligar.
 
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
 flowchart LR
-    CAT[("auditing.JobCatalog<br/>5000–5999")] -- "sp_Add_Company_App" --> JOBS[("auditing.Jobs<br/>uma linha por empresa")]
+    CAT[("auditing.Catalog<br/>5000–5999")] -- "WebApp: contratar módulo" --> JOBS[("auditing.Jobs<br/>uma linha por empresa")]
     JOBS -- "IsActive = 1" --> HOST["Hangfire · WebJob · Worker<br/>uma execução por empresa"]
     HOST --> SVC["Me · Reverses · Refunds"]
     SVC --> LOGS[("auditing.Logs<br/>Messages · Records")]
@@ -519,7 +521,7 @@ Cada mensagem tem um nível ([`PROPOSTA-NIVEL-MENSAGEM-AUDITING.md`](../../../Sh
 | `appsettings.json` do host | `AfterSale:BaseUrl` | Endereço da API (`https://api.send4.com.br/`) |
 | `appsettings.json` do host | `ConnectionStrings` | Conexão com o SQL Server (dados e auditoria) |
 | Banco | `aftersale.AfterSaleParameters` | CNPJ (`doc_company`) e token de cada empresa |
-| Banco | `monitor.HoldingCompanies` | De/para CNPJ → holding (empresa do painel); só os CNPJs da holding da execução são lidos |
+| Banco | `auditing.Companies` | Empresas de cada holding; cada execução é de uma empresa e lê só o token dela |
 
 > [!IMPORTANT]
 > Os tokens ficam só no banco, carregados pela tela de cadastro do WebApp ou, em teste, pelo `tools/seeds/Import-TestSeeds.ps1`.

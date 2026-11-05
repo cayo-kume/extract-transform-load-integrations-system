@@ -91,7 +91,7 @@ O módulo **não escreve** no Microvix.
 | API consumida | `POST https://webapi.microvix.com.br/1.0/api/integracao/<Comando>`, corpo XML (`application/xml`, UTF-8) com usuário, senha, comando e parâmetros |
 | Documentação da API | Web Service de Saída Padrão v274 e WS B2C V64 (PDFs da Linx); o método `LinxMetodos` devolve o catálogo de comandos e parâmetros aceitos hoje |
 | Banco de dados | SQL Server (schemas `untreated`, `linxmicrovix` e `auditing`; o `Script001` cria `linxmicrovix` quando não existe) |
-| Multiempresa | Sim: cada CNPJ de `linxmicrovix.LinxMicrovixParameters` tem as chaves e credenciais de cada API. O CNPJ (`doc_company`) é a primeira coluna da chave de todas as tabelas. Cada execução é de **uma empresa do painel** (holding, `ICompanyContext`) e lê só os CNPJs ligados a ela em `monitor.HoldingCompanies` |
+| Multiempresa | Sim: cada CNPJ de `linxmicrovix.LinxMicrovixParameters` tem as chaves e credenciais de cada API. O CNPJ (`doc_company`) é a primeira coluna da chave de todas as tabelas. Cada execução é de **uma empresa** (`ICompanyContext`, com a holding dela em `auditing.Companies`) e lê só os parâmetros dessa empresa (`doc_company` = a empresa da execução) |
 | Host | `src/Backend/Hosts/WebApi` (controller `LinxMicrovixController`, `partial` por service) |
 
 ### 🏢 Empresa da execução
@@ -99,10 +99,9 @@ O módulo **não escreve** no Microvix.
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
 flowchart LR
-    AG["⏱️ Agendador<br/>job + empresa"] --> CTX["ICompanyContext<br/>holding da execução"]
-    ROTA["🌐 Rota<br/>X-Company ou docCompany"] --> CTX
-    CTX --> HC[("monitor.HoldingCompanies<br/>holding → CNPJs")]
-    HC --> PAR[("LinxMicrovixParameters<br/>chaves erp_* e b2c_*")]
+    AG["⏱️ Agendador<br/>job + empresa"] --> CTX["ICompanyContext<br/>empresa e holding da execução"]
+    ROTA["🌐 Rota<br/>docCompany ou X-Company"] --> CTX
+    CTX --> PAR[("LinxMicrovixParameters<br/>doc_company = empresa<br/>chaves erp_* e b2c_*")]
     PAR --> LJ["🏪 lojas do cliente<br/>LinxGrupoLojas · B2CConsultaEmpresas"]
     LJ --> API["Linx Microvix<br/>ERP e B2C"]
 
@@ -112,9 +111,9 @@ flowchart LR
     class API warm
 ```
 
-`CreateGetCompanysQuery(company)` lê os parâmetros pelo join com `monitor.HoldingCompanies`: os services continuam
-percorrendo `GetCompanys()`, agora só com os CNPJs da holding da execução
-([plano do cadastro](../../../../../docs/PLANO-TELA-CADASTRO-EMPRESA.md), 4.4).
+`CreateGetCompanysQuery(company)` lê os parâmetros com `WHERE doc_company` = a empresa da execução: os services
+continuam percorrendo `GetCompanys()`, agora só com a linha dessa empresa
+([proposta do schema auditing](../../../../../docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)).
 
 ### Comportamentos da API que a integração trata
 A documentação não descreve tudo; o que segue foi conferido com chamadas reais (detalhes em
@@ -852,7 +851,7 @@ flowchart LR
 ### Fluxo das leituras recorrentes
 
 1. abre um log em `auditing.Logs` com o job do método;
-2. para cada CNPJ da holding da execução (`LinxMicrovixParameters` com o join em `monitor.HoldingCompanies`) que tem a
+2. com os parâmetros da empresa da execução (`LinxMicrovixParameters` com `doc_company` = a empresa), se tiverem a
    chave daquela API, e para cada loja (métodos de loja), lê o maior timestamp gravado;
 3. monta o envelope XML (`Authentication`, `ResponseFormat`, `Command` com os parâmetros) e chama a API. Um
    502/503/504 espera 10 s e tenta de novo uma vez;
@@ -875,9 +874,9 @@ sequenceDiagram
     participant M as Linx Microvix (XML)
     participant B as SQL Server
 
-    J->>S: Linx* ou B2CConsulta* (holding no ICompanyContext)
+    J->>S: Linx* ou B2CConsulta* (empresa no ICompanyContext)
     S->>B: auditing.sp_Log_Start (job, empresa)
-    S->>B: CNPJs da holding com a chave da API
+    S->>B: parâmetros da empresa com a chave da API
     loop cada cliente e cada loja
         S->>B: MAX(timestamp) gravado
         loop até a resposta vir vazia
@@ -982,8 +981,8 @@ O host chama o método em `Hosts/WebApi/Extensions/ServicesExtensions.cs`.
 
 > [!NOTE]
 > Desde o cadastro de empresas, o DbUp cria só **estrutura e catálogo do produto**. Os scripts de jobs inserem em
-> **`auditing.JobCatalog`** (sem empresa); os jobs de uma empresa nascem em `auditing.Jobs`, inativos, quando ela contrata o
-> módulo (`auditing.sp_Add_Company_App`). Os **parâmetros** (chaves) saíram do DbUp para `Seeds/SQLServer`.
+> **`auditing.Catalog`** (sem empresa e sem agenda); os jobs de uma empresa nascem em `auditing.Jobs`, inativos e com a
+> agenda sugerida, quando ela contrata o módulo no WebApp (Cadastro › Módulos e Credenciais). Os **parâmetros** (chaves) saíram do DbUp para `Seeds/SQLServer`.
 
 O DbUp executa cada script uma única vez. Os scripts gerais do módulo ficam em `Parameters/` e cada service tem a sua pasta (`Erp/<Service>` ou `B2C/<Service>`) com um trio de scripts:
 tabelas, procedures e jobs (os recorrentes e os sob demanda do service). O `migrator.csx` lê as subpastas e executa
@@ -1065,7 +1064,7 @@ flowchart LR
 Rota base: `LinxMicrovixJobs/LinxMicrovix`. A classe é `partial`: um arquivo por service
 (`LinxMicrovixController.<Service>.cs`), cada um injetando só o seu service na ação (`[FromServices]`).
 
-### Leituras recorrentes (disparam a integração dos CNPJs da holding)
+### Leituras recorrentes (disparam a integração da empresa)
 
 `POST <Método>` para cada um dos 260 métodos (ex.: `POST LinxMicrovixJobs/LinxMicrovix/LinxProdutos`), agrupados no
 Swagger pela tag do service.
@@ -1085,9 +1084,9 @@ Todas exigem:
 * o CNPJ do cliente na rota (`{docCompany}`, 14 dígitos) e, nos métodos de loja, o da loja (`{cnpjEmp}`);
 * o valor da busca (até 100 caracteres). As rotas estão na tabela das leituras sob demanda.
 
-A empresa da execução vem do cabeçalho opcional **`X-Company`** (CNPJ da holding) ou, sem ele, da holding do
-`{docCompany}` em `monitor.HoldingCompanies` (`CompanyContextFilter` do WebApi). CNPJ sem holding, `X-Company` que não é a
-holding do `{docCompany}` ou com algo além de dígitos dão **400**.
+A empresa da execução é o `{docCompany}` da rota, que precisa estar em `auditing.Companies` (`CompanyContextFilter` do
+WebApi); o cabeçalho opcional **`X-Company`** (CNPJ da empresa), se vier, precisa ser igual a ele. CNPJ não cadastrado,
+`X-Company` diferente do `{docCompany}` ou com algo além de dígitos dão **400**.
 
 | Código | Quando |
 |---|---|
@@ -1103,9 +1102,10 @@ holding do `{docCompany}` ou com algo além de dígitos dão **400**.
 
 ## 📝 Auditoria (jobs)
 
-Os jobs ficam no catálogo **`auditing.JobCatalog`** (scripts `..._Jobs_Into_Jobs_Table.sql`, no DbUp), com os mesmos ids
-em `EnumJob`; cada empresa que contrata o módulo recebe a sua cópia em **`auditing.Jobs`** (`Company` na chave), inativa
-até alguém ligar. Os ids de cada método estão nas tabelas dos services.
+Os jobs ficam no catálogo **`auditing.Catalog`** (scripts `..._Jobs_Into_Jobs_Table.sql`, no DbUp, sem agenda), com os
+mesmos ids em `EnumJob`; cada empresa que contrata o módulo no WebApp recebe a sua cópia em **`auditing.Jobs`** (`Holder`
+e `Company` na chave), com a agenda sugerida ([`AGENDA-SUGERIDA-JOBS.csv`](../../../../../docs/AGENDA-SUGERIDA-JOBS.csv)),
+inativa até alguém ligar. Os ids de cada método estão nas tabelas dos services.
 
 | Faixa | Tipo (`IdType`) | Conteúdo |
 |---|---|---|
@@ -1156,7 +1156,7 @@ Cada mensagem tem um nível ([`PROPOSTA-NIVEL-MENSAGEM-AUDITING.md`](../../../Sh
 | `appsettings.json` do host | `ConnectionStrings` | Conexão com o SQL Server (dados e auditoria) |
 | Banco | `linxmicrovix.LinxMicrovixParameters` | Por cliente: CNPJ (`doc_company`), `grupo` (opcional, filtro do `LinxGrupoLojas`) e, para cada API (`erp_*`, `b2c_*`), chave, usuário e senha. Um cliente só com uma das APIs deixa as colunas da outra nulas |
 
-| Banco | `monitor.HoldingCompanies` | De/para holding → CNPJ: quais clientes de `LinxMicrovixParameters` cada empresa do painel lê |
+| Banco | `auditing.Companies` | Empresas de cada holding: cada execução é de uma empresa e lê só a linha dela em `LinxMicrovixParameters` |
 
 As chaves ficam só no banco: pela tela de cadastro do WebApp (em construção) ou, num banco de teste, pelo
 `Seeds/SQLServer/Script003` (fora do git) via `tools/seeds/Import-TestSeeds.ps1`.
@@ -1217,7 +1217,7 @@ As leituras sob demanda usam os mesmos comandos, com o parâmetro da busca; a re
 | Documento | Assunto |
 |---|---|
 | 🟣 [PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md](docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md) | Proposta, decisões e plano em fases da padronização do módulo, com o que foi conferido na API |
-| 🏢 [PLANO-TELA-CADASTRO-EMPRESA.md](../../../../../docs/PLANO-TELA-CADASTRO-EMPRESA.md) | Cadastro de empresas: parâmetros fora do DbUp, `monitor.HoldingCompanies` e execução por empresa |
+| 🏢 [PLANO-TELA-CADASTRO-EMPRESA.md](../../../../../docs/PLANO-TELA-CADASTRO-EMPRESA.md) | Cadastro de empresas: parâmetros fora do DbUp e execução por empresa (histórico; o modelo atual está na [proposta do schema auditing](../../../../../docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)) |
 | ⚡ [PADRAO-CACHE-INTEGRACOES.md](../../../../../docs/PADRAO-CACHE-INTEGRACOES.md) | Padrão de cache das leituras |
 | 🔁 [ALTERACOES-MERGE-PROCEDURE-AUDITORIA.md](../../../../../src/Backend/Shared/docs/ALTERACOES-MERGE-PROCEDURE-AUDITORIA.md) | Procedure de merge e auditoria |
 

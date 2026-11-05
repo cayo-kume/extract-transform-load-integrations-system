@@ -1,0 +1,87 @@
+@* Adicionar aplicação monitorada, na Visão Geral: as aplicações do catálogo que a empresa logada ainda não contratou.
+   Adicionar abre a contratação (AppContractDialog), com a agenda dos jobs; eles nascem inativos, e o card entra na Visão
+   Geral como Inativa. *@
+@inject LoggedCompany LoggedCompany
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">Adicionar aplicação monitorada</MudText>
+    </TitleContent>
+    <DialogContent>
+        @if (_remaining.Count == 0)
+        {
+            <MudText Typo="Typo.body2">Todas as aplicações do catálogo já estão na Visão Geral de @LoggedCompany.Name.</MudText>
+        }
+        else
+        {
+            <MudList T="string" Dense="true" Class="add-app-list">
+                @foreach (var app in _remaining)
+                {
+                    <MudListItem T="string" @key="app.IdParent" Class="add-app-item">
+                        <div class="d-flex align-center gap-3">
+                            <MudAvatar Rounded="true" Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Medium">@AppLogos.Initials(app.Title)</MudAvatar>
+                            <div class="flex-grow-1" style="min-width: 0">
+                                <MudText Typo="Typo.subtitle2">@app.Title</MudText>
+                                <MudText Typo="Typo.caption" Class="d-block">@app.Description</MudText>
+                            </div>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" Disabled="_busy" OnClick="@(() => Add(app))">Adicionar</MudButton>
+                        </div>
+                    </MudListItem>
+                }
+            </MudList>
+        }
+        <MudText Typo="Typo.caption" Class="d-block mt-3">Os jobs nascem inativos: depois de adicionar, ligue a aplicação pelo chip Inativa do card.</MudText>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Close">Fechar</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance? MudDialog { get; set; }
+
+    [Parameter, EditorRequired] public IReadOnlyList<AppSummaryModel> Apps { get; set; } = [];
+
+    private List<AppSummaryModel> _remaining = [];
+    private bool _added;
+    private bool _busy;
+
+    protected override void OnInitialized() => _remaining = Apps.ToList();
+
+    private async Task Add(AppSummaryModel app)
+    {
+        _busy = true;
+
+        try
+        {
+            if (await AppContractDialog.ShowAsync(DialogService, app.IdParent, app.Title) is { } created)
+            {
+                Snackbar.Add($"{app.Title} adicionado à Visão Geral de {LoggedCompany.Name}: {created} job(s) criado(s), inativos.", Severity.Success);
+                _remaining.Remove(app);
+                _added = true;
+            }
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private void Close() => MudDialog?.Close(DialogResult.Ok(_added));
+
+    /// <summary>
+    /// Abre a lista; devolve se alguma aplicação foi adicionada (contratada).
+    /// </summary>
+    public static async Task<bool> ShowAsync(IDialogService dialogService, IReadOnlyList<AppSummaryModel> apps)
+    {
+        var parameters = new DialogParameters<AddAppDialog> { { x => x.Apps, apps } };
+
+        // sem X e sem fechar pelo fundo: só o Fechar, que devolve se algo foi adicionado (cancelar perderia isso)
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, BackdropClick = false, CloseOnEscapeKey = false };
+        var reference = await dialogService.ShowAsync<AddAppDialog>("Adicionar aplicação", parameters, options);
+        var result = await reference.Result;
+        return result is { Canceled: false, Data: true };
+    }
+}

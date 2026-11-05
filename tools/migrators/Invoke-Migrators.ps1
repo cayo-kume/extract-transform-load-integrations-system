@@ -14,13 +14,26 @@
     migrator, com as tabelas do schema quartz; o WebApi (Hangfire) cria o schema HangFire sozinho ao subir; o WebJob não tem
     tabelas. No fim, o log diz o que configurar em cada host para ele ser o único a agendar.
 
-    O banco é criado pelo próprio DbUp se não existir. Os migrators só criam a estrutura e o catálogo do produto: a empresa,
-    as credenciais dos módulos e os jobs ativos entram depois, pela tela tools/hosts/Invoke-HostsConfig.ps1.
+    O banco é criado pelo próprio DbUp se não existir. Os migrators só criam a estrutura e o catálogo do produto: as
+    holdings, as empresas, as credenciais dos módulos e os jobs entram depois, pelo WebApp (tela inicial, "Cadastrar holding
+    e empresas", e Cadastro › Módulos e Credenciais; docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md) ou, num banco de
+    teste, pelo tools/seeds/Import-TestSeeds.ps1.
 
-    Os usuários de banco do WebApp (etl_monitor e etl_query) também ficam com o Invoke-HostsConfig: o Shared só cria as
-    procedures (Script009), e o migrator não repassa ETL_MONITOR_PASSWORD nem ETL_QUERY_PASSWORD a nenhum migrator.
+    Usuários de banco do WebApp (opcional): com a senha do etl_monitor e/ou do etl_query, o migrator do Shared cria esses
+    usuários no fim (dbo.sp_Create_Monitor_User e dbo.sp_Grant_Query_User, do Script009; src/Frontend/WebApp/README.md). As
+    senhas vão só para o processo do Shared, pelas variáveis ETL_MONITOR_PASSWORD e ETL_QUERY_PASSWORD; em branco, o usuário
+    não é criado agora. Rodar de novo cria quem faltar e troca a senha de quem já existe para a informada.
 
-    A senha não aparece no log: os migrators imprimem a connection string e o script troca a senha por ****.
+    Connection strings dos projetos: no fim, com os migrators concluídos, o script grava a seção ConnectionStrings do
+    appsettings.json do WebApp, do WebApi, do WebJob e do Worker com este servidor e este banco (o arquivo é editado no
+    lugar, com os comentários). WebApi, WebJob e Worker: Connection com o usuário e a senha da tela. WebApp: Connection com
+    o etl_monitor e QueryConnection com o etl_query, com as senhas da seção Usuários de banco do WebApp (em branco, o
+    usuário e a senha da tela). As mesmas chaves saem dos User Secrets dos quatro projetos, que passariam por cima do
+    appsettings. A senha fica no arquivo e vai para o git, de propósito: é a configuração de teste. -SkipAppSettings (ou a
+    caixa da tela desmarcada) não grava nada.
+
+    A senha não aparece no log: os migrators imprimem a connection string e o script troca a senha por ****. As senhas dos
+    usuários do WebApp também são mascaradas.
 
     Pré-requisito: dotnet tool install -g dotnet-script
 
@@ -39,9 +52,30 @@
 .PARAMETER Apps
     Com -NoGui, só estas aplicações (o Shared entra sempre); sem ele, as marcadas por padrão na tela.
 
+.PARAMETER Services
+    Com -NoGui, só estes services, no formato Aplicação/service (ex.: Totvs/People, LinxMicrovix/Erp/Customers); a
+    aplicação sem nenhum na lista sobe todos os services dela. Parameters sobe sempre.
+
 .PARAMETER SchedulingHost
     Host que agenda as integrações: WebApi (Hangfire), WebJob (Azure) ou Worker (Quartz.NET). Obrigatório com -NoGui; na
     tela, deixa o host já escolhido.
+
+.PARAMETER MonitorPassword
+    Com -NoGui, a senha do usuário etl_monitor (painel e cadastro do WebApp); sem ela, o usuário não é criado agora.
+
+.PARAMETER QueryPassword
+    Com -NoGui, a senha do usuário etl_query (tela Executar Querys do WebApp); sem ela, o usuário não é criado agora.
+
+.PARAMETER HangfireUser
+    Com -NoGui, o usuário do dashboard do Hangfire (Hangfire:Dashboard:UserName no appsettings.json do WebApi); sem ele, o
+    usuário e a senha que estão lá ficam como estão.
+
+.PARAMETER HangfirePassword
+    Com -NoGui, a senha do dashboard do Hangfire (Hangfire:Dashboard:Password), junto com -HangfireUser.
+
+.PARAMETER SkipAppSettings
+    Não grava as connection strings nos appsettings.json do WebApp, do WebApi, do WebJob e do Worker (por exemplo, migrando
+    um banco da Azure sem trocar o banco de teste da máquina).
 
 .PARAMETER NoGui
     Roda sem a tela, no console, com os parâmetros acima.
@@ -55,6 +89,8 @@
 .EXAMPLE
     ./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -Apps Totvs,DataWarehouse -SchedulingHost Worker
 
+.EXAMPLE
+    ./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -SchedulingHost Worker -MonitorPassword (Read-Host -AsSecureString) -QueryPassword (Read-Host -AsSecureString)
 #>
 [CmdletBinding()]
 param(
@@ -65,8 +101,14 @@ param(
     [pscredential]$Credential,
     [ValidateSet('Totvs', 'LinxMicrovix', 'LinxCommerce', 'Movidesk', 'AfterSale', 'DataWarehouse')]
     [string[]]$Apps,
+    [string[]]$Services,
     [ValidateSet('WebApi', 'WebJob', 'Worker')]
     [string]$SchedulingHost,
+    [securestring]$MonitorPassword,
+    [securestring]$QueryPassword,
+    [string]$HangfireUser,
+    [securestring]$HangfirePassword,
+    [switch]$SkipAppSettings,
     [switch]$NoGui
 )
 
@@ -132,6 +174,14 @@ foreach ($key in $schedulingHosts.Keys) { $schedulingHosts[$key].Key = $key }
 foreach ($app in @($catalog) + @($schedulingHosts.Values | Where-Object App | ForEach-Object App)) {
     $app.Path = Join-Path $backend $app.Folder 'Scripts/SQLServer'
     $app.Scripts = @(Get-ChildItem -LiteralPath $app.Path -Filter '*.sql' -Recurse -File -ErrorAction SilentlyContinue).Count
+
+    # services: as pastas com scripts abaixo de Scripts/SQLServer (ex.: People, Erp/Customers), menos Parameters, que sobe
+    # sempre, e a raiz. A tela e -Services escolhem quais sobem; o migrator.csx do módulo filtra pela ETL_MIGRATOR_SERVICES
+    $app.Services = @(Get-ChildItem -LiteralPath $app.Path -Filter '*.sql' -Recurse -File -ErrorAction SilentlyContinue |
+        ForEach-Object { [IO.Path]::GetRelativePath($app.Path, $_.DirectoryName).Replace('\', '/') } |
+        Where-Object { $_ -ne '.' -and $_ -ne 'Parameters' } |
+        Group-Object | Sort-Object Name |
+        ForEach-Object { [pscustomobject]@{ Name = $_.Name; Scripts = $_.Count } })
 }
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -139,7 +189,7 @@ foreach ($app in @($catalog) + @($schedulingHosts.Values | Where-Object App | Fo
 # ---------------------------------------------------------------------------------------------------------------------
 
 $worker = {
-    param($apps, [string]$connectionString, [string[]]$secrets, $queue, $state, $schedulingHost)
+    param($apps, [string]$connectionString, [string[]]$secrets, $queue, $state, $schedulingHost, $userPasswords, $appSettings)
 
     function Write-Line([string]$text, [string]$kind = 'out') {
         foreach ($secret in $secrets) {
@@ -147,6 +197,66 @@ $worker = {
         }
 
         $queue.Enqueue([pscustomobject]@{ Text = $text; Kind = $kind })
+    }
+
+    # o appsettings.json editado no texto do arquivo, para os comentários, a ordem, o BOM e as quebras de linha ficarem
+    # como estão: a seção ConnectionStrings trocada inteira (sem ela, entra no começo do arquivo) e cada valor de Settings
+    # ("Hangfire:Dashboard:UserName") trocado no lugar
+    function Update-AppSettings([string]$path, $connectionStrings, $settings) {
+        $bytes = [IO.File]::ReadAllBytes($path)
+        $bom = $bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF
+        $text = [Text.UTF8Encoding]::new($false).GetString($bytes, ($bom ? 3 : 0), $bytes.Length - ($bom ? 3 : 0))
+        $newline = $text.Contains("`r`n") ? "`r`n" : "`n"
+
+        $lines = @('  "ConnectionStrings": {', '    // gravada pelo tools/migrators/Invoke-Migrators.ps1 (servidor, banco, usuário e senha da tela)')
+        $keys = @($connectionStrings.Keys)
+        for ($i = 0; $i -lt $keys.Count; $i++) {
+            $escaped = $connectionStrings[$keys[$i]].Replace('\', '\\').Replace('"', '\"')
+            $lines += "    `"$($keys[$i])`": `"$escaped`"$($i -lt $keys.Count - 1 ? ',' : '')"
+        }
+        $lines += '  },'
+        $section = ($lines -join $newline) + $newline
+
+        $pattern = [regex]::new('(?ms)^  "ConnectionStrings"\s*:\s*\{.*?^  \},?\r?\n')
+        if ($pattern.IsMatch($text)) { $text = $pattern.Replace($text, { $section }, 1) }
+        else { $text = ([regex]::new('^\{\r?\n')).Replace($text, { "{$newline$section$newline" }, 1) }
+
+        foreach ($key in @($settings.Keys)) { $text = Set-JsonValue $text $key $settings[$key] }
+
+        [IO.File]::WriteAllText($path, $text, [Text.UTF8Encoding]::new($bom))
+    }
+
+    # um valor simples (texto, número, true/false) pelo caminho com ":", achado em ordem no texto: cada nome é o primeiro
+    # depois do anterior, o que basta para o appsettings, em que cada caminho tem nomes únicos dentro da seção dele
+    function Set-JsonValue([string]$text, [string]$path, $value) {
+        $position = 0
+        foreach ($name in $path.Split(':')) {
+            $match = [regex]::new('"' + [regex]::Escape($name) + '"\s*:\s*').Match($text, $position)
+            if (-not $match.Success) { throw "$path não está no appsettings.json." }
+            $position = $match.Index + $match.Length
+        }
+
+        $literal = [regex]::new('"(?:[^"\\]|\\.)*"|true|false|null|-?\d+(?:\.\d+)?').Match($text, $position)
+        if (-not $literal.Success -or $literal.Index -ne $position) { throw "$path não é um valor simples no appsettings.json." }
+
+        $json = $value -is [bool] ? ($value ? 'true' : 'false') : '"' + ([string]$value).Replace('\', '\\').Replace('"', '\"') + '"'
+        $text.Substring(0, $position) + $json + $text.Substring($literal.Index + $literal.Length)
+    }
+
+    # as chaves que o appsettings passou a ter, tiradas dos User Secrets do projeto (planas ou aninhadas, pelo prefixo):
+    # elas passariam por cima do appsettings
+    function Remove-SecretKeys([string]$path, [string[]]$prefixes) {
+        if (-not $path -or -not (Test-Path -LiteralPath $path)) { return @() }
+
+        $secretsJson = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json -AsHashtable
+        if (-not $secretsJson) { return @() }
+
+        $removed = @($secretsJson.Keys | Where-Object { $key = $_; $prefixes | Where-Object { $key -eq $_ -or $key -like "$($_):*" } })
+        if ($removed.Count -eq 0) { return @() }
+
+        foreach ($key in $removed) { $secretsJson.Remove($key) }
+        Set-Content -LiteralPath $path -Value ($secretsJson | ConvertTo-Json -Depth 20) -Encoding utf8NoBOM
+        $removed
     }
 
     $state.Successful = $false
@@ -161,7 +271,7 @@ $worker = {
         }
 
         Write-Line '' 'out'
-        Write-Line "[$index/$($apps.Count)] $($app.Name) ($($app.Scripts) scripts)" 'step'
+        Write-Line "[$index/$($apps.Count)] $($app.Name) ($($app.Scripts) scripts$($null -ne $app.SelectedServices ? ", services: $(@($app.SelectedServices).Count) de $($app.Services.Count)" : ''))" 'step'
 
         # unidade livre para o subst, de Z: para trás
         $used = @([IO.DriveInfo]::GetDrives() | ForEach-Object { $_.Name.Substring(0, 1) })
@@ -191,9 +301,17 @@ $worker = {
             $info.StandardOutputEncoding = [Text.Encoding]::UTF8
             $info.StandardErrorEncoding = [Text.Encoding]::UTF8
 
-            # os usuários do WebApp são do Invoke-HostsConfig: o migrator.csx do Shared os criaria com estas variáveis, então
-            # elas não passam, mesmo que estejam no ambiente de quem abriu a tela
-            foreach ($variable in 'ETL_MONITOR_PASSWORD', 'ETL_QUERY_PASSWORD') { $null = $info.Environment.Remove($variable) }
+            # senhas dos usuários do WebApp: só o migrator do Shared as recebe (Script009); os outros nem as veem, mesmo que
+            # estejam no ambiente de quem abriu a tela
+            foreach ($variable in 'ETL_MONITOR_PASSWORD', 'ETL_QUERY_PASSWORD') {
+                $value = $app.Name -eq 'Shared' ? $userPasswords[$variable] : $null
+                if ($value) { $info.Environment[$variable] = $value } else { $null = $info.Environment.Remove($variable) }
+            }
+
+            # services escolhidos (migrator.csx dos módulos): sem escolha, todos; com ela, as pastas separadas por ";" (o ";" no
+            # fim garante a variável mesmo sem nenhum service: aí só Parameters)
+            if ($null -ne $app.SelectedServices) { $info.Environment['ETL_MIGRATOR_SERVICES'] = (@($app.SelectedServices) -join ';') + ';' }
+            else { $null = $info.Environment.Remove('ETL_MIGRATOR_SERVICES') }
 
             $process = [Diagnostics.Process]::Start($info)
             $state.Process = $process
@@ -233,6 +351,27 @@ $worker = {
     Write-Line '' 'out'
     Write-Line "Migrators concluídos: $($apps.Count) aplicações aplicadas." 'ok'
 
+    # as connection strings deste banco nos appsettings.json dos projetos (só com tudo migrado): o log mostra só as chaves
+    if ($appSettings) {
+        Write-Line '' 'out'
+
+        foreach ($project in $appSettings) {
+            try {
+                Update-AppSettings $project.Path $project.Values $project.Settings
+                $written = @(@($project.Values.Keys | ForEach-Object { "ConnectionStrings:$_" }) + @($project.Settings.Keys))
+                Write-Line "$($project.Name): appsettings.json com $($written -join ', ')." 'ok'
+
+                $removed = Remove-SecretKeys $project.SecretsPath (@('ConnectionStrings') + @($project.Settings.Keys))
+                if ($removed.Count -gt 0) {
+                    Write-Line "$($project.Name): $($removed -join ', ') saíram dos User Secrets (passariam por cima do appsettings)." 'warn'
+                }
+            }
+            catch {
+                Write-Line "$($project.Name): não foi possível gravar o appsettings.json: $($_.Exception.Message)" 'error'
+            }
+        }
+    }
+
     $state.Successful = $true
     Write-Line '' 'out'
     Write-Line 'Concluído.' 'ok'
@@ -241,9 +380,7 @@ $worker = {
 
     foreach ($step in $schedulingHost.Steps) { Write-Line "  - $step" 'out' }
     Write-Line '' 'out'
-    $builder = [Data.Common.DbConnectionStringBuilder]::new()
-    $builder.set_ConnectionString($connectionString)  # com "=", o PowerShell grava uma chave "ConnectionString" no dicionário
-    Write-Line "Empresa, credenciais dos módulos, jobs ativos e User Secrets: ./tools/hosts/Invoke-HostsConfig.ps1 -Database $($builder['Database']) -SchedulingHost $($schedulingHost.Key)" 'step'
+    Write-Line 'Holdings, empresas, credenciais e jobs: pelo WebApp (tela inicial, "Cadastrar holding e empresas") ou, num banco de teste, ./tools/seeds/Import-TestSeeds.ps1.' 'step'
 }
 
 function New-ConnectionString([string]$server, [int]$port, [string]$database, [string]$user, [string]$password, [bool]$trust) {
@@ -267,13 +404,72 @@ function Get-Secrets([string]$password) {
     @($password, ($builder.ConnectionString -replace '^password=', '')) | Select-Object -Unique
 }
 
-function Start-Migration($apps, [string]$connectionString, [string[]]$secrets, $schedulingHost) {
+# as senhas dos usuários do WebApp, pelo nome da variável que o migrator.csx do Shared lê; em branco fica de fora
+function New-UserPasswords([string]$monitorPassword, [string]$queryPassword) {
+    $passwords = @{}
+    if ($monitorPassword) { $passwords['ETL_MONITOR_PASSWORD'] = $monitorPassword }
+    if ($queryPassword) { $passwords['ETL_QUERY_PASSWORD'] = $queryPassword }
+    $passwords
+}
+
+# o que o log e a confirmação dizem sobre os usuários do WebApp
+function Get-UserPasswordsText($userPasswords) {
+    $users = @(
+        if ($userPasswords['ETL_MONITOR_PASSWORD']) { 'etl_monitor' }
+        if ($userPasswords['ETL_QUERY_PASSWORD']) { 'etl_query' }
+    )
+
+    $users ? "Usuários do WebApp: $($users -join ' e ') (criados pelo Shared)" : 'Usuários do WebApp: nenhum (sem senha)'
+}
+
+# os appsettings.json que recebem a configuração deste banco (Update-AppSettings, no fim da migração) e os User Secrets de
+# cada projeto, de onde as mesmas chaves saem. WebApi, WebJob e Worker: o usuário da tela (auditing fica no mesmo banco).
+# WebApp: etl_monitor e etl_query com as senhas da seção Usuários de banco do WebApp; sem a senha, o usuário da tela.
+# WebApi, da seção Hangfire: Hangfire:Enabled ligado só com o WebApi como host de agenda e, com o usuário preenchido, o
+# usuário e a senha do dashboard
+function New-AppSettingsTargets([string]$server, [int]$port, [string]$database, [string]$user, [string]$password, [bool]$trust, $userPasswords,
+    [string]$schedulingHostKey, [string]$hangfireUser, [string]$hangfirePassword) {
+    $root = Join-Path $PSScriptRoot '../..' | Resolve-Path | Select-Object -ExpandProperty Path
+    $main = New-ConnectionString $server $port $database $user $password $trust
+
+    $monitor = $userPasswords['ETL_MONITOR_PASSWORD'] ? (New-ConnectionString $server $port $database 'etl_monitor' $userPasswords['ETL_MONITOR_PASSWORD'] $trust) : $main
+    $query = $userPasswords['ETL_QUERY_PASSWORD'] ? (New-ConnectionString $server $port $database 'etl_query' $userPasswords['ETL_QUERY_PASSWORD'] $trust) : $main
+
+    $hangfire = [ordered]@{ 'Hangfire:Enabled' = $schedulingHostKey -eq 'WebApi' }
+    if ($hangfireUser) {
+        $hangfire['Hangfire:Dashboard:UserName'] = $hangfireUser
+        $hangfire['Hangfire:Dashboard:Password'] = $hangfirePassword
+    }
+
+    $projects = [ordered]@{
+        WebApp = @{ Folder = 'src/Frontend/WebApp'; Values = [ordered]@{ Connection = $monitor; QueryConnection = $query } }
+        WebApi = @{ Folder = 'src/Backend/Hosts/WebApi'; Values = [ordered]@{ Connection = $main }; Settings = $hangfire }
+        WebJob = @{ Folder = 'src/Backend/Hosts/WebJob'; Values = [ordered]@{ Connection = $main } }
+        Worker = @{ Folder = 'src/Backend/Hosts/Worker'; Values = [ordered]@{ Connection = $main } }
+    }
+
+    foreach ($name in $projects.Keys) {
+        $folder = Join-Path $root $projects[$name].Folder
+        $project = Get-ChildItem -LiteralPath $folder -Filter '*.csproj' | Select-Object -First 1
+        $secretsId = $project ? ((([xml](Get-Content -LiteralPath $project.FullName -Raw)).Project.PropertyGroup.UserSecretsId | Where-Object { $_ }) | Select-Object -First 1) : $null
+
+        [pscustomobject]@{
+            Name = $name
+            Path = Join-Path $folder 'appsettings.json'
+            Values = $projects[$name].Values
+            Settings = $projects[$name].Settings ?? [ordered]@{}
+            SecretsPath = $secretsId ? (Join-Path $env:APPDATA "Microsoft/UserSecrets/$secretsId/secrets.json") : $null
+        }
+    }
+}
+
+function Start-Migration($apps, [string]$connectionString, [string[]]$secrets, $schedulingHost, $userPasswords, $appSettings) {
     $queue = [Collections.Concurrent.ConcurrentQueue[object]]::new()
     $state = [hashtable]::Synchronized(@{ Cancel = $false; Process = $null; Successful = $false })
 
     $powershell = [powershell]::Create()
     $null = $powershell.AddScript($worker).AddArgument($apps).AddArgument($connectionString).AddArgument($secrets).
-        AddArgument($queue).AddArgument($state).AddArgument($schedulingHost)
+        AddArgument($queue).AddArgument($state).AddArgument($schedulingHost).AddArgument($userPasswords).AddArgument($appSettings)
 
     [pscustomobject]@{ PowerShell = $powershell; Handle = $powershell.BeginInvoke(); Queue = $queue; State = $state }
 }
@@ -297,17 +493,36 @@ if ($NoGui) {
     if (-not (Test-DotnetScript)) { throw $missingTool }
 
     $schedulingHostInfo = $schedulingHosts[$SchedulingHost]
-    $selected = @($catalog | Where-Object { $_.Required -or ($Apps ? $_.Name -in $Apps : $_.Default) }) +
+    $selected = @($catalog | Where-Object { $_.Required -or ($Apps ? $_.Name -in $Apps : $_.Default) } | ForEach-Object { $_.Clone() }) +
         @($schedulingHostInfo.App | Where-Object { $_ })
+
+    # -Services: "Aplicação/service" (ex.: Totvs/People, LinxMicrovix/Erp/Customers); a aplicação sem nenhum na lista sobe
+    # todos os services dela
+    foreach ($service in $Services) {
+        $name, $folder = $service.Replace('\', '/').Split('/', 2)
+        $app = $selected | Where-Object { $_.Name -eq $name } | Select-Object -First 1
+
+        if (-not $app) { throw "-Services $service`: a aplicação $name não está entre as que vão subir." }
+        if ($folder -notin $app.Services.Name) { throw "-Services $service`: $name não tem o service $folder ($(($app.Services.Name) -join ', '))." }
+
+        $app.SelectedServices = @($app.SelectedServices) + $folder | Where-Object { $_ }
+    }
 
     if (-not $Credential) { $Credential = Get-Credential -Message "SQL Server $Server,$Port" }
     $password = $Credential.GetNetworkCredential().Password
     $connectionString = New-ConnectionString $Server $Port $Database $Credential.UserName $password $true
 
-    Write-Host "Servidor $Server,$Port, banco ${Database}, host de agenda $($schedulingHostInfo.Title): $(($selected | ForEach-Object Name) -join ', ')"
+    $userPasswords = New-UserPasswords ($MonitorPassword ? [Net.NetworkCredential]::new('', $MonitorPassword).Password : '') `
+        ($QueryPassword ? [Net.NetworkCredential]::new('', $QueryPassword).Password : '')
 
-    $secrets = @(Get-Secrets $password)
-    $run = Start-Migration $selected $connectionString $secrets $schedulingHostInfo
+    Write-Host "Servidor $Server,$Port, banco ${Database}, host de agenda $($schedulingHostInfo.Title): $(($selected | ForEach-Object { $null -ne $_.SelectedServices ? "$($_.Name) ($(@($_.SelectedServices) -join ', '))" : $_.Name }) -join ', ')"
+    Write-Host (Get-UserPasswordsText $userPasswords)
+
+    $appSettings = $SkipAppSettings ? $null : @(New-AppSettingsTargets $Server $Port $Database $Credential.UserName $password $true $userPasswords `
+        $SchedulingHost $HangfireUser ($HangfirePassword ? [Net.NetworkCredential]::new('', $HangfirePassword).Password : ''))
+    $secrets = @(Get-Secrets $password) + @($userPasswords.Values | ForEach-Object { Get-Secrets $_ }) +
+        @(Get-Secrets ($HangfirePassword ? [Net.NetworkCredential]::new('', $HangfirePassword).Password : ''))
+    $run = Start-Migration $selected $connectionString $secrets $schedulingHostInfo $userPasswords $appSettings
     $colors = @{ out = 'Gray'; step = 'Cyan'; ok = 'Green'; error = 'Red'; warn = 'Yellow' }
 
     while (-not $run.Handle.IsCompleted -or -not $run.Queue.IsEmpty) {
@@ -344,7 +559,7 @@ $font = [Drawing.Font]::new('Segoe UI', 9)
 
 $form = [Windows.Forms.Form]@{
     Text = 'Migrators: subir tabelas no SQL Server'
-    ClientSize = [Drawing.Size]::new(860, 788)
+    ClientSize = [Drawing.Size]::new(860, 880)
     MinimumSize = [Drawing.Size]::new(760, 852)
     StartPosition = 'CenterScreen'
     Font = $font
@@ -423,66 +638,140 @@ foreach ($key in $schedulingHosts.Keys) {
 
 if ($SchedulingHost) { ($hostRadios | Where-Object Tag -eq $SchedulingHost).Checked = $true }
 
+# usuários de banco do WebApp: as senhas vão só para o migrator do Shared, que cria etl_monitor e etl_query (Script009)
+
+$usersGroup = [Windows.Forms.GroupBox]@{
+    Text = 'Usuários de banco do WebApp (opcional)'; Location = [Drawing.Point]::new(12, 232); Size = [Drawing.Size]::new(836, 84)
+    Anchor = 'Top, Left, Right'
+}
+
+$monitorLabel = [Windows.Forms.Label]@{ Text = 'Senha do etl_monitor (painel e cadastro)'; Location = [Drawing.Point]::new(14, 22); AutoSize = $true }
+$monitorBox = [Windows.Forms.TextBox]@{ UseSystemPasswordChar = $true; Location = [Drawing.Point]::new(14, 40); Width = 240 }
+$queryLabel = [Windows.Forms.Label]@{ Text = 'Senha do etl_query (Executar Querys)'; Location = [Drawing.Point]::new(270, 22); AutoSize = $true }
+$queryBox = [Windows.Forms.TextBox]@{ UseSystemPasswordChar = $true; Location = [Drawing.Point]::new(270, 40); Width = 240 }
+$usersHint = [Windows.Forms.Label]@{
+    Text = 'Em branco, o usuário não é criado agora. Quem já existe passa a ter a senha informada (a mesma que vai para o appsettings).'
+    Location = [Drawing.Point]::new(526, 22); Size = [Drawing.Size]::new(296, 54); ForeColor = [Drawing.SystemColors]::GrayText
+}
+
+if ($MonitorPassword) { $monitorBox.Text = [Net.NetworkCredential]::new('', $MonitorPassword).Password }
+if ($QueryPassword) { $queryBox.Text = [Net.NetworkCredential]::new('', $QueryPassword).Password }
+
+$usersGroup.Controls.AddRange(@($monitorLabel, $monitorBox, $queryLabel, $queryBox, $usersHint))
+
+# dashboard do Hangfire: vai para o appsettings.json do WebApi (Hangfire:Dashboard), com a caixa dos appsettings marcada;
+# Hangfire:Enabled segue o host de agenda escolhido
+
+$hangfireGroup = [Windows.Forms.GroupBox]@{
+    Text = 'Dashboard do Hangfire (WebApi)'; Location = [Drawing.Point]::new(12, 326); Size = [Drawing.Size]::new(836, 64)
+    Anchor = 'Top, Left, Right'
+}
+
+$hangfireUserLabel = [Windows.Forms.Label]@{ Text = 'Usuário'; Location = [Drawing.Point]::new(14, 28); AutoSize = $true }
+$hangfireUserBox = [Windows.Forms.TextBox]@{ Location = [Drawing.Point]::new(70, 25); Width = 184 }
+$hangfirePasswordLabel = [Windows.Forms.Label]@{ Text = 'Senha'; Location = [Drawing.Point]::new(270, 28); AutoSize = $true }
+$hangfirePasswordBox = [Windows.Forms.TextBox]@{ UseSystemPasswordChar = $true; Location = [Drawing.Point]::new(320, 25); Width = 190 }
+$hangfireHint = [Windows.Forms.Label]@{
+    Text = 'Obrigatório com o WebApi como host de agenda. Em branco com outro host, o appsettings fica como está.'
+    Location = [Drawing.Point]::new(526, 18); Size = [Drawing.Size]::new(296, 40); ForeColor = [Drawing.SystemColors]::GrayText
+}
+
+if ($HangfireUser) { $hangfireUserBox.Text = $HangfireUser }
+if ($HangfirePassword) { $hangfirePasswordBox.Text = [Net.NetworkCredential]::new('', $HangfirePassword).Password }
+
+$hangfireGroup.Controls.AddRange(@($hangfireUserLabel, $hangfireUserBox, $hangfirePasswordLabel, $hangfirePasswordBox, $hangfireHint))
+
+# connection strings deste banco nos appsettings.json do WebApp, do WebApi, do WebJob e do Worker, no fim da migração
+$appSettingsBox = [Windows.Forms.CheckBox]@{
+    Text = 'Gravar as connection strings nos appsettings'; Checked = -not $SkipAppSettings
+    Location = [Drawing.Point]::new(262, 679); AutoSize = $true
+}
+
 # catálogo
 
 $catalogLabel = [Windows.Forms.Label]@{
-    Text = 'Catálogo das aplicações (rodam na ordem da lista; o Shared é obrigatório)'
-    Location = [Drawing.Point]::new(12, 234); AutoSize = $true
+    Text = 'Catálogo das aplicações e dos services (rodam na ordem da lista; o Shared é obrigatório; Parameters sobe sempre)'
+    Location = [Drawing.Point]::new(12, 400); AutoSize = $true
 }
 
-$list = [Windows.Forms.ListView]@{
-    View = 'Details'; CheckBoxes = $true; FullRowSelect = $true; ShowGroups = $true; HeaderStyle = 'Nonclickable'
-    Location = [Drawing.Point]::new(12, 254); Size = [Drawing.Size]::new(836, 246); Anchor = 'Top, Left, Right'
+# uma linha por aplicação e, abaixo, uma por service (as pastas de Scripts/SQLServer): marcar ou desmarcar a aplicação
+# marca ou desmarca os services dela, e a aplicação fica marcada enquanto algum service estiver
+$list = [Windows.Forms.TreeView]@{
+    CheckBoxes = $true; ShowLines = $true; HideSelection = $false
+    Location = [Drawing.Point]::new(12, 420); Size = [Drawing.Size]::new(836, 246); Anchor = 'Top, Left, Right'
 }
-$null = $list.Columns.Add('Aplicação', 150)
-$null = $list.Columns.Add('Scripts', 60, 'Right')
-$null = $list.Columns.Add('Descrição', 600)
-
-$groups = @{}
 
 foreach ($app in $catalog) {
-    if (-not $groups.ContainsKey($app.Group)) {
-        $groups[$app.Group] = [Windows.Forms.ListViewGroup]::new($app.Group)
-        $null = $list.Groups.Add($groups[$app.Group])
+    $node = [Windows.Forms.TreeNode]::new("[$($app.Group)] $($app.Name) ($($app.Scripts) scripts): $($app.Description)")
+    $node.Tag = $app
+    $node.Checked = [bool]$app.Default
+
+    if ($app.Required) { $node.ForeColor = [Drawing.SystemColors]::GrayText }
+
+    foreach ($service in $app.Services) {
+        $child = [Windows.Forms.TreeNode]::new("$($service.Name) ($($service.Scripts) scripts)")
+        $child.Tag = $service.Name
+        $child.Checked = $node.Checked
+        $null = $node.Nodes.Add($child)
     }
 
-    $item = [Windows.Forms.ListViewItem]::new([string[]]@($app.Name, $app.Scripts, $app.Description), $groups[$app.Group])
-    $item.Tag = $app
-    $item.Checked = [bool]$app.Default
-
-    if ($app.Required) { $item.ForeColor = [Drawing.SystemColors]::GrayText }
-
-    $null = $list.Items.Add($item)
+    $null = $list.Nodes.Add($node)
 }
 
-$list.Add_ItemCheck({
+$list.Add_BeforeCheck({
     param($sender, $e)
 
-    if ($sender.Items[$e.Index].Tag.Required) { $e.NewValue = 'Checked' }
+    if ($e.Node.Tag -is [hashtable] -and $e.Node.Tag.Required -and $e.Node.Checked) { $e.Cancel = $true }
 })
 
-$checkAllButton = [Windows.Forms.Button]@{ Text = 'Marcar todas'; Location = [Drawing.Point]::new(12, 508); Size = [Drawing.Size]::new(110, 28) }
-$checkNoneButton = [Windows.Forms.Button]@{ Text = 'Desmarcar todas'; Location = [Drawing.Point]::new(128, 508); Size = [Drawing.Size]::new(120, 28) }
+# só o clique (ou o teclado) propaga: as mudanças feitas aqui chegam com Action = Unknown e param
+$list.Add_AfterCheck({
+    param($sender, $e)
+
+    if ($e.Action -eq 'Unknown') { return }
+
+    if ($e.Node.Parent) {
+        $parent = $e.Node.Parent
+        $any = @($parent.Nodes | Where-Object Checked).Count -gt 0
+        if ($parent.Checked -ne $any) { $parent.Checked = $any }
+    }
+    else {
+        foreach ($child in $e.Node.Nodes) { $child.Checked = $e.Node.Checked }
+    }
+})
+
+# as aplicações marcadas, cada uma com os services escolhidos (nulo: todos)
+function Get-SelectedApps {
+    @($list.Nodes | Where-Object Checked | ForEach-Object {
+            $app = $_.Tag.Clone()
+            $chosen = @($_.Nodes | Where-Object Checked | ForEach-Object Tag)
+            if ($app.Services.Count -gt 0 -and $chosen.Count -lt $app.Services.Count) { $app.SelectedServices = $chosen }
+            $app
+        })
+}
+
+$checkAllButton = [Windows.Forms.Button]@{ Text = 'Marcar todas'; Location = [Drawing.Point]::new(12, 674); Size = [Drawing.Size]::new(110, 28) }
+$checkNoneButton = [Windows.Forms.Button]@{ Text = 'Desmarcar todas'; Location = [Drawing.Point]::new(128, 674); Size = [Drawing.Size]::new(120, 28) }
 $runButton = [Windows.Forms.Button]@{
-    Text = 'Subir tabelas'; Location = [Drawing.Point]::new(616, 508); Size = [Drawing.Size]::new(120, 28); Anchor = 'Top, Right'
+    Text = 'Subir tabelas'; Location = [Drawing.Point]::new(616, 674); Size = [Drawing.Size]::new(120, 28); Anchor = 'Top, Right'
 }
 $cancelButton = [Windows.Forms.Button]@{
-    Text = 'Cancelar'; Location = [Drawing.Point]::new(742, 508); Size = [Drawing.Size]::new(106, 28); Anchor = 'Top, Right'; Enabled = $false
+    Text = 'Cancelar'; Location = [Drawing.Point]::new(742, 674); Size = [Drawing.Size]::new(106, 28); Anchor = 'Top, Right'; Enabled = $false
 }
 
 # log
 
 $log = [Windows.Forms.RichTextBox]@{
-    Location = [Drawing.Point]::new(12, 546); Size = [Drawing.Size]::new(836, 208); Anchor = 'Top, Bottom, Left, Right'
+    Location = [Drawing.Point]::new(12, 712); Size = [Drawing.Size]::new(836, 134); Anchor = 'Top, Bottom, Left, Right'
     ReadOnly = $true; BackColor = [Drawing.Color]::FromArgb(30, 30, 30); ForeColor = [Drawing.Color]::Gainsboro
     Font = [Drawing.Font]::new('Consolas', 9); WordWrap = $false
 }
 
 $status = [Windows.Forms.Label]@{
-    Text = 'Pronto.'; Location = [Drawing.Point]::new(12, 762); AutoSize = $true; Anchor = 'Bottom, Left'
+    Text = 'Pronto.'; Location = [Drawing.Point]::new(12, 854); AutoSize = $true; Anchor = 'Bottom, Left'
 }
 
-$form.Controls.AddRange(@($connection, $hostGroup, $catalogLabel, $list, $checkAllButton, $checkNoneButton, $runButton, $cancelButton, $log, $status))
+$form.Controls.AddRange(@($connection, $hostGroup, $usersGroup, $hangfireGroup, $appSettingsBox, $catalogLabel, $list, $checkAllButton, $checkNoneButton, $runButton, $cancelButton, $log, $status))
 
 $logColors = @{
     out = [Drawing.Color]::Gainsboro; step = [Drawing.Color]::DeepSkyBlue; ok = [Drawing.Color]::LightGreen
@@ -516,12 +805,18 @@ function Get-Fields {
 }
 
 function Set-Running([bool]$running) {
-    foreach ($control in $connection, $hostGroup, $list, $checkAllButton, $checkNoneButton, $runButton) { $control.Enabled = -not $running }
+    foreach ($control in $connection, $hostGroup, $usersGroup, $hangfireGroup, $appSettingsBox, $list, $checkAllButton, $checkNoneButton, $runButton) { $control.Enabled = -not $running }
     $cancelButton.Enabled = $running
 }
 
-$checkAllButton.Add_Click({ foreach ($item in $list.Items) { $item.Checked = $true } })
-$checkNoneButton.Add_Click({ foreach ($item in $list.Items) { $item.Checked = $false } })
+$checkAllButton.Add_Click({ foreach ($node in $list.Nodes) { $node.Checked = $true; foreach ($child in $node.Nodes) { $child.Checked = $true } } })
+$checkNoneButton.Add_Click({
+    foreach ($node in $list.Nodes) {
+        # o obrigatório (Shared) continua marcado
+        if (-not $node.Tag.Required) { $node.Checked = $false }
+        foreach ($child in $node.Nodes) { $child.Checked = $false }
+    }
+})
 
 # a porta aberta no servidor e, com o sqlcmd no PATH, o login (no master, sem depender do banco já existir)
 $testButton.Add_Click({
@@ -616,13 +911,22 @@ $runButton.Add_Click({
         return
     }
 
+    if ($appSettingsBox.Checked -and $hostRadio.Tag -eq 'WebApi' -and -not ($hangfireUserBox.Text.Trim() -and $hangfirePasswordBox.Text)) {
+        $null = [Windows.Forms.MessageBox]::Show('Com o WebApi como host de agenda, preencha o usuário e a senha do dashboard do Hangfire.', $form.Text, 'OK', 'Warning')
+        return
+    }
+
     $schedulingHost = $schedulingHosts[$hostRadio.Tag]
-    $selected = @($list.Items | Where-Object Checked | ForEach-Object Tag) + @($schedulingHost.App | Where-Object { $_ })
-    $names = ($selected | ForEach-Object Name) -join ', '
+    $selected = @(Get-SelectedApps) + @($schedulingHost.App | Where-Object { $_ })
+    $names = ($selected | ForEach-Object { $null -ne $_.SelectedServices ? "$($_.Name) ($(@($_.SelectedServices).Count) de $($_.Services.Count) services)" : $_.Name }) -join ', '
+    $userPasswords = New-UserPasswords $monitorBox.Text $queryBox.Text
+    $usersText = Get-UserPasswordsText $userPasswords
 
     $answer = [Windows.Forms.MessageBox]::Show(
         ("Subir as tabelas no banco $($fields.Database) de $($fields.Server),$($fields.Port)?`n`n$names`n`n" +
-            "Host de agenda: $($schedulingHost.Title)`n`nO banco é criado se não existir."),
+            "Host de agenda: $($schedulingHost.Title)`n`n$usersText`n`n" +
+            ($appSettingsBox.Checked ? "As connection strings deste banco (e, no WebApi, a seção Hangfire) vão para os appsettings.json do WebApp, do WebApi, do WebJob e do Worker (e saem dos User Secrets deles).`n`n" : '') +
+            "O banco é criado se não existir."),
         $form.Text, 'YesNo', 'Question')
 
     if ($answer -ne 'Yes') { return }
@@ -640,11 +944,14 @@ $runButton.Add_Click({
 
     $log.Clear()
     Write-Log "Servidor $($fields.Server),$($fields.Port), banco $($fields.Database), host de agenda $($schedulingHost.Title): $names" 'step'
+    Write-Log $usersText 'step'
     $status.Text = 'Rodando...'
     Set-Running $true
 
-    $secrets = @(Get-Secrets $fields.Password)
-    $script:run = Start-Migration $selected $connectionString $secrets $schedulingHost
+    $appSettings = $appSettingsBox.Checked ? @(New-AppSettingsTargets $fields.Server $fields.Port $fields.Database $fields.User $fields.Password $fields.Trust $userPasswords `
+        $hostRadio.Tag $hangfireUserBox.Text.Trim() $hangfirePasswordBox.Text) : $null
+    $secrets = @(Get-Secrets $fields.Password) + @($userPasswords.Values | ForEach-Object { Get-Secrets $_ }) + @(Get-Secrets $hangfirePasswordBox.Text)
+    $script:run = Start-Migration $selected $connectionString $secrets $schedulingHost $userPasswords $appSettings
     $timer.Start()
 })
 

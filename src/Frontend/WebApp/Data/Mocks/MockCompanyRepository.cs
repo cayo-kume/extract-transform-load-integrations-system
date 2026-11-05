@@ -3,156 +3,195 @@ using WebApp.Models;
 namespace WebApp.Data.Mocks
 {
     /// <summary>
-    /// Empresas, CNPJs, contratações e parâmetros em memória, compartilhados pelos dois repositórios falsos do cadastro.
-    /// Segredos ficam aqui, mas nunca saem pelos repositórios. Começa com a empresa logada (NEWBLOOMERS) e duas marcas.
+    /// Holdings, empresas, contratações e parâmetros em memória, compartilhados pelos dois repositórios falsos do cadastro.
+    /// Segredos e hashes de senha ficam aqui, mas nunca saem pelos repositórios. Começa com a holding da configuração
+    /// (NEWBLOOMERS), duas marcas, a holding fictícia Abacartes, de uma empresa só, e o usuário admin (senha admin1234) na
+    /// holding da configuração, para entrar no painel com o mock.
     /// </summary>
     public class MockCompanyStore
     {
         public readonly Lock Gate = new();
 
+        /// <summary>
+        /// CNPJ da holding → nome fantasia.
+        /// </summary>
+        public Dictionary<string, string?> Holders { get; } = [];
+
+        /// <summary>
+        /// CNPJ da empresa → empresa (com a holding).
+        /// </summary>
         public Dictionary<string, CompanyModel> Companies { get; } = [];
 
         /// <summary>
-        /// CNPJ de parâmetros → (holding, nome, criado em).
+        /// (empresa, job, tipo) → ativo, dos jobs contratados aqui (a empresa da configuração vem dos jobs do mock do monitor).
         /// </summary>
-        public Dictionary<string, (string Holding, string? Name, DateTime CreatedAt)> HoldingCompanies { get; } = [];
+        public Dictionary<(string Company, int IdJob, int IdType), bool> Jobs { get; } = [];
 
         /// <summary>
-        /// (empresa, módulo) → (jobs, ativos) das empresas que não são a logada (a logada vem dos jobs do mock do monitor).
+        /// (módulo, empresa) → colunas e quando foi gravada.
         /// </summary>
-        public Dictionary<(string Company, int IdParent), (int Jobs, int Active)> Apps { get; } = [];
+        public Dictionary<(int IdParent, string Company), (Dictionary<string, string?> Values, DateTime UpdatedAt)> Parameters { get; } = [];
 
         /// <summary>
-        /// (módulo, CNPJ) → colunas e quando foi gravada.
+        /// Usuários do painel (monitor.Users), com o hash da senha.
         /// </summary>
-        public Dictionary<(int IdParent, string DocCompany), (Dictionary<string, string?> Values, DateTime UpdatedAt)> Parameters { get; } = [];
+        public List<(UserModel User, string PasswordHash)> Users { get; } = [];
 
-        public MockCompanyStore()
+        /// <summary>
+        /// A empresa cujos jobs são os do mock do monitor.
+        /// </summary>
+        public string MonitorCompany { get; }
+
+        public MockCompanyStore(IConfiguration configuration)
         {
             var now = DateTime.Now;
-            var holding = LoggedCompany.DocCompany;
+            var holder = configuration["LoggedCompany:DocCompany"] is { Length: > 0 } doc ? doc : "44065634000106";
+            var name = configuration["LoggedCompany:Name"] is { Length: > 0 } configured ? configured : "NEWBLOOMERS";
+            MonitorCompany = holder;
 
-            Companies[holding] = new CompanyModel { Company = holding, Name = LoggedCompany.Name, TradeName = "NewBloomers", CreatedAt = now.AddDays(-30), UpdatedAt = now.AddDays(-30) };
-            Companies["12345678000195"] = new CompanyModel { Company = "12345678000195", Name = "Cliente Exemplo Ltda", TradeName = "Exemplo", IsActive = false, CreatedAt = now.AddDays(-5), UpdatedAt = now.AddDays(-2) };
+            Holders[holder] = name;
+            Add(holder, holder, name);
+            Add("11111111000111", holder, "Marca A");
+            Add("22222222000122", holder, "Marca B");
 
-            // marcas fictícias da holding; a própria holding entra porque tem parâmetros (Totvs)
-            HoldingCompanies[holding] = (holding, LoggedCompany.Name, now.AddDays(-30));
-            HoldingCompanies["11111111000111"] = (holding, "Marca A", now.AddDays(-30));
-            HoldingCompanies["22222222000122"] = (holding, "Marca B", now.AddDays(-30));
+            Holders["33333333000133"] = "Abacartes";
+            Add("33333333000133", "33333333000133", "Abacartes");
 
-            Parameters[(130, holding)] = (new() { ["client_id"] = "newbloomers-api", ["client_secret"] = "mock", ["username"] = "integracao", ["password"] = "mock" }, now.AddDays(-30));
+            Users.Add((new UserModel { IdUser = 1, Company = holder, Name = "Administrador", UserName = "admin", Email = "admin@exemplo.com.br", CreatedAt = now.AddDays(-30) },
+                UserAccounts.Hash("admin1234")));
+
+            Parameters[(130, holder)] = (new() { ["client_id"] = "newbloomers-api", ["client_secret"] = "mock", ["username"] = "integracao", ["password"] = "mock" }, now.AddDays(-30));
+            Parameters[(80, holder)] = (new() { ["grupo"] = "NEWBLOOMERS", ["erp_chave"] = Guid.NewGuid().ToString(), ["erp_user_name"] = "linx_export", ["erp_password"] = "mock" }, now.AddDays(-25));
             Parameters[(30, "11111111000111")] = (new() { ["token"] = Guid.NewGuid().ToString() }, now.AddDays(-20));
-            Parameters[(30, "22222222000122")] = (new() { ["token"] = Guid.NewGuid().ToString() }, now.AddDays(-20));
             Parameters[(50, "11111111000111")] = (new() { ["token"] = Guid.NewGuid().ToString() }, now.AddDays(-10));
-            Parameters[(80, holding)] = (new() { ["grupo"] = "NEWBLOOMERS", ["erp_chave"] = Guid.NewGuid().ToString(), ["erp_user_name"] = "linx_export", ["erp_password"] = "mock" }, now.AddDays(-25));
+            Parameters[(30, "22222222000122")] = (new() { ["token"] = Guid.NewGuid().ToString() }, now.AddDays(-20));
+
+            void Add(string company, string holding, string? fantasyName) =>
+                Companies[company] = new CompanyModel { Company = company, Holder = holding, FantasyName = fantasyName };
         }
     }
 
     /// <summary>
-    /// ICompanyRepository em memória (MockCompanyStore). O catálogo de módulos e os jobs da empresa logada vêm do
-    /// IMonitorRepository, para a tela de cadastro bater com as outras telas.
+    /// ICompanyRepository em memória (MockCompanyStore), com as mesmas regras do SqlCompanyRepository. O catálogo vem do
+    /// MockCatalog e a agenda sugerida, do JobAgenda (o .csv embutido), como no banco.
     /// </summary>
     public class MockCompanyRepository(MockCompanyStore store, IMonitorRepository monitor) : ICompanyRepository
     {
-        public Task<IReadOnlyList<CompanyModel>> GetCompaniesAsync(CancellationToken cancellationToken = default)
+        private const int HostsApp = 140;
+
+        public Task<IReadOnlyList<HolderModel>> GetHoldersAsync(CancellationToken cancellationToken = default)
         {
             lock (store.Gate)
-                return Task.FromResult<IReadOnlyList<CompanyModel>>(store.Companies.Values.OrderBy(x => x.Name).Select(Copy).ToList());
+            {
+                IReadOnlyList<HolderModel> holders = store.Holders
+                    .Select(x => new HolderModel { Holder = x.Key, FantasyName = x.Value, Companies = store.Companies.Values.Count(c => c.Holder == x.Key) })
+                    .OrderBy(x => x.Label)
+                    .ToList();
+
+                return Task.FromResult(holders);
+            }
         }
 
-        public Task<CompanyModel?> GetCompanyAsync(string company, CancellationToken cancellationToken = default)
+        public Task CreateHolderAsync(string holder, string? fantasyName, UserInput firstUser, CancellationToken cancellationToken = default)
         {
-            lock (store.Gate)
-                return Task.FromResult(store.Companies.TryGetValue(ModuleDefinitions.Digits(company), out var found) ? Copy(found) : null);
-        }
-
-        public Task CreateCompanyAsync(CompanyModel company, CancellationToken cancellationToken = default)
-        {
-            var key = ValidCompany(company.Company);
-            var name = Required(company.Name, "A razão social");
+            var key = Document(holder, "da holding");
 
             lock (store.Gate)
             {
-                // as mesmas regras de auditing.sp_Add_Company (50003) e da chave de monitor.Company
-                if (store.HoldingCompanies.TryGetValue(key, out var link) && link.Holding != key)
-                    throw new CompanyRegistrationException($"O CNPJ {key} já é da holding {link.Holding}.", 50003);
-                if (store.Companies.ContainsKey(key))
-                    throw new CompanyRegistrationException($"A empresa {key} já está cadastrada.");
+                EnsureFree(key);
+                var user = MockUserRepository.NewUser(store, firstUser, key);
 
-                var now = DateTime.Now;
-                store.Companies[key] = new CompanyModel { Company = key, Name = name, TradeName = Blank(company.TradeName), IsActive = true, CreatedAt = now, UpdatedAt = now };
+                store.Holders[key] = Blank(fantasyName);
+                store.Companies[key] = new CompanyModel { Company = key, Holder = key, FantasyName = Blank(fantasyName) };
+                AddJobs(key, HostsApp);
+                store.Users.Add(user);
             }
 
             return Task.CompletedTask;
         }
 
-        public Task UpdateCompanyAsync(string company, string name, string? tradeName, CancellationToken cancellationToken = default)
+        public Task UpdateHolderAsync(string holder, string? fantasyName, CancellationToken cancellationToken = default)
         {
-            var required = Required(name, "A razão social");
+            var key = ModuleDefinitions.Digits(holder);
 
             lock (store.Gate)
             {
-                var found = Find(company);
-                found.Name = required;
-                found.TradeName = Blank(tradeName);
-                found.UpdatedAt = DateTime.Now;
+                if (!store.Holders.ContainsKey(key))
+                    throw new CompanyRegistrationException($"A holding {holder} não está cadastrada.");
+
+                store.Holders[key] = Blank(fantasyName);
             }
 
             return Task.CompletedTask;
         }
 
-        public Task SetCompanyActiveAsync(string company, bool isActive, CancellationToken cancellationToken = default)
+        public Task<IReadOnlyList<CompanyModel>> GetCompaniesAsync(string holder, CancellationToken cancellationToken = default)
         {
-            lock (store.Gate)
-            {
-                var found = Find(company);
-                found.IsActive = isActive;
-                found.UpdatedAt = DateTime.Now;
-            }
-
-            return Task.CompletedTask;
-        }
-
-        public Task<IReadOnlyList<HoldingCompanyModel>> GetHoldingCompaniesAsync(string company, CancellationToken cancellationToken = default)
-        {
-            var key = ModuleDefinitions.Digits(company);
+            var key = ModuleDefinitions.Digits(holder);
 
             lock (store.Gate)
             {
-                IReadOnlyList<HoldingCompanyModel> result = store.HoldingCompanies
-                    .Where(x => x.Value.Holding == key)
-                    .OrderBy(x => x.Key)
-                    .Select(x => new HoldingCompanyModel
+                IReadOnlyList<CompanyModel> companies = store.Companies.Values
+                    .Where(x => x.Holder == key)
+                    .OrderBy(x => x.IsHolder ? 0 : 1)
+                    .ThenBy(x => x.Label)
+                    .Select(x => new CompanyModel
                     {
-                        Company = x.Key,
-                        Name = x.Value.Name,
-                        CreatedAt = x.Value.CreatedAt,
-                        Modules = store.Parameters.Keys.Where(p => p.DocCompany == x.Key).Select(p => p.IdParent).OrderBy(p => p).ToList()
+                        Company = x.Company,
+                        Holder = x.Holder,
+                        FantasyName = x.FantasyName,
+                        Modules = store.Parameters.Keys.Where(p => p.Company == x.Company).Select(p => p.IdParent).Order().ToList()
                     })
                     .ToList();
 
-                return Task.FromResult(result);
+                return Task.FromResult(companies);
             }
+        }
+
+        public Task CreateCompanyAsync(string holder, string company, string? fantasyName, CancellationToken cancellationToken = default)
+        {
+            var holderKey = ModuleDefinitions.Digits(holder);
+            var key = Document(company, "da empresa");
+
+            lock (store.Gate)
+            {
+                if (!store.Holders.ContainsKey(holderKey))
+                    throw new CompanyRegistrationException($"A holding {holderKey} não está cadastrada.");
+
+                EnsureFree(key);
+                store.Companies[key] = new CompanyModel { Company = key, Holder = holderKey, FantasyName = Blank(fantasyName) };
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public Task UpdateCompanyAsync(string company, string? fantasyName, CancellationToken cancellationToken = default)
+        {
+            lock (store.Gate)
+                Find(company).FantasyName = Blank(fantasyName);
+
+            return Task.CompletedTask;
         }
 
         public async Task<IReadOnlyList<CompanyAppModel>> GetAppsAsync(string company, CancellationToken cancellationToken = default)
         {
             var key = ModuleDefinitions.Digits(company);
-            var apps = await monitor.GetAppSummariesAsync(Period.Last24Hours, cancellationToken);
-            var jobs = await monitor.GetJobsAsync(idApp: null, idType: null, cancellationToken);
+            var monitorJobs = key == store.MonitorCompany ? await monitor.GetJobsAsync(idApp: null, idType: null, cancellationToken) : [];
 
             lock (store.Gate)
             {
                 Find(key);
 
-                return apps
+                return MockCatalog.Apps
                     .OrderBy(x => x.Title)
                     .Select(app =>
                     {
-                        // a empresa logada é a dos jobs do mock do monitor; as outras, o que foi contratado aqui
-                        var (count, active) = key == LoggedCompany.DocCompany
-                            ? (jobs.Count(x => x.IdApp == app.IdParent), jobs.Count(x => x.IdApp == app.IdParent && x.IsActive))
-                            : store.Apps.GetValueOrDefault((key, app.IdParent));
+                        var tree = Tree(app.IdParent);
+
+                        // a empresa da configuração é a dos jobs do mock do monitor; as outras, o que foi contratado aqui
+                        var (count, active) = key == store.MonitorCompany
+                            ? (monitorJobs.Count(x => x.IdApp == app.IdParent), monitorJobs.Count(x => x.IdApp == app.IdParent && x.IsActive))
+                            : (tree.Count(x => store.Jobs.ContainsKey((key, x.IdJob, x.IdType))), tree.Count(x => store.Jobs.GetValueOrDefault((key, x.IdJob, x.IdType))));
 
                         return new CompanyAppModel { IdParent = app.IdParent, Title = app.Title, Description = app.Description, Jobs = count, ActiveJobs = active };
                     })
@@ -160,22 +199,26 @@ namespace WebApp.Data.Mocks
             }
         }
 
-        public async Task<int> AddAppAsync(string company, int idParent, CancellationToken cancellationToken = default)
+        public Task<IReadOnlyList<CatalogJobModel>> GetCatalogJobsAsync(int idParent, CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<CatalogJobModel>>(CatalogJobs(idParent));
+
+        public Task<int> AddAppAsync(string company, int idParent, IReadOnlyList<CatalogJobModel> jobs, CancellationToken cancellationToken = default)
         {
             var key = ModuleDefinitions.Digits(company);
-            var catalog = (await monitor.GetJobsAsync(idApp: idParent, idType: null, cancellationToken)).Count;
+
+            foreach (var job in jobs)
+            {
+                var error = Sql.SqlCompanyRepository.ScheduleError(job);
+                if (error is not null)
+                    throw new CompanyRegistrationException($"{job.IdJob} {job.Title}: {error}");
+            }
 
             lock (store.Gate)
             {
                 Find(key);
 
-                // a empresa logada já tem todos os jobs no mock do monitor
-                if (key == LoggedCompany.DocCompany)
-                    return 0;
-
-                var (jobs, active) = store.Apps.GetValueOrDefault((key, idParent));
-                store.Apps[(key, idParent)] = (catalog, active);
-                return catalog - jobs;
+                // a empresa da configuração já tem todos os jobs no mock do monitor
+                return Task.FromResult(key == store.MonitorCompany ? 0 : AddJobs(key, idParent));
             }
         }
 
@@ -187,11 +230,55 @@ namespace WebApp.Data.Mocks
             {
                 Find(key);
 
-                if (store.Apps.TryGetValue((key, idParent), out var app))
-                    store.Apps[(key, idParent)] = (app.Jobs, 0);
+                foreach (var job in Tree(idParent).Where(x => store.Jobs.ContainsKey((key, x.IdJob, x.IdType))))
+                    store.Jobs[(key, job.IdJob, job.IdType)] = false;
             }
 
             return Task.CompletedTask;
+        }
+
+        // dentro do lock
+        private int AddJobs(string company, int idParent)
+        {
+            var created = 0;
+            foreach (var job in Tree(idParent))
+            {
+                if (store.Jobs.TryAdd((company, job.IdJob, job.IdType), false))
+                    created++;
+            }
+
+            return created;
+        }
+
+        // os jobs do módulo e, abaixo deles, as procedures que eles chamam (auditing.fn_CatalogTree)
+        private static List<CatalogJob> Tree(int idParent)
+        {
+            var tree = MockCatalog.Jobs.Where(x => x.IdParent == idParent).ToList();
+            var parents = tree.Select(x => x.IdJob).ToHashSet();
+            tree.AddRange(MockCatalog.Jobs.Where(x => x.IdType == 1 && parents.Contains(x.IdParent) && !tree.Contains(x)));
+            return tree;
+        }
+
+        private static List<CatalogJobModel> CatalogJobs(int idParent) => Tree(idParent)
+            .OrderByDescending(x => x.IdType)
+            .ThenBy(x => x.IdJob)
+            .Select(x => JobAgenda.Suggest(new CatalogJobModel
+            {
+                IdJob = x.IdJob,
+                IdType = x.IdType,
+                Title = x.Title,
+                Description = x.Description,
+                IsOnDemand = x.IdType == 2 && x.IntervalTimeInMinutes == 0 && x.RunningDailyAt is null
+            }))
+            .ToList();
+
+        // dentro do lock: um CNPJ é de uma holding só, e a própria holding é uma empresa
+        private void EnsureFree(string key)
+        {
+            if (store.Companies.TryGetValue(key, out var found))
+                throw new CompanyRegistrationException(found.IsHolder
+                    ? $"A holding e a empresa {found.Label} ({key}) já estão cadastradas."
+                    : $"O CNPJ {key} já é uma empresa da holding {found.Holder}.", CompanyRegistrationException.AlreadyRegistered);
         }
 
         // dentro do lock
@@ -200,26 +287,13 @@ namespace WebApp.Data.Mocks
                 ? found
                 : throw new CompanyRegistrationException($"A empresa {company} não está cadastrada.", 50002);
 
-        private static string ValidCompany(string? company)
+        private static string Document(string? value, string what)
         {
-            var key = ModuleDefinitions.Digits(company);
-            return key.Length is 11 or 14 ? key : throw new CompanyRegistrationException("O CNPJ precisa ter 14 dígitos (ou 11, de CPF).");
+            var key = ModuleDefinitions.Digits(value);
+            return key.Length is 11 or 14 ? key : throw new CompanyRegistrationException($"O CNPJ {what} precisa ter 14 dígitos (ou 11, de CPF).");
         }
 
-        private static string Required(string? value, string label) =>
-            string.IsNullOrWhiteSpace(value) ? throw new CompanyRegistrationException($"{label} é obrigatória.") : value.Trim();
-
         private static string? Blank(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
-
-        private static CompanyModel Copy(CompanyModel x) => new()
-        {
-            Company = x.Company,
-            Name = x.Name,
-            TradeName = x.TradeName,
-            IsActive = x.IsActive,
-            CreatedAt = x.CreatedAt,
-            UpdatedAt = x.UpdatedAt
-        };
     }
 
     /// <summary>
@@ -227,20 +301,16 @@ namespace WebApp.Data.Mocks
     /// </summary>
     public class MockModuleParametersRepository(MockCompanyStore store) : IModuleParametersRepository
     {
-        public Task<IReadOnlyList<ModuleParametersModel>> GetParametersAsync(int idParent, string company, CancellationToken cancellationToken = default)
+        public Task<ModuleParametersModel?> GetParametersAsync(int idParent, string company, CancellationToken cancellationToken = default)
         {
             var definition = ModuleDefinitions.Get(idParent);
             var key = ModuleDefinitions.Digits(company);
 
             lock (store.Gate)
             {
-                IReadOnlyList<ModuleParametersModel> result = store.Parameters
-                    .Where(x => x.Key.IdParent == idParent && store.HoldingCompanies.TryGetValue(x.Key.DocCompany, out var link) && link.Holding == key)
-                    .OrderBy(x => x.Key.DocCompany)
-                    .Select(x => ToModel(definition, x.Key.DocCompany, x.Value.Values, x.Value.UpdatedAt))
-                    .ToList();
-
-                return Task.FromResult(result);
+                return Task.FromResult(store.Parameters.TryGetValue((idParent, key), out var row)
+                    ? ToModel(definition, key, row.Values, row.UpdatedAt)
+                    : null);
             }
         }
 
@@ -248,20 +318,13 @@ namespace WebApp.Data.Mocks
         {
             var definition = ModuleDefinitions.Get(idParent);
             var key = ModuleDefinitions.Digits(company);
-            var doc = ModuleDefinitions.Digits(input.DocCompany);
 
             lock (store.Gate)
             {
                 if (!store.Companies.ContainsKey(key))
                     throw new CompanyRegistrationException($"A empresa {key} não está cadastrada.", 50002);
 
-                // as regras de auditing.sp_Add_Holding_Company
-                if (store.HoldingCompanies.TryGetValue(doc, out var link) && link.Holding != key)
-                    throw new CompanyRegistrationException($"O CNPJ {doc} já é da holding {link.Holding}.", 50003);
-                if (doc != key && store.Companies.ContainsKey(doc))
-                    throw new CompanyRegistrationException($"O CNPJ {doc} é de outra empresa do painel.", 50004);
-
-                var current = store.Parameters.TryGetValue((idParent, doc), out var row) ? row.Values : [];
+                var current = store.Parameters.TryGetValue((idParent, key), out var row) ? row.Values : [];
                 var error = ModuleDefinitions.Validate(definition, input, SecretsSet(definition, current));
                 if (error is not null)
                     throw new CompanyRegistrationException(error);
@@ -278,10 +341,7 @@ namespace WebApp.Data.Mocks
                     values[field.Column] = string.IsNullOrEmpty(value) ? null : value;
                 }
 
-                if (!store.HoldingCompanies.ContainsKey(doc))
-                    store.HoldingCompanies[doc] = (key, string.IsNullOrWhiteSpace(input.DocCompanyName) ? null : input.DocCompanyName.Trim(), DateTime.Now);
-
-                store.Parameters[(idParent, doc)] = (values, DateTime.Now);
+                store.Parameters[(idParent, key)] = (values, DateTime.Now);
             }
 
             return Task.CompletedTask;

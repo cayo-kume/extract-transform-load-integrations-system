@@ -11,7 +11,7 @@ namespace WebApp.Data.Mocks
     /// RouteOverrides, copiadas dos controllers do host. A chamada não sai do WebApp: a resposta é simulada e, quando o host
     /// teria rodado a integração, vira uma execução do job na MockTimeline.
     /// </summary>
-    internal sealed partial class MockOnDemandRunner(MockTimeline timeline) : IOnDemandRunner
+    internal sealed partial class MockOnDemandRunner(MockTimeline timeline, IConfiguration configuration) : IOnDemandRunner
     {
         private const string User = "operador";
         private const int MaxCallsPerJob = 20;
@@ -113,7 +113,7 @@ namespace WebApp.Data.Mocks
 
         private const string GenericModel = "Nesta fase, os campos do corpo não estão no painel: na fase 5 o modelo vem do swagger.json do host.";
 
-        private readonly Lazy<IReadOnlyList<OnDemandOperation>> _operations = new(() => Build(timeline));
+        private readonly Lazy<IReadOnlyList<OnDemandOperation>> _operations = new(() => Build(timeline, configuration["LoggedCompany:DocCompany"] is { Length: > 0 } doc ? doc : "44065634000106"));
         private readonly ConcurrentDictionary<int, ConcurrentQueue<OnDemandCall>> _calls = new();
 
         public async Task<IReadOnlyList<OnDemandOperation>> GetOperationsAsync(CancellationToken cancellationToken = default)
@@ -187,16 +187,16 @@ namespace WebApp.Data.Mocks
                 queue.TryDequeue(out _);
         }
 
-        private static IReadOnlyList<OnDemandOperation> Build(MockTimeline timeline) => timeline.Jobs
+        private static IReadOnlyList<OnDemandOperation> Build(MockTimeline timeline, string docCompany) => timeline.Jobs
             .Where(x => x.Catalog.IdType == 2 && x.Catalog.IntervalTimeInMinutes == 0 && x.Catalog.RunningDailyAt is null)
-            .Select(x => ToOperation(x, timeline.Apps[x.IdApp].Title))
+            .Select(x => ToOperation(x, timeline.Apps[x.IdApp].Title, docCompany))
             .OfType<OnDemandOperation>()
             .OrderBy(x => x.AppTitle)
             .ThenBy(x => x.Tag)
             .ThenBy(x => x.IdJob)
             .ToList();
 
-        private static OnDemandOperation? ToOperation(MockJob job, string appTitle)
+        private static OnDemandOperation? ToOperation(MockJob job, string appTitle, string docCompany)
         {
             var catalog = job.Catalog;
             var match = VerbAndRoute().Match(catalog.Description ?? "");
@@ -218,7 +218,7 @@ namespace WebApp.Data.Mocks
                 var name = parameter.Groups[1].Value;
                 if (name == "docCompany")
                 {
-                    parameters.Add(new OnDemandParameter(name, ParameterLocation.Path, "string (14 dígitos)", true, "Empresa (a logada)", LoggedCompany.DocCompany));
+                    parameters.Add(new OnDemandParameter(name, ParameterLocation.Path, "string (14 dígitos)", true, "Empresa (a logada)", docCompany));
                     continue;
                 }
 

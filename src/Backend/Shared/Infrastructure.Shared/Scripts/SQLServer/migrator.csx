@@ -79,10 +79,23 @@ foreach (var (procedure, variable) in new[] { ("dbo.sp_Create_Monitor_User", "ET
     using var command = new SqlCommand(procedure, connection) { CommandType = System.Data.CommandType.StoredProcedure, CommandTimeout = 300 };
     command.Parameters.AddWithValue("@password", password);
 
+    // as procedures só criam: quem já existia ficaria com a senha antiga, e o appsettings que o Invoke-Migrators grava com
+    // esta senha não conectaria. Então a senha informada vale também para o login (ou o usuário contido, na Azure) existente
+    using var align = new SqlCommand(@"
+        DECLARE @sql NVARCHAR(MAX);
+        IF CAST(SERVERPROPERTY('EngineEdition') AS INT) = 5
+            SET @sql = N'ALTER USER ' + QUOTENAME(@login) + N' WITH PASSWORD = ' + QUOTENAME(@password, '''') + N';';
+        ELSE IF EXISTS (SELECT 1 FROM sys.server_principals WHERE name = @login)
+            SET @sql = N'ALTER LOGIN ' + QUOTENAME(@login) + N' WITH PASSWORD = ' + QUOTENAME(@password, '''') + N';';
+        IF @sql IS NOT NULL EXEC (@sql);", connection) { CommandTimeout = 300 };
+    align.Parameters.AddWithValue("@login", procedure == "dbo.sp_Create_Monitor_User" ? "etl_monitor" : "etl_query");
+    align.Parameters.AddWithValue("@password", password);
+
     try
     {
         command.ExecuteNonQuery();
-        Console.WriteLine($"{procedure}: ok.");
+        align.ExecuteNonQuery();
+        Console.WriteLine($"{procedure}: ok (senha do login acertada).");
     }
     catch (SqlException exception)
     {

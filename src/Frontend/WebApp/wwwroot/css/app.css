@@ -158,6 +158,35 @@ code {
     border-radius: 12px;
 }
 
+/* Aplicação do catálogo ainda não contratada pela empresa: esmaecida, com a borda neutra */
+.app-card.app-card-available {
+    border-color: var(--mud-palette-lines-default);
+    opacity: 0.75;
+}
+
+/* Visão Geral: o último card da grade abre o Adicionar aplicação */
+.app-card-add {
+    border: 1px dashed var(--mud-palette-primary);
+    border-radius: 12px;
+    min-height: 220px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: var(--mud-palette-primary);
+    background: transparent;
+    cursor: pointer;
+    font: inherit;
+    width: 100%;
+}
+
+.app-card-add:hover,
+.app-card-add:focus-visible {
+    background: rgba(126, 111, 255, 0.08);
+}
+
 .app-description {
     margin-top: 10px;
     width: 100%;
@@ -349,6 +378,16 @@ code {
 .mud-appbar .logged-company {
     font-weight: 700;
     color: var(--mud-palette-warning);
+}
+
+/* Seletor de empresa da holding, ao lado do nome dela: largura fixa no desktop, o CNPJ em cinza */
+.mud-appbar .company-select {
+    flex: 0 0 300px;
+    max-width: 300px;
+}
+
+.company-select-doc {
+    color: var(--mud-palette-text-secondary);
 }
 
 /* Botão de copiar no canto do bloco de código: aparece ao passar o mouse (e com o foco do teclado) */
@@ -1121,6 +1160,17 @@ code {
 /* Celular (abaixo de 600px, o sm da MudBlazor) */
 @media (max-width: 599.98px) {
     /* barra do topo: o nome da empresa menor, cortado com reticências quando não cabe */
+    /* o seletor de empresa ocupa o espaço que sobra; o nome da holding sai (a empresa já diz qual é) */
+    .mud-appbar .company-select {
+        flex: 1 1 auto;
+        max-width: none;
+        min-width: 0;
+    }
+
+    .mud-appbar .logged-company {
+        display: none;
+    }
+
     .mud-appbar .logged-company {
         font-size: 0.75rem;
         min-width: 0;
@@ -1455,4 +1505,27 @@ html {
     .assistant-panel ~ .assistant-fab {
         display: none;
     }
+}
+
+/* Cadastro de holdings e empresas (tela fora do painel, aberta pela tela inicial): a linha escolhida em roxo claro */
+.registration-page {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px;
+    min-height: 100vh;
+    background: var(--mud-palette-background);
+}
+
+/* Primeiro acesso: os títulos das duas colunas na altura da linha de botões das empresas */
+.registration-title {
+    min-height: 36.5px;
+}
+
+.registration-row {
+    cursor: pointer;
+}
+
+.registration-selected {
+    cursor: pointer;
+    background: rgba(126, 111, 255, 0.12);
 }

@@ -28,8 +28,8 @@
     o script para: nunca cai para um banco pago.
 
     Senhas não aparecem no console: o administrador do SQL vem de -SqlAdminCredential (ou Get-Credential), e as senhas do
-    etl_monitor/etl_query, das variáveis ETL_MONITOR_PASSWORD e ETL_QUERY_PASSWORD (as mesmas senhas que se digitam no
-    Invoke-HostsConfig, que cria os dois usuários no banco).
+    etl_monitor/etl_query, das variáveis ETL_MONITOR_PASSWORD e ETL_QUERY_PASSWORD (as mesmas que se
+    passam ao Invoke-Migrators.ps1 em -MonitorPassword e -QueryPassword, que cria os dois usuários no banco).
 
     Pré-requisito: az login com acesso à assinatura da NEWBLOOMERS.
 
@@ -428,7 +428,7 @@ Write-Host "Pronto. Servidor: $sqlServer.database.windows.net (porta 1433)." -Fo
 foreach ($name in $Scenario) {
     $host_ = if ($name -in 'C3', 'A10') { 'WebApi' } elseif ($name -eq 'C6') { 'Worker' } else { 'WebJob' }
     Write-Host "  $($name): ./tools/migrators/Invoke-Migrators.ps1 -NoGui -Server $sqlServer.database.windows.net -Database EtlTeste_$name -SchedulingHost $host_"
-    Write-Host "  $($name): ./tools/hosts/Invoke-HostsConfig.ps1 -Server $sqlServer.database.windows.net -Database EtlTeste_$name -SchedulingHost $host_ (empresa, credenciais, jobs e os usuários etl_monitor/etl_query)"
+    Write-Host "  $($name): ./tools/seeds/Import-TestSeeds.ps1 -Server $sqlServer.database.windows.net -Database EtlTeste_$name (holding, empresas, credenciais e jobs; ativar os jobs pelo WebApp)"
 }
 if ('C7' -in $Scenario) {
     Write-Host "  WebJobs: publish-webjob.ps1 -Profile teste (ResourceGroup $resourceGroup, AppServiceName $appWebJobs, SubscriptionId $subscription)."

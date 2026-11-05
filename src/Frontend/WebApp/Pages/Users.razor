@@ -1,0 +1,99 @@
+@page "/users"
+@inject AdminAccess AdminAccess
+@inject IUserRepository UserRepository
+@inject LoggedCompany LoggedCompany
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject ILogger<Users> Logger
+
+@* Cadastros › Cadastrar Usuário: os usuários do painel (monitor.Users) das empresas da holding logada. O primeiro nasce com a
+   holding, na tela inicial; aqui entram os outros. Sem perfis por enquanto: todo usuário vê o painel da holding dele. *@
+
+<PageTitle>Cadastrar Usuário</PageTitle>
+
+@if (!AdminAccess.IsAllowed)
+{
+    <MudAlert Severity="Severity.Warning" Class="ma-4">Esta tela é só para administrador (Admin:Enabled em Development, até os perfis de usuário).</MudAlert>
+}
+else
+{
+    <MudGrid>
+        <MudItem xs="12" Class="d-flex align-center flex-wrap gap-3 pa-1 pl-10 pl-md-16">
+            <PageHeader Icon="@Icons.Material.Filled.People" Title="Cadastrar Usuário" Subtitle="@($"Os usuários das empresas da holding {LoggedCompany.HolderName}")" />
+            <MudSpacer />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PersonAdd" Class="mr-4" OnClick="NewUser">Novo usuário</MudButton>
+        </MudItem>
+    </MudGrid>
+
+    <div class="pa-4">
+        @if (_users is null)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+        }
+        else
+        {
+            <MudTable T="UserModel" Items="_users" Hover="true" Dense="true" Outlined="true" Elevation="0" Breakpoint="Breakpoint.Sm">
+                <HeaderContent>
+                    <MudTh>Nome</MudTh>
+                    <MudTh>Usuário</MudTh>
+                    <MudTh>E-mail</MudTh>
+                    <MudTh>Empresa</MudTh>
+                    <MudTh>Desde</MudTh>
+                    <MudTh></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Nome"><b>@context.Name</b></MudTd>
+                    <MudTd DataLabel="Usuário">@context.UserName</MudTd>
+                    <MudTd DataLabel="E-mail">@context.Email</MudTd>
+                    <MudTd DataLabel="Empresa">@context.CompanyLabel</MudTd>
+                    <MudTd DataLabel="Desde">@context.CreatedAt.ToString("dd/MM/yyyy")</MudTd>
+                    <MudTd>
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" aria-label="Editar o usuário" OnClick="@(() => EditUser(context))" />
+                    </MudTd>
+                </RowTemplate>
+                <NoRecordsContent>
+                    <MudText Typo="Typo.body2">Nenhum usuário cadastrado: comece por <b>Novo usuário</b>.</MudText>
+                </NoRecordsContent>
+            </MudTable>
+        }
+    </div>
+}
+
+@code {
+    private IReadOnlyList<UserModel>? _users;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AdminAccess.IsAllowed)
+            await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            _users = await UserRepository.GetUsersAsync(LoggedCompany.Holder);
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Não foi possível ler os usuários da holding {Holder}.", LoggedCompany.Holder);
+            Snackbar.Add("Não foi possível ler os usuários da holding.", Severity.Error);
+            _users ??= [];
+        }
+    }
+
+    private async Task NewUser()
+    {
+        if (await UserFormDialog.ShowAsync(DialogService) is { } userName)
+        {
+            Snackbar.Add($"Usuário {userName} cadastrado.", Severity.Success);
+            await LoadAsync();
+        }
+    }
+
+    private async Task EditUser(UserModel user)
+    {
+        if (await UserFormDialog.ShowAsync(DialogService, user) is not null)
+            await LoadAsync();
+    }
+}

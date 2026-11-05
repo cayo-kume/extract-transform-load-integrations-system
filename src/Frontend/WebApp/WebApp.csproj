@@ -16,4 +16,9 @@
     <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.14" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- agenda sugerida dos jobs ao contratar um módulo (Data/JobAgenda.cs), a mesma do tools/seeds/Import-TestSeeds.ps1 -->
+    <EmbeddedResource Include="..\..\..\docs\AGENDA-SUGERIDA-JOBS.csv" LogicalName="WebApp.AgendaSugeridaJobs.csv" />
+  </ItemGroup>
+
 </Project>

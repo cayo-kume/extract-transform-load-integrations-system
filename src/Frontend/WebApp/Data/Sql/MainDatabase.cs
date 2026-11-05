@@ -7,8 +7,7 @@ namespace WebApp.Data.Sql
 {
     /// <summary>
     /// Conexão com o banco principal (ConnectionStrings:Connection, usuário etl_monitor), onde ficam auditing.* e monitor.*,
-    /// a hora local das tabelas e a tradução dos THROW das procedures do cadastro (50002, 50003, 50004) em
-    /// CompanyRegistrationException, com a mensagem da procedure.
+    /// e a hora local das tabelas.
     /// </summary>
     public class MainDatabase(IConfiguration configuration)
     {
@@ -30,18 +29,6 @@ namespace WebApp.Data.Sql
             var connection = new SqlConnection(_connectionString);
             await connection.OpenAsync(cancellationToken);
             return connection;
-        }
-
-        public static async Task<T> Translate<T>(Func<Task<T>> action)
-        {
-            try
-            {
-                return await action();
-            }
-            catch (SqlException exception) when (exception.Number is 50002 or 50003 or 50004)
-            {
-                throw new CompanyRegistrationException(exception.Message, exception.Number, exception);
-            }
         }
 
         /// <summary>

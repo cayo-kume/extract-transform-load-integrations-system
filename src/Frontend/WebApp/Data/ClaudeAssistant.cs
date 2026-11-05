@@ -25,7 +25,7 @@ namespace WebApp.Data
     /// é falso e o chat avisa que não está configurado. O histórico da conversa (com os blocos de pensamento e de
     /// ferramenta, que a API exige de volta) fica com quem chama, um por aba.
     /// </summary>
-    public class ClaudeAssistant(IConfiguration configuration, AssistantTools tools, ILogger<ClaudeAssistant> logger)
+    public class ClaudeAssistant(IConfiguration configuration, AssistantTools tools, LoggedCompany loggedCompany, ILogger<ClaudeAssistant> logger)
     {
         private const string ModelId = "claude-opus-5-5";
 
@@ -40,8 +40,8 @@ namespace WebApp.Data
 
         private AnthropicClient Client => _client ??= new AnthropicClient { ApiKey = _apiKey };
 
-        private static readonly string SystemPrompt = $"""
-            Você é o assistente do Monitor de Integrações (ETL) da {LoggedCompany.Label}. Quem pergunta é da equipe que
+        private string SystemPrompt => $"""
+            Você é o assistente do Monitor de Integrações (ETL) da {loggedCompany.Label}. Quem pergunta é da equipe que
             acompanha as integrações (AfterSale, DataWarehouse, LinxCommerce, LinxMicrovix, Movidesk, Totvs e outras) e as
             procedures que elas chamam.
 

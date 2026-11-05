@@ -40,9 +40,9 @@ um **data warehouse** com dimensões, fatos e agregados.
 * 🌐 O host web **`WebApi`** ([README](src/Backend/Hosts/WebApi/README.md)) registra todos os módulos e expõe as rotas.
 * ⏱️ A agenda dos jobs recorrentes sai de `auditing.Jobs` e roda em **um de três hosts**: Hangfire no `WebApi`, WebJobs
   na Azure ou o serviço `Worker` com o Quartz.NET.
-* 🏢 **Multiempresa:** cada empresa cliente (a holding) fica em `monitor.Company` e tem os **próprios jobs, logs e
-  parâmetros**. Dados de cliente não ficam no DbUp: entram pela tela de cadastro (em construção) ou, nos testes, pelo
-  [`tools/seeds/Import-TestSeeds.ps1`](tools/seeds/Import-TestSeeds.ps1).
+* 🏢 **Multiempresa:** cada cliente é uma holding (`auditing.Holders`) com as empresas dela (`auditing.Companies`), e
+  cada empresa tem os **próprios jobs, logs e parâmetros**. Dados de cliente não ficam no DbUp: entram pela tela de
+  cadastro do WebApp ou, nos testes, pelo [`tools/seeds/Import-TestSeeds.ps1`](tools/seeds/Import-TestSeeds.ps1).
 * 🖥️ O painel **Monitor de Integrações** (`WebApp`) mostra o que os jobs gravam em `auditing`.
 
 > [!TIP]
@@ -53,7 +53,7 @@ um **data warehouse** com dimensões, fatos e agregados.
 flowchart TB
     ORIGENS["🏬 Origens<br/>Totvs Moda · Linx Microvix · Linx Commerce<br/>Movidesk · AfterSale"]
     HOSTS["⏱️ Quem dispara<br/>rotas do WebApi<br/>Hangfire · WebJob · Worker"]
-    EMP["🏢 Empresas<br/>monitor.Company"]
+    EMP["🏢 Holdings e empresas<br/>auditing.Holders · Companies"]
 
     subgraph SISTEMA["📦 Módulos .NET"]
         direction LR
@@ -111,7 +111,7 @@ flowchart TB
 | 🗃️ **Acesso a dados** | **Dapper** e bulk insert (`ISharedRepository`), SQL montado nos *command handlers* |
 | 🗄️ **Banco** | **SQL Server** (dados, auditoria e DW); scripts para MySQL e PostgreSQL existem só como `migrator.csx` |
 | 🔁 **Migrações** | **DbUp** executado por `dotnet-script` (`migrator.csx` em cada módulo): só estrutura e catálogo do produto |
-| 🧰 **Ferramentas** | `tools/migrators/Invoke-Migrators.ps1` (tela Windows Forms ou console) sobe as tabelas de todas as aplicações; `tools/hosts/Invoke-HostsConfig.ps1` (tela Windows Forms) cadastra a empresa, grava as credenciais das APIs dos módulos, liga e desliga os jobs e grava os User Secrets dos hosts e do WebApp; `tools/seeds/Import-TestSeeds.ps1` (PowerShell 7 + `sqlcmd`) carrega empresa, parâmetros e jobs num banco de teste; `tools/azure/New-AzureTestResources.ps1` (az cli) cria e apaga o grupo `rg-etl-teste` dos testes na Azure |
+| 🧰 **Ferramentas** | `tools/migrators/Invoke-Migrators.ps1` (tela Windows Forms ou console) sobe as tabelas de todas as aplicações; `tools/seeds/Import-TestSeeds.ps1` (PowerShell 7 + `sqlcmd`) carrega holding, empresas, parâmetros e jobs num banco de teste; `tools/azure/New-AzureTestResources.ps1` (az cli) cria e apaga o grupo `rg-etl-teste` dos testes na Azure |
 | ✅ **Validação** | **FluentValidation** (um validador por DTO) |
 | 🔌 **HTTP e JSON** | `IHttpClientFactory` (`IApiClient` nomeado por módulo), **Newtonsoft.Json**, XML (`System.Xml.Linq`) no Linx Microvix |
 | ⚡ **Cache** | `IMemoryCache` ([padrão](docs/PADRAO-CACHE-INTEGRACOES.md)) |
@@ -141,13 +141,12 @@ extract-transform-load-integrations-system/
 │   │       ├── General/                  AfterSale, Movidesk (ativos); Dootax, Mobsim, Oto, Pagarme (fora do host)
 │   │       ├── Shippment/                FlashCourier, Jadlog, Stone, TotalExpress (fora do host)
 │   │       └── DataWarehouse/
-│   ├── Frontend/WebApp/                  painel Blazor (visão geral, aplicações, integrações, erros, sob demanda e consultas)
+│   ├── Frontend/WebApp/                  painel Blazor (visão geral, aplicações, integrações, erros, sob demanda, consultas e cadastro)
 │   └── Mobile/MobileApp/                 app MAUI
 ├── 🧰 tools/
 │   ├── azure/                            New-AzureTestResources.ps1: cria e apaga os recursos da Azure dos testes de hospedagem
-│   ├── hosts/                            Invoke-HostsConfig.ps1: tela para ativar jobs e gravar os User Secrets dos projetos
 │   ├── migrators/                        Invoke-Migrators.ps1: tela para rodar os migrators na ordem certa
-│   └── seeds/                            Import-TestSeeds.ps1: carrega uma empresa de teste (parâmetros e jobs)
+│   └── seeds/                            Import-TestSeeds.ps1: carrega uma holding de teste (empresas, parâmetros e jobs)
 └── 🧪 tests/                                (vazio)
 ```
 
@@ -224,8 +223,8 @@ pie showData
 
 1. Uma rota (`POST` ou `GET` sem parâmetros) ou o agendador dispara o job **para uma empresa** (`ICompanyContext`); ele
    abre um log em `auditing.Logs` com o `IdJob` do `EnumJob` e a `Company`.
-2. A service lê os CNPJs da empresa na tabela de parâmetros do módulo (`<schema>.<Módulo>Parameters`, pelo join com
-   `monitor.HoldingCompanies`) e, para cada um, chama a API com **paginação**, **nova tentativa** em 401/429/502/503/504
+2. A service lê os parâmetros da empresa na tabela do módulo (`<schema>.<Módulo>Parameters`, `WHERE doc_company` = a
+   empresa da execução) e chama a API com **paginação**, **nova tentativa** em 401/429/502/503/504
    e a **janela de alteração** (data ou `timestamp`).
 3. Cada registro é **validado** (FluentValidation; erro vira mensagem no log, não interrompe), convertido em entidade com
    o **mesmo horário de lote** e o CNPJ da empresa (`doc_company`) e filtrado pelo cache/estado já gravado (só novos ou
@@ -248,8 +247,8 @@ sequenceDiagram
 
     D->>S: executa o job (IdJob)
     S->>B: auditing.sp_Log_Start (job, empresa)
-    S->>B: lê os CNPJs da empresa (Parameters + HoldingCompanies)
-    loop cada CNPJ
+    S->>B: lê os parâmetros da empresa (Parameters, doc_company)
+    loop cada parâmetro
         loop cada página
             S->>A: GET/POST com a janela de alteração
             A-->>S: registros (JSON / XML)
@@ -266,7 +265,7 @@ sequenceDiagram
 ### 🎯 Leitura sob demanda (um registro por chave)
 
 Rotas `GET .../{docCompany}/{chave}` chamadas por sistemas externos: exigem o cabeçalho **`X-User-Name`** (até 100
-caracteres) e o CNPJ na rota, que precisa estar em `monitor.HoldingCompanies` (a empresa da execução é a holding dele;
+caracteres) e o CNPJ na rota, que precisa estar em `auditing.Companies` (é a empresa da execução;
 ver [Empresas](#-empresas-multiempresa)); leem só aquele registro, gravam pelo mesmo caminho da leitura recorrente e
 registram a chamada em `<schema>.<Módulo>Requests`.
 
@@ -275,7 +274,7 @@ registram a chamada em `<schema>.<Módulo>Requests`.
 flowchart LR
     REQ["GET .../{docCompany}/{chave}<br/>X-User-Name"] --> V{"Parâmetros<br/>válidos?"}
     V -- não --> E400["400<br/>parâmetros inválidos"]
-    V -- sim --> H{"CNPJ tem holding<br/>em HoldingCompanies?"}
+    V -- sim --> H{"CNPJ cadastrado<br/>em auditing.Companies?"}
     H -- não --> E400
     H -- sim --> C{"Parâmetros<br/>do CNPJ?"}
     C -- não --> E422["422<br/>empresa ou erro da API"]
@@ -308,37 +307,37 @@ chamada fica em `<Módulo>Requests` com usuário, rota, corpo, resposta e `statu
 
 ## 🏢 Empresas (multiempresa)
 
-O sistema atende mais de um cliente. A **empresa** de tudo é a **holding** cadastrada em `monitor.Company` (CNPJ, só
-dígitos), e ela entra na chave de `auditing.Jobs`, `Logs`, `Messages` e `Records` (coluna **`Company`**). As decisões e
-as fases estão em [PLANO-TELA-CADASTRO-EMPRESA.md](docs/PLANO-TELA-CADASTRO-EMPRESA.md) e na
-[proposta](src/Backend/Shared/docs/PROPOSTA-DOC-COMPANY-AUDITING.md).
+O sistema atende mais de um cliente. Cada cliente é uma **holding** (`auditing.Holders`, CNPJ só dígitos) com as
+**empresas** dela (`auditing.Companies`, o `doc_company` das tabelas `*Parameters`): uma holding tem n empresas, uma
+empresa é de uma holding só e pode ser a própria holding (`Company = Holder`). Jobs, ativação e log são **de cada
+empresa**: `auditing.Jobs`, `Logs`, `Messages` e `Records` têm as colunas **`Holder`** e **`Company`**. As decisões estão
+na [proposta do schema auditing](docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md).
 
 | | Peça | Para que serve |
 |:---:|---|---|
-| 🏢 | `monitor.Company` | Empresas clientes (holding): razão social, nome fantasia e `IsActive`. Só as ativas entram na agenda |
-| 🔗 | `monitor.HoldingCompanies` | De/para dos CNPJs que aparecem em `doc_company` nas tabelas `*Parameters` (marcas, filiais) para a holding. Um CNPJ é de uma holding só |
-| 📚 | `auditing.JobCatalog` | Catálogo de jobs do produto, sem empresa, criado pelo DbUp (inclusive o 14000 dos hosts) |
-| 🗓️ | `auditing.Jobs` | Uma linha por **(job, empresa)**, com a `IsActive` daquela empresa: ativar é um `UPDATE` na linha dela |
-| ➕ | `auditing.sp_Add_Company` | Cadastra a empresa e já cria os jobs dos hosts dela |
-| 🧩 | `auditing.sp_Add_Company_App` / `sp_Remove_Company_App` | Contrata (copia o catálogo do módulo para `auditing.Jobs`, inativos) ou remove (desativa) uma integração |
-| 🔑 | `auditing.sp_Add_Holding_Company` | Liga um CNPJ de parâmetro à holding |
-| 🧠 | `ICompanyContext` (Shared) | A empresa da execução, uma por escopo: o log, os repositórios e a `sp_*_Sync` leem dela |
-| 🖼️ | `monitor.AppImage` / `monitor.AppSetting` | Imagem e parâmetros de apresentação do painel por módulo e empresa (`Company = '*'` é o padrão) |
+| 🏢 | `auditing.Holders` | Holdings clientes: CNPJ (`Document`) e nome fantasia |
+| 🔗 | `auditing.Companies` | Empresas de cada holding (`Company`, `Holder`, nome fantasia). Toda holding tem a linha da própria holding, com os jobs dos hosts |
+| 📚 | `auditing.Catalog` | Catálogo de jobs do produto, sem empresa e sem agenda, criado pelo DbUp (inclusive o 14000 dos hosts); `IsOnDemand` marca os sob demanda |
+| 🗓️ | `auditing.Jobs` | Uma linha por **(job, empresa)**, com a agenda (intervalo, hora do dia, fila) e a `IsActive` daquela empresa |
+| 🗒️ | [`AGENDA-SUGERIDA-JOBS.csv`](docs/AGENDA-SUGERIDA-JOBS.csv) | Agenda sugerida de cada job, embutida no WebApp e usada pelo `Import-TestSeeds.ps1` |
+| 📝 | WebApp (tela inicial e **Cadastro**) | Cadastra holdings e empresas, contrata módulos (jobs inativos com a agenda sugerida), grava credenciais e ativa jobs: `INSERT`/`UPDATE` direto, sem procedures |
+| 🧠 | `ICompanyContext` (Shared) | A holding e a empresa da execução, uma por escopo: o log, os repositórios e a `sp_*_Sync` leem dela |
+| 🖼️ | `monitor.AppImage` / `monitor.AppSetting` | Imagem e parâmetros de apresentação do painel por módulo e holding (`Holder = '*'` é o padrão) |
 
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
 flowchart TB
-    subgraph CAD["📝 Cadastro · tela ou .ps1"]
+    subgraph CAD["📝 Cadastro · WebApp ou .ps1"]
         direction LR
-        C1["sp_Add_Company"] --> C2["sp_Add_Holding_Company<br/>CNPJs dos parâmetros"]
-        C2 --> C3["sp_Add_Company_App<br/>contrata o módulo"]
+        C1["Nova holding<br/>holding + empresa própria"] --> C2["Nova empresa<br/>CNPJs dos parâmetros"]
+        C2 --> C3["Módulos e Credenciais<br/>contrata o módulo"]
     end
-    CAT[("auditing.JobCatalog<br/>(DbUp)")] --> C3
+    CAT[("auditing.Catalog<br/>(DbUp)")] --> C3
     C3 --> JOBS[("auditing.Jobs<br/>job x empresa · inativos")]
-    JOBS -- "UPDATE IsActive = 1" --> AG["⏱️ agenda<br/>só empresas ativas"]
-    AG --> CTX["ICompanyContext<br/>empresa da execução"]
-    CTX --> SVC["service do módulo<br/>CNPJs da holding"]
-    SVC --> LOG[("auditing.Logs<br/>Company")]
+    JOBS -- "IsActive = 1" --> AG["⏱️ agenda<br/>uma execução por empresa"]
+    AG --> CTX["ICompanyContext<br/>holding e empresa"]
+    CTX --> SVC["service do módulo<br/>parâmetros da empresa"]
+    SVC --> LOG[("auditing.Logs<br/>Holder · Company")]
 
     classDef accent fill:#7c5cff,stroke:#7c5cff,color:#ffffff
     classDef warm fill:#f5a524,stroke:#f5a524,color:#1e1b2e
@@ -346,8 +345,12 @@ flowchart TB
     class JOBS warm
 ```
 
-**Empresa numa rota** (`CompanyContextFilter`, global no `WebApi`): vem do cabeçalho **`X-Company`** (CNPJ da holding)
-ou, sem ele, da holding do `{docCompany}` da rota.
+Os jobs dos hosts (IdParent 140, como o 14000 `StuckJobsRecovery`) são um por holding, na empresa que é a própria
+holding; o `StuckJobsRecovery` lê os heartbeats de todas as empresas da holding. O `ScheduledJobRunner` e o
+`CompanyContextFilter` acham a holding da empresa em `auditing.Companies` (`ICompanyRepository`).
+
+**Empresa numa rota** (`CompanyContextFilter`, global no `WebApi`): é o `{docCompany}` da rota ou, sem ele, o cabeçalho
+**`X-Company`** (CNPJ da empresa, não da holding). Com os dois, precisam ser iguais.
 
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
@@ -355,13 +358,15 @@ flowchart LR
     R["Requisição"] --> X{"X-Company<br/>só dígitos?"}
     X -- não --> B1["400"]
     X -- "sim ou ausente" --> D{"Rota tem<br/>docCompany?"}
-    D -- não --> N["segue com X-Company<br/>ou sem empresa"]
-    D -- sim --> H{"Holding do CNPJ<br/>em HoldingCompanies?"}
-    H -- não --> B2["400"]
-    H -- sim --> M{"X-Company igual<br/>à holding?"}
+    D -- não --> N{"Tem<br/>X-Company?"}
+    D -- sim --> M{"X-Company igual<br/>ao docCompany?"}
     M -- não --> B3["400"]
-    M -- "sim ou ausente" --> OK["empresa = holding"]
-    N -. "sem empresa, o log recusa" .-> FIM["execução"]
+    M -- "sim ou ausente" --> H{"Empresa em<br/>auditing.Companies?"}
+    N -- sim --> H
+    N -- não --> SEM["sem empresa"]
+    H -- não --> B2["400"]
+    H -- sim --> OK["empresa e holding<br/>da execução"]
+    SEM -. "o log recusa" .-> FIM["execução"]
     OK --> FIM
 
     classDef ok fill:#16a34a,stroke:#16a34a,color:#ffffff
@@ -371,19 +376,18 @@ flowchart LR
 ```
 
 > [!IMPORTANT]
-> Num ambiente novo o sistema sobe **sem nenhuma empresa**, e nada roda até alguém cadastrar uma. Os parâmetros
+> Num ambiente novo o sistema sobe **sem nenhuma holding**, e nada roda até alguém cadastrar uma, com as empresas. Os parâmetros
 > (credenciais) ficam em **texto puro** nas tabelas `*Parameters` nesta fase.
 
 ---
 
 ## ⏱️ Agendamento dos jobs
 
-A agenda é uma só, em `auditing.Jobs`, com **uma linha por (job, empresa)** e só das empresas ativas em
-`monitor.Company`:
+A agenda é uma só, em `auditing.Jobs`, com **uma linha por (job, empresa)**:
 
 | Coluna | Significado |
 |---|---|
-| `Company` | a empresa (holding) daquela linha; o agendador roda **uma execução por (job, empresa)** |
+| `Holder`, `Company` | a holding e a empresa daquela linha; o agendador roda **uma execução por (job, empresa)** |
 | `IsActive` | só com `1` o job entra na agenda para aquela empresa; **todo insert nasce `0`** |
 | `IntervalTimeInMinutes` | intervalo; `0` = sob demanda, fora da agenda |
 | `RunningDailyAt` | preenchida, o job é diário e roda nessa hora (só com intervalo `1440`) |
@@ -485,8 +489,8 @@ POST http://localhost:5252/DataWarehouseJobs/DataWarehouse/RunHourly
 
 | Schema | Conteúdo |
 |---|---|
-| 📝 `auditing` | `Apps`, `JobCatalog`, `Jobs`, `Types`, `Logs`, `Messages`, `Records` (com `Company`), as procedures `sp_Log_Start/Message/Error/End`, `sp_Add_Company`, `sp_Add_Company_App`, `sp_Remove_Company_App`, `sp_Add_Holding_Company`, a função `fn_JobCatalogTree` e a view `vw_JobsHeartbeat` (Shared) |
-| 🏢 `monitor` | `Company`, `HoldingCompanies`, `AppImage` e `AppSetting`: empresas clientes e a apresentação do painel por empresa (Shared, `Script008`) |
+| 📝 `auditing` | `Holders`, `Companies`, `Apps`, `Catalog`, `Jobs`, `Types`, `Logs`, `Messages`, `Records` (com `Holder` e `Company`), `SchedulingHosts`, as procedures `sp_Log_Start/Message/Error/End`, a função `fn_CatalogTree` e a view `vw_JobsHeartbeat` (Shared) |
+| 🏢 `monitor` | `AppImage` e `AppSetting` (por holding) e `JobAcknowledgement` (por empresa): a apresentação e o acesso do painel (Shared, `Script008`) |
 | 📥 `untreated` | Carga bruta de cada tabela de dados, sem chave (recebe o bulk insert) |
 | 🧩 `totvs`, `linxmicrovix`, `linxcommerce`, `movidesk`, `aftersale` | Tabelas finais (com PK), procedures `sp_<Tabela>_Sync` (com `@Company`), parâmetros e `<Módulo>Requests` |
 | 🔧 `dbo` | `sp_Create_Merge_Procedure` (gera os merges), `sp_TryApplock`, limpeza de logs e manutenção (Shared) |
@@ -503,25 +507,23 @@ Brasília).
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'primaryColor':'#ede9fe','primaryTextColor':'#1e1b2e','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','tertiaryColor':'#ffffff'}}}%%
 erDiagram
-    Company ||--o{ HoldingCompanies : "Holding"
-    Company ||--o{ Jobs : "Company"
-    Apps ||..o{ JobCatalog : "IdParent (sem FK)"
-    JobCatalog ||..o{ Jobs : "sp_Add_Company_App"
-    Types ||--o{ Jobs : "IdType"
-    Jobs ||--o{ Logs : "IdJob, IdType, Company"
+    Holders ||--o{ Companies : "Holder"
+    Companies ||--o{ Jobs : "Holder, Company"
+    Apps ||..o{ Catalog : "IdParent (sem FK)"
+    Catalog ||--o{ Jobs : "IdJob, IdType"
+    Types ||--o{ Catalog : "IdType"
+    Jobs ||--o{ Logs : "IdJob, IdType, Holder, Company"
     Logs ||--o{ Messages : "Execution"
     Logs ||--o{ Records : "Execution"
 
-    Company {
-        varchar Company PK
-        nvarchar Name
-        nvarchar TradeName
-        bit IsActive
+    Holders {
+        varchar Document PK
+        varchar FantasyName
     }
-    HoldingCompanies {
+    Companies {
         varchar Company PK
-        varchar Holding FK
-        nvarchar Name
+        varchar Holder FK
+        varchar FantasyName
     }
     Apps {
         int IdParent PK
@@ -533,21 +535,19 @@ erDiagram
         nvarchar JobType
         nvarchar Description
     }
-    JobCatalog {
+    Catalog {
         int IdJob PK
         int IdType PK
         int IdParent
         nvarchar Title
-        int IntervalTimeInMinutes
-        time RunningDailyAt
-        nvarchar Queue
+        nvarchar Description
+        bit IsOnDemand
     }
     Jobs {
         int IdJob PK
         int IdType PK
+        varchar Holder PK
         varchar Company PK
-        int IdParent
-        nvarchar Title
         int IntervalTimeInMinutes
         time RunningDailyAt
         nvarchar Queue
@@ -556,6 +556,7 @@ erDiagram
     Logs {
         int IdJob PK
         int IdType PK
+        varchar Holder PK
         varchar Company PK
         uniqueidentifier Execution PK
         uniqueidentifier ExecutionParent
@@ -564,6 +565,7 @@ erDiagram
     }
     Messages {
         bigint IdExecutionMessage
+        varchar Holder FK
         varchar Company FK
         uniqueidentifier Execution FK
         bit IsError
@@ -573,6 +575,7 @@ erDiagram
     }
     Records {
         bigint IdRecord
+        varchar Holder FK
         varchar Company FK
         uniqueidentifier Execution FK
         nvarchar FieldKeyValue
@@ -592,12 +595,12 @@ Infrastructure.<Módulo>/
 ├── Scripts/SQLServer/     ← DbUp (estrutura e catálogo)
 │   ├── migrator.csx
 │   ├── Parameters/        schema, tabela de parâmetros, app e a tabela de requests
-│   └── <Service>/         um trio por service: _Tables, _Sync_Procedures e _Jobs_Into_Jobs_Table (→ auditing.JobCatalog)
+│   └── <Service>/         um trio por service: _Tables, _Sync_Procedures e _Jobs_Into_Jobs_Table (→ auditing.Catalog, sem agenda)
 └── Seeds/SQLServer/       ← fora do DbUp: parâmetros (credenciais) de uma empresa, lidos só pelo .ps1 de teste
 ```
 
 * O **`Shared`**, base dos outros, não tem services e mantém os scripts direto em `SQLServer/` (`Script001` a
-  `Script008`: schemas e tabelas de `auditing`, procedures de log e de cadastro, merge, `dbo`, tipos, views, os jobs do
+  `Script008`: schemas e tabelas de `auditing`, procedures de log, merge, `dbo`, tipos, views, os jobs do
   app 140 `Hosts` no catálogo e o schema `monitor`).
 * Os scripts de credenciais de LinxMicrovix e LinxCommerce ficam **fora do git** (`.gitignore`), só com o `.example`;
   os de Totvs, Movidesk e AfterSale estão no git, em `Seeds/SQLServer`.
@@ -643,9 +646,10 @@ agendador; ver o README de cada host):
 | `DataWarehouse:Pepper` | Pepper do hash de CPF/CNPJ no DW; sem ele, as etapas com `doc_hash` são puladas |
 | `Hangfire:Enabled` e `Hangfire:Dashboard:*` | Liga o Hangfire no `WebApi`, com o dashboard em `http://localhost:5252/hangfire`; usuário e senha do dashboard só por variável de ambiente ou user-secrets |
 
-As empresas e credenciais de cada API ficam **no banco**: a empresa em `monitor.Company` e as credenciais na tabela de
-parâmetros do módulo (`TotvsParameters`, `LinxMicrovixParameters`, `LinxCommerceParameters`, `MovideskParameters`,
-`AfterSaleParameters`), uma linha por CNPJ. Elas entram pela tela de cadastro (em construção) ou, nos testes, pelos
+As empresas e credenciais de cada API ficam **no banco**: a holding e as empresas em `auditing.Holders` e
+`auditing.Companies` e as credenciais na tabela de parâmetros do módulo (`TotvsParameters`, `LinxMicrovixParameters`,
+`LinxCommerceParameters`, `MovideskParameters`, `AfterSaleParameters`), uma linha por CNPJ. Elas entram pelo cadastro do
+WebApp (tela inicial e **Cadastro › Módulos e Credenciais**) ou, nos testes, pelos
 scripts de `Seeds/SQLServer` via `tools/seeds/Import-TestSeeds.ps1`. O Linx Commerce não tem `BaseUrl`: o endereço é de
 cada cliente, na tabela de parâmetros.
 
@@ -672,10 +676,12 @@ como `****` no log:
 ./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -SchedulingHost Worker
 ```
 
-O migrator só cria a estrutura: depois dele, a tela [`tools/hosts/Invoke-HostsConfig.ps1`](tools/hosts/Invoke-HostsConfig.ps1)
-cadastra a empresa, pede a credencial da API de cada módulo antes de ativar os jobs dele, escolhe quais jobs ficam
-ativos, cria os usuários `etl_monitor` e `etl_query` do WebApp e grava nos User Secrets do WebApi, do Worker, do WebJob e do WebApp a connection string, o host de agenda ligado, as APIs
-desligadas para teste e o resto da configuração local ([GUIA-DE-USO](GUIA-DE-USO.md#️-configurar-jobs-e-user-secrets-invoke-hostsconfig)).
+O migrator só cria a estrutura e o catálogo. Os usuários `etl_monitor` e `etl_query` do WebApp são criados pelo
+migrator do Shared com as senhas da seção "Usuários de banco do WebApp" do `Invoke-Migrators.ps1` (ou `-MonitorPassword`
+e `-QueryPassword` com `-NoGui`). Holding, empresas, credenciais e jobs ativos ficam no WebApp (passo 2), e os User Secrets do
+WebApi, do Worker, do WebJob e do WebApp (connection string, host de agenda ligado, APIs desligadas para teste e o resto
+da configuração local) são gravados à mão com `dotnet user-secrets set`, com as chaves do README de cada projeto
+([GUIA-DE-USO](GUIA-DE-USO.md#-3-holding-empresas-e-parâmetros)).
 
 <div align="center">
 
@@ -700,10 +706,13 @@ argumento e não imprime usuário nem senha.
 
 </details>
 
-**2. 🏢 Empresa e credenciais** — na tela do `Invoke-HostsConfig.ps1`: **Nova empresa…** cadastra a empresa e os
-módulos contratados (jobs inativos), e marcar os jobs de um módulo sem credencial pede a chave da API dele, gravada no
-Salvar junto com os jobs. Num banco de teste, o script avulso `tools/seeds/Import-TestSeeds.ps1` carrega de uma vez a
-empresa e as credenciais de `Seeds/SQLServer` (jobs inativos). Só aceita banco com `Test`/`Teste` no nome (ou `-Force`):
+**2. 🏢 Holding, empresas e credenciais** — no WebApp (com `Database:Enabled` e `Admin:Enabled`): na tela inicial,
+**Cadastrar holding e empresas** cadastra a holding (com a empresa que é a própria holding e os jobs dos hosts) e as
+outras empresas; no painel, **Cadastro › Módulos e Credenciais** contrata os módulos de cada empresa (jobs inativos, com
+a agenda sugerida) e grava a credencial, e ativar um job de um módulo sem credencial abre o formulário dela antes. Num
+banco de teste, o script avulso `tools/seeds/Import-TestSeeds.ps1` carrega de uma vez a holding (`-Holder`,
+`-HolderName`), as empresas e as credenciais de `Seeds/SQLServer` (jobs inativos). Só aceita banco com `Test`/`Teste` no
+nome (ou `-Force`):
 
 ```powershell
 ./tools/seeds/Import-TestSeeds.ps1 -Database 'EtlTeste'
@@ -757,11 +766,11 @@ falha no restore de módulos fora do host (pacotes sem versão em Dootax, Oto, S
 
 | Onde | O que fica registrado |
 |---|---|
-| `auditing.Logs` | Cada execução de job: `IdJob`, `IdType`, `Company`, `Execution` (GUID), execução pai, início e fim |
+| `auditing.Logs` | Cada execução de job: `IdJob`, `IdType`, `Holder`, `Company`, `Execution` (GUID), execução pai, início e fim |
 | `auditing.Messages` | Mensagens da execução: erros de validação, respostas de erro da API, avisos |
 | `auditing.Records` | O registro integrado (JSON ou XML) pela chave (`FieldKeyValue`), para conferir o que veio da origem |
 | `<schema>.<Módulo>Requests` | Cada leitura sob demanda e escrita: usuário (`X-User-Name`), rota, chave, corpo, resposta, `is_success`, `status_code` |
-| `auditing.JobCatalog` / `auditing.Apps` | Catálogo dos jobs (id, título, intervalo, tipo: integração ou procedure) por app |
+| `auditing.Catalog` / `auditing.Apps` | Catálogo dos jobs (id, título, descrição, tipo: integração ou procedure, sob demanda) por app, sem agenda |
 | `auditing.Jobs` | Os jobs de cada empresa, com a agenda e a ativação dela |
 | `auditing.vw_JobsHeartbeat` | Última execução de cada (job, empresa) (heartbeat dos hosts de agenda) |
 | `dw_control.CheckResult` | Resultado das checagens do DW em cada carga |
@@ -839,14 +848,20 @@ e telas responsivas para celular e tablet.
 | ⚠️ **Logs de Erros** | `/errors` | Mensagens de erro e aviso por aplicação, integração e causa, com a execução num diálogo |
 | ▶️ **Sob Demanda** | `/on-demand` | As integrações sem agenda, no estilo do Swagger (só com `Admin:Enabled`) |
 | 💻 **Executar Querys** | `/queries` | Consultas SQL com favoritas e querys prontas (só com `Admin:Enabled`) |
+| 🏢 **Holdings e Empresas** | `/registration` | Aberta pela tela inicial (**Cadastrar holding e empresas**, só com `Admin:Enabled`): Nova holding, Nova empresa e Abrir painel |
+| 🧩 **Cadastro › Módulos e Credenciais** | `/modules` | Um cartão por módulo da empresa do seletor: contratar com a agenda sugerida (editável), credencial com segredos mascarados e remover módulo (só com `Admin:Enabled`) |
+| 🖧 **Cadastro › Hosts de Agenda** | `/scheduling-hosts` | Qual host de agenda está no ar e qual agenda; só mostra (só com `Admin:Enabled`) |
 
-O **cadastro de empresas** já tem os repositórios no WebApp (`ICompanyRepository` e `IModuleParametersRepository`, fase
-4.5 do [plano](docs/PLANO-TELA-CADASTRO-EMPRESA.md)): mock por padrão e Dapper com `Database:Enabled = true`, a mesma chave que liga o painel no banco (fase 5). A
-tela (fase 4.6) só começa depois do mockup aprovado.
+O **cadastro** grava direto em `auditing.Holders`, `auditing.Companies`, `auditing.Jobs` e nas tabelas `*Parameters`
+([proposta](docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)): mock por padrão e Dapper com `Database:Enabled = true`, a
+mesma chave que liga o painel no banco (fase 5). No painel, o **seletor de empresa** do topo troca entre as empresas da
+holding (a escolha fica no navegador); `LoggedCompany:DocCompany` só sugere a primeira. Ativar um job de um módulo com
+API externa sem a credencial da empresa abre o formulário dela e depois pede confirmação de que o host vai chamar a API
+de verdade. O botão **Testar conexão** ainda está desabilitado (passo 4.6.1 do [plano](docs/PLANO-TELA-CADASTRO-EMPRESA.md)).
 
 > [!NOTE]
 > O **assistente de IA** (botão roxo no canto inferior direito, em todas as telas menos o login) é um chat com o Claude que
-> responde sobre integrações, erros e execuções da empresa logada, só com consultas de leitura. As perguntas e os dados
+> responde sobre integrações, erros e execuções da empresa escolhida, só com consultas de leitura. As perguntas e os dados
 > que ele consulta vão para a API da Anthropic.
 
 ---
@@ -917,7 +932,7 @@ As regras de organização valem para todos os módulos e estão em
 | 🔌 | **Módulos fora do host** | Dootax, Mobsim, Oto, Pagarme (General) e FlashCourier, Jadlog, Stone, TotalExpress (Shippment) têm código do sistema antigo, mas o registro no host e os controllers estão comentados. O `LinxMicrovix - Inbound Web Service` (escritas do B2C) está vazio |
 | ⏱️ | **Agendamento** | Os três hosts de agenda estão prontos e foram **testados em 02 e 03/11/2026** (Docker, nginx, serviço do Windows, Azure SQL e App Service, nos [testes de hospedagem](docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md)), mas **nenhum está em produção**. Hoje os jobs rodam pelas rotas, chamadas por um agendador externo. Os testes deixaram 15 pontos para decidir ([seção 8.3](docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md#83-pontos-em-aberto)); o mais grave é a perda de tickets da Movidesk quando a API erra um bloco |
 | 🖥️ | **Painel** | O `WebApp` lê o banco com `Database:Enabled = true` (fase 5, usada em todos os testes de hospedagem, inclusive publicado em container e no App Service); sem a chave, fica no mock. Falta a autenticação (fase 6 do [plano](src/Frontend/WebApp/docs/PLANO-WEBAPP.md)), e num servidor em UTC a hora das telas sai adiantada |
-| 🏢 | **Cadastro de empresas** | Banco, seed de teste, log, agenda e services por empresa e os repositórios do WebApp estão **feitos** (fases 4.1 a 4.5 do [plano](docs/PLANO-TELA-CADASTRO-EMPRESA.md)); falta a **tela** (4.6, com Testar conexão) e o Dapper do WebApp ainda não rodou contra o banco. Contratar cria os jobs inativos e remover só desativa: o banco ainda não distingue os dois casos |
+| 🏢 | **Cadastro de empresas** | Banco (holdings, empresas e catálogo, [proposta](docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)), seed de teste, log, agenda e services por empresa e as telas do WebApp estão **feitos**; falta o **Testar conexão** (4.6.1 do [plano](docs/PLANO-TELA-CADASTRO-EMPRESA.md)). Contratar cria os jobs inativos e remover só desativa: o banco ainda não distingue os dois casos |
 | 🔑 | **Credenciais em texto puro** | As tabelas `*Parameters` guardam segredos sem criptografia nesta fase; o acesso ao banco é o único controle |
 | 🔔 | **Nível de mensagem** | Informação, aviso e erro em `auditing.Messages`: ainda é só [proposta](src/Backend/Shared/docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md) |
 | 🔐 | **Autenticação** | O `[Authorize]` dos controllers está comentado, e o painel ainda não tem login (fase 4.7 do plano) |
@@ -933,7 +948,7 @@ As regras de organização valem para todos os módulos e estão em
 | 📖 README de cada módulo | Conceitos da API, services e métodos, fluxos, endpoints, scripts, jobs, configuração e pendências |
 | ⏱️ README e `docs/PLANO-HOST-*.md` de cada host | [WebApi](src/Backend/Hosts/WebApi/README.md), [WebJob](src/Backend/Hosts/WebJob/README.md) e [Worker](src/Backend/Hosts/Worker/README.md): como rodar, publicar e configurar, e a decisão de cada passo |
 | 🖥️ [src/Frontend/WebApp](src/Frontend/WebApp/README.md) | Painel: telas, assistente de IA e o plano do front-end (`docs/PLANO-WEBAPP.md`) |
-| 🏢 [PLANO-TELA-CADASTRO-EMPRESA.md](docs/PLANO-TELA-CADASTRO-EMPRESA.md) | Cadastro de empresas: o que sai do DbUp, o `.ps1` de teste, log, agenda e services por empresa e as fases da tela |
+| 🏢 [PLANO-TELA-CADASTRO-EMPRESA.md](docs/PLANO-TELA-CADASTRO-EMPRESA.md) | Cadastro de empresas: o que sai do DbUp, o `.ps1` de teste, log, agenda e services por empresa e as fases da tela (histórico; o modelo atual está na [proposta do schema auditing](docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)) |
 | 🏛️ [src/Backend/Modules/DataWarehouse/docs](src/Backend/Modules/DataWarehouse/docs/00-ordem-de-leitura.md) | Guia do data warehouse |
 | 📐 [PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md](docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md) | Padrão de código e scripts |
 | ⚡ [PADRAO-CACHE-INTEGRACOES.md](docs/PADRAO-CACHE-INTEGRACOES.md) | Padrão de cache |

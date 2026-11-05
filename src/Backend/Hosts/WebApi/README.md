@@ -39,7 +39,7 @@ chamava `Hangfire`; as decisões e o histórico de cada passo estão em [docs/PL
 | 💻 | **Plataforma** | .NET 10 (`net10.0`), ASP.NET Core |
 | ⏱️ | **Agendador** | Hangfire 1.8 com storage SQL Server, opcional (`Hangfire:Enabled`) |
 | 🔗 | **Endereço local** | `http://localhost:5252` (Swagger em `http://localhost:5252/swagger`, dashboard do Hangfire em `http://localhost:5252/hangfire`) |
-| 🏢 | **Empresa** | por (job, empresa) na agenda; nas rotas, `X-Company` ou a holding do `{docCompany}` |
+| 🏢 | **Empresa** | por (job, empresa) na agenda; nas rotas, o `{docCompany}` ou, sem ele, o `X-Company` (CNPJ da empresa) |
 | 🔐 | **Autenticação da API** | desligada por enquanto: o `[Authorize]` dos controllers está comentado |
 
 <div align="center">
@@ -120,22 +120,22 @@ o usuário e a senha acima. Com `Hangfire:Enabled = false` (padrão), `/hangfire
 > `http://127.0.0.1:9/`, senão os jobs da agenda chamam as APIs de verdade.
 
 > [!TIP]
-> No lugar das variáveis, use user-secrets (o `WebApi.csproj` tem `UserSecretsId`):
-> `dotnet user-secrets set "Hangfire:Dashboard:Password" "<senha>" --project src/Backend/Hosts/WebApi`. A tela
-> [`tools/hosts/Invoke-HostsConfig.ps1`](../../../../tools/hosts/Invoke-HostsConfig.ps1) grava de uma vez
-> `Hangfire:Enabled`, usuário e senha do dashboard, a connection string e as `BaseUrl` em `http://127.0.0.1:9/`.
+> Na máquina de desenvolvimento, o `tools/migrators/Invoke-Migrators.ps1` grava no `appsettings.json` deste projeto o
+> `Hangfire:Enabled` (ligado com o WebApi como host de agenda) e o usuário e a senha do dashboard, da seção **Dashboard
+> do Hangfire (WebApi)** da tela (ou `-HangfireUser` e `-HangfirePassword` com `-NoGui`), e tira as mesmas chaves dos
+> User Secrets. As outras chaves estão na [tabela de User Secrets](#-user-secrets-na-máquina-de-desenvolvimento).
 
 > [!IMPORTANT]
 > Antes de ligar o Hangfire num banco, ele precisa ter `auditing.Jobs` com as colunas `IsActive`, `RunningDailyAt`,
-> `Queue` e `Company` (Script001 do Shared) e **pelo menos uma empresa ativa** em `monitor.Company`, com os módulos
-> contratados (`auditing.sp_Add_Company` e `auditing.sp_Add_Company_App`, ou o
-> [`tools/seeds/Import-TestSeeds.ps1`](../../../../tools/seeds/Import-TestSeeds.ps1) num banco de teste). Sem empresa, a
-> agenda fica vazia. Um banco que rodou os scripts antes de 30/10/2026 precisa do ajuste descrito no plano, §4.8.
+> `Queue`, `Holder` e `Company` (Script001 do Shared) e **pelo menos uma holding com empresas** em `auditing.Holders` e
+> `auditing.Companies`, com os módulos contratados (cadastro do WebApp: tela inicial e Cadastro › Módulos e Credenciais,
+> ou o [`tools/seeds/Import-TestSeeds.ps1`](../../../../tools/seeds/Import-TestSeeds.ps1) num banco de teste). Sem
+> empresa, a agenda fica vazia. Um banco que rodou os scripts antes de 30/10/2026 precisa do ajuste descrito no plano, §4.8.
 >
 > A tela [`tools/migrators/Invoke-Migrators.ps1`](../../../../tools/migrators/Invoke-Migrators.ps1) com o host
 > **WebApi (Hangfire)** marcado sobe as tabelas na ordem certa; no fim, o log lembra de ligar `Hangfire:Enabled` aqui e
-> parar os outros hosts. A tela [`tools/hosts/Invoke-HostsConfig.ps1`](../../../../tools/hosts/Invoke-HostsConfig.ps1)
-> cadastra a empresa, grava as credenciais dos módulos, escolhe os jobs ativos e liga o Hangfire.
+> parar os outros hosts. A holding, as empresas, as credenciais dos módulos e os jobs ativos ficam no WebApp; ligar o
+> Hangfire é a configuração deste host (`Hangfire:Enabled`).
 
 > [!CAUTION]
 > O [WebApi.http](WebApi.http) tem exemplos de rotas de cada módulo. Cada chamada roda a integração **de verdade** contra
@@ -150,7 +150,7 @@ WebApi/
 ├── Controllers/          rotas por módulo (DataWarehouse, General, LinxCommerce, LinxMicrovix, Shippment, Totvs)
 ├── Extensions/
 │   ├── BuilderExtensions.cs    controllers, Swagger, CORS e o filtro global de empresa
-│   ├── CompanyContextFilter.cs empresa da execução nas rotas (X-Company ou a holding do {docCompany})
+│   ├── CompanyContextFilter.cs empresa da execução nas rotas ({docCompany} ou X-Company, em auditing.Companies)
 │   ├── ServicesExtensions.cs   registro dos módulos e, com Hangfire:Enabled, do Hangfire (AddHangfireService)
 │   └── AppUseExtensions.cs     pipeline e, com Hangfire:Enabled, dashboard e jobs de manutenção (UseHangfire)
 ├── Scheduling/
@@ -174,8 +174,8 @@ Os mapas `IdJob → método` (`RecurringJobs/`), o `JobCron` e o `ScheduledJobRu
 
 | Seção | Uso |
 |---|---|
-| `ConnectionStrings:Connection` | banco das integrações (módulos, `auditing`, `monitor` e, por padrão, o storage do Hangfire e a trava de concorrência). Fica fora do `appsettings.json`: User Secrets na máquina de desenvolvimento (a tela `tools/hosts/Invoke-HostsConfig.ps1` grava) e variável de ambiente `ConnectionStrings__Connection` no servidor |
-| `ConnectionStrings:AuditingConnection` | opcional: banco de `auditing`. Sem ela, o Shared usa a `Connection` trocando `NEWBLOOMERS` por `AUDITING` no nome |
+| `ConnectionStrings:Connection` | banco das integrações (módulos, `auditing`, `monitor` e, por padrão, o storage do Hangfire e a trava de concorrência). Fica fora do `appsettings.json`: User Secrets na máquina de desenvolvimento (`dotnet user-secrets set`, [abaixo](#-user-secrets-na-máquina-de-desenvolvimento)) e variável de ambiente `ConnectionStrings__Connection` no servidor |
+| `ConnectionStrings:AuditingConnection` | opcional: banco de `auditing` em outro banco. Sem ela, o Shared usa a própria `Connection` (auditing fica no mesmo banco) |
 | `Hangfire` | tudo do Hangfire (tabela abaixo) |
 | `AfterSale`, `Movidesk`, `LinxMicrovix`, `Totvs`... | `BaseUrl` e as opções de cada módulo (ver o README do módulo) |
 
@@ -203,6 +203,24 @@ Os mapas `IdJob → método` (`RecurringJobs/`), o `JobCron` e o `ScheduledJobRu
 | `Dashboard:UserName`, `Password` | vazios | credenciais do dashboard: variável de ambiente (`Hangfire__Dashboard__Password`) ou user-secrets |
 
 </details>
+
+### 🔑 User Secrets na máquina de desenvolvimento
+
+Os User Secrets do WebApi são gravados à mão (o `WebApi.csproj` tem `UserSecretsId`):
+
+| Chave | Valor |
+|---|---|
+| `AfterSale:BaseUrl`, `Movidesk:BaseUrl`, `LinxMicrovix:BaseUrl`, `Totvs:BaseUrl` | `http://127.0.0.1:9/` para testes sem chamar as APIs; sem a chave, vale a do `appsettings.json` (o Linx Commerce não tem `BaseUrl`) |
+| `DataWarehouse:Pepper` | opcional: pepper do hash de CPF/CNPJ no DW |
+
+A connection string (`Connection`), o `Hangfire:Enabled` e o usuário e a senha do dashboard
+(`Hangfire:Dashboard:UserName` e `Password`) ficam no `appsettings.json`, gravados pelo
+`tools/migrators/Invoke-Migrators.ps1` no fim da migração; o script tira as mesmas chaves dos User Secrets. `auditing` fica
+no mesmo banco.
+
+```powershell
+dotnet user-secrets set "Totvs:BaseUrl" "http://127.0.0.1:9/" --project src/Backend/Hosts/WebApi
+```
 
 ---
 
@@ -239,13 +257,14 @@ módulos entram no host conforme forem migrados (plano, passo 6).
 
 ## 🏢 Empresa da execução nas rotas
 
-Toda execução grava a empresa (a holding do painel) em `auditing.Logs`, `Messages` e `Records`
-([cadastro de empresas](../../../../docs/PLANO-TELA-CADASTRO-EMPRESA.md), 4.4). Nas rotas, quem informa é o
+Toda execução grava a holding e a empresa em `auditing.Logs`, `Messages` e `Records`
+([proposta do schema auditing](../../../../docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)). Nas rotas, quem informa é o
 **`CompanyContextFilter`**, global, antes da action:
 
-* o cabeçalho **`X-Company`** (CNPJ da holding, só dígitos, em `monitor.Company`); ou
-* sem ele, a holding do **`{docCompany}`** da rota em `monitor.HoldingCompanies`;
-* com os dois, o `docCompany` precisa ser da holding informada.
+* o **`{docCompany}`** da rota; ou
+* sem ele, o cabeçalho **`X-Company`** (CNPJ da empresa, só dígitos; não é o da holding);
+* com os dois, precisam ser a mesma empresa;
+* a empresa precisa estar em `auditing.Companies`, e a holding sai dela (`ICompanyRepository`).
 
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
@@ -254,13 +273,13 @@ flowchart LR
     H -- não --> E1["400<br/>X-Company inválido"]
     H -- "sim ou ausente" --> D{"rota tem<br/>docCompany?"}
     D -- não --> C1["empresa = X-Company<br/>(ou nenhuma)"]
-    D -- sim --> HC{"holding em<br/>monitor.HoldingCompanies?"}
-    HC -- não --> E2["400<br/>CNPJ sem holding"]
-    HC -- sim --> EQ{"X-Company igual<br/>à holding?"}
-    EQ -- diferente --> E3["400<br/>CNPJ de outra holding"]
-    EQ -- "igual ou ausente" --> C2["empresa = holding"]
-    C1 --> RUN["▶️ action<br/>ICompanyContext"]
-    C2 --> RUN
+    D -- sim --> EQ{"X-Company igual<br/>ao docCompany?"}
+    EQ -- diferente --> E3["400<br/>X-Company diferente da rota"]
+    EQ -- "igual ou ausente" --> C2["empresa = docCompany"]
+    C1 --> HC{"empresa em<br/>auditing.Companies?"}
+    C2 --> HC
+    HC -- não --> E2["400<br/>CNPJ não cadastrado"]
+    HC -- "sim (ou sem empresa)" --> RUN["▶️ action<br/>ICompanyContext"]
 
     classDef accent fill:#7c5cff,stroke:#7c5cff,color:#ffffff
     classDef err fill:#dc2626,stroke:#dc2626,color:#ffffff
@@ -293,10 +312,10 @@ fila; o host diz **o que** ele executa.
 | `IntervalTimeInMinutes` | intervalo; 0 = sob demanda, fora da agenda |
 | `RunningDailyAt` | preenchida, o job é diário e roda nessa hora (só com intervalo 1440). Os diários dos scripts estão às 23:00 |
 | `Queue` | fila do Hangfire (`default` até existir um segundo servidor) |
-| `Company` | empresa (holding) da linha: uma linha por (job, empresa), criada por `auditing.sp_Add_Company_App` a partir do catálogo `auditing.JobCatalog` |
+| `Holder`, `Company` | holding e empresa da linha: uma linha por (job, empresa), criada pelo WebApp (Cadastro › Módulos e Credenciais) a partir do catálogo `auditing.Catalog`, com a agenda sugerida |
 
 Só os jobs de integração (`IdType = 2`) entram na agenda; os de procedure (`IdType = 1`) são chamados pelo próprio
-service, depois da carga. Só entram as empresas **ativas** em `monitor.Company`.
+service, depois da carga; os do catálogo com `IsOnDemand = 1` também ficam fora.
 
 **Do registro ao cron:** 3 vira `*/3 * * * *`, 60 vira `0 * * * *`, 120 vira `0 */2 * * *` e um diário às 23:00 vira
 `0 23 * * *`, no fuso de `Hangfire:TimeZone`. Um intervalo que o cron não representa (que não divide a hora ou o dia)
@@ -304,8 +323,8 @@ fica fora da agenda, com aviso no log.
 
 **O `SchedulerRefresh`** monta a agenda: roda na subida e a cada `Schedule:RefreshIntervalInMinutes`. Ele lê
 `auditing.Jobs`, inclui na agenda os jobs ativos que têm método no mapa, altera os que mudaram e remove os que ficaram
-inativos, sem intervalo, de empresa desativada ou saíram do mapa. Um `UPDATE` na tabela vale, no máximo, no ciclo
-seguinte. Os recurring jobs da agenda são **um por (job, empresa ativa)** e se chamam
+inativos, sem intervalo ou saíram do mapa. Um `UPDATE` na tabela vale, no máximo, no ciclo
+seguinte. Os recurring jobs da agenda são **um por (job, empresa)** e se chamam
 `<IdJob>-<Title> - V<versão> - <empresa>` (ex.: `9002-DataWarehouseShortCycle - V1.0.0 - 44065634000106`), com a versão
 do `[JobVersion]` do método ([abaixo](#️-versão-dos-jobs)). O resultado de cada releitura aparece no dashboard e no log
 (`Agenda: N job(s) na agenda...`), com os avisos.
@@ -313,8 +332,7 @@ do `[JobVersion]` do método ([abaixo](#️-versão-dos-jobs)). O resultado de c
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
 flowchart LR
-    CAT[("auditing.JobCatalog<br/>catálogo do produto")] -- "sp_Add_Company_App" --> JOBS[("auditing.Jobs<br/>uma linha por empresa")]
-    COMP[("monitor.Company<br/>empresas ativas")] --> REF
+    CAT[("auditing.Catalog<br/>catálogo do produto")] -- "WebApp: contratar módulo" --> JOBS[("auditing.Jobs<br/>uma linha por empresa")]
     JOBS --> REF["🔄 SchedulerRefresh<br/>subida + a cada 10 min"]
     MAP["Hosts.Scheduling<br/>IdJob → método"] --> REF
     REF --> RJ["Recurring jobs<br/>IdJob-Title - Vx.y.z - empresa"]
@@ -330,10 +348,10 @@ flowchart LR
 
 ```sql
 -- liga um job de uma empresa
-UPDATE [auditing].[Jobs] SET IsActive = 1 WHERE IdType = 2 AND IdJob = 3000 AND Company = '<CNPJ da holding>';
+UPDATE [auditing].[Jobs] SET IsActive = 1 WHERE IdType = 2 AND IdJob = 3000 AND Company = '<CNPJ da empresa>';
 
 -- liga um módulo inteiro de uma empresa, pela faixa de IdJob (ex.: Movidesk, 3000 a 3499)
-UPDATE [auditing].[Jobs] SET IsActive = 1 WHERE IdType = 2 AND IdJob BETWEEN 3000 AND 3499 AND IntervalTimeInMinutes > 0 AND Company = '<CNPJ da holding>';
+UPDATE [auditing].[Jobs] SET IsActive = 1 WHERE IdType = 2 AND IdJob BETWEEN 3000 AND 3499 AND IntervalTimeInMinutes > 0 AND Company = '<CNPJ da empresa>';
 
 -- muda a hora de um diário (todas as empresas)
 UPDATE [auditing].[Jobs] SET RunningDailyAt = '02:30' WHERE IdType = 2 AND IdJob = 9001;
@@ -434,12 +452,12 @@ C1, C2, C3, A1, A2, A5, A6, A8 e A10), com os 12 jobs do conjunto mínimo a cada
 
 ## ➕ Um job ou um módulo novo
 
-* **Job recorrente novo num módulo do host:** a linha no script de jobs da service (vai para `auditing.JobCatalog`, com
-  `RunningDailyAt` e `Queue`, ver [PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md](../../../../docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md)
+* **Job recorrente novo num módulo do host:** a linha no script de jobs da service (vai para `auditing.Catalog`, sem agenda;
+  a agenda sugerida é uma linha na [`docs/AGENDA-SUGERIDA-JOBS.csv`](../../../../docs/AGENDA-SUGERIDA-JOBS.csv), ver [PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md](../../../../docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md)
   §3.1), a rota no controller, a entrada no mapa do módulo em
   `src/Backend/Hosts/Hosts.Scheduling/RecurringJobs/<Módulo>RecurringJobs.cs`, com o método sem parâmetros do service, e
-  `[JobVersion("1.0.0")]` no método da classe do service. Para as empresas que já têm o módulo, `auditing.sp_Add_Company_App`
-  de novo cria a linha em `auditing.Jobs` (inativa, sem duplicar as outras). Sem o mapa, o `SchedulerRefresh` avisa e
+  `[JobVersion("1.0.0")]` no método da classe do service. Para as empresas que já têm o módulo, contratar o módulo
+  de novo no WebApp cria a linha em `auditing.Jobs` (inativa, sem duplicar as outras). Sem o mapa, o `SchedulerRefresh` avisa e
   deixa o job fora da agenda.
 * **Módulo novo:** referência no `WebApi.csproj`, registro no `ServicesExtensions`, controller, o mapa
   `<Módulo>RecurringJobs.cs` incluído no `RecurringJobMap` e o script de jobs com as colunas novas (plano, passo 6).

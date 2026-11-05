@@ -1,0 +1,144 @@
+@* Contratar um módulo para a empresa do seletor: os jobs do catálogo (com as procedures) nascem inativos, com a agenda
+   sugerida (Data/JobAgenda.cs), que aqui dá para mudar nas integrações recorrentes antes de gravar. As procedures ficam com
+   a sugerida e os sob demanda, fora da agenda. Depois, a agenda muda na tela Integrações. *@
+@inject ICompanyRepository CompanyRepository
+@inject LoggedCompany LoggedCompany
+@inject ILogger<AppContractDialog> Logger
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">Contratar @Title para @LoggedCompany.Name</MudText>
+    </TitleContent>
+    <DialogContent>
+        @if (_jobs is null)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-4" />
+        }
+        else
+        {
+            <MudTable T="CatalogJobModel" Items="Recurring" Dense="true" Outlined="true" Elevation="0" FixedHeader="true" Height="360px">
+                <HeaderContent>
+                    <MudTh>Job</MudTh>
+                    <MudTh>Intervalo (min)</MudTh>
+                    <MudTh>Diário às</MudTh>
+                    <MudTh>Fila</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Job"><b>@context.IdJob</b> @context.Title</MudTd>
+                    <MudTd DataLabel="Intervalo (min)">
+                        <MudNumericField T="int" @bind-Value="context.IntervalTimeInMinutes" Min="1" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@(context.RunningDailyAt is not null || _saving)" Style="max-width:110px" />
+                    </MudTd>
+                    <MudTd DataLabel="Diário às">
+                        <MudTextField T="string" InputType="InputType.Time" Value="@(context.RunningDailyAt?.ToString("HH:mm"))" ValueChanged="@(value => SetDailyAt(context, value))"
+                                      Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="_saving" Clearable="true" Style="max-width:130px" />
+                    </MudTd>
+                    <MudTd DataLabel="Fila">
+                        <MudTextField T="string" @bind-Value="context.Queue" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="_saving" Style="max-width:130px" />
+                    </MudTd>
+                </RowTemplate>
+                <NoRecordsContent>
+                    <MudText Typo="Typo.body2">O módulo não tem integração recorrente.</MudText>
+                </NoRecordsContent>
+            </MudTable>
+
+            <MudText Typo="Typo.caption" Class="d-block mt-2">
+                @Recurring.Count() integração(ões) recorrente(s) · @_jobs.Count(x => x.IsOnDemand) sob demanda · @_jobs.Count(x => x.IdType != 2) procedure(s) (agenda sugerida)
+            </MudText>
+            <MudAlert Severity="Severity.Info" Dense="true" Class="mt-3">Os jobs nascem <b>inativos</b>. Ativar é na tela Integrações; um módulo com API só ativa com a credencial da empresa gravada.</MudAlert>
+
+            @if (_error is not null)
+            {
+                <MudAlert Severity="Severity.Error" Dense="true" Class="mt-3">@_error</MudAlert>
+            }
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton Disabled="_saving" OnClick="Cancel">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(_jobs is null || _saving)" OnClick="Save">Contratar (@(_jobs?.Count ?? 0) jobs)</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance? MudDialog { get; set; }
+
+    [Parameter, EditorRequired] public int IdParent { get; set; }
+
+    [Parameter] public string? Title { get; set; }
+
+    private IReadOnlyList<CatalogJobModel>? _jobs;
+    private string? _error;
+    private bool _saving;
+
+    private IEnumerable<CatalogJobModel> Recurring => _jobs?.Where(x => x.IdType == 2 && !x.IsOnDemand) ?? [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _jobs = await CompanyRepository.GetCatalogJobsAsync(IdParent);
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Não foi possível ler o catálogo do módulo {IdParent}.", IdParent);
+            _jobs = [];
+            _error = "Não foi possível ler os jobs do módulo.";
+        }
+    }
+
+    // com hora, o job é diário (intervalo 1440, como a CHECK de auditing.Jobs); sem hora, volta para a sugestão de intervalo
+    private static void SetDailyAt(CatalogJobModel job, string? value)
+    {
+        if (TimeOnly.TryParse(value, out var time))
+        {
+            job.RunningDailyAt = time;
+            job.IntervalTimeInMinutes = 1440;
+        }
+        else
+        {
+            job.RunningDailyAt = null;
+        }
+    }
+
+    private void Cancel() => MudDialog?.Cancel();
+
+    private async Task Save()
+    {
+        _saving = true;
+        _error = null;
+
+        try
+        {
+            var created = await CompanyRepository.AddAppAsync(LoggedCompany.DocCompany, IdParent, _jobs!);
+            MudDialog?.Close(DialogResult.Ok(created));
+        }
+        catch (CompanyRegistrationException exception)
+        {
+            _error = exception.Message;
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Não foi possível contratar o módulo {IdParent}.", IdParent);
+            _error = "Não foi possível contratar o módulo.";
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    /// <summary>
+    /// Abre o diálogo; devolve quantos jobs foram criados, ou nulo se cancelou.
+    /// </summary>
+    public static async Task<int?> ShowAsync(IDialogService dialogService, int idParent, string? title)
+    {
+        var parameters = new DialogParameters<AppContractDialog>
+        {
+            { x => x.IdParent, idParent },
+            { x => x.Title, title }
+        };
+
+        var reference = await dialogService.ShowAsync<AppContractDialog>("Contratar", parameters, new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });
+        var result = await reference.Result;
+        return result is null || result.Canceled ? null : result.Data as int?;
+    }
+}

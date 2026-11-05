@@ -6,8 +6,8 @@ namespace Application.Shared.Handlers.Commands
     {
         public string CreateInsertRecordQuery()
         {
-            return $@"INSERT INTO [auditing].[Logs] ([IdJob], [IdType], [Company], [StartDate], [EndDate], [Execution])
-                      VALUES (@IdJob, @IdType, @Company, @StartDate, @EndDate, @Execution)";
+            return $@"INSERT INTO [auditing].[Logs] ([IdJob], [IdType], [Holder], [Company], [StartDate], [EndDate], [Execution])
+                      VALUES (@IdJob, @IdType, @Holder, @Company, @StartDate, @EndDate, @Execution)";
         }
     }
 }

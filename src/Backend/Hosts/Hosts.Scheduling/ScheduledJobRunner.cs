@@ -11,7 +11,7 @@ namespace Hosts.Scheduling
     /// log da execução (com o comando SQL e a pilha), fecha e grava o log em auditing.Logs e auditing.Messages, sem HttpContext.
     /// É scoped: o host cria um escopo por execução (o Hangfire faz isso sozinho), e o service e o ILoggerService vêm do mesmo
     /// escopo, então o erro vai para o log que o service abriu. A exceção segue adiante, para o host marcar a falha. Cada execução
-    /// é de uma empresa (docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.4): o executor informa a empresa ao ICompanyContext do escopo
+    /// é de uma empresa (docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md): o executor informa a empresa e a holding dela ao ICompanyContext do escopo
     /// antes de chamar o service, e o log, os parâmetros e as procedures de sincronização usam essa empresa. Quem chama segura a
     /// trava da empresa; por isso, antes de executar, o executor fecha como interrompidas as execuções do job e da empresa que
     /// ficaram abertas em auditing.Logs (queda, reinício ou deploy no meio), docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md, 3.1
@@ -22,10 +22,11 @@ namespace Hosts.Scheduling
         private readonly ILoggerService _jobLog;
         private readonly ICompanyContext _companyContext;
         private readonly IJobScheduleRepository _jobScheduleRepository;
+        private readonly ICompanyRepository _companyRepository;
         private readonly ILogger<ScheduledJobRunner> _logger;
 
-        public ScheduledJobRunner(IServiceProvider services, ILoggerService jobLog, ICompanyContext companyContext, IJobScheduleRepository jobScheduleRepository, ILogger<ScheduledJobRunner> logger) =>
-            (_services, _jobLog, _companyContext, _jobScheduleRepository, _logger) = (services, jobLog, companyContext, jobScheduleRepository, logger);
+        public ScheduledJobRunner(IServiceProvider services, ILoggerService jobLog, ICompanyContext companyContext, IJobScheduleRepository jobScheduleRepository, ICompanyRepository companyRepository, ILogger<ScheduledJobRunner> logger) =>
+            (_services, _jobLog, _companyContext, _jobScheduleRepository, _companyRepository, _logger) = (services, jobLog, companyContext, jobScheduleRepository, companyRepository, logger);
 
         public Task Run(int idJob, string company) =>
             RecurringJobMap.Definitions.TryGetValue(idJob, out var definition)
@@ -37,7 +38,14 @@ namespace Hosts.Scheduling
         /// </summary>
         public async Task Run(RecurringJobDefinition definition, string company)
         {
-            _companyContext.SetCompany(company);
+            // a holding sai da empresa (auditing.Companies): os agendadores guardam só a empresa no job
+
+            var holder = await _companyRepository.GetHolder(company)
+
+                ?? throw new InvalidOperationException($"Empresa {company} não cadastrada em auditing.Companies.");
+
+
+            _companyContext.SetCompany(holder, company);
 
             await CloseInterruptedExecutions(definition, company);
 

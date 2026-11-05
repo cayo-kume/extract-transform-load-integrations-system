@@ -62,7 +62,7 @@ Cada camada à direita vence a da esquerda. Em variável de ambiente, o `:` da c
 | 🌐 **WebApi** | `ConnectionStrings:Connection`, `Hangfire:Enabled`, `Hangfire:Dashboard:UserName`, `Hangfire:Dashboard:Password` | sem `Hangfire:Enabled = true`, só as rotas e o Swagger |
 | 🪟 **Worker** | `ConnectionStrings:Connection`, `Quartz:Enabled` | o `appsettings.json` do git já vem com `Quartz:Enabled = true` |
 | ☁️ **WebJob** | `ConnectionStrings:Connection` e, para a recuperação, `Recovery:*` | um processo por job, escolhido no `run.cmd` |
-| 🖥️ **WebApp** | `Database:Enabled`, `ConnectionStrings:Connection` (`etl_monitor`), `ConnectionStrings:QueryConnection` (`etl_query`), `LoggedCompany:DocCompany` | `Assistant:ApiKey` só se for usar o assistente |
+| 🖥️ **WebApp** | `Database:Enabled`, `ConnectionStrings:Connection` (`etl_monitor`), `ConnectionStrings:QueryConnection` (`etl_query`) | `Assistant:ApiKey` só se for usar o assistente; `LoggedCompany:DocCompany` só sugere a primeira empresa (o seletor do topo escolhe) |
 | 🧩 Todos os hosts | opcional: `InitialLoad:MaxMonths` (carga inicial limitada), `<Módulo>:BaseUrl` (só para apontar outra API), `DataWarehouse:Pepper` | as `BaseUrl` de produção já estão no `appsettings.json` |
 
 > [!CAUTION]
@@ -77,8 +77,8 @@ Cada camada à direita vence a da esquerda. Em variável de ambiente, o `:` da c
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
 flowchart LR
-    A["🗄️ 1. Banco<br/>Invoke-Migrators"] --> B["🏢 2. Empresa"]
-    B --> C["🎛️ 3. Jobs ativos<br/>Invoke-HostsConfig"]
+    A["🗄️ 1. Banco<br/>Invoke-Migrators"] --> B["🏢 2. Holding e empresas<br/>WebApp"]
+    B --> C["🎛️ 3. Jobs ativos<br/>WebApp"]
     C --> D["⏱️ 4. Um host<br/>de agenda"]
     D --> E["🚢 5. Publicar"]
 
@@ -89,14 +89,14 @@ flowchart LR
 1. **Banco.** A tela [`tools/migrators/Invoke-Migrators.ps1`](tools/migrators/Invoke-Migrators.ps1) sobe as tabelas, com o
    host de agenda escolhido (o Worker tem tabelas próprias, schema `quartz`). **No Azure SQL**, crie o banco antes, com a collation `Latin1_General_100_CI_AS_SC_UTF8`: o DbUp
    criaria no tier padrão, que é pago, e a collation não muda depois ([MIGRATOR-CSX](docs/MIGRATOR-CSX.md)).
-2. **Empresa.** **Nova empresa…** na tela [`tools/hosts/Invoke-HostsConfig.ps1`](tools/hosts/Invoke-HostsConfig.ps1)
-   (ou `auditing.sp_Add_Company` e `auditing.sp_Add_Company_App` à mão, [GUIA-DE-USO, passo 3](GUIA-DE-USO.md#-3-empresa-e-parâmetros)).
-   Os jobs nascem inativos.
-3. **Credenciais e jobs ativos.** Na mesma tela: um módulo com API externa só ativa jobs com a credencial dele, que a
-   tela pede e grava na tabela `<Módulo>Parameters` junto com os jobs, direto no banco. Vale para qualquer ambiente com
-   acesso ao banco. Com as senhas do `etl_monitor` e do `etl_query`, ela também cria os dois usuários do painel no banco.
-   A parte de **configuração dos projetos** dela grava só User Secrets: serve para a máquina de desenvolvimento, não para
-   servidor.
+2. **Holding e empresas.** No WebApp, tela inicial, **Cadastrar holding e empresas** (`/registration`, só admin):
+   **Nova holding** grava a holding (`auditing.Holders`), a empresa que é a própria holding (`auditing.Companies`) e os
+   jobs dos hosts dela; **Nova empresa** acrescenta os outros CNPJs. Os jobs nascem inativos.
+3. **Credenciais e jobs ativos.** No painel, **Cadastro › Módulos e Credenciais** contrata os módulos de cada empresa
+   (jobs com a agenda sugerida) e grava a credencial na tabela `<Módulo>Parameters`; um módulo com API externa só ativa
+   jobs com a credencial da empresa. Vale para qualquer ambiente com acesso ao banco. Os usuários `etl_monitor` e
+   `etl_query` do painel são criados pelo `Invoke-Migrators.ps1`, com as senhas da seção "Usuários de banco do WebApp"
+   (ou `-MonitorPassword` e `-QueryPassword` com `-NoGui`).
 4. **Um host de agenda por banco.** Hangfire (WebApi), Quartz (Worker) ou WebJobs: dois agendadores no mesmo banco rodam
    os jobs em dobro (teste A2). Antes de ligar um, pare os outros.
 5. **Publicar**, conforme o ambiente abaixo.
@@ -107,7 +107,7 @@ flowchart LR
 
 | Ambiente | WebApi | Worker | WebJob | WebApp | Camada da configuração | Testes |
 |---|:---:|:---:|:---:|:---:|---|---|
-| 💻 Máquina de desenvolvimento | ✅ | ✅ | ✅ (`--job`) | ✅ | User Secrets (`Invoke-HostsConfig`) | C1, C3, C4, C6 |
+| 💻 Máquina de desenvolvimento | ✅ | ✅ | ✅ (`--job`) | ✅ | User Secrets (`dotnet user-secrets set`) | C1, C3, C4, C6 |
 | 🐳 Docker com nginx | ✅ | — | — | ✅ | `.env` do compose → variáveis de ambiente | C2, C5 |
 | 🪟 Serviço do Windows | — | ✅ | — | — | `appsettings.Production.json` na pasta do serviço | C4b, A3 |
 | ☁️ Azure App Service (Windows) | ✅ ¹ | — | ✅ | ✅ | App Settings e Connection strings | C7, A9, A10 |
@@ -124,18 +124,21 @@ App Service pede plano próprio ou maior.
 
 ## 💻 Máquina de desenvolvimento
 
-Não é deploy, mas é o mesmo esquema de camadas: `dotnet run` roda em `Development` e lê os **User Secrets**.
+Não é deploy, mas é o mesmo esquema de camadas: `dotnet run` roda em `Development` e lê o `appsettings.json` e, por
+cima, os **User Secrets**. As connection strings do WebApp, do WebApi, do WebJob e do Worker ficam no `appsettings.json` de cada um,
+gravadas pelo `Invoke-Migrators.ps1` no fim da migração (vão para o git de propósito: é a configuração de teste); o
+script tira as mesmas chaves dos User Secrets. No WebApi, o script também grava o `Hangfire:Enabled` e o usuário e a senha do
+dashboard (seção **Dashboard do Hangfire (WebApi)** da tela).
 
 ```powershell
-./tools/hosts/Invoke-HostsConfig.ps1 -Database EtlTeste -SchedulingHost WebApi
 dotnet run --project src/Backend/Hosts/WebApi --launch-profile http
 dotnet run --project src/Frontend/WebApp --launch-profile http
 ```
 
-A tela grava, nos User Secrets dos quatro projetos, a connection string do banco, o host de agenda ligado e os outros
-desligados, o dashboard do Hangfire, as `BaseUrl` em `http://127.0.0.1:9/` (sem chamada às APIs, marcado por padrão) e a
-configuração do painel. Contra o Azure SQL (C3, C6), o servidor da tela é o `<servidor>.database.windows.net`, com a
-regra de firewall para o IP da máquina.
+Os User Secrets de cada projeto são gravados à mão, com `dotnet user-secrets set`: a connection string do banco, o host
+de agenda ligado e os outros desligados, o dashboard do Hangfire, as `BaseUrl` em `http://127.0.0.1:9/` (sem chamada às
+APIs) e a configuração do painel. As chaves de cada projeto estão no README dele. Contra o Azure SQL (C3, C6), o servidor
+da connection string é o `<servidor>.database.windows.net`, com a regra de firewall para o IP da máquina.
 
 ---
 

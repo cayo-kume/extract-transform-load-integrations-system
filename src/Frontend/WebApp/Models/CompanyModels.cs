@@ -1,46 +1,43 @@
 namespace WebApp.Models
 {
     /// <summary>
-    /// Empresa do painel (holding) em monitor.Company (docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.5).
+    /// Holding cliente em auditing.Holders (docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md).
     /// </summary>
-    public class CompanyModel
+    public class HolderModel
     {
         /// <summary>
-        /// CNPJ, só dígitos: o mesmo doc_company das tabelas *Parameters.
+        /// CNPJ, só dígitos.
         /// </summary>
-        public string Company { get; set; } = "";
+        public string Holder { get; set; } = "";
+
+        public string? FantasyName { get; set; }
 
         /// <summary>
-        /// Razão social.
+        /// Empresas da holding em auditing.Companies (a própria holding conta).
         /// </summary>
-        public string Name { get; set; } = "";
+        public int Companies { get; set; }
 
-        /// <summary>
-        /// Nome fantasia.
-        /// </summary>
-        public string? TradeName { get; set; }
-
-        public bool IsActive { get; set; } = true;
-
-        public DateTime CreatedAt { get; set; }
-
-        public DateTime UpdatedAt { get; set; }
+        public string Label => string.IsNullOrWhiteSpace(FantasyName) ? Holder : FantasyName;
     }
 
     /// <summary>
-    /// Um CNPJ de parâmetros (marca ou a própria holding) ligado à empresa em monitor.HoldingCompanies, com os módulos
-    /// em que ele tem parâmetros.
+    /// Empresa de uma holding em auditing.Companies: o doc_company das tabelas *Parameters e o Company dos jobs. A própria
+    /// holding também é uma empresa (Company = Holder), com os jobs dos hosts.
     /// </summary>
-    public class HoldingCompanyModel
+    public class CompanyModel
     {
         public string Company { get; set; } = "";
 
-        public string? Name { get; set; }
+        public string Holder { get; set; } = "";
 
-        public DateTime CreatedAt { get; set; }
+        public string? FantasyName { get; set; }
+
+        public bool IsHolder => Company == Holder;
+
+        public string Label => string.IsNullOrWhiteSpace(FantasyName) ? Company : FantasyName;
 
         /// <summary>
-        /// IdParent dos módulos com uma linha de *Parameters para este CNPJ.
+        /// IdParent dos módulos com uma linha de *Parameters para esta empresa.
         /// </summary>
         public IReadOnlyList<int> Modules { get; set; } = [];
     }
@@ -71,6 +68,35 @@ namespace WebApp.Models
     }
 
     /// <summary>
+    /// Um job do catálogo (auditing.Catalog) de um módulo, com a agenda sugerida (docs/AGENDA-SUGERIDA-JOBS.csv), que a tela
+    /// pode mudar antes de contratar o módulo.
+    /// </summary>
+    public class CatalogJobModel
+    {
+        public int IdJob { get; set; }
+
+        public int IdType { get; set; }
+
+        public string? Title { get; set; }
+
+        public string? Description { get; set; }
+
+        /// <summary>
+        /// Executado sob demanda (controllers): fica em auditing.Jobs com intervalo 0, fora da agenda.
+        /// </summary>
+        public bool IsOnDemand { get; set; }
+
+        public int IntervalTimeInMinutes { get; set; }
+
+        /// <summary>
+        /// Preenchida, o job é diário e roda nessa hora (o intervalo é 1440).
+        /// </summary>
+        public TimeOnly? RunningDailyAt { get; set; }
+
+        public string Queue { get; set; } = "default";
+    }
+
+    /// <summary>
     /// Tipo do campo de parâmetro, para a validação e o campo da tela.
     /// </summary>
     public enum ModuleFieldKind
@@ -91,14 +117,15 @@ namespace WebApp.Models
     public sealed record ModuleDefinition(int IdParent, string Title, string Table, IReadOnlyList<ModuleField> Fields);
 
     /// <summary>
-    /// Uma linha de *Parameters como a tela vê: os valores que não são segredo e, dos segredos, só se estão definidos.
+    /// A linha de *Parameters da empresa num módulo, como a tela vê: os valores que não são segredo e, dos segredos, só se
+    /// estão definidos.
     /// </summary>
     public class ModuleParametersModel
     {
         public int IdParent { get; set; }
 
         /// <summary>
-        /// CNPJ da linha (doc_company): uma linha por CNPJ em cada módulo.
+        /// CNPJ da linha (doc_company): a empresa. Uma linha por CNPJ em cada módulo.
         /// </summary>
         public string DocCompany { get; set; } = "";
 
@@ -120,13 +147,20 @@ namespace WebApp.Models
     /// </summary>
     public class ModuleParametersInput
     {
-        public string DocCompany { get; set; } = "";
-
-        /// <summary>
-        /// Nome do CNPJ para monitor.HoldingCompanies (opcional).
-        /// </summary>
-        public string? DocCompanyName { get; set; }
-
         public Dictionary<string, string?> Values { get; set; } = [];
+    }
+
+    /// <summary>
+    /// Um tipo de host de agenda no ar neste banco (auditing.SchedulingHosts, pelo heartbeat). Datas em UTC.
+    /// </summary>
+    public class SchedulingHostModel
+    {
+        public string HostType { get; set; } = "";
+
+        public int Instances { get; set; }
+
+        public DateTime StartedAt { get; set; }
+
+        public DateTime LastHeartbeat { get; set; }
     }
 }

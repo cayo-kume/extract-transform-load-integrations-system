@@ -27,8 +27,36 @@ Regra do usuário:
     - A view `vw_JobsHeartbeat` e a FK de `JobAcknowledgement` funcionaram.
     - Nenhum objeto aponta para tabela que não existe, exceto o `auditing.sp_Log_nd` do Script004, um erro de digitação
       que já existia.
-- **Seção 3 (C#, `.ps1`, WebApp e documentação): a fazer.** Até lá, os hosts, o WebApp e os `.ps1` não funcionam num
-  banco migrado com estes scripts.
+  - Correção à parte, no mesmo commit: o Script004 chamava `auditing.sp_Log_nd` na `p_statistics_maintenance`; agora
+    chama `sp_Log_End`.
+- **Seção 3 (C#, `.ps1`, WebApp e documentação): feita em 04/11/2026.**
+  - **Backend:**
+    - `ICompanyContext` guarda a holding e a empresa. O `ScheduledJobRunner` e o `CompanyContextFilter` descobrem a
+      holding pela empresa, com o `CompanyRepository` (que substitui o `HoldingCompanyRepository`).
+    - Nas rotas do WebApi, a empresa é o `{docCompany}` ou, sem ele, o `X-Company` (agora o CNPJ da empresa). Se vierem
+      os dois, precisam ser iguais.
+    - O log grava `Holder`. A agenda lê o título no `Catalog` e ignora os jobs sob demanda.
+    - O 14000 lê o heartbeat de todas as empresas da holding.
+    - Os módulos leem os parâmetros com `doc_company = empresa`.
+  - **`Invoke-HostsConfig.ps1`: apagado.** O que ele fazia foi para o WebApp:
+    - Tela inicial: o botão "Cadastrar holding e empresas" abre `/registration`.
+    - Seletor de empresa no topo do painel.
+    - Grupo Cadastro no menu, com Módulos e Credenciais (`/modules`) e Hosts de Agenda (`/scheduling-hosts`).
+    - Ativar um job sem credencial abre antes o formulário da credencial.
+    - A agenda sugerida vem do `.csv` embutido (`Data/JobAgenda.cs`).
+    - O que não cabe numa tela web ficou assim: os User Secrets passam a ser gravados à mão, com
+      `dotnet user-secrets set`. Os usuários `etl_monitor` e `etl_query` voltaram para a seção "Usuários de banco do
+      WebApp" do `Invoke-Migrators.ps1` (tela, ou `-MonitorPassword` e `-QueryPassword` com `-NoGui`).
+  - **`Import-TestSeeds.ps1`:**
+    - O parâmetro `-Company` virou `-Holder`.
+    - Cada CNPJ dos parâmetros vira empresa da holding.
+    - Os jobs são criados por empresa, com a agenda do `.csv`.
+  - **Testes no Docker, num banco descartável já apagado:**
+    - Migrators e seeds rodaram sem erro.
+    - WebApi: as rotas da Movidesk gravaram o log com `Holder` e `Company` e recusaram uma empresa sem cadastro.
+    - WebApp: cadastro de holding, recusa de CNPJ de outra holding, contratação com a agenda editada, credencial pedida
+      ao ativar e troca de empresa pelo seletor.
+  - **A fazer:** o "Testar conexão" (docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.6.1). O botão está na tela, desabilitado.
 
 ## 0. Decisões de 04/11/2026
 

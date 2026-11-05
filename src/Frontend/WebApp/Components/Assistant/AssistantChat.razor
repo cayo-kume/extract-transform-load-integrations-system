@@ -2,6 +2,7 @@
 @using Anthropic.Exceptions
 @using Anthropic.Models.Beta.Messages
 @implements IDisposable
+@inject LoggedCompany LoggedCompany
 @inject ClaudeAssistant Assistant
 @inject NavigationManager Navigation
 @inject ILogger<AssistantChat> Logger

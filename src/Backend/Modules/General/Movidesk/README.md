@@ -57,7 +57,7 @@ Módulo do sistema de integrações (ETL) responsável por **ler** os dados da A
 | API consumida | Movidesk API pública v1 — `https://api.movidesk.com/public/v1/` |
 | Documentação da API | [Tickets](https://atendimento.movidesk.com/kb/article/256/movidesk-ticket-api), [Pessoas](https://atendimento.movidesk.com/kb/article/189/movidesk-person-api), [Serviços](https://atendimento.movidesk.com/kb/article/7440/api-servicos) |
 | Banco de dados | SQL Server (schemas `untreated`, `movidesk` e `auditing`; o `Script001` cria `movidesk` e `untreated` quando não existem) |
-| Multiempresa | Sim: cada CNPJ cadastrado em `movidesk.MovideskParameters` tem o seu token; o CNPJ (`doc_company`) é a primeira coluna da chave de todas as tabelas. Cada execução é de uma **empresa do painel** (a holding, em `ICompanyContext`) e lê só os CNPJs ligados a ela em `monitor.HoldingCompanies` |
+| Multiempresa | Sim: cada CNPJ cadastrado em `movidesk.MovideskParameters` tem o seu token; o CNPJ (`doc_company`) é a primeira coluna da chave de todas as tabelas. Cada execução é de uma **empresa** (`ICompanyContext`, com a holding dela em `auditing.Companies`) e lê só o token dessa empresa (`doc_company` = a empresa da execução) |
 | Host | `src/Backend/Hosts/WebApi` (controller `MovideskController`); agenda pelos hosts `WebApi` (Hangfire), `WebJob` ou `Worker` |
 
 ### Limites da API
@@ -252,7 +252,7 @@ sequenceDiagram
 
     J->>S: GetTickets()
     S->>B: auditing.sp_Log_Start
-    S->>B: CNPJs da holding (MovideskParameters + monitor.HoldingCompanies)
+    S->>B: token da empresa (MovideskParameters, doc_company = empresa)
     loop cada CNPJ
         S->>B: maior lastUpdate gravado (menos 1 h)
         loop fase 1 · 1.000 por chamada · 6 s entre chamadas
@@ -291,9 +291,9 @@ sequenceDiagram
    * também quando a chamada falha antes de ter resposta (timeout, rede);
 5. devolve `true` (gravado), `false` (não existe na Movidesk) ou `null` (empresa não cadastrada ou resposta inválida).
 
-A empresa da execução (a holding) vem do cabeçalho opcional **`X-Company`** ou, sem ele, da holding do `{docCompany}` em
-`monitor.HoldingCompanies` (`CompanyContextFilter` do WebApi): CNPJ sem holding, `X-Company` de outra holding ou com algo além de
-dígitos dão **400**.
+A empresa da execução é o `{docCompany}` da rota, que precisa estar em `auditing.Companies` (`CompanyContextFilter` do
+WebApi); o cabeçalho opcional **`X-Company`** (CNPJ da empresa), se vier, precisa ser igual a ele. CNPJ não cadastrado,
+`X-Company` diferente ou com algo além de dígitos dão **400**.
 
 Como a API indica "não encontrado":
 
@@ -388,7 +388,7 @@ O DbUp (`Scripts/SQLServer/migrator.csx`) executa cada script uma única vez, na
 | `People/` | `Script008`–`010` | `MovideskPeople`, as filhas e netas (endereços, contatos, e-mails, equipes, relacionamentos e seus serviços, campos adicionais, itens de configuração), mais os domínios `MovideskPersonTypes` e `MovideskProfileTypes`; procedures de merge e jobs das pessoas |
 | `Services/` | `Script011`–`013` | `MovideskServices`, `MovideskServicesCategories` e os domínios `MovideskServiceTicketTypes` e `MovideskServiceAudiences`; procedures de merge e jobs dos serviços |
 
-Os scripts `*_Jobs_Into_Jobs_Table.sql` inserem no **catálogo** `auditing.JobCatalog` (sem empresa). Os jobs sob demanda já nascem com os títulos do `EnumJob` (`MovideskGetTicketById`, `MovideskGetPersonById` e `MovideskGetServiceById`).
+Os scripts `*_Jobs_Into_Jobs_Table.sql` inserem no **catálogo** `auditing.Catalog` (sem empresa e sem agenda). Os jobs sob demanda já nascem com os títulos do `EnumJob` (`MovideskGetTicketById`, `MovideskGetPersonById` e `MovideskGetServiceById`).
 
 **Regras gerais das tabelas e dos merges:**
 * Toda tabela de dados existe em dois schemas: `untreated` (recebe o bulk insert, sem chave) e `movidesk` (tabela final, com PK). As exceções são `movidesk.MovideskRequests`, que só recebe inserts, e as tabelas de domínio, preenchidas pelos próprios scripts.
@@ -433,7 +433,7 @@ Todas exigem:
 * o cabeçalho **`X-User-Name`** (até 100 caracteres);
 * o CNPJ da empresa na rota (`{docCompany}`, 14 dígitos).
 
-Sem o cabeçalho, com o CNPJ inválido ou com um id fora do formato, a resposta é **400** (ou **404** pela restrição de rota), sem chamar a API. O cabeçalho opcional **`X-Company`** informa a holding; sem ele, vale a holding do `{docCompany}` em `monitor.HoldingCompanies`.
+Sem o cabeçalho, com o CNPJ inválido ou com um id fora do formato, a resposta é **400** (ou **404** pela restrição de rota), sem chamar a API. O `{docCompany}` é a empresa da execução (em `auditing.Companies`); o cabeçalho opcional **`X-Company`**, se vier, precisa ser o mesmo CNPJ.
 
 | Método | Rota | Formato do id | Service |
 |---|---|---|---|
@@ -488,12 +488,12 @@ Mesmas exigências das leituras sob demanda (`X-User-Name` e `{docCompany}`), co
 
 ## 📝 Auditoria (jobs)
 
-O catálogo fica em `auditing.JobCatalog` (scripts de jobs de `Tickets/`, `People/` e `Services/`), com os mesmos ids em `EnumJob`. Cada empresa recebe a sua cópia em `auditing.Jobs` (`Company` na chave) ao contratar o módulo (`auditing.sp_Add_Company_App`), com os jobs **inativos** (`IsActive = 0`) até alguém ligar.
+O catálogo fica em `auditing.Catalog` (scripts de jobs de `Tickets/`, `People/` e `Services/`, sem agenda), com os mesmos ids em `EnumJob`. Cada empresa recebe a sua cópia em `auditing.Jobs` (`Holder` e `Company` na chave) ao contratar o módulo no WebApp (Cadastro › Módulos e Credenciais), com a agenda sugerida ([`AGENDA-SUGERIDA-JOBS.csv`](../../../../../docs/AGENDA-SUGERIDA-JOBS.csv)) e os jobs **inativos** (`IsActive = 0`) até alguém ligar.
 
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
 flowchart LR
-    CAT[("auditing.JobCatalog<br/>3000–3999")] -- "sp_Add_Company_App" --> JOBS[("auditing.Jobs<br/>uma linha por empresa")]
+    CAT[("auditing.Catalog<br/>3000–3999")] -- "WebApp: contratar módulo" --> JOBS[("auditing.Jobs<br/>uma linha por empresa")]
     JOBS -- "IsActive = 1" --> HOST["Hangfire · WebJob · Worker<br/>uma execução por empresa"]
     HOST --> SVC["MovideskTickets · People · Services"]
     SVC --> LOGS[("auditing.Logs<br/>Messages · Records")]
@@ -549,7 +549,7 @@ Cada mensagem tem um nível ([`PROPOSTA-NIVEL-MENSAGEM-AUDITING.md`](../../../Sh
 | `appsettings.json` do host | `Movidesk:BaseUrl` | Endereço da API (`https://api.movidesk.com/public/v1/`) |
 | `appsettings.json` do host | `ConnectionStrings` | Conexão com o SQL Server (dados e auditoria) |
 | Banco | `movidesk.MovideskParameters` | CNPJ (`doc_company`) e token de cada empresa |
-| Banco | `monitor.HoldingCompanies` | De/para CNPJ → holding (empresa do painel); só os CNPJs da holding da execução são lidos |
+| Banco | `auditing.Companies` | Empresas de cada holding; cada execução é de uma empresa e lê só o token dela |
 
 > [!IMPORTANT]
 > Os tokens ficam só no banco e nunca são gravados em logs: a rota registrada em `MovideskRequests` não inclui o token.

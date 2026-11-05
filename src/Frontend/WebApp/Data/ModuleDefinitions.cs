@@ -46,6 +46,24 @@ namespace WebApp.Data
 
         public static ModuleDefinition? Find(int idParent) => All.FirstOrDefault(x => x.IdParent == idParent);
 
+        /// <summary>
+        /// A empresa tem credencial gravada no módulo: os campos obrigatórios preenchidos e, no LinxMicrovix (que não tem
+        /// obrigatório), a chave do WS de saída ou a do B2C. Sem ela, os jobs do módulo não são ativados.
+        /// </summary>
+        public static bool HasCredential(ModuleDefinition definition, ModuleParametersModel? parameters)
+        {
+            if (parameters is null)
+                return false;
+
+            bool IsSet(ModuleField field) =>
+                field.Secret ? parameters.SecretsSet.Contains(field.Column) : !string.IsNullOrWhiteSpace(parameters.Values.GetValueOrDefault(field.Column));
+
+            if (!definition.Fields.Where(x => x.Required).All(IsSet))
+                return false;
+
+            return definition.IdParent != 80 || definition.Fields.Where(x => x.Column is "erp_chave" or "b2c_chave").Any(IsSet);
+        }
+
         public static ModuleDefinition Get(int idParent) =>
             Find(idParent) ?? throw new CompanyRegistrationException($"O módulo {idParent} não tem parâmetros editáveis pelo painel.");
 
@@ -60,10 +78,6 @@ namespace WebApp.Data
         /// </summary>
         public static string? Validate(ModuleDefinition definition, ModuleParametersInput input, IReadOnlySet<string> existing)
         {
-            var doc = Digits(input.DocCompany);
-            if (doc.Length is not (11 or 14))
-                return "O CNPJ dos parâmetros precisa ter 14 dígitos (ou 11, de CPF).";
-
             foreach (var key in input.Values.Keys)
             {
                 if (definition.Fields.All(x => x.Column != key))

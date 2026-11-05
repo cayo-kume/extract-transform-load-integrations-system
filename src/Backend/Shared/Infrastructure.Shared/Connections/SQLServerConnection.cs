@@ -15,8 +15,8 @@ namespace Infrastructure.Shared.Connections
         public SQLServerConnection(IConfiguration configuration)
         {
             _connectionstring = configuration.GetConnectionString("Connection");
-            _auditingConnectionstring = configuration.GetConnectionString("AuditingConnection")
-                ?? _connectionstring?.Replace("NEWBLOOMERS", "AUDITING");
+            // auditing fica no mesmo banco das integrações: a AuditingConnection só existe para separar, se um dia precisar
+            _auditingConnectionstring = configuration.GetConnectionString("AuditingConnection") ?? _connectionstring;
         }
 
         public void Dispose() => _connection?.Dispose();

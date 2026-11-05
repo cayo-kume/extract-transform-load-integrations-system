@@ -1,22 +1,48 @@
 namespace WebApp.Models
 {
     /// <summary>
-    /// Empresa do login, mostrada no topo. A visão é só dela: nenhuma tela mostra dados de outra empresa.
-    /// Até a fase 6 do plano (docs/PLANO-WEBAPP.md) vem da configuração (LoggedCompany:DocCompany e LoggedCompany:Name,
-    /// lidas uma vez no Program.cs); depois, da sessão autenticada. O CNPJ é o Company de auditing.Jobs e monitor.Company.
+    /// Holding e empresa do painel, mostradas no topo (docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md). A visão é só da
+    /// empresa escolhida: nenhuma tela mostra dados de outra. Uma por aba (circuito): o seletor do topo troca a empresa e
+    /// guarda a escolha no navegador; o MainLayout lê a escolha antes de mostrar a primeira tela. Até a fase 6 do plano
+    /// (docs/PLANO-WEBAPP.md), a primeira escolha vem da configuração (LoggedCompany:DocCompany e LoggedCompany:Name).
+    /// O CNPJ da empresa é o Company de auditing.Jobs, e o da holding, o Holder.
     /// </summary>
-    public static class LoggedCompany
+    public class LoggedCompany(IConfiguration configuration)
     {
-        public static string Name { get; private set; } = "NEWBLOOMERS";
+        private const string DefaultDocument = "44065634000106";
+        private const string DefaultName = "NEWBLOOMERS";
 
-        public static string DocCompany { get; private set; } = "44065634000106";
+        /// <summary>
+        /// CNPJ da holding (auditing.Holders).
+        /// </summary>
+        public string Holder { get; private set; } = Configured(configuration, "LoggedCompany:DocCompany", DefaultDocument);
 
-        public static string Label => $"{Name} - {DocCompany}";
+        public string HolderName { get; private set; } = Configured(configuration, "LoggedCompany:Name", DefaultName);
 
-        public static void Configure(IConfiguration configuration)
+        /// <summary>
+        /// CNPJ da empresa (auditing.Companies): o doc_company dos parâmetros e o Company dos jobs.
+        /// </summary>
+        public string DocCompany { get; private set; } = Configured(configuration, "LoggedCompany:DocCompany", DefaultDocument);
+
+        /// <summary>
+        /// Nome fantasia da empresa.
+        /// </summary>
+        public string Name { get; private set; } = Configured(configuration, "LoggedCompany:Name", DefaultName);
+
+        public string Label => $"{Name} - {DocCompany}";
+
+        /// <summary>
+        /// Troca a holding e a empresa da aba. Nome vazio vira o CNPJ.
+        /// </summary>
+        public void Set(string holder, string? holderName, string company, string? companyName)
         {
-            Name = configuration["LoggedCompany:Name"] is { Length: > 0 } name ? name : Name;
-            DocCompany = configuration["LoggedCompany:DocCompany"] is { Length: > 0 } doc ? doc : DocCompany;
+            Holder = holder;
+            HolderName = string.IsNullOrWhiteSpace(holderName) ? holder : holderName;
+            DocCompany = company;
+            Name = string.IsNullOrWhiteSpace(companyName) ? company : companyName;
         }
+
+        private static string Configured(IConfiguration configuration, string key, string fallback) =>
+            configuration[key] is { Length: > 0 } value ? value : fallback;
     }
 }

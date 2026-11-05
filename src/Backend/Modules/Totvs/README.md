@@ -66,7 +66,7 @@ O módulo também **escreve** na Totvs (**54 rotas** de escrita, plano em [`PLAN
 | API consumida | Totvs Moda — `https://www30.bhan.com.br:9443/api/totvsmoda/` (autenticação OAuth2, fluxo `password`) |
 | Documentação da API | Swagger de cada API em `.../api/totvsmoda/<api>/v2/swagger/index.html` (`person`, `seller`, `product`, `purchase-order`, `sales-order`, `accounts-payable`, `fiscal`) |
 | Banco de dados | SQL Server (schemas `untreated`, `totvs` e `auditing`; o `Script001` cria `totvs` quando não existe) |
-| Multiempresa | Sim: cada CNPJ de `totvs.TotvsParameters` tem as suas credenciais, e as buscas usam **todas as lojas** dele gravadas em `totvs.TotvsBranches`. O CNPJ (`doc_company`) é a primeira coluna da chave de todas as tabelas. Cada execução é de **uma empresa do painel** (holding, `ICompanyContext`) e lê só os CNPJs ligados a ela em `monitor.HoldingCompanies` |
+| Multiempresa | Sim: cada CNPJ de `totvs.TotvsParameters` tem as suas credenciais, e as buscas usam **todas as lojas** dele gravadas em `totvs.TotvsBranches`. O CNPJ (`doc_company`) é a primeira coluna da chave de todas as tabelas. Cada execução é de **uma empresa** (`ICompanyContext`, com a holding dela em `auditing.Companies`) e lê só as credenciais dessa empresa (`doc_company` = a empresa da execução) |
 | Host | `src/Backend/Hosts/WebApi` (controller `TotvsController`) |
 
 ### 🏢 Empresa da execução
@@ -74,10 +74,9 @@ O módulo também **escreve** na Totvs (**54 rotas** de escrita, plano em [`PLAN
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
 flowchart LR
-    AG["⏱️ Agendador<br/>job + empresa"] --> CTX["ICompanyContext<br/>holding da execução"]
-    ROTA["🌐 Rota<br/>X-Company ou docCompany"] --> CTX
-    CTX --> HC[("monitor.HoldingCompanies<br/>holding → CNPJs")]
-    HC --> PAR[("totvs.TotvsParameters<br/>credenciais por CNPJ")]
+    AG["⏱️ Agendador<br/>job + empresa"] --> CTX["ICompanyContext<br/>empresa e holding da execução"]
+    ROTA["🌐 Rota<br/>docCompany ou X-Company"] --> CTX
+    CTX --> PAR[("totvs.TotvsParameters<br/>doc_company = empresa")]
     PAR --> TOKEN["🔑 token OAuth2<br/>por CNPJ"]
     PAR --> BR[("totvs.TotvsBranches<br/>lojas do CNPJ")]
     TOKEN --> API["Totvs Moda API"]
@@ -89,9 +88,9 @@ flowchart LR
     class API warm
 ```
 
-`CreateGetCompanysQuery(company)` lê os parâmetros pelo join com `monitor.HoldingCompanies`: os services continuam
-percorrendo `GetCompanys()`, agora só com os CNPJs da holding da execução
-([plano do cadastro](../../../../docs/PLANO-TELA-CADASTRO-EMPRESA.md), 4.4).
+`CreateGetCompanysQuery(company)` lê os parâmetros com `WHERE doc_company` = a empresa da execução: os services
+continuam percorrendo `GetCompanys()`, agora só com a linha dessa empresa
+([proposta do schema auditing](../../../../docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)).
 
 ### Comportamentos da API que a integração trata
 A documentação não descreve tudo; o que segue foi conferido com chamadas reais (detalhes em [`src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md`](docs/PROPOSTA-PADRONIZACAO-TOTVS.md), §5.2):
@@ -383,7 +382,7 @@ Os nomes dos métodos são os da **documentação oficial** (`PostSearch*`, `Get
 Seguem o padrão de [`docs/PADRAO-CACHE-INTEGRACOES.md`](../../../../docs/PADRAO-CACHE-INTEGRACOES.md):
 
 1. abre um log em `auditing.Logs` com o job do método;
-2. para cada CNPJ da holding da execução (`TotvsParameters` com o join em `monitor.HoldingCompanies`), obtém o token e as lojas de `TotvsBranches`. Sem lojas, registra a mensagem e segue para a próxima empresa (por isso o `GetBranchesList` roda primeiro);
+2. com as credenciais da empresa da execução (`TotvsParameters` com `doc_company` = a empresa), obtém o token e as lojas de `TotvsBranches`. Sem lojas, registra a mensagem e termina (por isso o `GetBranchesList` roda primeiro);
 3. calcula a janela: desde o maior `maxChangeFilterDate` gravado, menos 1 hora de folga. Com o banco vazio, a carga inicial é:
 
    | Recurso | Carga inicial |
@@ -411,9 +410,9 @@ sequenceDiagram
     participant T as Totvs Moda API
     participant B as SQL Server
 
-    J->>S: PostSearch* (holding no ICompanyContext)
+    J->>S: PostSearch* (empresa no ICompanyContext)
     S->>B: auditing.sp_Log_Start (job, empresa)
-    S->>B: CNPJs da holding (TotvsParameters + HoldingCompanies)
+    S->>B: credenciais da empresa (TotvsParameters, doc_company)
     loop cada CNPJ
         S->>C: token do CNPJ
         alt sem token em cache
@@ -495,8 +494,8 @@ O DbUp executa cada script uma única vez. Os scripts gerais do módulo ficam em
 
 > [!NOTE]
 > Desde o cadastro de empresas, o DbUp cria só **estrutura e catálogo do produto**. Os scripts de jobs inserem em
-> **`auditing.JobCatalog`** (sem empresa); os jobs de uma empresa nascem em `auditing.Jobs`, inativos, quando ela contrata o
-> módulo (`auditing.sp_Add_Company_App`). Os **parâmetros** (credenciais) saíram do DbUp para `Seeds/SQLServer`.
+> **`auditing.Catalog`** (sem empresa e sem agenda); os jobs de uma empresa nascem em `auditing.Jobs`, inativos e com a
+> agenda sugerida, quando ela contrata o módulo no WebApp (Cadastro › Módulos e Credenciais). Os **parâmetros** (credenciais) saíram do DbUp para `Seeds/SQLServer`.
 
 | Pasta | Script | Conteúdo |
 |---|---|---|
@@ -572,7 +571,7 @@ pie showData
     "Bonus" : 1
 ```
 
-### Leituras recorrentes (disparam a integração dos CNPJs da holding)
+### Leituras recorrentes (disparam a integração da empresa)
 
 <details>
 <summary><b>📖 Rotas das leituras recorrentes</b></summary>
@@ -632,9 +631,9 @@ Todas exigem:
 * o CNPJ da empresa na rota (`{docCompany}`, 14 dígitos);
 * códigos numéricos maiores que zero.
 
-A empresa da execução vem do cabeçalho opcional **`X-Company`** (CNPJ da holding) ou, sem ele, da holding do
-`{docCompany}` em `monitor.HoldingCompanies` (`CompanyContextFilter` do WebApi). CNPJ sem holding, `X-Company` que não é a
-holding do `{docCompany}` ou com algo além de dígitos dão **400**.
+A empresa da execução é o `{docCompany}` da rota, que precisa estar em `auditing.Companies` (`CompanyContextFilter` do
+WebApi); o cabeçalho opcional **`X-Company`** (CNPJ da empresa), se vier, precisa ser igual a ele. CNPJ não cadastrado,
+`X-Company` diferente do `{docCompany}` ou com algo além de dígitos dão **400**.
 
 | Método | Rota | Service |
 |---|---|---|
@@ -805,8 +804,9 @@ escritas de pedido de venda, a **chave do pedido** é `branchCode` + `orderCode`
 
 ## 📝 Auditoria (jobs)
 
-Os jobs ficam no catálogo **`auditing.JobCatalog`** (scripts `..._Jobs_Into_Jobs_Table.sql`, no DbUp), com os mesmos ids
-em `EnumJob`. Cada empresa que contrata o módulo recebe a sua cópia em **`auditing.Jobs`** (`Company` na chave),
+Os jobs ficam no catálogo **`auditing.Catalog`** (scripts `..._Jobs_Into_Jobs_Table.sql`, no DbUp, sem agenda), com os
+mesmos ids em `EnumJob`. Cada empresa que contrata o módulo no WebApp recebe a sua cópia em **`auditing.Jobs`** (`Holder`
+e `Company` na chave), com a agenda sugerida ([`AGENDA-SUGERIDA-JOBS.csv`](../../../../docs/AGENDA-SUGERIDA-JOBS.csv)),
 inativa até alguém ligar.
 
 | Faixa | Tipo (`IdType`) | Conteúdo |
@@ -925,7 +925,7 @@ Cada mensagem tem um nível ([`PROPOSTA-NIVEL-MENSAGEM-AUDITING.md`](../../Share
 | `appsettings.json` do host | `Totvs:Writes:Products:AllowedValueCodes`, `AllowedValueBranches`, `MaxValueVariationPercent` | Escrita de preço e custo (PR7): tipos e códigos permitidos (`P1,C1`: P preço, C custo), lojas permitidas (`1,101`) e a variação máxima contra o valor gravado (padrão 20). Lista vazia recusa toda escrita de valor |
 | `appsettings.json` do host | `ConnectionStrings` | Conexão com o SQL Server (dados e auditoria) |
 | Banco | `totvs.TotvsParameters` | CNPJ (`doc_company`) e credenciais (`client_id`, `client_secret`, `username`, `password`) de cada empresa |
-| Banco | `monitor.HoldingCompanies` | De/para holding → CNPJ: quais CNPJs de `TotvsParameters` cada empresa do painel lê |
+| Banco | `auditing.Companies` | Empresas de cada holding: cada execução é de uma empresa e lê só a linha dela em `TotvsParameters` |
 
 As credenciais vão para o banco pela tela de cadastro do WebApp (em construção) ou, num banco de teste, pelo
 `Seeds/SQLServer/Script003` via `tools/seeds/Import-TestSeeds.ps1`; nunca são gravadas em logs.
@@ -1025,7 +1025,7 @@ cada fase ("Não verificado"). Em resumo:
 |---|---|
 | 🟣 [PROPOSTA-PADRONIZACAO-TOTVS.md](docs/PROPOSTA-PADRONIZACAO-TOTVS.md) | Proposta, decisões e plano em fases da padronização do módulo, com o que foi conferido em cada API |
 | 🟣 [PLANO-TOTVS-METODOS-FALTANTES.md](docs/PLANO-TOTVS-METODOS-FALTANTES.md) | Plano dos métodos faltantes (leituras, catálogos e escritas) |
-| 🏢 [PLANO-TELA-CADASTRO-EMPRESA.md](../../../../docs/PLANO-TELA-CADASTRO-EMPRESA.md) | Cadastro de empresas: parâmetros fora do DbUp, `monitor.HoldingCompanies` e execução por empresa |
+| 🏢 [PLANO-TELA-CADASTRO-EMPRESA.md](../../../../docs/PLANO-TELA-CADASTRO-EMPRESA.md) | Cadastro de empresas: parâmetros fora do DbUp e execução por empresa (histórico; o modelo atual está na [proposta do schema auditing](../../../../docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)) |
 | ⚡ [PADRAO-CACHE-INTEGRACOES.md](../../../../docs/PADRAO-CACHE-INTEGRACOES.md) | Padrão de cache das leituras |
 | 🔁 [ALTERACOES-MERGE-PROCEDURE-AUDITORIA.md](../../../../src/Backend/Shared/docs/ALTERACOES-MERGE-PROCEDURE-AUDITORIA.md) | Procedure de merge e auditoria |
 

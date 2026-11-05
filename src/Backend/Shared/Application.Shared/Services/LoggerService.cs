@@ -26,21 +26,23 @@ namespace Application.Shared.Services
         public LoggerService(ILoggerRepository logRepository, ICompanyContext companyContext, IJobExecutionGuard guard) =>
             (_logRepository, _companyContext, _guard) = (logRepository, companyContext, guard);
 
-        // a empresa vem do contexto da execução, que o agendador ou a rota informam (docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.3)
+        // a holding e a empresa vêm do contexto da execução, que o agendador ou a rota informam
+        // (docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)
         public ILoggerService AddLog(Enum job) =>
-            AddLog(job, _companyContext.Company ?? throw new InvalidOperationException(
-                $"Job {job}: execução sem empresa. Quem inicia a execução precisa informar ICompanyContext.SetCompany."));
+            _companyContext.Company is null || _companyContext.Holder is null
+                ? throw new InvalidOperationException($"Job {job}: execução sem empresa. Quem inicia a execução precisa informar ICompanyContext.SetCompany.")
+                : AddLog(job, _companyContext.Holder, _companyContext.Company);
 
-        public ILoggerService AddLog(Enum job, string company)
+        public ILoggerService AddLog(Enum job, string holder, string company)
         {
-            _companyContext.SetCompany(company);
+            _companyContext.SetCompany(holder, company);
 
             if (Log is null)
             {
                 // numa rota do WebApi, a trava do job (JobAlreadyRunningException com ela ocupada), antes de qualquer gravação
                 _guard.BeforeLogStart(job, company);
 
-                Log = new Log(job: job, company: company);
+                Log = new Log(job: job, holder: holder, company: company);
 
                 // a execução aparece aberta desde o início (docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md, 3.1). Sem banco, a
                 // exceção sobe: o job não teria onde gravar o que lê
@@ -66,6 +68,7 @@ namespace Application.Shared.Services
                 new Message(
                     job: Log.Job,
                     jobType: Log.IdType,
+                    holder: Log.Holder,
                     company: Log.Company,
                     message: message,
                     exceptionMessage: exceptionMessage,
@@ -95,6 +98,7 @@ namespace Application.Shared.Services
                 new Message(
                     job: Log.Job,
                     jobType: Log.IdType,
+                    holder: Log.Holder,
                     company: Log.Company,
                     message,
                     Log.Execution,
@@ -113,7 +117,7 @@ namespace Application.Shared.Services
             if (Log is null) return this;
 
             Log.Records.Add(
-                new Record(job: Log.Job, jobType: Log.IdType, company: Log.Company, key: key, regXML: xml, execution: Log.Execution)
+                new Record(job: Log.Job, jobType: Log.IdType, holder: Log.Holder, company: Log.Company, key: key, regXML: xml, execution: Log.Execution)
             );
 
             return this;

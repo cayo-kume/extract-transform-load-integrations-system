@@ -14,7 +14,12 @@ namespace Domain.Shared.Entities.Auditing
         public Enum IdType { get; private set; }
 
         /// <summary>
-        /// empresa do painel (CNPJ da holding) da execução
+        /// holding da empresa (auditing.Holders)
+        /// </summary>
+        public string Holder { get; private set; } = string.Empty;
+
+        /// <summary>
+        /// empresa da execução (auditing.Companies)
         /// </summary>
         public string Company { get; private set; } = string.Empty;
 
@@ -51,12 +56,14 @@ namespace Domain.Shared.Entities.Auditing
         /// Create a new log
         /// </summary>
         /// <param name="job"></param>
-        /// <param name="company">empresa do painel; sem ela nenhuma execução é gravada</param>
-        public Log(Enum job, string company)
+        /// <param name="holder">holding da empresa</param>
+        /// <param name="company">empresa da execução; sem ela nenhuma execução é gravada</param>
+        public Log(Enum job, string holder, string company)
         {
-            if (string.IsNullOrWhiteSpace(company))
-                throw new ArgumentException("A execução precisa de uma empresa (CNPJ da holding).", nameof(company));
+            if (string.IsNullOrWhiteSpace(holder) || string.IsNullOrWhiteSpace(company))
+                throw new ArgumentException("A execução precisa de uma holding e de uma empresa (CNPJ).", nameof(company));
 
+            Holder = holder;
             Company = company;
             Execution = Guid.NewGuid();
             Job = job;

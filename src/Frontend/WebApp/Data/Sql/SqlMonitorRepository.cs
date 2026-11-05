@@ -14,7 +14,7 @@ namespace WebApp.Data.Sql
     /// Mensagens: o nível vem de auditing.Messages.Level (1 informação, 2 aviso, 3 erro), da proposta de nível
     /// (src/Backend/Shared/docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md): só o erro põe o job em saúde de erro; o aviso é contado à parte.
     /// </summary>
-    public class SqlMonitorRepository(MainDatabase database, IMemoryCache cache, IModuleParametersRepository parameters, ILogger<SqlMonitorRepository> logger) : IMonitorRepository
+    public class SqlMonitorRepository(MainDatabase database, IMemoryCache cache, IModuleParametersRepository parameters, LoggedCompany loggedCompany, ILogger<SqlMonitorRepository> logger) : IMonitorRepository
     {
         // até a fase 6 (autenticação), quem reconhece é um nome fixo, como no mock
         private const string User = "operador";
@@ -32,15 +32,18 @@ namespace WebApp.Data.Sql
         // muda a cada escrita: as chaves do cache levam a versão, e as entradas antigas expiram sozinhas
         private static int _version;
 
-        private static string Company => LoggedCompany.DocCompany;
+        // a empresa do seletor do topo (os jobs e os logs são dela) e a holding dela (imagens e parâmetros de apresentação)
+        private string Company => loggedCompany.DocCompany;
+
+        private string Holder => loggedCompany.Holder;
 
         // a aplicação de cada job do catálogo: a integração está na árvore do módulo, e a procedure na do job que a chama
-        // (auditing.fn_JobCatalogTree, a mesma da contratação de módulo)
+        // (auditing.fn_CatalogTree, a mesma da contratação de módulo)
         private const string JobAppsCte = """
             WITH JobApps AS (
                 SELECT t.IdJob, t.IdType, MIN(a.IdParent) AS IdApp
                 FROM [auditing].[Apps] a WITH (NOLOCK)
-                CROSS APPLY [auditing].[fn_JobCatalogTree](a.IdParent) t
+                CROSS APPLY [auditing].[fn_CatalogTree](a.IdParent) t
                 GROUP BY t.IdJob, t.IdType
             )
             """;
@@ -64,13 +67,13 @@ namespace WebApp.Data.Sql
         private const string SelectJobs = $"""
             {JobAppsCte}
             SELECT
-                j.IdParent,
-                COALESCE(ja.IdApp, j.IdParent) AS IdApp,
+                cat.IdParent,
+                COALESCE(ja.IdApp, cat.IdParent) AS IdApp,
                 j.IdJob,
                 j.IdType,
                 ty.JobType,
-                j.Title,
-                j.[Description],
+                cat.Title,
+                cat.[Description],
                 j.IntervalTimeInMinutes,
                 j.IsActive,
                 j.RunningDailyAt,
@@ -90,6 +93,7 @@ namespace WebApp.Data.Sql
                 ack.ExpiresAt AS AckExpiresAt
             FROM
                 [auditing].[Jobs] j WITH (NOLOCK)
+                JOIN [auditing].[Catalog] cat WITH (NOLOCK) ON cat.IdJob = j.IdJob AND cat.IdType = j.IdType
                 JOIN [auditing].[Types] ty WITH (NOLOCK) ON ty.IdType = j.IdType
                 LEFT JOIN JobApps ja ON ja.IdJob = j.IdJob AND ja.IdType = j.IdType
                 OUTER APPLY (
@@ -111,7 +115,7 @@ namespace WebApp.Data.Sql
 
         private const string SelectApps = """
             SELECT IdParent, Title, [Description] FROM [auditing].[Apps] WITH (NOLOCK) ORDER BY Title;
-            SELECT IdParent, Company, ContentType, [Data] FROM [monitor].[AppImage] WITH (NOLOCK) WHERE Company IN (@company, '*');
+            SELECT IdParent, Holder, ContentType, [Data] FROM [monitor].[AppImage] WITH (NOLOCK) WHERE Holder IN (@holder, '*');
             """;
 
         // execuções por job e faixa de tempo: @width segundos por faixa a partir de @start
@@ -148,12 +152,13 @@ namespace WebApp.Data.Sql
                 [auditing].[Messages] m WITH (NOLOCK)
                 JOIN [auditing].[Logs] l WITH (NOLOCK) ON l.Company = m.Company AND l.IdJob = m.IdJob AND l.IdType = m.IdType AND l.Execution = m.Execution
                 JOIN [auditing].[Jobs] j WITH (NOLOCK) ON j.Company = m.Company AND j.IdJob = m.IdJob AND j.IdType = m.IdType
+                JOIN [auditing].[Catalog] cat WITH (NOLOCK) ON cat.IdJob = j.IdJob AND cat.IdType = j.IdType
                 LEFT JOIN JobApps ja ON ja.IdJob = m.IdJob AND ja.IdType = m.IdType
             WHERE
                 m.Company = @company
                 AND l.StartDate >= @since
                 AND m.[Level] >= @minLevel
-                AND (@idApp IS NULL OR COALESCE(ja.IdApp, j.IdParent) = @idApp)
+                AND (@idApp IS NULL OR COALESCE(ja.IdApp, cat.IdParent) = @idApp)
                 AND (@idJob IS NULL OR (m.IdJob = @idJob AND m.IdType = @idType))
                 AND (@search IS NULL
                     OR m.[Message] COLLATE Latin1_General_100_CI_AI LIKE @search
@@ -170,8 +175,8 @@ namespace WebApp.Data.Sql
             m.SqlCommand,
             m.ExceptionMessage,
             m.ExceptionStackTrace,
-            COALESCE(ja.IdApp, j.IdParent) AS IdApp,
-            j.Title AS JobTitle,
+            COALESCE(ja.IdApp, cat.IdParent) AS IdApp,
+            cat.Title AS JobTitle,
             l.StartDate AS ExecutionStartDate
             """;
 
@@ -326,6 +331,7 @@ namespace WebApp.Data.Sql
                     [auditing].[Logs] l WITH (NOLOCK)
                     JOIN [auditing].[Messages] m WITH (NOLOCK) ON m.Company = l.Company AND m.IdJob = l.IdJob AND m.IdType = l.IdType AND m.Execution = l.Execution
                     JOIN [auditing].[Jobs] j WITH (NOLOCK) ON j.Company = l.Company AND j.IdJob = l.IdJob AND j.IdType = l.IdType
+                    JOIN [auditing].[Catalog] cat WITH (NOLOCK) ON cat.IdJob = j.IdJob AND cat.IdType = j.IdType
                     LEFT JOIN JobApps ja ON ja.IdJob = l.IdJob AND ja.IdType = l.IdType
                 WHERE
                     l.Execution = @execution AND l.Company = @company
@@ -514,37 +520,31 @@ namespace WebApp.Data.Sql
         {
             var settings = new List<ModuleSettingModel>();
 
-            // credenciais e parâmetros da tabela *Parameters do módulo, uma linha por CNPJ da empresa; segredo só mascarado
-            if (ModuleDefinitions.Find(idApp) is { } definition)
+            // credenciais e parâmetros da tabela *Parameters do módulo, a linha da empresa; segredo só mascarado
+            if (ModuleDefinitions.Find(idApp) is { } definition
+                && await parameters.GetParametersAsync(idApp, Company, cancellationToken) is { } row)
             {
-                var rows = await parameters.GetParametersAsync(idApp, Company, cancellationToken);
-
-                foreach (var row in rows)
+                settings.AddRange(definition.Fields.Select(field => new ModuleSettingModel
                 {
-                    var suffix = rows.Count > 1 ? $" ({row.DocCompany})" : "";
-
-                    settings.AddRange(definition.Fields.Select(field => new ModuleSettingModel
-                    {
-                        Label = field.Label + suffix,
-                        Value = field.Secret
-                            ? row.SecretsSet.Contains(field.Column) ? Masked : null
-                            : row.Values.GetValueOrDefault(field.Column),
-                        IsSecret = field.Secret
-                    }));
-                }
+                    Label = field.Label,
+                    Value = field.Secret
+                        ? row.SecretsSet.Contains(field.Column) ? Masked : null
+                        : row.Values.GetValueOrDefault(field.Column),
+                    IsSecret = field.Secret
+                }));
             }
 
-            // parâmetros de apresentação e acesso (monitor.AppSetting): o da empresa substitui o padrão ('*') de mesmo nome
+            // parâmetros de apresentação e acesso (monitor.AppSetting): o da holding substitui o padrão ('*') de mesmo nome
             await using var connection = await database.OpenAsync(cancellationToken);
             var appSettings = await connection.QueryAsync<(string Name, string? Value, bool IsSecret)>(new CommandDefinition("""
                 SELECT s.[Name], s.[Value], s.IsSecret
                 FROM [monitor].[AppSetting] s WITH (NOLOCK)
                 WHERE s.IdParent = @idApp
-                    AND (s.Company = @company
-                        OR (s.Company = '*' AND NOT EXISTS (
-                            SELECT 1 FROM [monitor].[AppSetting] o WITH (NOLOCK) WHERE o.IdParent = s.IdParent AND o.Company = @company AND o.[Name] = s.[Name])))
+                    AND (s.Holder = @holder
+                        OR (s.Holder = '*' AND NOT EXISTS (
+                            SELECT 1 FROM [monitor].[AppSetting] o WITH (NOLOCK) WHERE o.IdParent = s.IdParent AND o.Holder = @holder AND o.[Name] = s.[Name])))
                 ORDER BY s.[Name]
-                """, new { idApp, company = Company }, cancellationToken: cancellationToken));
+                """, new { idApp, holder = Holder }, cancellationToken: cancellationToken));
 
             settings.AddRange(appSettings.Select(x => new ModuleSettingModel
             {
@@ -576,7 +576,7 @@ namespace WebApp.Data.Sql
                 SET IsActive = @isActive
                 FROM
                     [auditing].[Jobs] j
-                    JOIN [auditing].[fn_JobCatalogTree](@idApp) t ON t.IdJob = j.IdJob AND t.IdType = j.IdType
+                    JOIN [auditing].[fn_CatalogTree](@idApp) t ON t.IdJob = j.IdJob AND t.IdType = j.IdType
                 WHERE
                     j.Company = @company
                 """, new { company = Company, idApp, isActive }, cancellationToken: cancellationToken));
@@ -611,6 +611,21 @@ namespace WebApp.Data.Sql
                 throw JobNotFound(idJob, idType);
         }
 
+        public async Task<IReadOnlyList<SchedulingHostModel>> GetSchedulingHostsAsync(CancellationToken cancellationToken = default)
+        {
+            // as linhas sem heartbeat há mais de 2 min já não contam: o próximo heartbeat de qualquer host as apaga
+            await using var connection = await database.OpenAsync(cancellationToken);
+            var hosts = await connection.QueryAsync<SchedulingHostModel>(new CommandDefinition("""
+                SELECT HostType, COUNT(*) AS Instances, MIN(StartedAt) AS StartedAt, MAX(LastHeartbeat) AS LastHeartbeat
+                FROM [auditing].[SchedulingHosts] WITH (NOLOCK)
+                WHERE LastHeartbeat >= DATEADD(MINUTE, -2, SYSUTCDATETIME())
+                GROUP BY HostType
+                ORDER BY MIN(StartedAt), HostType
+                """, cancellationToken: cancellationToken));
+
+            return hosts.ToList();
+        }
+
         public async Task<IReadOnlyList<string>> GetQueuesAsync(CancellationToken cancellationToken = default)
         {
             await using var connection = await database.OpenAsync(cancellationToken);
@@ -637,11 +652,12 @@ namespace WebApp.Data.Sql
 
                 DELETE FROM [monitor].[JobAcknowledgement] WHERE Company = @company AND IdJob = @idJob AND IdType = @idType;
 
-                INSERT INTO [monitor].[JobAcknowledgement] (IdJob, IdType, Company, Execution, Note, [User], [At], ExpiresAt)
-                VALUES (@idJob, @idType, @company, @execution, @note, @user, @now, DATEADD(MINUTE, @lifetime, @now));
+                INSERT INTO [monitor].[JobAcknowledgement] (IdJob, IdType, Holder, Company, Execution, Note, [User], [At], ExpiresAt)
+                VALUES (@idJob, @idType, @holder, @company, @execution, @note, @user, @now, DATEADD(MINUTE, @lifetime, @now));
                 """,
                 new
                 {
+                    holder = Holder,
                     company = Company,
                     idJob,
                     idType,
@@ -677,9 +693,9 @@ namespace WebApp.Data.Sql
             await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
 
             await connection.ExecuteAsync(new CommandDefinition($"""
-                DELETE FROM [monitor].[AppImage] WHERE IdParent = @idApp AND Company = @company;
-                INSERT INTO [monitor].[AppImage] (IdParent, Company, ContentType, [Data], UpdatedAt) VALUES (@idApp, @company, @contentType, @data, {MainDatabase.Now});
-                """, new { idApp, company = Company, contentType, data }, transaction, cancellationToken: cancellationToken));
+                DELETE FROM [monitor].[AppImage] WHERE IdParent = @idApp AND Holder = @holder;
+                INSERT INTO [monitor].[AppImage] (IdParent, Holder, ContentType, [Data], UpdatedAt) VALUES (@idApp, @holder, @contentType, @data, {MainDatabase.Now});
+                """, new { idApp, holder = Holder, contentType, data }, transaction, cancellationToken: cancellationToken));
 
             await transaction.CommitAsync(cancellationToken);
             Changed();
@@ -689,8 +705,8 @@ namespace WebApp.Data.Sql
         {
             await using var connection = await database.OpenAsync(cancellationToken);
             await connection.ExecuteAsync(new CommandDefinition(
-                "DELETE FROM [monitor].[AppImage] WHERE IdParent = @idApp AND Company = @company",
-                new { idApp, company = Company }, cancellationToken: cancellationToken));
+                "DELETE FROM [monitor].[AppImage] WHERE IdParent = @idApp AND Holder = @holder",
+                new { idApp, holder = Holder }, cancellationToken: cancellationToken));
 
             Changed();
         }
@@ -707,12 +723,12 @@ namespace WebApp.Data.Sql
             }))!;
 
         private async Task<(IReadOnlyList<AppModel> Apps, IReadOnlyList<ImageRow> Images)> AppsAsync(CancellationToken cancellationToken) =>
-            await cache.GetOrCreateAsync($"Monitor:Apps:{Company}:{Volatile.Read(ref _version)}", async entry =>
+            await cache.GetOrCreateAsync($"Monitor:Apps:{Holder}:{Volatile.Read(ref _version)}", async entry =>
             {
                 entry.AbsoluteExpirationRelativeToNow = CacheLifetime;
 
                 await using var connection = await database.OpenAsync(cancellationToken);
-                using var reader = await connection.QueryMultipleAsync(new CommandDefinition(SelectApps, new { company = Company }, cancellationToken: cancellationToken));
+                using var reader = await connection.QueryMultipleAsync(new CommandDefinition(SelectApps, new { holder = Holder }, cancellationToken: cancellationToken));
                 var apps = (await reader.ReadAsync<AppModel>()).ToList();
                 var images = (await reader.ReadAsync<ImageRow>()).ToList();
                 return ((IReadOnlyList<AppModel>)apps, (IReadOnlyList<ImageRow>)images);
@@ -771,6 +787,7 @@ namespace WebApp.Data.Sql
                     [auditing].[Messages] m WITH (NOLOCK)
                     JOIN [auditing].[Logs] l WITH (NOLOCK) ON l.Company = m.Company AND l.IdJob = m.IdJob AND l.IdType = m.IdType AND l.Execution = m.Execution
                     JOIN [auditing].[Jobs] j WITH (NOLOCK) ON j.Company = m.Company AND j.IdJob = m.IdJob AND j.IdType = m.IdType
+                    JOIN [auditing].[Catalog] cat WITH (NOLOCK) ON cat.IdJob = j.IdJob AND cat.IdType = j.IdType
                     LEFT JOIN JobApps ja ON ja.IdJob = m.IdJob AND ja.IdType = m.IdType
                 WHERE
                     m.Company = @company AND m.IdExecutionMessage IN @ids
@@ -792,7 +809,7 @@ namespace WebApp.Data.Sql
         }
 
         // parâmetros de MessagesFrom; a busca vira LIKE com os curingas do texto escapados
-        private static DynamicParameters MessageFilter(MessageQuery query, object extra)
+        private DynamicParameters MessageFilter(MessageQuery query, object extra)
         {
             var search = string.IsNullOrWhiteSpace(query.Search)
                 ? null
@@ -873,7 +890,7 @@ namespace WebApp.Data.Sql
         // a imagem própria da empresa, a padrão do módulo ('*') ou a do pacote
         private static string? ImageUrlOf(int idApp, IReadOnlyList<ImageRow> images)
         {
-            var image = images.FirstOrDefault(x => x.IdParent == idApp && x.Company != "*") ?? images.FirstOrDefault(x => x.IdParent == idApp);
+            var image = images.FirstOrDefault(x => x.IdParent == idApp && x.Holder != "*") ?? images.FirstOrDefault(x => x.IdParent == idApp);
             return image is null ? AppLogos.For(idApp) : $"data:{image.ContentType};base64,{Convert.ToBase64String(image.Data)}";
         }
 
@@ -883,7 +900,7 @@ namespace WebApp.Data.Sql
 
         private static void Changed() => Interlocked.Increment(ref _version);
 
-        private static InvalidOperationException JobNotFound(int idJob, int idType) =>
+        private InvalidOperationException JobNotFound(int idJob, int idType) =>
             new($"Job {idJob} (tipo {idType}) não existe para a empresa {Company}.");
 
         private sealed class JobRow
@@ -940,7 +957,7 @@ namespace WebApp.Data.Sql
         private sealed class ImageRow
         {
             public int IdParent { get; set; }
-            public string Company { get; set; } = "";
+            public string Holder { get; set; } = "";
             public string ContentType { get; set; } = "";
             public byte[] Data { get; set; } = [];
         }

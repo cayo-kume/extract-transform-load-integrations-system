@@ -15,7 +15,7 @@
 </div>
 
 <p align="center">
-  <b>Roda cada job recorrente como um WebJob contínuo na Azure, para todas as empresas ativas, com a agenda lida de <code>auditing.Jobs</code>.</b>
+  <b>Roda cada job recorrente como um WebJob contínuo na Azure, para todas as empresas com o job ativo, com a agenda lida de <code>auditing.Jobs</code>.</b>
 </p>
 
 <p align="center">
@@ -30,7 +30,7 @@
 ---
 
 Host que roda os jobs recorrentes como **WebJobs contínuos na Azure**, no lugar do WebJob do sistema antigo. Cada WebJob
-é um processo deste projeto que roda **um job só** (`--job <IdJob>`), **para todas as empresas ativas**, uma de cada vez,
+é um processo deste projeto que roda **um job só** (`--job <IdJob>`), **para todas as empresas com o job ativo**, uma de cada vez,
 com a agenda lida de `auditing.Jobs`. Até 30/10/2026 o projeto se chamava `AzureWebJob`; as decisões e o histórico de cada
 passo estão em [docs/PLANO-HOST-WEBJOB.md](docs/PLANO-HOST-WEBJOB.md).
 
@@ -38,7 +38,7 @@ passo estão em [docs/PLANO-HOST-WEBJOB.md](docs/PLANO-HOST-WEBJOB.md).
 |:---:|---|---|
 | 💻 | **Plataforma** | .NET 10 (`net10.0`), worker (`Microsoft.NET.Sdk.Worker`), sem o Azure WebJobs SDK |
 | 📅 | **Agenda** | `auditing.Jobs`, uma linha por (job, empresa), relida a cada ciclo; nada de `[TimerTrigger]` no código |
-| ⚙️ | **Um processo** | um job (`--job <IdJob>`) para todas as empresas ativas; na Azure, um WebJob por job, chamado `<Title> - V<versão>` |
+| ⚙️ | **Um processo** | um job (`--job <IdJob>`) para todas as empresas com o job ativo; na Azure, um WebJob por job, chamado `<Title> - V<versão>` |
 | 🚀 | **Publicação** | `Publish/publish-webjob.ps1` com os perfis de `Publish/publish-profiles.psd1` |
 | 🩺 | **Recuperação** | job 14000 `StuckJobsRecovery`, um por empresa, só neste host |
 
@@ -69,18 +69,15 @@ WebApi, os WebJobs publicados ou o serviço do Worker.
 ## ▶️ Como rodar no local
 
 > [!TIP]
-> O banco precisa das tabelas (Shared e módulos) e de uma empresa ativa com os módulos contratados. A tela
+> O banco precisa das tabelas (Shared e módulos) e de uma holding com empresas e os módulos contratados. A tela
 > [`tools/migrators/Invoke-Migrators.ps1`](../../../../tools/migrators/Invoke-Migrators.ps1) com o host **WebJob (Azure)**
-> marcado sobe as tabelas (o WebJob não tem tabelas próprias), e a tela
-> [`tools/hosts/Invoke-HostsConfig.ps1`](../../../../tools/hosts/Invoke-HostsConfig.ps1) cadastra a empresa, as credenciais
-> dos módulos e os jobs ativos.
+> marcado sobe as tabelas (o WebJob não tem tabelas próprias), e o cadastro do WebApp (tela inicial e Cadastro › Módulos e
+> Credenciais) grava a holding, as empresas, as credenciais dos módulos e os jobs ativos.
 
-O job vem da linha de comando. A connection string fica fora do `appsettings.json`: user-secrets (o projeto já tem o
-`UserSecretsId`) ou variável de ambiente.
-
-```bash
-dotnet user-secrets set "ConnectionStrings:Connection" "<connection string>" --project src/Backend/Hosts/WebJob
-```
+O job vem da linha de comando. A connection string (`Connection`) fica no `appsettings.json`,
+gravada pelo `tools/migrators/Invoke-Migrators.ps1` no fim da migração (em produção, variável de ambiente ou a
+configuração do App Service). Na máquina de desenvolvimento, os User Secrets do WebJob são gravados à mão: as `BaseUrl` em `http://127.0.0.1:9/` para testes sem chamar as APIs (`AfterSale:BaseUrl`,
+`Movidesk:BaseUrl`, `LinxMicrovix:BaseUrl`, `Totvs:BaseUrl`) e, opcional, `DataWarehouse:Pepper`.
 
 ```bash
 dotnet run --project src/Backend/Hosts/WebJob -- --job 9002
@@ -190,7 +187,7 @@ Os mapas `IdJob → método` (`RecurringJobs/`), o `JobCron` e o `ScheduledJobRu
 | Seção | Uso |
 |---|---|
 | `ConnectionStrings:Connection` | banco das integrações (módulos, `auditing`, `monitor` e a trava de concorrência) |
-| `ConnectionStrings:AuditingConnection` | opcional: banco de `auditing`. Sem ela, o Shared usa a `Connection` trocando `NEWBLOOMERS` por `AUDITING` no nome |
+| `ConnectionStrings:AuditingConnection` | opcional: banco de `auditing` em outro banco. Sem ela, o Shared usa a própria `Connection` (auditing fica no mesmo banco) |
 | `WebJob` | a agenda do processo (tabela abaixo) |
 | `Recovery` | a recuperação dos WebJobs travados (ver [Recuperação](#-recuperação-de-jobs-travados)) |
 | `AfterSale`, `Movidesk`, `LinxMicrovix`, `Totvs`... | `BaseUrl` e as opções de cada módulo (ver o README do módulo) |
@@ -216,7 +213,7 @@ A agenda vem de `auditing.Jobs`, com as mesmas colunas e regras do Hangfire do W
 | `IntervalTimeInMinutes` | intervalo; 0 = sob demanda, não roda |
 | `RunningDailyAt` | preenchida, o job é diário e roda nessa hora (só com intervalo 1440). Os diários dos scripts estão às 23:00 |
 | `Queue` | não usada neste host (é a fila do Hangfire) |
-| `Company` | empresa (holding) da linha; só entram as empresas ativas em `monitor.Company` |
+| `Holder`, `Company` | holding e empresa da linha: uma linha por (job, empresa) |
 
 Os horários seguem as regras do cron do WebApi, no fuso de `WebJob:TimeZone`: 3 roda nos minutos múltiplos de 3, 60 no
 minuto 0 de cada hora, 120 a cada 2 horas cheias, e um diário na hora de `RunningDailyAt`. Um intervalo que não divide a
@@ -224,7 +221,7 @@ hora nem o dia fica sem agenda, com aviso no log.
 
 **A cada ciclo, o processo:**
 
-1. lê as linhas do job em `auditing.Jobs` (`IdType = 2`), **uma por empresa ativa**, e calcula o próximo horário de cada
+1. lê as linhas do job em `auditing.Jobs` (`IdType = 2`), **uma por empresa**, e calcula o próximo horário de cada
    empresa; o mais próximo é o da vez;
 2. espera, em pedaços de no máximo `RecheckIntervalInMinutes`;
 3. relê a linha daquela empresa logo antes de rodar: um job desligado durante a espera não roda nem no horário já
@@ -235,7 +232,7 @@ hora nem o dia fica sem agenda, com aviso no log.
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
 flowchart TB
-    READ[("auditing.Jobs<br/>job X · empresas ativas")] --> NEXT["próximo horário<br/>de cada empresa"]
+    READ[("auditing.Jobs<br/>job X · uma linha por empresa")] --> NEXT["próximo horário<br/>de cada empresa"]
     NEXT --> PICK["a empresa do horário<br/>mais próximo"]
     PICK --> WAIT["⏳ espera<br/>em pedaços de 5 min"]
     WAIT --> RE{"ainda ativo<br/>e igual?"}
@@ -255,13 +252,13 @@ flowchart TB
 
 As empresas rodam **uma de cada vez** neste processo. Uma execução longa não deixa a mesma empresa rodar de novo os
 horários que passaram durante ela; as outras empresas rodam em seguida os horários delas que já passaram. Uma empresa
-inativa (ou nova) conta a partir de agora: ao ligar, não roda de uma vez os horários em que estava desligada.
+com o job inativo (ou nova) conta a partir de agora: ao ligar, não roda de uma vez os horários em que estava desligada.
 
 Uma mudança na tabela vale, no máximo, depois de `RecheckIntervalInMinutes` ou no horário seguinte, **sem republicar**.
 
 ```sql
 -- liga um job de uma empresa
-UPDATE [auditing].[Jobs] SET IsActive = 1 WHERE IdType = 2 AND IdJob = 3000 AND Company = '<CNPJ da holding>';
+UPDATE [auditing].[Jobs] SET IsActive = 1 WHERE IdType = 2 AND IdJob = 3000 AND Company = '<CNPJ da empresa>';
 
 -- muda o intervalo (todas as empresas)
 UPDATE [auditing].[Jobs] SET IntervalTimeInMinutes = 15 WHERE IdType = 2 AND IdJob = 3000;
@@ -383,11 +380,11 @@ em cerca de 1 minuto e sobe `Running`.
 ## 🩺 Recuperação de jobs travados
 
 O job **14000 `StuckJobsRecovery`** (app 140 `Hosts`, a cada 15 minutos) roda o `RecoverStuckJobs()` num WebJob próprio,
-só neste host (no Hangfire do WebApi ele não tem método). **Toda empresa tem o seu 14000**, criado junto com ela por
-`auditing.sp_Add_Company`; cada um lê o heartbeat **só dos jobs da sua empresa** e só chama a Azure quando algum está com
-o **heartbeat off**:
+só neste host (no Hangfire do WebApi ele não tem método). **Toda holding tem o seu 14000**, na empresa que é a própria
+holding, criado junto com ela pelo cadastro do WebApp (**Nova holding**); cada um lê o heartbeat **dos jobs de todas as
+empresas da holding** e só chama a Azure quando algum está com o **heartbeat off**:
 
-1. lê `auditing.vw_JobsHeartbeat` da empresa (uma consulta, apoiada no índice `IX_Logs_Heartbeat`);
+1. lê `auditing.vw_JobsHeartbeat` da holding (uma consulta, apoiada no índice `IX_Logs_Heartbeat`);
 2. **off** = job ativo sem execução terminada há mais que 1 × o intervalo (`IntervalTimeInMinutes` + `GraceMinutes`, que
    é 0); num diário, sem execução terminada desde o último horário de `RunningDailyAt`. Um job que nunca rodou fica fora
    até a primeira execução;
@@ -399,7 +396,7 @@ o **heartbeat off**:
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
 flowchart LR
-    T["⏰ 14000 da empresa<br/>a cada 15 min"] --> HB[("vw_JobsHeartbeat<br/>só a empresa")]
+    T["⏰ 14000 da holding<br/>a cada 15 min"] --> HB[("vw_JobsHeartbeat<br/>empresas da holding")]
     HB --> OFF{"algum job<br/>off?"}
     OFF -- não --> OK["✅ log e fim<br/>sem chamar a Azure"]
     OFF -- sim --> PROT{"cooldown, parado à mão<br/>ou transitório?"}
@@ -455,11 +452,11 @@ local, o `az login`. Um service principal, se um dia precisar, entra pelas vari�
 
 ## ➕ Um job ou um módulo novo
 
-* **Job recorrente novo num módulo do host:** a linha no script de jobs da service (vai para `auditing.JobCatalog`, com
-  `RunningDailyAt` e `Queue`, ver [PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md](../../../../docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md)
+* **Job recorrente novo num módulo do host:** a linha no script de jobs da service (vai para `auditing.Catalog`, sem agenda;
+  a agenda sugerida é uma linha na [`docs/AGENDA-SUGERIDA-JOBS.csv`](../../../../docs/AGENDA-SUGERIDA-JOBS.csv), ver [PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md](../../../../docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md)
   §3.1), a entrada no mapa do módulo em `src/Backend/Hosts/Hosts.Scheduling/RecurringJobs/<Módulo>RecurringJobs.cs`,
   `[JobVersion("1.0.0")]` no método da classe do service e o `IdJob` no `Jobs` do perfil de publicação. Para as empresas
-  que já têm o módulo, `auditing.sp_Add_Company_App` de novo cria a linha em `auditing.Jobs` (inativa, sem duplicar).
+  que já têm o módulo, contratar o módulo de novo no WebApp cria a linha em `auditing.Jobs` (inativa, sem duplicar).
 * **Módulo novo:** referência no `WebJob.csproj` e registro no `ServicesExtensions` (também no WebApi), o mapa
   `<Módulo>RecurringJobs.cs` incluído no `RecurringJobMap` e o script de jobs com as colunas novas.
 * **Job só deste host** (como o 14000): a entrada em `Scheduling/WebJobRecurringJobs.cs`.

@@ -19,7 +19,7 @@ namespace Application.LinxMicrovix.Outbound.Services
         private readonly ICompanyContext _companyContext;
         private readonly IInitialLoad _initialLoad;
 
-        // mais a empresa da execução: a consulta só traz os CNPJs dela (monitor.HoldingCompanies), e o processo atende várias
+        // mais a empresa da execução: a consulta só traz os parâmetros dela (doc_company = empresa), e o processo atende várias
         private const string ParametersKey = "LinxMicrovix:Parameters";
 
         // CNPJ entra interpolado nas queries: só passa com 14 dígitos

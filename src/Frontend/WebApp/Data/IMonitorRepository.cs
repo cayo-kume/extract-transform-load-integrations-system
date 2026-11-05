@@ -86,6 +86,12 @@ namespace WebApp.Data
         Task<IReadOnlyList<string>> GetQueuesAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Tipos de host de agenda no ar neste banco (auditing.SchedulingHosts), do que está no ar há mais tempo (o que
+        /// agenda) para o mais recente.
+        /// </summary>
+        Task<IReadOnlyList<SchedulingHostModel>> GetSchedulingHostsAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Liga ou desliga todos os jobs de um módulo (o chip "Ativa" do card).
         /// </summary>
         Task SetModuleActiveAsync(int idApp, bool isActive, CancellationToken cancellationToken = default);

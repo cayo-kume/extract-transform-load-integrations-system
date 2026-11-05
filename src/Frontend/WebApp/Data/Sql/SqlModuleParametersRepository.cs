@@ -1,46 +1,44 @@
-using System.Data;
 using Dapper;
 using WebApp.Models;
 
 namespace WebApp.Data.Sql
 {
     /// <summary>
-    /// IModuleParametersRepository nas tabelas *Parameters dos módulos, com Dapper. Tabela e colunas vêm só de
-    /// ModuleDefinitions; os valores vão sempre como parâmetro. Os segredos não saem daqui: a leitura devolve só se estão
-    /// definidos.
+    /// IModuleParametersRepository nas tabelas *Parameters dos módulos, com Dapper: a linha de cada empresa (doc_company =
+    /// empresa). Tabela e colunas vêm só de ModuleDefinitions; os valores vão sempre como parâmetro. Os segredos não saem
+    /// daqui: a leitura devolve só se estão definidos.
     /// </summary>
     public class SqlModuleParametersRepository(MainDatabase database) : IModuleParametersRepository
     {
-        public async Task<IReadOnlyList<ModuleParametersModel>> GetParametersAsync(int idParent, string company, CancellationToken cancellationToken = default)
+        public async Task<ModuleParametersModel?> GetParametersAsync(int idParent, string company, CancellationToken cancellationToken = default)
         {
             var definition = ModuleDefinitions.Get(idParent);
             await using var connection = await database.OpenAsync(cancellationToken);
 
             if (!(await MainDatabase.ExistingTablesAsync(connection)).Contains(definition.Table))
-                return [];
+                return null;
 
-            var rows = await connection.QueryAsync(new CommandDefinition(
-                $"SELECT CAST(p.doc_company AS varchar(20)) AS doc_company, p.integrated_or_updated_at, {Columns(definition)} FROM {definition.Table} p JOIN [monitor].[HoldingCompanies] h ON h.Company = p.doc_company WHERE h.Holding = @company ORDER BY p.doc_company",
+            var row = (IDictionary<string, object?>?)await connection.QueryFirstOrDefaultAsync(new CommandDefinition(
+                $"SELECT CAST(p.doc_company AS varchar(20)) AS doc_company, p.integrated_or_updated_at, {Columns(definition)} FROM {definition.Table} p WHERE p.doc_company = @company",
                 new { company = ModuleDefinitions.Digits(company) }, cancellationToken: cancellationToken));
 
-            return rows
-                .Cast<IDictionary<string, object?>>()
-                .Select(row => new ModuleParametersModel
-                {
-                    IdParent = idParent,
-                    DocCompany = (string)row["doc_company"]!,
-                    UpdatedAt = row["integrated_or_updated_at"] as DateTime?,
-                    Values = definition.Fields.Where(x => !x.Secret).ToDictionary(x => x.Column, x => Text(row[x.Column])),
-                    SecretsSet = definition.Fields.Where(x => x.Secret && Text(row[x.Column]) is not null).Select(x => x.Column).ToHashSet()
-                })
-                .ToList();
+            if (row is null)
+                return null;
+
+            return new ModuleParametersModel
+            {
+                IdParent = idParent,
+                DocCompany = (string)row["doc_company"]!,
+                UpdatedAt = row["integrated_or_updated_at"] as DateTime?,
+                Values = definition.Fields.Where(x => !x.Secret).ToDictionary(x => x.Column, x => Text(row[x.Column])),
+                SecretsSet = definition.Fields.Where(x => x.Secret && Text(row[x.Column]) is not null).Select(x => x.Column).ToHashSet()
+            };
         }
 
         public async Task SaveParametersAsync(int idParent, string company, ModuleParametersInput input, CancellationToken cancellationToken = default)
         {
             var definition = ModuleDefinitions.Get(idParent);
-            var key = ModuleDefinitions.Digits(company);
-            var doc = ModuleDefinitions.Digits(input.DocCompany);
+            var doc = ModuleDefinitions.Digits(company);
 
             await using var connection = await database.OpenAsync(cancellationToken);
             await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
@@ -48,7 +46,13 @@ namespace WebApp.Data.Sql
             if (!(await MainDatabase.ExistingTablesAsync(connection, transaction)).Contains(definition.Table))
                 throw new CompanyRegistrationException($"A tabela de parâmetros de {definition.Title} não existe neste banco: rode o migrator do módulo.");
 
-            // a linha atual do CNPJ, travada até o fim da transação, para saber quais segredos já estão gravados
+            // só empresa cadastrada tem parâmetros: os services leem a linha pelo CNPJ da empresa da execução
+            var registered = await connection.ExecuteScalarAsync<int>(new CommandDefinition(
+                "SELECT COUNT(*) FROM [auditing].[Companies] WHERE Company = @doc", new { doc }, transaction, cancellationToken: cancellationToken));
+            if (registered == 0)
+                throw new CompanyRegistrationException($"A empresa {doc} não está cadastrada.", 50002);
+
+            // a linha atual da empresa, travada até o fim da transação, para saber quais segredos já estão gravados
             var current = (IDictionary<string, object?>?)await connection.QueryFirstOrDefaultAsync(new CommandDefinition(
                 $"SELECT {Columns(definition)} FROM {definition.Table} WITH (UPDLOCK, HOLDLOCK) WHERE doc_company = @doc",
                 new { doc }, transaction, cancellationToken: cancellationToken));
@@ -60,12 +64,6 @@ namespace WebApp.Data.Sql
             var error = ModuleDefinitions.Validate(definition, input, secretsSet);
             if (error is not null)
                 throw new CompanyRegistrationException(error);
-
-            // liga o CNPJ à empresa antes de gravar: recusa um CNPJ de outra holding ou de outra empresa do painel
-            await MainDatabase.Translate(() => connection.ExecuteAsync(new CommandDefinition(
-                "[auditing].[sp_Add_Holding_Company]",
-                new { company = key, docCompany = doc, name = string.IsNullOrWhiteSpace(input.DocCompanyName) ? null : input.DocCompanyName.Trim() },
-                transaction, commandType: CommandType.StoredProcedure, cancellationToken: cancellationToken)));
 
             // segredo vazio mantém o gravado: a coluna fica fora do UPDATE (num INSERT, segredo obrigatório já foi validado)
             var fields = definition.Fields

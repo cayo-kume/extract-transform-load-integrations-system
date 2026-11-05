@@ -1,8 +1,12 @@
 @inherits LayoutComponentBase
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @implements IDisposable
+@inject LoggedCompany LoggedCompany
+@inject LoggedCompanyStorage CompanyStorage
 @inject ProtectedLocalStorage LocalStorage
 @inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject ILogger<MainLayout> Logger
 
 <MudThemeProvider Theme="@_theme" IsDarkMode="_isDarkMode" />
 <MudPopoverProvider />
@@ -15,19 +19,58 @@
             <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="DrawerToggle" />
         </MudTooltip>
         <MudSpacer />
-        <MudText Typo="Typo.body2" Class="mr-4 logged-company">@LoggedCompany.Label</MudText>
+        @* a holding e, ao lado, a empresa dela: todas as telas mostram só a empresa escolhida (a escolha fica no navegador) *@
+        <MudText Typo="Typo.body2" Class="mr-3 logged-company">@LoggedCompany.HolderName</MudText>
+        <MudSelect T="string" Value="@LoggedCompany.DocCompany" ValueChanged="SelectCompany" Label="Empresa" Dense="true" Margin="Margin.Dense"
+                   Variant="Variant.Outlined" Disabled="@(CompanyStorage.Companies.Count <= 1)" Class="mr-2 company-select" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight"
+                   ToStringFunc="@(company => CompanyStorage.Companies.FirstOrDefault(x => x.Company == company) is { FantasyName.Length: > 0 } found ? $"{found.FantasyName} · {found.Company}" : company)">
+            @foreach (var company in CompanyStorage.Companies)
+            {
+                <MudSelectItem T="string" Value="@company.Company">
+                    <div class="d-flex align-center justify-space-between gap-3">
+                        <span>@company.Label@if (!string.IsNullOrWhiteSpace(company.FantasyName)) { <span class="company-select-doc"> · @company.Company</span> }</span>
+                        @if (company.IsHolder)
+                        {
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Warning">holding</MudChip>
+                        }
+                    </div>
+                </MudSelectItem>
+            }
+        </MudSelect>
         <MudTooltip Text="@(_isDarkMode ? "Tema claro" : "Tema escuro")">
             <MudIconButton Icon="@DarkLightModeButtonIcon" Color="Color.Inherit" OnClick="DarkModeToggle" />
         </MudTooltip>
+        @* o usuário logado e o Sair: o POST apaga o cookie e volta para a tela inicial *@
+        <MudText Typo="Typo.body2" Class="ml-2 mr-1 logged-user d-none d-sm-flex">
+            <MudIcon Icon="@Icons.Material.Filled.AccountCircle" Size="Size.Small" Class="mr-1" />@_userName
+        </MudText>
+        <form method="post" action="/account/signout" data-enhance="false" class="d-inline">
+            <AntiforgeryToken />
+            <MudTooltip Text="Sair">
+                <MudIconButton ButtonType="ButtonType.Submit" Icon="@Icons.Material.Filled.Logout" Color="Color.Inherit" aria-label="Sair" />
+            </MudTooltip>
+        </form>
     </MudAppBar>
     <MudDrawer @bind-Open="_drawerOpen" Elevation="8" ClipMode="DrawerClipMode.Never">
         <NavMenu/>
     </MudDrawer>
     <MudMainContent>
         @* Uma exceção numa tela mostra este cartão em vez de derrubar o painel; trocar de tela também limpa o erro *@
-        <ErrorBoundary @ref="_boundary">
+        @* a tela só aparece com a empresa lida do navegador; trocar a empresa recria a tela (a @key), que relê os dados *@
+        <ErrorBoundary @ref="_boundary" @key="LoggedCompany.DocCompany">
             <ChildContent>
-                @Body
+                @if (_companyReady)
+                {
+                    @Body
+                }
+                else if (_blocked is not null)
+                {
+                    <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Class="ma-4">@_blocked</MudAlert>
+                }
+                else
+                {
+                    <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="ma-4" />
+                }
             </ChildContent>
             <ErrorContent>
                 <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Class="ma-4">
@@ -41,34 +84,67 @@
     </MudMainContent>
 </MudLayout>
 
-@* Assistente de IA no canto inferior direito, em todas as telas com este layout (o login usa o BlankLayout) *@
-<AssistantChat />
+@* Assistente de IA no canto inferior direito, em todas as telas com este layout (o login usa o BlankLayout); só com a empresa
+   do usuário escolhida, porque as ferramentas dele leem os dados dela *@
+@if (_companyReady)
+{
+    <AssistantChat />
+}
 
 @code {
+    [CascadingParameter] private Task<AuthenticationState>? AuthenticationState { get; set; }
+
     private bool _drawerOpen = true;
+    private string? _userName;
+    private string _userHolder = "";
+    private string _userCompany = "";
     private bool _isDarkMode = true;
     private MudTheme? _theme;
     private ErrorBoundary? _boundary;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        base.OnInitialized();
         Navigation.LocationChanged += OnLocationChanged;
+        _theme = AppTheme.Create();
 
-        _theme = new()
+        // sem login, nenhuma tela do painel: volta para a tela inicial (no prerender, vira um redirect)
+        var user = AuthenticationState is null ? null : (await AuthenticationState).User;
+        if (user?.Identity?.IsAuthenticated != true)
         {
-            PaletteLight = _lightPalette,
-            PaletteDark = _darkPalette,
-            LayoutProperties = new LayoutProperties()
-        };
+            Navigation.NavigateTo("/", forceLoad: true);
+            return;
+        }
+
+        _userName = user.Identity.Name;
+        _userHolder = user.FindFirst(UserClaims.Holder)?.Value ?? "";
+        _userCompany = user.FindFirst(UserClaims.Company)?.Value ?? "";
     }
 
     private const string DarkModeKey = "dark-mode";
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender)
+        // sem login, o OnInitializedAsync já mandou para a tela inicial: nenhuma tela aparece
+        if (!firstRender || _userName is null)
             return;
+
+        // a empresa da aba: a última escolhida neste navegador (o armazenamento só existe depois do primeiro render)
+        // sem a holding do usuário (apagada, outro banco) ou sem conseguir ler, nenhuma tela: a empresa da configuração podia
+        // ser de outra holding
+        try
+        {
+            if (await CompanyStorage.RestoreAsync(_userHolder, _userCompany))
+                _companyReady = true;
+            else
+                _blocked = $"A holding do seu usuário ({_userHolder}) não está cadastrada neste banco. Saia e entre com outro usuário.";
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Não foi possível ler as empresas cadastradas.");
+            _blocked = "Não foi possível ler as empresas cadastradas. Recarregue a página; se continuar, veja o log do WebApp.";
+        }
+
+        StateHasChanged();
 
         // a escolha de tema fica no navegador; se não der para ler (aba anônima, dados limpos), fica o escuro
         try
@@ -82,6 +158,22 @@
         }
         catch (Exception)
         {
+        }
+    }
+
+    private bool _companyReady;
+    private string? _blocked;
+
+    private async Task SelectCompany(string company)
+    {
+        try
+        {
+            await CompanyStorage.SelectAsync(LoggedCompany.Holder, company);
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Não foi possível trocar para a empresa {Company}.", company);
+            Snackbar.Add("Não foi possível trocar de empresa.", Severity.Error);
         }
     }
 
@@ -110,44 +202,6 @@
         }
     }
 
-    private readonly PaletteLight _lightPalette = new()
-    {
-        Black = "#110e2d",
-        AppbarText = "#424242",
-        AppbarBackground = "rgba(255,255,255,0.8)",
-        DrawerBackground = "#ffffff",
-        GrayLight = "#e8e8e8",
-        GrayLighter = "#f9f9f9",
-    };
-
-    private readonly PaletteDark _darkPalette = new()
-    {
-        Primary = "#7e6fff",
-        Surface = "#1e1e2d",
-        Background = "#1a1a27",
-        BackgroundGray = "#151521",
-        AppbarText = "#92929f",
-        AppbarBackground = "rgba(26,26,39,0.8)",
-        DrawerBackground = "#1a1a27",
-        ActionDefault = "#74718e",
-        ActionDisabled = "#9999994d",
-        ActionDisabledBackground = "#605f6d4d",
-        TextPrimary = "#b2b0bf",
-        TextSecondary = "#92929f",
-        TextDisabled = "#ffffff33",
-        DrawerIcon = "#92929f",
-        DrawerText = "#92929f",
-        GrayLight = "#2a2833",
-        GrayLighter = "#1e1e2d",
-        Info = "#4a86ff",
-        Success = "#3dcb6c",
-        Warning = "#ffb545",
-        Error = "#ff3f5f",
-        LinesDefault = "#33323e",
-        TableLines = "#33323e",
-        Divider = "#292838",
-        OverlayLight = "#1e1e2d80",
-    };
 
     public string DarkLightModeButtonIcon => _isDarkMode switch
     {

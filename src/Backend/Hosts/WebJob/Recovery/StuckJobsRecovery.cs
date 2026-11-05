@@ -22,8 +22,9 @@ namespace WebJob.Recovery
     /// recuperação dos WebJobs travados (src/Backend/Hosts/WebJob/docs/PLANO-HOST-WEBJOB.md, passo 7), no lugar do
     /// AzureService.RecoveryTotvsJobs() do sistema antigo: vale para todos os jobs, e a API da Azure (listar e reiniciar WebJobs)
     /// só é chamada quando o heartbeat de algum job está off. É o job 14000 (StuckJobsRecovery) de auditing.Jobs, com o seu
-    /// próprio WebJob; roda só neste host. Cada empresa tem o seu 14000 e lê o heartbeat só dos jobs dela
-    /// (docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.4); o WebJob reiniciado é o do job, que atende todas as empresas
+    /// próprio WebJob; roda só neste host. Cada holding tem o seu 14000 (na empresa que é a
+    /// própria holding) e lê o heartbeat dos jobs de todas as empresas dela (docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md); o
+    /// WebJob reiniciado é o do job, que atende todas as empresas
     /// </summary>
     public class StuckJobsRecovery : IStuckJobsRecovery
     {
@@ -56,7 +57,7 @@ namespace WebJob.Recovery
             var timeZone = TimeZoneInfo.FindSystemTimeZoneById(_webJobSettings.TimeZone);
             var now = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, timeZone).DateTime;
 
-            var heartbeats = (await _jobScheduleRepository.GetActiveJobsHeartbeat(_companyContext.Company!)).ToList();
+            var heartbeats = (await _jobScheduleRepository.GetActiveJobsHeartbeat(_companyContext.Holder!)).ToList();
             var off = new List<(JobHeartbeat Job, string Reason)>();
 
             foreach (var job in heartbeats)
@@ -75,7 +76,7 @@ namespace WebJob.Recovery
             }
 
             foreach (var (job, reason) in off)
-                _jobLog.AddMessage($"{job.IdJob} {job.Title}: heartbeat off ({reason}).");
+                _jobLog.AddMessage($"{job.IdJob} {job.Title} ({job.Company}): heartbeat off ({reason}).");
 
             if (_settings.DryRun)
             {

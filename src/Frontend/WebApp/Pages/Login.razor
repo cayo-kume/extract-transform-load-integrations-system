@@ -1,44 +1,90 @@
 ﻿@page "/"
 @layout BlankLayout
 @inject NavigationManager Navigation
+@inject AdminAccess AdminAccess
+@inject IUserRepository UserRepository
+@inject SignInTickets SignInTickets
+@inject ILogger<Login> Logger
 
 <PageTitle>Login</PageTitle>
 
-@* 
-<AuthorizeView>
-    <Authorized>
-        Usuário já autenticado, redireciona para seleção de empresa
-    </Authorized>
-    <NotAuthorized> *@
-        <div class="login-container">
-            <div class="login-background"></div>
-            <div class="login-form-container align-self-center">
+<div class="login-container">
+    <div class="login-background"></div>
+    <div class="login-form-container align-self-center">
         <MudImage ObjectFit="ObjectFit.Cover" Height="150" Width="300" Src="/images/logos/logo_200x200.png" Style="margin-bottom: 2rem" />
-                <MudButton OnClick="BeginSignIn" StartIcon="@Icons.Custom.Brands.MicrosoftWindows" IconSize="Size.Large" Variant="Variant.Filled" Color="Color.Dark" Size="Size.Large" FullWidth="true">Entrar</MudButton>
-            </div>
-        </div>
-@*     
-    </NotAuthorized>
-</AuthorizeView> *@
+
+        @* usuário ou e-mail e senha de monitor.Users; o erro não diz qual dos dois está errado *@
+        <form @onsubmit="SignIn" class="login-form">
+            <MudTextField T="string" @bind-Value="_login" Label="Usuário ou e-mail" Variant="Variant.Outlined" Immediate="true" AutoFocus="true"
+                          Error="_failed" Disabled="_signingIn" Class="mb-4" autocomplete="username" />
+            <MudTextField T="string" @bind-Value="_password" Label="Senha" Variant="Variant.Outlined" Immediate="true"
+                          InputType="@(_showPassword ? InputType.Text : InputType.Password)" Error="_failed" ErrorText="Usuário ou senha inválidos."
+                          Adornment="Adornment.End" AdornmentIcon="@(_showPassword ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                          AdornmentAriaLabel="Mostrar a senha" OnAdornmentClick="@(() => _showPassword = !_showPassword)" Disabled="_signingIn" autocomplete="current-password" />
+
+            <MudButton ButtonType="ButtonType.Submit" StartIcon="@Icons.Custom.Brands.MicrosoftWindows" IconSize="Size.Large" Variant="Variant.Filled" Color="Color.Dark"
+                       Size="Size.Large" FullWidth="true" Disabled="@(_signingIn || string.IsNullOrWhiteSpace(_login) || string.IsNullOrEmpty(_password))" Class="mt-4">Entrar</MudButton>
+        </form>
+
+        @if (AdminAccess.IsAllowed)
+        {
+            @* cadastro da holding, com o primeiro usuário (só administrador, como o resto do cadastro) *@
+            <MudButton Href="/registration" StartIcon="@Icons.Material.Filled.Domain" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Large" FullWidth="true" Class="mt-3">Primeiro acesso</MudButton>
+        }
+
+        @if (_error is not null)
+        {
+            <MudAlert Severity="Severity.Error" Dense="true" Class="mt-3">@_error</MudAlert>
+        }
+    </div>
+</div>
 
 @code {
-    // [CascadingParameter]
-    // private Task<AuthenticationState>? AuthState { get; set; }
+    [CascadingParameter] private Task<AuthenticationState>? AuthenticationState { get; set; }
 
+    private string? _login;
+    private string? _password;
+    private bool _showPassword;
+    private bool _failed;
+    private bool _signingIn;
+    private string? _error;
+
+    // já logado: direto para o painel (para trocar de usuário, Sair no topo)
     protected override async Task OnInitializedAsync()
     {
-        // if (AuthState is not null)
-        // {
-        //     var state = await AuthState;
-        //     if (state.User.Identity?.IsAuthenticated == true)
-        //     {
-        //        Navigation.NavigateTo("/Empresas");
-        //     }
-        // }
+        if (AuthenticationState is not null && (await AuthenticationState).User.Identity?.IsAuthenticated == true)
+            Navigation.NavigateTo("/home");
     }
 
-    private void BeginSignIn()
+    private async Task SignIn()
     {
-        Navigation.NavigateTo("/home", forceLoad: true);
+        if (string.IsNullOrWhiteSpace(_login) || string.IsNullOrEmpty(_password))
+            return;
+
+        _signingIn = true;
+        _failed = false;
+        _error = null;
+
+        try
+        {
+            var user = await UserRepository.ValidateAsync(_login, _password);
+            if (user is null)
+            {
+                _failed = true;
+                return;
+            }
+
+            // o circuito não grava cookie: o /account/signin grava, com o ticket de uso único, e abre o painel
+            Navigation.NavigateTo($"/account/signin?ticket={SignInTickets.Issue(user)}", forceLoad: true);
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Não foi possível conferir o login.");
+            _error = "Não foi possível entrar agora. Tente de novo; se continuar, veja o log do WebApp.";
+        }
+        finally
+        {
+            _signingIn = false;
+        }
     }
 }

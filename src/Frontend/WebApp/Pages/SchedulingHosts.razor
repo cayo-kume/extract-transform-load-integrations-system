@@ -1,0 +1,126 @@
+@page "/scheduling-hosts"
+@inject AdminAccess AdminAccess
+@inject IMonitorRepository MonitorRepository
+@inject ISnackbar Snackbar
+@inject ILogger<SchedulingHosts> Logger
+
+@* Cadastro › Hosts de Agenda: os hosts de agenda no ar neste banco, pelo heartbeat (auditing.SchedulingHosts), e qual
+   agenda (o que está no ar há mais tempo, docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md, 4.2). Só mostra: ligar e desligar
+   um host é a configuração dele (Hangfire:Enabled, Quartz:Enabled), na publicação. *@
+
+<PageTitle>Hosts de Agenda</PageTitle>
+
+@if (!AdminAccess.IsAllowed)
+{
+    <MudAlert Severity="Severity.Warning" Class="ma-4">Esta tela é só para administrador (Admin:Enabled em Development, até a autenticação).</MudAlert>
+}
+else
+{
+    <MudGrid>
+        <MudItem xs="12" Class="d-flex align-center flex-wrap gap-3 pa-1 pl-10 pl-md-16">
+            <PageHeader Icon="@Icons.Material.Filled.Dns" Title="Hosts de Agenda" Subtitle="Os hosts que agendam os jobs neste banco" />
+            <MudSpacer />
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Refresh" Class="mr-4" OnClick="LoadAsync">Atualizar</MudButton>
+        </MudItem>
+    </MudGrid>
+
+    <div class="pa-4">
+        @if (_hosts is null)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+        }
+        else
+        {
+            <MudTable T="HostRow" Items="Rows" Dense="true" Outlined="true" Elevation="0">
+                <HeaderContent>
+                    <MudTh>Host</MudTh>
+                    <MudTh>Instâncias</MudTh>
+                    <MudTh>No ar desde</MudTh>
+                    <MudTh>Último heartbeat</MudTh>
+                    <MudTh>Situação</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Host"><b>@context.Title</b></MudTd>
+                    <MudTd DataLabel="Instâncias">@(context.Host?.Instances.ToString() ?? "—")</MudTd>
+                    <MudTd DataLabel="No ar desde">@(context.Host is { } host ? MainLocal(host.StartedAt).ToString("dd/MM HH:mm") : "—")</MudTd>
+                    <MudTd DataLabel="Último heartbeat">@(context.Host is { } host2 ? $"há {Math.Max(0, (int)(DateTime.UtcNow - host2.LastHeartbeat).TotalSeconds)} s" : "—")</MudTd>
+                    <MudTd DataLabel="Situação">
+                        @if (context.Host is null)
+                        {
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">fora do ar</MudChip>
+                        }
+                        else if (context.Scheduling)
+                        {
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Success">agendando</MudChip>
+                        }
+                        else
+                        {
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Warning">no ar, em espera</MudChip>
+                        }
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+
+            @if (_hosts.Count > 1)
+            {
+                <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-3">
+                    Mais de um tipo de host no ar: só o @Title(_hosts[0].HostType) agenda. Desligue o agendador dos outros
+                    (@string.Join(", ", _hosts.Skip(1).Select(x => Setting(x.HostType)))) para eles não ficarem em espera.
+                </MudAlert>
+            }
+            else if (_hosts.Count == 0)
+            {
+                <MudAlert Severity="Severity.Info" Dense="true" Class="mt-3">Nenhum host de agenda no ar neste banco: os jobs ativos não rodam até um host subir.</MudAlert>
+            }
+
+            <MudText Typo="Typo.caption" Class="d-block mt-3">Ligar e desligar um host é a configuração dele (appsettings ou variável de ambiente), na publicação; esta tela só mostra o que está no ar.</MudText>
+        }
+    </div>
+}
+
+@code {
+    // os tipos que os hosts gravam em auditing.SchedulingHosts (AddSchedulingHostRegistration)
+    private static readonly (string HostType, string Title, string Setting)[] Types =
+    [
+        ("Hangfire", "WebApi (Hangfire)", "Hangfire:Enabled = false no WebApi"),
+        ("Quartz", "Worker (Quartz.NET)", "Quartz:Enabled = false no Worker"),
+        ("WebJob", "WebJob (Azure)", "os WebJobs parados no App Service")
+    ];
+
+    private IReadOnlyList<SchedulingHostModel>? _hosts;
+
+    private sealed record HostRow(string Title, SchedulingHostModel? Host, bool Scheduling);
+
+    private IEnumerable<HostRow> Rows => Types
+        .Select(type => (type, host: _hosts!.FirstOrDefault(x => x.HostType == type.HostType)))
+        .Select(x => new HostRow(x.type.Title, x.host, x.host is not null && x.host.HostType == _hosts![0].HostType))
+        .OrderBy(x => x.Host is null ? 1 : 0);
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AdminAccess.IsAllowed)
+            await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            _hosts = await MonitorRepository.GetSchedulingHostsAsync();
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Não foi possível ler os hosts de agenda.");
+            Snackbar.Add("Não foi possível ler os hosts de agenda.", Severity.Error);
+            _hosts ??= [];
+        }
+    }
+
+    private static string Title(string hostType) => Types.FirstOrDefault(x => x.HostType == hostType).Title ?? hostType;
+
+    private static string Setting(string hostType) => Types.FirstOrDefault(x => x.HostType == hostType).Setting ?? hostType;
+
+    // auditing.SchedulingHosts grava em UTC; a tela mostra no horário de Brasília, como o resto do painel
+    private static DateTime MainLocal(DateTime utc) =>
+        TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time"));
+}

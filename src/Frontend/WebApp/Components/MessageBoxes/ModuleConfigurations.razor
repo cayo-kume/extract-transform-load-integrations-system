@@ -1,9 +1,14 @@
 @inject IMonitorRepository MonitorRepository
+@inject ICompanyRepository CompanyRepository
+@inject LoggedCompany LoggedCompany
+@inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject ILogger<ModuleConfigurations> Logger
 
-@* Configurações de um módulo para a empresa logada, em abas: imagem (a da empresa), credenciais e parâmetros (só leitura
-   nesta fase). A agenda (ligar e desligar os jobs, intervalo, hora diária e fila) fica só na tela Integrações, no botão
-   Agenda de cada aplicação (rodada 9). Ver docs/PLANO-WEBAPP.md, "Ajustes de layout". *@
+@* Configurações de um módulo para a empresa logada, em abas: imagem (a da empresa), credenciais (a linha de
+   <Módulo>Parameters da empresa, editável), parâmetros (só leitura) e contrato (contratar ou remover o módulo). Credenciais e
+   contrato vieram da antiga tela Módulos e Credenciais. A agenda (ligar e desligar os jobs, intervalo, hora diária e fila)
+   fica na tela Integrações, no botão Agenda de cada aplicação. Ver docs/PLANO-WEBAPP.md, "Ajustes de layout". *@
 
 <MudDialog>
     <TitleContent>
@@ -41,14 +46,14 @@
 
                 <MudTabPanel Text="Credenciais">
                     <div class="pa-2">
-                        <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3">Somente leitura nesta fase: a gravação entra com o banco (fase 5) e a autenticação (fase 6).</MudAlert>
-                        @foreach (var setting in _settings.Where(x => x.IsSecret))
+                        @if (ModuleDefinitions.Find(IdApp) is { } definition)
                         {
-                            <MudTextField T="string" Value="@setting.Value" Label="@setting.Label" Disabled="true" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Key" />
+                            <MudText Typo="Typo.caption" Class="d-block mb-3">Credencial de @LoggedCompany.Label. Segredo gravado não volta para a tela: clique no lápis para substituir.</MudText>
+                            <CredentialForm Definition="definition" />
                         }
-                        @if (!_settings.Any(x => x.IsSecret))
+                        else
                         {
-                            <MudText Typo="Typo.body2">Nenhuma credencial cadastrada para este módulo.</MudText>
+                            <MudText Typo="Typo.body2">Este módulo não usa API externa: não tem credencial.</MudText>
                         }
                     </div>
                 </MudTabPanel>
@@ -59,6 +64,49 @@
                         @foreach (var setting in _settings.Where(x => !x.IsSecret))
                         {
                             <MudTextField T="string" Value="@setting.Value" Label="@setting.Label" Disabled="true" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3" />
+                        }
+                    </div>
+                </MudTabPanel>
+
+                <MudTabPanel Text="Contrato">
+                    <div class="pa-2">
+                        @if (_app is null)
+                        {
+                            <MudText Typo="Typo.body2">Não foi possível ler a contratação do módulo.</MudText>
+                        }
+                        else
+                        {
+                            <div class="d-flex align-center flex-wrap gap-2 mb-3">
+                                @if (_app.IsContracted)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Success">contratado</MudChip>
+                                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@_app.ActiveJobs de @_app.Jobs jobs ativos</MudChip>
+                                }
+                                else
+                                {
+                                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">não contratado</MudChip>
+                                }
+                            </div>
+                            <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3">
+                                @if (_app.IsContracted)
+                                {
+                                    <span>Remover o módulo só desativa os jobs dele em @LoggedCompany.Name (os logs referenciam os jobs). A credencial continua gravada.</span>
+                                }
+                                else
+                                {
+                                    <span>Contratar cria os jobs do módulo para @LoggedCompany.Name, inativos e com a agenda sugerida, que dá para mudar antes de gravar.</span>
+                                }
+                            </MudAlert>
+                            <div class="d-flex justify-end">
+                                @if (_app.IsContracted)
+                                {
+                                    <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" Disabled="@(_app.ActiveJobs == 0 || _changing)" OnClick="RemoveApp">Remover módulo</MudButton>
+                                }
+                                else
+                                {
+                                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" Disabled="_changing" OnClick="ContractApp">Contratar</MudButton>
+                                }
+                            </div>
                         }
                     </div>
                 </MudTabPanel>
@@ -82,21 +130,84 @@
     [Parameter] public string? Title { get; set; }
 
     /// <summary>
-    /// Aba que abre primeiro: 0 Imagem, 1 Credenciais, 2 Parâmetros.
+    /// Aba que abre primeiro: 0 Imagem, 1 Credenciais, 2 Parâmetros, 3 Contrato.
     /// </summary>
     [Parameter] public int InitialTab { get; set; }
 
     private IReadOnlyList<ModuleSettingModel> _settings = [];
+    private CompanyAppModel? _app;
     private string? _imageUrl;
     private int _tab;
     private bool _loading = true;
+    private bool _changing;
 
     protected override async Task OnInitializedAsync()
     {
         _tab = InitialTab;
         _settings = await MonitorRepository.GetModuleSettingsAsync(IdApp);
         await LoadImage();
+        await LoadContract();
         _loading = false;
+    }
+
+    private async Task LoadContract()
+    {
+        try
+        {
+            _app = (await CompanyRepository.GetAppsAsync(LoggedCompany.DocCompany)).FirstOrDefault(x => x.IdParent == IdApp);
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Não foi possível ler a contratação do módulo {IdParent}.", IdApp);
+            _app = null;
+        }
+    }
+
+    private async Task ContractApp()
+    {
+        _changing = true;
+
+        try
+        {
+            if (await AppContractDialog.ShowAsync(DialogService, IdApp, Title) is { } created)
+            {
+                Snackbar.Add($"{Title} contratado para {LoggedCompany.Name}: {created} job(s) criado(s), inativos.", Severity.Success);
+                await LoadContract();
+            }
+        }
+        finally
+        {
+            _changing = false;
+        }
+    }
+
+    private async Task RemoveApp()
+    {
+        var confirmed = await DialogService.ShowMessageBoxAsync(
+            $"Remover {Title}",
+            (MarkupString)$"<p>Desativar os {_app!.ActiveJobs} job(s) ativo(s) do {System.Net.WebUtility.HtmlEncode(Title)} para <strong>{System.Net.WebUtility.HtmlEncode(LoggedCompany.Label)}</strong>?</p><p>Os jobs e a credencial continuam gravados; para voltar, ative os jobs na tela Integrações.</p>",
+            yesText: "Remover", cancelText: "Cancelar");
+
+        if (confirmed != true)
+            return;
+
+        _changing = true;
+
+        try
+        {
+            await CompanyRepository.RemoveAppAsync(LoggedCompany.DocCompany, IdApp);
+            Snackbar.Add($"{Title}: jobs desativados para {LoggedCompany.Name}.", Severity.Warning);
+            await LoadContract();
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Não foi possível remover o módulo {IdParent}.", IdApp);
+            Snackbar.Add("Não foi possível remover o módulo.", Severity.Error);
+        }
+        finally
+        {
+            _changing = false;
+        }
     }
 
     private async Task LoadImage()

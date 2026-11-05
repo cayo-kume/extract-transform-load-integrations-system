@@ -34,10 +34,12 @@ Todos os módulos usam o **mesmo banco** e a mesma tabela de controle do DbUp. R
 3. **DataWarehouse**, por último: ele lê as tabelas dos módulos.
 4. **Host Worker**, só se o Worker (Quartz.NET) for o orquestrador: depende só do Shared.
 
-Os migrators não inserem dados de cliente: o banco sobe sem empresa, sem parâmetros (credenciais) e com `auditing.Jobs`
-vazio; os jobs ficam no catálogo `auditing.JobCatalog`. Os scripts de parâmetros ficam em `Infrastructure.<Módulo>/Seeds/SQLServer`,
-fora do alcance do DbUp, e a empresa é cadastrada pela tela do WebApp ou, em teste, pelo `.ps1` de seeds
-([PLANO-TELA-CADASTRO-EMPRESA.md](PLANO-TELA-CADASTRO-EMPRESA.md), seção 3). Num banco de teste, depois dos migrators:
+Os migrators não inserem dados de cliente: o banco sobe sem holding, sem empresa, sem parâmetros (credenciais) e com
+`auditing.Jobs` vazio; os jobs ficam no catálogo `auditing.Catalog` (sem agenda: a agenda sugerida é a
+[`AGENDA-SUGERIDA-JOBS.csv`](AGENDA-SUGERIDA-JOBS.csv), e a de cada empresa fica em `auditing.Jobs`). Os scripts de
+parâmetros ficam em `Infrastructure.<Módulo>/Seeds/SQLServer`, fora do alcance do DbUp, e a holding e as empresas são
+cadastradas pela tela do WebApp ou, em teste, pelo `.ps1` de seeds
+([PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md](PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)). Num banco de teste, depois dos migrators:
 
 ```powershell
 ./tools/seeds/Import-TestSeeds.ps1 -Database EtlTeste
@@ -100,7 +102,7 @@ Cria o banco se ele ainda não existir.
 ```csharp
 var upgrader = DeployChanges.To
     .SqlDatabase(connectionString)
-    .WithScriptsFromFileSystem(".", new FileSystemScriptOptions { IncludeSubDirectories = true })
+    .WithScriptsFromFileSystem(".", new FileSystemScriptOptions { IncludeSubDirectories = true, Filter = IsSelected })
     .WithScriptSorter(scripts => scripts.OrderBy(s => s.Name.Split('.')[^2], StringComparer.Ordinal))
     .LogToConsole()
     .Build();
@@ -109,6 +111,9 @@ var upgrader = DeployChanges.To
 * **`WithScriptsFromFileSystem(".", ... IncludeSubDirectories = true)`**: lê todos os `.sql` da pasta atual **e das
   subpastas**. O DbUp nomeia cada script pelo caminho, com pontos no lugar das barras (ex.:
   `People.Script005_Create_Totvs_People_Tables.sql`).
+* **`Filter = IsSelected`** (nos módulos): com a variável `ETL_MIGRATOR_SERVICES`, só os scripts das pastas listadas,
+  mais `Parameters` e a raiz; sem ela, todos. Quem passa a variável é o `Invoke-Migrators.ps1` (catálogo da tela ou
+  `-Services`).
 * **`WithScriptSorter(...)`**: ordena pelo **nome do arquivo**, sem a pasta. Sem ele, a ordem seria alfabética pelo nome
   completo, e `B2C.*` rodaria antes de `Parameters.Script001`. Com ele, a ordem de execução é a do número do arquivo, que é
   única e sequencial no módulo.
@@ -157,6 +162,13 @@ Totvs, LinxMicrovix, LinxCommerce, Movidesk, AfterSale e DataWarehouse. Ele roda
 um a partir de uma unidade `subst` (sem o problema de MAX_PATH), e para no primeiro erro. A senha aparece como `****` no
 log. Precisa do PowerShell 7 e do `dotnet-script`.
 
+O catálogo é uma árvore: abaixo de cada aplicação, os services dela (as pastas de `Scripts/SQLServer`, como `People` no
+Totvs ou `Erp/Customers` no LinxMicrovix), cada um com uma caixa. Marcar ou desmarcar a aplicação marca ou desmarca todos
+os services, e a aplicação fica marcada enquanto algum estiver. `Parameters` (e os scripts da raiz, como os do Shared)
+sobe sempre. A escolha vai para o `migrator.csx` do módulo pela variável `ETL_MIGRATOR_SERVICES` (pastas separadas por
+`;`); sem a variável, sobem todos os services, como ao rodar o `migrator.csx` à mão. Rodar de novo com outros services
+sobe só os que faltam: o DbUp aplica os scripts que ainda não estão em `dbo.SchemaVersions`.
+
 O host de agenda é um só por banco (README, "Um host de agenda por vez"), e a escolha é obrigatória:
 
 | Host | O que o script faz no banco |
@@ -165,13 +177,24 @@ O host de agenda é um só por banco (README, "Um host de agenda por vez"), e a 
 | WebJob (Azure) | Nada: o WebJob não tem tabelas, a agenda é a `auditing.Jobs` |
 | Worker (Quartz.NET) | Roda o migrator do host, por último: as tabelas do schema `quartz` |
 
-No fim, o log lista o que acertar nos outros hosts para o escolhido ser o único a agendar. Essa parte (jobs ativos e
-User Secrets de cada projeto) é da segunda tela, [`tools/hosts/Invoke-HostsConfig.ps1`](../tools/hosts/Invoke-HostsConfig.ps1)
-([GUIA-DE-USO](../GUIA-DE-USO.md#️-configurar-jobs-e-user-secrets-invoke-hostsconfig)).
+No fim, o log lista o que acertar nos outros hosts para o escolhido ser o único a agendar. Os jobs ativos ficam no
+WebApp (Cadastro › Módulos e Credenciais e tela Integrações), e os User Secrets de cada projeto, na máquina de
+desenvolvimento, são gravados à mão com `dotnet user-secrets set` (as chaves estão no README de cada host).
 
-Os usuários de banco do WebApp (`etl_monitor` e `etl_query`) também são da segunda tela: o Shared só cria as procedures
-do Script009, e o `Invoke-Migrators.ps1` não repassa `ETL_MONITOR_PASSWORD` nem `ETL_QUERY_PASSWORD` a nenhum migrator.
-Rodando o `migrator.csx` do Shared à mão, as variáveis continuam valendo.
+Os usuários de banco do WebApp (`etl_monitor` e `etl_query`) são criados pelo migrator do Shared (Script009) com as
+senhas da seção "Usuários de banco do WebApp" da tela do `Invoke-Migrators.ps1` (ou `-MonitorPassword` e `-QueryPassword`
+com `-NoGui`). As senhas vão só para o processo do Shared, pelas variáveis `ETL_MONITOR_PASSWORD` e
+`ETL_QUERY_PASSWORD`; em branco, o usuário não é criado agora. Quem já existe passa a ter a senha informada. Rodando o `migrator.csx`
+do Shared à mão, as mesmas variáveis no ambiente fazem o mesmo.
+
+No fim da migração, o `Invoke-Migrators.ps1` grava a seção `ConnectionStrings` do `appsettings.json` do WebApp
+(`Connection` com o `etl_monitor` e `QueryConnection` com o `etl_query`, quando as senhas deles foram informadas; senão,
+o usuário da tela), do WebApi, do WebJob e do Worker (`Connection` com o usuário da tela), editando o arquivo
+no lugar, com os comentários. As mesmas chaves saem dos User Secrets dos quatro projetos. A senha vai para o git de
+propósito: é a configuração de teste. No `appsettings.json` do WebApi, ele grava
+também o `Hangfire:Enabled` (ligado só com o WebApi como host de agenda) e, da seção **Dashboard do Hangfire (WebApi)**
+(ou `-HangfireUser` e `-HangfirePassword`), o usuário e a senha do dashboard; com o WebApi como host, a tela pede os
+dois. `-SkipAppSettings` (ou a caixa da tela desmarcada) não grava nada.
 
 ```powershell
 ./tools/migrators/Invoke-Migrators.ps1
@@ -184,15 +207,22 @@ Com `-NoGui`, roda no console, com `-Credential`, `-Apps` (o Shared entra sempre
 ./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -Apps Totvs,DataWarehouse -SchedulingHost WebApi
 ```
 
-O migrator não grava empresa, credencial nem job. Quem faz isso é a tela
-[`tools/hosts/Invoke-HostsConfig.ps1`](../tools/hosts/Invoke-HostsConfig.ps1): cadastra a empresa, pede a credencial da
-API de cada módulo antes de ativar os jobs dele e grava tudo numa transação. Num banco de teste, o script avulso
-[`tools/seeds/Import-TestSeeds.ps1`](../tools/seeds/Import-TestSeeds.ps1) carrega de uma vez a empresa e as credenciais
-de `Seeds/SQLServer`, com os jobs inativos. A opção **Banco de teste** da tela do migrator (`-TestSeeds`, `-Company`,
+`-Services` escolhe os services, no formato `Aplicação/service`; a aplicação sem nenhum na lista sobe todos os dela:
+
+```powershell
+./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -Apps Totvs,LinxMicrovix -Services Totvs/People,LinxMicrovix/Erp/Customers -SchedulingHost WebApi
+```
+
+O migrator não grava holding, empresa, credencial nem job. Quem faz isso é o WebApp: na tela inicial, **Cadastrar
+holding e empresas** (`/registration`) cadastra a holding e as empresas, e no painel, **Cadastro › Módulos e
+Credenciais** contrata os módulos de cada empresa e pede a credencial da API antes de ativar os jobs dele. Num banco de
+teste, o script avulso [`tools/seeds/Import-TestSeeds.ps1`](../tools/seeds/Import-TestSeeds.ps1) carrega de uma vez a
+holding (`-Holder`, `-HolderName`), as empresas e as credenciais de `Seeds/SQLServer`, com os jobs de cada empresa
+inativos e com a agenda sugerida. A opção **Banco de teste** da tela do migrator (`-TestSeeds`, `-Company`,
 `-CompanyName` e `-ActivateJobs`) saiu em 04/11/2026.
 
 Os módulos fora do host (Dootax, FlashCourier etc.) não estão no catálogo: o FlashCourier grava os mesmos ids do
-DataWarehouse em `auditing.Apps` (90) e `auditing.JobCatalog` (9000 a 9004), e os dois no mesmo banco quebram a chave.
+DataWarehouse em `auditing.Apps` (90) e `auditing.Catalog` (9000 a 9004), e os dois no mesmo banco quebram a chave.
 
 ### Um módulo por vez
 

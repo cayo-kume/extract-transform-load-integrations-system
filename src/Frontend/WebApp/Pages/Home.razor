@@ -1,6 +1,9 @@
 @page "/home"
 @implements IAsyncDisposable
 @inject IMonitorRepository MonitorRepository
+@inject ICompanyRepository CompanyRepository
+@inject LoggedCompany LoggedCompany
+@inject IDialogService DialogService
 @inject NavigationManager Navigation
 @inject FilterSession FilterSession
 @inject ISnackbar Snackbar
@@ -21,15 +24,30 @@
         <div class="d-flex align-center pa-4">
             <h3 class="ma-0 text-center">APLICAÇÕES MONITORADAS</h3>
             <MudSpacer />
+            @if (_available.Count > 0)
+            {
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" Class="mr-4" OnClick="AddApp">Adicionar aplicação</MudButton>
+            }
             <MudLink Href="@WithPeriod("/applications")" Typo="Typo.body2">Ver em Aplicações</MudLink>
         </div>
 
-        <!-- Cards na ordem da gravidade: com erro, atrasadas e inativas primeiro; numa grade só, com quantas colunas
-             couberem, para os cards ficarem alinhados em qualquer largura -->
+        <!-- As aplicações que a empresa contratou (ativas e inativas), na ordem da gravidade: com erro, atrasadas e inativas
+             primeiro; numa grade só, com quantas colunas couberem, para os cards ficarem alinhados em qualquer largura. O
+             último card adiciona as que faltam -->
         <div class="card-grid pa-4">
             @foreach (var summarizedApp in _apps)
             {
                 <AppCard @key="summarizedApp.IdParent" Summary="summarizedApp" Period="_filter.Period" OnChanged="ReloadAsync" />
+            }
+            @if (_available.Count > 0 && _filter.IdApp is null)
+            {
+                <div class="app-card-wrapper">
+                    <button type="button" class="app-card-add" @onclick="AddApp">
+                        <MudIcon Icon="@Icons.Material.Filled.Add" Size="Size.Large" />
+                        <MudText Typo="Typo.subtitle1">Adicionar aplicação</MudText>
+                        <MudText Typo="Typo.caption">@_available.Count @(_available.Count == 1 ? "disponível" : "disponíveis")</MudText>
+                    </button>
+                </div>
             }
         </div>
 
@@ -254,6 +272,9 @@
 
     private IReadOnlyList<AppSummaryModel> _allApps = [];
     private IReadOnlyList<AppSummaryModel> _apps = [];
+
+    // as do catálogo que a empresa ainda não contratou: o Adicionar aplicação
+    private IReadOnlyList<AppSummaryModel> _available = [];
     private IReadOnlyList<JobModel> _jobs = [];
     private IReadOnlyList<HeartbeatModel> _heartbeat = [];
     private IReadOnlyList<AppBucketsModel> _week = [];
@@ -415,11 +436,24 @@
 
     private Task ManualRefresh() => Load(quiet: false);
 
+    // adicionar = contratar: os jobs nascem inativos, e o card aparece como Inativa até ligar pelo chip
+    private async Task AddApp()
+    {
+        if (await AddAppDialog.ShowAsync(DialogService, _available))
+            await ReloadAsync();
+    }
+
     private async Task Load(bool quiet)
     {
         try
         {
-            var apps = await MonitorRepository.GetAppSummariesAsync(_filter.Period, _disposed.Token);
+            // só as aplicações que a empresa contratou; as outras vão para o Adicionar aplicação
+            var merged = CompanyApps.Merge(
+                await MonitorRepository.GetAppSummariesAsync(_filter.Period, _disposed.Token),
+                await CompanyRepository.GetAppsAsync(LoggedCompany.DocCompany, _disposed.Token),
+                LoggedCompany);
+            var apps = merged.Where(x => x.IsContracted).ToList();
+            _available = merged.Where(x => !x.IsContracted).ToList();
             var jobs = await MonitorRepository.GetJobsAsync(idApp: null, idType: null, _disposed.Token);
             // todas as integrações ativas (o painel corta em 10 por aplicação), a semana do card de registros e a janela
             // anterior para os deltas

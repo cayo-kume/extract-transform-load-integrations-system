@@ -11,7 +11,12 @@ namespace Domain.Shared.Entities.Auditing
         public int IdJob { get; set; }
 
         /// <summary>
-        /// empresa do painel (CNPJ da holding): auditing.Jobs tem uma linha por (job, empresa)
+        /// holding da empresa (auditing.Holders)
+        /// </summary>
+        public string Holder { get; set; } = string.Empty;
+
+        /// <summary>
+        /// empresa (auditing.Companies): auditing.Jobs tem uma linha por (job, holding, empresa)
         /// </summary>
         public string Company { get; set; } = string.Empty;
 

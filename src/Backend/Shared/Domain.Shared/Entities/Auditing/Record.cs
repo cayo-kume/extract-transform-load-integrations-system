@@ -6,6 +6,9 @@
 
         public Enum IdType { get; private set; }
 
+        public string Holder { get; private set; } = string.Empty;
+
+
         public string Company { get; private set; } = string.Empty;
 
         public string? FieldKeyValue { get; private set; }
@@ -24,6 +27,7 @@
         public Record(
             Enum job,
             Enum jobType,
+            string holder,
             string company,
             string key,
             string regXML,
@@ -32,6 +36,7 @@
         {
             IdJob = job;
             IdType = jobType;
+            Holder = holder;
             Company = company;
             FieldKeyValue = key;
             RecordText = regXML;

@@ -9,6 +9,9 @@ namespace Domain.Shared.Entities.Auditing
 
         public Enum IdType { get; private set; }
 
+        public string Holder { get; private set; } = string.Empty;
+
+
         public string Company { get; private set; } = string.Empty;
 
         /// <summary>
@@ -35,8 +38,9 @@ namespace Domain.Shared.Entities.Auditing
         /// <param name="message"></param>
         /// <param name="guidExecution"></param>
         /// <param name="level"></param>
-        public Message(Enum job, Enum jobType, string company, string message, Guid guidExecution, MessageLevel level = MessageLevel.Information)
+        public Message(Enum job, Enum jobType, string holder, string company, string message, Guid guidExecution, MessageLevel level = MessageLevel.Information)
         {
+            Holder = holder;
             Company = company;
             IdJob = job;
             IdType = jobType;
@@ -51,8 +55,9 @@ namespace Domain.Shared.Entities.Auditing
         /// <param name="message"></param>
         /// <param name="exceptionMessage"></param>
         /// <param name="execution"></param>
-        public Message(Enum job, Enum jobType, string company, string message, string exceptionMessage, string stackTraceMessage, string sqlCommand, Guid execution)
+        public Message(Enum job, Enum jobType, string holder, string company, string message, string exceptionMessage, string stackTraceMessage, string sqlCommand, Guid execution)
         {
+            Holder = holder;
             Company = company;
             IdJob = job;
             IdType = jobType;

@@ -31,7 +31,7 @@ namespace Application.LinxCommerce.Services
         private readonly ICompanyContext _companyContext;
         private readonly IInitialLoad _initialLoad;
 
-        // mais a empresa da execução: a consulta só traz os CNPJs dela (monitor.HoldingCompanies), e o processo atende várias
+        // mais a empresa da execução: a consulta só traz os parâmetros dela (doc_company = empresa), e o processo atende várias
         private const string ParametersKey = "LinxCommerce:Parameters";
 
         // o código antigo usava 500 no SearchOrders; as outras buscas liam uma página de 1000 ou 10000 sem paginar

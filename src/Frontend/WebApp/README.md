@@ -23,7 +23,7 @@
   <a href="#-telas">Telas</a> ·
   <a href="#-de-onde-vem-cada-número">Números</a> ·
   <a href="#-dados-mockados">Mock</a> ·
-  <a href="#-cadastro-de-empresas-repositórios">Cadastro</a> ·
+  <a href="#-cadastro-de-holdings-empresas-e-módulos">Cadastro</a> ·
   <a href="#-assistente-de-ia">Assistente</a> ·
   <a href="#️-estrutura">Estrutura</a>
 </p>
@@ -42,9 +42,9 @@ histórico de cada fase estão em [docs/PLANO-WEBAPP.md](docs/PLANO-WEBAPP.md).
 | 🧱 | **Componentes** | MudBlazor 9 |
 | 🌐 | **Endereço local** | `http://localhost:5067` (perfil `http`) e `https://localhost:7236` (perfil `https`) |
 | 🧪 | **Dados** | **mockados** por padrão; com `Database:Enabled = true`, o **banco** (fase 5): painel, cadastro e Executar Querys com Dapper ([abaixo](#️-banco-de-dados-fase-5)) |
-| 🏢 | **Cadastro de empresas** | repositórios prontos (mock ou banco, pela mesma chave), sem tela ainda |
-| 🏛️ | **Empresa logada** | `LoggedCompany:DocCompany` e `LoggedCompany:Name` (padrão `NEWBLOOMERS - 44065634000106`) até a fase 6 |
-| 🔐 | **Autenticação** | nenhuma até a fase 6: o botão "Entrar" só leva para `/home` |
+| 🏢 | **Cadastro** | a holding nasce no **Primeiro acesso** da tela inicial (`/registration`), com o primeiro usuário; no painel, **Cadastros › Cadastrar Empresas**, **Cadastrar Usuário** e **Hosts de Agenda**; módulos e credenciais ficam na engrenagem de cada aplicação (mock ou banco, pela mesma chave; só com `Admin:Enabled`) |
+| 🏛️ | **Empresa logada** | escolhida no seletor do topo (holding e empresa por aba, guardadas no navegador); `LoggedCompany:DocCompany` e `LoggedCompany:Name` (padrão `NEWBLOOMERS - 44065634000106`) só dão a primeira escolha |
+| 🔐 | **Autenticação** | usuário ou e-mail e senha de `monitor.Users` (hash PBKDF2), com cookie; sem login, o painel volta para a tela inicial. No mock: usuário `admin`, senha `admin1234` ([abaixo](#-login)) |
 
 > [!NOTE]
 > Sem `Database:Enabled`, os dados do painel são **mockados**: tudo o que você ativa, desativa, reconhece ou agenda some ao
@@ -128,21 +128,26 @@ publicado atrás do nginx num container Linux (C2, C5) e num App Service Windows
 
 | | Rota | Tela |
 |:---:|---|---|
-| 🔑 | `/` | **login** (sem autenticação por enquanto) |
-| 🏠 | `/home` | **visão geral**: cards das aplicações (os com problema primeiro), métricas com a taxa de sucesso por aplicação e o delta contra a janela anterior, "Falhas Ativas" com os jobs, registros por dia nos 7 últimos dias dentro do card de registros, painel de saúde com um grupo recolhível por aplicação (as com erro ou atraso primeiro e já abertas, até 10 integrações cada e o link para o resto em Integrações), atualizados a cada minuto |
-| 🧩 | `/applications` | **cards das aplicações**, com a imagem da empresa; o chip "Ativa" liga ou desliga o módulo (desligar pede confirmação) |
+| 🔑 | `/` | **login**: usuário ou e-mail e senha (campos Outlined do MudBlazor, nas cores do tema claro no painel branco); abaixo de "Entrar", o botão **Primeiro acesso**, só com `Admin:Enabled` |
+| 🏢 | `/registration` | **Holdings e Empresas** (o Primeiro acesso), fora do painel (sem menu nem seletor). Mostra **só a holding cadastrada nesta visita**: não lista as que já existem no banco, e a tabela começa com uma linha só, a do **Nova holding**. **Nova holding** grava a holding, a empresa que é a própria holding, os jobs dos hosts dela (inativos) e o **primeiro usuário**, numa transação; CNPJ já cadastrado mostra "A holding e a empresa ... já estão cadastradas" e nada é gravado. Editar uma holding sem usuário pede o primeiro. **Nova empresa** acrescenta um CNPJ à holding; **Abrir painel** entra no painel (com login). Só com `Admin:Enabled` |
+| 🛡️ | `/admin/holdings` | a tela de antes do Primeiro acesso, com **todas** as holdings e as empresas de cada uma, guardada para o futuro perfil de administrador. Sem link em nenhuma tela; só com `Admin:Enabled` |
+| 🏠 | `/home` | **visão geral**: cards das aplicações que a empresa contratou, ativas e inativas (os com problema primeiro), com **Adicionar aplicação** (no topo da seção e como último card) para contratar as que faltam, métricas com a taxa de sucesso por aplicação e o delta contra a janela anterior, "Falhas Ativas" com os jobs, registros por dia nos 7 últimos dias dentro do card de registros, painel de saúde com um grupo recolhível por aplicação (as com erro ou atraso primeiro e já abertas, até 10 integrações cada e o link para o resto em Integrações), atualizados a cada minuto |
+| 🧩 | `/applications` | **todas as aplicações do catálogo**, com a imagem da empresa: as contratadas primeiro (o chip "Ativa" liga ou desliga o módulo; desligar pede confirmação) e depois as não contratadas, esmaecidas, com **Contratar**. A **engrenagem** abre Imagem, **Credenciais** (editável, segredos mascarados; **Testar conexão** existe, desabilitado, 4.6.1 do [plano](../../../docs/PLANO-TELA-CADASTRO-EMPRESA.md)), Parâmetros e **Contrato** (contratar ou remover o módulo, que só desativa os jobs) |
 | 🔀 | `/integrations` | **Integrações** (era Jobs e Integrações): todos os jobs, num grupo recolhível por aplicação, com o filtro **Situação** (Ativos, Inativos e Todos; abre em Ativos), o de tipo (Todos, Integrações e Procedures), o de saúde (os contadores do topo são botões de filtro, com mais de um ao mesmo tempo; `?health=error,late`) e a busca. Na ordem do `IdJob`, cada integração com as procedures que chama dentro dela, o chip que liga ou desliga cada job (com "Desfazer"), duração e registros da última execução, e os botões Execuções, Executar agora e Reconhecer; cada job abre as execuções, mensagens e registros. O botão **Agenda** de cada aplicação põe a tabela em modo de edição da agenda. Os grupos começam fechados e abrem com uma aplicação só (`?app=70`), com o link de um job (`?job=3001&type=2`, em qualquer situação), com busca ou com filtro de saúde. As rotas `/jobs`, `/applications/jobs` e `/applications/{IdApp}/jobs` caem aqui; as `/applications/...` abrem em Todos |
 | ⚠️ | `/errors` | **Logs de Erros**: mensagens de erro (e, se marcado, de aviso) do período, por aplicação, integração, procedure e causa, com busca pelo job e pelo texto; `?app=30&job=3001` abre o grupo |
 | ▶️ | `/on-demand` | **Sob Demanda**: as integrações sem agenda, no estilo do Swagger (método, parâmetros, corpo JSON, Executar e resposta), com filtro por verbo nos contadores do topo, só com a chave `Admin:Enabled` ([abaixo](#-telas-de-administrador)) |
 | 💻 | `/queries` | **Executar Querys**, com favoritas e querys prontas na barra lateral; o chip do banco no topo é o próprio seletor. Só com a chave `Admin:Enabled` ([abaixo](#-telas-de-administrador)) |
+| 🏢 | `/companies` | **Cadastros › Cadastrar Empresas**: as empresas da holding logada, com **Nova empresa** e a edição do nome fantasia. Só com `Admin:Enabled` |
+| 👥 | `/users` | **Cadastros › Cadastrar Usuário**: os usuários do painel das empresas da holding logada, com **Novo usuário** (empresa, nome, usuário, e-mail e senha) e a edição (nome, e-mail e nova senha; o usuário não muda). Usuário e e-mail não se repetem. Só com `Admin:Enabled` |
+| 🖧 | `/scheduling-hosts` | **Cadastros › Hosts de Agenda**: os hosts de agenda no ar neste banco (`auditing.SchedulingHosts`) e qual agenda. Só mostra: ligar e desligar um host continua na configuração dele, na publicação. Só com `Admin:Enabled` |
 
 | ![Métricas e painel de saúde](../../../docs/images/webapp/visao-geral-saude.png)<br> <sub><b>🏠 Visão Geral</b> — métricas, registros por dia, falhas ativas e painel de saúde</sub> | ![Tela Aplicações](../../../docs/images/webapp/aplicacoes.png)<br> <sub><b>🧩 Aplicações</b> — imagem da empresa e o chip que liga ou desliga o módulo</sub> |
 |:---:|:---:|
 | ![Tela Integrações](../../../docs/images/webapp/integracoes.png)<br> <sub><b>🔀 Integrações</b> — procedures dentro da integração, saúde, Executar agora e Agenda</sub> | ![Tela Logs de Erros](../../../docs/images/webapp/logs-de-erros.png)<br> <sub><b>⚠️ Logs de Erros</b> — mensagens por aplicação, integração e causa</sub> |
 | ![Tela Sob Demanda](../../../docs/images/webapp/sob-demanda.png)<br> <sub><b>▶️ Sob Demanda</b> — integrações sem agenda, no estilo do Swagger</sub> | ![Tela Executar Querys](../../../docs/images/webapp/executar-querys.png)<br> <sub><b>💻 Executar Querys</b> — SQL com favoritas e querys prontas</sub> |
 
-O **menu lateral** tem Visão Geral, Aplicações, Integrações, Logs de Erros e, para quem tem acesso, Sob Demanda e Executar
-Querys. As integrações sob demanda (sem agenda) **não aparecem** em Integrações nem no painel de saúde: ficam na tela Sob
+O **menu lateral** tem Visão Geral, Aplicações, Integrações, Logs de Erros e, para quem tem acesso, Sob Demanda, Executar
+Querys e o grupo **Cadastros** (Cadastrar Empresas, Cadastrar Usuário, Hosts de Agenda). No topo, o usuário logado e o botão **Sair**. As integrações sob demanda (sem agenda) **não aparecem** em Integrações nem no painel de saúde: ficam na tela Sob
 Demanda.
 
 ```mermaid
@@ -202,9 +207,9 @@ diálogos ocupam a tela toda. As regras ficam no fim do `wwwroot/css/app.css`.
 
 * 🔗 **Período, aplicação, tipo e saúde ficam na URL** (`?period=7d&app=30`), então o link de uma tela abre do mesmo jeito
   para outra pessoa; sem `period` na URL, vale o último período escolhido na aba. A busca fica só na tela.
-* 🧭 **Barra superior:** o botão que esconde o menu, a empresa logada (`LoggedCompany`, fixa em
-  `NEWBLOOMERS - 44065634000106` por configuração até a autenticação) e o botão que troca entre o tema escuro e o claro; a escolha do tema
-  fica salva no navegador.
+* 🧭 **Barra superior:** o botão que esconde o menu, a holding e o **seletor de empresa** (as empresas da holding; a
+  escolha fica salva no navegador, e a troca de holding é pelo **Abrir painel** do cadastro) e o botão que troca entre o
+  tema escuro e o claro; a escolha do tema também fica salva no navegador.
 * 📄 **Paginação padrão:** 50 linhas nas grids de jobs, 5 nas execuções e 25 nas mensagens de erro.
 
 ### 🩺 Saúde, ações e agenda
@@ -227,7 +232,7 @@ resumo "11 procedures · 1 com erro".
 > [!IMPORTANT]
 > Ativar ou desativar um job ou um módulo, mudar a agenda, reconhecer uma falha, pedir uma execução e trocar a imagem de
 > uma aplicação **só mudam o mock** e somem ao reiniciar o app. Com o banco, viram `UPDATE` em `auditing.Jobs.IsActive`,
-> gravação em `monitor.JobAcknowledgement` e `monitor.AppImage` e o pedido lido pelo host, por empresa
+> gravação em `monitor.JobAcknowledgement` e `monitor.AppImage` e o pedido lido pelo host, por empresa (a imagem, por holding)
 > ([PROPOSTA-DOC-COMPANY-AUDITING.md](../../Backend/Shared/docs/PROPOSTA-DOC-COMPANY-AUDITING.md) e o passo 11.5 do plano).
 
 🛟 **Erro do repositório** vira um aviso (Snackbar) e a tela continua com os dados que já tinha; uma exceção numa tela
@@ -290,7 +295,7 @@ aviso conta em "Warnings" e aparece na linha do heartbeat. `IsError` continua no
 | 💬 `Data/Mocks/MockTexts.cs` | mensagens e registros, com os textos que os services gravam hoje |
 | 💻 `Data/Mocks/MockQueryRunner.cs` | executor falso da tela de consultas ([abaixo](#-executar-querys)) |
 | ▶️ `Data/Mocks/MockOnDemandRunner.cs` | executor falso da tela Sob Demanda ([abaixo](#️-sob-demanda)) |
-| 🏢 `Data/Mocks/MockCompanyRepository.cs` | cadastro de empresas em memória ([abaixo](#-cadastro-de-empresas-repositórios)) |
+| 🏢 `Data/Mocks/MockCompanyRepository.cs` | cadastro de holdings, empresas e módulos em memória ([abaixo](#-cadastro-de-holdings-empresas-e-módulos)) |
 
 As telas só conhecem as interfaces `IMonitorRepository` e `IQueryRunner`: a chave `Database:Enabled` escolhe, no
 `Program.cs`, entre o mock e o banco ([abaixo](#️-banco-de-dados-fase-5)), sem mudar nenhuma tela.
@@ -305,25 +310,45 @@ As telas só conhecem as interfaces `IMonitorRepository` e `IQueryRunner`: a cha
 
 ---
 
-## 🏢 Cadastro de empresas (repositórios)
+## 🏢 Cadastro de holdings, empresas e módulos
 
-Fase **4.5** do [plano do cadastro](../../../docs/PLANO-TELA-CADASTRO-EMPRESA.md): o acesso a dados do cadastro de empresas
-e das credenciais de cada integração já existe, **sem tela**. A tela (fase 4.6) só entra depois de um **mockup aprovado**.
+O cadastro substituiu a antiga tela Windows Forms `Invoke-HostsConfig.ps1`
+([proposta do schema auditing](../../../docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)). Grava direto, sem
+procedures: `auditing.Holders`, `auditing.Companies`, `auditing.Jobs` e as tabelas `*Parameters` dos módulos.
 
 | | Peça | O que faz |
 |:---:|---|---|
-| 🏢 | `ICompanyRepository` (`Data/ICompanyRepository.cs`) | lista, cria (`auditing.sp_Add_Company`), edita razão social e nome fantasia e ativa ou desativa empresas em `monitor.Company`. O CNPJ não muda (é a chave dos jobs e dos logs); aceita o CNPJ formatado e grava só os dígitos (11 ou 14). Lista os CNPJs da holding (`monitor.HoldingCompanies`) e as integrações do catálogo, e contrata (`sp_Add_Company_App`, jobs nascem inativos) ou remove (`sp_Remove_Company_App`) uma integração |
-| 🔑 | `IModuleParametersRepository` | lê e grava a linha de `*Parameters` do módulo por CNPJ. Ao gravar, numa transação: valida, chama `auditing.sp_Add_Holding_Company` e faz o INSERT ou o UPDATE. **Segredos nunca voltam** (a leitura diz só se estão definidos) e segredo vazio mantém o gravado |
+| 🏢 | `ICompanyRepository` (`Data/ICompanyRepository.cs`) | lista e cria holdings (a holding, a empresa que é a própria holding e os jobs dos hosts, IdParent 140, inativos e com a agenda sugerida, numa transação) e empresas da holding; edita o nome fantasia. O CNPJ não muda (é a chave dos jobs e dos logs) e um CNPJ já cadastrado, nesta ou em outra holding, é recusado; aceita o CNPJ formatado e grava só os dígitos (11 ou 14). Lista os módulos do catálogo com os jobs da empresa, e contrata (jobs do `auditing.fn_CatalogTree`, inativos, com a agenda escolhida; rodar de novo não duplica) ou remove (desativa os jobs, que os logs referenciam) um módulo |
+| 🔑 | `IModuleParametersRepository` | lê e grava a linha de `*Parameters` do módulo da empresa (`doc_company` = a empresa, que precisa estar em `auditing.Companies`). **Segredos nunca voltam** (a leitura diz só se estão definidos) e segredo vazio mantém o gravado |
 | 📋 | `Data/ModuleDefinitions.cs` | os campos de cada módulo (Movidesk, AfterSale, LinxCommerce, LinxMicrovix e Totvs; DataWarehouse não tem parâmetros), com rótulo, obrigatório, segredo, tipo (texto, `https://` ou GUID) e tamanho. Tabela e colunas do SQL só vêm daqui |
-| 🧪 | `Data/Mocks/MockCompanyRepository.cs` | o mesmo contrato em memória, com as regras dos erros 50002, 50003 e 50004 das procedures |
-| 🗃️ | `Data/Sql/SqlCompanyRepository.cs`, `SqlModuleParametersRepository.cs` | Dapper sobre `ConnectionStrings:Connection` |
+| 🗓️ | `Data/JobAgenda.cs` | a agenda sugerida de cada job: o [`docs/AGENDA-SUGERIDA-JOBS.csv`](../../../docs/AGENDA-SUGERIDA-JOBS.csv) embutido no assembly (o catálogo não tem agenda) |
+| 🏛️ | `Data/LoggedCompanyStorage.cs` | a holding e a empresa escolhidas, guardadas no navegador (`ProtectedLocalStorage`); o seletor do topo e o **Abrir painel** gravam. O usuário logado só vê a holding dele: uma escolha de outra holding vira a empresa do usuário |
+| 👥 | `IUserRepository` (`Data/IUserRepository.cs`) | confere o login (usuário ou e-mail), lista, cria e edita os usuários de `monitor.Users`; as regras (campos, senha de 8 caracteres ou mais, hash PBKDF2 do `PasswordHasher` do ASP.NET Core) ficam em `Data/UserAccounts.cs`, iguais no mock e no banco |
+| 🧪 | `Data/Mocks/MockCompanyRepository.cs`, `MockUserRepository.cs` | o mesmo contrato em memória, com as mesmas regras |
+| 🗃️ | `Data/Sql/SqlCompanyRepository.cs`, `SqlModuleParametersRepository.cs`, `SqlUserRepository.cs` | Dapper sobre `ConnectionStrings:Connection` |
 
-Os erros de regra chegam à tela como `CompanyRegistrationException`, com o número da procedure em `Code`.
+Os erros de regra chegam à tela como `CompanyRegistrationException` (`Code` 50001 para CNPJ já cadastrado, 50002 para
+empresa não cadastrada, 0 para a validação do WebApp).
+
+### 🔑 Login
+
+A tela inicial confere usuário (ou e-mail) e senha em `monitor.Users` (tabela do `Script008_Create_Monitor_Schema.sql` do
+Shared; o `etl_monitor` tem INSERT e UPDATE nela). Como a tela é interativa e não grava cookie, ela pede um ticket de uso
+único (`SignInTickets`, um minuto) e recarrega em `/account/signin`, que grava o cookie `etl-monitor` (8 horas, renovado com
+o uso) com o usuário, a empresa e a holding dele (`Data/AccountEndpoints.cs`). **Sair**, no topo, é um POST com antiforgery
+para `/account/signout`. Sem o cookie, o `MainLayout` volta para a tela inicial antes de mostrar qualquer tela.
+
+No mock, o usuário `admin` (senha `admin1234`) está na holding da configuração. Uma holding que já existia antes do login não
+tem usuário: editar a holding em `/registration` pede o primeiro. Ainda não há perfis: as telas de administrador continuam
+na chave `Admin:Enabled`.
+
+**Credencial antes de ativar:** ativar um job ou um módulo de um módulo com API externa (Totvs, LinxMicrovix,
+LinxCommerce, Movidesk, AfterSale) sem a credencial da empresa abre primeiro o formulário dela e, depois, pede
+confirmação de que o host vai chamar a API de verdade.
 
 > [!WARNING]
 > O mock é o padrão; `Database:Enabled = true` liga o **Dapper** junto com o resto do painel
-> ([abaixo](#️-banco-de-dados-fase-5)). O teste da fase 5 no Docker passou pelo painel e pelo Executar Querys, mas não
-> exercitou o cadastro (não há tela): ele ainda precisa de um teste próprio no banco.
+> ([abaixo](#️-banco-de-dados-fase-5)).
 
 ---
 
@@ -334,7 +359,7 @@ Com `Database:Enabled = true`, o WebApp lê e grava no banco principal com **Dap
 
 | | Peça | O que faz |
 |:---:|---|---|
-| 📊 | `Data/Sql/SqlMonitorRepository.cs` | o `IMonitorRepository` real: `auditing.*` e `monitor.*` da empresa logada, tudo `WITH (NOLOCK)` e com as contagens prontas no SQL. Jobs e totais por período num cache de 30 s, que toda escrita daqui invalida. Saúde, reconhecimento e ordem iguais às do mock |
+| 📊 | `Data/Sql/SqlMonitorRepository.cs` | o `IMonitorRepository` real: `auditing.*` e `monitor.*` da empresa do seletor, tudo `WITH (NOLOCK)` e com as contagens prontas no SQL. Jobs e totais por período num cache de 30 s, que toda escrita daqui invalida. Saúde, reconhecimento e ordem iguais às do mock |
 | 💻 | `Data/Sql/SqlQueryRunner.cs` | o `IQueryRunner` real, com a connection string própria (`etl_query`). Todo comando roda numa transação: o SELECT é desfeito no fim, e o resto espera Confirmar ou Desfazer (sem resposta, é desfeito aqui mesmo, também com a aba fechada). Timeout de 30 s, cada comando no log com banco, duração, linhas e desfecho |
 | 🔌 | `Data/Sql/MainDatabase.cs` | a conexão com o banco principal e a hora de Brasília das tabelas |
 
@@ -343,32 +368,30 @@ Com `Database:Enabled = true`, o WebApp lê e grava no banco principal com **Dap
 | `Database:Enabled` | `true` liga o banco; `false` (padrão do `appsettings.json`) fica no mock |
 | `ConnectionStrings:Connection` | banco principal, com o usuário `etl_monitor` |
 | `ConnectionStrings:QueryConnection` | o mesmo servidor, com o usuário `etl_query` (só para Executar Querys) |
-| `LoggedCompany:DocCompany` | CNPJ da empresa em `monitor.Company` (padrão `44065634000106`) |
+| `LoggedCompany:DocCompany` | só a primeira escolha do seletor do topo (padrão `44065634000106`), se estiver em `auditing.Companies` |
+| `Admin:Enabled` | `true` mostra as telas de administrador e o cadastro (só em `Development`, [abaixo](#-telas-de-administrador)) |
+| `Assistant:ApiKey` | opcional: liga o assistente ([abaixo](#-assistente-de-ia)) |
 
-A tela [`tools/hosts/Invoke-HostsConfig.ps1`](../../../tools/hosts/Invoke-HostsConfig.ps1) grava essas chaves (e as dos
-hosts) de uma vez. À mão, na máquina de desenvolvimento, contra o SQL Server do Docker (troque `SEU_BANCO` e `SUA_SENHA`;
-o banco precisa dos migrators e da empresa cadastrada) e reinicie o WebApp, porque a troca entre mock e banco só acontece
-quando ele sobe:
+Na máquina de desenvolvimento, as chaves vão à mão para os User Secrets, contra o SQL Server do Docker (troque
+`SEU_BANCO` e `SUA_SENHA`; o banco precisa dos migrators, e a holding e as empresas entram depois, pelo cadastro) e
+reinicie o WebApp, porque a troca entre mock e banco só acontece quando ele sobe:
 
 ```bash
 dotnet user-secrets set "Database:Enabled" "true" --project src/Frontend/WebApp
 ```
 
-```bash
-dotnet user-secrets set "ConnectionStrings:Connection" "Server=localhost,1433;Database=SEU_BANCO;User Id=sa;Password=SUA_SENHA;TrustServerCertificate=True" --project src/Frontend/WebApp
-```
-
-```bash
-dotnet user-secrets set "ConnectionStrings:QueryConnection" "Server=localhost,1433;Database=SEU_BANCO;User Id=sa;Password=SUA_SENHA;TrustServerCertificate=True" --project src/Frontend/WebApp
-```
+As connection strings (`Connection` e `QueryConnection`) ficam no `appsettings.json` do WebApp, gravadas pelo
+`Invoke-Migrators.ps1` no fim da migração (passo 2); para outro banco, rode o migrator para ele ou edite a seção
+`ConnectionStrings` do arquivo.
 
 Em homologação e produção, as connection strings usam os usuários próprios, nunca o `sa`: `User Id=etl_monitor` na
 `Connection` e `User Id=etl_query` na `QueryConnection`.
 
 Os usuários `etl_monitor` e `etl_query` saem das procedures `dbo.sp_Create_Monitor_User` e `dbo.sp_Grant_Query_User`
-(Script009 do Shared). A senha nunca fica em script: quem tem `ALTER ANY LOGIN` roda as procedures com ela, à mão, pelas
-senhas do `etl_monitor` e do `etl_query` na tela `tools/hosts/Invoke-HostsConfig.ps1` (que cria os dois no Salvar) ou
-pelo `migrator.csx` do Shared rodado à mão, com as variáveis de ambiente `ETL_MONITOR_PASSWORD` e `ETL_QUERY_PASSWORD`. Banco criado depois:
+(Script009 do Shared). A senha nunca fica em script: quem tem `ALTER ANY LOGIN` roda as procedures com ela, à mão, ou
+pelo `tools/migrators/Invoke-Migrators.ps1`, com as senhas da seção "Usuários de banco do WebApp" (ou `-MonitorPassword`
+e `-QueryPassword` com `-NoGui`), que vão só para o migrator do Shared. Rodando o `migrator.csx` do Shared à mão, as
+variáveis de ambiente `ETL_MONITOR_PASSWORD` e `ETL_QUERY_PASSWORD` fazem o mesmo. Banco criado depois:
 `EXEC dbo.sp_Grant_Query_User @database = N'<banco>'`.
 
 > [!IMPORTANT]
@@ -381,12 +404,12 @@ pelo `migrator.csx` do Shared rodado à mão, com as variáveis de ambiente `ETL
 
 ## 🔒 Telas de administrador
 
-Executar Querys **altera qualquer banco do servidor**, e Sob Demanda **escreve nos sistemas de origem** (Movidesk, Totvs,
-AfterSale), por isso as duas são restritas ao administrador. Até a autenticação, elas só abrem com as duas condições:
+Executar Querys **altera qualquer banco do servidor**, Sob Demanda **escreve nos sistemas de origem** (Movidesk, Totvs,
+AfterSale) e o cadastro grava holdings, empresas, credenciais e jobs, por isso as três são restritas ao administrador. Até a autenticação, elas só abrem com as duas condições:
 
 1. o ambiente `Development`;
 2. a chave `Admin:Enabled = true`, que fica `false` no `appsettings.json` e é ligada só na máquina do administrador, por
-   User Secrets. Uma chave só libera as duas telas:
+   User Secrets. Uma chave só libera as telas e o botão **Cadastrar holding e empresas** da tela inicial:
 
 ```bash
 dotnet user-secrets set "Admin:Enabled" "true" --project src/Frontend/WebApp
@@ -410,7 +433,7 @@ dotnet user-secrets set "Admin:Enabled" "true" --project src/Frontend/WebApp
 </div>
 
 O **botão roxo** no canto inferior direito (todas as telas, menos o login) abre um chat com o Claude (`claude-opus-5-5`, API
-da Anthropic, pacote NuGet `Anthropic`). Ele responde sobre integrações, erros e execuções da empresa logada consultando
+da Anthropic, pacote NuGet `Anthropic`). Ele responde sobre integrações, erros e execuções da empresa do seletor consultando
 ferramentas **só de leitura** em cima do `IMonitorRepository` (`Data/AssistantTools.cs`): saúde das integrações, resumo do
 período, busca de jobs, execuções de um job e causas de erro. **Não executa, não reconhece, não liga nem desliga nada, não
 roda querys e não vê credenciais nem parâmetros dos módulos.** As respostas chegam aos poucos (streaming) e trazem links
@@ -435,7 +458,7 @@ sequenceDiagram
         API-->>A: chamada de ferramenta
         A->>T: saúde, resumo, jobs, execuções, causas
         T->>R: leitura
-        R-->>T: dados da empresa logada
+        R-->>T: dados da empresa do seletor
         T-->>A: resultado
         A->>API: resultado da ferramenta
     end
@@ -525,13 +548,14 @@ WebApp/
 │   ├── Filters/        filtros do topo das telas e o período da aba (FilterSession)
 │   ├── Loadings/       SpaceLoading, o carregamento padrão do app
 │   ├── MessageBoxes/   ModuleConfigurations (abas Imagem, Credenciais e Parâmetros), execução de uma mensagem,
-│   │                   nota do reconhecimento e nome da favorita
+│   │                   nota do reconhecimento, nome da favorita e os diálogos do cadastro (holding e empresa,
+│   │                   contratar módulo, credencial)
 │   ├── NavMenus/       menu lateral
 │   └── OnDemand/       componentes da tela Sob Demanda
 ├── Data/               IMonitorRepository, IQueryRunner, IOnDemandRunner, ICompanyRepository, ModuleDefinitions,
 │   │                   SqlInspector, acesso à tela de consultas, assistente (ClaudeAssistant, AssistantTools)
 │   ├── Mocks/          mocks do painel, das consultas, do Sob Demanda e do cadastro
-│   └── Sql/            Dapper do cadastro de empresas (SqlCompanyRepository, SqlModuleParametersRepository)
+│   └── Sql/            Dapper do painel e do cadastro (SqlMonitorRepository, SqlCompanyRepository, SqlModuleParametersRepository)
 ├── Layout/             MainLayout (barra, menu e tema) e BlankLayout (login)
 ├── Models/             modelos de leitura, sem nada de Blazor (vão para um projeto próprio quando o MAUI chegar)
 ├── Pages/              uma página por rota
@@ -548,15 +572,15 @@ uma mudança no CSS ou no JavaScript, o navegador baixa o arquivo novo **sem pre
 | Fase | O que entra |
 |---|---|
 | 🗄️ **5 — Banco de dados** | usuários de banco pelo DbUp, `MonitorRepository` com Dapper no banco principal e `QueryRunner` real |
-| 🏢 **4.6 do cadastro — Tela de cadastro** | lista e formulário de empresas, integrações contratadas e credenciais, com **Testar conexão** por módulo; só depois de mockup aprovado ([plano](../../../docs/PLANO-TELA-CADASTRO-EMPRESA.md)) |
-| 🔐 **6 — Autenticação** | login com Microsoft Entra ID e grupos para Executar Querys e para editar a agenda dos jobs |
+| 🏢 **4.6.1 do cadastro — Testar conexão** | o botão **Testar conexão** por módulo, hoje desabilitado na aba Credenciais da engrenagem, em Aplicações ([plano](../../../docs/PLANO-TELA-CADASTRO-EMPRESA.md)) |
+| 🔐 **6 — Autenticação** | o login com `monitor.Users` já existe; faltam os perfis (grupos para Executar Querys, cadastro e agenda dos jobs, no lugar do `Admin:Enabled`) e, se for o caso, o Microsoft Entra ID |
 | 📱 **7 — App MAUI** | os mesmos dados no app, por uma API |
 
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
 flowchart LR
-    F14["✅ Fases 1 a 4<br/>telas sobre o mock"] --> C45["✅ Cadastro 4.5<br/>repositórios"]
-    C45 --> C46["🏢 Cadastro 4.6<br/>tela, após mockup"]
+    F14["✅ Fases 1 a 4<br/>telas sobre o mock"] --> C45["✅ Cadastro 4.5 e 4.6<br/>repositórios e telas"]
+    C45 --> C46["🏢 Cadastro 4.6.1<br/>Testar conexão"]
     F14 --> F5["🗄️ Fase 5<br/>banco de dados"]
     F5 --> F6["🔐 Fase 6<br/>autenticação"]
     C46 --> F6

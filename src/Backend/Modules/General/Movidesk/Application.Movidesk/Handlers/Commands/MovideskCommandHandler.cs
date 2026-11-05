@@ -6,14 +6,13 @@ namespace Application.Movidesk.Handlers.Commands
     {
         public string CreateGetCompanysQuery(string company)
         {
-            // só os CNPJs da holding da execução (monitor.HoldingCompanies, docs/PLANO-TELA-CADASTRO-EMPRESA.md 4.4); company é só
-            // dígitos (ICompanyContext)
+            // só os parâmetros da empresa da execução (doc_company = empresa, docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md);
+            // company é só dígitos (ICompanyContext)
             return @$"SELECT DISTINCT
                      DOC_COMPANY AS DOC_COMPANY,
                      TOKEN AS TOKEN
                      FROM MOVIDESK.MOVIDESKPARAMETERS P
-                     JOIN MONITOR.HOLDINGCOMPANIES HC ON HC.COMPANY = P.DOC_COMPANY
-                     WHERE HC.HOLDING = '{company}'";
+                     WHERE P.DOC_COMPANY = '{company}'";
         }
 
         public string CreateGetCompanyQuery(string doc_company)

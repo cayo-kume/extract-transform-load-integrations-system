@@ -1,6 +1,7 @@
 ﻿@inherits LayoutComponentBase
 
-<MudThemeProvider />
+@* tela inicial e cadastro de holdings e empresas: sem menu nem seletor de empresa, no tema escuro do painel *@
+<MudThemeProvider Theme="@_theme" IsDarkMode="true" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
@@ -8,5 +9,5 @@
 @Body
 
 @code {
-
+    private readonly MudTheme _theme = AppTheme.Create();
 }

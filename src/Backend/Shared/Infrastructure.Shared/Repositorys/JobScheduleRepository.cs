@@ -7,7 +7,8 @@ namespace Infrastructure.Shared.Repositorys
 {
     /// <summary>
     /// lê a agenda em auditing.Jobs pela conexão de auditoria, a mesma em que o LoggerService grava auditing.Logs. Uma linha
-    /// por (job, empresa), só das empresas ativas em monitor.Company (docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.4)
+    /// por (job, holding, empresa); o título vem de auditing.Catalog, e os jobs sob demanda ficam de fora
+    /// (docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)
     /// </summary>
     public class JobScheduleRepository : IJobScheduleRepository
     {
@@ -18,10 +19,10 @@ namespace Infrastructure.Shared.Repositorys
 
         public async Task<IEnumerable<JobSchedule>> GetIntegrationJobs()
         {
-            const string sql = @"SELECT j.IdJob, j.Company, j.Title, j.IntervalTimeInMinutes, j.RunningDailyAt, j.Queue, j.IsActive
+            const string sql = @"SELECT j.IdJob, j.Holder, j.Company, c.Title, j.IntervalTimeInMinutes, j.RunningDailyAt, j.Queue, j.IsActive
                                  FROM [auditing].[Jobs] j
-                                 JOIN [monitor].[Company] c ON c.Company = j.Company AND c.IsActive = 1
-                                 WHERE j.IdType = 2";
+                                 JOIN [auditing].[Catalog] c ON c.IdJob = j.IdJob AND c.IdType = j.IdType
+                                 WHERE j.IdType = 2 AND c.IsOnDemand = 0";
 
             using var conn = _sqlServerConnection.GetIDbAuditingConnection();
 
@@ -30,26 +31,26 @@ namespace Infrastructure.Shared.Repositorys
 
         public async Task<IEnumerable<JobSchedule>> GetIntegrationJobByCompany(int idJob)
         {
-            const string sql = @"SELECT j.IdJob, j.Company, j.Title, j.IntervalTimeInMinutes, j.RunningDailyAt, j.Queue, j.IsActive
+            const string sql = @"SELECT j.IdJob, j.Holder, j.Company, c.Title, j.IntervalTimeInMinutes, j.RunningDailyAt, j.Queue, j.IsActive
                                  FROM [auditing].[Jobs] j
-                                 JOIN [monitor].[Company] c ON c.Company = j.Company AND c.IsActive = 1
-                                 WHERE j.IdType = 2 AND j.IdJob = @idJob";
+                                 JOIN [auditing].[Catalog] c ON c.IdJob = j.IdJob AND c.IdType = j.IdType
+                                 WHERE j.IdType = 2 AND c.IsOnDemand = 0 AND j.IdJob = @idJob";
 
             using var conn = _sqlServerConnection.GetIDbAuditingConnection();
 
             return await conn.QueryAsync<JobSchedule>(sql, new { idJob });
         }
 
-        public async Task<IEnumerable<JobHeartbeat>> GetActiveJobsHeartbeat(string company)
+        public async Task<IEnumerable<JobHeartbeat>> GetActiveJobsHeartbeat(string holder)
         {
-            const string sql = @"SELECT IdParent, IdJob, Company, Title, IntervalTimeInMinutes, RunningDailyAt, Queue, IsActive,
+            const string sql = @"SELECT IdParent, IdJob, Holder, Company, Title, IntervalTimeInMinutes, RunningDailyAt, Queue, IsActive,
                                         LastStartDate, LastEndDate, OpenSince
                                  FROM [auditing].[vw_JobsHeartbeat]
-                                 WHERE IsActive = 1 AND Company = @company";
+                                 WHERE IsActive = 1 AND Holder = @holder";
 
             using var conn = _sqlServerConnection.GetIDbAuditingConnection();
 
-            return await conn.QueryAsync<JobHeartbeat>(sql, new { company = new DbString { Value = company, IsAnsi = true, Length = 20 } });
+            return await conn.QueryAsync<JobHeartbeat>(sql, new { holder = new DbString { Value = holder, IsAnsi = true, Length = 20 } });
         }
 
         public async Task<int> CloseInterruptedExecutions(int idJob, string company)
@@ -57,14 +58,14 @@ namespace Infrastructure.Shared.Repositorys
             // fim = agora (a execução seguinte começa), em horário de Brasília como o resto de auditing.Logs
             const string sql = """
                 DECLARE @now DATETIME = CAST(SYSUTCDATETIME() AT TIME ZONE 'UTC' AT TIME ZONE 'E. South America Standard Time' AS DATETIME);
-                DECLARE @closed TABLE (IdJob INT, IdType INT, Company VARCHAR(20), Execution UNIQUEIDENTIFIER, StartDate DATETIME);
+                DECLARE @closed TABLE (IdJob INT, IdType INT, Holder VARCHAR(20), Company VARCHAR(20), Execution UNIQUEIDENTIFIER, StartDate DATETIME);
 
                 UPDATE [auditing].[Logs] SET EndDate = @now
-                OUTPUT inserted.IdJob, inserted.IdType, inserted.Company, inserted.Execution, inserted.StartDate INTO @closed
+                OUTPUT inserted.IdJob, inserted.IdType, inserted.Holder, inserted.Company, inserted.Execution, inserted.StartDate INTO @closed
                 WHERE IdJob = @idJob AND IdType = 2 AND Company = @company AND EndDate IS NULL;
 
-                INSERT INTO [auditing].[Messages] (IdJob, IdType, Company, Execution, [Message], [Level])
-                SELECT IdJob, IdType, Company, Execution,
+                INSERT INTO [auditing].[Messages] (IdJob, IdType, Holder, Company, Execution, [Message], [Level])
+                SELECT IdJob, IdType, Holder, Company, Execution,
                     CONCAT('Execução interrompida: o processo parou antes do fim (queda, reinício ou deploy). Iniciada em ',
                         FORMAT(StartDate, 'dd/MM/yyyy HH:mm:ss'), ' e fechada pela execução seguinte.'),
                     3

@@ -258,7 +258,7 @@ begin
         exec [auditing].[sp_Log_Error] @execution, @error_message 
     end catch
      
-    exec auditing.sp_Log_nd @execution, @output;
+    exec auditing.sp_Log_End @execution, @output;
 end
 
 GO

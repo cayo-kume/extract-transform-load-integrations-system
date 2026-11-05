@@ -74,3 +74,26 @@ GO
 ALTER TABLE [monitor].[JobAcknowledgement] ADD  CONSTRAINT [FK_JobAcknowledgement_Jobs] FOREIGN KEY([IdJob], [IdType], [Holder], [Company])
 REFERENCES [auditing].[Jobs] ([IdJob], [IdType], [Holder], [Company])
 GO
+
+-- usuários do painel (WebApp): login por usuário ou e-mail; a senha só como hash (PBKDF2, PasswordHasher do ASP.NET Core).
+-- O primeiro usuário de uma holding nasce com ela, na tela de cadastro; os outros, em Cadastros › Cadastrar Usuário
+CREATE TABLE [monitor].[Users](
+    [IdUser] [int] IDENTITY(1,1) NOT NULL,
+    [Company] [varchar](20) NOT NULL,
+    [Name] [nvarchar](150) NOT NULL,
+    [UserName] [nvarchar](100) NOT NULL,
+    [Email] [nvarchar](200) NOT NULL,
+    [PasswordHash] [nvarchar](500) NOT NULL,
+    [CreatedAt] [datetime] NOT NULL CONSTRAINT [DF_Users_CreatedAt] DEFAULT (SYSUTCDATETIME() AT TIME ZONE 'UTC' AT TIME ZONE 'E. South America Standard Time'),
+ CONSTRAINT [PK_Users] PRIMARY KEY CLUSTERED
+(
+    [IdUser] ASC
+)WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UQ_Users_UserName] UNIQUE ([UserName] ASC),
+ CONSTRAINT [UQ_Users_Email] UNIQUE ([Email] ASC)
+) ON [PRIMARY]
+GO
+
+ALTER TABLE [monitor].[Users] ADD  CONSTRAINT [FK_Users_Companies] FOREIGN KEY([Company])
+REFERENCES [auditing].[Companies] ([Company])
+GO

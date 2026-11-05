@@ -6,10 +6,10 @@ using Microsoft.AspNetCore.Mvc.Filters;
 namespace WebApi.Extensions
 {
     /// <summary>
-    /// empresa da execução numa rota (docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.4), informada ao ICompanyContext da requisição antes da
-    /// action: o cabeçalho X-Company (CNPJ da holding, monitor.Company) ou, sem ele, a holding do {docCompany} da rota em
-    /// monitor.HoldingCompanies. Com os dois, o docCompany precisa ser da holding informada. Sem nenhum, a rota segue sem empresa e
-    /// o LoggerService recusa abrir o log
+    /// empresa da execução numa rota (docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md), informada ao ICompanyContext da
+    /// requisição antes da action: o {docCompany} da rota ou, sem ele, o cabeçalho X-Company (CNPJ da empresa, auditing.Companies).
+    /// Com os dois, precisam ser a mesma empresa. A holding sai da empresa em auditing.Companies. Sem nenhum, a rota segue sem
+    /// empresa e o LoggerService recusa abrir o log
     /// </summary>
     public class CompanyContextFilter : IAsyncActionFilter
     {
@@ -18,10 +18,10 @@ namespace WebApi.Extensions
         private const string DocCompanyRouteValue = "docCompany";
 
         private readonly ICompanyContext _companyContext;
-        private readonly IHoldingCompanyRepository _holdingCompanyRepository;
+        private readonly ICompanyRepository _companyRepository;
 
-        public CompanyContextFilter(ICompanyContext companyContext, IHoldingCompanyRepository holdingCompanyRepository) =>
-            (_companyContext, _holdingCompanyRepository) = (companyContext, holdingCompanyRepository);
+        public CompanyContextFilter(ICompanyContext companyContext, ICompanyRepository companyRepository) =>
+            (_companyContext, _companyRepository) = (companyContext, companyRepository);
 
         public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
@@ -30,31 +30,33 @@ namespace WebApi.Extensions
 
             if (company is not null && !company.All(char.IsAsciiDigit))
             {
-                context.Result = new BadRequestObjectResult($"{CompanyHeader} '{company}' inválido: use o CNPJ da holding, só dígitos.");
+                context.Result = new BadRequestObjectResult($"{CompanyHeader} '{company}' inválido: use o CNPJ da empresa, só dígitos.");
                 return;
             }
 
             if (context.RouteData.Values.TryGetValue(DocCompanyRouteValue, out var value) && value?.ToString() is { Length: > 0 } docCompany)
             {
-                var holding = await _holdingCompanyRepository.GetHolding(docCompany);
-
-                if (holding is null)
+                if (company is not null && company != docCompany)
                 {
-                    context.Result = new BadRequestObjectResult($"CNPJ {docCompany} sem holding em monitor.HoldingCompanies.");
+                    context.Result = new BadRequestObjectResult($"{CompanyHeader} {company} diferente do CNPJ {docCompany} da rota.");
                     return;
                 }
 
-                if (company is not null && company != holding)
-                {
-                    context.Result = new BadRequestObjectResult($"CNPJ {docCompany} é da holding {holding}, não de {company}.");
-                    return;
-                }
-
-                company = holding;
+                company = docCompany;
             }
 
             if (company is not null)
-                _companyContext.SetCompany(company);
+            {
+                var holder = await _companyRepository.GetHolder(company);
+
+                if (holder is null)
+                {
+                    context.Result = new BadRequestObjectResult($"CNPJ {company} não cadastrado em auditing.Companies.");
+                    return;
+                }
+
+                _companyContext.SetCompany(holder, company);
+            }
 
             await next();
         }

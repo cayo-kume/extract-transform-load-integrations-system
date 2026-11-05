@@ -40,5 +40,11 @@ namespace WebApp.Models
         public int FailingJobs { get; set; }
 
         public bool IsActive => ActiveJobs > 0;
+
+        /// <summary>
+        /// Falso: módulo do catálogo que a empresa ainda não contratou (sem jobs). A tela Aplicações mostra para contratar; a
+        /// Visão Geral, só no Adicionar aplicação.
+        /// </summary>
+        public bool IsContracted { get; set; } = true;
     }
 }

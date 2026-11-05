@@ -93,7 +93,7 @@ namespace WebApp.Components.Display
         /// Mudança de agenda vale para a produção: confirma listando o que muda e grava as alterações dos jobs informados
         /// (um grupo da tela Jobs, ou todos os do diálogo). Devolve quantas foram salvas; 0 se cancelou.
         /// </summary>
-        public async Task<int> ConfirmAndSaveAsync(IDialogService dialogService, ISnackbar snackbar, ILogger logger, IMonitorRepository repository, string? title, IEnumerable<JobModel> jobs)
+        public async Task<int> ConfirmAndSaveAsync(IDialogService dialogService, ISnackbar snackbar, ILogger logger, IMonitorRepository repository, string companyLabel, string? title, IEnumerable<JobModel> jobs)
         {
             var changes = jobs
                 .Where(IsChanged)
@@ -111,7 +111,7 @@ namespace WebApp.Components.Display
 
             var confirmed = await dialogService.ShowMessageBoxAsync(
                 $"Salvar a agenda de {title}?",
-                (MarkupString)$"<p>Para <strong>{System.Net.WebUtility.HtmlEncode(LoggedCompany.Label)}</strong>:</p><ul>{string.Concat(changes.Select(x => Describe(x.Job, x.Draft)))}</ul>{warning}<p>O host relê a agenda no próximo ciclo (até {HealthChip.HostRecheckMinutes} min).</p>",
+                (MarkupString)$"<p>Para <strong>{System.Net.WebUtility.HtmlEncode(companyLabel)}</strong>:</p><ul>{string.Concat(changes.Select(x => Describe(x.Job, x.Draft)))}</ul>{warning}<p>O host relê a agenda no próximo ciclo (até {HealthChip.HostRecheckMinutes} min).</p>",
                 yesText: "Salvar",
                 cancelText: "Cancelar");
 

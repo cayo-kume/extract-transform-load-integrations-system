@@ -77,7 +77,7 @@ Módulo do sistema de integrações (ETL) responsável por **ler** os dados do L
 | API consumida | Linx Commerce — o endereço é **por cliente** (`base_url` de `linxcommerce.LinxCommerceParameters`), autenticação `Basic` com usuário e chave |
 | Documentação da API | Nenhuma usada: o módulo foi escrito a partir do código antigo, sem credenciais (ver [Pendências](#-pendências)) |
 | Banco de dados | SQL Server (schemas `untreated`, `linxcommerce` e `auditing`; o `Script001` cria `linxcommerce` quando não existe) |
-| Multiempresa | Sim: cada CNPJ de `linxcommerce.LinxCommerceParameters` tem o seu ambiente e as suas credenciais. O CNPJ (`doc_company`) é a primeira coluna da chave de todas as tabelas. Cada execução é de uma **empresa do painel** (a holding, em `ICompanyContext`) e lê só os CNPJs ligados a ela em `monitor.HoldingCompanies` |
+| Multiempresa | Sim: cada CNPJ de `linxcommerce.LinxCommerceParameters` tem o seu ambiente e as suas credenciais. O CNPJ (`doc_company`) é a primeira coluna da chave de todas as tabelas. Cada execução é de uma **empresa** (`ICompanyContext`, com a holding dela em `auditing.Companies`) e lê só o cliente dessa empresa (`doc_company` = a empresa da execução) |
 | Host | `src/Backend/Hosts/WebApi` (controller `LinxCommerceController`); agenda pelos hosts `WebApi` (Hangfire), `WebJob` ou `Worker` |
 
 ### Comportamentos da API que a integração trata
@@ -204,7 +204,7 @@ Application.LinxCommerce/
 | Método | O que faz |
 |---|---|
 | `GetBatchTime` | Horário do lote, em Brasília |
-| `GetCompanys` / `GetCompany` | Clientes de `LinxCommerceParameters` ligados à holding da execução em `monitor.HoldingCompanies` (cache `LinxCommerce:Parameters:<empresa>`). Ignora, com mensagem no log, o cliente sem CNPJ de 14 dígitos ou sem `base_url` `https` (aceita `http://localhost`, para testes com API simulada), usuário ou chave |
+| `GetCompanys` / `GetCompany` | Cliente de `LinxCommerceParameters` da empresa da execução (`doc_company` = a empresa; cache `LinxCommerce:Parameters:<empresa>`). Ignora, com mensagem no log, o cliente sem CNPJ de 14 dígitos ou sem `base_url` `https` (aceita `http://localhost`, para testes com API simulada), usuário ou chave |
 | `ModifiedDateWindow` | O `Where` da janela pela data de alteração |
 | `Search<T>` | Lê todas as páginas de uma busca (500 por página) e devolve cada item com o seu JSON; `null` se alguma página falhou |
 | `Get<T>` | Lê um registro e devolve o DTO e o JSON sem os campos sensíveis; `null` se falhou |
@@ -227,7 +227,7 @@ Toda chamada é `POST` em `{base_url}/v1/{rota}` com `Authorization: Basic <usu�
 Seguem o padrão de [`docs/PADRAO-CACHE-INTEGRACOES.md`](../../../../docs/PADRAO-CACHE-INTEGRACOES.md):
 
 1. abre um log em `auditing.Logs` com o job do método;
-2. para cada cliente de `LinxCommerceParameters` da holding da execução, calcula a janela **a partir do banco**, com 1 hora de folga:
+2. para o cliente de `LinxCommerceParameters` da empresa da execução, calcula a janela **a partir do banco**, com 1 hora de folga:
 
    | Recurso | Início da janela | Carga inicial (banco vazio) |
    |---|---|---|
@@ -257,7 +257,7 @@ sequenceDiagram
 
     J->>S: SearchOrders()
     S->>B: auditing.sp_Log_Start
-    S->>B: clientes da holding (LinxCommerceParameters)
+    S->>B: cliente da empresa (LinxCommerceParameters, doc_company)
     loop cada cliente
         S->>B: maior ModifiedDate gravado (menos 1 h)
         loop Page.PageIndex até PageCount · 500 por página
@@ -327,7 +327,7 @@ O host chama o método em `Hosts/WebApi/Extensions/ServicesExtensions.cs`.
 > `./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -Apps LinxCommerce -SchedulingHost WebApi`.
 
 O DbUp executa cada script uma única vez, na ordem do número do arquivo. Uma correção de tabela, procedure ou view vai **no script de criação original**, não num `ALTER` novo ([padrão, §3.3](../../../../docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md)); num banco que já rodou o script, a correção é aplicada à parte. Os scripts gerais ficam em `Parameters/` e cada service tem a sua pasta, com o trio tabelas,
-procedures e jobs (os recorrentes e os sob demanda do service, inseridos no catálogo `auditing.JobCatalog`); o `migrator.csx` lê as
+procedures e jobs (os recorrentes e os sob demanda do service, inseridos no catálogo `auditing.Catalog`, sem agenda); o `migrator.csx` lê as
 subpastas.
 
 | Pasta | Script | Conteúdo |
@@ -396,8 +396,8 @@ Todas exigem:
 * o CNPJ do cliente na rota (`{docCompany}`, 14 dígitos);
 * ids numéricos maiores que zero, `OrderID` como Guid e número do pedido com letras, números, `.`, `_` e `-` (até 50).
 
-O cabeçalho opcional **`X-Company`** informa a holding; sem ele, vale a holding do `{docCompany}` em `monitor.HoldingCompanies`
-(CNPJ sem holding ou `X-Company` de outra holding dão **400**).
+O `{docCompany}` é a empresa da execução e precisa estar em `auditing.Companies`; o cabeçalho opcional **`X-Company`**
+(CNPJ da empresa), se vier, precisa ser igual a ele (CNPJ não cadastrado ou `X-Company` diferente dão **400**).
 
 | Método | Rota | Service |
 |---|---|---|
@@ -427,13 +427,15 @@ O cabeçalho opcional **`X-Company`** informa a holding; sem ele, vale a holding
 
 ## 📝 Auditoria (jobs)
 
-O catálogo fica em `auditing.JobCatalog`, com os mesmos ids em `EnumJob`. Cada empresa recebe a sua cópia em `auditing.Jobs`
-(`Company` na chave) ao contratar o módulo (`auditing.sp_Add_Company_App`), com os jobs **inativos** até alguém ligar.
+O catálogo fica em `auditing.Catalog` (sem agenda), com os mesmos ids em `EnumJob`. Cada empresa recebe a sua cópia em
+`auditing.Jobs` (`Holder` e `Company` na chave) ao contratar o módulo no WebApp (Cadastro › Módulos e Credenciais), com a
+agenda sugerida ([`AGENDA-SUGERIDA-JOBS.csv`](../../../../docs/AGENDA-SUGERIDA-JOBS.csv)) e os jobs **inativos** até
+alguém ligar.
 
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
 flowchart LR
-    CAT[("auditing.JobCatalog<br/>7000–7999")] -- "sp_Add_Company_App" --> JOBS[("auditing.Jobs<br/>uma linha por empresa")]
+    CAT[("auditing.Catalog<br/>7000–7999")] -- "WebApp: contratar módulo" --> JOBS[("auditing.Jobs<br/>uma linha por empresa")]
     JOBS -- "IsActive = 1" --> HOST["Hangfire · WebJob · Worker<br/>uma execução por empresa"]
     HOST --> SVC["Orders · Customers<br/>Catalog · SalesRepresentatives"]
     SVC --> LOGS[("auditing.Logs<br/>Messages · Records")]
@@ -465,7 +467,7 @@ flowchart LR
 | 7015 | `LinxCommerceGetSalesRepresentative` | sob demanda |
 
 Os intervalos são ajustáveis por um `update` em `auditing.Jobs`, sem mudar o código. A ativação é por empresa (`IsActive` da linha da
-empresa em `auditing.Jobs`). Sem cliente da holding em `LinxCommerceParameters`, cada job só registra "Nenhum cliente" e termina.
+empresa em `auditing.Jobs`). Sem cliente da empresa em `LinxCommerceParameters`, cada job só registra "Nenhum cliente" e termina.
 
 Cada mensagem de `auditing.Messages` tem um nível ([`PROPOSTA-NIVEL-MENSAGEM-AUDITING.md`](../../Shared/docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md)):
 
@@ -483,7 +485,7 @@ Cada mensagem de `auditing.Messages` tem um nível ([`PROPOSTA-NIVEL-MENSAGEM-AU
 |---|---|---|
 | `appsettings.json` do host | `ConnectionStrings` | Conexão com o SQL Server (dados e auditoria) |
 | Banco | `linxcommerce.LinxCommerceParameters` | CNPJ (`doc_company`), endereço do ambiente (`base_url`) e credenciais (`user_name`, `api_key`) de cada cliente |
-| Banco | `monitor.HoldingCompanies` | De/para CNPJ → holding (empresa do painel); só os clientes da holding da execução são lidos |
+| Banco | `auditing.Companies` | Empresas de cada holding; cada execução é de uma empresa e lê só o cliente dela |
 
 > [!IMPORTANT]
 > O módulo não tem chave no `appsettings`: o endereço da API é de cada cliente. As credenciais vão para o banco pela tela de cadastro

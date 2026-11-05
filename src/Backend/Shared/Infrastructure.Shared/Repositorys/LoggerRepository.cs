@@ -20,13 +20,13 @@ namespace Infrastructure.Shared.Repositorys
         private static readonly HashSet<int> TransientErrors = [1205, 4891, 40613, 40501, 40197, 49918, 49919, 49920, 10928, 10929];
 
         private const string InsertLog = """
-            INSERT INTO [auditing].[Logs] ([IdJob], [IdType], [Company], [StartDate], [EndDate], [Execution])
-            VALUES (@IdJob, @IdType, @Company, @StartDate, @EndDate, @Execution)
+            INSERT INTO [auditing].[Logs] ([IdJob], [IdType], [Holder], [Company], [StartDate], [EndDate], [Execution])
+            VALUES (@IdJob, @IdType, @Holder, @Company, @StartDate, @EndDate, @Execution)
             """;
 
         private const string UpdateEndDate = """
             UPDATE [auditing].[Logs] SET [EndDate] = @EndDate
-            WHERE [IdJob] = @IdJob AND [IdType] = @IdType AND [Company] = @Company AND [Execution] = @Execution
+            WHERE [IdJob] = @IdJob AND [IdType] = @IdType AND [Holder] = @Holder AND [Company] = @Company AND [Execution] = @Execution
             """;
 
         private readonly ISQLServerConnection _sqlServerConnection;
@@ -82,6 +82,7 @@ namespace Infrastructure.Shared.Repositorys
         {
             IdJob = Convert.ToInt32(log.Job),
             IdType = Convert.ToInt32(log.IdType),
+            Holder = log.Holder,
             Company = log.Company,
             StartDate = log.StartDate.ToString("s"),
             EndDate = log.EndDate?.ToString("s"),

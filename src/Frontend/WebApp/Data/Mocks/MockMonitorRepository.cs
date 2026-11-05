@@ -527,6 +527,19 @@ namespace WebApp.Data.Mocks
             return _timeline.Jobs.Select(x => ScheduleOf(x).Queue).Distinct().Order().ToList();
         }
 
+        // um WebApi agendando há horas e um Worker no ar em espera, para a tela Hosts de Agenda mostrar o aviso
+        public async Task<IReadOnlyList<SchedulingHostModel>> GetSchedulingHostsAsync(CancellationToken cancellationToken = default)
+        {
+            await Delay(cancellationToken);
+
+            var now = DateTime.UtcNow;
+            return
+            [
+                new SchedulingHostModel { HostType = "Hangfire", Instances = 1, StartedAt = now.AddHours(-3), LastHeartbeat = now.AddSeconds(-20) },
+                new SchedulingHostModel { HostType = "Quartz", Instances = 1, StartedAt = now.AddMinutes(-40), LastHeartbeat = now.AddSeconds(-35) }
+            ];
+        }
+
         // a mesma regra de JobModel.IsOnDemand, com a agenda alterada pelo diálogo
         private bool IsOnDemand(MockJob job) =>
             job.Catalog.IdType == 2 && ScheduleOf(job) is { Interval: 0, DailyAt: null };

@@ -6,7 +6,7 @@
 -- etl_query. No Azure SQL Database (EngineEdition 5) não há login no servidor: o usuário é contido no banco.
 
 -- etl_monitor: leitura de auditing e monitor, a agenda e a ativação dos jobs, o reconhecimento de falhas, as imagens e o
--- cadastro de holdings, empresas e jobs (INSERT direto e as tabelas *Parameters que já existem no banco)
+-- cadastro de holdings, empresas, jobs e usuários do painel (INSERT direto e as tabelas *Parameters que já existem no banco)
 CREATE OR ALTER PROCEDURE [dbo].[sp_Create_Monitor_User] (
     @password NVARCHAR(128) = NULL
 ) AS
@@ -53,6 +53,7 @@ BEGIN
 
     GRANT INSERT, UPDATE, DELETE ON [monitor].[JobAcknowledgement] TO [etl_monitor];
     GRANT INSERT, UPDATE, DELETE ON [monitor].[AppImage] TO [etl_monitor];
+    GRANT INSERT, UPDATE ON [monitor].[Users] TO [etl_monitor];
 
     -- parâmetros dos módulos (tela de cadastro): uma tabela *Parameters por módulo migrado neste banco
     SET @sql = N'';

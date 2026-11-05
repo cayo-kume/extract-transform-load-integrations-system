@@ -1,3 +1,4 @@
+@inject LoggedCompany LoggedCompany
 @* Detalhe de uma mensagem com exceção: texto da exceção, pilha e comando SQL, cada um num bloco de código com o botão de
    copiar no canto, e "Copiar tudo" num texto só, com o contexto, pronto para colar num chamado. *@
 
@@ -44,11 +45,11 @@
     /// <summary>
     /// Cabeçalho com aplicação, job, execução, data e nível, e depois mensagem, exceção, pilha e SQL.
     /// </summary>
-    public static string TicketText(MessageModel message)
+    public static string TicketText(MessageModel message, string companyLabel)
     {
         var lines = new List<string>
         {
-            $"Empresa: {LoggedCompany.Label}",
+            $"Empresa: {companyLabel}",
             $"Aplicação: {message.AppTitle ?? "—"}",
             $"Job: {message.IdJob} - {message.JobTitle ?? "—"} (tipo {message.IdType})",
             $"Execução: {message.Execution}",
@@ -72,7 +73,7 @@
     {
         try
         {
-            await JS.InvokeVoidAsync("webApp.copy", TicketText(Message));
+            await JS.InvokeVoidAsync("webApp.copy", TicketText(Message, LoggedCompany.Label));
             Snackbar.Add("Copiado, pronto para colar num chamado.", Severity.Normal, config => config.VisibleStateDuration = 2000);
         }
         catch (JSException)

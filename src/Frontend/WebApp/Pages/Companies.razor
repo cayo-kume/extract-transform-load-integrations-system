@@ -1,0 +1,122 @@
+@page "/companies"
+@inject AdminAccess AdminAccess
+@inject ICompanyRepository CompanyRepository
+@inject LoggedCompany LoggedCompany
+@inject LoggedCompanyStorage CompanyStorage
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject ILogger<Companies> Logger
+
+@* Cadastros › Cadastrar Empresas: as empresas da holding logada. A holding nasce na tela inicial (Primeiro acesso), com a
+   empresa que é ela mesma; aqui entram as outras. O CNPJ não muda (é a chave dos jobs e dos logs): a edição é só do nome. *@
+
+<PageTitle>Cadastrar Empresas</PageTitle>
+
+@if (!AdminAccess.IsAllowed)
+{
+    <MudAlert Severity="Severity.Warning" Class="ma-4">Esta tela é só para administrador (Admin:Enabled em Development, até os perfis de usuário).</MudAlert>
+}
+else
+{
+    <MudGrid>
+        <MudItem xs="12" Class="d-flex align-center flex-wrap gap-3 pa-1 pl-10 pl-md-16">
+            <PageHeader Icon="@Icons.Material.Filled.Domain" Title="Cadastrar Empresas" Subtitle="@($"As empresas (CNPJs) da holding {LoggedCompany.HolderName}")" />
+            <MudSpacer />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Class="mr-4" OnClick="NewCompany">Nova empresa</MudButton>
+        </MudItem>
+    </MudGrid>
+
+    <div class="pa-4">
+        @if (_companies is null)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+        }
+        else
+        {
+            <MudTable T="CompanyModel" Items="_companies" Hover="true" Dense="true" Outlined="true" Elevation="0" Breakpoint="Breakpoint.Sm">
+                <HeaderContent>
+                    <MudTh>Empresa</MudTh>
+                    <MudTh>CNPJ</MudTh>
+                    <MudTh>Credenciais</MudTh>
+                    <MudTh></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Empresa">
+                        <b>@context.Label</b>
+                        @if (context.IsHolder)
+                        {
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Warning" Class="ml-2">holding</MudChip>
+                        }
+                    </MudTd>
+                    <MudTd DataLabel="CNPJ">@context.Company</MudTd>
+                    <MudTd DataLabel="Credenciais">
+                        @foreach (var idParent in context.Modules)
+                        {
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@(ModuleDefinitions.Find(idParent)?.Title ?? idParent.ToString())</MudChip>
+                        }
+                    </MudTd>
+                    <MudTd>
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" aria-label="Editar a empresa" OnClick="@(() => EditCompany(context))" />
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+            <MudText Typo="Typo.caption" Class="mt-2 d-block">Os módulos e as credenciais de cada empresa ficam na tela Aplicações, na engrenagem da aplicação. O seletor do topo troca de empresa.</MudText>
+        }
+    </div>
+}
+
+@code {
+    private IReadOnlyList<CompanyModel>? _companies;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AdminAccess.IsAllowed)
+            await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            _companies = await CompanyRepository.GetCompaniesAsync(LoggedCompany.Holder);
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Não foi possível ler as empresas da holding {Holder}.", LoggedCompany.Holder);
+            Snackbar.Add("Não foi possível ler as empresas da holding.", Severity.Error);
+            _companies ??= [];
+        }
+    }
+
+    private async Task NewCompany()
+    {
+        if (await CompanyFormDialog.ShowAsync(DialogService, LoggedCompany.Holder, LoggedCompany.HolderName) is { } company)
+        {
+            Snackbar.Add($"Empresa {company} cadastrada na {LoggedCompany.HolderName}.", Severity.Success);
+            await LoadAsync();
+            await RefreshSelector();
+        }
+    }
+
+    private async Task EditCompany(CompanyModel company)
+    {
+        if (await CompanyFormDialog.ShowAsync(DialogService, company.Holder, LoggedCompany.HolderName, company.Company, company.FantasyName) is not null)
+        {
+            await LoadAsync();
+            await RefreshSelector();
+        }
+    }
+
+    // o seletor do topo relê as empresas da holding, sem trocar a escolhida
+    private async Task RefreshSelector()
+    {
+        try
+        {
+            await CompanyStorage.SelectAsync(LoggedCompany.Holder, LoggedCompany.DocCompany, persist: false);
+        }
+        catch (Exception exception)
+        {
+            Logger.LogWarning(exception, "Não foi possível reler as empresas do seletor.");
+        }
+    }
+}

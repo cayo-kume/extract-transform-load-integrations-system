@@ -1,0 +1,133 @@
+@* Novo usuário do painel ou edição (monitor.Users), numa empresa da holding logada. Na edição, o usuário (login) e a empresa
+   não mudam, e a senha em branco mantém a gravada. Grava pelo próprio diálogo, para o erro de regra (usuário ou e-mail
+   repetido, senha curta) aparecer nele sem perder o que foi digitado. *@
+@inject IUserRepository UserRepository
+@inject ICompanyRepository CompanyRepository
+@inject LoggedCompany LoggedCompany
+@inject ILogger<UserFormDialog> Logger
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@(Editing ? $"Editar {User!.UserName}" : "Novo usuário")</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudGrid Spacing="3">
+            <MudItem xs="12">
+                <MudSelect T="string" @bind-Value="_input.Company" Label="Empresa" Variant="Variant.Outlined" Disabled="@(Editing || _saving)" Required="true"
+                           AnchorOrigin="Origin.BottomCenter" ToStringFunc="@(company => _companies.FirstOrDefault(x => x.Company == company) is { } found ? $"{found.Label} - {found.Company}" : company)">
+                    @foreach (var company in _companies)
+                    {
+                        <MudSelectItem T="string" Value="@company.Company">@company.Label - @company.Company</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField T="string" @bind-Value="_input.Name" Label="Nome" Variant="Variant.Outlined" Required="true" Disabled="_saving" MaxLength="150" Immediate="true" AutoFocus="true" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField T="string" @bind-Value="_input.UserName" Label="Usuário" Variant="Variant.Outlined" Required="@(!Editing)" Disabled="@(Editing || _saving)" MaxLength="100" Immediate="true" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField T="string" @bind-Value="_input.Email" Label="E-mail" Variant="Variant.Outlined" Required="true" Disabled="_saving" MaxLength="200" Immediate="true" InputType="InputType.Email" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField T="string" @bind-Value="_input.Password" Label="@(Editing ? "Nova senha" : "Senha")" Variant="Variant.Outlined" Required="@(!Editing)" Disabled="_saving" Immediate="true"
+                              InputType="@(_showPassword ? InputType.Text : InputType.Password)"
+                              HelperText="@(Editing ? "Em branco, mantém a senha atual." : $"Pelo menos {UserAccounts.MinPasswordLength} caracteres.")"
+                              Adornment="Adornment.End" AdornmentIcon="@(_showPassword ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                              AdornmentAriaLabel="Mostrar a senha" OnAdornmentClick="@(() => _showPassword = !_showPassword)" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField T="string" @bind-Value="_input.ConfirmPassword" Label="Confirmar senha" Variant="Variant.Outlined" Required="@(!Editing)" Disabled="_saving" Immediate="true"
+                              InputType="@(_showPassword ? InputType.Text : InputType.Password)" />
+            </MudItem>
+        </MudGrid>
+
+        @if (_error is not null)
+        {
+            <MudAlert Severity="Severity.Error" Dense="true" Class="mt-3">@_error</MudAlert>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton Disabled="_saving" OnClick="Cancel">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(_saving || string.IsNullOrWhiteSpace(_input.Company))" OnClick="Save">Gravar</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance? MudDialog { get; set; }
+
+    /// <summary>
+    /// Preenchido: edição deste usuário.
+    /// </summary>
+    [Parameter] public UserModel? User { get; set; }
+
+    private bool Editing => User is not null;
+
+    private readonly UserInput _input = new();
+    private IReadOnlyList<CompanyModel> _companies = [];
+    private string? _error;
+    private bool _saving;
+    private bool _showPassword;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _input.Company = User?.Company ?? LoggedCompany.DocCompany;
+        _input.Name = User?.Name;
+        _input.UserName = User?.UserName;
+        _input.Email = User?.Email;
+
+        try
+        {
+            _companies = await CompanyRepository.GetCompaniesAsync(LoggedCompany.Holder);
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Não foi possível ler as empresas da holding {Holder}.", LoggedCompany.Holder);
+            _error = "Não foi possível ler as empresas da holding.";
+        }
+    }
+
+    private void Cancel() => MudDialog?.Cancel();
+
+    private async Task Save()
+    {
+        _saving = true;
+        _error = null;
+
+        try
+        {
+            if (Editing)
+                await UserRepository.UpdateUserAsync(User!.IdUser, _input);
+            else
+                await UserRepository.CreateUserAsync(_input);
+
+            MudDialog?.Close(DialogResult.Ok(_input.UserName?.Trim()));
+        }
+        catch (CompanyRegistrationException exception)
+        {
+            _error = exception.Message;
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Não foi possível gravar o usuário {UserName}.", _input.UserName);
+            _error = "Não foi possível gravar. Tente de novo; se continuar, veja o log do WebApp.";
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    /// <summary>
+    /// Abre o formulário; devolve o usuário gravado, ou nulo se cancelou.
+    /// </summary>
+    public static async Task<string?> ShowAsync(IDialogService dialogService, UserModel? user = null)
+    {
+        var parameters = new DialogParameters<UserFormDialog> { { x => x.User, user } };
+
+        var reference = await dialogService.ShowAsync<UserFormDialog>("Usuário", parameters, new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        var result = await reference.Result;
+        return result is null || result.Canceled ? null : result.Data as string;
+    }
+}

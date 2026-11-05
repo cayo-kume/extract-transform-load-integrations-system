@@ -1,0 +1,206 @@
+@* Nova holding, nova empresa ou edição do nome fantasia (docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md). O CNPJ só é
+   digitado no cadastro: depois é a chave dos jobs e dos logs e não muda. Grava pelo próprio diálogo, para o erro de regra
+   (CNPJ já cadastrado, de outra holding) aparecer nele sem perder o que foi digitado. A holding nasce com o primeiro usuário
+   do painel (monitor.Users); uma holding sem usuário (de antes do login) ganha o primeiro na edição. *@
+@inject ICompanyRepository CompanyRepository
+@inject IUserRepository UserRepository
+@inject ILogger<CompanyFormDialog> Logger
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@Title</MudText>
+    </TitleContent>
+    <DialogContent>
+        @if (_askUser)
+        {
+            <MudText Typo="Typo.overline" Color="Color.Primary" Class="d-block">Holding</MudText>
+        }
+        <MudTextField T="string" @bind-Value="_document" Label="@(Holder is null ? "CNPJ da holding" : "CNPJ da empresa")" Variant="Variant.Outlined"
+                      Disabled="@(Editing || _saving)" Required="true" MaxLength="18" Immediate="true" AutoFocus="@(!Editing)" Class="mb-3"
+                      Error="_alreadyRegistered" HelperText="Só os números ou com pontos, barra e traço." />
+        <MudTextField T="string" @bind-Value="_fantasyName" Label="Nome fantasia" Variant="Variant.Outlined" Disabled="_saving" MaxLength="250" Immediate="true" AutoFocus="Editing" />
+
+        @if (_askUser)
+        {
+            <MudText Typo="Typo.overline" Color="Color.Primary" Class="d-block mt-4">Primeiro usuário</MudText>
+            @if (Editing)
+            {
+                <MudText Typo="Typo.caption" Class="d-block mb-2">A holding ainda não tem usuário do painel. Preencha para cadastrar o primeiro, ou deixe em branco.</MudText>
+            }
+            <MudGrid Spacing="3">
+                <MudItem xs="12">
+                    <MudTextField T="string" @bind-Value="_user.Name" Label="Nome" Variant="Variant.Outlined" Required="@(!Editing)" Disabled="_saving" MaxLength="150" Immediate="true" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField T="string" @bind-Value="_user.UserName" Label="Usuário" Variant="Variant.Outlined" Required="@(!Editing)" Disabled="_saving" MaxLength="100" Immediate="true" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField T="string" @bind-Value="_user.Email" Label="E-mail" Variant="Variant.Outlined" Required="@(!Editing)" Disabled="_saving" MaxLength="200" Immediate="true" InputType="InputType.Email" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField T="string" @bind-Value="_user.Password" Label="Senha" Variant="Variant.Outlined" Required="@(!Editing)" Disabled="_saving" Immediate="true"
+                                  InputType="@(_showPassword ? InputType.Text : InputType.Password)" HelperText="@($"Pelo menos {UserAccounts.MinPasswordLength} caracteres.")"
+                                  Adornment="Adornment.End" AdornmentIcon="@(_showPassword ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                                  AdornmentAriaLabel="Mostrar a senha" OnAdornmentClick="@(() => _showPassword = !_showPassword)" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField T="string" @bind-Value="_user.ConfirmPassword" Label="Confirmar senha" Variant="Variant.Outlined" Required="@(!Editing)" Disabled="_saving" Immediate="true"
+                                  InputType="@(_showPassword ? InputType.Text : InputType.Password)" />
+                </MudItem>
+            </MudGrid>
+        }
+
+        @if (!Editing)
+        {
+            <MudAlert Severity="Severity.Info" Dense="true" Class="mt-3">
+                @if (Holder is null)
+                {
+                    <span>Grava a holding, a empresa que é a própria holding, os jobs dos hosts dela (inativos) e o primeiro usuário, que já pode entrar no painel. As outras empresas entram por <b>Nova empresa</b>.</span>
+                }
+                else
+                {
+                    <span>A empresa entra na holding <b>@HolderLabel</b>. Os módulos e as credenciais dela ficam na tela Aplicações do painel, na engrenagem de cada aplicação.</span>
+                }
+            </MudAlert>
+        }
+
+        @if (_error is not null)
+        {
+            <MudAlert Severity="Severity.Error" Dense="true" Class="mt-3">@_error</MudAlert>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton Disabled="_saving" OnClick="Cancel">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(_saving || string.IsNullOrWhiteSpace(_document))" OnClick="Save">Gravar</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance? MudDialog { get; set; }
+
+    /// <summary>
+    /// Nula: holding. Preenchida: empresa desta holding.
+    /// </summary>
+    [Parameter] public string? Holder { get; set; }
+
+    [Parameter] public string? HolderLabel { get; set; }
+
+    /// <summary>
+    /// Preenchido: edição do nome fantasia deste CNPJ.
+    /// </summary>
+    [Parameter] public string? Document { get; set; }
+
+    [Parameter] public string? FantasyName { get; set; }
+
+    private bool Editing => Document is not null;
+
+    private string Title => (Holder, Editing) switch
+    {
+        (null, false) => "Nova holding",
+        (null, true) => "Editar holding",
+        (_, false) => "Nova empresa",
+        _ => "Editar empresa"
+    };
+
+    private string? _document;
+    private string? _fantasyName;
+    private string? _error;
+    private bool _saving;
+    private bool _alreadyRegistered;
+    private bool _askUser;
+    private bool _showPassword;
+    private readonly UserInput _user = new();
+
+    private bool UserFilled =>
+        !string.IsNullOrWhiteSpace(_user.Name) || !string.IsNullOrWhiteSpace(_user.UserName) || !string.IsNullOrWhiteSpace(_user.Email) || !string.IsNullOrEmpty(_user.Password);
+
+    // o primeiro usuário: sempre na holding nova; na edição, só se a holding ainda não tiver nenhum
+    protected override async Task OnInitializedAsync()
+    {
+        _document = Document;
+        _fantasyName = FantasyName;
+
+        if (Holder is not null)
+            return;
+
+        if (!Editing)
+        {
+            _askUser = true;
+            return;
+        }
+
+        try
+        {
+            _askUser = (await UserRepository.GetUsersAsync(Document!)).Count == 0;
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Não foi possível ler os usuários da holding {Holder}.", Document);
+            _error = "Não foi possível ler os usuários da holding: o primeiro usuário não pode ser cadastrado agora. Veja o log do WebApp.";
+        }
+    }
+
+    private void Cancel() => MudDialog?.Cancel();
+
+    private async Task Save()
+    {
+        _saving = true;
+        _error = null;
+        _alreadyRegistered = false;
+
+        try
+        {
+            var document = _document ?? "";
+
+            if (Holder is null && Editing)
+            {
+                await CompanyRepository.UpdateHolderAsync(document, _fantasyName);
+                if (_askUser && UserFilled)
+                {
+                    _user.Company = document;
+                    await UserRepository.CreateUserAsync(_user);
+                }
+            }
+            else if (Holder is null)
+                await CompanyRepository.CreateHolderAsync(document, _fantasyName, _user);
+            else if (Editing)
+                await CompanyRepository.UpdateCompanyAsync(document, _fantasyName);
+            else
+                await CompanyRepository.CreateCompanyAsync(Holder, document, _fantasyName);
+
+            MudDialog?.Close(DialogResult.Ok(ModuleDefinitions.Digits(document)));
+        }
+        catch (CompanyRegistrationException exception)
+        {
+            _error = exception.Message;
+            _alreadyRegistered = exception.Code == CompanyRegistrationException.AlreadyRegistered;
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Não foi possível gravar o cadastro de {Document}.", _document);
+            _error = "Não foi possível gravar. Tente de novo; se continuar, veja o log do WebApp.";
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    /// <summary>
+    /// Abre o formulário; devolve o CNPJ gravado, ou nulo se cancelou.
+    /// </summary>
+    public static async Task<string?> ShowAsync(IDialogService dialogService, string? holder = null, string? holderLabel = null, string? document = null, string? fantasyName = null)
+    {
+        var parameters = new DialogParameters<CompanyFormDialog>
+        {
+            { x => x.Holder, holder },
+            { x => x.HolderLabel, holderLabel },
+            { x => x.Document, document },
+            { x => x.FantasyName, fantasyName }
+        };
+
+        var reference = await dialogService.ShowAsync<CompanyFormDialog>("Cadastro", parameters, new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        var result = await reference.Result;
+        return result is null || result.Canceled ? null : result.Data as string;
+    }
+}

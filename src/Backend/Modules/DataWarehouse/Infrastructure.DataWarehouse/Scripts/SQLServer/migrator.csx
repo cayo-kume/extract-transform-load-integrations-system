@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 using DbUp;
 using DbUp.ScriptProviders;
 using Microsoft.Data.SqlClient;
@@ -64,13 +65,32 @@ Console.WriteLine($"Conectando em: servidor {builder.DataSource}, banco {builder
 // 1. Garante que o banco existe (o nome vem da connection string)
 EnsureDatabase.For.SqlDatabase(connectionString);
 
+// services escolhidos na tela do tools/migrators/Invoke-Migrators.ps1: a variável ETL_MIGRATOR_SERVICES traz as pastas
+// (ex.: People;Erp/Customers), separadas por ";". Sem ela, sobem todas; Parameters e os scripts da raiz sobem sempre
+var services = Environment.GetEnvironmentVariable("ETL_MIGRATOR_SERVICES")?
+    .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+    .Select(x => x.Replace('\\', '/').Trim('/'))
+    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+var scriptsRoot = Path.GetFullPath(".");
+
+bool IsSelected(string path)
+{
+    if (services is null) return true;
+
+    var folder = Path.GetRelativePath(scriptsRoot, Path.GetDirectoryName(Path.GetFullPath(path))!).Replace('\\', '/');
+    return folder == "." || folder.Equals("Parameters", StringComparison.OrdinalIgnoreCase) || services.Contains(folder);
+}
+
+if (services is not null)
+    Console.WriteLine($"Services: {(services.Count > 0 ? string.Join(", ", services.Order()) : "nenhum")} (Parameters sempre).");
+
 // 2. Configura o DbUp. Tempo limite por comando de 10 min (o padrão é 30 s): logo depois da criação de centenas de
 // tabelas pelos outros módulos, a primeira geração de procedure pode passar de 30 s.
 // Os scripts ficam em subpastas por camada (Parameters, Landing, History...); o DbUp nomeia cada um pelo caminho
 // (ex.: Landing.Script008_...sql), então a ordem de execução é a do número do arquivo, não a da pasta
 var upgrader = DeployChanges.To
     .SqlDatabase(connectionString)
-    .WithScriptsFromFileSystem(".", new FileSystemScriptOptions { IncludeSubDirectories = true })
+    .WithScriptsFromFileSystem(".", new FileSystemScriptOptions { IncludeSubDirectories = true, Filter = IsSelected })
     .WithScriptSorter(scripts => scripts.OrderBy(s => s.Name.Split('.')[^2], StringComparer.Ordinal))
     .WithExecutionTimeout(TimeSpan.FromMinutes(10))
     .LogToConsole()

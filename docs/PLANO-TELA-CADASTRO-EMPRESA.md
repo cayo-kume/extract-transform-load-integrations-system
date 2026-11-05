@@ -1,5 +1,13 @@
 # Plano: cadastro de empresas e integrações pela tela (fora do DbUp)
 
+> [!NOTE]
+> **O modelo mudou (04/11/2026).** `monitor.Company` e `monitor.HoldingCompanies` saíram: a holding fica em
+> `auditing.Holders` e as empresas dela em `auditing.Companies`, com jobs, ativação e log por empresa; o catálogo virou
+> `auditing.Catalog` (sem agenda), as procedures de cadastro (`sp_Add_Company`, `sp_Add_Holding_Company`,
+> `sp_Add_Company_App`, `sp_Remove_Company_App`) foram removidas e o `tools/hosts/Invoke-HostsConfig.ps1` deu lugar às telas
+> de cadastro do WebApp. O modelo atual está em
+> [PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md](PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md); este plano fica como histórico.
+
 Branch: `implementacao-tela-cadastro`. Status: **4.1 e 4.2 feitas**; as fases seguintes ainda não começaram.
 
 Base: [PROPOSTA-DOC-COMPANY-AUDITING.md](../src/Backend/Shared/docs/PROPOSTA-DOC-COMPANY-AUDITING.md). Este plano

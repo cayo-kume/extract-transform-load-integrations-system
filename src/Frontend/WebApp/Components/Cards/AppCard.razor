@@ -1,10 +1,12 @@
+@inject LoggedCompany LoggedCompany
+@inject IModuleParametersRepository ParametersRepository
 @inject IDialogService DialogService
 @inject IMonitorRepository MonitorRepository
 @inject ISnackbar Snackbar
 @inject ILogger<AppCard> Logger
 
 <div class="app-card-wrapper">
-    <MudCard Class="app-card">
+    <MudCard Class="@(Summary.IsContracted ? "app-card" : "app-card app-card-available")">
         <MudCardHeader Class="pa-2">
             <CardHeaderContent>
                 <div class="d-flex flex-row align-center">
@@ -12,19 +14,26 @@
                         <MudText Typo="Typo.h6">@Summary.Title</MudText>
                     </div>
                     <div class="d-flex justify-end">
-                        <!-- Liga ou desliga todas as integrações do módulo para a empresa logada -->
-                        <MudChip T="string"
-                                 Variant="Variant.Outlined"
-                                 Color="@(Summary.IsActive ? Color.Success : Color.Default)"
-                                 Icon="@(_saving ? null : Summary.IsActive ? null : Icons.Material.Filled.PauseCircle)"
-                                 Disabled="_saving"
-                                 OnClick="ToggleModule">
-                            @if (_saving)
-                            {
-                                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-1" Style="width: 14px; height: 14px" />
-                            }
-                            @(Summary.IsActive ? "Ativa" : "Inativa")
-                        </MudChip>
+                        @if (!Summary.IsContracted)
+                        {
+                            <MudChip T="string" Variant="Variant.Outlined" Color="Color.Default">Não contratada</MudChip>
+                        }
+                        else
+                        {
+                            <!-- Liga ou desliga todas as integrações do módulo para a empresa logada -->
+                            <MudChip T="string"
+                                     Variant="Variant.Outlined"
+                                     Color="@(Summary.IsActive ? Color.Success : Color.Default)"
+                                     Icon="@(_saving ? null : Summary.IsActive ? null : Icons.Material.Filled.PauseCircle)"
+                                     Disabled="_saving"
+                                     OnClick="ToggleModule">
+                                @if (_saving)
+                                {
+                                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-1" Style="width: 14px; height: 14px" />
+                                }
+                                @(Summary.IsActive ? "Ativa" : "Inativa")
+                            </MudChip>
+                        }
                     </div>
                 </div>
             </CardHeaderContent>
@@ -47,21 +56,35 @@
             <MudTooltip Text="@Summary.Description" Placement="Placement.Top">
                 <MudText Typo="Typo.body2" Class="app-description">@Summary.Description</MudText>
             </MudTooltip>
-            <div class="d-flex flex-row gap-18 mb-2 mt-4">
-                <MudText Typo="Typo.caption" Class="app-stat app-stat-label">Integrações: @Summary.Integrations</MudText>
-                <MudText Typo="Typo.caption" Class="app-stat">Procedures: @Summary.Procedures</MudText>
-            </div>
-            <div class="d-flex flex-row gap-18 mb-2">
-                <MudText Typo="Typo.caption" Class="app-stat app-stat-label">Ativas: @Summary.ActiveJobs</MudText>
-                <MudText Typo="Typo.caption" Class="app-stat">Execuções: @Summary.Executions</MudText>
-            </div>
-            <div class="d-flex flex-row gap-18">
-                <MudText Typo="Typo.caption" Class="app-stat app-stat-label">Erros: @Summary.Errors</MudText>
-                <MudText Typo="Typo.caption" Class="app-stat">Avisos: @Summary.Warnings</MudText>
-            </div>
+            @if (Summary.IsContracted)
+            {
+                <div class="d-flex flex-row gap-18 mb-2 mt-4">
+                    <MudText Typo="Typo.caption" Class="app-stat app-stat-label">Integrações: @Summary.Integrations</MudText>
+                    <MudText Typo="Typo.caption" Class="app-stat">Procedures: @Summary.Procedures</MudText>
+                </div>
+                <div class="d-flex flex-row gap-18 mb-2">
+                    <MudText Typo="Typo.caption" Class="app-stat app-stat-label">Ativas: @Summary.ActiveJobs</MudText>
+                    <MudText Typo="Typo.caption" Class="app-stat">Execuções: @Summary.Executions</MudText>
+                </div>
+                <div class="d-flex flex-row gap-18">
+                    <MudText Typo="Typo.caption" Class="app-stat app-stat-label">Erros: @Summary.Errors</MudText>
+                    <MudText Typo="Typo.caption" Class="app-stat">Avisos: @Summary.Warnings</MudText>
+                </div>
+            }
+            else
+            {
+                <MudText Typo="Typo.caption" Class="d-block mt-4 app-stat">Ainda não contratada por @LoggedCompany.Name: contrate para criar os jobs, inativos e com a agenda sugerida.</MudText>
+            }
         </MudCardContent>
         <MudCardActions Class="pa-2">
-            <MudButton Href="@($"/integrations?app={Summary.IdParent}&status=all&period={MonitorDisplay.PeriodQuery(Period)}")" Variant="Variant.Text" Color="Color.Primary">Ver jobs</MudButton>
+            @if (Summary.IsContracted)
+            {
+                <MudButton Href="@($"/integrations?app={Summary.IdParent}&status=all&period={MonitorDisplay.PeriodQuery(Period)}")" Variant="Variant.Text" Color="Color.Primary">Ver jobs</MudButton>
+            }
+            else
+            {
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="Contract">Contratar</MudButton>
+            }
         </MudCardActions>
     </MudCard>
 </div>
@@ -95,6 +118,10 @@
         var activate = !Summary.IsActive;
         var company = System.Net.WebUtility.HtmlEncode(LoggedCompany.Label);
 
+        // módulo com API externa: só ativa com a credencial da empresa gravada (e a confirmação de que vai chamar a API)
+        if (activate && !await CredentialDialog.EnsureAsync(DialogService, ParametersRepository, LoggedCompany, Summary.IdParent, $"os {TotalJobs} jobs do {Summary.Title}"))
+            return;
+
         if (!activate)
         {
             var confirmed = await DialogService.ShowMessageBoxAsync(
@@ -126,7 +153,17 @@
         }
     }
 
-    // o "macro": credenciais, imagem e parâmetros globais do módulo, para a empresa logada
+    // contratar cria os jobs do módulo para a empresa logada, inativos, com a agenda do diálogo
+    private async Task Contract()
+    {
+        if (await AppContractDialog.ShowAsync(DialogService, Summary.IdParent, Summary.Title) is { } created)
+        {
+            Snackbar.Add($"{Summary.Title} contratado para {LoggedCompany.Name}: {created} job(s) criado(s), inativos.", Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+    }
+
+    // o "macro": imagem, credenciais, parâmetros e contrato do módulo, para a empresa logada
     private async Task OpenConfigurations()
     {
         await ModuleConfigurations.ShowAsync(DialogService, Summary.IdParent, Summary.Title);
