@@ -261,6 +261,20 @@ $worker = {
 
     $state.Successful = $false
     $index = 0
+    $migrated = @($apps).Count
+
+    # usuários do WebApp por último: o sp_Create_Monitor_User (Script009) só dá ao etl_monitor as tabelas *Parameters que
+    # já existem, e elas nascem nos migrators dos módulos, que rodam depois do Shared. Com senha e mais de uma aplicação, o
+    # Shared roda de novo no fim só para os usuários (o DbUp não tem mais nada a aplicar), e a primeira vez vai sem senha
+    $shared = @($apps | Where-Object { $_.Name -eq 'Shared' }) | Select-Object -First 1
+    $usersLast = $shared -and $migrated -gt 1 -and @($userPasswords.Values | Where-Object { $_ }).Count -gt 0
+
+    if ($usersLast) {
+        $users = $shared.Clone()
+        $users.Name = 'Shared (usuários do WebApp)'
+        $users.UsersStep = $true
+        $apps = @($apps) + $users
+    }
 
     foreach ($app in $apps) {
         $index++
@@ -304,7 +318,7 @@ $worker = {
             # senhas dos usuários do WebApp: só o migrator do Shared as recebe (Script009); os outros nem as veem, mesmo que
             # estejam no ambiente de quem abriu a tela
             foreach ($variable in 'ETL_MONITOR_PASSWORD', 'ETL_QUERY_PASSWORD') {
-                $value = $app.Name -eq 'Shared' ? $userPasswords[$variable] : $null
+                $value = $app.UsersStep -or ($app.Name -eq 'Shared' -and -not $usersLast) ? $userPasswords[$variable] : $null
                 if ($value) { $info.Environment[$variable] = $value } else { $null = $info.Environment.Remove($variable) }
             }
 
@@ -349,7 +363,7 @@ $worker = {
     }
 
     Write-Line '' 'out'
-    Write-Line "Migrators concluídos: $($apps.Count) aplicações aplicadas." 'ok'
+    Write-Line "Migrators concluídos: $migrated aplicações aplicadas." 'ok'
 
     # as connection strings deste banco nos appsettings.json dos projetos (só com tudo migrado): o log mostra só as chaves
     if ($appSettings) {

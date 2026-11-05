@@ -187,6 +187,12 @@ com `-NoGui`). As senhas vão só para o processo do Shared, pelas variáveis `E
 `ETL_QUERY_PASSWORD`; em branco, o usuário não é criado agora. Quem já existe passa a ter a senha informada. Rodando o `migrator.csx`
 do Shared à mão, as mesmas variáveis no ambiente fazem o mesmo.
 
+O `etl_monitor` só ganha as tabelas `*Parameters` que já existem quando a `dbo.sp_Create_Monitor_User` roda, e elas nascem
+nos migrators dos módulos, depois do Shared. Por isso, com senha e mais de uma aplicação marcada, o `Invoke-Migrators.ps1`
+roda o Shared de novo no fim, só para os usuários ("Shared (usuários do WebApp)"). Módulo migrado à parte depois: rode
+`EXEC dbo.sp_Create_Monitor_User` (sem senha, o usuário já existe) para ele ganhar a tabela de parâmetros; sem isso, a
+engrenagem do WebApp diz que a tabela de parâmetros do módulo não existe.
+
 No fim da migração, o `Invoke-Migrators.ps1` grava a seção `ConnectionStrings` do `appsettings.json` do WebApp
 (`Connection` com o `etl_monitor` e `QueryConnection` com o `etl_query`, quando as senhas deles foram informadas; senão,
 o usuário da tela), do WebApi, do WebJob e do Worker (`Connection` com o usuário da tela), editando o arquivo
