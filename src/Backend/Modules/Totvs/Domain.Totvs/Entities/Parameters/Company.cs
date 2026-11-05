@@ -12,5 +12,8 @@ namespace Domain.Totvs.Entities.Parameters
         public string client_secret { get; init; } = String.Empty;
         public string username { get; init; } = String.Empty;
         public string password { get; init; } = String.Empty;
+
+        // endereço da API da empresa; nulo usa o Totvs:BaseUrl do appsettings (IApiClient.UseBaseAddress)
+        public string? base_url { get; init; }
     }
 }

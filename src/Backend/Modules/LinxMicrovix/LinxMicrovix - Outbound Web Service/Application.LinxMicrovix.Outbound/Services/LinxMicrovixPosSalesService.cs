@@ -57,6 +57,8 @@ namespace Application.LinxMicrovix.Outbound.Services
             {
                 foreach (var company in (await _linxMicrovixService.GetCompanys()).WithProgress("empresa"))
                 {
+                    _apiClient.UseBaseAddress(company?.base_url);
+
                     if (company.erp_chave is null)
                         continue;   // cliente sem o WS de saída padrão
 
@@ -263,6 +265,8 @@ namespace Application.LinxMicrovix.Outbound.Services
             {
                 foreach (var company in (await _linxMicrovixService.GetCompanys()).WithProgress("empresa"))
                 {
+                    _apiClient.UseBaseAddress(company?.base_url);
+
                     if (company.erp_chave is null)
                         continue;   // cliente sem o WS de saída padrão
 
@@ -496,6 +500,8 @@ namespace Application.LinxMicrovix.Outbound.Services
             {
                 foreach (var company in (await _linxMicrovixService.GetCompanys()).WithProgress("empresa"))
                 {
+                    _apiClient.UseBaseAddress(company?.base_url);
+
                     if (company.erp_chave is null)
                         continue;   // cliente sem o WS de saída padrão
 

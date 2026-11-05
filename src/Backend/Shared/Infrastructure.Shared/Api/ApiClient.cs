@@ -1,6 +1,7 @@
 using Domain.Shared.Abstractions.Api;
 using Domain.Shared.Extensions;
 using Microsoft.Extensions.Logging;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Net.Http.Headers;
 using System.Text;
@@ -16,6 +17,9 @@ namespace Infrastructure.Shared.Api
         private readonly ILogger<ApiClient> _logger;
         private readonly string _clientName;
 
+        // endereço por empresa (UseBaseAddress), por nome de cliente: no AsyncLocal, cada job vê só o que ele mesmo informou
+        private static readonly AsyncLocal<ImmutableDictionary<string, string>?> _baseAddresses = new();
+
         public ApiClient(IHttpClientFactory httpClientFactory, ILogger<ApiClient> logger, string clientName)
         {
             _httpClientFactory = httpClientFactory;
@@ -27,7 +31,7 @@ namespace Infrastructure.Shared.Api
         {
             var client = CreateClient(headers);
 
-            var url = BuildUrl(client.BaseAddress?.ToString(), route, queryParams);
+            var url = BuildUrl(BaseAddress(client), route, queryParams);
 
             _logger.LogDebug("[ApiClient] GET {Url}", url);
 
@@ -43,7 +47,7 @@ namespace Infrastructure.Shared.Api
         {
             var client = CreateClient(headers);
 
-            var url = BuildUrl(client.BaseAddress?.ToString(), route);
+            var url = BuildUrl(BaseAddress(client), route);
             var json = body != null ? Newtonsoft.Json.JsonConvert.SerializeObject(body) : string.Empty;
             var httpContent = new StringContent(json, Encoding.UTF8, contentType ?? "application/json");
 
@@ -63,7 +67,7 @@ namespace Infrastructure.Shared.Api
         {
             var client = CreateClient(headers);
 
-            var url = BuildUrl(client.BaseAddress?.ToString(), route);
+            var url = BuildUrl(BaseAddress(client), route);
             var json = body != null ? Newtonsoft.Json.JsonConvert.SerializeObject(body) : string.Empty;
             var httpContent = new StringContent(json, Encoding.UTF8, "application/json");
 
@@ -83,7 +87,7 @@ namespace Infrastructure.Shared.Api
         {
             var client = CreateClient(headers);
 
-            var url = BuildUrl(client.BaseAddress?.ToString(), route);
+            var url = BuildUrl(BaseAddress(client), route);
 
             var request = new HttpRequestMessage(HttpMethod.Delete, url);
             if (body != null)
@@ -108,7 +112,7 @@ namespace Infrastructure.Shared.Api
         {
             var client = CreateClient(headers);
 
-            var url = BuildUrl(client.BaseAddress?.ToString(), route);
+            var url = BuildUrl(BaseAddress(client), route);
             var httpContent = new FormUrlEncodedContent(formData);
 
             _logger.LogDebug("[ApiClient] POST-FORM {Url}", url);
@@ -127,7 +131,7 @@ namespace Infrastructure.Shared.Api
         {
             var client = CreateClient(headers);
 
-            var url = BuildUrl(client.BaseAddress?.ToString(), route);
+            var url = BuildUrl(BaseAddress(client), route);
 
             using var httpContent = new MultipartFormDataContent();
 
@@ -154,7 +158,7 @@ namespace Infrastructure.Shared.Api
         {
             var client = CreateClient(headers);
 
-            var url = BuildUrl(client.BaseAddress?.ToString(), route, queryParams);
+            var url = BuildUrl(BaseAddress(client), route, queryParams);
 
             _logger.LogDebug("[ApiClient] {Method} {Route}", method, route);
 
@@ -233,6 +237,15 @@ namespace Infrastructure.Shared.Api
                 _ => IsResponseCut(ex.InnerException)
             };
 
+        public void UseBaseAddress(string? baseUrl)
+        {
+            var current = _baseAddresses.Value ?? ImmutableDictionary<string, string>.Empty;
+
+            _baseAddresses.Value = string.IsNullOrWhiteSpace(baseUrl)
+                ? current.Remove(_clientName)
+                : current.SetItem(_clientName, baseUrl.Trim());
+        }
+
         private HttpClient CreateClient(Dictionary<string, string>? headers)
         {
             var client = _httpClientFactory.CreateClient(_clientName);
@@ -259,6 +272,9 @@ namespace Infrastructure.Shared.Api
 
             return client;
         }
+
+        private string? BaseAddress(HttpClient client) =>
+            _baseAddresses.Value?.GetValueOrDefault(_clientName) ?? client.BaseAddress?.ToString();
 
         private static string BuildUrl(string? baseAddress, string route, Dictionary<string, string>? queryParams = null)
         {

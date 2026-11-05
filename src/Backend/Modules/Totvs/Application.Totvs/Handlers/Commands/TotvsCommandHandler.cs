@@ -13,7 +13,8 @@ namespace Application.Totvs.Handlers.Commands
                      CLIENT_ID AS CLIENT_ID,
                      CLIENT_SECRET AS CLIENT_SECRET,
                      USERNAME AS USERNAME,
-                     [PASSWORD] AS [PASSWORD]
+                     [PASSWORD] AS [PASSWORD],
+                     BASE_URL AS BASE_URL
                      FROM TOTVS.TOTVSPARAMETERS P
                      WHERE P.DOC_COMPANY = '{company}'";
         }

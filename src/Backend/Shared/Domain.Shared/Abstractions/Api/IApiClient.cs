@@ -20,5 +20,12 @@ namespace Domain.Shared.Abstractions.Api
         /// conteúdo que pode ser enviado de novo (StringContent, ByteArrayContent; StreamContent não)
         /// </summary>
         Task<ApiResponse> SendAsync(HttpMethod method, string route, HttpContent? content = null, Dictionary<string, string>? headers = null, Dictionary<string, string>? queryParams = null, bool retryOnNetworkError = false);
+
+        /// <summary>
+        /// endereço da API da empresa em processamento (base_url de &lt;Módulo&gt;Parameters, gravada na aba Credenciais do
+        /// WebApp): vale para as próximas chamadas deste cliente no mesmo fluxo (o job que chamou), até a próxima empresa.
+        /// Nulo ou vazio volta ao &lt;Módulo&gt;:BaseUrl do appsettings
+        /// </summary>
+        void UseBaseAddress(string? baseUrl);
     }
 }

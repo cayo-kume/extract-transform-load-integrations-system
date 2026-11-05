@@ -8,7 +8,8 @@ namespace Application.AfterSale.Handlers.Commands
         {
             return @$"SELECT DISTINCT
                      DOC_COMPANY,
-                     TOKEN
+                     TOKEN,
+                     BASE_URL
                      FROM AFTERSALE.AFTERSALEPARAMETERS
                      WHERE 
                      DOC_COMPANY = '{doc_company}'";
@@ -20,7 +21,8 @@ namespace Application.AfterSale.Handlers.Commands
             // company é só dígitos (ICompanyContext)
             return @$"SELECT DISTINCT
                     DOC_COMPANY,
-                    TOKEN AS TOKEN
+                    TOKEN AS TOKEN,
+                    BASE_URL AS BASE_URL
                     FROM AFTERSALE.AFTERSALEPARAMETERS P
                      WHERE P.DOC_COMPANY = '{company}'";
         }

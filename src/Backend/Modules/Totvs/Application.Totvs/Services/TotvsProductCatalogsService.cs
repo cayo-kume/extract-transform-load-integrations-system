@@ -104,6 +104,8 @@ namespace Application.Totvs.Services
             {
                 foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
+                    _apiClient.UseBaseAddress(company?.base_url);
+
                     var batchTime = _totvsService.GetBatchTime();
 
                     // maxChangeFilterDate só vem com StartChangeDate/EndChangeDate (testado). Banco vazio: desde 2000
@@ -213,6 +215,8 @@ namespace Application.Totvs.Services
             {
                 foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
+                    _apiClient.UseBaseAddress(company?.base_url);
+
                     var batchTime = _totvsService.GetBatchTime();
 
                     // maxChangeFilterDate só vem com StartChangeDate/EndChangeDate (testado). Banco vazio: desde 2000
@@ -321,6 +325,8 @@ namespace Application.Totvs.Services
             {
                 foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
+                    _apiClient.UseBaseAddress(company?.base_url);
+
                     var batchTime = _totvsService.GetBatchTime();
 
                     // maxChangeFilterDate só vem com StartChangeDate/EndChangeDate (testado). Banco vazio: desde 2000
@@ -430,6 +436,8 @@ namespace Application.Totvs.Services
             {
                 foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
+                    _apiClient.UseBaseAddress(company?.base_url);
+
                     var batchTime = _totvsService.GetBatchTime();
 
                     // maxChangeFilterDate só vem com StartChangeDate/EndChangeDate (testado). Banco vazio: desde 2000
@@ -539,6 +547,8 @@ namespace Application.Totvs.Services
             {
                 foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
+                    _apiClient.UseBaseAddress(company?.base_url);
+
                     var batchTime = _totvsService.GetBatchTime();
 
                     // maxChangeFilterDate só vem com StartChangeDate/EndChangeDate (testado). Banco vazio: desde 2000
@@ -648,6 +658,8 @@ namespace Application.Totvs.Services
             {
                 foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
+                    _apiClient.UseBaseAddress(company?.base_url);
+
                     var batchTime = _totvsService.GetBatchTime();
 
                     var items = await GetCatalogPages<Domain.Totvs.Dtos.Reads.Products.Catalogs.Color>(
@@ -738,6 +750,8 @@ namespace Application.Totvs.Services
             {
                 foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
+                    _apiClient.UseBaseAddress(company?.base_url);
+
                     var batchTime = _totvsService.GetBatchTime();
 
                     // maxChangeFilterDate só vem com StartChangeDate/EndChangeDate (testado). Banco vazio: desde 2000
@@ -847,6 +861,8 @@ namespace Application.Totvs.Services
             {
                 foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
+                    _apiClient.UseBaseAddress(company?.base_url);
+
                     var batchTime = _totvsService.GetBatchTime();
 
                     // maxChangeFilterDate só vem com StartChangeDate/EndChangeDate (testado). Banco vazio: desde 2000
@@ -956,6 +972,8 @@ namespace Application.Totvs.Services
             {
                 foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
+                    _apiClient.UseBaseAddress(company?.base_url);
+
                     var batchTime = _totvsService.GetBatchTime();
 
                     // maxChangeFilterDate só vem com StartChangeDate/EndChangeDate (testado). Banco vazio: desde 2000
@@ -1065,6 +1083,8 @@ namespace Application.Totvs.Services
             {
                 foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
+                    _apiClient.UseBaseAddress(company?.base_url);
+
                     var batchTime = _totvsService.GetBatchTime();
 
                     // maxChangeFilterDate só vem com StartChangeDate/EndChangeDate (testado). Banco vazio: desde 2000
@@ -1175,6 +1195,8 @@ namespace Application.Totvs.Services
             {
                 foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
+                    _apiClient.UseBaseAddress(company?.base_url);
+
                     var batchTime = _totvsService.GetBatchTime();
 
                     // maxChangeFilterDate só vem com StartChangeDate/EndChangeDate (testado). Banco vazio: desde 2000
@@ -1284,6 +1306,8 @@ namespace Application.Totvs.Services
             {
                 foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
+                    _apiClient.UseBaseAddress(company?.base_url);
+
                     var batchTime = _totvsService.GetBatchTime();
 
                     // maxChangeFilterDate só vem com StartChangeDate/EndChangeDate (testado). Banco vazio: desde 2000
@@ -1393,6 +1417,7 @@ namespace Application.Totvs.Services
                     return _totvsService.WriteDisabled(WritesGroup, key);
 
                 var company = await _totvsService.GetCompany(doc_company);
+                _apiClient.UseBaseAddress(company?.base_url);
 
                 if (company is null)
                     return _totvsService.CompanyNotFound(doc_company, key);
@@ -1429,6 +1454,7 @@ namespace Application.Totvs.Services
                     return _totvsService.WriteDisabled(WritesGroup, key);
 
                 var company = await _totvsService.GetCompany(doc_company);
+                _apiClient.UseBaseAddress(company?.base_url);
 
                 if (company is null)
                     return _totvsService.CompanyNotFound(doc_company, key);
@@ -1458,6 +1484,7 @@ namespace Application.Totvs.Services
                     return _totvsService.WriteDisabled(WritesGroup, key);
 
                 var company = await _totvsService.GetCompany(doc_company);
+                _apiClient.UseBaseAddress(company?.base_url);
 
                 if (company is null)
                     return _totvsService.CompanyNotFound(doc_company, key);

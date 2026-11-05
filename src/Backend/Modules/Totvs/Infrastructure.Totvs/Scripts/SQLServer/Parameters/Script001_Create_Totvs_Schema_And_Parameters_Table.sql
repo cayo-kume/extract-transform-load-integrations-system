@@ -12,5 +12,6 @@ create table [totvs].TotvsParameters (
 	client_id nvarchar(100) not null,
 	client_secret nvarchar(200) not null,
 	username nvarchar(100) not null,
-	[password] nvarchar(200) not null
+	[password] nvarchar(200) not null,
+	base_url nvarchar(200) null   --endereço da API da empresa (aba Credenciais do WebApp); nulo usa o Totvs:BaseUrl do appsettings
 );

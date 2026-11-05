@@ -10,7 +10,8 @@ namespace Application.Movidesk.Handlers.Commands
             // company é só dígitos (ICompanyContext)
             return @$"SELECT DISTINCT
                      DOC_COMPANY AS DOC_COMPANY,
-                     TOKEN AS TOKEN
+                     TOKEN AS TOKEN,
+                     BASE_URL AS BASE_URL
                      FROM MOVIDESK.MOVIDESKPARAMETERS P
                      WHERE P.DOC_COMPANY = '{company}'";
         }
@@ -20,7 +21,8 @@ namespace Application.Movidesk.Handlers.Commands
             // doc_company já passou pelo ^\d{14}$ do controller; com aspas porque a coluna é nvarchar (CNPJ pode começar com zero)
             return @$"SELECT DISTINCT
                      DOC_COMPANY AS DOC_COMPANY,
-                     TOKEN AS TOKEN
+                     TOKEN AS TOKEN,
+                     BASE_URL AS BASE_URL
                      FROM MOVIDESK.MOVIDESKPARAMETERS
                      WHERE DOC_COMPANY = '{doc_company}'";
         }

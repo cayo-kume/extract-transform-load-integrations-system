@@ -16,5 +16,6 @@ create table [movidesk].MovideskParameters (
 	--marca d'água do GetTickets (UTC, como o lastUpdate da API): o início da listagem da última execução completa da empresa,
 	--menos 1 h de folga. Só avança quando todos os tickets alterados foram gravados; nula, o GetTickets parte do maior
 	--lastUpdate gravado (docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md, 2.1)
-	tickets_synced_until		datetime null
+	tickets_synced_until		datetime null,
+	base_url					nvarchar(200) null        --endereço da API da empresa (aba Credenciais do WebApp); nulo usa o Movidesk:BaseUrl do appsettings
 );

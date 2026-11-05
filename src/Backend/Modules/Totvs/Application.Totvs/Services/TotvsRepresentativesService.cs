@@ -73,6 +73,8 @@ namespace Application.Totvs.Services
             {
                 foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
+                    _apiClient.UseBaseAddress(company?.base_url);
+
                     var batchTime = _totvsService.GetBatchTime();
 
                     // os parâmetros de empresa do representante só vêm para as lojas pedidas em option.branchRepresentativeParameterList
@@ -269,6 +271,7 @@ namespace Application.Totvs.Services
             try
             {
                 var company = await _totvsService.GetCompany(doc_company);
+                _apiClient.UseBaseAddress(company?.base_url);
 
                 if (company is null)
                 {
@@ -438,6 +441,8 @@ namespace Application.Totvs.Services
             {
                 foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
+                    _apiClient.UseBaseAddress(company?.base_url);
+
                     var today = _totvsService.GetBatchTime().Date;
 
                     var lastMovement = await _totvsRepresentativesRepository.GetReceptionSalesLastMovementDate(company.doc_company!);
@@ -647,6 +652,7 @@ namespace Application.Totvs.Services
                     return _totvsService.WriteDisabled(WritesGroup, key);
 
                 var company = await _totvsService.GetCompany(doc_company);
+                _apiClient.UseBaseAddress(company?.base_url);
 
                 if (company is null)
                     return _totvsService.CompanyNotFound(doc_company, key);

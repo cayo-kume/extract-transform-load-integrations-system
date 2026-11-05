@@ -68,6 +68,8 @@ namespace Application.Totvs.Services
             {
                 foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
+                    _apiClient.UseBaseAddress(company?.base_url);
+
                     // branchCodeList filtra também as filhas: sem todas as lojas, o vendedor vem só com a informação das enviadas (testado)
                     var branchCodes = await _totvsService.GetBranchCodes(company);
 
@@ -286,6 +288,8 @@ namespace Application.Totvs.Services
             {
                 foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
+                    _apiClient.UseBaseAddress(company?.base_url);
+
                     var batchTime = _totvsService.GetBatchTime();
 
                     // as quatro rotas são lidas inteiras, sem filtro de data: sem ele a API não preenche o maxChangeFilterDate, e uma

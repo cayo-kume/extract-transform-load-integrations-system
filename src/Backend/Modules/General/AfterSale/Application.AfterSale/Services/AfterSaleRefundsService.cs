@@ -71,6 +71,8 @@ namespace Application.AfterSale.Services
 
             foreach (var company in companys.WithProgress("empresa"))
             {
+                _apiClient.UseBaseAddress(company?.base_url);
+
                 var summarizedRefunds = new List<Domain.AfterSale.Dtos.Reads.Refunds.SearchRefunds.Refund>();
                 var listResponses = new List<string>();
 
@@ -248,6 +250,8 @@ namespace Application.AfterSale.Services
 
             foreach (var company in companys.WithProgress("empresa"))
             {
+                _apiClient.UseBaseAddress(company?.base_url);
+
                 var response = await _apiClient.GetAsync(
                     route: "v3/api/refunds/actions",
                     headers: new Dictionary<string, string> { { "Authorization", $"Bearer {company.Token}" } }
@@ -344,6 +348,8 @@ namespace Application.AfterSale.Services
 
             foreach (var company in companys.WithProgress("empresa"))
             {
+                _apiClient.UseBaseAddress(company?.base_url);
+
                 var response = await _apiClient.GetAsync(
                     route: "v3/api/refunds/banks",
                     headers: new Dictionary<string, string> { { "Authorization", $"Bearer {company.Token}" } }
@@ -443,6 +449,7 @@ namespace Application.AfterSale.Services
             foreach (var refundsByCompany in summarizedRefunds.Where(x => x != null).GroupBy(x => x!.doc_company).ToList().WithProgress("empresa"))
             {
                 var company = companys.FirstOrDefault(x => x?.doc_company == refundsByCompany.Key);
+                _apiClient.UseBaseAddress(company?.base_url);
 
                 if (company is null)
                 {
@@ -574,6 +581,7 @@ namespace Application.AfterSale.Services
             try
             {
                 var company = (await _afterSaleRepository.GetCompanys()).FirstOrDefault(x => x?.doc_company == doc_company);
+                _apiClient.UseBaseAddress(company?.base_url);
 
                 if (company is null)
                 {
@@ -696,6 +704,8 @@ namespace Application.AfterSale.Services
 
             foreach (var company in companys.WithProgress("empresa"))
             {
+                _apiClient.UseBaseAddress(company?.base_url);
+
                 var response = await _apiClient.GetAsync(
                     route: "v3/api/refunds/status",
                     headers: new Dictionary<string, string> { { "Authorization", $"Bearer {company.Token}" } }
@@ -792,6 +802,8 @@ namespace Application.AfterSale.Services
 
             foreach (var company in companys.WithProgress("empresa"))
             {
+                _apiClient.UseBaseAddress(company?.base_url);
+
                 var response = await _apiClient.GetAsync(
                     route: "v3/api/refunds/types",
                     headers: new Dictionary<string, string> { { "Authorization", $"Bearer {company.Token}" } }
@@ -976,6 +988,7 @@ namespace Application.AfterSale.Services
             try
             {
                 var company = (await _afterSaleRepository.GetCompanys()).FirstOrDefault(x => x?.doc_company == doc_company);
+                _apiClient.UseBaseAddress(company?.base_url);
 
                 if (company is null)
                 {

@@ -12,7 +12,8 @@ create table [aftersale].AfterSaleParameters (
 	integrated_or_updated_at datetime,
 	id int not null identity primary key, 
 	[doc_company] nvarchar(14) not null,
-	token uniqueidentifier
+	token uniqueidentifier,
+	base_url nvarchar(200) null   --endereço da API da empresa (aba Credenciais do WebApp); nulo usa o AfterSale:BaseUrl do appsettings
 );
 
 create table [untreated].AfterSaleErrors (

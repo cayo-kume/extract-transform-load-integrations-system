@@ -15,5 +15,6 @@ create table [linxmicrovix].LinxMicrovixParameters (
 	erp_password				nvarchar(50),            --linx_export pela v274
 	b2c_chave					uniqueidentifier,        --chave do WS B2C (nula se o cliente não tiver)
 	b2c_user_name				nvarchar(50),            --linx_b2c pela V64
-	b2c_password				nvarchar(50)             --linx_b2c pela V64
+	b2c_password				nvarchar(50),            --linx_b2c pela V64
+	base_url					nvarchar(200) null       --endereço da API da empresa (aba Credenciais do WebApp); nulo usa o LinxMicrovix:BaseUrl do appsettings
 );

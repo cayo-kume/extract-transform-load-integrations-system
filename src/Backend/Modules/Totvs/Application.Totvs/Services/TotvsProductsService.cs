@@ -113,6 +113,8 @@ namespace Application.Totvs.Services
             {
                 foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
+                    _apiClient.UseBaseAddress(company?.base_url);
+
                     var codes = await GetStockCodes(company);
 
                     if (codes is null)
@@ -465,6 +467,8 @@ namespace Application.Totvs.Services
             {
                 foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
+                    _apiClient.UseBaseAddress(company?.base_url);
+
                     var batchTime = _totvsService.GetBatchTime();
 
                     // lastChageDate vem 0001-01-01 (testado): a janela começa no fim da última janela lida e gravada − 1 h (banco vazio,
@@ -643,6 +647,8 @@ namespace Application.Totvs.Services
             {
                 foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
+                    _apiClient.UseBaseAddress(company?.base_url);
+
                     // branchCode filtra uma loja por chamada; sem lojas em TotvsBranches não há o que ler
                     var branchCodes = await _totvsService.GetBranchCodes(company);
 
@@ -779,6 +785,8 @@ namespace Application.Totvs.Services
             {
                 foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
+                    _apiClient.UseBaseAddress(company?.base_url);
+
                     foreach (var (baseBranchCode, brandClassificationCode) in BaseBranchCodes)
                     {
                         var stored = (await _totvsProductsRepository.GetSkusProductCodes(company.doc_company!, baseBranchCode)).ToHashSet();
@@ -988,6 +996,8 @@ namespace Application.Totvs.Services
             {
                 foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
+                    _apiClient.UseBaseAddress(company?.base_url);
+
                     foreach (var (baseBranchCode, brandClassificationCode) in BaseBranchCodes)
                     {
                         // lojas da marca (mesma raiz de CNPJ da matriz), para trazer também a referência alterada só na informação de uma loja
@@ -1240,6 +1250,7 @@ namespace Application.Totvs.Services
             try
             {
                 var company = await _totvsService.GetCompany(doc_company);
+                _apiClient.UseBaseAddress(company?.base_url);
 
                 if (company is null)
                 {
@@ -1519,6 +1530,7 @@ namespace Application.Totvs.Services
             try
             {
                 var company = await _totvsService.GetCompany(doc_company);
+                _apiClient.UseBaseAddress(company?.base_url);
 
                 if (company is null)
                     return _totvsService.CompanyNotFound(doc_company, key);
@@ -1545,6 +1557,7 @@ namespace Application.Totvs.Services
             try
             {
                 var company = await _totvsService.GetCompany(doc_company);
+                _apiClient.UseBaseAddress(company?.base_url);
 
                 if (company is null)
                     return _totvsService.CompanyNotFound(doc_company, key);
@@ -1577,6 +1590,7 @@ namespace Application.Totvs.Services
             try
             {
                 var company = await _totvsService.GetCompany(doc_company);
+                _apiClient.UseBaseAddress(company?.base_url);
 
                 if (company is null)
                     return _totvsService.CompanyNotFound(doc_company, key);
@@ -1601,6 +1615,7 @@ namespace Application.Totvs.Services
             try
             {
                 var company = await _totvsService.GetCompany(doc_company);
+                _apiClient.UseBaseAddress(company?.base_url);
 
                 if (company is null)
                     return _totvsService.CompanyNotFound(doc_company, key);
@@ -1626,6 +1641,7 @@ namespace Application.Totvs.Services
             try
             {
                 var company = await _totvsService.GetCompany(doc_company);
+                _apiClient.UseBaseAddress(company?.base_url);
 
                 if (company is null)
                     return _totvsService.CompanyNotFound(doc_company, key);
@@ -1652,6 +1668,7 @@ namespace Application.Totvs.Services
             try
             {
                 var company = await _totvsService.GetCompany(doc_company);
+                _apiClient.UseBaseAddress(company?.base_url);
 
                 if (company is null)
                     return _totvsService.CompanyNotFound(doc_company, key);
@@ -1930,6 +1947,7 @@ namespace Application.Totvs.Services
                     return _totvsService.WriteDisabled(WritesGroup, key);
 
                 var company = await _totvsService.GetCompany(doc_company);
+                _apiClient.UseBaseAddress(company?.base_url);
 
                 if (company is null)
                     return _totvsService.CompanyNotFound(doc_company, key);

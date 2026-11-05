@@ -13,11 +13,13 @@ namespace WebApp.Data
         [
             new(30, "Movidesk", "[movidesk].[MovideskParameters]",
             [
-                new("token", "Token da API", Required: true, Secret: true, ModuleFieldKind.Guid)
+                new("token", "Token da API", Required: true, Secret: true, ModuleFieldKind.Guid),
+                new("base_url", "Base URL", Required: false, Secret: false, ModuleFieldKind.Url)
             ]),
             new(50, "AfterSale", "[aftersale].[AfterSaleParameters]",
             [
-                new("token", "Token da API", Required: true, Secret: true, ModuleFieldKind.Guid)
+                new("token", "Token da API", Required: true, Secret: true, ModuleFieldKind.Guid),
+                new("base_url", "Base URL", Required: false, Secret: false, ModuleFieldKind.Url)
             ]),
             new(70, "LinxCommerce", "[linxcommerce].[LinxCommerceParameters]",
             [
@@ -33,14 +35,16 @@ namespace WebApp.Data
                 new("erp_password", "Senha do WS de saída", Required: false, Secret: true, MaxLength: 50),
                 new("b2c_chave", "Chave do WS B2C", Required: false, Secret: true, ModuleFieldKind.Guid),
                 new("b2c_user_name", "Usuário do WS B2C", Required: false, Secret: false, MaxLength: 50),
-                new("b2c_password", "Senha do WS B2C", Required: false, Secret: true, MaxLength: 50)
+                new("b2c_password", "Senha do WS B2C", Required: false, Secret: true, MaxLength: 50),
+                new("base_url", "Base URL", Required: false, Secret: false, ModuleFieldKind.Url)
             ]),
             new(130, "Totvs", "[totvs].[TotvsParameters]",
             [
                 new("client_id", "Client ID", Required: true, Secret: false, MaxLength: 100),
                 new("client_secret", "Client secret", Required: true, Secret: true),
                 new("username", "Usuário", Required: true, Secret: false, MaxLength: 100),
-                new("password", "Senha", Required: true, Secret: true)
+                new("password", "Senha", Required: true, Secret: true),
+                new("base_url", "Base URL", Required: false, Secret: false, ModuleFieldKind.Url)
             ])
         ];
 
