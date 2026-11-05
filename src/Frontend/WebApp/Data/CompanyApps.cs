@@ -8,8 +8,17 @@ namespace WebApp.Data
     /// </summary>
     public static class CompanyApps
     {
-        // os jobs dos hosts (Hosts, 140) são um por holding, na empresa que é a própria holding: nas outras, o módulo some
-        private const int HostsApp = 140;
+        // aplicações da holding: os jobs dos hosts (Hosts, 140) e o DataWarehouse (90), que carrega os dados de todas as
+        // empresas a cada execução. Uma por holding, na empresa que é a própria holding: nas filiais, o módulo some
+        public const int HostsApp = 140;
+        public const int DataWarehouseApp = 90;
+
+        public static bool IsHoldingApp(int idApp) => idApp is HostsApp or DataWarehouseApp;
+
+        /// <summary>
+        /// A aplicação aparece para a empresa: as da holding, só na própria holding.
+        /// </summary>
+        public static bool Shows(int idApp, string company, string holder) => !IsHoldingApp(idApp) || company == holder;
 
         /// <summary>
         /// Os contratados, com os números do período (zerados se o resumo não trouxer o módulo), e depois os não contratados,
@@ -17,7 +26,7 @@ namespace WebApp.Data
         /// </summary>
         public static List<AppSummaryModel> Merge(IReadOnlyList<AppSummaryModel> summaries, IReadOnlyList<CompanyAppModel> apps, string company, string holder)
         {
-            var visible = apps.Where(x => x.IdParent != HostsApp || company == holder).ToList();
+            var visible = apps.Where(x => Shows(x.IdParent, company, holder)).ToList();
             var byId = summaries.ToDictionary(x => x.IdParent);
 
             var contracted = visible

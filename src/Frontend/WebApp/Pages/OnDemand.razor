@@ -50,21 +50,7 @@
                     <MudLink Typo="Typo.body2" OnClick="@(() => _verbs.Clear())">mostrar todos</MudLink>
                 }
                 <MudSpacer />
-                @if (LoggedCompany.IsAllCompanies)
-                {
-                    @* "Todas as empresas": a chamada roda com a credencial e os jobs da empresa escolhida aqui *@
-                    <MudSelect T="string" @bind-Value="_company" Label="Empresa" Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true" Required="true" Style="max-width: 320px"
-                               ToStringFunc="@(company => company is null ? "" : $"{LoggedCompany.CompanyLabel(company)} · {company}")">
-                        @foreach (var company in LoggedCompany.ScopeCompanies)
-                        {
-                            <MudSelectItem T="string" Value="@company.Company">@LoggedCompany.CompanyLabel(company.Company) · @company.Company</MudSelectItem>
-                        }
-                    </MudSelect>
-                }
-                else
-                {
-                    <MudText Typo="Typo.caption">Empresa: <span class="logged-company-text">@LoggedCompany.Label</span></MudText>
-                }
+                <MudText Typo="Typo.caption">Empresa: <span class="logged-company-text">@LoggedCompany.Label</span></MudText>
             </div>
 
             <!-- Como o Swagger do host: aplicação, depois a tag, depois o método; o clique abre os parâmetros -->

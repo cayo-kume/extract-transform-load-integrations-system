@@ -16,7 +16,7 @@
         <PageHeader Icon="@Icons.Material.Filled.Dashboard" Title="Visão geral" Subtitle="Saúde, falhas e volume das aplicações" />
     </MudItem>
 
-    <Filters Value="_filter" ValueChanged="OnFilterChanged" ShowType="false" ShowSearch="false" />
+    <Filters Value="_filter" ValueChanged="OnFilterChanged" ShowType="false" ShowSearch="false" Summed="true" />
 
     <MudItem xs="12" Class="loading-container">
         <SpaceLoading Overlay="true" Visible="_loading" Label="Carregando o painel" />
@@ -37,7 +37,7 @@
         <div class="card-grid pa-4">
             @foreach (var summarizedApp in _apps)
             {
-                <AppCard @key="summarizedApp.IdParent" Summary="summarizedApp" Period="_filter.Period" OnChanged="ReloadAsync" />
+                <AppCard @key="summarizedApp.IdParent" Summary="summarizedApp" Period="_filter.Period" OnChanged="ReloadAsync" Summed="Summed" />
             }
             @if (_available.Count > 0 && _filter.IdApp is null && LoggedCompany.CanManage)
             {
@@ -277,7 +277,11 @@
     private IReadOnlyList<AvailableApp> _available = [];
 
     // na visão "Todas as empresas", cada job vem com a empresa na frente
-    private string CompanyPrefix(string company) => LoggedCompany.IsAllCompanies ? $"{LoggedCompany.CompanyLabel(company)} · " : "";
+    // com a holding escolhida, a Visão Geral soma a holding e as empresas dela (LoggedCompany.SummedCompanies), e cada job
+    // leva o nome da empresa na frente
+    private bool Summed => LoggedCompany.SummedCompanies.Count > 1;
+
+    private string CompanyPrefix(string company) => Summed ? $"{LoggedCompany.CompanyLabel(company)} · " : "";
     private IReadOnlyList<JobModel> _jobs = [];
     private IReadOnlyList<HeartbeatModel> _heartbeat = [];
     private IReadOnlyList<AppBucketsModel> _week = [];
@@ -453,15 +457,17 @@
     {
         try
         {
-            // só as aplicações que alguma empresa do escopo contratou, somadas; as outras vão para o Adicionar aplicação
-            var apps = (await CompanyView.SummariesAsync(_filter.Period, _disposed.Token)).Where(x => x.IsContracted).ToList();
+            // as aplicações que alguma empresa somada contratou, com os números somados (com a holding escolhida, ela e as
+            // empresas dela); o Adicionar aplicação contrata na empresa escolhida
+            var view = CompanyView.Summed;
+            var apps = (await view.SummariesAsync(_filter.Period, _disposed.Token)).Where(x => x.IsContracted).ToList();
             _available = await CompanyView.AvailableAsync(_disposed.Token);
-            var jobs = await CompanyView.JobsAsync(idApp: null, idType: null, _disposed.Token);
+            var jobs = await view.JobsAsync(idApp: null, idType: null, _disposed.Token);
             // todas as integrações ativas (o painel corta em 10 por aplicação), a semana do card de registros e a janela
             // anterior para os deltas
-            var heartbeat = await CompanyView.HeartbeatAsync(_filter.Period, top: int.MaxValue, _disposed.Token);
-            _week = await CompanyView.BucketsAsync(Period.Last7Days, buckets: 7, previousWindow: false, _disposed.Token);
-            _previousBuckets = await CompanyView.BucketsAsync(_filter.Period, buckets: 1, previousWindow: true, _disposed.Token);
+            var heartbeat = await view.HeartbeatAsync(_filter.Period, top: int.MaxValue, _disposed.Token);
+            _week = await view.BucketsAsync(Period.Last7Days, buckets: 7, previousWindow: false, _disposed.Token);
+            _previousBuckets = await view.BucketsAsync(_filter.Period, buckets: 1, previousWindow: true, _disposed.Token);
 
             _allApps = apps;
             _jobs = jobs.Where(x => _filter.IdApp is null || x.IdApp == _filter.IdApp).ToList();

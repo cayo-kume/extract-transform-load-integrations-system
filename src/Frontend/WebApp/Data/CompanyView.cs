@@ -8,13 +8,21 @@ namespace WebApp.Data
     public sealed record AvailableApp(AppSummaryModel App, IReadOnlyList<CompanyModel> Missing);
 
     /// <summary>
-    /// O painel das empresas que a tela mostra agora (LoggedCompany.ScopeCompanies): uma empresa só ou, na visão "Todas as
-    /// empresas" da holding, todas as visíveis. O repositório lê uma empresa por vez (IMonitorRepository.For), e aqui as
-    /// leituras são juntadas: as listas com o CNPJ de cada linha (Company) e os resumos das aplicações somados.
+    /// O painel das empresas que a tela mostra: a escolhida no seletor (LoggedCompany.ScopeCompanies) ou, na Visão Geral
+    /// (Summed), a holding com todas as empresas dela (LoggedCompany.SummedCompanies). O repositório lê uma empresa por vez
+    /// (IMonitorRepository.For), e aqui as leituras são juntadas: as listas com o CNPJ de cada linha (Company) e os resumos
+    /// das aplicações somados.
     /// </summary>
     public class CompanyView(IMonitorRepository monitor, ICompanyRepository companies, LoggedCompany loggedCompany)
     {
-        private IReadOnlyList<CompanyModel> Scope => loggedCompany.ScopeCompanies;
+        private bool _summed;
+
+        /// <summary>
+        /// A mesma visão somando as empresas da holding, quando a holding está escolhida (a Visão Geral).
+        /// </summary>
+        public CompanyView Summed => new(monitor, companies, loggedCompany) { _summed = true };
+
+        private IReadOnlyList<CompanyModel> Scope => _summed ? loggedCompany.SummedCompanies : loggedCompany.ScopeCompanies;
 
         /// <summary>
         /// O repositório de uma empresa da linha (a ação grava nela); empresa que o usuário não vê é recusada.
@@ -47,7 +55,9 @@ namespace WebApp.Data
                 merged.Add((company, CompanyApps.Merge(summaries, apps, company.Company, loggedCompany.Holder), apps));
             }
 
-            var catalog = merged.SelectMany(x => x.Apps).GroupBy(x => x.IdParent);
+            // Hosts e DataWarehouse são da holding: só aparecem com ela no escopo, mesmo que os chips venham dela
+            var catalog = merged.SelectMany(x => x.Apps).GroupBy(x => x.IdParent)
+                .Where(x => !CompanyApps.IsHoldingApp(x.Key) || scope.Contains(loggedCompany.Holder));
             var result = new List<AppSummaryModel>();
             foreach (var app in catalog)
             {
@@ -112,7 +122,7 @@ namespace WebApp.Data
         {
             var jobs = new List<JobModel>();
             foreach (var company in Scope)
-                jobs.AddRange(await monitor.For(company.Company).GetJobsAsync(idApp, idType, cancellationToken));
+                jobs.AddRange((await monitor.For(company.Company).GetJobsAsync(idApp, idType, cancellationToken)).Where(x => Shows(x.IdApp, company)));
             return jobs;
         }
 
@@ -120,7 +130,7 @@ namespace WebApp.Data
         {
             var rows = new List<HeartbeatModel>();
             foreach (var company in Scope)
-                rows.AddRange(await monitor.For(company.Company).GetHeartbeatAsync(period, top, cancellationToken));
+                rows.AddRange((await monitor.For(company.Company).GetHeartbeatAsync(period, top, cancellationToken)).Where(x => Shows(x.IdApp, company)));
             return rows;
         }
 
@@ -131,7 +141,7 @@ namespace WebApp.Data
         {
             var all = new List<AppBucketsModel>();
             foreach (var company in Scope)
-                all.AddRange(await monitor.For(company.Company).GetExecutionBucketsAsync(period, buckets, previousWindow, cancellationToken));
+                all.AddRange((await monitor.For(company.Company).GetExecutionBucketsAsync(period, buckets, previousWindow, cancellationToken)).Where(x => Shows(x.IdApp, company)));
 
             return all
                 .GroupBy(x => x.IdApp)
@@ -165,8 +175,31 @@ namespace WebApp.Data
         {
             var jobs = new List<MessageJobSummaryModel>();
             foreach (var company in Scope)
-                jobs.AddRange(await monitor.For(company.Company).GetMessageJobsAsync(query, cancellationToken));
+                jobs.AddRange((await monitor.For(company.Company).GetMessageJobsAsync(query, cancellationToken)).Where(x => Shows(x.IdApp, company)));
             return jobs;
         }
+
+        /// <summary>
+        /// Aplicação da holding ligada na holding: desliga os jobs dela que estiverem ligados nas filiais (contratos de antes
+        /// da regra), para a mesma carga não rodar duas vezes. Devolve quantas filiais tinham jobs ligados.
+        /// </summary>
+        public async Task<int> DeactivateInBranchesAsync(int idApp, CancellationToken cancellationToken = default)
+        {
+            var changed = 0;
+            foreach (var company in loggedCompany.VisibleCompanies.Where(x => x.Company != loggedCompany.Holder))
+            {
+                var app = (await companies.GetAppsAsync(company.Company, cancellationToken)).FirstOrDefault(x => x.IdParent == idApp);
+                if (app is not { ActiveJobs: > 0 })
+                    continue;
+
+                await monitor.For(company.Company).SetModuleActiveAsync(idApp, false);
+                changed++;
+            }
+
+            return changed;
+        }
+
+        // os jobs das aplicações da holding (Hosts, DataWarehouse) que alguma filial ainda tenha não aparecem
+        private bool Shows(int idApp, CompanyModel company) => CompanyApps.Shows(idApp, company.Company, loggedCompany.Holder);
     }
 }

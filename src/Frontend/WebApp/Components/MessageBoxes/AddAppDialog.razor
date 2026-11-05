@@ -1,6 +1,6 @@
-@* Adicionar aplicação monitorada, na Visão Geral: as aplicações do catálogo que alguma empresa do escopo (a do seletor ou,
-   na visão "Todas as empresas", as da holding) ainda não contratou. Adicionar abre a contratação (AppContractDialog), com a
-   agenda dos jobs e as empresas que faltam; eles nascem inativos, e o card entra na Visão Geral como Inativa. *@
+@* Adicionar aplicação monitorada, na Visão Geral: as aplicações do catálogo que a empresa do seletor ainda não contratou.
+   Adicionar abre a contratação (AppContractDialog), com a agenda dos jobs; eles nascem inativos, e o card entra na Visão
+   Geral como Inativa. As outras empresas da holding contratam pela aba Contrato da engrenagem do card. *@
 @inject LoggedCompany LoggedCompany
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
@@ -26,10 +26,6 @@
                             <div class="flex-grow-1" style="min-width: 0">
                                 <MudText Typo="Typo.subtitle2">@app.Title</MudText>
                                 <MudText Typo="Typo.caption" Class="d-block">@app.Description</MudText>
-                                @if (LoggedCompany.IsAllCompanies)
-                                {
-                                    <MudText Typo="Typo.caption" Class="d-block mud-text-secondary">Falta em: @string.Join(", ", available.Missing.Select(x => LoggedCompany.CompanyLabel(x.Company)))</MudText>
-                                }
                             </div>
                             <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" Disabled="_busy" OnClick="@(() => Add(available))">Adicionar</MudButton>
                         </div>

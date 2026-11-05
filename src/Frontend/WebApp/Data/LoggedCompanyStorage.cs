@@ -42,18 +42,18 @@ namespace WebApp.Data
             }
 
             // o dono do aplicativo abre qualquer holding (a escolhida em Todas as holdings); os outros, só a deles, qualquer
-            // que seja o perfil. Sem escolha guardada, quem vê a holding inteira começa em "Todas as empresas"
+            // que seja o perfil. Sem escolha guardada, cada um começa na empresa dele (o da holding, na holding)
             var parts = (stored ?? "").Split('|');
             if (parts[0] != userHolder && !loggedCompany.IsOwner)
-                parts = [userHolder, userCompany == userHolder || loggedCompany.IsOwner ? LoggedCompany.AllCompanies : userCompany];
+                parts = [userHolder, userCompany];
 
             return await SelectAsync(parts[0], parts.ElementAtOrDefault(1), persist: false, cancellationToken);
         }
 
         /// <summary>
         /// Troca a holding e a empresa da aba e guarda no navegador. Empresa nula, de outra holding ou que o usuário logado não
-        /// pode ver vira a primeira que ele pode (a própria holding vem primeiro). LoggedCompany.AllCompanies é a visão "Todas
-        /// as empresas", só para quem vê mais de uma empresa. Falso se não sobrar nenhuma.
+        /// pode ver vira a primeira que ele pode (a própria holding vem primeiro; o "*" da antiga visão "Todas as empresas",
+        /// ainda guardado em algum navegador, também). Falso se não sobrar nenhuma.
         /// </summary>
         public async Task<bool> SelectAsync(string holder, string? company, bool persist = true, CancellationToken cancellationToken = default)
         {
@@ -70,20 +70,19 @@ namespace WebApp.Data
             Companies = (await companies.GetCompaniesAsync(selectedHolder.Holder, cancellationToken))
                 .Where(x => user.Length == 0 || loggedCompany.IsOwner || user == selectedHolder.Holder || x.Company == user)
                 .ToList();
-            var all = company == LoggedCompany.AllCompanies && Companies.Count > 1;
-            var selected = (all ? Companies.FirstOrDefault(x => x.IsHolder) : Companies.FirstOrDefault(x => x.Company == company)) ?? Companies.FirstOrDefault();
+            var selected = Companies.FirstOrDefault(x => x.Company == company) ?? Companies.FirstOrDefault(x => x.IsHolder) ?? Companies.FirstOrDefault();
             if (selected is null)
                 return false;
 
             loggedCompany.Set(selectedHolder.Holder, selectedHolder.FantasyName, selected.Company, selected.FantasyName);
-            loggedCompany.SetScope(all, Companies);
+            loggedCompany.SetVisibleCompanies(Companies);
 
             if (!persist)
                 return true;
 
             try
             {
-                await storage.SetAsync(Key, $"{selectedHolder.Holder}|{(all ? LoggedCompany.AllCompanies : selected.Company)}");
+                await storage.SetAsync(Key, $"{selectedHolder.Holder}|{selected.Company}");
             }
             catch (Exception)
             {

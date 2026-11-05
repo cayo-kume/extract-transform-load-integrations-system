@@ -32,31 +32,26 @@ namespace WebApp.Models
         public string Label => $"{Name} - {DocCompany}";
 
         /// <summary>
-        /// Valor do seletor do topo para a visão "Todas as empresas" da holding.
-        /// </summary>
-        public const string AllCompanies = "*";
-
-        /// <summary>
-        /// Visão "Todas as empresas": as telas mostram as empresas da holding juntas (CompanyView), e cada ação vale para a
-        /// empresa da linha. DocCompany fica sendo a própria holding, para o que é de uma empresa só (imagem, padrão).
-        /// </summary>
-        public bool IsAllCompanies { get; private set; }
-
-        /// <summary>
         /// Empresas que o usuário logado vê na holding escolhida (as do seletor).
         /// </summary>
         public IReadOnlyList<CompanyModel> VisibleCompanies { get; private set; } = [];
 
         /// <summary>
-        /// Empresas que as telas mostram agora: todas as visíveis na visão "Todas as empresas", senão só a escolhida.
+        /// A empresa escolhida, a que as telas mostram (como lista, para o CompanyView).
         /// </summary>
         public IReadOnlyList<CompanyModel> ScopeCompanies =>
-            IsAllCompanies ? VisibleCompanies : VisibleCompanies.Where(x => x.Company == DocCompany).DefaultIfEmpty(new CompanyModel { Company = DocCompany, Holder = Holder, FantasyName = Name }).ToList();
+            VisibleCompanies.Where(x => x.Company == DocCompany).DefaultIfEmpty(new CompanyModel { Company = DocCompany, Holder = Holder, FantasyName = Name }).ToList();
 
         /// <summary>
-        /// O valor do seletor: a empresa escolhida ou AllCompanies. As telas são recriadas quando ele muda.
+        /// A própria holding está escolhida no seletor (não uma filial).
         /// </summary>
-        public string ScopeKey => IsAllCompanies ? AllCompanies : DocCompany;
+        public bool IsHolderSelected => DocCompany == Holder;
+
+        /// <summary>
+        /// As empresas que a Visão Geral soma: com a holding escolhida, ela e todas as empresas que o usuário vê; com uma
+        /// filial, só a filial.
+        /// </summary>
+        public IReadOnlyList<CompanyModel> SummedCompanies => IsHolderSelected && SeesWholeHolding && VisibleCompanies.Count > 1 ? VisibleCompanies : ScopeCompanies;
 
         /// <summary>
         /// Nome curto de uma empresa visível, para os chips e as colunas Empresa (sem o nome da holding na frente, quando a
@@ -69,11 +64,7 @@ namespace WebApp.Models
             return company != Holder && label.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) && label.Length > prefix.Length ? label[prefix.Length..] : label;
         }
 
-        public void SetScope(bool allCompanies, IReadOnlyList<CompanyModel> visible)
-        {
-            IsAllCompanies = allCompanies;
-            VisibleCompanies = visible;
-        }
+        public void SetVisibleCompanies(IReadOnlyList<CompanyModel> visible) => VisibleCompanies = visible;
 
         /// <summary>
         /// CNPJ da empresa do usuário logado (monitor.Users); vazio sem login (tela de cadastro).

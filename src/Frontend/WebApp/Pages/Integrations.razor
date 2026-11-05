@@ -42,17 +42,6 @@
             <div class="segment-filter">
                 <MudText Typo="Typo.caption">Tipo</MudText>
                 <TypeSegment Value="_type" ValueChanged="@(type => Go(_status, _health, type, _filter.IdApp, _filter.Period))" />
-                @if (LoggedCompany.IsAllCompanies)
-                {
-                    @* "Todas as empresas": restringe a tela a uma empresa, sem trocar o seletor do topo *@
-                    <MudSelect T="string" @bind-Value="_companyFilter" Label="Empresa" Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true" Clearable="true" Style="max-width: 260px"
-                               Placeholder="Todas" ToStringFunc="@(company => string.IsNullOrEmpty(company) ? "Todas" : LoggedCompany.CompanyLabel(company))">
-                        @foreach (var company in LoggedCompany.ScopeCompanies)
-                        {
-                            <MudSelectItem T="string" Value="@company.Company">@LoggedCompany.CompanyLabel(company.Company) · @company.Company</MudSelectItem>
-                        }
-                    </MudSelect>
-                }
             </div>
             <MudSpacer />
             <RefreshBar UpdatedAt="_updatedAt" OnRefresh="Load" />
@@ -89,30 +78,7 @@
         <div class="px-4 pb-4 pt-4">
             @foreach (var app in FilteredApps)
             {
-                @if (LoggedCompany.IsAllCompanies)
-                {
-                    var companies = CompaniesOf(app.IdParent);
-                    var total = companies.Sum(x => JobsIn(NodesOf(app.IdParent, x.Company)).Count);
-
-                    @* "Todas as empresas": a aplicação com um bloco por empresa, cada um com a sua agenda *@
-                    <div class="app-group holding-group" @key="app.IdParent">
-                        <div class="app-group-head holding-group-head">
-                            <MudText Typo="Typo.subtitle2" Style="white-space: nowrap">@app.IdParent - @app.Title</MudText>
-                            <MudText Typo="Typo.caption" Class="app-group-description d-none d-md-block">@app.Description</MudText>
-                            <div class="app-group-meta">
-                                <MudText Typo="Typo.caption" Style="white-space: nowrap">@companies.Count empresa(s) · @total job(s)</MudText>
-                            </div>
-                        </div>
-                        @foreach (var company in companies)
-                        {
-                            @Group(app, company.Company, nested: true)
-                        }
-                    </div>
-                }
-                else
-                {
-                    @Group(app, LoggedCompany.DocCompany, nested: false)
-                }
+                @Group(app, LoggedCompany.DocCompany)
             }
 
             @if (!_loading && !FilteredApps.Any())
@@ -197,10 +163,6 @@
 
     private static string GroupKey(int idApp, string company) => $"{idApp}|{company}";
 
-    // as empresas do escopo com jobs da aplicação no filtro (visão "Todas as empresas")
-    private List<CompanyModel> CompaniesOf(int idApp) =>
-        LoggedCompany.ScopeCompanies.Where(x => NodesOf(idApp, x.Company).Count > 0).ToList();
-
     private static string StatusLabel(JobStatus status) => status switch
     {
         JobStatus.Active => "Ativos",
@@ -284,11 +246,7 @@
         (_focusJob is null || job.IdJob == _focusJob) && _filter.Matches(job.IdJob.ToString(), job.Title, job.Description);
 
     // as sob demanda ficam na tela Sob Demanda; só aparecem aqui pelo link direto (?job=), vindo dos Logs de Erros
-    // filtro Empresa da visão "Todas as empresas"; vazio, todas
-    private string? _companyFilter;
-
     private IEnumerable<JobModel> Scoped => _jobs
-        .Where(x => string.IsNullOrEmpty(_companyFilter) || x.Company == _companyFilter)
         .Where(x => !x.IsOnDemand || x.IdJob == _focusJob)
         .Where(x => _filter.IdApp is null || x.IdApp == _filter.IdApp);
 
@@ -310,7 +268,7 @@
 
     private IEnumerable<AppSummaryModel> FilteredApps => _apps
         .Where(x => _filter.IdApp is null || x.IdParent == _filter.IdApp)
-        .Where(x => LoggedCompany.ScopeCompanies.Any(c => NodesOf(x.IdParent, c.Company).Count > 0));
+        .Where(x => NodesOf(x.IdParent, LoggedCompany.DocCompany).Count > 0);
 
     // os jobs mostrados no grupo: as integrações (sem as que só estão ali como cabeçalho) e as procedures
     private static List<JobModel> JobsIn(List<JobNode> nodes) =>
@@ -432,9 +390,8 @@
 
     private string? AppTitle(int idApp) => _apps.FirstOrDefault(x => x.IdParent == idApp)?.Title;
 
-    // o grupo de uma aplicação numa empresa: o de sempre (numa empresa só) ou um bloco dentro da aplicação, com o nome da
-    // empresa no lugar do da aplicação (nested, na visão "Todas as empresas")
-    private RenderFragment Group(AppSummaryModel app, string company, bool nested) => __builder =>
+    // o grupo de uma aplicação na empresa escolhida, com a agenda dela
+    private RenderFragment Group(AppSummaryModel app, string company) => __builder =>
     {
         var key = GroupKey(app.IdParent, company);
         var nodes = NodesOf(app.IdParent, company);
@@ -442,24 +399,12 @@
         var expanded = IsExpanded(key);
         var scheduling = _scheduleApps.Contains(key);
 
-            <div class="@(nested ? "app-group company-group" : "app-group")" @key="key">
+            <div class="app-group" @key="key">
                 <div class="app-group-head" role="button" tabindex="0" aria-expanded="@(expanded ? "true" : "false")" @onclick="@(() => ToggleApp(key))" @onkeydown="@(e => OnAppKeyDown(e, key))">
                     <MudIcon Icon="@(expanded ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)" Size="Size.Small" />
-                    @if (nested)
-    {
-        <MudText Typo="Typo.subtitle2" Style="white-space: nowrap">@LoggedCompany.CompanyLabel(company)</MudText>
-        <MudText Typo="Typo.caption" Class="app-group-description">@company</MudText>
-        @if (company == LoggedCompany.Holder)
-        {
-            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Warning">holding</MudChip>
-        }
-    }
-    else
-    {
-        <MudText Typo="Typo.subtitle2" Style="white-space: nowrap">@app.IdParent - @app.Title</MudText>
-        <MudText Typo="Typo.caption" Class="app-group-description d-none d-md-block">@app.Description</MudText>
-    }
-                    
+                    <MudText Typo="Typo.subtitle2" Style="white-space: nowrap">@app.IdParent - @app.Title</MudText>
+                    <MudText Typo="Typo.caption" Class="app-group-description d-none d-md-block">@app.Description</MudText>
+
                     @* no celular, os números, os chips e o botão Agenda descem para a segunda linha *@
                     <div class="app-group-meta">
                         <MudText Typo="Typo.caption" Style="white-space: nowrap">

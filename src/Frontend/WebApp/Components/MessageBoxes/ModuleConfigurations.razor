@@ -1,5 +1,6 @@
 @inject IMonitorRepository MonitorRepository
 @inject ICompanyRepository CompanyRepository
+@inject CompanyView CompanyView
 @inject IModuleParametersRepository ParametersRepository
 @inject LoggedCompany LoggedCompany
 @inject IDialogService DialogService
@@ -144,7 +145,7 @@
                                         }
                                         else
                                         {
-                                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" Disabled="_changing" OnClick="@(() => ActivateAll(row.Company))">Ativar todos</MudButton>
+                                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" Disabled="_changing" OnClick="@(() => ActivateAll(row.Company))">@(IsHoldingApp ? "Ativar" : "Ativar todos")</MudButton>
                                         }
                                     }
                                 }
@@ -155,6 +156,17 @@
                                     {
                                         <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" Disabled="_changing" OnClick="@(() => ContractApp(row.Company))">Contratar</MudButton>
                                     }
+                                }
+                            </div>
+                        }
+                        @if (IdApp == CompanyApps.DataWarehouseApp && LoggedCompany.VisibleCompanies.Count > 1)
+                        {
+                            @* o DataWarehouse da holding carrega todas as empresas: elas entram sozinhas, sem contrato próprio *@
+                            <div class="contract-cover">
+                                <MudText Typo="Typo.caption" Class="mud-text-secondary">Abrange as @LoggedCompany.VisibleCompanies.Count empresas da holding</MudText>
+                                @foreach (var company in LoggedCompany.VisibleCompanies)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@LoggedCompany.CompanyLabel(company.Company)</MudChip>
                                 }
                             </div>
                         }
@@ -203,10 +215,15 @@
         _loading = false;
     }
 
-    // as empresas do diálogo: todas as que o usuário vê na holding (para quem vê a holding inteira) ou só a do seletor
-    private IReadOnlyList<CompanyModel> Companies => LoggedCompany.SeesWholeHolding && LoggedCompany.VisibleCompanies.Count > 1
-        ? LoggedCompany.VisibleCompanies
-        : LoggedCompany.ScopeCompanies;
+    // as empresas do diálogo: todas as que o usuário vê na holding (para quem vê a holding inteira) ou só a do seletor. Hosts
+    // e DataWarehouse são da holding: só ela
+    private IReadOnlyList<CompanyModel> Companies => IsHoldingApp && LoggedCompany.VisibleCompanies.FirstOrDefault(x => x.Company == LoggedCompany.Holder) is { } holder
+        ? [holder]
+        : LoggedCompany.SeesWholeHolding && LoggedCompany.VisibleCompanies.Count > 1
+            ? LoggedCompany.VisibleCompanies
+            : LoggedCompany.ScopeCompanies;
+
+    private bool IsHoldingApp => CompanyApps.IsHoldingApp(IdApp);
 
     private bool ManyCompanies => Companies.Count > 1;
 
@@ -300,6 +317,11 @@
         try
         {
             await MonitorRepository.For(company.Company).SetModuleActiveAsync(IdApp, true);
+
+            // aplicação da holding ligada: as filiais que ainda tinham os jobs dela ligados são desligadas
+            if (IsHoldingApp && company.Company == LoggedCompany.Holder)
+                await CompanyView.DeactivateInBranchesAsync(IdApp);
+
             Snackbar.Add($"{Title}: jobs ativados em {company.Label}.", Severity.Success);
             await LoadContract();
         }

@@ -97,7 +97,6 @@
                                     <div class="job-group-head" role="button" tabindex="0" aria-expanded="@(nodeExpanded ? "true" : "false")" @onclick="@(() => ToggleKey(node.Key))" @onkeydown="@(e => OnKeyDown(e, node.Key))">
                                         <MudIcon Icon="@(nodeExpanded ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)" Size="Size.Small" />
                                         <HealthChip Context="node.Health" Now="_updatedAt" />
-                                        @CompanyChip(node.Key.Company)
                                         <MudText Typo="Typo.body2" Class="job-title">@node.Key.IdJob - @node.Title</MudText>
                                         @if (node.LastErrorAt is DateTime last)
                                         {
@@ -190,17 +189,6 @@
 
     // os grupos abertos antes da busca, para voltar a eles quando a busca é limpa
     private (HashSet<int> Apps, HashSet<(string, int, int)> Jobs)? _beforeSearch;
-
-    // na visão "Todas as empresas", cada job com o chip da empresa
-    private RenderFragment CompanyChip(string company) => __builder =>
-    {
-        if (LoggedCompany.IsAllCompanies)
-        {
-            <MudTooltip Text="@company">
-                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@LoggedCompany.CompanyLabel(company)</MudChip>
-            </MudTooltip>
-        }
-    };
 
     private MessageLevel MinLevel => _includeWarnings ? MessageLevel.Warning : MessageLevel.Error;
 
@@ -478,7 +466,6 @@
         <div class="job-group-head @(child ? "child" : "")" role="button" tabindex="0" aria-expanded="@(expanded ? "true" : "false")" @onclick="@(() => ToggleKey(key))" @onkeydown="@(e => OnKeyDown(e, key))">
             <MudIcon Icon="@(expanded ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)" Size="Size.Small" />
             <HealthChip Context="HealthContext.From(job)" Now="_updatedAt" />
-            @CompanyChip(job.Company)
             <MudText Typo="Typo.body2" Class="job-title">@job.IdJob - @job.JobTitle</MudText>
             @if (job.IsOnDemand)
             {

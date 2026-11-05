@@ -95,6 +95,11 @@
     /// </summary>
     [Parameter] public int Columns { get; set; } = 7;
 
+    /// <summary>
+    /// As aplicações das empresas que a Visão Geral soma (CompanyView.Summed), em vez das da empresa escolhida.
+    /// </summary>
+    [Parameter] public bool Summed { get; set; }
+
     private IReadOnlyList<TypeModel> _types = [];
     private IReadOnlyList<AppSummaryModel> _apps = [];
 
@@ -103,9 +108,9 @@
         if (ShowType)
             _types = await MonitorRepository.GetTypesAsync();
 
-        // as aplicações contratadas por alguma empresa da tela (todas, na visão "Todas as empresas")
+        // as aplicações contratadas pela empresa escolhida (na Visão Geral da holding, por alguma empresa dela)
         if (ShowApp)
-            _apps = (await CompanyView.SummariesAsync(Value.Period)).Where(x => x.IsContracted).ToList();
+            _apps = (await (Summed ? CompanyView.Summed : CompanyView).SummariesAsync(Value.Period)).Where(x => x.IsContracted).ToList();
     }
 
     private Task Change(FilterState value)

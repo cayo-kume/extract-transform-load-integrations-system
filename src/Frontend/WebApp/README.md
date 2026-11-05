@@ -151,23 +151,22 @@ e o grupo **Cadastros** (Cadastrar Empresas, Cadastrar Usuário), e o dono, Exec
 holdings. No topo, o usuário logado e o botão **Sair**. As integrações sob demanda (sem agenda) **não aparecem** em Integrações nem no painel de saúde: ficam na tela Sob
 Demanda.
 
-### 🏢 Visão "Todas as empresas" (holding)
+### 🏢 A holding e as empresas dela
 
-Para quem vê a holding inteira (o usuário da holding e o dono), o seletor do topo tem a opção **Todas as empresas**, que
-vem escolhida no primeiro acesso. Nela, as telas mostram as empresas da holding juntas, e cada ação grava na empresa da
-linha:
+Toda tela mostra a empresa escolhida no seletor do topo; quem é da holding entra na própria holding (marcada com o chip
+**holding**). Para mexer numa filial sem trocar de empresa, a holding usa a engrenagem do card:
 
-| Tela | Na visão "Todas as empresas" |
+| Onde | Com a holding escolhida |
 |---|---|
-| Visão Geral e Aplicações | os cards somam as empresas; a linha **Empresas** tem um chip por empresa que contratou o módulo (verde com algum job ligado), e o chip liga e desliga o módulo naquela empresa. Numa empresa só, o chip troca o seletor para ela. **Adicionar aplicação** e **Contratar** escolhem as empresas |
-| Integrações | cada aplicação com **um bloco por empresa**, cada um com a sua **Agenda**, o chip Ativo, Execuções, Executar agora e Reconhecer; filtro **Empresa** |
-| Logs de Erros | os jobs de todas as empresas, com o chip da empresa |
+| Visão Geral | **soma a holding e todas as empresas dela**: os cards (Integrações, Ativas, Execuções, Erros, Avisos), as Métricas Consolidadas e o painel de saúde. O card mostra as aplicações contratadas por qualquer empresa, o chip "ativa em X de Y" (só informa) e "soma de N empresas"; as falhas e o painel de saúde levam o nome da empresa na frente do job. Com uma filial escolhida, só ela |
+| Aplicações, Integrações, Logs de Erros, Sob Demanda | só a empresa escolhida |
+| Linha **Empresas** do card | um chip por empresa que contratou o módulo (verde com algum job ligado); o chip troca o seletor para ela |
 | Engrenagem | **Credenciais** e **Parâmetros** em um painel por empresa que contratou o módulo; **Contrato** com todas as empresas (Contratar, Ativar todos, Remover) |
-| Sob Demanda | o campo **Empresa** escolhe com que empresa a chamada roda |
+| Hosts (140) e DataWarehouse (90) | **aplicações da holding**, uma por holding: só aparecem com a holding escolhida (somem de todas as telas numa filial), o card mostra só a holding, com o chip Ativa/Inativa e "da holding", e a aba Contrato tem só a linha da holding (botão **Ativar**). O DataWarehouse carrega os dados de todas as empresas a cada execução (ele não recebe a empresa do job), então as filiais entram sozinhas: o Contrato lista as empresas que ele abrange. Ligar um deles na holding desliga os jobs dele que ainda estiverem ligados numa filial (contrato de antes da regra), para a carga não rodar duas vezes |
 
-O repositório lê uma empresa por vez (`IMonitorRepository.For(empresa)`), e o `Data/CompanyView.cs` junta as empresas da
-tela; cada linha (`JobModel`, `HeartbeatModel`, `MessageModel`...) leva o CNPJ dela em `Company`. No mock, só a empresa da
-configuração tem execuções: as outras aparecem sem jobs.
+O repositório lê uma empresa por vez (`IMonitorRepository.For(empresa)`), e o `Data/CompanyView.cs` junta as empresas
+(`CompanyView.Summed`, com `LoggedCompany.SummedCompanies`); cada linha (`JobModel`, `HeartbeatModel`, `MessageModel`...)
+leva o CNPJ dela em `Company`. No mock, só a empresa da configuração tem execuções: as outras aparecem sem jobs.
 
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
@@ -421,7 +420,9 @@ Os usuários `etl_monitor` e `etl_query` saem das procedures `dbo.sp_Create_Moni
 pelo `tools/migrators/Invoke-Migrators.ps1`, com as senhas da seção "Usuários de banco do WebApp" (ou `-MonitorPassword`
 e `-QueryPassword` com `-NoGui`), que vão só para o migrator do Shared. Rodando o `migrator.csx` do Shared à mão, as
 variáveis de ambiente `ETL_MONITOR_PASSWORD` e `ETL_QUERY_PASSWORD` fazem o mesmo. Banco criado depois:
-`EXEC dbo.sp_Grant_Query_User @database = N'<banco>'`.
+`EXEC dbo.sp_Grant_Query_User @database = N'<banco>'`. Módulo migrado depois do usuário: `EXEC dbo.sp_Create_Monitor_User`
+(sem senha) dá ao `etl_monitor` a tabela `*Parameters` dele; sem isso, gravar as credenciais diz "A tabela de parâmetros
+de ... não existe neste banco" (o `etl_monitor` não enxerga a tabela).
 
 > [!IMPORTANT]
 > Ainda sem banco: **Executar agora** (o host não lê pedidos de execução; o botão avisa que não foi possível) e a tela

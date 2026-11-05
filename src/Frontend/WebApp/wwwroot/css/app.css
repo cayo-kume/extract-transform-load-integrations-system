@@ -139,7 +139,8 @@ code {
    a mesma altura. auto-fill mantém a largura da coluna mesmo quando há menos cards que colunas */
 .card-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    /* numa tela mais estreita que 260px, a coluna ocupa o que houver em vez de sair da tela */
+    grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
     gap: 16px;
     align-items: stretch;
 }
@@ -164,6 +165,47 @@ code {
     opacity: 0.75;
 }
 
+/* Cabeçalho do card das aplicações: o título encolhe com reticências, a engrenagem fica no canto e o chip de situação vai
+   na linha de baixo, para nada sair do card numa coluna estreita */
+.app-card-header {
+    align-items: flex-start;
+}
+
+.app-card-header .mud-card-header-content {
+    min-width: 0;
+}
+
+.app-card-header .mud-card-header-actions {
+    flex: 0 0 auto;
+}
+
+.app-card-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.app-card-status {
+    display: flex;
+    flex-wrap: wrap;
+    margin-top: 2px;
+}
+
+.app-card-status .mud-chip {
+    margin: 0;
+}
+
+/* os números do card quebram de linha em vez de sair dele */
+.app-stats {
+    flex-wrap: wrap;
+    column-gap: 12px !important;
+    row-gap: 2px;
+}
+
+.app-stats .app-stat {
+    white-space: nowrap;
+}
+
 /* Card das aplicações: a linha Empresas (usuário da holding), com um chip por empresa que contratou o módulo */
 .app-companies {
     display: flex;
@@ -176,6 +218,22 @@ code {
 .app-companies-label {
     color: var(--mud-palette-text-secondary);
     margin-right: 2px;
+}
+
+/* nome de empresa longo corta com reticências (o nome inteiro fica no tooltip) */
+.app-companies .mud-tooltip-root {
+    max-width: 100%;
+    min-width: 0;
+}
+
+.app-company-chip {
+    max-width: 100%;
+}
+
+.app-company-chip .mud-chip-content {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .app-companies-sum {
@@ -1559,4 +1617,13 @@ html {
     border: 1px solid var(--mud-palette-lines-default);
     border-radius: 6px;
     margin-bottom: 8px;
+}
+
+/* Contrato do DataWarehouse: as empresas da holding que ele carrega (só informa) */
+.contract-cover {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 4px 0;
 }
