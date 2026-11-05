@@ -70,15 +70,34 @@ namespace WebApp.Data
             var values = await credentialReader.GetValuesAsync(idParent, company, cancellationToken);
 
             if (values is null)
-                return [new ConnectionTestResult("Base URL", "", false, "Credencial não gravada.")];
+                return [new ConnectionTestResult("Produção", "", false, "Credencial não gravada.")];
 
             var secrets = definition.Fields.Where(x => x.Secret).Select(x => values.GetValueOrDefault(x.Column)).Where(x => !string.IsNullOrEmpty(x)).Cast<string>().ToList();
             var results = new List<ConnectionTestResult>();
+            var usesHomolog = ModuleDefinitions.UsesHomolog(values);
 
-            foreach (var (label, column) in new[] { ("Base URL", "base_url"), ("Homolog URL", "homolog_url") })
+            // cada ambiente com a própria URL e credencial (a de homologação nas colunas hml_); o que os jobs usam vem primeiro
+            var environments = new[]
             {
-                if (values.GetValueOrDefault(column) is not { Length: > 0 } url)
+                (homolog: false, label: "Produção", url: values.GetValueOrDefault(ModuleDefinitions.BaseUrl)),
+                (homolog: true, label: "Homologação", url: values.GetValueOrDefault(ModuleDefinitions.HomologUrl))
+            }.OrderBy(x => x.homolog != usesHomolog);
+
+            foreach (var (homolog, name, url) in environments)
+            {
+                if (string.IsNullOrWhiteSpace(url))
                     continue;
+
+                var label = homolog == usesHomolog ? $"{name} (em uso)" : name;
+                var credential = homolog
+                    ? definition.Fields.Where(x => !ModuleDefinitions.IsHomolog(x)).ToDictionary(x => x.Column, x => values.GetValueOrDefault($"hml_{x.Column}") ?? (x.Column == "grupo" ? values.GetValueOrDefault(x.Column) : null))
+                    : values.ToDictionary(x => x.Key, x => x.Value);
+
+                if (!Complete(definition, credential))
+                {
+                    results.Add(new ConnectionTestResult(label, url, false, "credencial incompleta neste ambiente"));
+                    continue;
+                }
 
                 var started = Stopwatch.GetTimestamp();
 
@@ -87,7 +106,7 @@ namespace WebApp.Data
                     using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                     timeout.CancelAfter(Timeout);
 
-                    var error = await CallAsync(idParent, url.TrimEnd('/'), values, timeout.Token);
+                    var error = await CallAsync(idParent, url.TrimEnd('/'), credential, timeout.Token);
                     var elapsed = $"{Stopwatch.GetElapsedTime(started).TotalMilliseconds:0} ms";
 
                     results.Add(error is null
@@ -186,6 +205,11 @@ namespace WebApp.Data
                     return "módulo sem teste de conexão";
             }
         }
+
+        // os obrigatórios de produção preenchidos e, no LinxMicrovix, a chave do ERP ou a do B2C
+        private static bool Complete(ModuleDefinition definition, IReadOnlyDictionary<string, string?> credential) =>
+            definition.Fields.Where(x => x.Required && !ModuleDefinitions.IsApiUrl(x)).All(x => !string.IsNullOrWhiteSpace(credential.GetValueOrDefault(x.Column)))
+            && (definition.IdParent != 80 || !string.IsNullOrWhiteSpace(credential.GetValueOrDefault("erp_chave")) || !string.IsNullOrWhiteSpace(credential.GetValueOrDefault("b2c_chave")));
 
         private static string Error(HttpResponseMessage response, string body)
         {

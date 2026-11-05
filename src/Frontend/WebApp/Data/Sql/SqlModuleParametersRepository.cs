@@ -85,9 +85,12 @@ namespace WebApp.Data.Sql
         private static string Columns(ModuleDefinition definition) =>
             string.Join(", ", definition.Fields.Select(x => $"[{x.Column}]"));
 
-        // uniqueidentifier vai como Guid; vazio vira nulo
+        // uniqueidentifier vai como Guid; vazio vira nulo. A escolha da URL é bit not null: sem valor, 0 (a Base URL)
         private static object? Value(ModuleField field, string? value)
         {
+            if (field.Column == ModuleDefinitions.UseHomologUrl)
+                return ModuleDefinitions.UsesHomolog(new Dictionary<string, string?> { [field.Column] = value });
+
             value = value?.Trim();
             if (string.IsNullOrEmpty(value))
                 return null;

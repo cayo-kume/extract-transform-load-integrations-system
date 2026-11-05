@@ -18,5 +18,7 @@ create table [movidesk].MovideskParameters (
 	--lastUpdate gravado (docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md, 2.1)
 	tickets_synced_until		datetime null,
 	base_url					nvarchar(200) null,       --endereço da API da empresa (aba Parâmetros do WebApp); nulo usa o Movidesk:BaseUrl do appsettings
-	homolog_url					nvarchar(200) null        --endereço da API de homologação da empresa (aba Parâmetros do WebApp), usado pelo host com ApiEnvironment = Homologation
+	homolog_url					nvarchar(200) null, --endereço da API de homologação da empresa (aba Parâmetros do WebApp), usado quando use_homolog_url = 1
+	use_homolog_url bit not null default 0, --1: os jobs usam a homolog_url e as colunas hml_ (aba Parâmetros do WebApp); 0: a base_url e as de produção
+	hml_token uniqueidentifier null --token de homologação
 );

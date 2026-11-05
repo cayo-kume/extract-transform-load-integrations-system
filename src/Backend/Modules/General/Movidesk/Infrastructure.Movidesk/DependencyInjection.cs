@@ -20,7 +20,7 @@ namespace Infrastructure.Movidesk.DependencyInjection
         public static IServiceCollection AddScopedMovideskServices(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddKeyedScoped<IApiClient>("MovideskAPI", (sp, _) =>
-                new ApiClient(sp.GetRequiredService<IHttpClientFactory>(), sp.GetRequiredService<ILogger<ApiClient>>(), "MovideskAPI", configuration));
+                new ApiClient(sp.GetRequiredService<IHttpClientFactory>(), sp.GetRequiredService<ILogger<ApiClient>>(), "MovideskAPI"));
             services.AddHttpClient("MovideskAPI", client =>
             {
                 client.BaseAddress = new Uri(configuration["Movidesk:BaseUrl"]!);

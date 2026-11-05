@@ -17,5 +17,12 @@ create table [linxmicrovix].LinxMicrovixParameters (
 	b2c_user_name				nvarchar(50),            --linx_b2c pela V64
 	b2c_password				nvarchar(50),            --linx_b2c pela V64
 	base_url					nvarchar(200) null,      --endereço da API da empresa (aba Parâmetros do WebApp); nulo usa o LinxMicrovix:BaseUrl do appsettings
-	homolog_url					nvarchar(200) null       --endereço da API de homologação da empresa (aba Parâmetros do WebApp), usado pelo host com ApiEnvironment = Homologation
+	homolog_url					nvarchar(200) null, --endereço da API de homologação da empresa (aba Parâmetros do WebApp), usado quando use_homolog_url = 1
+	use_homolog_url bit not null default 0, --1: os jobs usam a homolog_url e as colunas hml_ (aba Parâmetros do WebApp); 0: a base_url e as de produção
+	hml_erp_chave uniqueidentifier null, --erp_chave de homologação
+	hml_erp_user_name nvarchar(50) null, --erp_user_name de homologação
+	hml_erp_password nvarchar(50) null, --erp_password de homologação
+	hml_b2c_chave uniqueidentifier null, --b2c_chave de homologação
+	hml_b2c_user_name nvarchar(50) null, --b2c_user_name de homologação
+	hml_b2c_password nvarchar(50) null --b2c_password de homologação
 );

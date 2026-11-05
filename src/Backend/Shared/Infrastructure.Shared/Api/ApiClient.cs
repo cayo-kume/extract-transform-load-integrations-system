@@ -1,6 +1,5 @@
 using Domain.Shared.Abstractions.Api;
 using Domain.Shared.Extensions;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Collections.Immutable;
 using System.Diagnostics;
@@ -18,18 +17,14 @@ namespace Infrastructure.Shared.Api
         private readonly ILogger<ApiClient> _logger;
         private readonly string _clientName;
 
-        // ApiEnvironment do host: Homologation usa a homolog_url das empresas (UseBaseAddress); sem a chave, Production
-        private readonly bool _homologation;
-
         // endereço por empresa (UseBaseAddress), por nome de cliente: no AsyncLocal, cada job vê só o que ele mesmo informou
         private static readonly AsyncLocal<ImmutableDictionary<string, string>?> _baseAddresses = new();
 
-        public ApiClient(IHttpClientFactory httpClientFactory, ILogger<ApiClient> logger, string clientName, IConfiguration? configuration = null)
+        public ApiClient(IHttpClientFactory httpClientFactory, ILogger<ApiClient> logger, string clientName)
         {
             _httpClientFactory = httpClientFactory;
             _logger = logger;
             _clientName = clientName;
-            _homologation = string.Equals(configuration?["ApiEnvironment"], "Homologation", StringComparison.OrdinalIgnoreCase);
         }
 
         public async Task<string?> GetAsync(string route, Dictionary<string, string>? headers = null, Dictionary<string, string>? queryParams = null)
@@ -242,11 +237,8 @@ namespace Infrastructure.Shared.Api
                 _ => IsResponseCut(ex.InnerException)
             };
 
-        public void UseBaseAddress(string? baseUrl, string? homologUrl)
+        public void UseBaseAddress(string? baseUrl)
         {
-            if (_homologation)
-                baseUrl = homologUrl;
-
             var current = _baseAddresses.Value ?? ImmutableDictionary<string, string>.Empty;
 
             _baseAddresses.Value = string.IsNullOrWhiteSpace(baseUrl)

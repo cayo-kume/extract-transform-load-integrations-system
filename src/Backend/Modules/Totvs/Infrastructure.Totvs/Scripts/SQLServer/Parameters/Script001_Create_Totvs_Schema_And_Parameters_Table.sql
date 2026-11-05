@@ -14,5 +14,10 @@ create table [totvs].TotvsParameters (
 	username nvarchar(100) not null,
 	[password] nvarchar(200) not null,
 	base_url nvarchar(200) null,  --endereço da API da empresa (aba Parâmetros do WebApp); nulo usa o Totvs:BaseUrl do appsettings
-	homolog_url nvarchar(200) null --endereço da API de homologação da empresa (aba Parâmetros do WebApp), usado pelo host com ApiEnvironment = Homologation
+	homolog_url nvarchar(200) null, --endereço da API de homologação da empresa (aba Parâmetros do WebApp), usado quando use_homolog_url = 1
+	use_homolog_url bit not null default 0, --1: os jobs usam a homolog_url e as colunas hml_ (aba Parâmetros do WebApp); 0: a base_url e as de produção
+	hml_client_id nvarchar(100) null, --client_id de homologação
+	hml_client_secret nvarchar(200) null, --client_secret de homologação
+	hml_username nvarchar(100) null, --username de homologação
+	hml_password nvarchar(200) null --password de homologação
 );

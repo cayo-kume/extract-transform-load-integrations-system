@@ -96,7 +96,7 @@ namespace Application.Movidesk.Services
             try
             {
                 var company = await _movideskRepository.GetCompany(doc_company);
-                _apiClient.UseBaseAddress(company?.base_url, company?.homolog_url);
+                _apiClient.UseBaseAddress(company?.base_url);
 
                 if (company is null)
                 {
@@ -201,7 +201,7 @@ namespace Application.Movidesk.Services
 
             foreach (var company in companys.WithProgress("empresa"))
             {
-                _apiClient.UseBaseAddress(company?.base_url, company?.homolog_url);
+                _apiClient.UseBaseAddress(company?.base_url);
 
                 if (company?.doc_company is null)
                     continue;
@@ -612,7 +612,7 @@ namespace Application.Movidesk.Services
             try
             {
                 var company = await _movideskRepository.GetCompany(doc_company);
-                _apiClient.UseBaseAddress(company?.base_url, company?.homolog_url);
+                _apiClient.UseBaseAddress(company?.base_url);
 
                 if (company is null)
                 {

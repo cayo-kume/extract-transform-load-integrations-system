@@ -93,7 +93,7 @@
                         @* Base URL e Homolog URL editáveis (ModuleDefinitions.IsApiUrl); o resto continua só leitura *@
                         @if (ApiUrlDefinition is not null)
                         {
-                            <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3">Base URL e Homolog URL são o endereço da API de cada empresa. Vazias, os jobs usam o endereço do appsettings do host.</MudAlert>
+                            <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3">Marque a URL que os jobs de cada empresa usam: a Base URL usa a credencial de produção, e a Homolog URL a de homologação. Base URL marcada e vazia: os jobs usam o endereço do appsettings do host.</MudAlert>
                         }
                         else
                         {
@@ -295,12 +295,14 @@
     private string CredentialLabel(string company) =>
         ModuleDefinitions.Find(IdApp) is not { } definition ? "" :
         _credentials.GetValueOrDefault(company) is not { } parameters ? "sem credencial" :
-        ModuleDefinitions.HasCredential(definition, parameters) ? "gravada" : "incompleta";
+        ModuleDefinitions.HasCredential(definition, parameters) ? "gravada" :
+        // a credencial do ambiente que os jobs usam (a Homolog URL marcada ou não)
+        ModuleDefinitions.UsesHomolog(parameters.Values) ? "homologação incompleta" : "incompleta";
 
     private Color CredentialColor(string company) => CredentialLabel(company) switch
     {
         "gravada" => Color.Success,
-        "incompleta" => Color.Warning,
+        "incompleta" or "homologação incompleta" => Color.Warning,
         _ => Color.Error
     };
 

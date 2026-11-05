@@ -9,17 +9,18 @@ namespace Application.LinxMicrovix.Outbound.Handlers.Commands
         {
             // só os parâmetros da empresa da execução (doc_company = empresa, docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md);
             // company é só dígitos (ICompanyContext)
+            // credencial e endereço do ambiente marcado na aba Parâmetros do WebApp (use_homolog_url = 1, homologação): os
+            // services leem sempre as colunas de produção
             return @$"SELECT DISTINCT
                      DOC_COMPANY AS DOC_COMPANY,
                      GRUPO AS GRUPO,
-                     ERP_CHAVE AS ERP_CHAVE,
-                     ERP_USER_NAME AS ERP_USER_NAME,
-                     ERP_PASSWORD AS ERP_PASSWORD,
-                     B2C_CHAVE AS B2C_CHAVE,
-                     B2C_USER_NAME AS B2C_USER_NAME,
-                     B2C_PASSWORD AS B2C_PASSWORD,
-                     BASE_URL AS BASE_URL,
-                     HOMOLOG_URL AS HOMOLOG_URL
+                     CASE WHEN USE_HOMOLOG_URL = 1 THEN HML_ERP_CHAVE ELSE ERP_CHAVE END AS ERP_CHAVE,
+                     CASE WHEN USE_HOMOLOG_URL = 1 THEN HML_ERP_USER_NAME ELSE ERP_USER_NAME END AS ERP_USER_NAME,
+                     CASE WHEN USE_HOMOLOG_URL = 1 THEN HML_ERP_PASSWORD ELSE ERP_PASSWORD END AS ERP_PASSWORD,
+                     CASE WHEN USE_HOMOLOG_URL = 1 THEN HML_B2C_CHAVE ELSE B2C_CHAVE END AS B2C_CHAVE,
+                     CASE WHEN USE_HOMOLOG_URL = 1 THEN HML_B2C_USER_NAME ELSE B2C_USER_NAME END AS B2C_USER_NAME,
+                     CASE WHEN USE_HOMOLOG_URL = 1 THEN HML_B2C_PASSWORD ELSE B2C_PASSWORD END AS B2C_PASSWORD,
+                     CASE WHEN USE_HOMOLOG_URL = 1 THEN HOMOLOG_URL ELSE BASE_URL END AS BASE_URL
                      FROM LINXMICROVIX.LINXMICROVIXPARAMETERS P
                      WHERE P.DOC_COMPANY = '{company}'";
         }

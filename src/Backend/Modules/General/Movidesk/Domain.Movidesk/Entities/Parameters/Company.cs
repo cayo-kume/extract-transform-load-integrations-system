@@ -6,8 +6,8 @@ namespace Domain.Movidesk.Entities.Parameters
     {
         public Guid Token { get; init; }
 
-        // endereços da API da empresa (produção e homologação, IApiClient.UseBaseAddress); nulo usa o Movidesk:BaseUrl do appsettings
+        // endereço da API do ambiente marcado na aba Parâmetros do WebApp (base_url ou homolog_url; as credenciais acima são as
+        // do mesmo ambiente, pela consulta); nulo usa o Movidesk:BaseUrl do appsettings (IApiClient.UseBaseAddress)
         public string? base_url { get; init; }
-        public string? homolog_url { get; init; }
     }
 }

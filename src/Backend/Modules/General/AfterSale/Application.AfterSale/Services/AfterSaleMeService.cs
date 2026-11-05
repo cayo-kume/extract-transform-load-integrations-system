@@ -59,7 +59,7 @@ namespace Application.AfterSale.Services
 
             foreach (var company in companys.WithProgress("empresa"))
             {
-                _apiClient.UseBaseAddress(company?.base_url, company?.homolog_url);
+                _apiClient.UseBaseAddress(company?.base_url);
 
                 var response = await _apiClient.GetAsync(
                     route: "v3/api/me",

@@ -20,7 +20,7 @@ namespace Infrastructure.LinxMicrovix.Outbound.DependencyInjection
             // um cliente para as duas APIs (ERP e B2C): as duas responderam na URL da v274; a rota de cada chamada é o nome do
             // método. O portal de teste (webapi-aceitacao) é só outro LinxMicrovix:BaseUrl no appsettings do ambiente
             services.AddKeyedScoped<IApiClient>("LinxMicrovixAPI", (sp, _) =>
-                new ApiClient(sp.GetRequiredService<IHttpClientFactory>(), sp.GetRequiredService<ILogger<ApiClient>>(), "LinxMicrovixAPI", configuration));
+                new ApiClient(sp.GetRequiredService<IHttpClientFactory>(), sp.GetRequiredService<ILogger<ApiClient>>(), "LinxMicrovixAPI"));
             services.AddHttpClient("LinxMicrovixAPI", client =>
             {
                 client.BaseAddress = new Uri(configuration["LinxMicrovix:BaseUrl"]!);

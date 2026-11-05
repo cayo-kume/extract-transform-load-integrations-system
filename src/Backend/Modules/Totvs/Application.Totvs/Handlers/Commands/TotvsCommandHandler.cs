@@ -8,14 +8,15 @@ namespace Application.Totvs.Handlers.Commands
         {
             // só os parâmetros da empresa da execução (doc_company = empresa, docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md);
             // company é só dígitos (ICompanyContext)
+            // credencial e endereço do ambiente marcado na aba Parâmetros do WebApp (use_homolog_url = 1, homologação): os
+            // services leem sempre as colunas de produção
             return @$"SELECT DISTINCT
                      DOC_COMPANY AS DOC_COMPANY,
-                     CLIENT_ID AS CLIENT_ID,
-                     CLIENT_SECRET AS CLIENT_SECRET,
-                     USERNAME AS USERNAME,
-                     [PASSWORD] AS [PASSWORD],
-                     BASE_URL AS BASE_URL,
-                     HOMOLOG_URL AS HOMOLOG_URL
+                     CASE WHEN USE_HOMOLOG_URL = 1 THEN HML_CLIENT_ID ELSE CLIENT_ID END AS CLIENT_ID,
+                     CASE WHEN USE_HOMOLOG_URL = 1 THEN HML_CLIENT_SECRET ELSE CLIENT_SECRET END AS CLIENT_SECRET,
+                     CASE WHEN USE_HOMOLOG_URL = 1 THEN HML_USERNAME ELSE USERNAME END AS USERNAME,
+                     CASE WHEN USE_HOMOLOG_URL = 1 THEN HML_PASSWORD ELSE [PASSWORD] END AS [PASSWORD],
+                     CASE WHEN USE_HOMOLOG_URL = 1 THEN HOMOLOG_URL ELSE BASE_URL END AS BASE_URL
                      FROM TOTVS.TOTVSPARAMETERS P
                      WHERE P.DOC_COMPANY = '{company}'";
         }
