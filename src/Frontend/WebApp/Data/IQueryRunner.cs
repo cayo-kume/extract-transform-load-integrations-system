@@ -24,6 +24,11 @@ namespace WebApp.Data
         Task<IReadOnlyList<string>> GetDatabasesAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Banco do painel (o da connection string): o escolhido ao abrir a tela e o das querys prontas.
+        /// </summary>
+        string? DefaultDatabase { get; }
+
+        /// <summary>
         /// Executa o SQL no banco. Comando que altera algo fica numa transação aberta (QueryResult.TransactionId), que
         /// precisa de CommitAsync ou RollbackAsync.
         /// </summary>

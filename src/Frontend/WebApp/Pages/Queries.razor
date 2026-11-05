@@ -351,7 +351,7 @@
         }
 
         await Snackbar.TryAsync(Logger, async () => _databases = await QueryRunner.GetDatabasesAsync(), "Não foi possível listar os bancos.");
-        _database = _databases.Contains("NEWBLOOMERS") ? "NEWBLOOMERS" : _databases.FirstOrDefault();
+        _database = QueryRunner.DefaultDatabase is { } main && _databases.Contains(main) ? main : _databases.FirstOrDefault();
 
         if (ReadyQueries.Find(ReadyQuery) is { } ready)
         {
@@ -657,8 +657,9 @@
         if (Busy)
             return;
 
-        if (_databases.Contains(query.Database))
-            _database = query.Database;
+        // as querys prontas leem o schema auditing do banco do painel
+        if (QueryRunner.DefaultDatabase is { } main && _databases.Contains(main))
+            _database = main;
 
         _sql = query.Sql;
     }

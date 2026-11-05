@@ -27,6 +27,8 @@ namespace WebApp.Data.Sql
 
         private readonly ConcurrentDictionary<Guid, OpenTransaction> _open = new();
 
+        public string? DefaultDatabase => new SqlConnectionStringBuilder(_connectionString).InitialCatalog is { Length: > 0 } database ? database : null;
+
         public async Task<IReadOnlyList<string>> GetDatabasesAsync(CancellationToken cancellationToken = default)
         {
             await using var connection = new SqlConnection(_connectionString);

@@ -18,6 +18,8 @@ namespace WebApp.Data.Mocks
 
         private readonly ConcurrentDictionary<Guid, DateTime> _openTransactions = new();
 
+        public string? DefaultDatabase => "Company";
+
         public async Task<IReadOnlyList<string>> GetDatabasesAsync(CancellationToken cancellationToken = default)
         {
             await Task.Delay(Random.Shared.Next(100, 250), cancellationToken);
