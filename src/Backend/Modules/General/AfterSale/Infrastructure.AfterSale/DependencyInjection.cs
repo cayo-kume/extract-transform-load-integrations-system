@@ -20,7 +20,7 @@ namespace Infrastructure.AfterSale.DependencyInjection
         public static IServiceCollection AddScopedAfterSaleServices(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddKeyedScoped<IApiClient>("AfterSaleAPI", (sp, _) =>
-                new ApiClient(sp.GetRequiredService<IHttpClientFactory>(), sp.GetRequiredService<ILogger<ApiClient>>(), "AfterSaleAPI"));
+                new ApiClient(sp.GetRequiredService<IHttpClientFactory>(), sp.GetRequiredService<ILogger<ApiClient>>(), "AfterSaleAPI", configuration));
             services.AddHttpClient("AfterSaleAPI", client =>
             {
                 client.BaseAddress = new Uri(configuration["AfterSale:BaseUrl"]!);

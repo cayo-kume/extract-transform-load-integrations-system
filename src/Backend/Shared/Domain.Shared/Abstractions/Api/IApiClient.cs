@@ -22,10 +22,11 @@ namespace Domain.Shared.Abstractions.Api
         Task<ApiResponse> SendAsync(HttpMethod method, string route, HttpContent? content = null, Dictionary<string, string>? headers = null, Dictionary<string, string>? queryParams = null, bool retryOnNetworkError = false);
 
         /// <summary>
-        /// endereço da API da empresa em processamento (base_url de &lt;Módulo&gt;Parameters, gravada na aba Credenciais do
-        /// WebApp): vale para as próximas chamadas deste cliente no mesmo fluxo (o job que chamou), até a próxima empresa.
-        /// Nulo ou vazio volta ao &lt;Módulo&gt;:BaseUrl do appsettings
+        /// endereço da API da empresa em processamento (base_url e homolog_url de &lt;Módulo&gt;Parameters, gravadas na aba
+        /// Parâmetros do WebApp): host com ApiEnvironment = Homologation usa a homolog_url, os outros a base_url. Vale para as
+        /// próximas chamadas deste cliente no mesmo fluxo (o job que chamou), até a próxima empresa. A escolhida vazia volta ao
+        /// &lt;Módulo&gt;:BaseUrl do appsettings
         /// </summary>
-        void UseBaseAddress(string? baseUrl);
+        void UseBaseAddress(string? baseUrl, string? homologUrl);
     }
 }

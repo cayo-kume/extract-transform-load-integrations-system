@@ -113,7 +113,7 @@ namespace Application.Totvs.Services
             {
                 foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
-                    _apiClient.UseBaseAddress(company?.base_url);
+                    _apiClient.UseBaseAddress(company?.base_url, company?.homolog_url);
 
                     var codes = await GetStockCodes(company);
 
@@ -467,7 +467,7 @@ namespace Application.Totvs.Services
             {
                 foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
-                    _apiClient.UseBaseAddress(company?.base_url);
+                    _apiClient.UseBaseAddress(company?.base_url, company?.homolog_url);
 
                     var batchTime = _totvsService.GetBatchTime();
 
@@ -647,7 +647,7 @@ namespace Application.Totvs.Services
             {
                 foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
-                    _apiClient.UseBaseAddress(company?.base_url);
+                    _apiClient.UseBaseAddress(company?.base_url, company?.homolog_url);
 
                     // branchCode filtra uma loja por chamada; sem lojas em TotvsBranches não há o que ler
                     var branchCodes = await _totvsService.GetBranchCodes(company);
@@ -785,7 +785,7 @@ namespace Application.Totvs.Services
             {
                 foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
-                    _apiClient.UseBaseAddress(company?.base_url);
+                    _apiClient.UseBaseAddress(company?.base_url, company?.homolog_url);
 
                     foreach (var (baseBranchCode, brandClassificationCode) in BaseBranchCodes)
                     {
@@ -996,7 +996,7 @@ namespace Application.Totvs.Services
             {
                 foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
-                    _apiClient.UseBaseAddress(company?.base_url);
+                    _apiClient.UseBaseAddress(company?.base_url, company?.homolog_url);
 
                     foreach (var (baseBranchCode, brandClassificationCode) in BaseBranchCodes)
                     {
@@ -1250,7 +1250,7 @@ namespace Application.Totvs.Services
             try
             {
                 var company = await _totvsService.GetCompany(doc_company);
-                _apiClient.UseBaseAddress(company?.base_url);
+                _apiClient.UseBaseAddress(company?.base_url, company?.homolog_url);
 
                 if (company is null)
                 {
@@ -1530,7 +1530,7 @@ namespace Application.Totvs.Services
             try
             {
                 var company = await _totvsService.GetCompany(doc_company);
-                _apiClient.UseBaseAddress(company?.base_url);
+                _apiClient.UseBaseAddress(company?.base_url, company?.homolog_url);
 
                 if (company is null)
                     return _totvsService.CompanyNotFound(doc_company, key);
@@ -1557,7 +1557,7 @@ namespace Application.Totvs.Services
             try
             {
                 var company = await _totvsService.GetCompany(doc_company);
-                _apiClient.UseBaseAddress(company?.base_url);
+                _apiClient.UseBaseAddress(company?.base_url, company?.homolog_url);
 
                 if (company is null)
                     return _totvsService.CompanyNotFound(doc_company, key);
@@ -1590,7 +1590,7 @@ namespace Application.Totvs.Services
             try
             {
                 var company = await _totvsService.GetCompany(doc_company);
-                _apiClient.UseBaseAddress(company?.base_url);
+                _apiClient.UseBaseAddress(company?.base_url, company?.homolog_url);
 
                 if (company is null)
                     return _totvsService.CompanyNotFound(doc_company, key);
@@ -1615,7 +1615,7 @@ namespace Application.Totvs.Services
             try
             {
                 var company = await _totvsService.GetCompany(doc_company);
-                _apiClient.UseBaseAddress(company?.base_url);
+                _apiClient.UseBaseAddress(company?.base_url, company?.homolog_url);
 
                 if (company is null)
                     return _totvsService.CompanyNotFound(doc_company, key);
@@ -1641,7 +1641,7 @@ namespace Application.Totvs.Services
             try
             {
                 var company = await _totvsService.GetCompany(doc_company);
-                _apiClient.UseBaseAddress(company?.base_url);
+                _apiClient.UseBaseAddress(company?.base_url, company?.homolog_url);
 
                 if (company is null)
                     return _totvsService.CompanyNotFound(doc_company, key);
@@ -1668,7 +1668,7 @@ namespace Application.Totvs.Services
             try
             {
                 var company = await _totvsService.GetCompany(doc_company);
-                _apiClient.UseBaseAddress(company?.base_url);
+                _apiClient.UseBaseAddress(company?.base_url, company?.homolog_url);
 
                 if (company is null)
                     return _totvsService.CompanyNotFound(doc_company, key);
@@ -1947,7 +1947,7 @@ namespace Application.Totvs.Services
                     return _totvsService.WriteDisabled(WritesGroup, key);
 
                 var company = await _totvsService.GetCompany(doc_company);
-                _apiClient.UseBaseAddress(company?.base_url);
+                _apiClient.UseBaseAddress(company?.base_url, company?.homolog_url);
 
                 if (company is null)
                     return _totvsService.CompanyNotFound(doc_company, key);

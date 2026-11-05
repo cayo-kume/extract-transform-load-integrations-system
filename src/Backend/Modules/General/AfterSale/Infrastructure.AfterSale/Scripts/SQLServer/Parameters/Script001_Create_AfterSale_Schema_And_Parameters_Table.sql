@@ -13,7 +13,8 @@ create table [aftersale].AfterSaleParameters (
 	id int not null identity primary key, 
 	[doc_company] nvarchar(14) not null,
 	token uniqueidentifier,
-	base_url nvarchar(200) null   --endereço da API da empresa (aba Credenciais do WebApp); nulo usa o AfterSale:BaseUrl do appsettings
+	base_url nvarchar(200) null,  --endereço da API da empresa (aba Parâmetros do WebApp); nulo usa o AfterSale:BaseUrl do appsettings
+	homolog_url nvarchar(200) null --endereço da API de homologação da empresa (aba Parâmetros do WebApp), usado pelo host com ApiEnvironment = Homologation
 );
 
 create table [untreated].AfterSaleErrors (

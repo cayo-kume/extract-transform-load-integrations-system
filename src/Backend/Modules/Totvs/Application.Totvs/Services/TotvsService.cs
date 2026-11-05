@@ -85,10 +85,10 @@ namespace Application.Totvs.Services
 
         public async Task<string?> GetToken(Company company)
         {
-            _apiClient.UseBaseAddress(company.base_url);
+            _apiClient.UseBaseAddress(company.base_url, company.homolog_url);
 
             // o token é do ambiente: a base_url entra na chave para a troca de homologação e produção não reaproveitar o outro
-            var key = $"{TokenKey}:{company.doc_company}:{company.base_url}";
+            var key = $"{TokenKey}:{company.doc_company}:{company.base_url}:{company.homolog_url}";
 
             if (_cache.TryGetValue(key, out string? cached) && !String.IsNullOrEmpty(cached))
                 return cached;
@@ -139,7 +139,7 @@ namespace Application.Totvs.Services
         }
 
         public void RemoveToken(Company company) =>
-            _cache.Remove($"{TokenKey}:{company.doc_company}:{company.base_url}");
+            _cache.Remove($"{TokenKey}:{company.doc_company}:{company.base_url}:{company.homolog_url}");
 
         public void SaveRequest(Domain.Totvs.Enums.EnumJob job, string user_name, string httpMethod, string route, string doc_company, string field_key_value, string? responseBody, bool isSuccess, string? requestBody = null, int? statusCode = null) =>
             _totvsRepository.InsertIntoTotvsRequests(
@@ -162,7 +162,7 @@ namespace Application.Totvs.Services
 
         public async Task<Domain.Totvs.Dtos.Writes.Result> ReadOnDemand(Company company, Domain.Totvs.Enums.EnumJob job, string user_name, string key, HttpMethod method, string route, string? requestBody = null, string? emptyListProperty = null)
         {
-            _apiClient.UseBaseAddress(company.base_url);
+            _apiClient.UseBaseAddress(company.base_url, company.homolog_url);
 
             var routeName = route.Split('?')[0];
             ApiResponse? response = null;
@@ -293,7 +293,7 @@ namespace Application.Totvs.Services
 
         public async Task<Domain.Totvs.Dtos.Writes.Result> Write(Company company, Domain.Totvs.Enums.EnumJob job, string user_name, string key, HttpMethod method, string route, object? body, string checkHint, bool repeatLock = false, object? loggedBody = null)
         {
-            _apiClient.UseBaseAddress(company.base_url);
+            _apiClient.UseBaseAddress(company.base_url, company.homolog_url);
 
             var routeName = route.Split('?')[0];
 

@@ -19,7 +19,8 @@ namespace Domain.LinxMicrovix.Outbound.Entities.Parameters
         public string? b2c_user_name { get; init; }
         public string? b2c_password { get; init; }
 
-        // endereço da API da empresa; nulo usa o LinxMicrovix:BaseUrl do appsettings (IApiClient.UseBaseAddress)
+        // endereços da API da empresa (produção e homologação, IApiClient.UseBaseAddress); nulo usa o LinxMicrovix:BaseUrl do appsettings
         public string? base_url { get; init; }
+        public string? homolog_url { get; init; }
     }
 }

@@ -13,7 +13,8 @@ namespace Domain.Totvs.Entities.Parameters
         public string username { get; init; } = String.Empty;
         public string password { get; init; } = String.Empty;
 
-        // endereço da API da empresa; nulo usa o Totvs:BaseUrl do appsettings (IApiClient.UseBaseAddress)
+        // endereços da API da empresa (produção e homologação, IApiClient.UseBaseAddress); nulo usa o Totvs:BaseUrl do appsettings
         public string? base_url { get; init; }
+        public string? homolog_url { get; init; }
     }
 }

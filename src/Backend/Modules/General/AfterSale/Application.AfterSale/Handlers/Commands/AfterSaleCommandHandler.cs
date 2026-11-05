@@ -9,7 +9,8 @@ namespace Application.AfterSale.Handlers.Commands
             return @$"SELECT DISTINCT
                      DOC_COMPANY,
                      TOKEN,
-                     BASE_URL
+                     BASE_URL,
+                     HOMOLOG_URL
                      FROM AFTERSALE.AFTERSALEPARAMETERS
                      WHERE 
                      DOC_COMPANY = '{doc_company}'";
@@ -22,7 +23,8 @@ namespace Application.AfterSale.Handlers.Commands
             return @$"SELECT DISTINCT
                     DOC_COMPANY,
                     TOKEN AS TOKEN,
-                    BASE_URL AS BASE_URL
+                    BASE_URL AS BASE_URL,
+                    HOMOLOG_URL AS HOMOLOG_URL
                     FROM AFTERSALE.AFTERSALEPARAMETERS P
                      WHERE P.DOC_COMPANY = '{company}'";
         }

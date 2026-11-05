@@ -14,12 +14,14 @@ namespace WebApp.Data
             new(30, "Movidesk", "[movidesk].[MovideskParameters]",
             [
                 new("token", "Token da API", Required: true, Secret: true, ModuleFieldKind.Guid),
-                new("base_url", "Base URL", Required: false, Secret: false, ModuleFieldKind.Url)
+                new("base_url", "Base URL", Required: false, Secret: false, ModuleFieldKind.Url),
+                new("homolog_url", "Homolog URL", Required: false, Secret: false, ModuleFieldKind.Url)
             ]),
             new(50, "AfterSale", "[aftersale].[AfterSaleParameters]",
             [
                 new("token", "Token da API", Required: true, Secret: true, ModuleFieldKind.Guid),
-                new("base_url", "Base URL", Required: false, Secret: false, ModuleFieldKind.Url)
+                new("base_url", "Base URL", Required: false, Secret: false, ModuleFieldKind.Url),
+                new("homolog_url", "Homolog URL", Required: false, Secret: false, ModuleFieldKind.Url)
             ]),
             new(70, "LinxCommerce", "[linxcommerce].[LinxCommerceParameters]",
             [
@@ -36,7 +38,8 @@ namespace WebApp.Data
                 new("b2c_chave", "Chave do WS B2C", Required: false, Secret: true, ModuleFieldKind.Guid),
                 new("b2c_user_name", "Usuário do WS B2C", Required: false, Secret: false, MaxLength: 50),
                 new("b2c_password", "Senha do WS B2C", Required: false, Secret: true, MaxLength: 50),
-                new("base_url", "Base URL", Required: false, Secret: false, ModuleFieldKind.Url)
+                new("base_url", "Base URL", Required: false, Secret: false, ModuleFieldKind.Url),
+                new("homolog_url", "Homolog URL", Required: false, Secret: false, ModuleFieldKind.Url)
             ]),
             new(130, "Totvs", "[totvs].[TotvsParameters]",
             [
@@ -44,11 +47,18 @@ namespace WebApp.Data
                 new("client_secret", "Client secret", Required: true, Secret: true),
                 new("username", "Usuário", Required: true, Secret: false, MaxLength: 100),
                 new("password", "Senha", Required: true, Secret: true),
-                new("base_url", "Base URL", Required: false, Secret: false, ModuleFieldKind.Url)
+                new("base_url", "Base URL", Required: false, Secret: false, ModuleFieldKind.Url),
+                new("homolog_url", "Homolog URL", Required: false, Secret: false, ModuleFieldKind.Url)
             ])
         ];
 
         public static ModuleDefinition? Find(int idParent) => All.FirstOrDefault(x => x.IdParent == idParent);
+
+        /// <summary>
+        /// Endereço da API da empresa (Base URL e Homolog URL): fica na aba Parâmetros, não na Credenciais. O endereço
+        /// obrigatório do LinxCommerce é parte da credencial e continua lá.
+        /// </summary>
+        public static bool IsApiUrl(ModuleField field) => !field.Required && field.Column is "base_url" or "homolog_url";
 
         /// <summary>
         /// A empresa tem credencial gravada no módulo: os campos obrigatórios preenchidos e, no LinxMicrovix (que não tem

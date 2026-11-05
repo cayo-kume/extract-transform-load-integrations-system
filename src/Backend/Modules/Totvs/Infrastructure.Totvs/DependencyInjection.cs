@@ -20,7 +20,7 @@ namespace Infrastructure.Totvs.DependencyInjection
         {
             // homologação é só outro Totvs:BaseUrl no appsettings do ambiente
             services.AddKeyedScoped<IApiClient>("TotvsAPI", (sp, _) =>
-                new ApiClient(sp.GetRequiredService<IHttpClientFactory>(), sp.GetRequiredService<ILogger<ApiClient>>(), "TotvsAPI"));
+                new ApiClient(sp.GetRequiredService<IHttpClientFactory>(), sp.GetRequiredService<ILogger<ApiClient>>(), "TotvsAPI", configuration));
             services.AddHttpClient("TotvsAPI", client =>
             {
                 client.BaseAddress = new Uri(configuration["Totvs:BaseUrl"]!);

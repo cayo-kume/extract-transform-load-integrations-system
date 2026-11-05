@@ -456,19 +456,18 @@ namespace WebApp.Data.Mocks
 
         private const string Masked = "••••••••••••••••";
 
-        // credenciais e parâmetros globais por módulo, no formato dos scripts de Parameters; valores de credencial mascarados
+        // credenciais e parâmetros globais por módulo, no formato dos scripts de Parameters; valores de credencial mascarados.
+        // Base URL e Homolog URL não entram: a aba Parâmetros edita as duas no formulário
         private static readonly Dictionary<int, IReadOnlyList<ModuleSettingModel>> ModuleSettings = new()
         {
             [30] =
             [
                 new() { Label = "Token da API", Value = Masked, IsSecret = true },
-                new() { Label = "URL base da API", Value = "https://api.movidesk.com/public/v1" },
                 new() { Label = "Timeout das chamadas (segundos)", Value = "60" }
             ],
             [50] =
             [
                 new() { Label = "API Key", Value = Masked, IsSecret = true },
-                new() { Label = "URL base da API", Value = "https://api.aftersale.com.br" },
                 new() { Label = "Timeout das chamadas (segundos)", Value = "60" }
             ],
             [70] =
@@ -481,7 +480,6 @@ namespace WebApp.Data.Mocks
             [
                 new() { Label = "Chave do ERP", Value = Masked, IsSecret = true },
                 new() { Label = "Chave do B2C", Value = Masked, IsSecret = true },
-                new() { Label = "URL base da API", Value = "https://webapi.microvix.com.br/1.0/api/integracao" },
                 new() { Label = "Timeout das chamadas (segundos)", Value = "120" },
                 new() { Label = "Tamanho do lote (Bulk Insert)", Value = "5000" }
             ],
@@ -494,7 +492,6 @@ namespace WebApp.Data.Mocks
             [
                 new() { Label = "Client Id", Value = Masked, IsSecret = true },
                 new() { Label = "Client Secret", Value = Masked, IsSecret = true },
-                new() { Label = "URL base da API", Value = "https://api-homolog.totvs.com.br" },
                 new() { Label = "Timeout das chamadas (segundos)", Value = "120" }
             ]
         };

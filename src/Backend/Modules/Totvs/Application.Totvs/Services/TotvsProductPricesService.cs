@@ -85,7 +85,7 @@ namespace Application.Totvs.Services
             {
                 foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
-                    _apiClient.UseBaseAddress(company?.base_url);
+                    _apiClient.UseBaseAddress(company?.base_url, company?.homolog_url);
 
                     var codes = await GetPriceCodes(company);
 
@@ -390,7 +390,7 @@ namespace Application.Totvs.Services
             {
                 foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
-                    _apiClient.UseBaseAddress(company?.base_url);
+                    _apiClient.UseBaseAddress(company?.base_url, company?.homolog_url);
 
                     var codes = await GetCostCodes(company);
 
@@ -689,7 +689,7 @@ namespace Application.Totvs.Services
             {
                 foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
-                    _apiClient.UseBaseAddress(company?.base_url);
+                    _apiClient.UseBaseAddress(company?.base_url, company?.homolog_url);
 
                     // as tabelas vêm do cabeçalho (GetPriceTablesHeaders, que roda antes, como as filiais antes das buscas)
                     var priceTableCodes = (await _totvsProductPricesRepository.GetActivePriceTableCodes(company.doc_company!)).ToList();
@@ -889,7 +889,7 @@ namespace Application.Totvs.Services
             {
                 foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
-                    _apiClient.UseBaseAddress(company?.base_url);
+                    _apiClient.UseBaseAddress(company?.base_url, company?.homolog_url);
 
                     // BranchCode é obrigatório: uma leitura por loja (hoje só as matrizes 1 e 101 têm promoção, testado)
                     var branchCodes = await _totvsService.GetBranchCodes(company);
@@ -1205,7 +1205,7 @@ namespace Application.Totvs.Services
                     return _totvsService.WriteDisabled(WritesGroup, key);
 
                 var company = await _totvsService.GetCompany(doc_company);
-                _apiClient.UseBaseAddress(company?.base_url);
+                _apiClient.UseBaseAddress(company?.base_url, company?.homolog_url);
 
                 if (company is null)
                     return _totvsService.CompanyNotFound(doc_company, key);
@@ -1287,7 +1287,7 @@ namespace Application.Totvs.Services
                     return _totvsService.WriteDisabled(WritesGroup, key);
 
                 var company = await _totvsService.GetCompany(doc_company);
-                _apiClient.UseBaseAddress(company?.base_url);
+                _apiClient.UseBaseAddress(company?.base_url, company?.homolog_url);
 
                 if (company is null)
                     return _totvsService.CompanyNotFound(doc_company, key);

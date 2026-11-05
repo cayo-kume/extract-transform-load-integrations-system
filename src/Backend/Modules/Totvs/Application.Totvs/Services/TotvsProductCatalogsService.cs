@@ -104,7 +104,7 @@ namespace Application.Totvs.Services
             {
                 foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
-                    _apiClient.UseBaseAddress(company?.base_url);
+                    _apiClient.UseBaseAddress(company?.base_url, company?.homolog_url);
 
                     var batchTime = _totvsService.GetBatchTime();
 
@@ -215,7 +215,7 @@ namespace Application.Totvs.Services
             {
                 foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
-                    _apiClient.UseBaseAddress(company?.base_url);
+                    _apiClient.UseBaseAddress(company?.base_url, company?.homolog_url);
 
                     var batchTime = _totvsService.GetBatchTime();
 
@@ -325,7 +325,7 @@ namespace Application.Totvs.Services
             {
                 foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
-                    _apiClient.UseBaseAddress(company?.base_url);
+                    _apiClient.UseBaseAddress(company?.base_url, company?.homolog_url);
 
                     var batchTime = _totvsService.GetBatchTime();
 
@@ -436,7 +436,7 @@ namespace Application.Totvs.Services
             {
                 foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
-                    _apiClient.UseBaseAddress(company?.base_url);
+                    _apiClient.UseBaseAddress(company?.base_url, company?.homolog_url);
 
                     var batchTime = _totvsService.GetBatchTime();
 
@@ -547,7 +547,7 @@ namespace Application.Totvs.Services
             {
                 foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
-                    _apiClient.UseBaseAddress(company?.base_url);
+                    _apiClient.UseBaseAddress(company?.base_url, company?.homolog_url);
 
                     var batchTime = _totvsService.GetBatchTime();
 
@@ -658,7 +658,7 @@ namespace Application.Totvs.Services
             {
                 foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
-                    _apiClient.UseBaseAddress(company?.base_url);
+                    _apiClient.UseBaseAddress(company?.base_url, company?.homolog_url);
 
                     var batchTime = _totvsService.GetBatchTime();
 
@@ -750,7 +750,7 @@ namespace Application.Totvs.Services
             {
                 foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
-                    _apiClient.UseBaseAddress(company?.base_url);
+                    _apiClient.UseBaseAddress(company?.base_url, company?.homolog_url);
 
                     var batchTime = _totvsService.GetBatchTime();
 
@@ -861,7 +861,7 @@ namespace Application.Totvs.Services
             {
                 foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
-                    _apiClient.UseBaseAddress(company?.base_url);
+                    _apiClient.UseBaseAddress(company?.base_url, company?.homolog_url);
 
                     var batchTime = _totvsService.GetBatchTime();
 
@@ -972,7 +972,7 @@ namespace Application.Totvs.Services
             {
                 foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
-                    _apiClient.UseBaseAddress(company?.base_url);
+                    _apiClient.UseBaseAddress(company?.base_url, company?.homolog_url);
 
                     var batchTime = _totvsService.GetBatchTime();
 
@@ -1083,7 +1083,7 @@ namespace Application.Totvs.Services
             {
                 foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
-                    _apiClient.UseBaseAddress(company?.base_url);
+                    _apiClient.UseBaseAddress(company?.base_url, company?.homolog_url);
 
                     var batchTime = _totvsService.GetBatchTime();
 
@@ -1195,7 +1195,7 @@ namespace Application.Totvs.Services
             {
                 foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
-                    _apiClient.UseBaseAddress(company?.base_url);
+                    _apiClient.UseBaseAddress(company?.base_url, company?.homolog_url);
 
                     var batchTime = _totvsService.GetBatchTime();
 
@@ -1306,7 +1306,7 @@ namespace Application.Totvs.Services
             {
                 foreach (var company in (await _totvsService.GetCompanys()).WithProgress("empresa"))
                 {
-                    _apiClient.UseBaseAddress(company?.base_url);
+                    _apiClient.UseBaseAddress(company?.base_url, company?.homolog_url);
 
                     var batchTime = _totvsService.GetBatchTime();
 
@@ -1417,7 +1417,7 @@ namespace Application.Totvs.Services
                     return _totvsService.WriteDisabled(WritesGroup, key);
 
                 var company = await _totvsService.GetCompany(doc_company);
-                _apiClient.UseBaseAddress(company?.base_url);
+                _apiClient.UseBaseAddress(company?.base_url, company?.homolog_url);
 
                 if (company is null)
                     return _totvsService.CompanyNotFound(doc_company, key);
@@ -1454,7 +1454,7 @@ namespace Application.Totvs.Services
                     return _totvsService.WriteDisabled(WritesGroup, key);
 
                 var company = await _totvsService.GetCompany(doc_company);
-                _apiClient.UseBaseAddress(company?.base_url);
+                _apiClient.UseBaseAddress(company?.base_url, company?.homolog_url);
 
                 if (company is null)
                     return _totvsService.CompanyNotFound(doc_company, key);
@@ -1484,7 +1484,7 @@ namespace Application.Totvs.Services
                     return _totvsService.WriteDisabled(WritesGroup, key);
 
                 var company = await _totvsService.GetCompany(doc_company);
-                _apiClient.UseBaseAddress(company?.base_url);
+                _apiClient.UseBaseAddress(company?.base_url, company?.homolog_url);
 
                 if (company is null)
                     return _totvsService.CompanyNotFound(doc_company, key);

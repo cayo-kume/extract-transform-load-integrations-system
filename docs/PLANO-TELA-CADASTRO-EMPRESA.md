@@ -303,7 +303,7 @@ Mudança de layout só com mockup aprovado antes.
 - [ ] Segredos: nunca voltam para a tela depois de gravados. O campo mostra "definido" e aceita só substituir.
 - [ ] Ao contratar uma integração, os jobs nascem inativos. A ativação continua na tela de Integrações e na Visão geral.
 - [ ] Validação de CNPJ e de duplicidade.
-- [ ] Botão **Testar conexão** por módulo (ver 4.6.1).
+- [x] Botão **Testar conexão** por módulo (ver 4.6.1).
 
 #### 4.6.1 Testar conexão
 

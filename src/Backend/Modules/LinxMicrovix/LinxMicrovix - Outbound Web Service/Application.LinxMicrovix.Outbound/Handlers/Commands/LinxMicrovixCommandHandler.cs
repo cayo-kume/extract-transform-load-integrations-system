@@ -18,7 +18,8 @@ namespace Application.LinxMicrovix.Outbound.Handlers.Commands
                      B2C_CHAVE AS B2C_CHAVE,
                      B2C_USER_NAME AS B2C_USER_NAME,
                      B2C_PASSWORD AS B2C_PASSWORD,
-                     BASE_URL AS BASE_URL
+                     BASE_URL AS BASE_URL,
+                     HOMOLOG_URL AS HOMOLOG_URL
                      FROM LINXMICROVIX.LINXMICROVIXPARAMETERS P
                      WHERE P.DOC_COMPANY = '{company}'";
         }

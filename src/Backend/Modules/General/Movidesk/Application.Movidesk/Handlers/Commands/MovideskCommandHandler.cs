@@ -11,7 +11,8 @@ namespace Application.Movidesk.Handlers.Commands
             return @$"SELECT DISTINCT
                      DOC_COMPANY AS DOC_COMPANY,
                      TOKEN AS TOKEN,
-                     BASE_URL AS BASE_URL
+                     BASE_URL AS BASE_URL,
+                     HOMOLOG_URL AS HOMOLOG_URL
                      FROM MOVIDESK.MOVIDESKPARAMETERS P
                      WHERE P.DOC_COMPANY = '{company}'";
         }
@@ -22,7 +23,8 @@ namespace Application.Movidesk.Handlers.Commands
             return @$"SELECT DISTINCT
                      DOC_COMPANY AS DOC_COMPANY,
                      TOKEN AS TOKEN,
-                     BASE_URL AS BASE_URL
+                     BASE_URL AS BASE_URL,
+                     HOMOLOG_URL AS HOMOLOG_URL
                      FROM MOVIDESK.MOVIDESKPARAMETERS
                      WHERE DOC_COMPANY = '{doc_company}'";
         }

@@ -13,5 +13,6 @@ create table [totvs].TotvsParameters (
 	client_secret nvarchar(200) not null,
 	username nvarchar(100) not null,
 	[password] nvarchar(200) not null,
-	base_url nvarchar(200) null   --endereço da API da empresa (aba Credenciais do WebApp); nulo usa o Totvs:BaseUrl do appsettings
+	base_url nvarchar(200) null,  --endereço da API da empresa (aba Parâmetros do WebApp); nulo usa o Totvs:BaseUrl do appsettings
+	homolog_url nvarchar(200) null --endereço da API de homologação da empresa (aba Parâmetros do WebApp), usado pelo host com ApiEnvironment = Homologation
 );

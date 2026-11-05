@@ -59,6 +59,7 @@ if (builder.Configuration.GetValue<bool>("Database:Enabled"))
     builder.Services.AddSingleton<ICompanyRepository, WebApp.Data.Sql.SqlCompanyRepository>();
     builder.Services.AddSingleton<IUserRepository, WebApp.Data.Sql.SqlUserRepository>();
     builder.Services.AddSingleton<IModuleParametersRepository, WebApp.Data.Sql.SqlModuleParametersRepository>();
+    builder.Services.AddSingleton<IModuleCredentialReader, SqlModuleCredentialReader>();
 }
 else
 {
@@ -68,7 +69,12 @@ else
     builder.Services.AddSingleton<ICompanyRepository, MockCompanyRepository>();
     builder.Services.AddSingleton<IUserRepository, MockUserRepository>();
     builder.Services.AddSingleton<IModuleParametersRepository, MockModuleParametersRepository>();
+    builder.Services.AddSingleton<IModuleCredentialReader, MockModuleCredentialReader>();
 }
+
+// Testar conexão da aba Credenciais (docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.6.1): chamada de leitura do próprio WebApp
+builder.Services.AddHttpClient();
+builder.Services.AddScoped<ConnectionTester>();
 
 // Sob Demanda: respostas simuladas até o IOnDemandRunner que chama o WebApi (docs/PLANO-WEBAPP.md, 11.5.6). A
 // MockTimeline gera as execuções do mock e é a mesma do painel com mock, para uma chamada virar uma execução do job

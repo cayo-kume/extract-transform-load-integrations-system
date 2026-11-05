@@ -528,11 +528,12 @@ namespace WebApp.Data.Sql
         {
             var settings = new List<ModuleSettingModel>();
 
-            // credenciais e parâmetros da tabela *Parameters do módulo, a linha da empresa; segredo só mascarado
+            // credenciais e parâmetros da tabela *Parameters do módulo, a linha da empresa; segredo só mascarado. Base URL e
+            // Homolog URL ficam de fora: a aba Parâmetros edita as duas no próprio formulário
             if (ModuleDefinitions.Find(idApp) is { } definition
                 && await parameters.GetParametersAsync(idApp, Company, cancellationToken) is { } row)
             {
-                settings.AddRange(definition.Fields.Select(field => new ModuleSettingModel
+                settings.AddRange(definition.Fields.Where(field => !ModuleDefinitions.IsApiUrl(field)).Select(field => new ModuleSettingModel
                 {
                     Label = field.Label,
                     Value = field.Secret

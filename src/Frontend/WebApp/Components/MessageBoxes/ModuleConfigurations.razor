@@ -90,7 +90,15 @@
 
                 <MudTabPanel Text="Parâmetros">
                     <div class="pa-2">
-                        <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3">Somente leitura nesta fase.</MudAlert>
+                        @* Base URL e Homolog URL editáveis (ModuleDefinitions.IsApiUrl); o resto continua só leitura *@
+                        @if (ApiUrlDefinition is not null)
+                        {
+                            <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3">Base URL e Homolog URL são o endereço da API de cada empresa. Vazias, os jobs usam o endereço do appsettings do host.</MudAlert>
+                        }
+                        else
+                        {
+                            <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3">Somente leitura nesta fase.</MudAlert>
+                        }
                         @if (ManyCompanies)
                         {
                             <MudExpansionPanels MultiExpansion="true" Elevation="0" Outlined="true" Dense="true">
@@ -99,6 +107,10 @@
                                     <MudExpansionPanel @key="row.Company.Company" Expanded="@(row.Company.Company == LoggedCompany.DocCompany)">
                                         <TitleContent>@CompanyTitle(row.Company)</TitleContent>
                                         <ChildContent>
+                                            @if (ApiUrlDefinition is { } urls)
+                                            {
+                                                <CredentialForm Definition="urls" ApiUrls="true" Company="@row.Company.Company" ReadOnly="@(!LoggedCompany.CanManage)" />
+                                            }
                                             @foreach (var setting in _settingsByCompany.GetValueOrDefault(row.Company.Company, []).Where(x => !x.IsSecret))
                                             {
                                                 <MudTextField T="string" Value="@setting.Value" Label="@setting.Label" Disabled="true" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3" />
@@ -110,6 +122,10 @@
                         }
                         else
                         {
+                            @if (ApiUrlDefinition is { } urls)
+                            {
+                                <CredentialForm Definition="urls" ApiUrls="true" ReadOnly="@(!LoggedCompany.CanManage)" />
+                            }
                             @foreach (var setting in _settings.Where(x => !x.IsSecret))
                             {
                                 <MudTextField T="string" Value="@setting.Value" Label="@setting.Label" Disabled="true" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3" />
@@ -224,6 +240,9 @@
             : LoggedCompany.ScopeCompanies;
 
     private bool IsHoldingApp => CompanyApps.IsHoldingApp(IdApp);
+
+    // módulo com Base URL e Homolog URL editáveis na aba Parâmetros
+    private ModuleDefinition? ApiUrlDefinition => ModuleDefinitions.Find(IdApp) is { } definition && definition.Fields.Any(ModuleDefinitions.IsApiUrl) ? definition : null;
 
     private bool ManyCompanies => Companies.Count > 1;
 
