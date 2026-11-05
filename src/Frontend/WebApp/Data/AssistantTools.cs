@@ -226,7 +226,9 @@ namespace WebApp.Data
                 MinLevel = input.TryGetValue("incluir_avisos", out var warnings) && warnings.ValueKind == JsonValueKind.True ? MessageLevel.Warning : MessageLevel.Error,
                 IdApp = Int(input, "id_aplicacao"),
                 IdJob = idJob,
-                IdType = idJob is null ? null : Int(input, "id_tipo") ?? 2
+                IdType = idJob is null ? null : Int(input, "id_tipo") ?? 2,
+                // o assistente vê também os erros já reconhecidos (ele diz quais estão reconhecidos)
+                ShowAcknowledged = true
             };
 
             // com um job, as causas dele; sem job, os jobs com mais erros e as causas de cada um dos primeiros

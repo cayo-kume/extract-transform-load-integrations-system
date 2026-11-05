@@ -168,6 +168,10 @@ namespace WebApp.Data.Sql
                 AND (@search IS NULL
                     OR m.[Message] COLLATE Latin1_General_100_CI_AI LIKE @search
                     OR m.ExceptionMessage COLLATE Latin1_General_100_CI_AI LIKE @search)
+                -- Logs de Erros: as execuções até o último reconhecimento do job ficam de fora (MessageQuery.ShowAcknowledged)
+                AND (@showAcknowledged = 1 OR NOT EXISTS (
+                    SELECT 1 FROM [monitor].[JobAcknowledgement] ack WITH (NOLOCK)
+                    WHERE ack.Company = m.Company AND ack.IdJob = m.IdJob AND ack.IdType = m.IdType AND ack.[At] >= l.StartDate))
             """;
 
         private const string MessageColumns = """
@@ -488,7 +492,10 @@ namespace WebApp.Data.Sql
                         RunningDailyAt = DailyAt(job?.RunningDailyAt),
                         LastStartDate = job?.StartDate,
                         LastEndDate = job?.EndDate,
-                        Acknowledgement = job is null ? null : Acknowledgement(job, now)
+                        Acknowledgement = job is null ? null : Acknowledgement(job, now),
+                        LastAcknowledgement = job?.AckAt is DateTime at
+                            ? new AcknowledgementModel { Execution = job.AckExecution, Note = job.AckNote, User = job.AckUser, At = at, ExpiresAt = job.AckExpiresAt ?? at }
+                            : null
                     };
                 })
                 // ainda falhando primeiro, depois os recuperados; em cada bloco, a ocorrência mais recente primeiro
@@ -836,7 +843,8 @@ namespace WebApp.Data.Sql
                 idApp = query.IdApp,
                 idJob = query.IdJob,
                 idType = query.IdType,
-                search = new DbString { Value = search, IsAnsi = false, Length = 4000 }
+                search = new DbString { Value = search, IsAnsi = false, Length = 4000 },
+                showAcknowledged = query.ShowAcknowledged
             });
 
             return parameters;

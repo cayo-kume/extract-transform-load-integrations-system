@@ -6,6 +6,7 @@
 @inject ISnackbar Snackbar
 @inject ILogger<Errors> Logger
 @inject LoggedCompany LoggedCompany
+@inject IDialogService DialogService
 
 <PageTitle>Logs de Erros</PageTitle>
 
@@ -31,6 +32,16 @@
             }
             <MudSpacer />
             <MudCheckBox T="bool" Value="_includeWarnings" ValueChanged="OnIncludeWarningsChanged" Color="Color.Warning" Label="Incluir avisos" />
+            <MudTooltip Text="Mostra também os erros já reconhecidos, apagados, com quem reconheceu e o Desfazer">
+                <MudCheckBox T="bool" Value="_showAcknowledged" ValueChanged="OnShowAcknowledgedChanged" Color="Color.Primary" Label="Mostrar reconhecidos" />
+            </MudTooltip>
+            @if (LoggedCompany.CanManage)
+            {
+                <MudTooltip Text="Reconhece os erros de todos os jobs da lista: eles saem de Logs de Erros até errarem de novo">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Warning" Size="Size.Small" StartIcon="@Icons.Material.Filled.DoneAll"
+                               Disabled="@(_acknowledging || PendingJobs.Count == 0)" OnClick="AcknowledgeAll">Reconhecer todos</MudButton>
+                </MudTooltip>
+            }
             <RefreshBar UpdatedAt="_updatedAt" OnRefresh="Refresh" />
             <CopyButton GetText="@(() => Navigation.Uri)" Tooltip="Copiar o link desta tela (período, avisos e grupos do link)" />
         </div>
@@ -41,8 +52,10 @@
             {
                 var expanded = _expandedApps.Contains(app.IdParent);
                 var jobs = VisibleJobs(app.IdParent);
-                var errors = Searching ? jobs.Sum(x => x.Job.Errors) : app.Errors;
-                var warnings = Searching ? jobs.Sum(x => x.Job.Warnings) : app.Warnings;
+                // pelos jobs da lista, não pelos totais do período: os erros reconhecidos ficam de fora
+                var errors = jobs.Sum(x => x.Job.Errors);
+                var warnings = jobs.Sum(x => x.Job.Warnings);
+                var failing = jobs.Count(x => IsFailing(x.Job));
 
                 @* @key: sem ele, o Blazor reaproveita a MessagesTable de um grupo para outra aplicação quando a lista muda *@
                 <div class="app-group" @key="app.IdParent">
@@ -51,11 +64,11 @@
                         <MudText Typo="Typo.subtitle2">@app.Title</MudText>
                         @* no celular, os jobs falhando e o último erro descem para a segunda linha; os chips ficam ao lado do nome *@
                         <div class="app-group-info">
-                            @if (app.FailingJobs > 0)
+                            @if (failing > 0)
                             {
-                                <MudText Typo="Typo.caption" Color="Color.Error">@app.FailingJobs job(s) falhando agora</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Error">@failing job(s) falhando agora</MudText>
                             }
-                            @if (app.LastErrorAt is DateTime lastError)
+                            @if (jobs.Max(x => x.Job.LastErrorAt) is DateTime lastError)
                             {
                                 <MudText Typo="Typo.caption">último erro @MonitorDisplay.Ago(lastError, _updatedAt) (@MonitorDisplay.Time(lastError, _updatedAt))</MudText>
                             }
@@ -97,6 +110,7 @@
                                     <div class="job-group-head" role="button" tabindex="0" aria-expanded="@(nodeExpanded ? "true" : "false")" @onclick="@(() => ToggleKey(node.Key))" @onkeydown="@(e => OnKeyDown(e, node.Key))">
                                         <MudIcon Icon="@(nodeExpanded ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)" Size="Size.Small" />
                                         <HealthChip Context="node.Health" Now="_updatedAt" />
+                                        @CompanyChip(node.Key.Company)
                                         <MudText Typo="Typo.body2" Class="job-title">@node.Key.IdJob - @node.Title</MudText>
                                         @if (node.LastErrorAt is DateTime last)
                                         {
@@ -114,7 +128,8 @@
                                             <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Warning">@node.Warnings.ToString("N0") aviso(s)</MudChip>
                                         }
                                         <MudChip T="string" Size="Size.Small" Variant="Variant.Text">@node.Children.Count procedure(s)</MudChip>
-                                        <div @onclick:stopPropagation="true" @onkeydown:stopPropagation="true">
+                                        <div class="d-flex align-center gap-1" @onclick:stopPropagation="true" @onkeydown:stopPropagation="true">
+                                            @AckActions(node.Jobs, $"{node.Key.IdJob} - {node.Title}")
                                             <MudTooltip Text="Abrir o job na tela de Jobs">
                                                 <MudIconButton Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small" Href="@MonitorDisplay.JobLink(app.IdParent, node.Key.IdJob, node.Key.IdType, _filter.Period)" aria-label="Abrir o job" />
                                             </MudTooltip>
@@ -172,6 +187,8 @@
 
     private FilterState _filter = new();
     private bool _includeWarnings;
+    private bool _showAcknowledged;
+    private bool _acknowledging;
     private bool _loading = true;
     private DateTime _updatedAt;
     private (Period, bool)? _loadedKey;
@@ -184,15 +201,31 @@
     private readonly Dictionary<int, IReadOnlyList<MessageJobSummaryModel>> _textJobs = [];
     private readonly Dictionary<int, IReadOnlyList<JobModel>> _appJobs = [];
     private HashSet<int> _expandedApps = [];
-    // por (empresa, IdJob, IdType): na visão "Todas as empresas" o mesmo job aparece em cada empresa
+    // por (empresa, IdJob, IdType): com a holding escolhida o mesmo job aparece em cada empresa
     private HashSet<(string Company, int IdJob, int IdType)> _expandedJobs = [];
 
     // os grupos abertos antes da busca, para voltar a eles quando a busca é limpa
     private (HashSet<int> Apps, HashSet<(string, int, int)> Jobs)? _beforeSearch;
 
+    // com a holding escolhida, a holding e as filiais que o usuário vê (LoggedCompany.SummedCompanies), como na Visão Geral
+    private bool Summed => LoggedCompany.SummedCompanies.Count > 1;
+
+    private CompanyView View => Summed ? CompanyView.Summed : CompanyView;
+
+    // com a holding escolhida, cada job com o chip da empresa
+    private RenderFragment CompanyChip(string company) => __builder =>
+    {
+        if (Summed)
+        {
+            <MudTooltip Text="@company">
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary">@LoggedCompany.CompanyLabel(company)</MudChip>
+            </MudTooltip>
+        }
+    };
+
     private MessageLevel MinLevel => _includeWarnings ? MessageLevel.Warning : MessageLevel.Error;
 
-    private MessageQuery BaseQuery => new() { Period = _filter.Period, MinLevel = MinLevel };
+    private MessageQuery BaseQuery => new() { Period = _filter.Period, MinLevel = MinLevel, ShowAcknowledged = _showAcknowledged };
 
     private string? Search => string.IsNullOrWhiteSpace(_filter.Search) ? null : _filter.Search.Trim();
 
@@ -200,9 +233,18 @@
 
     private string? TextSearch => Search is { Length: >= MessageGrouping.MinSearchLength } search ? search : null;
 
-    private IEnumerable<AppSummaryModel> AppsWithMessages => Searching
-        ? _apps.Where(x => VisibleJobs(x.IdParent).Count > 0).OrderBy(x => x.Title)
-        : _apps.Where(x => x.Errors > 0 || (_includeWarnings && x.Warnings > 0)).OrderBy(x => x.Title);
+    // as aplicações com erro no período (pelos totais) que ainda têm job na lista: tirando os reconhecidos, pode não sobrar
+    private IEnumerable<AppSummaryModel> Candidates => _apps.Where(x => x.Errors > 0 || (_includeWarnings && x.Warnings > 0));
+
+    private IEnumerable<AppSummaryModel> AppsWithMessages => Candidates.Where(x => VisibleJobs(x.IdParent).Count > 0).OrderBy(x => x.Title);
+
+    // os jobs da lista que ainda não foram reconhecidos (Reconhecer todos), um por empresa e job
+    private List<MessageJobSummaryModel> PendingJobs => AppsWithMessages
+        .SelectMany(x => VisibleJobs(x.IdParent))
+        .Select(x => x.Job)
+        .Where(x => !x.IsAcknowledged)
+        .DistinctBy(x => (x.Company, x.IdJob, x.IdType))
+        .ToList();
 
     /// <summary>
     /// Job na tela: Search é o texto que as mensagens dele precisam ter (nulo quando casou pelo IdJob ou pelo título, e
@@ -317,6 +359,98 @@
         }
     }
 
+    private async Task OnShowAcknowledgedChanged(bool value)
+    {
+        _showAcknowledged = value;
+        await RefreshExpandedJobsAsync();
+    }
+
+    // Reconhecer (os jobs ainda não reconhecidos) ou, com todos reconhecidos, o chip com quem reconheceu e o Desfazer
+    private RenderFragment AckActions(IReadOnlyList<MessageJobSummaryModel> jobs, string title) => __builder =>
+    {
+        var pending = jobs.Where(x => !x.IsAcknowledged).ToList();
+
+        if (pending.Count == 0 && jobs.FirstOrDefault()?.LastAcknowledgement is { } acknowledgement)
+        {
+            <MudTooltip Text="@($"Reconhecido por {acknowledgement.User} às {acknowledgement.At:dd/MM HH:mm}{(acknowledgement.Note is null ? "" : $": {acknowledgement.Note}")}")">
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.DoneAll">Reconhecido</MudChip>
+            </MudTooltip>
+            @if (LoggedCompany.CanManage)
+            {
+                <MudButton Variant="Variant.Text" Size="Size.Small" StartIcon="@Icons.Material.Filled.RemoveDone" Disabled="_acknowledging" OnClick="@(() => UndoAsync(jobs))">Desfazer</MudButton>
+            }
+        }
+        else if (pending.Count > 0 && LoggedCompany.CanManage)
+        {
+            <MudTooltip Text="Os erros até agora saem da lista, com uma nota para o próximo turno; um erro novo volta">
+                <MudButton Variant="Variant.Outlined" Color="Color.Warning" Size="Size.Small" StartIcon="@Icons.Material.Filled.DoneAll" Disabled="_acknowledging"
+                           OnClick="@(() => AcknowledgeAsync(pending, $"Reconhecer erro de {title}"))">Reconhecer</MudButton>
+            </MudTooltip>
+        }
+    };
+
+    private Task AcknowledgeAll() => AcknowledgeAsync(PendingJobs, "Reconhecer todos os erros");
+
+    // reconhece cada job (a última execução dele): os erros até agora saem da lista; o aviso traz o Desfazer
+    private async Task AcknowledgeAsync(IReadOnlyList<MessageJobSummaryModel> jobs, string title)
+    {
+        if (jobs.Count == 0)
+            return;
+
+        var parameters = new DialogParameters<AcknowledgeDialog> { { x => x.Title, title }, { x => x.Count, jobs.Count } };
+        var reference = await DialogService.ShowAsync<AcknowledgeDialog>(title, parameters, new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        var result = await reference.Result;
+        if (result is null || result.Canceled)
+            return;
+
+        _acknowledging = true;
+        try
+        {
+            var saved = await Snackbar.TryAsync(Logger, async () =>
+            {
+                foreach (var job in jobs)
+                    await MonitorRepository.For(job.Company).AcknowledgeAsync(job.IdJob, job.IdType, result.Data as string);
+            }, "Não foi possível reconhecer os erros.");
+
+            if (saved)
+            {
+                var text = jobs.Count == 1 ? $"{jobs[0].IdJob} - {jobs[0].JobTitle} reconhecido e fora da lista." : $"{jobs.Count} jobs reconhecidos e fora da lista.";
+                Snackbar.Add(text, Severity.Success, config =>
+                {
+                    config.Action = "Desfazer";
+                    config.ActionColor = Color.Warning;
+                    config.OnClick = _ => InvokeAsync(() => UndoAsync(jobs));
+                });
+            }
+
+            await Refresh();
+        }
+        finally
+        {
+            _acknowledging = false;
+        }
+    }
+
+    // apaga o reconhecimento: os erros voltam à lista
+    private async Task UndoAsync(IReadOnlyList<MessageJobSummaryModel> jobs)
+    {
+        _acknowledging = true;
+        try
+        {
+            await Snackbar.TryAsync(Logger, async () =>
+            {
+                foreach (var job in jobs)
+                    await MonitorRepository.For(job.Company).RemoveAcknowledgementAsync(job.IdJob, job.IdType);
+            }, "Não foi possível desfazer o reconhecimento.");
+
+            await Refresh();
+        }
+        finally
+        {
+            _acknowledging = false;
+        }
+    }
+
     // a inclusão de avisos muda quais jobs aparecem e os totais; fica na URL (?warnings=1), como o período
     private void OnIncludeWarningsChanged(bool value) =>
         Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("warnings", value ? 1 : (int?)null));
@@ -325,7 +459,7 @@
     {
         await Snackbar.TryAsync(Logger, async () =>
         {
-            _apps = (await CompanyView.SummariesAsync(_filter.Period)).Where(x => x.IsContracted).ToList();
+            _apps = (await View.SummariesAsync(_filter.Period)).Where(x => x.IsContracted).ToList();
             _updatedAt = WebApp.Data.Sql.MainDatabase.LocalNow();
         }, "Não foi possível carregar as mensagens.");
 
@@ -344,10 +478,8 @@
         _jobs.Clear();
         _textJobs.Clear();
 
-        // com busca, todas as aplicações com mensagem no período; sem busca, só as abertas
-        var apps = Searching
-            ? _apps.Where(x => x.Errors > 0 || (_includeWarnings && x.Warnings > 0)).Select(x => x.IdParent).ToList()
-            : _expandedApps.ToList();
+        // todas as aplicações com mensagem no período: sem os reconhecidos, os totais e a lista saem dos jobs
+        var apps = Candidates.Select(x => x.IdParent).ToList();
 
         await Task.WhenAll(apps.Select(LoadJobs));
     }
@@ -358,13 +490,13 @@
         {
             var query = BaseQuery with { IdApp = idApp };
             // as empresas da tela (todas, na visão "Todas as empresas"), cada job com a empresa dele
-            _jobs[idApp] = await CompanyView.MessageJobsAsync(query);
+            _jobs[idApp] = await View.MessageJobsAsync(query);
 
             // todos os jobs da aplicação, para achar a integração pai de cada procedure e a saúde dela
-            _appJobs[idApp] = await CompanyView.JobsAsync(idApp, idType: null);
+            _appJobs[idApp] = await View.JobsAsync(idApp, idType: null);
 
             if (TextSearch is string search)
-                _textJobs[idApp] = await CompanyView.MessageJobsAsync(query with { Search = search });
+                _textJobs[idApp] = await View.MessageJobsAsync(query with { Search = search });
         }, "Não foi possível carregar os jobs da aplicação.");
     }
 
@@ -403,6 +535,8 @@
     private sealed record ErrorNode((string Company, int IdJob, int IdType) Key, string? Title, HealthContext Health, JobItem? Own, IReadOnlyList<JobItem> Children)
     {
         private IEnumerable<JobItem> All => Own is null ? Children : Children.Prepend(Own);
+
+        public IReadOnlyList<MessageJobSummaryModel> Jobs => All.Select(x => x.Job).ToList();
 
         public int Errors => All.Sum(x => x.Job.Errors);
         public int Warnings => All.Sum(x => x.Job.Warnings);
@@ -463,9 +597,10 @@
         var job = item.Job;
         var key = (job.Company, job.IdJob, job.IdType);
         var expanded = _expandedJobs.Contains(key);
-        <div class="job-group-head @(child ? "child" : "")" role="button" tabindex="0" aria-expanded="@(expanded ? "true" : "false")" @onclick="@(() => ToggleKey(key))" @onkeydown="@(e => OnKeyDown(e, key))">
+        <div class="job-group-head @(child ? "child" : "")" style="@(job.IsAcknowledged ? "opacity: .6" : null)" role="button" tabindex="0" aria-expanded="@(expanded ? "true" : "false")" @onclick="@(() => ToggleKey(key))" @onkeydown="@(e => OnKeyDown(e, key))">
             <MudIcon Icon="@(expanded ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)" Size="Size.Small" />
             <HealthChip Context="HealthContext.From(job)" Now="_updatedAt" />
+            @CompanyChip(job.Company)
             <MudText Typo="Typo.body2" Class="job-title">@job.IdJob - @job.JobTitle</MudText>
             @if (job.IsOnDemand)
             {
@@ -489,7 +624,8 @@
             <MudTooltip Text="Mensagens com o mesmo texto (números e Guids à parte) formam uma causa">
                 <MudChip T="string" Size="Size.Small" Variant="Variant.Text">@job.Causes causa(s)</MudChip>
             </MudTooltip>
-            <div @onclick:stopPropagation="true" @onkeydown:stopPropagation="true">
+            <div class="d-flex align-center gap-1" @onclick:stopPropagation="true" @onkeydown:stopPropagation="true">
+                @AckActions([job], $"{job.IdJob} - {job.JobTitle}")
                 <MudTooltip Text="Abrir o job na tela de Jobs">
                     <MudIconButton Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small" Href="@JobHref(job)" aria-label="Abrir o job" />
                 </MudTooltip>

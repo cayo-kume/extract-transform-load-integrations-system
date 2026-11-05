@@ -4,9 +4,10 @@
 @inject ISnackbar Snackbar
 @inject ILogger<JobActions> Logger
 
-@* Ações da linha de um job: executar agora e reconhecer a falha. Na tela Integrações (Inline), são botões com nome ao lado
-   de "Execuções" (rodada 9); no painel de saúde da Visão geral, um menu de três pontos. Nunca no clique do chip de saúde,
-   porque o chip também aparece nos cabeçalhos e nos contadores, onde o clique seria ambíguo. *@
+@* Ações da linha de um job. Na tela Integrações (Inline), só o Executar agora, com nome ao lado de "Execuções": reconhecer
+   o erro fica na tela Logs de Erros. No painel de saúde da Visão geral, um menu de três pontos com executar agora e
+   reconhecer a falha. Nunca no clique do chip de saúde, porque o chip também aparece nos cabeçalhos e nos contadores, onde o
+   clique seria ambíguo. *@
 
 @* o perfil Visualizador só vê: sem Executar agora nem Reconhecer *@
 @if (!LoggedCompany.CanManage)
@@ -19,18 +20,6 @@ else if (Inline)
         {
             <MudTooltip Text="@RunTooltip">
                 <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.PlayArrow" Disabled="@(!CanRun)" OnClick="RequestRun">Executar agora</MudButton>
-            </MudTooltip>
-        }
-        @if (Job.Acknowledgement is not null)
-        {
-            <MudTooltip Text="A falha volta para Falhas Ativas">
-                <MudButton Variant="Variant.Text" Color="Color.Default" Size="Size.Small" StartIcon="@Icons.Material.Filled.RemoveDone" OnClick="RemoveAcknowledgement">Desfazer reconhecimento</MudButton>
-            </MudTooltip>
-        }
-        else if (CanAcknowledge)
-        {
-            <MudTooltip Text="Tira a falha de Falhas Ativas até a próxima execução, com uma nota para o próximo turno">
-                <MudButton Variant="Variant.Outlined" Color="Color.Warning" Size="Size.Small" StartIcon="@Icons.Material.Filled.DoneAll" OnClick="Acknowledge">Reconhecer</MudButton>
             </MudTooltip>
         }
     </div>
@@ -116,7 +105,7 @@ else if (CanAcknowledge || Job.Acknowledgement is not null || CanRun || RunHint 
 
     private async Task Acknowledge()
     {
-        var parameters = new DialogParameters<AcknowledgeDialog> { { x => x.Job, Job } };
+        var parameters = new DialogParameters<AcknowledgeDialog> { { x => x.Title, $"Reconhecer {MonitorDisplay.HealthLabel(Job.Health).ToLowerInvariant()} de {Job.IdJob} - {Job.Title}" } };
         var reference = await DialogService.ShowAsync<AcknowledgeDialog>("Reconhecer falha", parameters, new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
         var result = await reference.Result;
         if (result is null || result.Canceled)

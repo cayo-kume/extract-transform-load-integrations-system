@@ -52,8 +52,8 @@ namespace WebApp.Data
             no fim do item no formato [texto](link), sem mudar o endereço.
 
             Você só lê dados. Não executa integrações, não reconhece falhas, não liga nem desliga jobs e não roda querys: se
-            pedirem, explique onde a pessoa faz isso no painel (Integrações: botões Executar agora e Reconhecer, e o chip
-            Ativo; Executar Querys para consultas). Você não tem acesso a credenciais nem a parâmetros dos módulos.
+            pedirem, explique onde a pessoa faz isso no painel (Integrações: botão Executar agora e o chip Ativo; Logs de
+            Erros: Reconhecer e Reconhecer todos; Executar Querys para consultas). Você não tem acesso a credenciais nem a parâmetros dos módulos.
 
             Saúde de um job: Erro (a última execução teve mensagem de erro), Atrasado (não começou nenhuma execução em 1 ×
             o intervalo), Rodando (sem fim) ou Ok. Falha reconhecida é uma falha que alguém da equipe já está tratando.

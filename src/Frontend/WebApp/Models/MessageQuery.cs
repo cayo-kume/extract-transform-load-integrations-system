@@ -25,5 +25,11 @@ namespace WebApp.Models
         /// Só as mensagens de uma causa (MessageGroupModel.Key).
         /// </summary>
         public string? GroupKey { get; init; }
+
+        /// <summary>
+        /// Falso (padrão da tela Logs de Erros): as mensagens das execuções que começaram até o último reconhecimento do job
+        /// (monitor.JobAcknowledgement.At, sem a validade de "Falhas Ativas") ficam de fora; um erro depois dele volta.
+        /// </summary>
+        public bool ShowAcknowledged { get; init; }
     }
 }

@@ -324,7 +324,8 @@ namespace WebApp.Data.Mocks
                         RunningDailyAt = job.Catalog.RunningDailyAt,
                         LastStartDate = last?.StartDate,
                         LastEndDate = last?.EndDate,
-                        Acknowledgement = AcknowledgementOf(job, last, now)
+                        Acknowledgement = AcknowledgementOf(job, last, now),
+                        LastAcknowledgement = LastAcknowledgementOf(job)
                     };
                 })
                 // ainda falhando primeiro, depois os recuperados; em cada bloco, a ocorrência mais recente primeiro
@@ -332,6 +333,13 @@ namespace WebApp.Data.Mocks
                 .ThenByDescending(x => x.LastErrorAt)
                 .ThenBy(x => x.IdJob)
                 .ToList();
+        }
+
+        // o último reconhecimento do job, sem a validade de "Falhas Ativas" (MessageQuery.ShowAcknowledged)
+        private AcknowledgementModel? LastAcknowledgementOf(MockJob job)
+        {
+            lock (_stateLock)
+                return _acknowledgements.GetValueOrDefault((job.Catalog.IdJob, job.Catalog.IdType));
         }
 
         public async Task<IReadOnlyList<MessageGroupModel>> GetMessageGroupsAsync(MessageQuery query, CancellationToken cancellationToken = default)
@@ -417,6 +425,8 @@ namespace WebApp.Data.Mocks
                 .Where(x => query.IdJob is null || (x.Catalog.IdJob == query.IdJob && x.Catalog.IdType == query.IdType))
                 .SelectMany(x => _timeline.Between(x, from, now, now))
                 .Where(x => x.Errors > 0 || (query.MinLevel <= MessageLevel.Warning && x.Warnings > 0))
+                // as execuções até o último reconhecimento do job ficam de fora, como no banco
+                .Where(x => query.ShowAcknowledged || LastAcknowledgementOf(x.Job) is not { } acknowledgement || x.StartDate > acknowledgement.At)
                 .OrderByDescending(x => x.StartDate);
         }
 

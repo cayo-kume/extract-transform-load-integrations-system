@@ -127,10 +127,13 @@
                         </div>
                         @if (holdingOpen)
                         {
-                            @foreach (var company in companies)
-                            {
-                                @Group(app, company.Company, nested: true)
-                            }
+                            @* 10 px antes da primeira empresa, o mesmo espaço entre as empresas e no fim do grupo *@
+                            <div style="padding-top: 10px">
+                                @foreach (var company in companies)
+                                {
+                                    @Group(app, company.Company, nested: true)
+                                }
+                            </div>
                         }
                     </div>
                 }

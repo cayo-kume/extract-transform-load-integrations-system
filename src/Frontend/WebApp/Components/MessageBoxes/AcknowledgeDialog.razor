@@ -1,26 +1,35 @@
-@* Nota opcional ao reconhecer a falha de um job; devolve o texto (ou vazio) e cancela com o X. *@
+@* Nota opcional ao reconhecer os erros de um ou mais jobs (Logs de Erros, "Falhas Ativas" da Visão geral); devolve o texto
+   (ou vazio) e cancela com o X. *@
 
 <MudDialog>
     <TitleContent>
-        <MudText Typo="Typo.h6">Reconhecer @MonitorDisplay.HealthLabel(Job.Health).ToLowerInvariant() de @Job.IdJob - @Job.Title</MudText>
+        <MudText Typo="Typo.h6">@Title</MudText>
     </TitleContent>
     <DialogContent>
         <MudText Typo="Typo.body2" Class="mb-3">
-            O job sai de "Falhas Ativas" e desce no painel de saúde até a próxima execução (ou por 24 h). A saúde não muda:
-            um erro novo volta a aparecer.
+            @(Count > 1 ? $"Os erros destes {Count} jobs" : "Os erros deste job") até agora saem de Logs de Erros e de "Falhas Ativas".
+            Se @(Count > 1 ? "um deles errar" : "ele errar") de novo, volta à lista com os erros novos.
         </MudText>
         <MudTextField T="string" @bind-Value="_note" Label="Nota para o próximo turno (opcional)" Placeholder="Ex.: API Totvs fora, chamado 12345 aberto" Variant="Variant.Outlined" Lines="3" MaxLength="500" Counter="500" Immediate="true" AutoFocus="true" />
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancelar</MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Confirm">Reconhecer</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Confirm">@(Count > 1 ? $"Reconhecer {Count}" : "Reconhecer")</MudButton>
     </DialogActions>
 </MudDialog>
 
 @code {
     [CascadingParameter] private IMudDialogInstance? MudDialog { get; set; }
 
-    [Parameter] public JobModel Job { get; set; } = default!;
+    /// <summary>
+    /// Ex.: "Reconhecer erro de 8003 - LinxUsuarios" ou "Reconhecer todos os erros".
+    /// </summary>
+    [Parameter] public string Title { get; set; } = "Reconhecer";
+
+    /// <summary>
+    /// Quantos jobs o reconhecimento cobre (o texto e o botão dizem quantos).
+    /// </summary>
+    [Parameter] public int Count { get; set; } = 1;
 
     private string? _note;
 

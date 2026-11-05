@@ -46,6 +46,17 @@ namespace WebApp.Models
         public AcknowledgementModel? Acknowledgement { get; set; }
 
         /// <summary>
+        /// O último reconhecimento do job, sem a validade de "Falhas Ativas": na tela Logs de Erros, os erros até ele saem da
+        /// lista (MessageQuery.ShowAcknowledged).
+        /// </summary>
+        public AcknowledgementModel? LastAcknowledgement { get; set; }
+
+        /// <summary>
+        /// Todos os erros do job na lista são de antes do último reconhecimento (só aparece com "Mostrar reconhecidos").
+        /// </summary>
+        public bool IsAcknowledged => LastAcknowledgement is { } acknowledgement && LastErrorAt is DateTime last && last <= acknowledgement.At;
+
+        /// <summary>
         /// Integração sob demanda (ver JobModel.IsOnDemand): o cabeçalho ganha o chip e o link vai para a tela Sob Demanda.
         /// </summary>
         public bool IsOnDemand => IdType == 2 && IntervalTimeInMinutes == 0 && RunningDailyAt is null;
