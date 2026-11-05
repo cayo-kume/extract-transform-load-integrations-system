@@ -6,7 +6,7 @@
 -- etl_query. No Azure SQL Database (EngineEdition 5) não há login no servidor: o usuário é contido no banco.
 
 -- etl_monitor: leitura de auditing e monitor, a agenda e a ativação dos jobs, o reconhecimento de falhas, as imagens e o
--- cadastro de empresas (procedures e as tabelas *Parameters que já existem no banco)
+-- cadastro de holdings, empresas e jobs (INSERT direto e as tabelas *Parameters que já existem no banco)
 CREATE OR ALTER PROCEDURE [dbo].[sp_Create_Monitor_User] (
     @password NVARCHAR(128) = NULL
 ) AS
@@ -42,17 +42,17 @@ BEGIN
     GRANT SELECT ON SCHEMA::[auditing] TO [etl_monitor];
     GRANT SELECT ON SCHEMA::[monitor] TO [etl_monitor];
 
-    -- agenda e ativação dos jobs da empresa, só nessas colunas
+    -- cadastro de holdings e empresas pela tela (INSERT direto, docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)
+    GRANT INSERT, UPDATE ON [auditing].[Holders] TO [etl_monitor];
+    GRANT INSERT, UPDATE ON [auditing].[Companies] TO [etl_monitor];
+
+    -- jobs da empresa: a tela contrata um módulo com INSERT a partir de auditing.fn_CatalogTree e muda a agenda e a
+    -- ativação só nessas colunas
+    GRANT INSERT ON [auditing].[Jobs] TO [etl_monitor];
     GRANT UPDATE ON [auditing].[Jobs] ([IsActive], [IntervalTimeInMinutes], [RunningDailyAt], [Queue]) TO [etl_monitor];
 
     GRANT INSERT, UPDATE, DELETE ON [monitor].[JobAcknowledgement] TO [etl_monitor];
     GRANT INSERT, UPDATE, DELETE ON [monitor].[AppImage] TO [etl_monitor];
-    GRANT UPDATE ON [monitor].[Company] ([Name], [TradeName], [IsActive], [UpdatedAt]) TO [etl_monitor];
-
-    GRANT EXECUTE ON [auditing].[sp_Add_Company] TO [etl_monitor];
-    GRANT EXECUTE ON [auditing].[sp_Add_Holding_Company] TO [etl_monitor];
-    GRANT EXECUTE ON [auditing].[sp_Add_Company_App] TO [etl_monitor];
-    GRANT EXECUTE ON [auditing].[sp_Remove_Company_App] TO [etl_monitor];
 
     -- parâmetros dos módulos (tela de cadastro): uma tabela *Parameters por módulo migrado neste banco
     SET @sql = N'';
