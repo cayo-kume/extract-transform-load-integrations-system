@@ -19,11 +19,11 @@ namespace WebJob.Recovery
     }
 
     /// <summary>
-    /// recuperação dos WebJobs travados (src/Backend/Hosts/WebJob/docs/PLANO-HOST-WEBJOB.md, passo 7), no lugar do
+    /// recuperação dos WebJobs travados (src/Backend/Hosts/WebJob/.docs/PLANO-HOST-WEBJOB.md, passo 7), no lugar do
     /// AzureService.RecoveryTotvsJobs() do sistema antigo: vale para todos os jobs, e a API da Azure (listar e reiniciar WebJobs)
     /// só é chamada quando o heartbeat de algum job está off. É o job 14000 (StuckJobsRecovery) de auditing.Jobs, com o seu
     /// próprio WebJob; roda só neste host. Cada holding tem o seu 14000 (na empresa que é a
-    /// própria holding) e lê o heartbeat dos jobs de todas as empresas dela (docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md); o
+    /// própria holding) e lê o heartbeat dos jobs de todas as empresas dela (.docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md); o
     /// WebJob reiniciado é o do job, que atende todas as empresas
     /// </summary>
     public class StuckJobsRecovery : IStuckJobsRecovery

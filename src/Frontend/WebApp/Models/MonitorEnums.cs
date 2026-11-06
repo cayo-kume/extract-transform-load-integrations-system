@@ -1,7 +1,7 @@
 namespace WebApp.Models
 {
     /// <summary>
-    /// Nível de uma mensagem de auditing.Messages (src/Backend/Shared/docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md).
+    /// Nível de uma mensagem de auditing.Messages (src/Backend/Shared/.docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md).
     /// </summary>
     public enum MessageLevel
     {

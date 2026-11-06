@@ -1,6 +1,6 @@
 <div align="center">
 
-![NEWBLOOMERS · Sistema de Integrações · ETL](../../../../docs/images/banner.png)
+![NEWBLOOMERS · Sistema de Integrações · ETL](../../../../.docs/images/banner.png)
 
 </div>
 
@@ -8,9 +8,9 @@
 
 <div align="center">
 
-![.NET 10](../../../../docs/images/badges/net-10.svg) ![ASP.NET Core](../../../../docs/images/badges/asp-net-core-swagger.svg) ![Hangfire](../../../../docs/images/badges/hangfire-1-8-opcional.svg)
+![.NET 10](../../../../.docs/images/badges/net-10.svg) ![ASP.NET Core](../../../../.docs/images/badges/asp-net-core-swagger.svg) ![Hangfire](../../../../.docs/images/badges/hangfire-1-8-opcional.svg)
 
-![Rotas](../../../../docs/images/badges/rotas-464-sq.svg) ![Porta](../../../../docs/images/badges/localhost-5252-sq.svg) ![Empresa](../../../../docs/images/badges/empresa-x-company-sq.svg) ![Autenticação](../../../../docs/images/badges/autenticao-desligada-sq.svg)
+![Rotas](../../../../.docs/images/badges/rotas-464-sq.svg) ![Porta](../../../../.docs/images/badges/localhost-5252-sq.svg) ![Empresa](../../../../.docs/images/badges/empresa-x-company-sq.svg) ![Autenticação](../../../../.docs/images/badges/autenticao-desligada-sq.svg)
 
 </div>
 
@@ -32,7 +32,7 @@
 
 Host web do sistema de integrações: registra os módulos, expõe as rotas que disparam cada leitura e escrita e, quando
 ligado, roda o **Hangfire**, que agenda os jobs recorrentes a partir de `auditing.Jobs`. Até 30/10/2026 o projeto se
-chamava `Hangfire`; as decisões e o histórico de cada passo estão em [docs/PLANO-HOST-WEBAPI.md](docs/PLANO-HOST-WEBAPI.md).
+chamava `Hangfire`; as decisões e o histórico de cada passo estão em [.docs/PLANO-HOST-WEBAPI.md](.docs/PLANO-HOST-WEBAPI.md).
 
 | | Item | Valor |
 |:---:|---|---|
@@ -44,7 +44,7 @@ chamava `Hangfire`; as decisões e o histórico de cada passo estão em [docs/PL
 
 <div align="center">
 
-![Swagger do WebApi](../../../../docs/images/swagger/visao-geral.png)
+![Swagger do WebApi](../../../../.docs/images/swagger/visao-geral.png)
 
 <sub><b>Swagger</b> — uma tag por service, agrupadas por módulo</sub>
 
@@ -93,7 +93,7 @@ storage, o usuário e a senha do dashboard...), o host não sobe e a mensagem li
 > host se registra em `auditing.SchedulingHosts` com heartbeat (a cada 30 s, expira em 2 min) e só o tipo que está no ar
 > há mais tempo executa os jobs da agenda: o Hangfire ligado com o Worker no ar sobe, avisa no log e deixa os jobs da
 > agenda em `Deleted` com o motivo, até o Worker sair. Para ligar os dois de propósito numa migração:
-> `Scheduling:AllowOtherHostTypes = true` ([melhorias, 4.2](../../../../docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md#42-ponto-7-dois-agendadores-no-mesmo-banco)).
+> `Scheduling:AllowOtherHostTypes = true` ([melhorias, 4.2](../../../../.docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md#42-ponto-7-dois-agendadores-no-mesmo-banco)).
 
 ---
 
@@ -164,7 +164,7 @@ WebApi/
 │   └── HangfireJobRunner.cs                                o que o Hangfire executa: repassa ao ScheduledJobRunner
 ├── appsettings.json
 ├── WebApi.http
-└── docs/PLANO-HOST-WEBAPI.md
+└── .docs/PLANO-HOST-WEBAPI.md
 ```
 
 Os mapas `IdJob → método` (`RecurringJobs/`), o `JobCron` e o `ScheduledJobRunner` ficam no projeto
@@ -240,14 +240,14 @@ do módulo. `Swagger:DefaultCompany`, no `appsettings.json`, já preenche o camp
 | 🟣 **Linx Commerce** | `LinxCommerceJobs/LinxCommerce` | **12** | [README](../../Modules/LinxCommerce/README.md) |
 | 🟣 **Movidesk** | `MovideskJobs/Movidesk` | **16** | [README](../../Modules/General/Movidesk/README.md) |
 | 🟣 **AfterSale** | `AfterSaleJobs/AfterSale` | **24** | [README](../../Modules/General/AfterSale/README.md) |
-| 🟠 **Data warehouse** | `DataWarehouseJobs/DataWarehouse` | **5** | [funcionamento e fluxo](../../Modules/DataWarehouse/docs/DATAWAREHOUSE-FUNCIONAMENTO-E-FLUXO.md); 200 concluída, 500 falha, 409 outra carga rodando |
+| 🟠 **Data warehouse** | `DataWarehouseJobs/DataWarehouse` | **5** | [funcionamento e fluxo](../../Modules/DataWarehouse/.docs/DATAWAREHOUSE-FUNCIONAMENTO-E-FLUXO.md); 200 concluída, 500 falha, 409 outra carga rodando |
 
 <details>
 <summary><b>🖼️ Exemplo: rotas do AfterSale no Swagger</b></summary>
 
 <div align="center">
 
-![Rotas do AfterSale no Swagger](../../../../docs/images/swagger/aftersale.png)
+![Rotas do AfterSale no Swagger](../../../../.docs/images/swagger/aftersale.png)
 
 </div>
 
@@ -261,7 +261,7 @@ módulos entram no host conforme forem migrados (plano, passo 6).
 ## 🏢 Empresa da execução nas rotas
 
 Toda execução grava a holding e a empresa em `auditing.Logs`, `Messages` e `Records`
-([proposta do schema auditing](../../../../docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)). Nas rotas, quem informa é o
+([proposta do schema auditing](../../../../.docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)). Nas rotas, quem informa é o
 **`CompanyContextFilter`**, global, antes da action:
 
 * o **`{docCompany}`** da rota; ou
@@ -425,7 +425,7 @@ da mesma empresa; as duas rodam em sequência (a trava da empresa impede rodarem
 > pede a trava do job (`job:<IdJob>`, ou a do grupo do DW) sem esperar. Ocupada, a rota devolve **409**
 > (`JOB_ALREADY_RUNNING`) sem gravar nada em `auditing`; a trava fica com a requisição até o fim. As rotas por chave
 > (ex.: um ticket pelo número) e as de escrita não são jobs da agenda e não pedem trava
-> ([melhorias, 4.1](../../../../docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md#41-ponto-6-rotas-do-webapi-sem-a-trava)).
+> ([melhorias, 4.1](../../../../.docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md#41-ponto-6-rotas-do-webapi-sem-a-trava)).
 
 ---
 
@@ -444,7 +444,7 @@ da mesma empresa; as duas rodam em sequência (a trava da empresa impede rodarem
 
 ## 🧪 Comportamento testado
 
-Conferido nos [testes de hospedagem](../../../../docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md) de 02 e 03/11/2026 (cenários
+Conferido nos [testes de hospedagem](../../../../.docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md) de 02 e 03/11/2026 (cenários
 C1, C2, C3, A1, A2, A5, A6, A8 e A10), com os 12 jobs do conjunto mínimo a cada 5 minutos:
 
 | Situação | O que acontece |
@@ -463,7 +463,7 @@ C1, C2, C3, A1, A2, A5, A6, A8 e A10), com os 12 jobs do conjunto mínimo a cada
 ## ➕ Um job ou um módulo novo
 
 * **Job recorrente novo num módulo do host:** a linha no script de jobs da service (vai para `auditing.Catalog`, sem agenda;
-  a agenda sugerida é uma linha na [`docs/AGENDA-SUGERIDA-JOBS.csv`](../../../../docs/AGENDA-SUGERIDA-JOBS.csv), ver [PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md](../../../../docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md)
+  a agenda sugerida é uma linha na [`.docs/AGENDA-SUGERIDA-JOBS.csv`](../../../../.docs/AGENDA-SUGERIDA-JOBS.csv), ver [PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md](../../../../.docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md)
   §3.1), a rota no controller, a entrada no mapa do módulo em
   `src/Backend/Hosts/Hosts.Scheduling/RecurringJobs/<Módulo>RecurringJobs.cs`, com o método sem parâmetros do service, e
   `[JobVersion("1.0.0")]` no método da classe do service. Para as empresas que já têm o módulo, contratar o módulo
@@ -476,7 +476,7 @@ C1, C2, C3, A1, A2, A5, A6, A8 e A10), com os 12 jobs do conjunto mínimo a cada
 
 <div align="center">
 
-![NEWBLOOMERS](../../../../docs/newbloomers.png)
+![NEWBLOOMERS](../../../../.docs/newbloomers.png)
 
 <sub>Host WebApi · <a href="../../../../README.md">voltar ao README do repositório</a></sub>
 

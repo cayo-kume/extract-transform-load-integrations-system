@@ -4,7 +4,7 @@ using Microsoft.Extensions.Configuration;
 namespace Hosts.Scheduling
 {
     /// <summary>
-    /// um tipo de host de agenda por banco (docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md, 4.2): cada instância de Hangfire, Quartz ou
+    /// um tipo de host de agenda por banco (.docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md, 4.2): cada instância de Hangfire, Quartz ou
     /// WebJob se registra em auditing.SchedulingHosts com heartbeat (SchedulingHostHeartbeat), e só o tipo que está no ar há mais
     /// tempo executa os jobs da agenda. Vários do mesmo tipo podem (o cluster do Quartz, os WebJobs, vários servidores do Hangfire).
     /// Quem não agenda continua no ar e assume quando o outro tipo sair (parada ou 2 min sem heartbeat). Com

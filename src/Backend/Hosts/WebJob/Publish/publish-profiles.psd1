@@ -1,4 +1,4 @@
-# Perfis de publicação do host WebJob (src/Backend/Hosts/WebJob/docs/PLANO-HOST-WEBJOB.md §6.1), lidos pelo publish-webjob.ps1.
+# Perfis de publicação do host WebJob (src/Backend/Hosts/WebJob/.docs/PLANO-HOST-WEBJOB.md §6.1), lidos pelo publish-webjob.ps1.
 # Só nomes de recursos da Azure, nenhum segredo: a autenticação é a do "az login" de quem publica (ou a identidade do
 # pipeline). Este arquivo não entra no build nem no zip dos WebJobs.
 @{
@@ -25,7 +25,7 @@
             Jobs           = @()
         }
 
-        # testes de hospedagem C7 (docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md, seção 5.2): o grupo e o App Service criados
+        # testes de hospedagem C7 (.docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md, seção 5.2): o grupo e o App Service criados
         # por tools/azure/New-AzureTestResources.ps1 e apagados no fim; o conjunto mínimo de jobs da seção 2.1
         teste = @{
             SubscriptionId = 'f65c8654-2630-4bda-aba5-4c2a8eba4cf0'

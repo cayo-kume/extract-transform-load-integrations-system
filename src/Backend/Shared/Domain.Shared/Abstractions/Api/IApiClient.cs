@@ -3,7 +3,7 @@ namespace Domain.Shared.Abstractions.Api
     public interface IApiClient
     {
         /// <summary>
-        /// GET; erro de rede na leitura da resposta repete uma vez, depois de 10 s (docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md, 2.2)
+        /// GET; erro de rede na leitura da resposta repete uma vez, depois de 10 s (.docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md, 2.2)
         /// </summary>
         Task<string?> GetAsync(string route, Dictionary<string, string>? headers = null, Dictionary<string, string>? queryParams = null);
         Task<string?> PostAsync(string route, object? body = null, Dictionary<string, string>? headers = null, string? contentType = null);

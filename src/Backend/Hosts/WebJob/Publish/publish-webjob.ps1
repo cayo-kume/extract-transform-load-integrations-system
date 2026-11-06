@@ -2,7 +2,7 @@
 <#
 .SYNOPSIS
     Publica os jobs do host WebJob na Azure: um WebJob contínuo por job, chamado "<Title> - V<versão>"
-    (src/Backend/Hosts/WebJob/docs/PLANO-HOST-WEBJOB.md, passo 6).
+    (src/Backend/Hosts/WebJob/.docs/PLANO-HOST-WEBJOB.md, passo 6).
 
 .DESCRIPTION
     Lê o perfil em publish-profiles.psd1 (na mesma pasta), faz um "dotnet publish" só e, para cada IdJob do perfil, monta um

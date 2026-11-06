@@ -4,7 +4,7 @@ namespace WebApp.Data
 {
     /// <summary>
     /// As tabelas *Parameters de cada módulo e as colunas que a tela de cadastro edita, num único lugar
-    /// (docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.5). Cada módulo tem colunas próprias; a fonte é o Script001 de Parameters do
+    /// (.docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.5). Cada módulo tem colunas próprias; a fonte é o Script001 de Parameters do
     /// módulo. Os nomes de tabela e coluna daqui entram no SQL do repositório, então só vêm desta lista, nunca da tela.
     /// No Movidesk, AfterSale, LinxMicrovix e Totvs cada credencial tem a gêmea de homologação (hml_), e a aba Parâmetros
     /// edita a Base URL, a Homolog URL e qual das duas os jobs usam (use_homolog_url): marcada a Homolog URL, os jobs usam

@@ -5,7 +5,7 @@ namespace Application.LinxMicrovix.Outbound.Abstractions.Services
 {
     /// <summary>
     /// métodos em comum usados pelos services do módulo; o envelope XML, a chamada à API, a repetição pelo timestamp e a
-    /// leitura da resposta ficam no próprio método de cada service (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §4.1)
+    /// leitura da resposta ficam no próprio método de cada service (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/.docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md §4.1)
     /// </summary>
     public interface ILinxMicrovixService
     {
@@ -17,7 +17,7 @@ namespace Application.LinxMicrovix.Outbound.Abstractions.Services
         /// <summary>
         /// janela de datas de uma leitura recorrente pelo timestamp. Com o timestamp do banco em 0 (carga inicial) e
         /// InitialLoad:MaxMonths ligado: data inicial = horário do lote − MaxMonths e filtra_somente_timestamp = 0, para a API
-        /// filtrar pela data (testado, docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md §1.3). No resto: 2000-01-01 e 1, como sempre.
+        /// filtrar pela data (testado, .docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md §1.3). No resto: 2000-01-01 e 1, como sempre.
         /// Calcular uma vez antes das páginas: da 2ª em diante o timestamp não é mais 0, e a carga não pode trocar de modo no meio
         /// </summary>
         /// <param name="timestamp">o timestamp gravado no banco (GetLastTimestamp)</param>

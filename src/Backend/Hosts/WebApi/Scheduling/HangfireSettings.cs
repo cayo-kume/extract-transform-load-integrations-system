@@ -1,7 +1,7 @@
 namespace WebApi.Scheduling
 {
     /// <summary>
-    /// seção Hangfire do appsettings.json (src/Backend/Hosts/WebApi/docs/PLANO-HOST-WEBAPI.md §3.1). Com Enabled = false o host sobe
+    /// seção Hangfire do appsettings.json (src/Backend/Hosts/WebApi/.docs/PLANO-HOST-WEBAPI.md §3.1). Com Enabled = false o host sobe
     /// só como API e nada daqui é lido; com true, a seção é validada na subida (HangfireSettingsValidator)
     /// </summary>
     public class HangfireSettings

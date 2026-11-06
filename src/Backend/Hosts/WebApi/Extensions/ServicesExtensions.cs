@@ -27,7 +27,7 @@ namespace WebApi.Extensions
         {
             builder.Services.AddScopedSharedServices();
 
-            // rotas que rodam um job da agenda pedem a mesma trava dos agendadores (docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md,
+            // rotas que rodam um job da agenda pedem a mesma trava dos agendadores (.docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md,
             // 4.1): ligada pelo RouteJobLockFilter só nas requisições, não nas execuções do Hangfire; ocupada, 409
             builder.Services.AddScoped<RouteJobLock>();
             builder.Services.AddScoped<IJobExecutionGuard>(sp => sp.GetRequiredService<RouteJobLock>());
@@ -46,7 +46,7 @@ namespace WebApi.Extensions
             builder.Services.AddScopedTotvsServices(builder.Configuration);
             builder.Services.AddScopedDataWarehouseServices(builder.Configuration);
 
-            // Hangfire opcional (src/Backend/Hosts/WebApi/docs/PLANO-HOST-WEBAPI.md §3): com Hangfire:Enabled = false o host sobe só
+            // Hangfire opcional (src/Backend/Hosts/WebApi/.docs/PLANO-HOST-WEBAPI.md §3): com Hangfire:Enabled = false o host sobe só
             // como API, sem storage, servidor, dashboard nem agenda, e o banco do Hangfire nem é acessado
             builder.Services.Configure<HangfireSettings>(builder.Configuration.GetSection(HangfireSettings.SectionName));
 
@@ -94,7 +94,7 @@ namespace WebApi.Extensions
             // executor dos jobs da agenda (Hosts.Scheduling): grava o log da execução que cai no meio
             services.AddScheduledJobRunner();
 
-            // um tipo de host de agenda por banco (docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md, 4.2): antes do servidor do
+            // um tipo de host de agenda por banco (.docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md, 4.2): antes do servidor do
             // Hangfire, que roda os atrasados logo na subida
             services.AddSchedulingHostRegistration("Hangfire");
 

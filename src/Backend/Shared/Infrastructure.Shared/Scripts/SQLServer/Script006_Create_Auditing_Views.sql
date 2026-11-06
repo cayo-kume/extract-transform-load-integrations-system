@@ -1,4 +1,4 @@
-/****** Heartbeat dos jobs de integração (src/Backend/Hosts/WebJob/docs/PLANO-HOST-WEBJOB.md, passo 7) ******/
+/****** Heartbeat dos jobs de integração (src/Backend/Hosts/WebJob/.docs/PLANO-HOST-WEBJOB.md, passo 7) ******/
 -- Por job de integração recorrente (IdType = 2, IsOnDemand = 0) e empresa (Holder + Company): a agenda (auditing.Jobs) e
 -- a última execução terminada e a execução aberta mais antiga (auditing.Logs) daquela empresa. Só dados: a regra de "off"
 -- (ex.: sem execução terminada há mais que 1 × o intervalo) fica em quem lê, como a recuperação dos WebJobs e o painel do

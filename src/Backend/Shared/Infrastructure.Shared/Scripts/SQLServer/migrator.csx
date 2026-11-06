@@ -14,7 +14,7 @@ var builder = new SqlConnectionStringBuilder(connectionString);
 Console.WriteLine($"Conectando em: servidor {builder.DataSource}, banco {builder.InitialCatalog}");
 
 // 0. Azure SQL serverless pausado: o primeiro acesso acorda o banco, o que leva até ≈ 90 s, e a conexão desiste em 15 s
-// (testes de hospedagem, A8; docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md, 5.6). Repete enquanto o banco acorda; qualquer outro
+// (testes de hospedagem, A8; .docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md, 5.6). Repete enquanto o banco acorda; qualquer outro
 // erro (banco que ainda não existe, login) segue para o EnsureDatabase, que mostra o erro de verdade. Sem pool: com ele, o
 // erro de um banco que ainda não existe fica guardado e volta na conexão do DbUp logo depois de o EnsureDatabase criar o banco
 var probe = new SqlConnectionStringBuilder(connectionString) { Pooling = false }.ConnectionString;
@@ -58,7 +58,7 @@ if (!result.Successful)
     Environment.Exit(-1);
 }
 
-// 4. Usuários de banco do WebApp (Script009, src/Frontend/WebApp/docs/PLANO-WEBAPP.md, passo 10): só com a senha na
+// 4. Usuários de banco do WebApp (Script009, src/Frontend/WebApp/.docs/PLANO-WEBAPP.md, passo 10): só com a senha na
 // variável de ambiente, nunca no argumento nem no script. Sem a variável, quem administra roda a procedure à mão.
 // Banco novo: o Script001 troca a collation do banco, e a conexão do pool aberta antes dele não volta mais ("Resetting the
 // connection results in a different state than the initial login", visto no teste C1). Limpar o pool abre uma conexão nova

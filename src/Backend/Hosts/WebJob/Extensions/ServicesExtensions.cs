@@ -13,7 +13,7 @@ namespace WebJob.Extensions
     public static class ServicesExtensions
     {
         /// <summary>
-        /// os mesmos módulos do host WebApi (src/Backend/Hosts/WebJob/docs/PLANO-HOST-WEBJOB.md §3.2) e o executor de jobs. Um módulo
+        /// os mesmos módulos do host WebApi (src/Backend/Hosts/WebJob/.docs/PLANO-HOST-WEBJOB.md §3.2) e o executor de jobs. Um módulo
         /// novo entra aqui e no WebApi, junto com o mapa em Hosts.Scheduling
         /// </summary>
         public static HostApplicationBuilder AddServices(this HostApplicationBuilder builder)

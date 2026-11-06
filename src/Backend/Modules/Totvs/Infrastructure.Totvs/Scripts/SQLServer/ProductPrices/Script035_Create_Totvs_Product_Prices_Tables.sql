@@ -1,5 +1,5 @@
--- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
-/****** Preços e custos: tabelas untreated e totvs (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.9, fase PR-2) ******/
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; .docs/MIGRATOR-CSX.md)
+/****** Preços e custos: tabelas untreated e totvs (src/Backend/Modules/Totvs/.docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.9, fase PR-2) ******/
 --uma linha por loja + produto + código (todos os códigos de preço, custo e saldo do cadastro). branchCode vem antes do produto
 --na chave: a janela, a carga inicial e o cache de estado consultam por loja. Os dados do produto já estão em TotvsSkus.
 
@@ -116,7 +116,7 @@ alter table [totvs].TotvsPricesOtherPromotions add constraint [FK_TotvsPricesOth
 
 go
 
-/****** Tabelas de preço (itens) e promoções: tabelas untreated e totvs (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.2, fase PR-2) ******/
+/****** Tabelas de preço (itens) e promoções: tabelas untreated e totvs (src/Backend/Modules/Totvs/.docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.2, fase PR-2) ******/
 --itens das tabelas de PEDFM011 (o cabeçalho é a TotvsPriceTables, do Script045) e itens de promoção de PRDFM002/PRDFM319
 
 if dbo.fn_Migrator_Creates(N'[untreated].TotvsPriceTablesItems') = 1

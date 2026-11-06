@@ -1,6 +1,6 @@
 <div align="center">
 
-![NEWBLOOMERS · Sistema de Integrações · ETL](../../../../../docs/images/banner.png)
+![NEWBLOOMERS · Sistema de Integrações · ETL](../../../../../.docs/images/banner.png)
 
 </div>
 
@@ -8,9 +8,9 @@
 
 <div align="center">
 
-![App](../../../../../docs/images/badges/app-50.svg) ![Schema](../../../../../docs/images/badges/schema-aftersale.svg) ![Rotas](../../../../../docs/images/badges/rotas-24.svg) ![Jobs](../../../../../docs/images/badges/jobs-50005999.svg)
+![App](../../../../../.docs/images/badges/app-50.svg) ![Schema](../../../../../.docs/images/badges/schema-aftersale.svg) ![Rotas](../../../../../.docs/images/badges/rotas-24.svg) ![Jobs](../../../../../.docs/images/badges/jobs-50005999.svg)
 
-![.NET](../../../../../docs/images/badges/net-10-sq.svg) ![API](../../../../../docs/images/badges/api-send4-public-api-1-0-8-sq.svg) ![Leituras](../../../../../docs/images/badges/leituras-e-commerce-reversas-reembolsos-sq.svg) ![Ações](../../../../../docs/images/badges/aes-10-sq.svg)
+![.NET](../../../../../.docs/images/badges/net-10-sq.svg) ![API](../../../../../.docs/images/badges/api-send4-public-api-1-0-8-sq.svg) ![Leituras](../../../../../.docs/images/badges/leituras-e-commerce-reversas-reembolsos-sq.svg) ![Ações](../../../../../.docs/images/badges/aes-10-sq.svg)
 
 </div>
 
@@ -78,7 +78,7 @@ AfterSale/
 ├── Domain.AfterSale          ← contratos, DTOs, entidades e enums (sem dependência de infraestrutura)
 ├── Application.AfterSale     ← services (regras de integração), queries SQL e validações
 ├── Infrastructure.AfterSale  ← repositórios, injeção de dependência e scripts de banco
-└── docs                      ← propostas, planos e implementações do módulo
+└── .docs                      ← propostas, planos e implementações do módulo
     └── Responsed Jsons  ← JSONs de referência usados para montar DTOs e entidades
 ```
 
@@ -145,7 +145,7 @@ Domain.AfterSale/
   * `integrated_or_updated_at` e `request_date`, preenchidas pelo sistema com o horário de Brasília;
   * `date` de `AfterSaleRefundsStatusHistories`, que faz parte da chave primária e por isso mantém o fallback `01/01/1990`.
   
-  Guia: [`src/Backend/Modules/General/AfterSale/docs/PROPOSTA-DATAS-NULAS-AFTERSALE.md`](docs/PROPOSTA-DATAS-NULAS-AFTERSALE.md).
+  Guia: [`src/Backend/Modules/General/AfterSale/.docs/PROPOSTA-DATAS-NULAS-AFTERSALE.md`](.docs/PROPOSTA-DATAS-NULAS-AFTERSALE.md).
 * As entidades de reversas e de reembolsos usadas pelos métodos implementados têm `doc_company` (CNPJ da empresa), que faz parte da chave primária da tabela. Ainda **sem** `doc_company`: `Me` (dados do e-commerce) e `Reverses/History`, cujo método está pendente (ver [Pendências](#-pendências-conhecidas)).
 * Listas filhas usam `[SkipProperty]` para não virarem coluna no bulk insert. O bulk insert mapeia as colunas **pelo nome** da propriedade.
 * `EnumJob` deve ficar em sincronia com os scripts de jobs de cada pasta (`Script0NN_Insert_AfterSale_*_Jobs_Into_Jobs_Table.sql`).
@@ -222,7 +222,7 @@ Application.AfterSale/
 
 ### Fluxo das leituras (GET)
 
-Todas as leituras seguem o mesmo desenho, documentado em [`docs/PADRAO-CACHE-INTEGRACOES.md`](../../../../../docs/PADRAO-CACHE-INTEGRACOES.md):
+Todas as leituras seguem o mesmo desenho, documentado em [`.docs/PADRAO-CACHE-INTEGRACOES.md`](../../../../../.docs/PADRAO-CACHE-INTEGRACOES.md):
 
 1. abre um log em `auditing.Logs` com o job do método;
 2. com o token da empresa da execução (`AfterSaleParameters` com `doc_company` = a empresa), chama a API (seguindo `next_page_url` nas rotas paginadas, com pausa para respeitar o limite de requisições da AfterSale);
@@ -363,7 +363,7 @@ O host chama o método em `Hosts/WebApi/Extensions/ServicesExtensions.cs`.
 > módulo, sem o problema do limite de 260 caracteres. Em linha de comando:
 > `./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -Apps AfterSale -SchedulingHost WebApi`.
 
-Executados uma única vez cada pelo DbUp (`Scripts/SQLServer/migrator.csx`), na ordem do número do arquivo. Uma correção de tabela, procedure ou view vai **no script de criação original**, não num `ALTER` novo ([padrão, §3.3](../../../../../docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md)); num banco que já rodou o script, a correção é aplicada à parte. Os scripts gerais ficam em `Parameters/` e cada service tem a sua pasta, com o trio tabelas, procedures e jobs.
+Executados uma única vez cada pelo DbUp (`Scripts/SQLServer/migrator.csx`), na ordem do número do arquivo. Uma correção de tabela, procedure ou view vai **no script de criação original**, não num `ALTER` novo ([padrão, §3.3](../../../../../.docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md)); num banco que já rodou o script, a correção é aplicada à parte. Os scripts gerais ficam em `Parameters/` e cada service tem a sua pasta, com o trio tabelas, procedures e jobs.
 
 | Pasta | Script | Conteúdo |
 |---|---|---|
@@ -371,7 +371,7 @@ Executados uma única vez cada pelo DbUp (`Scripts/SQLServer/migrator.csx`), na 
 | `Parameters/` | `Script002_Create_AfterSale_Errors_Sync_Procedures.sql` | Procedure de merge de `AfterSaleErrors` (comum a reembolsos e reversas) |
 | `Parameters/` | `Script003_Insert_AfterSale_Values_Into_Apps_Table.sql` | App `50 - AfterSale` em `auditing.Apps` |
 | `Parameters/` | `Script004_Insert_AfterSale_Errors_Jobs_Into_Jobs_Table.sql` | Job da procedure de `AfterSaleErrors` (5536) em `auditing.Catalog` |
-| `Seeds/SQLServer/` (irmã de `Scripts/`) | `Script005_Insert_Values_Into_AfterSale_Parameters_Table.sql` | Empresas e tokens em `AfterSaleParameters`. **Fora do DbUp**: só o [`tools/seeds/Import-TestSeeds.ps1`](../../../../../tools/seeds/Import-TestSeeds.ps1) roda ([plano do cadastro](../../../../../docs/PLANO-TELA-CADASTRO-EMPRESA.md)) |
+| `Seeds/SQLServer/` (irmã de `Scripts/`) | `Script005_Insert_Values_Into_AfterSale_Parameters_Table.sql` | Empresas e tokens em `AfterSaleParameters`. **Fora do DbUp**: só o [`tools/seeds/Import-TestSeeds.ps1`](../../../../../tools/seeds/Import-TestSeeds.ps1) roda ([plano do cadastro](../../../../../.docs/PLANO-TELA-CADASTRO-EMPRESA.md)) |
 | `Parameters/` | `Script006_Create_AfterSale_Requests_Table.sql` | `aftersale.AfterSaleRequests` (log das chamadas de escrita), já com `integrated_or_updated_at` |
 | `Me/` | `Script007`–`009` | `AfterSaleEcommerces`, `...MessagesPages`, `...MessagesMails`, `...Reasons`, `...SubReasons`, `...StringValues`; procedures de merge e jobs do e-commerce |
 | `Refunds/` | `Script010`–`012` | `AfterSaleRefunds` e filhas (`CouldChangeStatusFor`, `OrdersPaymentsMethods`, `StatusHistories`, `TotalAmountHistories`, `Products`, `ProductsImages`, `ProductsImagesUrls`), `AfterSaleSummarizedRefunds`, `AfterSaleStatusRefunds`, `AfterSaleActionsRefunds`, `AfterSaleBanksRefunds`, `AfterSaleTypesRefunds`; procedures de merge e jobs dos reembolsos |
@@ -389,7 +389,7 @@ Rota base: `AfterSaleJobs/AfterSale`.
 
 <div align="center">
 
-![Swagger do AfterSale](../../../../../docs/images/swagger/aftersale.png)
+![Swagger do AfterSale](../../../../../.docs/images/swagger/aftersale.png)
 
 <sub><b>Swagger</b> do WebApi — tag <code>AfterSaleReverses</code> aberta</sub>
 
@@ -452,7 +452,7 @@ Resposta: **200** quando a AfterSale devolve `success = true`, **422** quando n�
 
 <div align="center">
 
-![Tela Sob Demanda do painel](../../../../../docs/images/webapp/sob-demanda.png)
+![Tela Sob Demanda do painel](../../../../../.docs/images/webapp/sob-demanda.png)
 
 <sub><b>Sob Demanda</b> no Monitor de Integrações — as ações e leituras por id do AfterSale ficam no grupo do módulo</sub>
 
@@ -465,7 +465,7 @@ Resposta: **200** quando a AfterSale devolve `success = true`, **422** quando n�
 O catálogo fica em `auditing.Catalog` (scripts de jobs de `Parameters/`, `Me/`, `Refunds/` e `Reverses/`, sem agenda), com `IdParent = 50` (app AfterSale), e os mesmos
 ids em `EnumJob`. Cada empresa recebe a sua cópia em `auditing.Jobs` (`Holder` e `Company` na chave) ao contratar o módulo
 no WebApp (Cadastro › Módulos e Credenciais), com a agenda sugerida
-([`AGENDA-SUGERIDA-JOBS.csv`](../../../../../docs/AGENDA-SUGERIDA-JOBS.csv)) e os jobs **inativos** até alguém ligar.
+([`AGENDA-SUGERIDA-JOBS.csv`](../../../../../.docs/AGENDA-SUGERIDA-JOBS.csv)) e os jobs **inativos** até alguém ligar.
 
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
@@ -504,7 +504,7 @@ flowchart LR
 Toda execução grava `auditing.Logs` (com a `Company` da execução) e, conforme o caso, `auditing.Messages` (mensagens e erros de
 validação) e `auditing.Records` (registros integrados).
 
-Cada mensagem tem um nível ([`PROPOSTA-NIVEL-MENSAGEM-AUDITING.md`](../../../Shared/docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md)):
+Cada mensagem tem um nível ([`PROPOSTA-NIVEL-MENSAGEM-AUDITING.md`](../../../Shared/.docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md)):
 
 | Nível | Mensagens |
 |---|---|
@@ -528,7 +528,7 @@ Cada mensagem tem um nível ([`PROPOSTA-NIVEL-MENSAGEM-AUDITING.md`](../../../Sh
 
 ---
 
-## 📁 Pasta `docs/Responsed Jsons`
+## 📁 Pasta `.docs/Responsed Jsons`
 
 JSONs de referência por rota (`Me`, `Refund/*`, `Reverse/*`), usados para montar DTOs e entidades:
 
@@ -543,7 +543,7 @@ JSONs de referência por rota (`Me`, `Refund/*`, `Reverse/*`), usados para monta
 
 ## 🚧 Pendências conhecidas
 
-* **Datas legadas `1990-01-01`**: registros gravados antes da mudança para datas anuláveis mantêm `01/01/1990` nas datas que vieram vazias, até serem reintegrados. O script avulso de limpeza está em [`src/Backend/Modules/General/AfterSale/docs/PROPOSTA-DATAS-NULAS-AFTERSALE.md`](docs/PROPOSTA-DATAS-NULAS-AFTERSALE.md) e ainda não foi executado. Consumidores fora do módulo que tratam `1990-01-01` como "sem data" precisam passar a usar `is null`.
+* **Datas legadas `1990-01-01`**: registros gravados antes da mudança para datas anuláveis mantêm `01/01/1990` nas datas que vieram vazias, até serem reintegrados. O script avulso de limpeza está em [`src/Backend/Modules/General/AfterSale/.docs/PROPOSTA-DATAS-NULAS-AFTERSALE.md`](.docs/PROPOSTA-DATAS-NULAS-AFTERSALE.md) e ainda não foi executado. Consumidores fora do módulo que tratam `1990-01-01` como "sem data" precisam passar a usar `is null`.
 * **Detalhes já gravados não são atualizados pelo lote**: `GetReverse` e `GetRefund` só leem quem ainda não tem detalhe. Alterações posteriores chegam apenas por `GetReverseById` / `GetRefundById`.
 * **Histórico de reversas**: DTOs, entidade, tabela `AfterSaleHistoriesReverses` (já com `doc_company`) e a sua procedure de merge existem, mas não há método nem endpoint, e a entidade ainda não tem `doc_company`. O job 5010 e o da procedure (5516) saíram do `EnumJob` e dos scripts de jobs: voltam quando o método for escrito.
 * ⚠️ **`Me`**: as entidades e tabelas do e-commerce ainda não têm `doc_company`, então os dados das duas empresas não são separados por CNPJ.
@@ -554,23 +554,23 @@ JSONs de referência por rota (`Me`, `Refund/*`, `Reverse/*`), usados para monta
 
 ## 📚 Documentação complementar
 
-Guias de alteração e decisões tomadas durante o desenvolvimento, na pasta [`docs/`](docs) do módulo (os padrões comuns ficam no `docs/` da raiz e em `src/Backend/Shared/docs`):
+Guias de alteração e decisões tomadas durante o desenvolvimento, na pasta [`.docs/`](.docs) do módulo (os padrões comuns ficam no `.docs/` da raiz e em `src/Backend/Shared/.docs`):
 
 | Documento | Assunto |
 |---|---|
-| [`PADRAO-CACHE-INTEGRACOES.md`](../../../../../docs/PADRAO-CACHE-INTEGRACOES.md) | Padrão de cache das leituras |
-| [`ALTERACOES-GETSTATUS-REVERSES.md`](docs/ALTERACOES-GETSTATUS-REVERSES.md), [`ALTERACOES-GETTRANSPORTATIONS-REVERSES.md`](docs/ALTERACOES-GETTRANSPORTATIONS-REVERSES.md), [`ALTERACOES-CNPJ-DEMAIS-METODOS-REVERSES.md`](docs/ALTERACOES-CNPJ-DEMAIS-METODOS-REVERSES.md) | CNPJ (`doc_company`) nas leituras de reversas |
-| [`ANALISE-ROTAS-PUT-POST-REVERSAS.md`](docs/ANALISE-ROTAS-PUT-POST-REVERSAS.md) | Análise das rotas de escrita de reversas |
-| [`PROPOSTA-LOG-REQUISICOES-ESCRITA.md`](docs/PROPOSTA-LOG-REQUISICOES-ESCRITA.md) | Log das chamadas de escrita (`AfterSaleRequests`) |
-| [`ALTERACOES-MERGE-PROCEDURE-AUDITORIA.md`](../../../../../src/Backend/Shared/docs/ALTERACOES-MERGE-PROCEDURE-AUDITORIA.md) | Procedure de merge e relacionamentos da auditoria |
-| [`IMPLEMENTACAO-GETREFUNDS.md`](docs/IMPLEMENTACAO-GETREFUNDS.md), [`IMPLEMENTACAO-GETREFUND.md`](docs/IMPLEMENTACAO-GETREFUND.md), [`IMPLEMENTACAO-REFUNDS-STATUS-ACTIONS-BANKS-TYPES.md`](docs/IMPLEMENTACAO-REFUNDS-STATUS-ACTIONS-BANKS-TYPES.md), [`IMPLEMENTACAO-REFUNDS-POSTS.md`](docs/IMPLEMENTACAO-REFUNDS-POSTS.md) | Implementação das rotas de reembolsos |
-| [`PROPOSTA-DATAS-NULAS-AFTERSALE.md`](docs/PROPOSTA-DATAS-NULAS-AFTERSALE.md) | Datas anuláveis (`DateTime?`) no padrão do Movidesk |
+| [`PADRAO-CACHE-INTEGRACOES.md`](../../../../../.docs/PADRAO-CACHE-INTEGRACOES.md) | Padrão de cache das leituras |
+| [`ALTERACOES-GETSTATUS-REVERSES.md`](.docs/ALTERACOES-GETSTATUS-REVERSES.md), [`ALTERACOES-GETTRANSPORTATIONS-REVERSES.md`](.docs/ALTERACOES-GETTRANSPORTATIONS-REVERSES.md), [`ALTERACOES-CNPJ-DEMAIS-METODOS-REVERSES.md`](.docs/ALTERACOES-CNPJ-DEMAIS-METODOS-REVERSES.md) | CNPJ (`doc_company`) nas leituras de reversas |
+| [`ANALISE-ROTAS-PUT-POST-REVERSAS.md`](.docs/ANALISE-ROTAS-PUT-POST-REVERSAS.md) | Análise das rotas de escrita de reversas |
+| [`PROPOSTA-LOG-REQUISICOES-ESCRITA.md`](.docs/PROPOSTA-LOG-REQUISICOES-ESCRITA.md) | Log das chamadas de escrita (`AfterSaleRequests`) |
+| [`ALTERACOES-MERGE-PROCEDURE-AUDITORIA.md`](../../../../../src/Backend/Shared/.docs/ALTERACOES-MERGE-PROCEDURE-AUDITORIA.md) | Procedure de merge e relacionamentos da auditoria |
+| [`IMPLEMENTACAO-GETREFUNDS.md`](.docs/IMPLEMENTACAO-GETREFUNDS.md), [`IMPLEMENTACAO-GETREFUND.md`](.docs/IMPLEMENTACAO-GETREFUND.md), [`IMPLEMENTACAO-REFUNDS-STATUS-ACTIONS-BANKS-TYPES.md`](.docs/IMPLEMENTACAO-REFUNDS-STATUS-ACTIONS-BANKS-TYPES.md), [`IMPLEMENTACAO-REFUNDS-POSTS.md`](.docs/IMPLEMENTACAO-REFUNDS-POSTS.md) | Implementação das rotas de reembolsos |
+| [`PROPOSTA-DATAS-NULAS-AFTERSALE.md`](.docs/PROPOSTA-DATAS-NULAS-AFTERSALE.md) | Datas anuláveis (`DateTime?`) no padrão do Movidesk |
 
 ---
 
 <div align="center">
 
-![NEWBLOOMERS](../../../../../docs/newbloomers.png)
+![NEWBLOOMERS](../../../../../.docs/newbloomers.png)
 
 <sub>Sistema de integrações · feito com .NET 10</sub>
 

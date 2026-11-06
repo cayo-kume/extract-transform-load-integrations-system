@@ -8,7 +8,7 @@ using System.Reflection;
 namespace Hosts.Scheduling.RecurringJobs
 {
     /// <summary>
-    /// o que um job de auditing.Jobs executa (src/Backend/Hosts/WebApi/docs/PLANO-HOST-WEBAPI.md §4.2): o método sem parâmetros do
+    /// o que um job de auditing.Jobs executa (src/Backend/Hosts/WebApi/.docs/PLANO-HOST-WEBAPI.md §4.2): o método sem parâmetros do
     /// service, a versão dele ([JobVersion] no método da classe do service, §4.10) e a chave da trava de concorrência (§4.7).
     /// Quando, em que fila e se roda vem da tabela. Serve aos dois hosts de agenda: quem executa é o ScheduledJobRunner
     /// </summary>
@@ -60,7 +60,7 @@ namespace Hosts.Scheduling.RecurringJobs
         }
 
         /// <summary>
-        /// job que só executa uma procedure no banco (src/Backend/Hosts/WebJob/docs/PLANO-HOST-WEBJOB.md §4.2), pelo repositório do
+        /// job que só executa uma procedure no banco (src/Backend/Hosts/WebJob/.docs/PLANO-HOST-WEBJOB.md §4.2), pelo repositório do
         /// Shared. Sem método de service, a versão vem aqui, e não de [JobVersion]. O log da execução é o que a própria procedure
         /// grava (auditing.sp_Log_*); uma falha vai para o log do host. O título é o Title da linha em auditing.Jobs. Ex.:
         /// ForProcedure(10001, "P_Volo_Integracao_Clientes", "[general].[P_Volo_Integracao_Clientes]", "1.0.0")
@@ -85,7 +85,7 @@ namespace Hosts.Scheduling.RecurringJobs
             $"job:{idJob}";
 
         /// <summary>
-        /// trava da execução de uma empresa (docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.4): com ela ocupada, a execução anterior da
+        /// trava da execução de uma empresa (.docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.4): com ela ocupada, a execução anterior da
         /// mesma empresa ainda roda. A ConcurrencyKey continua valendo entre empresas, porque o job escreve nas mesmas tabelas
         /// (untreated e a sp_*_Sync) para todas
         /// </summary>

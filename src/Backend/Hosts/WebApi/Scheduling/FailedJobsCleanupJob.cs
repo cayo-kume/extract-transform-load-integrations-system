@@ -5,7 +5,7 @@ using Microsoft.Extensions.Options;
 namespace WebApi.Scheduling
 {
     /// <summary>
-    /// limpeza da tela de Failed do dashboard (src/Backend/Hosts/WebApi/docs/PLANO-HOST-WEBAPI.md §3.4). Com AutomaticRetry em 0, toda
+    /// limpeza da tela de Failed do dashboard (src/Backend/Hosts/WebApi/.docs/PLANO-HOST-WEBAPI.md §3.4). Com AutomaticRetry em 0, toda
     /// falha fica em Failed, que não expira; este job passa para Deleted as que falharam há mais de
     /// Hangfire:Maintenance:FailedJobsRetentionInDays, e elas saem do storage pela retenção do §3.3. O erro continua em auditing.Logs e
     /// auditing.Messages

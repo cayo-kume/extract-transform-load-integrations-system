@@ -1,6 +1,6 @@
 <div align="center">
 
-![NEWBLOOMERS · Sistema de Integrações · ETL](../../../../../docs/images/banner.png)
+![NEWBLOOMERS · Sistema de Integrações · ETL](../../../../../.docs/images/banner.png)
 
 </div>
 
@@ -8,9 +8,9 @@
 
 <div align="center">
 
-![App](../../../../../docs/images/badges/app-30.svg) ![Schema](../../../../../docs/images/badges/schema-movidesk.svg) ![Rotas](../../../../../docs/images/badges/rotas-16.svg) ![Jobs](../../../../../docs/images/badges/jobs-30003999.svg)
+![App](../../../../../.docs/images/badges/app-30.svg) ![Schema](../../../../../.docs/images/badges/schema-movidesk.svg) ![Rotas](../../../../../.docs/images/badges/rotas-16.svg) ![Jobs](../../../../../.docs/images/badges/jobs-30003999.svg)
 
-![.NET](../../../../../docs/images/badges/net-10-sq.svg) ![API](../../../../../docs/images/badges/api-pblica-v1-sq.svg) ![Leituras](../../../../../docs/images/badges/leituras-tickets-pessoas-servios-sq.svg) ![Escritas](../../../../../docs/images/badges/escritas-sim-sq.svg) ![Limite](../../../../../docs/images/badges/limite-10-req-min-sq.svg)
+![.NET](../../../../../.docs/images/badges/net-10-sq.svg) ![API](../../../../../.docs/images/badges/api-pblica-v1-sq.svg) ![Leituras](../../../../../.docs/images/badges/leituras-tickets-pessoas-servios-sq.svg) ![Escritas](../../../../../.docs/images/badges/escritas-sim-sq.svg) ![Limite](../../../../../.docs/images/badges/limite-10-req-min-sq.svg)
 
 </div>
 
@@ -79,7 +79,7 @@ Movidesk/
 ├── Domain.Movidesk          ← contratos, DTOs, entidades e enums (sem dependência de infraestrutura)
 ├── Application.Movidesk     ← services (regras de integração), queries SQL e validações
 ├── Infrastructure.Movidesk  ← repositórios, injeção de dependência e scripts de banco
-└── docs                     ← propostas, planos e implementações do módulo
+└── .docs                     ← propostas, planos e implementações do módulo
     └── Responsed Jsons  ← JSONs de referência (dados fictícios) usados para montar DTOs e entidades
 ```
 
@@ -209,7 +209,7 @@ Application.Movidesk/
 
 ### Fluxo das leituras recorrentes (tickets e pessoas)
 
-Seguem o padrão de [`docs/PADRAO-CACHE-INTEGRACOES.md`](../../../../../docs/PADRAO-CACHE-INTEGRACOES.md):
+Seguem o padrão de [`.docs/PADRAO-CACHE-INTEGRACOES.md`](../../../../../.docs/PADRAO-CACHE-INTEGRACOES.md):
 
 1. abre um log em `auditing.Logs` com o job do método;
 2. para cada empresa de `MovideskParameters`, calcula a janela de busca:
@@ -221,7 +221,7 @@ Seguem o padrão de [`docs/PADRAO-CACHE-INTEGRACOES.md`](../../../../../docs/PAD
 6. converte para entidades, faz o bulk insert nas tabelas `untreated` e chama as procedures de merge `movidesk.sp_<Tabela>_Sync`, do pai para os filhos;
 7. grava cada registro integrado (com o JSON recebido) em `auditing.Records`.
 
-**Tickets** com todas as listas expandidas numa chamada levam ~100 s por página e chegam a dar 504. Por isso o `GetTickets` trabalha em duas fases ([detalhes](docs/IMPLEMENTACAO-MOVIDESK-GETTICKETS-EXPAND-EM-GRUPOS.md)):
+**Tickets** com todas as listas expandidas numa chamada levam ~100 s por página e chegam a dar 504. Por isso o `GetTickets` trabalha em duas fases ([detalhes](.docs/IMPLEMENTACAO-MOVIDESK-GETTICKETS-EXPAND-EM-GRUPOS.md)):
 
 * **Fase 1:** lista só `id` e `lastUpdate` da janela (1.000 por chamada) e usa o cache para separar os tickets novos ou alterados.
 * **Fase 2:** busca os alterados em blocos de até 100, por faixa de ids, com o `$expand` dividido em **5 chamadas** por bloco (campos, ações, clientes e itens, históricos, campos adicionais).
@@ -237,7 +237,7 @@ Seguem o padrão de [`docs/PADRAO-CACHE-INTEGRACOES.md`](../../../../../docs/PAD
 > com `$top` cheio ou ticket sem algum grupo, fica onde estava, e a próxima execução relista a mesma janela (o cache de
 > estado evita regravar o que já entrou). Erro da API é mensagem de **erro** e a execução termina "Concluída com erro da
 > API Movidesk em N empresa(s)". Com a coluna nula (antes da primeira execução completa), vale a regra antiga
-> ([melhorias, 2.1](../../../../../docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md#21-ponto-11-movidesk-tickets-pula-tickets-depois-de-um-bloco-com-erro)).
+> ([melhorias, 2.1](../../../../../.docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md#21-ponto-11-movidesk-tickets-pula-tickets-depois-de-um-bloco-com-erro)).
 > Num banco que rodou a versão anterior, para recuperar tickets pulados, ponha `tickets_synced_until` 89 dias atrás uma vez.
 
 ```mermaid
@@ -305,7 +305,7 @@ Como a API indica "não encontrado":
 
 ### Fluxo da escrita (tickets, pessoas e serviços)
 
-Detalhes e decisões em [`src/Backend/Modules/General/Movidesk/docs/IMPLEMENTACAO-MOVIDESK-TICKETS-ESCRITA.md`](docs/IMPLEMENTACAO-MOVIDESK-TICKETS-ESCRITA.md), [`src/Backend/Modules/General/Movidesk/docs/IMPLEMENTACAO-MOVIDESK-PESSOAS-ESCRITA.md`](docs/IMPLEMENTACAO-MOVIDESK-PESSOAS-ESCRITA.md) e [`src/Backend/Modules/General/Movidesk/docs/IMPLEMENTACAO-MOVIDESK-SERVICES-ESCRITA.md`](docs/IMPLEMENTACAO-MOVIDESK-SERVICES-ESCRITA.md). Cada service tem o seu fluxo comum (`SendTicket`, `SendPerson` e `SendService`), e os três devolvem o mesmo `Dtos/Writes/Result`.
+Detalhes e decisões em [`src/Backend/Modules/General/Movidesk/.docs/IMPLEMENTACAO-MOVIDESK-TICKETS-ESCRITA.md`](.docs/IMPLEMENTACAO-MOVIDESK-TICKETS-ESCRITA.md), [`src/Backend/Modules/General/Movidesk/.docs/IMPLEMENTACAO-MOVIDESK-PESSOAS-ESCRITA.md`](.docs/IMPLEMENTACAO-MOVIDESK-PESSOAS-ESCRITA.md) e [`src/Backend/Modules/General/Movidesk/.docs/IMPLEMENTACAO-MOVIDESK-SERVICES-ESCRITA.md`](.docs/IMPLEMENTACAO-MOVIDESK-SERVICES-ESCRITA.md). Cada service tem o seu fluxo comum (`SendTicket`, `SendPerson` e `SendService`), e os três devolvem o mesmo `Dtos/Writes/Result`.
 
 1. o controller valida o corpo (FluentValidation, `Validations/Writes/Tickets`, `Validations/Writes/People` e `Validations/Writes/Services`) e devolve **400** sem chamar a API, porque 3 erros seguidos bloqueiam a API por 60 s;
 2. o service abre um log com o job da rota, busca a empresa pelo CNPJ e chama a API pelo `IApiClient.SendAsync`, que devolve o status HTTP (PATCH, relacionamentos e DELETE respondem 200 sem corpo);
@@ -376,13 +376,13 @@ O host chama o método em `Hosts/WebApi/Extensions/ServicesExtensions.cs`.
 > módulo, sem o problema do limite de 260 caracteres. Em linha de comando:
 > `./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -Apps Movidesk -SchedulingHost WebApi`.
 
-O DbUp (`Scripts/SQLServer/migrator.csx`) executa cada script uma única vez, na ordem do número do arquivo. Uma correção de tabela, procedure ou view vai **no script de criação original**, não num `ALTER` novo ([padrão, §3.3](../../../../../docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md)); num banco que já rodou o script, a correção é aplicada à parte. Os scripts gerais ficam em `Parameters/` e cada service tem a sua pasta, com o trio tabelas, procedures e jobs.
+O DbUp (`Scripts/SQLServer/migrator.csx`) executa cada script uma única vez, na ordem do número do arquivo. Uma correção de tabela, procedure ou view vai **no script de criação original**, não num `ALTER` novo ([padrão, §3.3](../../../../../.docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md)); num banco que já rodou o script, a correção é aplicada à parte. Os scripts gerais ficam em `Parameters/` e cada service tem a sua pasta, com o trio tabelas, procedures e jobs.
 
 | Pasta | Script | Conteúdo |
 |---|---|---|
 | `Parameters/` | `Script001_Create_Movidesk_Parameters_Table.sql` | Schemas `movidesk` e `untreated` (só se não existirem) e `movidesk.MovideskParameters` (CNPJ + token por empresa) |
 | `Parameters/` | `Script002_Insert_Movidesk_Values_Into_Apps_Table.sql` | App `30 - Movidesk` em `auditing.Apps` |
-| `Seeds/SQLServer/` (irmã de `Scripts/`) | `Script003_Insert_Values_Into_Movidesk_Parameters_Table.sql` | Empresa e token em `MovideskParameters`. **Fora do DbUp**: só o [`tools/seeds/Import-TestSeeds.ps1`](../../../../../tools/seeds/Import-TestSeeds.ps1) roda ([plano do cadastro](../../../../../docs/PLANO-TELA-CADASTRO-EMPRESA.md)) |
+| `Seeds/SQLServer/` (irmã de `Scripts/`) | `Script003_Insert_Values_Into_Movidesk_Parameters_Table.sql` | Empresa e token em `MovideskParameters`. **Fora do DbUp**: só o [`tools/seeds/Import-TestSeeds.ps1`](../../../../../tools/seeds/Import-TestSeeds.ps1) roda ([plano do cadastro](../../../../../.docs/PLANO-TELA-CADASTRO-EMPRESA.md)) |
 | `Parameters/` | `Script004_Create_Movidesk_Requests_Table.sql` | `movidesk.MovideskRequests` (log das chamadas sob demanda), já com `integrated_or_updated_at` |
 | `Tickets/` | `Script005`–`007` | `MovideskTickets`, as tabelas filhas e netas (tags, clientes, relacionamentos, históricos, campos adicionais, itens de configuração, ações e seus tags/apontamentos/despesas/anexos), mais os domínios `MovideskTicketsOrigins` e `MovideskTicketsTypes`; procedures de merge e jobs dos tickets |
 | `People/` | `Script008`–`010` | `MovideskPeople`, as filhas e netas (endereços, contatos, e-mails, equipes, relacionamentos e seus serviços, campos adicionais, itens de configuração), mais os domínios `MovideskPersonTypes` e `MovideskProfileTypes`; procedures de merge e jobs das pessoas |
@@ -405,7 +405,7 @@ Rota base: `MovideskJobs/Movidesk`.
 
 <div align="center">
 
-![Swagger do Movidesk](../../../../../docs/images/swagger/movidesk.png)
+![Swagger do Movidesk](../../../../../.docs/images/swagger/movidesk.png)
 
 <sub><b>Swagger</b> do WebApi — tag <code>MovideskTickets</code> aberta</sub>
 
@@ -478,7 +478,7 @@ Mesmas exigências das leituras sob demanda (`X-User-Name` e `{docCompany}`), co
 
 <div align="center">
 
-![Tela Sob Demanda do painel](../../../../../docs/images/webapp/sob-demanda.png)
+![Tela Sob Demanda do painel](../../../../../.docs/images/webapp/sob-demanda.png)
 
 <sub><b>Sob Demanda</b> no Monitor de Integrações — as rotas sem agenda do Movidesk ficam no grupo do módulo</sub>
 
@@ -488,7 +488,7 @@ Mesmas exigências das leituras sob demanda (`X-User-Name` e `{docCompany}`), co
 
 ## 📝 Auditoria (jobs)
 
-O catálogo fica em `auditing.Catalog` (scripts de jobs de `Tickets/`, `People/` e `Services/`, sem agenda), com os mesmos ids em `EnumJob`. Cada empresa recebe a sua cópia em `auditing.Jobs` (`Holder` e `Company` na chave) ao contratar o módulo no WebApp (Cadastro › Módulos e Credenciais), com a agenda sugerida ([`AGENDA-SUGERIDA-JOBS.csv`](../../../../../docs/AGENDA-SUGERIDA-JOBS.csv)) e os jobs **inativos** (`IsActive = 0`) até alguém ligar.
+O catálogo fica em `auditing.Catalog` (scripts de jobs de `Tickets/`, `People/` e `Services/`, sem agenda), com os mesmos ids em `EnumJob`. Cada empresa recebe a sua cópia em `auditing.Jobs` (`Holder` e `Company` na chave) ao contratar o módulo no WebApp (Cadastro › Módulos e Credenciais), com a agenda sugerida ([`AGENDA-SUGERIDA-JOBS.csv`](../../../../../.docs/AGENDA-SUGERIDA-JOBS.csv)) e os jobs **inativos** (`IsActive = 0`) até alguém ligar.
 
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
@@ -532,7 +532,7 @@ Toda execução grava `auditing.Logs` (com a `Company` da execução) e, conform
 * `auditing.Messages`, com mensagens e erros de validação;
 * `auditing.Records`, com os registros integrados e o JSON recebido.
 
-Cada mensagem tem um nível ([`PROPOSTA-NIVEL-MENSAGEM-AUDITING.md`](../../../Shared/docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md)):
+Cada mensagem tem um nível ([`PROPOSTA-NIVEL-MENSAGEM-AUDITING.md`](../../../Shared/.docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md)):
 
 | Nível | Mensagens |
 |---|---|
@@ -556,7 +556,7 @@ Cada mensagem tem um nível ([`PROPOSTA-NIVEL-MENSAGEM-AUDITING.md`](../../../Sh
 
 ---
 
-## 📁 Pasta `docs/Responsed Jsons`
+## 📁 Pasta `.docs/Responsed Jsons`
 
 Respostas reais da API, com os dados trocados por **dados fictícios** para não expor informações no histórico do git:
 
@@ -572,26 +572,26 @@ Respostas reais da API, com os dados trocados por **dados fictícios** para não
 
 ## 📚 Documentação complementar
 
-Guias de modelagem, implementação e decisões tomadas, na pasta [`docs/`](docs) do módulo (os padrões comuns ficam no `docs/` da raiz e em `src/Backend/Shared/docs`):
+Guias de modelagem, implementação e decisões tomadas, na pasta [`.docs/`](.docs) do módulo (os padrões comuns ficam no `.docs/` da raiz e em `src/Backend/Shared/.docs`):
 
 | Documento | Assunto |
 |---|---|
-| [`MOVIDESK-MODELAGEM-TICKETS.md`](docs/MOVIDESK-MODELAGEM-TICKETS.md) | Tabelas e relações dos tickets |
-| [`IMPLEMENTACAO-MOVIDESK-GETTICKETS.md`](docs/IMPLEMENTACAO-MOVIDESK-GETTICKETS.md), [`IMPLEMENTACAO-MOVIDESK-GETTICKET.md`](docs/IMPLEMENTACAO-MOVIDESK-GETTICKET.md) | Leitura dos tickets (lista e por número) |
-| [`MOVIDESK-MODELAGEM-PESSOAS.md`](docs/MOVIDESK-MODELAGEM-PESSOAS.md) | Tabelas e relações das pessoas |
-| [`IMPLEMENTACAO-MOVIDESK-GETPEOPLE.md`](docs/IMPLEMENTACAO-MOVIDESK-GETPEOPLE.md), [`IMPLEMENTACAO-MOVIDESK-GETPERSON.md`](docs/IMPLEMENTACAO-MOVIDESK-GETPERSON.md) | Leitura das pessoas (lista e por Cód. Ref.) |
-| [`IMPLEMENTACAO-MOVIDESK-SERVICES.md`](docs/IMPLEMENTACAO-MOVIDESK-SERVICES.md) | Tabelas e leitura do catálogo de serviços |
-| [`IMPLEMENTACAO-MOVIDESK-TICKETS-ESCRITA.md`](docs/IMPLEMENTACAO-MOVIDESK-TICKETS-ESCRITA.md) | Criação, alteração e anexos de tickets |
-| [`IMPLEMENTACAO-MOVIDESK-PESSOAS-ESCRITA.md`](docs/IMPLEMENTACAO-MOVIDESK-PESSOAS-ESCRITA.md) | Criação, alteração, relacionamentos e exclusão de pessoas |
-| [`IMPLEMENTACAO-MOVIDESK-SERVICES-ESCRITA.md`](docs/IMPLEMENTACAO-MOVIDESK-SERVICES-ESCRITA.md) | Criação, alteração e exclusão de serviços |
-| [`PADRAO-CACHE-INTEGRACOES.md`](../../../../../docs/PADRAO-CACHE-INTEGRACOES.md) | Padrão de cache das leituras |
-| [`ALTERACOES-MERGE-PROCEDURE-AUDITORIA.md`](../../../../../src/Backend/Shared/docs/ALTERACOES-MERGE-PROCEDURE-AUDITORIA.md) | Procedure de merge e auditoria |
+| [`MOVIDESK-MODELAGEM-TICKETS.md`](.docs/MOVIDESK-MODELAGEM-TICKETS.md) | Tabelas e relações dos tickets |
+| [`IMPLEMENTACAO-MOVIDESK-GETTICKETS.md`](.docs/IMPLEMENTACAO-MOVIDESK-GETTICKETS.md), [`IMPLEMENTACAO-MOVIDESK-GETTICKET.md`](.docs/IMPLEMENTACAO-MOVIDESK-GETTICKET.md) | Leitura dos tickets (lista e por número) |
+| [`MOVIDESK-MODELAGEM-PESSOAS.md`](.docs/MOVIDESK-MODELAGEM-PESSOAS.md) | Tabelas e relações das pessoas |
+| [`IMPLEMENTACAO-MOVIDESK-GETPEOPLE.md`](.docs/IMPLEMENTACAO-MOVIDESK-GETPEOPLE.md), [`IMPLEMENTACAO-MOVIDESK-GETPERSON.md`](.docs/IMPLEMENTACAO-MOVIDESK-GETPERSON.md) | Leitura das pessoas (lista e por Cód. Ref.) |
+| [`IMPLEMENTACAO-MOVIDESK-SERVICES.md`](.docs/IMPLEMENTACAO-MOVIDESK-SERVICES.md) | Tabelas e leitura do catálogo de serviços |
+| [`IMPLEMENTACAO-MOVIDESK-TICKETS-ESCRITA.md`](.docs/IMPLEMENTACAO-MOVIDESK-TICKETS-ESCRITA.md) | Criação, alteração e anexos de tickets |
+| [`IMPLEMENTACAO-MOVIDESK-PESSOAS-ESCRITA.md`](.docs/IMPLEMENTACAO-MOVIDESK-PESSOAS-ESCRITA.md) | Criação, alteração, relacionamentos e exclusão de pessoas |
+| [`IMPLEMENTACAO-MOVIDESK-SERVICES-ESCRITA.md`](.docs/IMPLEMENTACAO-MOVIDESK-SERVICES-ESCRITA.md) | Criação, alteração e exclusão de serviços |
+| [`PADRAO-CACHE-INTEGRACOES.md`](../../../../../.docs/PADRAO-CACHE-INTEGRACOES.md) | Padrão de cache das leituras |
+| [`ALTERACOES-MERGE-PROCEDURE-AUDITORIA.md`](../../../../../src/Backend/Shared/.docs/ALTERACOES-MERGE-PROCEDURE-AUDITORIA.md) | Procedure de merge e auditoria |
 
 ---
 
 <div align="center">
 
-![NEWBLOOMERS](../../../../../docs/newbloomers.png)
+![NEWBLOOMERS](../../../../../.docs/newbloomers.png)
 
 <sub>Sistema de integrações · feito com .NET 10</sub>
 

@@ -2,7 +2,7 @@
 <#
 .SYNOPSIS
     Cria (ou apaga) os recursos da Azure dos testes de hospedagem C3, C6, C7 e A10 pelo az cli, na assinatura da
-    NEWBLOOMERS, nos planos do orçamento (docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md, seções 5 e 5.1).
+    NEWBLOOMERS, nos planos do orçamento (.docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md, seções 5 e 5.1).
 
 .DESCRIPTION
     Tudo fica no grupo rg-etl-teste da assinatura da NEWBLOOMERS (f65c8654-2630-4bda-aba5-4c2a8eba4cf0), fixa no script

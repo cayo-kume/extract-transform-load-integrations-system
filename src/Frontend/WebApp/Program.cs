@@ -47,7 +47,7 @@ builder.Services.AddScoped<FilterSession>();
 // O painel das empresas da tela: uma só ou, na visão "Todas as empresas" da holding, todas, juntadas aqui
 builder.Services.AddScoped<CompanyView>();
 
-// Dados (docs/PLANO-WEBAPP.md, fase 5): com Database:Enabled = true, o banco, com Dapper: painel e cadastro em
+// Dados (.docs/PLANO-WEBAPP.md, fase 5): com Database:Enabled = true, o banco, com Dapper: painel e cadastro em
 // ConnectionStrings:Connection (usuário etl_monitor) e Executar Querys em ConnectionStrings:QueryConnection (etl_query),
 // as duas nos User Secrets. Sem a chave, o mock, para mexer no visual sem banco.
 if (builder.Configuration.GetValue<bool>("Database:Enabled"))
@@ -72,11 +72,11 @@ else
     builder.Services.AddSingleton<IModuleCredentialReader, MockModuleCredentialReader>();
 }
 
-// Testar conexão da aba Credenciais (docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.6.1): chamada de leitura do próprio WebApp
+// Testar conexão da aba Credenciais (.docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.6.1): chamada de leitura do próprio WebApp
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<ConnectionTester>();
 
-// Sob Demanda: respostas simuladas até o IOnDemandRunner que chama o WebApi (docs/PLANO-WEBAPP.md, 11.5.6). A
+// Sob Demanda: respostas simuladas até o IOnDemandRunner que chama o WebApi (.docs/PLANO-WEBAPP.md, 11.5.6). A
 // MockTimeline gera as execuções do mock e é a mesma do painel com mock, para uma chamada virar uma execução do job
 builder.Services.AddSingleton<MockTimeline>();
 builder.Services.AddSingleton<IOnDemandRunner, MockOnDemandRunner>();

@@ -1,4 +1,4 @@
--- tabelas do Quartz.NET para o host Worker (src/Backend/Hosts/Worker/docs/PLANO-HOST-WORKER.md §3.3): o AdoJobStore, em cluster,
+-- tabelas do Quartz.NET para o host Worker (src/Backend/Hosts/Worker/.docs/PLANO-HOST-WORKER.md §3.3): o AdoJobStore, em cluster,
 -- no mesmo banco das integrações. É o script oficial do Quartz.NET 3.19.1 (database/tables/tables_sqlServer.sql, tag v3.19.1),
 -- sem o USE e o bloco de DROP, com as tabelas no schema quartz no lugar do dbo. O Quartz não cria nem atualiza estas tabelas:
 -- numa versão do pacote que mude o schema, entra um script novo

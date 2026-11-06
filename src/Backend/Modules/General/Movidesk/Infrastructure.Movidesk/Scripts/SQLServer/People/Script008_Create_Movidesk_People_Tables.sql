@@ -1,5 +1,5 @@
--- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
-/****** Pessoas: tabelas untreated e movidesk (src/Backend/Modules/General/Movidesk/docs/MOVIDESK-MODELAGEM-PESSOAS.md) ******/
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; .docs/MIGRATOR-CSX.md)
+/****** Pessoas: tabelas untreated e movidesk (src/Backend/Modules/General/Movidesk/.docs/MOVIDESK-MODELAGEM-PESSOAS.md) ******/
 
 if dbo.fn_Migrator_Creates(N'[untreated].MovideskPeople') = 1
 create table [untreated].MovideskPeople (

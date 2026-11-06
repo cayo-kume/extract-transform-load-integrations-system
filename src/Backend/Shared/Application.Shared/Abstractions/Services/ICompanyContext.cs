@@ -4,7 +4,7 @@ namespace Application.Shared.Abstractions.Services
     /// empresa (auditing.Companies) e holding (auditing.Holders) da execução em curso. Quem inicia a execução (o agendador ou a
     /// rota) informa as duas uma vez no escopo; o LoggerService grava o log com elas, os módulos leem os parâmetros da empresa
     /// (doc_company) e as procedures de sincronização recebem a empresa em @Company
-    /// (docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)
+    /// (.docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)
     /// </summary>
     public interface ICompanyContext
     {

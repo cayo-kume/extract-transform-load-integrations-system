@@ -2,7 +2,7 @@
 <#
 .SYNOPSIS
     Carrega uma holding de teste completa num banco já migrado: a holding, as empresas dela, os parâmetros (credenciais) de
-    cada módulo e os jobs de cada empresa, sem passar pela tela de cadastro (docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md).
+    cada módulo e os jobs de cada empresa, sem passar pela tela de cadastro (.docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md).
 
 .DESCRIPTION
     Os migrators (migrator.csx) criam só a estrutura e o catálogo do produto. Este script faz o que a tela de cadastro vai
@@ -16,7 +16,7 @@
     4. cadastra cada CNPJ (doc_company) do script de parâmetros como empresa da holding em auditing.Companies; um CNPJ que
        já é de outra holding vira aviso;
     5. para cada módulo, cria os jobs dele (auditing.fn_CatalogTree) em cada empresa da holding com parâmetros no módulo,
-       inativos e com a agenda sugerida de docs/AGENDA-SUGERIDA-JOBS.csv. O DataWarehouse, sem parâmetros, fica na empresa
+       inativos e com a agenda sugerida de .docs/AGENDA-SUGERIDA-JOBS.csv. O DataWarehouse, sem parâmetros, fica na empresa
        que é a própria holding.
 
     Ativar jobs não é com este script: é no WebApp (tela Integrações), que só ativa os jobs de um módulo com
@@ -178,7 +178,7 @@ SELECT CONCAT('CATALOG=', CASE WHEN OBJECT_ID('auditing.Catalog') IS NULL THEN -
 SELECT CONCAT('HOLDERS=', CASE WHEN OBJECT_ID('auditing.Holders') IS NULL THEN 0 ELSE 1 END);
 "@
 if ((Get-Marker $check 'CATALOG') -le 0 -or (Get-Marker $check 'HOLDERS') -ne 1) {
-    throw "O banco '$Database' não tem auditing.Catalog com jobs ou auditing.Holders: rode os migrators antes (docs/MIGRATOR-CSX.md)."
+    throw "O banco '$Database' não tem auditing.Catalog com jobs ou auditing.Holders: rode os migrators antes (.docs/MIGRATOR-CSX.md)."
 }
 
 # ---------------------------------------------------------------------------------------------------------------------

@@ -6,7 +6,7 @@ namespace Worker.Scheduling
     /// <summary>
     /// o disparo descartado pelo misfire (esperou thread mais que Quartz:Misfire:ThresholdInMinutes, ou o Worker estava fora) não
     /// chega ao job: este listener registra o descarte no log e conta no mesmo contador dos pulos
-    /// (src/Backend/Hosts/Worker/docs/PLANO-HOST-WORKER.md §5.3, item 2). Só para os triggers do grupo integrations
+    /// (src/Backend/Hosts/Worker/.docs/PLANO-HOST-WORKER.md §5.3, item 2). Só para os triggers do grupo integrations
     /// </summary>
     public class MisfireListener : ITriggerListener
     {

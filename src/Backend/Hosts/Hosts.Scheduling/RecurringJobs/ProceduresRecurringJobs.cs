@@ -2,7 +2,7 @@ namespace Hosts.Scheduling.RecurringJobs
 {
     /// <summary>
     /// jobs que só executam procedures no banco, do WebJob do sistema antigo (RecurringJobs/Procedures), **comentados** até as
-    /// procedures existirem neste repositório (src/Backend/Hosts/WebJob/docs/PLANO-HOST-WEBJOB.md §4.2). Ao descomentar um: a linha em
+    /// procedures existirem neste repositório (src/Backend/Hosts/WebJob/.docs/PLANO-HOST-WEBJOB.md §4.2). Ao descomentar um: a linha em
     /// auditing.Jobs (com RunningDailyAt e Queue, e o intervalo da tabela, não o do comentário), o IdJob dela aqui e a versão. O
     /// intervalo do comentário é o que o job tinha no sistema antigo, como referência
     /// </summary>

@@ -9,7 +9,7 @@
         None = 0,
 
         /// <summary>
-        /// recuperação dos WebJobs travados (host WebJob, src/Backend/Hosts/WebJob/docs/PLANO-HOST-WEBJOB.md, passo 7)
+        /// recuperação dos WebJobs travados (host WebJob, src/Backend/Hosts/WebJob/.docs/PLANO-HOST-WEBJOB.md, passo 7)
         /// </summary>
         StuckJobsRecovery = 14000
     }

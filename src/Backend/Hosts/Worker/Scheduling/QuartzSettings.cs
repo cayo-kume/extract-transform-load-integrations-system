@@ -1,7 +1,7 @@
 namespace Worker.Scheduling
 {
     /// <summary>
-    /// seção Quartz do appsettings.json (src/Backend/Hosts/Worker/docs/PLANO-HOST-WORKER.md §3.1), nossa e estruturada como a do
+    /// seção Quartz do appsettings.json (src/Backend/Hosts/Worker/.docs/PLANO-HOST-WORKER.md §3.1), nossa e estruturada como a do
     /// Hangfire do WebApi: não é a seção de chaves planas (quartz.scheduler.*) da documentação do Quartz.NET. Com Enabled = true ela é
     /// validada na subida (QuartzSettingsValidator)
     /// </summary>
@@ -21,7 +21,7 @@ namespace Worker.Scheduling
 
         /// <summary>
         /// id da instância no cluster (quartz.scheduler.instanceId), fixo entre reinícios para a afinidade de nó do Quartz
-        /// (docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md, 4.3). Vazio: &lt;máquina&gt;-&lt;Service:Name&gt;, único quando cada máquina tem
+        /// (.docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md, 4.3). Vazio: &lt;máquina&gt;-&lt;Service:Name&gt;, único quando cada máquina tem
         /// um Worker. Dois Workers na mesma máquina precisam de nomes de serviço diferentes, ou deste id na configuração de cada
         /// um: dois processos vivos com o mesmo id confundem o cluster
         /// </summary>

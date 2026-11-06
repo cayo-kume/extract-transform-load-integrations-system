@@ -4,9 +4,9 @@ using WebApp.Models;
 namespace WebApp.Data
 {
     /// <summary>
-    /// Agenda sugerida de cada job do catálogo, fixa no WebApp: o docs/AGENDA-SUGERIDA-JOBS.csv embutido no assembly (o mesmo
+    /// Agenda sugerida de cada job do catálogo, fixa no WebApp: o .docs/AGENDA-SUGERIDA-JOBS.csv embutido no assembly (o mesmo
     /// que o tools/seeds/Import-TestSeeds.ps1 usa). A tela de contratar módulo parte dela, e quem cadastra pode mudar antes de
-    /// gravar (docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md). Um job novo entra no .csv no mesmo commit do script do
+    /// gravar (.docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md). Um job novo entra no .csv no mesmo commit do script do
     /// catálogo; sem linha, o sob demanda fica com intervalo 0 e o recorrente, de hora em hora.
     /// </summary>
     public static class JobAgenda

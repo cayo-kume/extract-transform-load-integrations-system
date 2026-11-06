@@ -1,7 +1,7 @@
 namespace WebJob.Scheduling
 {
     /// <summary>
-    /// seção WebJob do appsettings.json (src/Backend/Hosts/WebJob/docs/PLANO-HOST-WEBJOB.md §4.1). O IdJob vem da linha de comando
+    /// seção WebJob do appsettings.json (src/Backend/Hosts/WebJob/.docs/PLANO-HOST-WEBJOB.md §4.1). O IdJob vem da linha de comando
     /// (WebJob.exe --job 8006), que o run.cmd de cada WebJob passa na Azure
     /// </summary>
     public class WebJobSettings

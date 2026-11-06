@@ -1,7 +1,7 @@
 namespace WebJob.Recovery
 {
     /// <summary>
-    /// seção Recovery do appsettings.json (src/Backend/Hosts/WebJob/docs/PLANO-HOST-WEBJOB.md §7): onde estão os WebJobs na Azure,
+    /// seção Recovery do appsettings.json (src/Backend/Hosts/WebJob/.docs/PLANO-HOST-WEBJOB.md §7): onde estão os WebJobs na Azure,
     /// a tolerância do heartbeat e as exceções por job. Sem segredo: a autenticação na Azure é o DefaultAzureCredential (a
     /// identidade gerenciada do App Service; no local, o az login)
     /// </summary>

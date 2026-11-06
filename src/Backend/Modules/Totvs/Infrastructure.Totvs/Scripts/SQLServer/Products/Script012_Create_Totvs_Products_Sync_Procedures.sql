@@ -1,5 +1,5 @@
--- roda em toda migração: cada procedure só é criada com a tabela já criada e se ainda não existe (docs/MIGRATOR-CSX.md)
-/****** Produtos: procedures de sincronização (src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.3) ******/
+-- roda em toda migração: cada procedure só é criada com a tabela já criada e se ainda não existe (.docs/MIGRATOR-CSX.md)
+/****** Produtos: procedures de sincronização (src/Backend/Modules/Totvs/.docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.3) ******/
 --As referências nunca são apagadas por este fluxo; filhas, cores e produtos que saíram de uma referência que veio no lote
 --são apagados, e as filhas que saíram de um produto que veio no lote também. A condição depende do mesmo
 --integrated_or_updated_at no lote inteiro e da ordem dos merges (a do TotvsProductsRepository).
@@ -55,7 +55,7 @@ exec dbo.sp_Create_Merge_Procedure @schema_name = 'totvs', @table_name = 'TotvsP
 
 go
 
-/****** Saldos: procedures de sincronização (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.9) ******/
+/****** Saldos: procedures de sincronização (src/Backend/Modules/Totvs/.docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.9) ******/
 --Nenhum saldo é apagado por este fluxo; o local que saiu do produto regravado é apagado.
 
 if object_id(N'[totvs].TotvsBalances') is not null and object_id(N'[totvs].[sp_TotvsBalances_Sync]') is null
@@ -65,7 +65,7 @@ exec dbo.sp_Create_Merge_Procedure @schema_name = 'totvs', @table_name = 'TotvsB
 
 go
 
-/****** Similares e lotes: procedures de sincronização (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.2) ******/
+/****** Similares e lotes: procedures de sincronização (src/Backend/Modules/Totvs/.docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.2) ******/
 --Produtos e lotes nunca são apagados por este fluxo; o similar, o item e o campo adicional que saíram do registro regravado são apagados.
 
 if object_id(N'[totvs].TotvsProductsSimilar') is not null and object_id(N'[totvs].[sp_TotvsProductsSimilar_Sync]') is null

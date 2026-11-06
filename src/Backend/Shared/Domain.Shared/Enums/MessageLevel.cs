@@ -1,7 +1,7 @@
 namespace Domain.Shared.Enums
 {
     /// <summary>
-    /// nível de uma mensagem de auditing.Messages (coluna Level, CK_Messages_Level), src/Backend/Shared/docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md.
+    /// nível de uma mensagem de auditing.Messages (coluna Level, CK_Messages_Level), src/Backend/Shared/.docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md.
     /// A pergunta que separa aviso de erro: o dado ficou para trás por uma falha (erro) ou por uma condição conhecida, que se
     /// resolve com cadastro ou rodando outro job antes (aviso)?
     /// </summary>

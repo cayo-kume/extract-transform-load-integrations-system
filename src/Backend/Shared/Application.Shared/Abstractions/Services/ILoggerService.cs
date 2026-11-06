@@ -45,7 +45,7 @@ namespace Application.Shared.Abstractions.Services
 
         /// <summary>
         /// Add a warning message (nível 2): parte do que devia ser processado não foi, por cadastro, ordem dos jobs ou descarte
-        /// de propósito (src/Backend/Shared/docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md)
+        /// de propósito (src/Backend/Shared/.docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md)
         /// </summary>
         /// <param name="message"></param>
         /// <returns>ILoggerService</returns>

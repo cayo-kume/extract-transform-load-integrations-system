@@ -1,7 +1,7 @@
 namespace WebApp.Models
 {
     /// <summary>
-    /// Holding cliente em auditing.Holders (docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md).
+    /// Holding cliente em auditing.Holders (.docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md).
     /// </summary>
     public class HolderModel
     {
@@ -73,7 +73,7 @@ namespace WebApp.Models
     }
 
     /// <summary>
-    /// Um job do catálogo (auditing.Catalog) de um módulo, com a agenda sugerida (docs/AGENDA-SUGERIDA-JOBS.csv), que a tela
+    /// Um job do catálogo (auditing.Catalog) de um módulo, com a agenda sugerida (.docs/AGENDA-SUGERIDA-JOBS.csv), que a tela
     /// pode mudar antes de contratar o módulo.
     /// </summary>
     public class CatalogJobModel

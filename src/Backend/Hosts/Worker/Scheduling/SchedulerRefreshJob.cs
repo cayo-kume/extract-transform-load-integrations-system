@@ -9,12 +9,12 @@ using Quartz.Impl.Matchers;
 namespace Worker.Scheduling
 {
     /// <summary>
-    /// monta a agenda do Quartz a partir de auditing.Jobs (src/Backend/Hosts/Worker/docs/PLANO-HOST-WORKER.md §4.4), como o
+    /// monta a agenda do Quartz a partir de auditing.Jobs (src/Backend/Hosts/Worker/.docs/PLANO-HOST-WORKER.md §4.4), como o
     /// SchedulerRefresh do Hangfire: roda na subida e a cada Quartz:Schedule:RefreshIntervalInMinutes, e um UPDATE na tabela vale,
     /// no máximo, no ciclo seguinte. Entra o job de integração ativo, com método no mapa e agenda que vira cron; sai o que ficou
     /// inativo, sem intervalo ou saiu do mapa. Só mexe no grupo integrations. Com dois Workers, uma releitura por vez: o
     /// [DisallowConcurrentExecution] e a trava job:scheduler-refresh, como no Hangfire (§5.3, item 4).
-    /// Um job do Quartz por (job, empresa) de auditing.Jobs (docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md), com a empresa no nome e no JobDataMap
+    /// Um job do Quartz por (job, empresa) de auditing.Jobs (.docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md), com a empresa no nome e no JobDataMap
     /// </summary>
     [DisallowConcurrentExecution]
     public class SchedulerRefreshJob : IJob

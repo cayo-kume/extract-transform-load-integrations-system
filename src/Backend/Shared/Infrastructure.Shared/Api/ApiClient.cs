@@ -10,7 +10,7 @@ namespace Infrastructure.Shared.Api
 {
     public class ApiClient : IApiClient
     {
-        // erro de rede na leitura da resposta: uma nova tentativa, depois desta espera (docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md, 2.2)
+        // erro de rede na leitura da resposta: uma nova tentativa, depois desta espera (.docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md, 2.2)
         private static readonly TimeSpan NetworkRetryDelay = TimeSpan.FromSeconds(10);
 
         private readonly IHttpClientFactory _httpClientFactory;

@@ -4,7 +4,7 @@ namespace WebApp.Data.Mocks
 {
     /// <summary>
     /// Mensagens e registros falsos de uma execução, com os textos que os services gravam hoje em auditing.Messages,
-    /// já no nível da proposta src/Backend/Shared/docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md.
+    /// já no nível da proposta src/Backend/Shared/.docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md.
     /// </summary>
     internal static class MockTexts
     {

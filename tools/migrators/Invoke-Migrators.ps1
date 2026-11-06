@@ -2,11 +2,11 @@
 <#
 .SYNOPSIS
     Sobe as tabelas das aplicações escolhidas num banco SQL Server, rodando o migrator.csx (DbUp) de cada uma, por uma tela
-    Windows Forms com o servidor, a porta, o banco, o usuário e a senha (docs/MIGRATOR-CSX.md).
+    Windows Forms com o servidor, a porta, o banco, o usuário e a senha (.docs/MIGRATOR-CSX.md).
 
 .DESCRIPTION
     A tela tem o catálogo das aplicações (as pastas Scripts/SQLServer com migrator.csx) e roda os marcados na ordem do
-    docs/MIGRATOR-CSX.md: Shared (sempre), as integrações, o DataWarehouse e o host de agenda. Cada
+    .docs/MIGRATOR-CSX.md: Shared (sempre), as integrações, o DataWarehouse e o host de agenda. Cada
     migrator roda com `dotnet script migrator.csx -- "<connection string>"` a partir de uma unidade subst, que encurta o
     caminho e evita o erro de MAX_PATH do SQL Client. No primeiro erro, os seguintes não rodam: eles dependem dos anteriores.
 
@@ -16,7 +16,7 @@
 
     O banco é criado pelo próprio DbUp se não existir. Os migrators só criam a estrutura e o catálogo do produto: as
     holdings, as empresas, as credenciais dos módulos e os jobs entram depois, pelo WebApp (tela inicial, "Cadastrar holding
-    e empresas", e Cadastro › Módulos e Credenciais; docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md) ou, num banco de
+    e empresas", e Cadastro › Módulos e Credenciais; .docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md) ou, num banco de
     teste, pelo tools/seeds/Import-TestSeeds.ps1.
 
     Usuários de banco do WebApp (opcional): com a senha do etl_monitor e/ou do etl_query, o migrator do Shared cria esses
@@ -141,7 +141,7 @@ $ErrorActionPreference = 'Stop'
 $backend = Join-Path $PSScriptRoot '../../src/Backend' | Resolve-Path | Select-Object -ExpandProperty Path
 
 # ---------------------------------------------------------------------------------------------------------------------
-# catálogo: a ordem de execução é a da lista (docs/MIGRATOR-CSX.md, "Ordem entre os módulos"); a pasta é a partir de
+# catálogo: a ordem de execução é a da lista (.docs/MIGRATOR-CSX.md, "Ordem entre os módulos"); a pasta é a partir de
 # src/Backend e aponta para Scripts/SQLServer, a que tem o migrator.csx. Os módulos fora do host (Dootax, FlashCourier...)
 # ficam de fora: não fazem parte do sistema novo e o FlashCourier grava os mesmos ids (90 e 9000) do DataWarehouse
 # ---------------------------------------------------------------------------------------------------------------------
@@ -212,7 +212,7 @@ foreach ($app in @($catalog) + @($schedulingHosts.Values | Where-Object App | Fo
 # jobs das integrações: o catálogo de cada service (o script *_Jobs_Into_Jobs_Table.sql) tem as integrações e as
 # procedures de sincronização delas (sp_<Tabela>_Sync, filhas da integração); as tabelas de um job são as das procedures
 # dele. A tela e -Jobs escolhem os jobs, e o migrator.csx do módulo só cria as tabelas deles (ETL_MIGRATOR_TABLES): os
-# scripts de tabelas rodam em toda migração e pulam a tabela que já existe (docs/MIGRATOR-CSX.md, "Escolha por job")
+# scripts de tabelas rodam em toda migração e pulam a tabela que já existe (.docs/MIGRATOR-CSX.md, "Escolha por job")
 $jobRow = [regex]"\(\s*(\d+)\s*,\s*(\d+)\s*,\s*'((?:[^']|'')*)'\s*,\s*'(?:[^']|'')*'\s*,\s*(\d+)\s*,\s*[01]\s*\)"
 $foreignKey = [regex]'(?im)^\s*alter\s+table\s+\[?\w+\]?\.\[?(\w+)\]?\s+add\s+constraint\b.*?\breferences\s+\[?\w+\]?\.\[?(\w+)\]?'
 

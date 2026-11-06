@@ -1,5 +1,5 @@
--- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
-/****** Filiais: tabelas untreated e totvs (src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.2.2) ******/
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; .docs/MIGRATOR-CSX.md)
+/****** Filiais: tabelas untreated e totvs (src/Backend/Modules/Totvs/.docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.2.2) ******/
 --tamanhos do swagger da API Person (BranchListModel e ViewAddressModel)
 
 if dbo.fn_Migrator_Creates(N'[untreated].TotvsBranches') = 1
@@ -93,7 +93,7 @@ alter table [totvs].TotvsBranchesAddresses add constraint [FK_TotvsBranchesAddre
 
 go
 
-/****** Pessoas físicas e jurídicas: tabelas untreated e totvs (src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.2.5) ******/
+/****** Pessoas físicas e jurídicas: tabelas untreated e totvs (src/Backend/Modules/Totvs/.docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.2.5) ******/
 --tamanhos do swagger da API Person; objetos 1:1 (shippingCompany, preferences, individualAdditionals) como colunas do pai
 --com o nome do objeto como prefixo (5.2.8). As filhas usam a mesma estrutura nas duas pessoas.
 

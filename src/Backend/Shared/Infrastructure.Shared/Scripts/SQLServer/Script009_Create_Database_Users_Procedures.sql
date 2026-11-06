@@ -1,4 +1,4 @@
-/****** Usuários de banco do WebApp (src/Frontend/WebApp/docs/PLANO-WEBAPP.md, passo 10) ******/
+/****** Usuários de banco do WebApp (src/Frontend/WebApp/.docs/PLANO-WEBAPP.md, passo 10) ******/
 -- A senha não fica em script nem no git: o DbUp só cria as procedures, e quem tem ALTER ANY LOGIN (o sa em
 -- desenvolvimento) roda cada uma com a senha, à mão ou pelo migrator.csx do Shared com as variáveis de ambiente
 -- ETL_MONITOR_PASSWORD e ETL_QUERY_PASSWORD. Rodar de novo não troca a senha (isso é ALTER LOGIN, fora daqui) e só
@@ -42,7 +42,7 @@ BEGIN
     GRANT SELECT ON SCHEMA::[auditing] TO [etl_monitor];
     GRANT SELECT ON SCHEMA::[monitor] TO [etl_monitor];
 
-    -- cadastro de holdings e empresas pela tela (INSERT direto, docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)
+    -- cadastro de holdings e empresas pela tela (INSERT direto, .docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)
     GRANT INSERT, UPDATE ON [auditing].[Holders] TO [etl_monitor];
     GRANT INSERT, UPDATE ON [auditing].[Companies] TO [etl_monitor];
 

@@ -183,7 +183,7 @@ namespace Application.Movidesk.Services
         /// A janela começa na marca d'água da empresa (movidesk.MovideskParameters.tickets_synced_until), que só avança quando
         /// todos os tickets alterados da janela foram gravados. Os blocos vão por id, não por lastUpdate: com a marca no maior
         /// lastUpdate gravado, um bloco com erro deixava para trás tickets que nunca mais entravam na janela (574 no teste C7,
-        /// docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md, 2.1). Erro da API em qualquer empresa termina a execução com erro.
+        /// .docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md, 2.1). Erro da API em qualquer empresa termina a execução com erro.
         /// </summary>
         [JobVersion("1.1.0")]
         public async Task<bool?> GetTickets()

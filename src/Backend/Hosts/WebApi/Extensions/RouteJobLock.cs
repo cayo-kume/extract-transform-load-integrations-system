@@ -9,7 +9,7 @@ using System.Text.Json;
 namespace WebApi.Extensions
 {
     /// <summary>
-    /// a trava dos agendadores nas rotas (docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md, 4.1; no teste A6, o disparo manual rodou junto
+    /// a trava dos agendadores nas rotas (.docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md, 4.1; no teste A6, o disparo manual rodou junto
     /// com o agendado e leu a API em dobro). Quando a rota abre o log de um job da agenda (LoggerService.AddLog), pede a trava do
     /// job (a ConcurrencyKey do mapa, que o agendador segura junto com a da empresa) sem esperar. Ocupada: JobAlreadyRunningException,
     /// que vira 409 sem log em auditing. A trava fica com a requisição e é solta no fim do escopo. Jobs fora do mapa (consulta por

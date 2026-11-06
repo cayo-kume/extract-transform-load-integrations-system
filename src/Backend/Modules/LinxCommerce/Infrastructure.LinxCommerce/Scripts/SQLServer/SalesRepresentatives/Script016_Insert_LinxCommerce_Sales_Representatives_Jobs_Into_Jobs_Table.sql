@@ -7,7 +7,7 @@ VALUES
 (7005, 7524, 'sp_LinxCommerceSalesRepresentativesCustomers_Sync', 'Procedure de sincronização entre as tabelas LinxCommerceSalesRepresentativesCustomers raw e trusted', 1, 0),
 
 /*Integrações*/
-/*Range 7000 - 7499 (ids reservados em src/Backend/Modules/LinxCommerce/docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md §7)*/
+/*Range 7000 - 7499 (ids reservados em src/Backend/Modules/LinxCommerce/.docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md §7)*/
 (70, 7005, 'LinxCommerceSearchSalesRepresentative', 'Integração dos vendedores (LinxCommerceSalesRepresentatives e filhas), só leitura, uma vez por dia', 2, 0),
 
 /*Integrações sob demanda - executadas pelo LinxCommerceController, não são recorrentes (IsOnDemand = 1)*/

@@ -1,7 +1,7 @@
-/****** Schema monitor: personalização por holding do painel (src/Backend/Shared/docs/PROPOSTA-DOC-COMPANY-AUDITING.md, 2.2) ******/
+/****** Schema monitor: personalização por holding do painel (src/Backend/Shared/.docs/PROPOSTA-DOC-COMPANY-AUDITING.md, 2.2) ******/
 --fica fora de auditing: auditing é o registro do que rodou e o cadastro (holdings, empresas e jobs); monitor é
 --configuração de apresentação e de acesso. As holdings e as empresas ficam em auditing.Holders e auditing.Companies
---(docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)
+--(.docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)
 IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'monitor')
 BEGIN
     EXEC('CREATE SCHEMA monitor')
@@ -48,7 +48,7 @@ ALTER TABLE [monitor].[AppSetting] ADD  CONSTRAINT [FK_AppSetting_Apps] FOREIGN 
 REFERENCES [auditing].[Apps] ([IdParent])
 GO
 
--- falha reconhecida pelo painel (src/Frontend/WebApp/docs/PLANO-WEBAPP.md, 11.5.1): um reconhecimento por job da empresa,
+-- falha reconhecida pelo painel (src/Frontend/WebApp/.docs/PLANO-WEBAPP.md, 11.5.1): um reconhecimento por job da empresa,
 -- válido enquanto a última execução for Execution (nula: job atrasado que nunca rodou) e até ExpiresAt. Reconhecer de novo
 -- substitui o anterior. A saúde do job não muda: o painel só tira o job de "Falhas Ativas".
 CREATE TABLE [monitor].[JobAcknowledgement](

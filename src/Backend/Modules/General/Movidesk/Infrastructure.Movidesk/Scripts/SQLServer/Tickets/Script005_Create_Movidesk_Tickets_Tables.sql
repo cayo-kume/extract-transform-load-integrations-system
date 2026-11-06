@@ -1,4 +1,4 @@
--- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; .docs/MIGRATOR-CSX.md)
 /****** Tickets: tabelas untreated e movidesk ******/
 
 if dbo.fn_Migrator_Creates(N'[untreated].MovideskTickets') = 1
@@ -552,7 +552,7 @@ if object_id(N'[movidesk].[FK_MovideskTicketsActions]') is null and object_id(N'
 alter table [movidesk].MovideskTicketsActions add constraint [FK_MovideskTicketsActions] foreign key (doc_company, ticketId) references [movidesk].MovideskTickets (doc_company, id);
 
 
-/****** Chaves estrangeiras: netas -> nível do meio (on delete cascade, ver src/Backend/Modules/General/Movidesk/docs/MOVIDESK-MODELAGEM-TICKETS.md 4.8) ******/
+/****** Chaves estrangeiras: netas -> nível do meio (on delete cascade, ver src/Backend/Modules/General/Movidesk/.docs/MOVIDESK-MODELAGEM-TICKETS.md 4.8) ******/
 
 if object_id(N'[movidesk].[FK_MovideskTicketsCustomFieldValuesItems]') is null and object_id(N'[movidesk].MovideskTicketsCustomFieldValuesItems') is not null and object_id(N'[movidesk].MovideskTicketsCustomFieldValues') is not null
 alter table [movidesk].MovideskTicketsCustomFieldValuesItems add constraint [FK_MovideskTicketsCustomFieldValuesItems] foreign key (doc_company, ticketId, customFieldId, customFieldRuleId, line) references [movidesk].MovideskTicketsCustomFieldValues (doc_company, ticketId, customFieldId, customFieldRuleId, line) on delete cascade;

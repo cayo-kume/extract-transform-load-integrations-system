@@ -8,11 +8,11 @@ using Hosts.Scheduling.RecurringJobs;
 namespace WebApi.Scheduling
 {
     /// <summary>
-    /// concorrência dos jobs da agenda (src/Backend/Hosts/WebApi/docs/PLANO-HOST-WEBAPI.md §4.7, combinação de A com B): antes de
+    /// concorrência dos jobs da agenda (src/Backend/Hosts/WebApi/.docs/PLANO-HOST-WEBAPI.md §4.7, combinação de A com B): antes de
     /// executar, pede a trava do IJobLock (Shared, banco das integrações) sem esperar. Ocupada, a execução não roda, vai para Deleted
     /// com o motivo do pulo e o worker fica livre na hora; o disparo seguinte do cron tenta de novo. As rotas dos controllers ficam
     /// fora da trava.
-    /// Com um recurring job por (job, empresa) (docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.4) são duas travas: a da empresa (a execução
+    /// Com um recurring job por (job, empresa) (.docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.4) são duas travas: a da empresa (a execução
     /// anterior da mesma empresa ainda roda: pula, como antes) e a do job, que vale entre empresas porque todas escrevem nas mesmas
     /// tabelas (untreated e a sp_*_Sync). Com a do job ocupada por outra empresa, a execução não é perdida: volta para a fila daqui a
     /// RescheduleDelay, senão as empresas disparadas no mesmo minuto pulariam sempre umas às outras

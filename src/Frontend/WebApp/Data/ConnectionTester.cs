@@ -11,7 +11,7 @@ namespace WebApp.Data
 {
     /// <summary>
     /// Os valores gravados da linha do módulo da empresa, segredos incluídos, só para o teste de conexão
-    /// (docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.6.1). Nada daqui volta para a tela: a leitura do formulário continua no
+    /// (.docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.6.1). Nada daqui volta para a tela: a leitura do formulário continua no
     /// IModuleParametersRepository, que devolve só se o segredo está gravado.
     /// </summary>
     public interface IModuleCredentialReader
@@ -53,7 +53,7 @@ namespace WebApp.Data
     public sealed record ConnectionTestResult(string Label, string Url, bool Success, string Message);
 
     /// <summary>
-    /// Testar conexão da aba Credenciais (docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.6.1): com a credencial gravada, só a chamada
+    /// Testar conexão da aba Credenciais (.docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.6.1): com a credencial gravada, só a chamada
     /// mínima de leitura em cada URL gravada da empresa (Base URL e, se houver, Homolog URL). Pedido de token na Totvs; GET do
     /// usuário no AfterSale; um serviço no Movidesk; LinxGrupoLojas (ou B2CConsultaEmpresas) no LinxMicrovix. Nunca escreve no
     /// provedor. Tempo limite de 10 s; os segredos não vão para o log nem para a mensagem.

@@ -1,10 +1,10 @@
 namespace WebApp.Models
 {
     /// <summary>
-    /// Holding e empresa do painel, mostradas no topo (docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md). A visão é só da
+    /// Holding e empresa do painel, mostradas no topo (.docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md). A visão é só da
     /// empresa escolhida: nenhuma tela mostra dados de outra. Uma por aba (circuito): o seletor do topo troca a empresa e
     /// guarda a escolha no navegador; o MainLayout lê a escolha antes de mostrar a primeira tela. Até a fase 6 do plano
-    /// (docs/PLANO-WEBAPP.md), a primeira escolha vem da configuração (LoggedCompany:DocCompany e LoggedCompany:Name).
+    /// (.docs/PLANO-WEBAPP.md), a primeira escolha vem da configuração (LoggedCompany:DocCompany e LoggedCompany:Name).
     /// O CNPJ da empresa é o Company de auditing.Jobs, e o da holding, o Holder.
     /// </summary>
     public class LoggedCompany(IConfiguration configuration)

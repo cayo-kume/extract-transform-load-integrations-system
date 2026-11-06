@@ -11,7 +11,7 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.8" />
     <!-- serviço do Windows (PLANO-HOST-WORKER.md §6.1): fora de um serviço, AddWindowsService não faz nada -->
     <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="10.0.8" />
-    <!-- Quartz.NET 3.19.1, a última da linha 3 (src/Backend/Hosts/Worker/docs/PLANO-HOST-WORKER.md, passo 3) -->
+    <!-- Quartz.NET 3.19.1, a última da linha 3 (src/Backend/Hosts/Worker/.docs/PLANO-HOST-WORKER.md, passo 3) -->
     <PackageReference Include="Quartz.Extensions.Hosting" Version="3.19.1" />
     <PackageReference Include="Quartz.Serialization.SystemTextJson" Version="3.19.1" />
   </ItemGroup>

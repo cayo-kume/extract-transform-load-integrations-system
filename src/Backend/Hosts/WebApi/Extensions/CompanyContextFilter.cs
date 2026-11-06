@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc.Filters;
 namespace WebApi.Extensions
 {
     /// <summary>
-    /// empresa da execução numa rota (docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md), informada ao ICompanyContext da
+    /// empresa da execução numa rota (.docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md), informada ao ICompanyContext da
     /// requisição antes da action: o {docCompany} da rota ou, sem ele, o cabeçalho X-Company (CNPJ da empresa, auditing.Companies).
     /// Com os dois, precisam ser a mesma empresa. A holding sai da empresa em auditing.Companies. Sem nenhum, 400 (o job não
     /// teria empresa para o log), salvo as rotas com [AllowWithoutCompany]

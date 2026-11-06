@@ -4,7 +4,7 @@
 using System;
 using DbUp;
 
-// tabelas do Quartz do host Worker (docs/PLANO-HOST-WORKER.md §3.3). Roda depois do migrator do Shared, no mesmo banco
+// tabelas do Quartz do host Worker (.docs/PLANO-HOST-WORKER.md §3.3). Roda depois do migrator do Shared, no mesmo banco
 // das integrações: a string de conexão dos argumentos ou uma default para teste local
 var connectionString = Args.Count > 0 ? Args[0] : "Server=localhost;Database=Company;User Id=sa;Password=root@1234;TrustServerCertificate=True;";
 

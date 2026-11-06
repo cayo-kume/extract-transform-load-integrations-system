@@ -1,7 +1,7 @@
 namespace Hosts.Scheduling
 {
     /// <summary>
-    /// conversão da agenda de auditing.Jobs em cron (src/Backend/Hosts/WebApi/docs/PLANO-HOST-WEBAPI.md §4.2). O cron conta a partir da
+    /// conversão da agenda de auditing.Jobs em cron (src/Backend/Hosts/WebApi/.docs/PLANO-HOST-WEBAPI.md §4.2). O cron conta a partir da
     /// hora cheia, então só entram intervalos que ele representa exatamente; o resto fica fora da agenda, com aviso no log
     /// </summary>
     public static class JobCron
@@ -29,7 +29,7 @@ namespace Hosts.Scheduling
             };
 
         /// <summary>
-        /// o cron de 5 campos acima no formato do Quartz.NET (src/Backend/Hosts/Worker/docs/PLANO-HOST-WORKER.md §4.2): segundos na
+        /// o cron de 5 campos acima no formato do Quartz.NET (src/Backend/Hosts/Worker/.docs/PLANO-HOST-WORKER.md §4.2): segundos na
         /// frente e '?' num dos campos de dia (ex.: "*/3 * * * *" → "0 */3 * * * ?", "0 23 * * *" → "0 0 23 * * ?")
         /// </summary>
         public static string ToQuartz(string cron)

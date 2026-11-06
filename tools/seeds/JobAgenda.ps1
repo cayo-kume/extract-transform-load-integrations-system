@@ -1,8 +1,8 @@
-# agenda sugerida dos jobs (docs/AGENDA-SUGERIDA-JOBS.csv), a mesma que a tela do WebApp sugere ao contratar um módulo
-# (docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md). Usada pelo Import-TestSeeds.ps1 (o WebApp embute o mesmo .csv, Data/JobAgenda.cs):
+# agenda sugerida dos jobs (.docs/AGENDA-SUGERIDA-JOBS.csv), a mesma que a tela do WebApp sugere ao contratar um módulo
+# (.docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md). Usada pelo Import-TestSeeds.ps1 (o WebApp embute o mesmo .csv, Data/JobAgenda.cs):
 # . (Join-Path $PSScriptRoot '../seeds/JobAgenda.ps1')
 
-$script:JobAgendaPath = Join-Path $PSScriptRoot '../../docs/AGENDA-SUGERIDA-JOBS.csv' | Resolve-Path
+$script:JobAgendaPath = Join-Path $PSScriptRoot '../../.docs/AGENDA-SUGERIDA-JOBS.csv' | Resolve-Path
 
 # SQL que cria os jobs de um módulo (auditing.fn_CatalogTree, com as procedures) para a empresa, inativos e com a agenda
 # sugerida; rodar de novo não duplica. Job sem linha no .csv: sob demanda com intervalo 0, recorrente de hora em hora.

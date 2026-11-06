@@ -8,7 +8,7 @@ namespace Infrastructure.Shared.Repositorys
     /// <summary>
     /// lê a agenda em auditing.Jobs pela conexão de auditoria, a mesma em que o LoggerService grava auditing.Logs. Uma linha
     /// por (job, holding, empresa); o título vem de auditing.Catalog, e os jobs sob demanda ficam de fora
-    /// (docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)
+    /// (.docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)
     /// </summary>
     public class JobScheduleRepository : IJobScheduleRepository
     {

@@ -1,5 +1,5 @@
--- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
-/****** Catálogos da API Product: tabelas untreated e totvs (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.1, fase PR-1) ******/
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; .docs/MIGRATOR-CSX.md)
+/****** Catálogos da API Product: tabelas untreated e totvs (src/Backend/Modules/Totvs/.docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.1, fase PR-1) ******/
 --tamanhos do swagger da API Product (ou, sem tamanho no swagger, os das outras tabelas). Catálogos pequenos, lidos pela janela de
 --alteração (T9), como as filiais; as cores, sem data na resposta, são lidas inteiras e comparadas pelo json_hash
 

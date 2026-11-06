@@ -1,4 +1,4 @@
-# Perfis de publicação do host Worker (src/Backend/Hosts/Worker/docs/PLANO-HOST-WORKER.md §6.1), lidos pelo publish-worker.ps1.
+# Perfis de publicação do host Worker (src/Backend/Hosts/Worker/.docs/PLANO-HOST-WORKER.md §6.1), lidos pelo publish-worker.ps1.
 # Só nomes de máquina, pasta, serviço e conta, nenhum segredo: a connection string fica na máquina, no
 # appsettings.Production.json da pasta do serviço (que o script nunca sobrescreve) ou em variável de ambiente do serviço.
 # Este arquivo não entra no build nem na pasta publicada.

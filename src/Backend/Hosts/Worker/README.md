@@ -1,6 +1,6 @@
 <div align="center">
 
-![NEWBLOOMERS · Sistema de Integrações · ETL](../../../../docs/images/banner.png)
+![NEWBLOOMERS · Sistema de Integrações · ETL](../../../../.docs/images/banner.png)
 
 </div>
 
@@ -8,9 +8,9 @@
 
 <div align="center">
 
-![.NET 10](../../../../docs/images/badges/net-10.svg) ![Quartz.NET](../../../../docs/images/badges/quartz-net-3-19-1.svg) ![Serviço do Windows](../../../../docs/images/badges/servio-do-windows-etlworker.svg)
+![.NET 10](../../../../.docs/images/badges/net-10.svg) ![Quartz.NET](../../../../.docs/images/badges/quartz-net-3-19-1.svg) ![Serviço do Windows](../../../../.docs/images/badges/servio-do-windows-etlworker.svg)
 
-![AdoJobStore](../../../../docs/images/badges/adojobstore-cluster-sq.svg) ![Schema](../../../../docs/images/badges/schema-quartz-sq.svg) ![Concorrência](../../../../docs/images/badges/concorrncia-duas-camadas-sq.svg) ![Painel](../../../../docs/images/badges/painel-webapp-sq.svg)
+![AdoJobStore](../../../../.docs/images/badges/adojobstore-cluster-sq.svg) ![Schema](../../../../.docs/images/badges/schema-quartz-sq.svg) ![Concorrência](../../../../.docs/images/badges/concorrncia-duas-camadas-sq.svg) ![Painel](../../../../.docs/images/badges/painel-webapp-sq.svg)
 
 </div>
 
@@ -32,7 +32,7 @@
 Host que roda os jobs recorrentes com o agendador **Quartz.NET**, como **serviço do Windows**: um processo só para todos
 os jobs ativos de `auditing.Jobs`. É a terceira opção de orquestração, ao lado do Hangfire do WebApi e dos WebJobs. Até
 01/11/2026 o projeto se chamava `Quartz` (e era só o modelo `dotnet new worker`). As decisões e o histórico de cada passo
-estão em [docs/PLANO-HOST-WORKER.md](docs/PLANO-HOST-WORKER.md).
+estão em [.docs/PLANO-HOST-WORKER.md](.docs/PLANO-HOST-WORKER.md).
 
 | | Item | Valor |
 |:---:|---|---|
@@ -81,7 +81,7 @@ mas **só um agenda por vez** no mesmo banco.
 > em 2 min), e só o tipo que está no ar há mais tempo executa os jobs: um Worker que sobe com o Hangfire ou os WebJobs no
 > ar avisa no log e espera eles saírem; vários Workers (o cluster) são do mesmo tipo e rodam juntos. Para os dois tipos
 > agendarem de propósito: `Scheduling:AllowOtherHostTypes = true`
-> ([melhorias, 4.2](../../../../docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md#42-ponto-7-dois-agendadores-no-mesmo-banco)).
+> ([melhorias, 4.2](../../../../.docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md#42-ponto-7-dois-agendadores-no-mesmo-banco)).
 
 > [!WARNING]
 > A trava impede que o mesmo job rode **ao mesmo tempo** em dois hosts, mas não que rode **duas vezes** no mesmo ciclo:
@@ -100,7 +100,7 @@ para testes sem chamar as APIs (`AfterSale:BaseUrl`, `Movidesk:BaseUrl`, `LinxMi
 opcional, `DataWarehouse:Pepper`.
 
 O banco precisa das tabelas do Quartz. O migrator do host roda **depois do migrator do Shared** (ver
-[MIGRATOR-CSX.md](../../../../docs/MIGRATOR-CSX.md)). O jeito mais simples é a tela
+[MIGRATOR-CSX.md](../../../../.docs/MIGRATOR-CSX.md)). O jeito mais simples é a tela
 [`Invoke-Migrators.ps1`](../../../../tools/migrators/Invoke-Migrators.ps1) com o host **Worker (Quartz.NET)** marcado: ela
 roda o Shared, as integrações e, por último, o migrator do Quartz, e no fim lista o que desligar nos outros hosts.
 
@@ -148,7 +148,7 @@ Worker/
 │   ├── publish-worker.ps1        script de publicação
 │   └── publish-profiles.psd1     perfis (dev, prod)
 ├── appsettings.json
-└── docs/PLANO-HOST-WORKER.md
+└── .docs/PLANO-HOST-WORKER.md
 ```
 
 Os mapas `IdJob → método` (`RecurringJobs/`), o `JobCron` e o `ScheduledJobRunner` ficam no projeto
@@ -268,7 +268,7 @@ Duas execuções do mesmo job nunca rodam juntas, nem entre Workers, nem entre o
    DW, que são jobs diferentes escrevendo nas mesmas tabelas; a troca de versão, em que o job antigo e o novo têm nomes
    diferentes; e outro host agendando.
 
-**Por empresa** ([cadastro de empresas](../../../../docs/PLANO-TELA-CADASTRO-EMPRESA.md), 4.4): são duas chaves, como no
+**Por empresa** ([cadastro de empresas](../../../../.docs/PLANO-TELA-CADASTRO-EMPRESA.md), 4.4): são duas chaves, como no
 WebApi.
 
 | | Chave | Ocupada | O que acontece |
@@ -448,7 +448,7 @@ voltar, e então rodou uma vez o ciclo atrasado).
 
 ## 🧪 Comportamento testado
 
-Conferido nos [testes de hospedagem](../../../../docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md) de 02 e 03/11/2026 (cenários
+Conferido nos [testes de hospedagem](../../../../.docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md) de 02 e 03/11/2026 (cenários
 C4, C4b, C5, C6, A1, A2, A3, A6 e A8), com os 12 jobs do conjunto mínimo a cada 5 minutos:
 
 | Situação | O que acontece |
@@ -456,7 +456,7 @@ C4, C4b, C5, C6, A1, A2, A3, A6 e A8), com os 12 jobs do conjunto mínimo a cada
 | 💥 Worker derrubado no meio | Os disparos em andamento ficam `EXECUTING` em `QRTZ_FIRED_TRIGGERS` e são limpos na volta, **sem reexecução**. As execuções interrompidas **não deixam registro em `auditing.Logs`**, que só é gravado no fim |
 | 💤 Worker parado mais que o misfire | Os disparos perdidos são descartados (aviso `Misfired` no log) e o job volta no horário seguinte. Dentro do limite, viram um disparo só. É a diferença para o Hangfire, que sempre roda uma vez o que atrasou |
 | 🧩 Dois Workers (cluster) | Check-in a cada 20 s, cada job roda uma vez por ciclo e o trabalho é dividido. Um nó derrubado: o outro detecta a instância morta, não reexecuta os disparos dela (`DisallowConcurrentExecution`) e segue sozinho |
-| 🆔 Id da instância | Com `AUTO`, o Quartz avisava na subida que pede um id fixo para afinidade de nó. Desde 03/11/2026 o id é `Quartz:InstanceId` ou `<máquina>-<Service:Name>` ([melhorias, 4.3](../../../../docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md#43-ponto-8-instanceid-do-quartz)) |
+| 🆔 Id da instância | Com `AUTO`, o Quartz avisava na subida que pede um id fixo para afinidade de nó. Desde 03/11/2026 o id é `Quartz:InstanceId` ou `<máquina>-<Service:Name>` ([melhorias, 4.3](../../../../.docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md#43-ponto-8-instanceid-do-quartz)) |
 | ☁️ Azure SQL | As 11 tabelas `quartz` e os ciclos funcionam no Azure SQL. Com o banco serverless pausado, o Quartz sobe e o primeiro ciclo é normal; o heartbeat dos hosts de agenda registra o erro de conexão uma vez e segue. O check-in a cada 20 s mantém um banco serverless **sempre acordado** (custo) |
 
 ---
@@ -464,7 +464,7 @@ C4, C4b, C5, C6, A1, A2, A3, A6 e A8), com os 12 jobs do conjunto mínimo a cada
 ## ➕ Um job ou um módulo novo
 
 * **Job recorrente novo num módulo do host:** a linha no script de jobs da service (vai para `auditing.Catalog`, sem agenda;
-  a agenda sugerida é uma linha na [`docs/AGENDA-SUGERIDA-JOBS.csv`](../../../../docs/AGENDA-SUGERIDA-JOBS.csv), ver [PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md](../../../../docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md)
+  a agenda sugerida é uma linha na [`.docs/AGENDA-SUGERIDA-JOBS.csv`](../../../../.docs/AGENDA-SUGERIDA-JOBS.csv), ver [PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md](../../../../.docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md)
   §3.1), a entrada no mapa do módulo em `src/Backend/Hosts/Hosts.Scheduling/RecurringJobs/<Módulo>RecurringJobs.cs` e
   `[JobVersion("1.0.0")]` no método da classe do service. Para as empresas que já têm o módulo,
   contratar o módulo de novo no WebApp cria a linha em `auditing.Jobs` (inativa, sem duplicar). Ligado em
@@ -476,7 +476,7 @@ C4, C4b, C5, C6, A1, A2, A3, A6 e A8), com os 12 jobs do conjunto mínimo a cada
 
 <div align="center">
 
-![NEWBLOOMERS](../../../../docs/newbloomers.png)
+![NEWBLOOMERS](../../../../.docs/newbloomers.png)
 
 <sub>Host Worker · <a href="../../../../README.md">voltar ao README do repositório</a></sub>
 

@@ -7,7 +7,7 @@ namespace Application.LinxMicrovix.Outbound.Handlers.Commands
     {
         public string CreateGetCompanysQuery(string company)
         {
-            // só os parâmetros da empresa da execução (doc_company = empresa, docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md);
+            // só os parâmetros da empresa da execução (doc_company = empresa, .docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md);
             // company é só dígitos (ICompanyContext)
             // credencial e endereço do ambiente marcado na aba Parâmetros do WebApp (use_homolog_url = 1, homologação): os
             // services leem sempre as colunas de produção
@@ -27,7 +27,7 @@ namespace Application.LinxMicrovix.Outbound.Handlers.Commands
 
         public string CreateGetStoresQuery(string doc_company, EnumApi api)
         {
-            // lojas consultadas pelos outros métodos (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 4.2, item 3).
+            // lojas consultadas pelos outros métodos (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/.docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 4.2, item 3).
             // Loja sem CNPJ fica de fora: cnpjEmp é obrigatório nas chamadas. Os nomes das colunas são os da resposta da API
             // (CNPJ no LinxGrupoLojas, cnpjEmp no B2CConsultaEmpresas). doc_company vem de LinxMicrovixParameters; com aspas
             // porque a coluna é nvarchar (CNPJ pode começar com zero)

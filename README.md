@@ -1,14 +1,14 @@
 <div align="center">
 
-![NEWBLOOMERS · Sistema de Integrações · ETL](docs/images/banner.png)
+![NEWBLOOMERS · Sistema de Integrações · ETL](.docs/images/banner.png)
 
 </div>
 
 <div align="center">
 
-![.NET 10](docs/images/badges/net-10.svg) ![C#](docs/images/badges/c-asp-net-core.svg) ![SQL Server](docs/images/badges/sql-server-dapper-dbup.svg) ![Blazor](docs/images/badges/blazor-mudblazor-9.svg)
+![.NET 10](.docs/images/badges/net-10.svg) ![C#](.docs/images/badges/c-asp-net-core.svg) ![SQL Server](.docs/images/badges/sql-server-dapper-dbup.svg) ![Blazor](.docs/images/badges/blazor-mudblazor-9.svg)
 
-![Hangfire](docs/images/badges/hangfire-1-8-sq.svg) ![Quartz.NET](docs/images/badges/quartz-net-3-19-sq.svg) ![Azure WebJobs](docs/images/badges/azure-webjobs-sq.svg) ![FluentValidation](docs/images/badges/fluentvalidation-validadores-sq.svg) ![Claude](docs/images/badges/assistente-claude-sq.svg)
+![Hangfire](.docs/images/badges/hangfire-1-8-sq.svg) ![Quartz.NET](.docs/images/badges/quartz-net-3-19-sq.svg) ![Azure WebJobs](.docs/images/badges/azure-webjobs-sq.svg) ![FluentValidation](.docs/images/badges/fluentvalidation-validadores-sq.svg) ![Claude](.docs/images/badges/assistente-claude-sq.svg)
 
 </div>
 
@@ -114,7 +114,7 @@ flowchart TB
 | 🧰 **Ferramentas** | `tools/migrators/Invoke-Migrators.ps1` (tela Windows Forms ou console) sobe as tabelas de todas as aplicações; `tools/seeds/Import-TestSeeds.ps1` (PowerShell 7 + `sqlcmd`) carrega holding, empresas, parâmetros e jobs num banco de teste; `tools/azure/New-AzureTestResources.ps1` (az cli) cria e apaga o grupo `rg-etl-teste` dos testes na Azure |
 | ✅ **Validação** | **FluentValidation** (um validador por DTO) |
 | 🔌 **HTTP e JSON** | `IHttpClientFactory` (`IApiClient` nomeado por módulo), **Newtonsoft.Json**, XML (`System.Xml.Linq`) no Linx Microvix |
-| ⚡ **Cache** | `IMemoryCache` ([padrão](docs/PADRAO-CACHE-INTEGRACOES.md)) |
+| ⚡ **Cache** | `IMemoryCache` ([padrão](.docs/PADRAO-CACHE-INTEGRACOES.md)) |
 | 🖥️ **Front-end** | Blazor Web App (interativo no servidor) com **MudBlazor** 9, visual pronto sobre dados mockados e um **assistente de IA** (Claude, pacote `Anthropic`, só leitura) ([README](src/Frontend/WebApp/README.md)) |
 | 📱 **Mobile** | .NET MAUI (`src/Mobile/MobileApp`), em construção |
 
@@ -125,7 +125,7 @@ flowchart TB
 ```text
 extract-transform-load-integrations-system/
 ├── 📄 etl-integrations-system.slnx          solução
-├── 📚 docs/                                 padrões, migrator, plano do cadastro de empresas e imagens dos READMEs
+├── 📚 .docs/                                 padrões, migrator, plano do cadastro de empresas e imagens dos READMEs
 ├── 📂 src/
 │   ├── Backend/
 │   │   ├── Hosts/
@@ -159,7 +159,7 @@ extract-transform-load-integrations-system/
 ├── Application.<Módulo>/     services (regras de leitura e escrita), command handlers (SQL) e validadores
 ├── Infrastructure.<Módulo>/  repositórios, injeção de dependência, Scripts/SQLServer (DbUp: estrutura e catálogo)
 │                             e Seeds/SQLServer (parâmetros de uma empresa, fora do DbUp, lidos só pelo .ps1)
-├── docs/                     propostas, planos, implementações e modelagens do módulo, e as respostas de
+├── .docs/                     propostas, planos, implementações e modelagens do módulo, e as respostas de
 │                             exemplo da API (Responsed Jsons ou Responsed XMLs, com dados fictícios)
 └── README.md                 documentação do módulo
 ```
@@ -189,7 +189,7 @@ Registrados no host (`src/Backend/Hosts/WebApi/Extensions/ServicesExtensions.cs`
 | 🟣 **LinxCommerce** | Linx Commerce (e-commerce: pedidos, clientes, catálogo) | `70` | `linxcommerce` | `LinxCommerceJobs/LinxCommerce` | **12** | [📖](src/Backend/Modules/LinxCommerce/README.md) |
 | 🟣 **Movidesk** | Movidesk (help desk: tickets, pessoas, serviços) | `30` | `movidesk` | `MovideskJobs/Movidesk` | **16** | [📖](src/Backend/Modules/General/Movidesk/README.md) |
 | 🟣 **AfterSale** | Troque Fácil (pós-venda: reversas e reembolsos) | `50` | `aftersale` | `AfterSaleJobs/AfterSale` | **24** | [📖](src/Backend/Modules/General/AfterSale/README.md) |
-| 🟠 **DataWarehouse** | DW do NEWBLOOMERS (lê as tabelas dos módulos) | `90` | `dw_*`, `datawarehouse`, `datamart` | `DataWarehouseJobs/DataWarehouse` | **5** | [📖](src/Backend/Modules/DataWarehouse/docs/00-ordem-de-leitura.md) |
+| 🟠 **DataWarehouse** | DW do NEWBLOOMERS (lê as tabelas dos módulos) | `90` | `dw_*`, `datawarehouse`, `datamart` | `DataWarehouseJobs/DataWarehouse` | **5** | [📖](src/Backend/Modules/DataWarehouse/.docs/00-ordem-de-leitura.md) |
 | ⚫ **Hosts** | Jobs dos próprios hosts de agenda (job 14000 `StuckJobsRecovery`, só no WebJob; um por empresa) | `140` | — | — | — | [📖](src/Backend/Hosts/WebJob/README.md) |
 | ⚫ **Shared** | Base comum: auditoria, `IApiClient`, `ISharedRepository`, trava de concorrência (`IJobLock`), empresa da execução (`ICompanyContext`) | — | `auditing`, `monitor`, `untreated`, `dbo` | — | — | — |
 
@@ -197,7 +197,7 @@ Registrados no host (`src/Backend/Hosts/WebApi/Extensions/ServicesExtensions.cs`
 
 <div align="center">
 
-![Swagger do WebApi com as tags de cada módulo](docs/images/swagger/visao-geral.png)
+![Swagger do WebApi com as tags de cada módulo](.docs/images/swagger/visao-geral.png)
 
 <sub><b>Swagger do WebApi</b> — uma tag por service de cada módulo (<code>http://localhost:5252/swagger</code>)</sub>
 
@@ -311,7 +311,7 @@ O sistema atende mais de um cliente. Cada cliente é uma **holding** (`auditing.
 **empresas** dela (`auditing.Companies`, o `doc_company` das tabelas `*Parameters`): uma holding tem n empresas, uma
 empresa é de uma holding só e pode ser a própria holding (`Company = Holder`). Jobs, ativação e log são **de cada
 empresa**: `auditing.Jobs`, `Logs`, `Messages` e `Records` têm as colunas **`Holder`** e **`Company`**. As decisões estão
-na [proposta do schema auditing](docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md).
+na [proposta do schema auditing](.docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md).
 
 | | Peça | Para que serve |
 |:---:|---|---|
@@ -319,7 +319,7 @@ na [proposta do schema auditing](docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.m
 | 🔗 | `auditing.Companies` | Empresas de cada holding (`Company`, `Holder`, nome fantasia). Toda holding tem a linha da própria holding, com os jobs dos hosts |
 | 📚 | `auditing.Catalog` | Catálogo de jobs do produto, sem empresa e sem agenda, criado pelo DbUp (inclusive o 14000 dos hosts); `IsOnDemand` marca os sob demanda |
 | 🗓️ | `auditing.Jobs` | Uma linha por **(job, empresa)**, com a agenda (intervalo, hora do dia, fila) e a `IsActive` daquela empresa |
-| 🗒️ | [`AGENDA-SUGERIDA-JOBS.csv`](docs/AGENDA-SUGERIDA-JOBS.csv) | Agenda sugerida de cada job, embutida no WebApp e usada pelo `Import-TestSeeds.ps1` |
+| 🗒️ | [`AGENDA-SUGERIDA-JOBS.csv`](.docs/AGENDA-SUGERIDA-JOBS.csv) | Agenda sugerida de cada job, embutida no WebApp e usada pelo `Import-TestSeeds.ps1` |
 | 📝 | WebApp (tela inicial e **Cadastro**) | Cadastra holdings e empresas, contrata módulos (jobs inativos com a agenda sugerida), grava credenciais e ativa jobs: `INSERT`/`UPDATE` direto, sem procedures |
 | 🧠 | `ICompanyContext` (Shared) | A holding e a empresa da execução, uma por escopo: o log, os repositórios e a `sp_*_Sync` leem dela |
 | 🖼️ | `monitor.AppImage` / `monitor.AppSetting` | Imagem e parâmetros de apresentação do painel por módulo e holding (`Holder = '*'` é o padrão) |
@@ -434,7 +434,7 @@ flowchart TB
 > **Um host de agenda por vez** no mesmo banco. O `WebApi` em modo só API combina com qualquer um deles, para o disparo
 > manual pelas rotas. Desde 03/11/2026 o código garante a regra: cada host se registra em `auditing.SchedulingHosts`
 > com heartbeat, e só o tipo que está no ar há mais tempo executa os jobs; o outro espera ele sair
-> ([melhorias, 4.2](docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md#42-ponto-7-dois-agendadores-no-mesmo-banco)). As rotas
+> ([melhorias, 4.2](.docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md#42-ponto-7-dois-agendadores-no-mesmo-banco)). As rotas
 > que rodam um job da agenda pedem a mesma trava e devolvem 409 com ele rodando.
 
 * 🔒 **Trava de concorrência em duas chaves:** o `IJobLock` do Shared (`sp_getapplock`) usa as mesmas chaves nos três
@@ -685,7 +685,7 @@ da configuração local) são gravados à mão com `dotnet user-secrets set`, co
 
 <div align="center">
 
-![Tela do Invoke-Migrators](docs/images/tools/invoke-migrators.png)
+![Tela do Invoke-Migrators](.docs/images/tools/invoke-migrators.png)
 
 <sub><b>Invoke-Migrators</b> — banco, host de agenda e o catálogo das aplicações (a imagem ainda mostra os grupos Usuários do WebApp e Banco de teste, que saíram)</sub>
 
@@ -701,7 +701,7 @@ dotnet script migrator.csx -- "Server=localhost;Database=NEWBLOOMERS;User Id=sa;
 ```
 
 No Windows, o caminho dos módulos passa de 260 caracteres: mapeie a pasta com `subst X: "<pasta SQLServer>"` e rode o
-migrator a partir de `X:` ([MIGRATOR-CSX.md](docs/MIGRATOR-CSX.md)). O migrator do DW exige a connection string como
+migrator a partir de `X:` ([MIGRATOR-CSX.md](.docs/MIGRATOR-CSX.md)). O migrator do DW exige a connection string como
 argumento e não imprime usuário nem senha.
 
 </details>
@@ -737,7 +737,7 @@ dotnet run --project src/Backend/Hosts/WebJob -- --job 9002
 
 <div align="center">
 
-![Saída do WebJob --list-jobs](docs/images/hosts/webjob-list-jobs.png)
+![Saída do WebJob --list-jobs](.docs/images/hosts/webjob-list-jobs.png)
 
 <sub><code>--list-jobs</code> lista os jobs que o host conhece, sem subir o host nem acessar o banco</sub>
 
@@ -794,30 +794,30 @@ falha no restore de módulos fora do host (pacotes sem versão em Dootax, Oto, S
 
 ## 🖥️ Painel (WebApp)
 
-O **Monitor de Integrações** ([README](src/Frontend/WebApp/README.md) · [plano](src/Frontend/WebApp/docs/PLANO-WEBAPP.md))
+O **Monitor de Integrações** ([README](src/Frontend/WebApp/README.md) · [plano](src/Frontend/WebApp/.docs/PLANO-WEBAPP.md))
 é um Blazor Web App com MudBlazor que lê as tabelas de `auditing`. Hoje roda sobre **dados mockados**
 (`MockMonitorRepository` e `MockQueryRunner`), sem autenticação, com o visual aprovado por mockup, **tema escuro e claro**
 e telas responsivas para celular e tablet.
 
 <div align="center">
 
-![Visão geral do Monitor de Integrações](docs/images/webapp/visao-geral.png)
+![Visão geral do Monitor de Integrações](.docs/images/webapp/visao-geral.png)
 
 <sub><b>Visão Geral</b> — cards das aplicações com integrações, execuções, erros e avisos</sub>
 
 </div>
 
-| ![Métricas e painel de saúde](docs/images/webapp/visao-geral-saude.png)<br> <sub><b>Métricas e painel de saúde</b> — taxa de sucesso, registros por dia e falhas ativas</sub> | ![Tela Integrações](docs/images/webapp/integracoes.png)<br> <sub><b>Integrações</b> — jobs por aplicação, procedures, saúde, Executar agora e Agenda</sub> |
+| ![Métricas e painel de saúde](.docs/images/webapp/visao-geral-saude.png)<br> <sub><b>Métricas e painel de saúde</b> — taxa de sucesso, registros por dia e falhas ativas</sub> | ![Tela Integrações](.docs/images/webapp/integracoes.png)<br> <sub><b>Integrações</b> — jobs por aplicação, procedures, saúde, Executar agora e Agenda</sub> |
 |:---:|:---:|
-| ![Tela Logs de Erros](docs/images/webapp/logs-de-erros.png)<br> <sub><b>Logs de Erros</b> — mensagens por aplicação, integração e causa</sub> | ![Tela Sob Demanda](docs/images/webapp/sob-demanda.png)<br> <sub><b>Sob Demanda</b> — integrações sem agenda, no estilo do Swagger</sub> |
-| ![Tela Executar Querys](docs/images/webapp/executar-querys.png)<br> <sub><b>Executar Querys</b> — SQL com favoritas e querys prontas</sub> | ![Assistente de IA](docs/images/webapp/assistente.png)<br> <sub><b>Assistente de IA</b> — chat com o Claude, só leitura</sub> |
+| ![Tela Logs de Erros](.docs/images/webapp/logs-de-erros.png)<br> <sub><b>Logs de Erros</b> — mensagens por aplicação, integração e causa</sub> | ![Tela Sob Demanda](.docs/images/webapp/sob-demanda.png)<br> <sub><b>Sob Demanda</b> — integrações sem agenda, no estilo do Swagger</sub> |
+| ![Tela Executar Querys](.docs/images/webapp/executar-querys.png)<br> <sub><b>Executar Querys</b> — SQL com favoritas e querys prontas</sub> | ![Assistente de IA](.docs/images/webapp/assistente.png)<br> <sub><b>Assistente de IA</b> — chat com o Claude, só leitura</sub> |
 
 <details>
 <summary><b>🌗 Tema claro, 📱 celular e Aplicações</b></summary>
 
 <div align="center">
 
-![Visão geral no tema claro](docs/images/webapp/visao-geral-claro.png)
+![Visão geral no tema claro](.docs/images/webapp/visao-geral-claro.png)
 
 <sub><b>Tema claro</b> — a escolha fica salva no navegador</sub>
 
@@ -825,7 +825,7 @@ e telas responsivas para celular e tablet.
 
 <div align="center">
 
-![Tela Aplicações](docs/images/webapp/aplicacoes.png)
+![Tela Aplicações](.docs/images/webapp/aplicacoes.png)
 
 <sub><b>Aplicações</b> — imagem da empresa e o chip que liga ou desliga o módulo</sub>
 
@@ -833,7 +833,7 @@ e telas responsivas para celular e tablet.
 
 <div align="center">
 
-![Visão geral no celular](docs/images/webapp/celular-visao-geral.png) ![Integrações no celular](docs/images/webapp/celular-integracoes.png)
+![Visão geral no celular](.docs/images/webapp/celular-visao-geral.png) ![Integrações no celular](.docs/images/webapp/celular-integracoes.png)
 
 <sub><b>Celular</b> — abaixo de 600px as tabelas viram blocos e os diálogos ocupam a tela toda</sub>
 
@@ -856,11 +856,11 @@ e telas responsivas para celular e tablet.
 | 🛡️ **Todas as holdings** | `/admin/holdings` | Todas as holdings e empresas do banco, e o painel de qualquer uma (só o dono do aplicativo) |
 
 O **cadastro** grava direto em `auditing.Holders`, `auditing.Companies`, `auditing.Jobs` e nas tabelas `*Parameters`
-([proposta](docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)): mock por padrão e Dapper com `Database:Enabled = true`, a
+([proposta](.docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)): mock por padrão e Dapper com `Database:Enabled = true`, a
 mesma chave que liga o painel no banco (fase 5). No painel, o **seletor de empresa** do topo troca entre as empresas da
 holding (a escolha fica no navegador); `LoggedCompany:DocCompany` só sugere a primeira. Ativar um job de um módulo com
 API externa sem a credencial da empresa abre o formulário dela e depois pede confirmação de que o host vai chamar a API
-de verdade. O botão **Testar conexão** ainda está desabilitado (passo 4.6.1 do [plano](docs/PLANO-TELA-CADASTRO-EMPRESA.md)).
+de verdade. O botão **Testar conexão** ainda está desabilitado (passo 4.6.1 do [plano](.docs/PLANO-TELA-CADASTRO-EMPRESA.md)).
 
 > [!NOTE]
 > O **assistente de IA** (botão roxo no canto inferior direito, em todas as telas menos o login) é um chat com o Claude que
@@ -905,7 +905,7 @@ As cargas são disparadas pelas rotas do `DataWarehouseController` (ou pela agen
 | `RunLinxLegacy` | `9004` | Carga única do legado Linx Microvix |
 
 📘 O guia completo (premissas, arquitetura, modelo, DDL, procedures, operação, acesso e riscos) está em
-[src/Backend/Modules/DataWarehouse/docs](src/Backend/Modules/DataWarehouse/docs/00-ordem-de-leitura.md), junto das regras
+[src/Backend/Modules/DataWarehouse/.docs](src/Backend/Modules/DataWarehouse/.docs/00-ordem-de-leitura.md), junto das regras
 de prefixo dos pedidos e do funcionamento do DW.
 
 ---
@@ -913,7 +913,7 @@ de prefixo dos pedidos e do funcionamento do DW.
 ## 📐 Padrões do código
 
 As regras de organização valem para todos os módulos e estão em
-[PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md](docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md):
+[PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md](.docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md):
 
 * ♻️ refatoração de estilo **não muda o comportamento**;
 * 🔒 método privado só existe quando é usado por **mais de um método**; senão, vai para dentro do pai (código direto ou
@@ -924,7 +924,7 @@ As regras de organização valem para todos os módulos e estão em
 * 🏷️ o método chamado por um job recorrente leva `[JobVersion("MAJOR.MINOR.PATCH")]`;
 * 🗄️ scripts em `Parameters/` e uma pasta por service, numeração sequencial, correção no script de criação.
 
-⚡ O cache segue [PADRAO-CACHE-INTEGRACOES.md](docs/PADRAO-CACHE-INTEGRACOES.md).
+⚡ O cache segue [PADRAO-CACHE-INTEGRACOES.md](.docs/PADRAO-CACHE-INTEGRACOES.md).
 
 ---
 
@@ -933,11 +933,11 @@ As regras de organização valem para todos os módulos e estão em
 | | Item | Situação |
 |:---:|---|---|
 | 🔌 | **Módulos fora do host** | Dootax, Mobsim, Oto, Pagarme (General) e FlashCourier, Jadlog, Stone, TotalExpress (Shippment) têm código do sistema antigo, mas o registro no host e os controllers estão comentados. O `LinxMicrovix - Inbound Web Service` (escritas do B2C) está vazio |
-| ⏱️ | **Agendamento** | Os três hosts de agenda estão prontos e foram **testados em 02 e 03/11/2026** (Docker, nginx, serviço do Windows, Azure SQL e App Service, nos [testes de hospedagem](docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md)), mas **nenhum está em produção**. Hoje os jobs rodam pelas rotas, chamadas por um agendador externo. Os testes deixaram 15 pontos para decidir ([seção 8.3](docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md#83-pontos-em-aberto)); o mais grave é a perda de tickets da Movidesk quando a API erra um bloco |
-| 🖥️ | **Painel** | O `WebApp` lê o banco com `Database:Enabled = true` (fase 5, usada em todos os testes de hospedagem, inclusive publicado em container e no App Service); sem a chave, fica no mock. Falta a autenticação (fase 6 do [plano](src/Frontend/WebApp/docs/PLANO-WEBAPP.md)), e num servidor em UTC a hora das telas sai adiantada |
-| 🏢 | **Cadastro de empresas** | Banco (holdings, empresas e catálogo, [proposta](docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)), seed de teste, log, agenda e services por empresa e as telas do WebApp estão **feitos**; falta o **Testar conexão** (4.6.1 do [plano](docs/PLANO-TELA-CADASTRO-EMPRESA.md)). Contratar cria os jobs inativos e remover só desativa: o banco ainda não distingue os dois casos |
+| ⏱️ | **Agendamento** | Os três hosts de agenda estão prontos e foram **testados em 02 e 03/11/2026** (Docker, nginx, serviço do Windows, Azure SQL e App Service, nos [testes de hospedagem](.docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md)), mas **nenhum está em produção**. Hoje os jobs rodam pelas rotas, chamadas por um agendador externo. Os testes deixaram 15 pontos para decidir ([seção 8.3](.docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md#83-pontos-em-aberto)); o mais grave é a perda de tickets da Movidesk quando a API erra um bloco |
+| 🖥️ | **Painel** | O `WebApp` lê o banco com `Database:Enabled = true` (fase 5, usada em todos os testes de hospedagem, inclusive publicado em container e no App Service); sem a chave, fica no mock. Falta a autenticação (fase 6 do [plano](src/Frontend/WebApp/.docs/PLANO-WEBAPP.md)), e num servidor em UTC a hora das telas sai adiantada |
+| 🏢 | **Cadastro de empresas** | Banco (holdings, empresas e catálogo, [proposta](.docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)), seed de teste, log, agenda e services por empresa e as telas do WebApp estão **feitos**; falta o **Testar conexão** (4.6.1 do [plano](.docs/PLANO-TELA-CADASTRO-EMPRESA.md)). Contratar cria os jobs inativos e remover só desativa: o banco ainda não distingue os dois casos |
 | 🔑 | **Credenciais em texto puro** | As tabelas `*Parameters` guardam segredos sem criptografia nesta fase; o acesso ao banco é o único controle |
-| 🔔 | **Nível de mensagem** | Informação, aviso e erro em `auditing.Messages`: ainda é só [proposta](src/Backend/Shared/docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md) |
+| 🔔 | **Nível de mensagem** | Informação, aviso e erro em `auditing.Messages`: ainda é só [proposta](src/Backend/Shared/.docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md) |
 | 🔐 | **Autenticação** | O `[Authorize]` dos controllers está comentado, e o painel ainda não tem login (fase 4.7 do plano) |
 | ⚙️ | **Jobs só de procedure** | `RecurringJobDefinition.ForProcedure` está todo comentado; ao descomentar um, a procedure precisa receber `@Company` |
 | 🧪 | **Testes** | A pasta `tests` está vazia |
@@ -949,24 +949,24 @@ As regras de organização valem para todos os módulos e estão em
 | Documento | Conteúdo |
 |---|---|
 | 📖 README de cada módulo | Conceitos da API, services e métodos, fluxos, endpoints, scripts, jobs, configuração e pendências |
-| ⏱️ README e `docs/PLANO-HOST-*.md` de cada host | [WebApi](src/Backend/Hosts/WebApi/README.md), [WebJob](src/Backend/Hosts/WebJob/README.md) e [Worker](src/Backend/Hosts/Worker/README.md): como rodar, publicar e configurar, e a decisão de cada passo |
-| 🖥️ [src/Frontend/WebApp](src/Frontend/WebApp/README.md) | Painel: telas, assistente de IA e o plano do front-end (`docs/PLANO-WEBAPP.md`) |
-| 🏢 [PLANO-TELA-CADASTRO-EMPRESA.md](docs/PLANO-TELA-CADASTRO-EMPRESA.md) | Cadastro de empresas: o que sai do DbUp, o `.ps1` de teste, log, agenda e services por empresa e as fases da tela (histórico; o modelo atual está na [proposta do schema auditing](docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)) |
-| 🏛️ [src/Backend/Modules/DataWarehouse/docs](src/Backend/Modules/DataWarehouse/docs/00-ordem-de-leitura.md) | Guia do data warehouse |
-| 📐 [PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md](docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md) | Padrão de código e scripts |
-| ⚡ [PADRAO-CACHE-INTEGRACOES.md](docs/PADRAO-CACHE-INTEGRACOES.md) | Padrão de cache |
+| ⏱️ README e `.docs/PLANO-HOST-*.md` de cada host | [WebApi](src/Backend/Hosts/WebApi/README.md), [WebJob](src/Backend/Hosts/WebJob/README.md) e [Worker](src/Backend/Hosts/Worker/README.md): como rodar, publicar e configurar, e a decisão de cada passo |
+| 🖥️ [src/Frontend/WebApp](src/Frontend/WebApp/README.md) | Painel: telas, assistente de IA e o plano do front-end (`.docs/PLANO-WEBAPP.md`) |
+| 🏢 [PLANO-TELA-CADASTRO-EMPRESA.md](.docs/PLANO-TELA-CADASTRO-EMPRESA.md) | Cadastro de empresas: o que sai do DbUp, o `.ps1` de teste, log, agenda e services por empresa e as fases da tela (histórico; o modelo atual está na [proposta do schema auditing](.docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)) |
+| 🏛️ [src/Backend/Modules/DataWarehouse/.docs](src/Backend/Modules/DataWarehouse/.docs/00-ordem-de-leitura.md) | Guia do data warehouse |
+| 📐 [PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md](.docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md) | Padrão de código e scripts |
+| ⚡ [PADRAO-CACHE-INTEGRACOES.md](.docs/PADRAO-CACHE-INTEGRACOES.md) | Padrão de cache |
 | 🚀 [GUIA-DE-USO.md](GUIA-DE-USO.md) | Passo a passo para subir o banco, carregar uma empresa e usar cada projeto |
 | 🚢 [DEPLOY.md](DEPLOY.md) | Deploy dos quatro projetos em cada ambiente testado (Docker com nginx, serviço do Windows, App Service, IIS), com a configuração fora do repositório |
-| 🔁 [MIGRATOR-CSX.md](docs/MIGRATOR-CSX.md) | Como rodar o `migrator.csx` e a tela `Invoke-Migrators.ps1` |
-| 🧪 [PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md](docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md) | Testes de hospedagem (C1 a C7, A1 a A10): roteiro, resultados, diferenças entre os hosts e pontos em aberto; recursos da Azure de teste pelo [`tools/azure/New-AzureTestResources.ps1`](tools/azure/New-AzureTestResources.ps1) |
-| 🔍 [REVISAO-PADRAO-CODIGO-E-SCRIPTS.md](docs/REVISAO-PADRAO-CODIGO-E-SCRIPTS.md) | Revisão dos módulos contra o padrão (todos os módulos do host e o Shared já seguem) |
-| 📂 `docs/` de cada módulo | Propostas, planos, implementações e modelagens do módulo (ex.: `src/Backend/Modules/Totvs/docs`); os do Shared ficam em `src/Backend/Shared/docs` (merge e auditoria, conversores dos validadores e as propostas de `auditing`) |
+| 🔁 [MIGRATOR-CSX.md](.docs/MIGRATOR-CSX.md) | Como rodar o `migrator.csx` e a tela `Invoke-Migrators.ps1` |
+| 🧪 [PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md](.docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md) | Testes de hospedagem (C1 a C7, A1 a A10): roteiro, resultados, diferenças entre os hosts e pontos em aberto; recursos da Azure de teste pelo [`tools/azure/New-AzureTestResources.ps1`](tools/azure/New-AzureTestResources.ps1) |
+| 🔍 [REVISAO-PADRAO-CODIGO-E-SCRIPTS.md](.docs/REVISAO-PADRAO-CODIGO-E-SCRIPTS.md) | Revisão dos módulos contra o padrão (todos os módulos do host e o Shared já seguem) |
+| 📂 `.docs/` de cada módulo | Propostas, planos, implementações e modelagens do módulo (ex.: `src/Backend/Modules/Totvs/.docs`); os do Shared ficam em `src/Backend/Shared/.docs` (merge e auditoria, conversores dos validadores e as propostas de `auditing`) |
 
 ---
 
 <div align="center">
 
-![NEWBLOOMERS](docs/newbloomers.png)
+![NEWBLOOMERS](.docs/newbloomers.png)
 
 <sub>Sistema de integrações · feito com .NET 10</sub>
 

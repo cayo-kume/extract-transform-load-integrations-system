@@ -1,6 +1,6 @@
 <div align="center">
 
-![NEWBLOOMERS · Sistema de Integrações · ETL](docs/images/banner.png)
+![NEWBLOOMERS · Sistema de Integrações · ETL](.docs/images/banner.png)
 
 </div>
 
@@ -8,16 +8,16 @@
 
 <div align="center">
 
-![.NET 10](docs/images/badges/net-10.svg) ![SQL Server](docs/images/badges/sql-server-dapper-dbup.svg) ![Blazor](docs/images/badges/blazor-mudblazor-9.svg)
+![.NET 10](.docs/images/badges/net-10.svg) ![SQL Server](.docs/images/badges/sql-server-dapper-dbup.svg) ![Blazor](.docs/images/badges/blazor-mudblazor-9.svg)
 
-![Hangfire](docs/images/badges/hangfire-1-8-sq.svg) ![Quartz.NET](docs/images/badges/quartz-net-3-19-sq.svg) ![Azure WebJobs](docs/images/badges/azure-webjobs-sq.svg)
+![Hangfire](.docs/images/badges/hangfire-1-8-sq.svg) ![Quartz.NET](.docs/images/badges/quartz-net-3-19-sq.svg) ![Azure WebJobs](.docs/images/badges/azure-webjobs-sq.svg)
 
 </div>
 
 <p align="center">
   <b>Como publicar o WebApi, o Worker, o WebJob e o painel em cada ambiente testado, sem credencial no repositório.</b><br>
   <sub>O uso na máquina de desenvolvimento está no <a href="GUIA-DE-USO.md">GUIA-DE-USO</a>; os testes que embasam este
-  documento, em <a href="docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md">PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM</a>.</sub>
+  documento, em <a href=".docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md">PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM</a>.</sub>
 </p>
 
 <p align="center">
@@ -88,7 +88,7 @@ flowchart LR
 
 1. **Banco.** A tela [`tools/migrators/Invoke-Migrators.ps1`](tools/migrators/Invoke-Migrators.ps1) sobe as tabelas, com o
    host de agenda escolhido (o Worker tem tabelas próprias, schema `quartz`). **No Azure SQL**, crie o banco antes, com a collation `Latin1_General_100_CI_AS_SC_UTF8`: o DbUp
-   criaria no tier padrão, que é pago, e a collation não muda depois ([MIGRATOR-CSX](docs/MIGRATOR-CSX.md)).
+   criaria no tier padrão, que é pago, e a collation não muda depois ([MIGRATOR-CSX](.docs/MIGRATOR-CSX.md)).
 2. **Holding e empresas.** No WebApp, tela inicial, **Cadastrar holding e empresas** (`/registration`, só admin):
    **Nova holding** grava a holding (`auditing.Holders`), a empresa que é a própria holding (`auditing.Companies`) e os
    jobs dos hosts dela; **Nova empresa** acrescenta os outros CNPJs. Os jobs nascem inativos.
@@ -309,4 +309,4 @@ O comportamento da aplicação é o mesmo do Docker; muda a configuração do se
 | Reinício | reiniciar o host (serviço, container ou App Service) e ver o ciclo seguinte normal |
 
 Os pontos em aberto dos testes (perda de tickets da Movidesk, plano, recuperação) estão na
-[seção 8.3](docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md#83-pontos-em-aberto) da proposta de testes.
+[seção 8.3](.docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md#83-pontos-em-aberto) da proposta de testes.

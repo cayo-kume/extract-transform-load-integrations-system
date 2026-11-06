@@ -1,5 +1,5 @@
--- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
-/****** Vendedores: tabelas untreated e linxcommerce (src/Backend/Modules/LinxCommerce/docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md 5.2) ******/
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; .docs/MIGRATOR-CSX.md)
+/****** Vendedores: tabelas untreated e linxcommerce (src/Backend/Modules/LinxCommerce/.docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md 5.2) ******/
 --colunas e tamanhos tirados do código antigo, sem resposta real da API: a conferir antes de ligar o job (§9).
 --datas da API em datetimeoffset (o Linx Commerce manda o fuso); integrated_or_updated_at é o horário do lote, em Brasília
 

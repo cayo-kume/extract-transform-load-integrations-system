@@ -1,6 +1,6 @@
 /****** dbo.sp_Create_Merge_Procedure 0.9.2 ******/
 --0.9.2: a procedure gerada recebe @Company (empresa do painel da execução) e passa para auditing.sp_Log_Start, que
---localiza o job pela empresa (docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.3).
+--localiza o job pela empresa (.docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.3).
 --nas tabelas com a coluna timestamp (Linx Microvix), o bloco "delete duplicate rows" seleciona também o timestamp (menos quando
 --já é parte da PK), que o output usa (deleted.timestamp) e que desempata a ordem: fica a linha mais nova.
 

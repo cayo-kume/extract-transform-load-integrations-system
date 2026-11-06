@@ -8,7 +8,7 @@ namespace WebApp.Data.Sql
 {
     /// <summary>
     /// ICompanyRepository no banco principal, com Dapper (sem API e sem Shared): INSERT e UPDATE direto em auditing.Holders,
-    /// auditing.Companies e auditing.Jobs (docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md).
+    /// auditing.Companies e auditing.Jobs (.docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md).
     /// </summary>
     public class SqlCompanyRepository(MainDatabase database) : ICompanyRepository
     {

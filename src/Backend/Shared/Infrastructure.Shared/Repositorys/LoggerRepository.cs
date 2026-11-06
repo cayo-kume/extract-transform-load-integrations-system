@@ -12,7 +12,7 @@ namespace Infrastructure.Shared.Repositorys
     {
         private const int CommandTimeoutSeconds = 360;
 
-        // a transação inteira repete com estas esperas (docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md, 3.2)
+        // a transação inteira repete com estas esperas (.docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md, 3.2)
         private static readonly TimeSpan[] RetryDelays = [TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(3)];
 
         // 1205: deadlock (C2); 4891: "Insert bulk failed due to a schema change of the target table" (C3, Azure SQL);

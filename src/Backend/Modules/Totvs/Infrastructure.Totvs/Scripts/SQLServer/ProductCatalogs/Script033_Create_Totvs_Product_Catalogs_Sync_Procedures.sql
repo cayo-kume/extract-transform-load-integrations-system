@@ -1,5 +1,5 @@
--- roda em toda migração: cada procedure só é criada com a tabela já criada e se ainda não existe (docs/MIGRATOR-CSX.md)
-/****** Catálogos da API Product: procedures de sincronização (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.1) ******/
+-- roda em toda migração: cada procedure só é criada com a tabela já criada e se ainda não existe (.docs/MIGRATOR-CSX.md)
+/****** Catálogos da API Product: procedures de sincronização (src/Backend/Modules/Totvs/.docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.1) ******/
 --Os catálogos nunca são apagados por este fluxo (um item removido na Totvs fica no banco, como as filiais); a filha que saiu de
 --um catálogo que veio no lote é apagada.
 

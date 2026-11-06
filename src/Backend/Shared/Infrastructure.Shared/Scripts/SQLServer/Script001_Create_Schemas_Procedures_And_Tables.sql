@@ -46,7 +46,7 @@ CREATE TABLE [auditing].[Apps](
 GO
 
 -- holdings clientes (CNPJ): cadastradas pela tela do WebApp (ou pelo .ps1 de teste), nunca pelo DbUp
--- (docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)
+-- (.docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)
 CREATE TABLE [auditing].[Holders](
 	[Document] [varchar](20) NOT NULL,
 	[FantasyName] [varchar](250) NULL,
@@ -77,7 +77,7 @@ CREATE TABLE [auditing].[Companies](
 GO
 
 -- catálogo de jobs do produto, sem empresa e sem agenda: os scripts Insert_*_Jobs dos módulos inserem aqui (ficam no
--- DbUp). A agenda sugerida de cada job fica fixa no WebApp (docs/AGENDA-SUGERIDA-JOBS.csv); a agenda de verdade, em
+-- DbUp). A agenda sugerida de cada job fica fixa no WebApp (.docs/AGENDA-SUGERIDA-JOBS.csv); a agenda de verdade, em
 -- auditing.Jobs
 CREATE TABLE [auditing].[Catalog](
 	[IdParent] [int] NULL,
@@ -106,7 +106,7 @@ CREATE TABLE [auditing].[Jobs](
 	[RunningDailyAt] [time](0) NULL,
 	[Queue] [nvarchar](50) NOT NULL,
 	[IsActive] [bit] NOT NULL CONSTRAINT [DF_Jobs_IsActive] DEFAULT (0),
-	-- RunningDailyAt preenchida: o job roda uma vez por dia nessa hora (src/Backend/Hosts/WebApi/docs/PLANO-HOST-WEBAPI.md §4.1)
+	-- RunningDailyAt preenchida: o job roda uma vez por dia nessa hora (src/Backend/Hosts/WebApi/.docs/PLANO-HOST-WEBAPI.md §4.1)
 	CONSTRAINT [CK_Jobs_RunningDailyAt] CHECK ([RunningDailyAt] IS NULL OR [IntervalTimeInMinutes] = 1440),
 	-- fila do Hangfire: só minúsculas, dígitos, _ e -
 	CONSTRAINT [CK_Jobs_Queue] CHECK (LEN([Queue]) > 0 AND [Queue] COLLATE Latin1_General_BIN NOT LIKE '%[^a-z0-9_-]%'),
@@ -142,12 +142,12 @@ CREATE TABLE [auditing].[Logs](
 GO
 
 -- heartbeat dos jobs (auditing.vw_JobsHeartbeat, Script006): a última execução de cada job sem varrer todas as execuções
--- dele (src/Backend/Hosts/WebJob/docs/PLANO-HOST-WEBJOB.md, passo 7)
+-- dele (src/Backend/Hosts/WebJob/.docs/PLANO-HOST-WEBJOB.md, passo 7)
 CREATE NONCLUSTERED INDEX [IX_Logs_Heartbeat] ON [auditing].[Logs] ([Holder] ASC, [Company] ASC, [IdJob] ASC, [IdType] ASC, [EndDate] ASC)
 WITH (STATISTICS_NORECOMPUTE = OFF, FILLFACTOR = 90, DATA_COMPRESSION = ROW) ON [PRIMARY]
 GO
 
--- painel do WebApp (src/Frontend/WebApp/docs/PLANO-WEBAPP.md, 11.3): todo filtro é por período (StartDate) da holding
+-- painel do WebApp (src/Frontend/WebApp/.docs/PLANO-WEBAPP.md, 11.3): todo filtro é por período (StartDate) da holding
 CREATE NONCLUSTERED INDEX [IX_Logs_StartDate] ON [auditing].[Logs] ([Holder] ASC, [StartDate] ASC)
 INCLUDE ([IdJob], [IdType], [Company], [EndDate], [Execution])
 WITH (STATISTICS_NORECOMPUTE = OFF, FILLFACTOR = 90, DATA_COMPRESSION = ROW) ON [PRIMARY]
@@ -171,7 +171,7 @@ CREATE TABLE [auditing].[Messages](
 	[Holder] [varchar](20) NOT NULL,
 	[Company] [varchar](20) NOT NULL,
 	[Execution] [uniqueidentifier] NOT NULL,
-	-- 1 informação, 2 aviso, 3 erro (src/Backend/Shared/docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md)
+	-- 1 informação, 2 aviso, 3 erro (src/Backend/Shared/.docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md)
 	[Level] [tinyint] NOT NULL CONSTRAINT [DF_Messages_Level] DEFAULT (1) CONSTRAINT [CK_Messages_Level] CHECK ([Level] IN (1, 2, 3)),
 	-- calculada, para as consultas e procedures que ainda leem IsError
 	[IsError] AS CAST(CASE WHEN [Level] = 3 THEN 1 ELSE 0 END AS BIT),
@@ -197,7 +197,7 @@ INCLUDE ([Level])
 WITH (STATISTICS_NORECOMPUTE = OFF, FILLFACTOR = 90, DATA_COMPRESSION = ROW) ON [PRIMARY]
 GO
 
--- hosts de agenda (Hangfire, Quartz, WebJob) que estão no ar neste banco, pelo heartbeat (docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md,
+-- hosts de agenda (Hangfire, Quartz, WebJob) que estão no ar neste banco, pelo heartbeat (.docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md,
 -- 4.2): um tipo de host agenda por vez, o que está no ar há mais tempo. Datas em UTC; a linha sem heartbeat há mais de 2 min
 -- é apagada pelo próximo heartbeat de qualquer host
 CREATE TABLE [auditing].[SchedulingHosts](

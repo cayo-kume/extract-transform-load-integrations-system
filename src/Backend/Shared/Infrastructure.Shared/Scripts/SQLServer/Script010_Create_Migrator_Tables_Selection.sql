@@ -1,4 +1,4 @@
-/****** Seleção de tabelas dos migrators dos módulos (docs/MIGRATOR-CSX.md, "Escolha por job") ******/
+/****** Seleção de tabelas dos migrators dos módulos (.docs/MIGRATOR-CSX.md, "Escolha por job") ******/
 -- Os scripts de tabelas e de procedures de sincronização dos services rodam em toda migração (RunAlways no DbUp) e só
 -- criam o que ainda não existe e está na seleção. Antes de rodar os scripts, o migrator.csx do módulo grava aqui os
 -- nomes das tabelas dos jobs escolhidos no tools/migrators/Invoke-Migrators.ps1 (variável ETL_MIGRATOR_TABLES), ou '*'

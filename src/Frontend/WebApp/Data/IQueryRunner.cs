@@ -4,7 +4,7 @@ namespace WebApp.Data
 {
     /// <summary>
     /// Execução de SQL livre da tela Executar Querys, separada do IMonitorRepository porque terá conexão e usuário de
-    /// banco próprios (etl_query). Até a fase 5 do plano (docs/PLANO-WEBAPP.md), a única implementação é o MockQueryRunner.
+    /// banco próprios (etl_query). Até a fase 5 do plano (.docs/PLANO-WEBAPP.md), a única implementação é o MockQueryRunner.
     /// </summary>
     public interface IQueryRunner
     {

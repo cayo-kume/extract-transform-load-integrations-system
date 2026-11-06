@@ -1,5 +1,5 @@
--- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
-/****** Contas a pagar: tabelas untreated e totvs (src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.2.7) ******/
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; .docs/MIGRATOR-CSX.md)
+/****** Contas a pagar: tabelas untreated e totvs (src/Backend/Modules/Totvs/.docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.2.7) ******/
 --tamanhos do swagger da API Accounts Payable. Duplicata: uma linha por parcela (o mesmo duplicateCode volta uma vez por
 --parcela). Comissão: uma linha por comissionado do fechamento (a rota não tem filtro de alteração nem maxChangeFilterDate).
 

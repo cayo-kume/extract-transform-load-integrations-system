@@ -1,5 +1,5 @@
--- roda em toda migração: cada procedure só é criada com a tabela já criada e se ainda não existe (docs/MIGRATOR-CSX.md)
-/****** Pedidos de venda: procedures de sincronização (src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.3) ******/
+-- roda em toda migração: cada procedure só é criada com a tabela já criada e se ainda não existe (.docs/MIGRATOR-CSX.md)
+/****** Pedidos de venda: procedures de sincronização (src/Backend/Modules/Totvs/.docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.3) ******/
 --Os pedidos nunca são apagados por este fluxo; as filhas (e netas) que saíram de um pedido que veio no lote são apagadas.
 --A condição depende do pedido e das filhas do mesmo lote terem o mesmo integrated_or_updated_at, e do merge do pedido rodar antes.
 declare @delete_by_order nvarchar(max) = 'exists (select 1 from [totvs].TotvsSaleOrders p where p.doc_company = target.doc_company and p.branchCode = target.branchCode and p.orderCode = target.orderCode and p.integrated_or_updated_at > target.integrated_or_updated_at)';
@@ -29,7 +29,7 @@ exec dbo.sp_Create_Merge_Procedure @schema_name = 'totvs', @table_name = 'TotvsS
 
 go
 
-/****** Catálogos e sugestões de faturamento da API Sales Order: procedures de sincronização (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §7) ******/
+/****** Catálogos e sugestões de faturamento da API Sales Order: procedures de sincronização (src/Backend/Modules/Totvs/.docs/PLANO-TOTVS-METODOS-FALTANTES.md §7) ******/
 --Catálogos e sugestões nunca são apagados por este fluxo; o pedido e o item que saíram da sugestão regravada são apagados.
 
 if object_id(N'[totvs].TotvsSaleDiscountTypes') is not null and object_id(N'[totvs].[sp_TotvsSaleDiscountTypes_Sync]') is null

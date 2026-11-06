@@ -17,7 +17,7 @@ using Application.Shared.Attributes;
 namespace Application.Totvs.Services
 {
     /// <summary>
-    /// preços e custos dos produtos (fase PR-2, src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.9, PR12): todos os códigos de preço e de custo
+    /// preços e custos dos produtos (fase PR-2, src/Backend/Modules/Totvs/.docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.9, PR12): todos os códigos de preço e de custo
     /// do cadastro, uma chamada por loja de cada marca; e os itens das tabelas de preço e das promoções (§5.2). Cada método faz as
     /// próprias chamadas à API; o comum vem do ITotvsService
     /// </summary>
@@ -173,7 +173,7 @@ namespace Application.Totvs.Services
                                 startDate = $"{windowStart:yyyy-MM-ddTHH:mm:ss}",
                                 endDate = $"{windowEnd:yyyy-MM-ddTHH:mm:ss}",
                                 inPrice = true,
-                                // inPrice não pega a mudança de promoção: vai também o inPromotionalPrice (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.9)
+                                // inPrice não pega a mudança de promoção: vai também o inPromotionalPrice (src/Backend/Modules/Totvs/.docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.9)
                                 inPromotionalPrice = true,
                                 branchPriceCodeList = new[] { branchCode },
                                 priceCodeList = codes

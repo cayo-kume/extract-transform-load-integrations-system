@@ -5,7 +5,7 @@ CREATE OR ALTER PROCEDURE [auditing].[sp_Log_Start] (
     @execution UNIQUEIDENTIFIER OUTPUT,
     @idType INT = 1, -- auditing.Types: 1 = Procedure
     -- empresa da execução (auditing.Companies): o job tem uma linha por empresa em auditing.Jobs, e a holding sai da
-    -- empresa (docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md). Sem padrão útil: nula, a execução é recusada (50005)
+    -- empresa (.docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md). Sem padrão útil: nula, a execução é recusada (50005)
     @company VARCHAR(20) = NULL
 ) AS
 BEGIN
@@ -177,8 +177,8 @@ GO
 -- jobs de um módulo no catálogo: os de auditing.Catalog com IdParent = módulo (auditing.Apps) e, abaixo deles, as
 -- procedures (IdType = 1), cujo IdParent é o IdJob do job que as chama (ex.: 3500 sp_MovideskTickets_Sync, IdParent 3000).
 -- A tela do WebApp contrata um módulo para a empresa com INSERT direto em auditing.Jobs a partir desta função, com a
--- agenda sugerida (docs/AGENDA-SUGERIDA-JOBS.csv), e remove com UPDATE de IsActive
--- (docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)
+-- agenda sugerida (.docs/AGENDA-SUGERIDA-JOBS.csv), e remove com UPDATE de IsActive
+-- (.docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)
 CREATE OR ALTER FUNCTION [auditing].[fn_CatalogTree] (
     @idParent INT
 ) RETURNS TABLE AS

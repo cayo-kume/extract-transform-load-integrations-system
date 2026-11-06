@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace Hosts.Scheduling.RecurringJobs
 {
     /// <summary>
-    /// todos os mapas IdJob → método dos módulos registrados no host (src/Backend/Hosts/WebApi/docs/PLANO-HOST-WEBAPI.md §4.2). Um
+    /// todos os mapas IdJob → método dos módulos registrados no host (src/Backend/Hosts/WebApi/.docs/PLANO-HOST-WEBAPI.md §4.2). Um
     /// módulo novo entra aqui junto com o registro no ServicesExtensions (passo 6)
     /// </summary>
     public static partial class RecurringJobMap
@@ -26,7 +26,7 @@ namespace Hosts.Scheduling.RecurringJobs
             $"{idJob}-{title} - V{version}";
 
         /// <summary>
-        /// nome do recurring job de uma empresa (docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.4): ex.:
+        /// nome do recurring job de uma empresa (.docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.4): ex.:
         /// "8006-LinxClientesFornec - V1.0.0 - 44065634000106". Um por (job, empresa)
         /// </summary>
         public static string RecurringJobId(int idJob, string? title, string version, string company) =>

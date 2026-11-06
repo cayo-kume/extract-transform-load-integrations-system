@@ -19,7 +19,7 @@ namespace Application.AfterSale.Handlers.Commands
 
         public string CreateGetCompanysQuery(string company)
         {
-            // só os parâmetros da empresa da execução (doc_company = empresa, docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md);
+            // só os parâmetros da empresa da execução (doc_company = empresa, .docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md);
             // company é só dígitos (ICompanyContext)
             // credencial e endereço do ambiente marcado na aba Parâmetros do WebApp (use_homolog_url = 1, homologação): os
             // services leem sempre as colunas de produção

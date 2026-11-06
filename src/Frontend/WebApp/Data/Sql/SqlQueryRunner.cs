@@ -8,7 +8,7 @@ namespace WebApp.Data.Sql
 {
     /// <summary>
     /// IQueryRunner no SQL Server, com a connection string própria da tela (ConnectionStrings:QueryConnection, usuário
-    /// etl_query, docs/PLANO-WEBAPP.md, passo 12). O banco escolhido entra na conexão (InitialCatalog), nunca por USE no
+    /// etl_query, .docs/PLANO-WEBAPP.md, passo 12). O banco escolhido entra na conexão (InitialCatalog), nunca por USE no
     /// texto. Todo comando roda numa transação: o SELECT é desfeito no fim (se o texto esconder uma escrita, ela não fica), e
     /// o que altera algo fica aberto esperando CommitAsync ou RollbackAsync. Sem resposta, a transação é desfeita aqui
     /// mesmo depois do prazo da tela, para uma aba fechada não deixar tabela travada.

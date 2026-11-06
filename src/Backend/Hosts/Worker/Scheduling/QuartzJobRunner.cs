@@ -7,7 +7,7 @@ using System.Globalization;
 namespace Worker.Scheduling
 {
     /// <summary>
-    /// o que o Quartz executa em cada job da agenda (src/Backend/Hosts/Worker/docs/PLANO-HOST-WORKER.md §4.2 e §5.3): uma classe só para
+    /// o que o Quartz executa em cada job da agenda (src/Backend/Hosts/Worker/.docs/PLANO-HOST-WORKER.md §4.2 e §5.3): uma classe só para
     /// todos os jobs, com o IdJob no JobDataMap, que repassa ao ScheduledJobRunner (log do erro em auditing). O Quartz cria um
     /// escopo por execução, então o runner e os services são scoped como nos outros hosts. Nenhuma exceção sobe: sem
     /// retentativa, o trigger segue para o próximo horário (§3.4).
@@ -16,7 +16,7 @@ namespace Worker.Scheduling
     /// anterior (vale entre os Workers do cluster), e o IJobLock, com as chaves dos outros hosts, cobre o resto (o grupo do DW, a
     /// troca de versão, outro host agendando). Um disparo que aconteceu com a execução anterior rodando é pulado, como no
     /// Hangfire (§5.2), pelo início e o fim da última execução guardados no JobDataMap.
-    /// Com um job do Quartz por (job, empresa) (docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.4), a empresa também vai no JobDataMap e
+    /// Com um job do Quartz por (job, empresa) (.docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.4), a empresa também vai no JobDataMap e
     /// são duas travas, como no WebApi: a da empresa (a execução anterior da mesma empresa ainda roda, em outro host: pula) e a do
     /// job, que vale entre empresas porque todas escrevem nas mesmas tabelas (untreated e a sp_*_Sync). Com a do job ocupada por
     /// outra empresa, a execução não é perdida: um trigger avulso dispara o mesmo job daqui a RescheduleDelay, senão as empresas

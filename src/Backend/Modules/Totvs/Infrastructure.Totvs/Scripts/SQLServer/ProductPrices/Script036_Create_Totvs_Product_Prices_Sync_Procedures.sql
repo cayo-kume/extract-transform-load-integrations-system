@@ -1,5 +1,5 @@
--- roda em toda migração: cada procedure só é criada com a tabela já criada e se ainda não existe (docs/MIGRATOR-CSX.md)
-/****** Preços e custos: procedures de sincronização (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.9) ******/
+-- roda em toda migração: cada procedure só é criada com a tabela já criada e se ainda não existe (.docs/MIGRATOR-CSX.md)
+/****** Preços e custos: procedures de sincronização (src/Backend/Modules/Totvs/.docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.9) ******/
 --Nenhum valor é apagado por este fluxo; a outra promoção que saiu do produto regravado é apagada.
 
 if object_id(N'[totvs].TotvsPrices') is not null and object_id(N'[totvs].[sp_TotvsPrices_Sync]') is null
@@ -11,7 +11,7 @@ exec dbo.sp_Create_Merge_Procedure @schema_name = 'totvs', @table_name = 'TotvsC
 
 go
 
-/****** Tabelas de preço (itens) e promoções: procedures de sincronização (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.2) ******/
+/****** Tabelas de preço (itens) e promoções: procedures de sincronização (src/Backend/Modules/Totvs/.docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.2) ******/
 --Itens e promoções nunca são apagados por este fluxo (o item que sai da promoção fica no banco com a última situação); o preço
 --por loja e escala que saiu do produto regravado é apagado.
 

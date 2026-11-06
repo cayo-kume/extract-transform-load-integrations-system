@@ -6,12 +6,12 @@ using WebApp.Models;
 namespace WebApp.Data.Sql
 {
     /// <summary>
-    /// IMonitorRepository no banco principal, com Dapper (docs/PLANO-WEBAPP.md, passo 11): auditing.* e monitor.* da empresa
+    /// IMonitorRepository no banco principal, com Dapper (.docs/PLANO-WEBAPP.md, passo 11): auditing.* e monitor.* da empresa
     /// logada. Toda leitura é WITH (NOLOCK), para não segurar o sp_Log_Start nem o bulk insert de Records; as contagens saem
     /// prontas do SQL. A lista de jobs (com a última execução) e os totais por período passam por um cache de 30 s, e
     /// qualquer escrita daqui o invalida. A saúde, o reconhecimento e a ordem são os mesmos do MockMonitorRepository.
     /// Mensagens: o nível vem de auditing.Messages.Level (1 informação, 2 aviso, 3 erro), da proposta de nível
-    /// (src/Backend/Shared/docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md): só o erro põe o job em saúde de erro; o aviso é contado à parte.
+    /// (src/Backend/Shared/.docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md): só o erro põe o job em saúde de erro; o aviso é contado à parte.
     /// </summary>
     public class SqlMonitorRepository(MainDatabase database, IMemoryCache cache, IModuleParametersRepository parameters, LoggedCompany loggedCompany, ILogger<SqlMonitorRepository> logger) : IMonitorRepository
     {
@@ -697,11 +697,11 @@ namespace WebApp.Data.Sql
         }
 
         /// <summary>
-        /// O host ainda não lê pedidos de execução do banco (docs/PLANO-WEBAPP.md, 11.5.2: colunas em auditing.Jobs ou a
+        /// O host ainda não lê pedidos de execução do banco (.docs/PLANO-WEBAPP.md, 11.5.2: colunas em auditing.Jobs ou a
         /// tabela monitor.JobRunRequest, a decidir com quem cuida do host). Até lá, "Executar agora" só existe no mock.
         /// </summary>
         public Task RequestRunAsync(int idJob, int idType, CancellationToken cancellationToken = default) =>
-            throw new NotSupportedException("\"Executar agora\" ainda não existe com o banco: o host não lê pedidos de execução (docs/PLANO-WEBAPP.md, 11.5.2).");
+            throw new NotSupportedException("\"Executar agora\" ainda não existe com o banco: o host não lê pedidos de execução (.docs/PLANO-WEBAPP.md, 11.5.2).");
 
         public async Task SetAppImageAsync(int idApp, string contentType, byte[] data, CancellationToken cancellationToken = default)
         {

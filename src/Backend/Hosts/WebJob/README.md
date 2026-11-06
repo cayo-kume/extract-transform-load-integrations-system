@@ -1,6 +1,6 @@
 <div align="center">
 
-![NEWBLOOMERS · Sistema de Integrações · ETL](../../../../docs/images/banner.png)
+![NEWBLOOMERS · Sistema de Integrações · ETL](../../../../.docs/images/banner.png)
 
 </div>
 
@@ -8,9 +8,9 @@
 
 <div align="center">
 
-![.NET 10](../../../../docs/images/badges/net-10.svg) ![Azure WebJobs](../../../../docs/images/badges/azure-webjobs-contnuos.svg) ![Um job por processo](../../../../docs/images/badges/um-job-por-processo.svg)
+![.NET 10](../../../../.docs/images/badges/net-10.svg) ![Azure WebJobs](../../../../.docs/images/badges/azure-webjobs-contnuos.svg) ![Um job por processo](../../../../.docs/images/badges/um-job-por-processo.svg)
 
-![Worker SDK](../../../../docs/images/badges/microsoft-net-sdk-worker-sem-webjobs-sdk-sq.svg) ![PowerShell](../../../../docs/images/badges/publicao-powershell-7-az-cli-sq.svg) ![Recuperação](../../../../docs/images/badges/recuperao-14000-por-empresa-sq.svg)
+![Worker SDK](../../../../.docs/images/badges/microsoft-net-sdk-worker-sem-webjobs-sdk-sq.svg) ![PowerShell](../../../../.docs/images/badges/publicao-powershell-7-az-cli-sq.svg) ![Recuperação](../../../../.docs/images/badges/recuperao-14000-por-empresa-sq.svg)
 
 </div>
 
@@ -32,7 +32,7 @@
 Host que roda os jobs recorrentes como **WebJobs contínuos na Azure**, no lugar do WebJob do sistema antigo. Cada WebJob
 é um processo deste projeto que roda **um job só** (`--job <IdJob>`), **para todas as empresas com o job ativo**, uma de cada vez,
 com a agenda lida de `auditing.Jobs`. Até 30/10/2026 o projeto se chamava `AzureWebJob`; as decisões e o histórico de cada
-passo estão em [docs/PLANO-HOST-WEBJOB.md](docs/PLANO-HOST-WEBJOB.md).
+passo estão em [.docs/PLANO-HOST-WEBJOB.md](.docs/PLANO-HOST-WEBJOB.md).
 
 | | Item | Valor |
 |:---:|---|---|
@@ -61,7 +61,7 @@ WebApi, os WebJobs publicados ou o serviço do Worker.
 > dobro). Por isso, desde 03/11/2026, cada processo se registra em `auditing.SchedulingHosts` (tipo `WebJob`, com o nome
 > do WebJob em `WEBJOBS_NAME`) e só executa os horários se o tipo dele for o que está no ar há mais tempo; os outros
 > WebJobs do mesmo App Service são do mesmo tipo e rodam juntos normalmente
-> ([melhorias, 4.2](../../../../docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md#42-ponto-7-dois-agendadores-no-mesmo-banco)). A coluna `Queue` é só a fila do Hangfire:
+> ([melhorias, 4.2](../../../../.docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md#42-ponto-7-dois-agendadores-no-mesmo-banco)). A coluna `Queue` é só a fila do Hangfire:
 > não divide jobs entre os hosts.
 
 ---
@@ -92,7 +92,7 @@ dotnet run --project src/Backend/Hosts/WebJob -- --list-jobs
 
 <div align="center">
 
-![Saída do --list-jobs](../../../../docs/images/hosts/webjob-list-jobs.png)
+![Saída do --list-jobs](../../../../.docs/images/hosts/webjob-list-jobs.png)
 
 <sub><b>--list-jobs</b> — trecho da saída (o script de publicação lê o título e a versão daqui)</sub>
 
@@ -143,7 +143,7 @@ parâmetro que mude por ambiente (ex.: `Recovery__AppServiceName`).
 | | Item | Detalhe |
 |:---:|---|---|
 | 🪟 | Plano **Windows**, Basic ou acima | WebJob contínuo exige **Always On**, que não existe no Free/Shared. Runtime `dotnet:10` disponível (perfil com `SelfContained = $false`); 64 bits ligado |
-| 📏 | **Tamanho do plano** | Um **B1** (1 núcleo, 1,75 GB) com 12 WebJobs, o painel e o WebApi ficou em 100% de CPU e 96% de memória: a leitura das notas da Totvs levou 5 vezes mais e foi cancelada. Para produção, um plano maior (B2, S1, P0v3) ou menos processos por plano ([ponto 12](../../../../docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md#83-pontos-em-aberto)) |
+| 📏 | **Tamanho do plano** | Um **B1** (1 núcleo, 1,75 GB) com 12 WebJobs, o painel e o WebApi ficou em 100% de CPU e 96% de memória: a leitura das notas da Totvs levou 5 vezes mais e foi cancelada. Para produção, um plano maior (B2, S1, P0v3) ou menos processos por plano ([ponto 12](../../../../.docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md#83-pontos-em-aberto)) |
 | 🗄️ | Banco | Connection string do tipo `SQLAzure` (ou `SQLServer`); no firewall do Azure SQL, os **IPs de saída** do App Service (`outboundIpAddresses`) |
 | 🕒 | Fuso | O App Service roda em UTC; os WebJobs usam `WebJob:TimeZone` e gravam em horário de Brasília, então `RunningDailyAt` vale no horário de Brasília |
 | 🔁 | Reinício | `az webapp restart` no meio de um ciclo: os WebJobs voltam sozinhos e o ciclo seguinte é normal. As execuções interrompidas não deixam registro em `auditing.Logs` (o log só é gravado no fim) |
@@ -174,7 +174,7 @@ WebJob/
 │   └── publish-profiles.psd1       perfis (dev, teste, prod)
 ├── settings.job
 ├── appsettings.json
-└── docs/PLANO-HOST-WEBJOB.md
+└── .docs/PLANO-HOST-WEBJOB.md
 ```
 
 Os mapas `IdJob → método` (`RecurringJobs/`), o `JobCron` e o `ScheduledJobRunner` ficam no projeto
@@ -446,14 +446,14 @@ local, o `az login`. Um service principal, se um dia precisar, entra pelas vari�
 > **Website Contributor** no App Service pede `Microsoft.Authorization/roleAssignments/write` (Owner ou User Access
 > Administrator), que a conta usada não tinha; sem o papel, a recuperação não lista nem reinicia os WebJobs. Antes de
 > contar com ela em produção, alguém com essa permissão dá o papel e o reinício é testado com `Recovery__DryRun=true` e
-> depois de verdade ([ponto 13](../../../../docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md#83-pontos-em-aberto)).
+> depois de verdade ([ponto 13](../../../../.docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md#83-pontos-em-aberto)).
 
 ---
 
 ## ➕ Um job ou um módulo novo
 
 * **Job recorrente novo num módulo do host:** a linha no script de jobs da service (vai para `auditing.Catalog`, sem agenda;
-  a agenda sugerida é uma linha na [`docs/AGENDA-SUGERIDA-JOBS.csv`](../../../../docs/AGENDA-SUGERIDA-JOBS.csv), ver [PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md](../../../../docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md)
+  a agenda sugerida é uma linha na [`.docs/AGENDA-SUGERIDA-JOBS.csv`](../../../../.docs/AGENDA-SUGERIDA-JOBS.csv), ver [PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md](../../../../.docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md)
   §3.1), a entrada no mapa do módulo em `src/Backend/Hosts/Hosts.Scheduling/RecurringJobs/<Módulo>RecurringJobs.cs`,
   `[JobVersion("1.0.0")]` no método da classe do service e o `IdJob` no `Jobs` do perfil de publicação. Para as empresas
   que já têm o módulo, contratar o módulo de novo no WebApp cria a linha em `auditing.Jobs` (inativa, sem duplicar).
@@ -465,7 +465,7 @@ local, o `az login`. Um service principal, se um dia precisar, entra pelas vari�
 
 <div align="center">
 
-![NEWBLOOMERS](../../../../docs/newbloomers.png)
+![NEWBLOOMERS](../../../../.docs/newbloomers.png)
 
 <sub>Host WebJob · <a href="../../../../README.md">voltar ao README do repositório</a></sub>
 

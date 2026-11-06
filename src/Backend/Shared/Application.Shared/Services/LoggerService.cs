@@ -27,7 +27,7 @@ namespace Application.Shared.Services
             (_logRepository, _companyContext, _guard) = (logRepository, companyContext, guard);
 
         // a holding e a empresa vêm do contexto da execução, que o agendador ou a rota informam
-        // (docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)
+        // (.docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)
         public ILoggerService AddLog(Enum job) =>
             _companyContext.Company is null || _companyContext.Holder is null
                 ? throw new InvalidOperationException($"Job {job}: execução sem empresa. Quem inicia a execução precisa informar ICompanyContext.SetCompany.")
@@ -44,7 +44,7 @@ namespace Application.Shared.Services
 
                 Log = new Log(job: job, holder: holder, company: company);
 
-                // a execução aparece aberta desde o início (docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md, 3.1). Sem banco, a
+                // a execução aparece aberta desde o início (.docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md, 3.1). Sem banco, a
                 // exceção sobe: o job não teria onde gravar o que lê
                 _logRepository.LogStart(Log);
                 _started = true;

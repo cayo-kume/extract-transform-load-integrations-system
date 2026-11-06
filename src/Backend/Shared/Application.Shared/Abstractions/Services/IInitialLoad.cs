@@ -1,7 +1,7 @@
 namespace Application.Shared.Abstractions.Services
 {
     /// <summary>
-    /// teto da carga inicial (banco vazio) em InitialLoad:MaxMonths (docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md §1.2).
+    /// teto da carga inicial (banco vazio) em InitialLoad:MaxMonths (.docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md §1.2).
     /// Sem a chave, ou com valor inválido, nada muda: cada leitura começa da data própria dela. Com a chave, nenhuma carga
     /// inicial começa antes de agora − MaxMonths; a leitura incremental (com dado no banco) não passa por aqui
     /// </summary>

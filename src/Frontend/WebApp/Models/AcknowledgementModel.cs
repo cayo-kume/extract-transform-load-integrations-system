@@ -3,7 +3,7 @@ namespace WebApp.Models
     /// <summary>
     /// Reconhecimento de uma falha (Erro ou Atrasado) por quem opera o painel: o job sai de "Falhas Ativas" até a próxima
     /// execução ou até expirar, e a nota fica para o próximo turno. A saúde do job não muda: é uma camada por cima dela.
-    /// Na fase 5, vira a tabela monitor.JobAcknowledgement (docs/PLANO-WEBAPP.md).
+    /// Na fase 5, vira a tabela monitor.JobAcknowledgement (.docs/PLANO-WEBAPP.md).
     /// </summary>
     public class AcknowledgementModel
     {

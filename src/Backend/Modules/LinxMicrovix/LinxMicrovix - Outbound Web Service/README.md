@@ -1,6 +1,6 @@
 <div align="center">
 
-![NEWBLOOMERS · Sistema de Integrações · ETL](../../../../../docs/images/banner.png)
+![NEWBLOOMERS · Sistema de Integrações · ETL](../../../../../.docs/images/banner.png)
 
 </div>
 
@@ -8,9 +8,9 @@
 
 <div align="center">
 
-![App 80](../../../../../docs/images/badges/app-80.svg) ![Schema linxmicrovix](../../../../../docs/images/badges/schema-linxmicrovix.svg) ![284 rotas](../../../../../docs/images/badges/rotas-284.svg) ![284 jobs](../../../../../docs/images/badges/jobs-284-260-procedures.svg)
+![App 80](../../../../../.docs/images/badges/app-80.svg) ![Schema linxmicrovix](../../../../../.docs/images/badges/schema-linxmicrovix.svg) ![284 rotas](../../../../../.docs/images/badges/rotas-284.svg) ![284 jobs](../../../../../.docs/images/badges/jobs-284-260-procedures.svg)
 
-![.NET 10](../../../../../docs/images/badges/net-10-sq.svg) ![XML](../../../../../docs/images/badges/api-xml-sq.svg) ![ERP v274](../../../../../docs/images/badges/erp-v274-191-mtodos-sq.svg) ![B2C V64](../../../../../docs/images/badges/b2c-v64-69-mtodos-sq.svg) ![Só leitura](../../../../../docs/images/badges/escritas-nenhuma-sq.svg)
+![.NET 10](../../../../../.docs/images/badges/net-10-sq.svg) ![XML](../../../../../.docs/images/badges/api-xml-sq.svg) ![ERP v274](../../../../../.docs/images/badges/erp-v274-191-mtodos-sq.svg) ![B2C V64](../../../../../.docs/images/badges/b2c-v64-69-mtodos-sq.svg) ![Só leitura](../../../../../.docs/images/badges/escritas-nenhuma-sq.svg)
 
 </div>
 
@@ -113,11 +113,11 @@ flowchart LR
 
 `CreateGetCompanysQuery(company)` lê os parâmetros com `WHERE doc_company` = a empresa da execução: os services
 continuam percorrendo `GetCompanys()`, agora só com a linha dessa empresa
-([proposta do schema auditing](../../../../../docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)).
+([proposta do schema auditing](../../../../../.docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)).
 
 ### Comportamentos da API que a integração trata
 A documentação não descreve tudo; o que segue foi conferido com chamadas reais (detalhes em
-[`PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md`](docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md), §4.2 e §9):
+[`PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md`](.docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md), §4.2 e §9):
 
 > [!WARNING]
 > **Os erros chegam com HTTP 200**, com `ResponseSuccess = False` e a mensagem em `<Message>`: o status HTTP sozinho não
@@ -152,7 +152,7 @@ LinxMicrovix - Outbound Web Service/
 ├── Domain.LinxMicrovix.Outbound          ← contratos, DTOs, entidades e enums (sem dependência de infraestrutura)
 ├── Application.LinxMicrovix.Outbound     ← services (leituras), queries SQL e validações
 ├── Infrastructure.LinxMicrovix.Outbound  ← repositórios, injeção de dependência e scripts de banco
-└── docs                                  ← propostas, planos e implementações do módulo
+└── .docs                                  ← propostas, planos e implementações do módulo
     └── Responsed XMLs  ← uma resposta de exemplo por método (dados fictícios)
 ```
 
@@ -1071,7 +1071,7 @@ Swagger pela tag do service.
 
 <div align="center">
 
-![Rotas do Linx Microvix no Swagger do WebApi](../../../../../docs/images/swagger/linxmicrovix.png)
+![Rotas do Linx Microvix no Swagger do WebApi](../../../../../.docs/images/swagger/linxmicrovix.png)
 
 <sub><b>Swagger do WebApi</b> — as rotas do Microvix agrupadas pela tag de cada service (<code>http://localhost:5252/swagger</code>)</sub>
 
@@ -1104,7 +1104,7 @@ WebApi); o cabeçalho opcional **`X-Company`** (CNPJ da empresa), se vier, preci
 
 Os jobs ficam no catálogo **`auditing.Catalog`** (scripts `..._Jobs_Into_Jobs_Table.sql`, no DbUp, sem agenda), com os
 mesmos ids em `EnumJob`; cada empresa que contrata o módulo no WebApp recebe a sua cópia em **`auditing.Jobs`** (`Holder`
-e `Company` na chave), com a agenda sugerida ([`AGENDA-SUGERIDA-JOBS.csv`](../../../../../docs/AGENDA-SUGERIDA-JOBS.csv)),
+e `Company` na chave), com a agenda sugerida ([`AGENDA-SUGERIDA-JOBS.csv`](../../../../../.docs/AGENDA-SUGERIDA-JOBS.csv)),
 inativa até alguém ligar. Os ids de cada método estão nas tabelas dos services.
 
 | Faixa | Tipo (`IdType`) | Conteúdo |
@@ -1130,7 +1130,7 @@ Toda execução grava `auditing.Logs` e, conforme o caso:
 * `auditing.Messages`, com mensagens e erros de validação;
 * `auditing.Records`, com os registros integrados e o XML da linha recebida.
 
-Cada mensagem tem um nível ([`PROPOSTA-NIVEL-MENSAGEM-AUDITING.md`](../../../Shared/docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md)):
+Cada mensagem tem um nível ([`PROPOSTA-NIVEL-MENSAGEM-AUDITING.md`](../../../Shared/.docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md)):
 
 | Nível | Mensagens |
 |---|---|
@@ -1140,7 +1140,7 @@ Cada mensagem tem um nível ([`PROPOSTA-NIVEL-MENSAGEM-AUDITING.md`](../../../Sh
 
 <div align="center">
 
-![Tela Logs de Erros do Monitor](../../../../../docs/images/webapp/logs-de-erros.png)
+![Tela Logs de Erros do Monitor](../../../../../.docs/images/webapp/logs-de-erros.png)
 
 <sub><b>Onde ver no painel</b> — os erros de cada execução, por aplicação e integração, na tela Logs de Erros do Monitor (dados mockados)</sub>
 
@@ -1167,9 +1167,9 @@ As chaves ficam só no banco: pela tela de cadastro do WebApp (em construção) 
 
 ---
 
-## 📁 Pasta `docs/Responsed XMLs`
+## 📁 Pasta `.docs/Responsed XMLs`
 
-A primeira página real de cada método (`docs/Responsed XMLs/<Service>/<Método>/xml-returned-by-api-end-point.xml`), com
+A primeira página real de cada método (`.docs/Responsed XMLs/<Service>/<Método>/xml-returned-by-api-end-point.xml`), com
 os dados trocados por **dados fictícios** para não expor informações no histórico do git:
 
 * as linhas foram cortadas em 2; o envelope (`<C>`, `ResponseResult`) ficou como veio;
@@ -1216,16 +1216,16 @@ As leituras sob demanda usam os mesmos comandos, com o parâmetro da busca; a re
 
 | Documento | Assunto |
 |---|---|
-| 🟣 [PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md](docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md) | Proposta, decisões e plano em fases da padronização do módulo, com o que foi conferido na API |
-| 🏢 [PLANO-TELA-CADASTRO-EMPRESA.md](../../../../../docs/PLANO-TELA-CADASTRO-EMPRESA.md) | Cadastro de empresas: parâmetros fora do DbUp e execução por empresa (histórico; o modelo atual está na [proposta do schema auditing](../../../../../docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)) |
-| ⚡ [PADRAO-CACHE-INTEGRACOES.md](../../../../../docs/PADRAO-CACHE-INTEGRACOES.md) | Padrão de cache das leituras |
-| 🔁 [ALTERACOES-MERGE-PROCEDURE-AUDITORIA.md](../../../../../src/Backend/Shared/docs/ALTERACOES-MERGE-PROCEDURE-AUDITORIA.md) | Procedure de merge e auditoria |
+| 🟣 [PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md](.docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md) | Proposta, decisões e plano em fases da padronização do módulo, com o que foi conferido na API |
+| 🏢 [PLANO-TELA-CADASTRO-EMPRESA.md](../../../../../.docs/PLANO-TELA-CADASTRO-EMPRESA.md) | Cadastro de empresas: parâmetros fora do DbUp e execução por empresa (histórico; o modelo atual está na [proposta do schema auditing](../../../../../.docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)) |
+| ⚡ [PADRAO-CACHE-INTEGRACOES.md](../../../../../.docs/PADRAO-CACHE-INTEGRACOES.md) | Padrão de cache das leituras |
+| 🔁 [ALTERACOES-MERGE-PROCEDURE-AUDITORIA.md](../../../../../src/Backend/Shared/.docs/ALTERACOES-MERGE-PROCEDURE-AUDITORIA.md) | Procedure de merge e auditoria |
 
 ---
 
 <div align="center">
 
-![NEWBLOOMERS](../../../../../docs/newbloomers.png)
+![NEWBLOOMERS](../../../../../.docs/newbloomers.png)
 
 <sub>Módulo Linx Microvix · sistema de integrações · .NET 10</sub>
 

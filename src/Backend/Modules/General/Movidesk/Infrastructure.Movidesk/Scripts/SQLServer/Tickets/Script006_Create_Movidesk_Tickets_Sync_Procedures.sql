@@ -1,5 +1,5 @@
--- roda em toda migração: cada procedure só é criada com a tabela já criada e se ainda não existe (docs/MIGRATOR-CSX.md)
---Filhas e netas apagam as linhas que não vieram no lote do ticket (src/Backend/Modules/General/Movidesk/docs/MOVIDESK-MODELAGEM-TICKETS.md 4.8).
+-- roda em toda migração: cada procedure só é criada com a tabela já criada e se ainda não existe (.docs/MIGRATOR-CSX.md)
+--Filhas e netas apagam as linhas que não vieram no lote do ticket (src/Backend/Modules/General/Movidesk/.docs/MOVIDESK-MODELAGEM-TICKETS.md 4.8).
 --A condição depende do ticket e das filhas do mesmo lote terem o mesmo integrated_or_updated_at, e do merge de MovideskTickets rodar antes.
 declare @delete_by_ticket nvarchar(max) = 'exists (select 1 from [movidesk].MovideskTickets p where p.doc_company = target.doc_company and p.id = target.ticketId and p.integrated_or_updated_at > target.integrated_or_updated_at)';
 

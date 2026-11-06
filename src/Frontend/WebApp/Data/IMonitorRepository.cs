@@ -3,7 +3,7 @@ using WebApp.Models;
 namespace WebApp.Data
 {
     /// <summary>
-    /// Leitura das tabelas auditing.* para o painel. Até a fase 5 do plano (docs/PLANO-WEBAPP.md), a única implementação é o
+    /// Leitura das tabelas auditing.* para o painel. Até a fase 5 do plano (.docs/PLANO-WEBAPP.md), a única implementação é o
     /// MockMonitorRepository; depois, o MonitorRepository lê o banco principal com Dapper.
     /// </summary>
     public interface IMonitorRepository

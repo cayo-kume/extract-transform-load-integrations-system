@@ -1,6 +1,6 @@
 <div align="center">
 
-![NEWBLOOMERS · Sistema de Integrações · ETL](docs/images/banner.png)
+![NEWBLOOMERS · Sistema de Integrações · ETL](.docs/images/banner.png)
 
 </div>
 
@@ -8,9 +8,9 @@
 
 <div align="center">
 
-![.NET 10](docs/images/badges/net-10.svg) ![SQL Server](docs/images/badges/sql-server-dapper-dbup.svg) ![Blazor](docs/images/badges/blazor-mudblazor-9.svg)
+![.NET 10](.docs/images/badges/net-10.svg) ![SQL Server](.docs/images/badges/sql-server-dapper-dbup.svg) ![Blazor](.docs/images/badges/blazor-mudblazor-9.svg)
 
-![Hangfire](docs/images/badges/hangfire-1-8-sq.svg) ![Quartz.NET](docs/images/badges/quartz-net-3-19-sq.svg) ![Azure WebJobs](docs/images/badges/azure-webjobs-sq.svg)
+![Hangfire](.docs/images/badges/hangfire-1-8-sq.svg) ![Quartz.NET](.docs/images/badges/quartz-net-3-19-sq.svg) ![Azure WebJobs](.docs/images/badges/azure-webjobs-sq.svg)
 
 </div>
 
@@ -71,7 +71,7 @@ flowchart LR
 | ⚫ | **Shared** | `src/Backend/Shared` | Auditoria, cliente HTTP, repositório comum, trava de concorrência e empresa da execução | — |
 | 🖥️ | **WebApp** | `src/Frontend/WebApp` | Painel Monitor de Integrações (Blazor): dados mockados por padrão, ou o banco com `Database:Enabled`; cadastro de holdings, empresas, módulos, credenciais e jobs | [📖](src/Frontend/WebApp/README.md) |
 | 📱 | **MobileApp** | `src/Mobile/MobileApp` | App .NET MAUI, em construção | — |
-| 🗄️ | **Invoke-Migrators** | `tools/migrators` | Tela (ou console) que sobe as tabelas de todas as aplicações na ordem certa | [MIGRATOR-CSX](docs/MIGRATOR-CSX.md) |
+| 🗄️ | **Invoke-Migrators** | `tools/migrators` | Tela (ou console) que sobe as tabelas de todas as aplicações na ordem certa | [MIGRATOR-CSX](.docs/MIGRATOR-CSX.md) |
 | 🧪 | **Import-TestSeeds** | `tools/seeds` | Script avulso: carrega uma holding de teste, as empresas dela e as credenciais de `Seeds/SQLServer` (jobs inativos, agenda sugerida) | [passo 3](#-3-holding-empresas-e-parâmetros) |
 
 ---
@@ -115,7 +115,7 @@ senha como `****` no log. O banco é criado pelo DbUp se não existir.
 
 <div align="center">
 
-![Tela do Invoke-Migrators](docs/images/tools/invoke-migrators.png)
+![Tela do Invoke-Migrators](.docs/images/tools/invoke-migrators.png)
 
 </div>
 
@@ -156,7 +156,7 @@ dotnet script migrator.csx -- "Server=localhost,1433;Database=EtlTeste;User Id=s
 ```
 
 No Windows, o caminho dos módulos passa de 260 caracteres: mapeie a pasta com `subst X: "<pasta SQLServer>"` e rode a
-partir de `X:`. Detalhes e solução de problemas em [MIGRATOR-CSX.md](docs/MIGRATOR-CSX.md).
+partir de `X:`. Detalhes e solução de problemas em [MIGRATOR-CSX.md](.docs/MIGRATOR-CSX.md).
 
 </details>
 
@@ -195,12 +195,12 @@ flowchart TB
 
 Totvs, LinxMicrovix, LinxCommerce, Movidesk e AfterSale só ativam jobs com a credencial da empresa: ativar sem ela abre
 o formulário da credencial e, depois, pede confirmação de que o host vai chamar a API de verdade. O botão **Testar
-conexão** ainda está desabilitado (próximo passo, item 4.6.1 do [plano](docs/PLANO-TELA-CADASTRO-EMPRESA.md)).
+conexão** ainda está desabilitado (próximo passo, item 4.6.1 do [plano](.docs/PLANO-TELA-CADASTRO-EMPRESA.md)).
 
-A agenda sugerida de cada job é a [`docs/AGENDA-SUGERIDA-JOBS.csv`](docs/AGENDA-SUGERIDA-JOBS.csv); o catálogo
+A agenda sugerida de cada job é a [`.docs/AGENDA-SUGERIDA-JOBS.csv`](.docs/AGENDA-SUGERIDA-JOBS.csv); o catálogo
 (`auditing.Catalog`) não tem agenda, e a de cada empresa fica em `auditing.Jobs`. O WebApp grava direto em
 `auditing.Holders`, `auditing.Companies` e `auditing.Jobs` (não há procedures de cadastro). Detalhes do modelo em
-[PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md](docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md).
+[PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md](.docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md).
 
 **Num banco de teste**, o script avulso [`tools/seeds/Import-TestSeeds.ps1`](tools/seeds/Import-TestSeeds.ps1) carrega
 de uma vez a holding, as empresas (cada `doc_company` dos scripts de parâmetros) e as credenciais de
@@ -239,7 +239,7 @@ O Swagger abre em **`http://localhost:5252/swagger`**, com uma tag por service d
 
 <div align="center">
 
-![Swagger do WebApi](docs/images/swagger/visao-geral.png)
+![Swagger do WebApi](.docs/images/swagger/visao-geral.png)
 
 </div>
 
@@ -300,12 +300,12 @@ $env:InitialLoad__MaxMonths = '3'
 ```
 
 Vale para Totvs, Linx Microvix, Movidesk e LinxCommerce. No Microvix, a carga inicial passa a mandar a data e
-`filtra_somente_timestamp = 0` (detalhes em [docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md](docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md#1-carga-inicial-limitada-a-3-meses)).
+`filtra_somente_timestamp = 0` (detalhes em [.docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md](.docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md#1-carga-inicial-limitada-a-3-meses)).
 
 **A carga inicial completa leva dois ciclos.** No primeiro, os jobs que dependem de filiais (Totvs) e lojas (Linx
 Microvix) rodam junto com os que as carregam e saem com pouco ou nada, com o aviso "sem lojas ... rode o ... antes" (nível
 aviso: o job não fica em erro). No ciclo seguinte, os dados vêm. Para ter tudo no primeiro ciclo, rode antes
-`TotvsGetBranchesList` e `LinxGrupoLojas` pela tela Sob Demanda ([melhorias, 5.2](docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md#52-ponto-5-carga-completa-em-2-ciclos)).
+`TotvsGetBranchesList` e `LinxGrupoLojas` pela tela Sob Demanda ([melhorias, 5.2](.docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md#52-ponto-5-carga-completa-em-2-ciclos)).
 
 ---
 
@@ -319,7 +319,7 @@ Abre em **`http://localhost:5067`**, sem API. Por padrão, os dados são **mocka
 
 <div align="center">
 
-![Visão geral do painel](docs/images/webapp/visao-geral.png)
+![Visão geral do painel](.docs/images/webapp/visao-geral.png)
 
 </div>
 
@@ -388,11 +388,11 @@ ORDER BY L.StartDate DESC;
 | `Skipped: previous execution ... still running` | a execução anterior da mesma empresa ainda roda | normal; se for sempre, aumentar o intervalo do job |
 | `Rescheduled: job:<IdJob> running for another company` | outra empresa está rodando o mesmo job | normal: volta em 1 minuto (Hangfire e Worker) |
 | Um script de credenciais roda no migrator | cópia antiga em `Scripts/SQLServer/Parameters` | mover para `Seeds/SQLServer` |
-| Migrator falha com `Connection Timeout Expired` no Azure SQL | banco serverless pausado (acorda em até ≈ 90 s) | rodar de novo, ou `Connect Timeout=120` ([MIGRATOR-CSX.md](docs/MIGRATOR-CSX.md)) |
+| Migrator falha com `Connection Timeout Expired` no Azure SQL | banco serverless pausado (acorda em até ≈ 90 s) | rodar de novo, ou `Connect Timeout=120` ([MIGRATOR-CSX.md](.docs/MIGRATOR-CSX.md)) |
 | Worker cai com `Database schema validation failed ... created the database tables` | quase sempre o banco fora do ar ou a connection string, não tabela faltando | conferir a conexão; como serviço, o Windows reinicia o processo a cada minuto até o banco voltar |
 | Serviço `EtlWorker` para logo depois de iniciar | sem `appsettings.Production.json` (connection string) na pasta do serviço | criar o arquivo na pasta e rodar o `publish-worker.ps1` de novo |
 | Uma execução que caiu no meio não aparece no painel | o log em `auditing.Logs` só é gravado no fim da execução | normal por enquanto: a próxima execução roda; a queda fica só no log do host |
-| Execução sem nenhuma mensagem e erro de PK em `auditing.Logs` no log do host | o bulk insert de `auditing.Messages` falhou (deadlock ou "schema change") e o `CommitError` tentou gravar o log de novo | ponto em aberto dos [testes de hospedagem](docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md#83-pontos-em-aberto); a próxima execução grava normalmente |
+| Execução sem nenhuma mensagem e erro de PK em `auditing.Logs` no log do host | o bulk insert de `auditing.Messages` falhou (deadlock ou "schema change") e o `CommitError` tentou gravar o log de novo | ponto em aberto dos [testes de hospedagem](.docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md#83-pontos-em-aberto); a próxima execução grava normalmente |
 | O mesmo job roda duas vezes por ciclo | dois hosts de agenda ligados no mesmo banco | deixar só um (passo 5) |
 | Painel publicado mostra "Atualizado às" 3 h adiantado | servidor em UTC (container, App Service) e a tela usa a hora da máquina | os horários das execuções estão certos; ver o [README do WebApp](src/Frontend/WebApp/README.md#-publicado-production) |
 | Executar Querys e Sob Demanda somem do menu | painel em `Production` | esperado: as duas só existem em `Development` |
@@ -405,18 +405,18 @@ ORDER BY L.StartDate DESC;
 | Assunto | Onde |
 |---|---|
 | Panorama, módulos, banco e DW | [README](README.md) |
-| Migrators e a tela | [docs/MIGRATOR-CSX.md](docs/MIGRATOR-CSX.md) |
-| Cadastro de empresas | [docs/PLANO-TELA-CADASTRO-EMPRESA.md](docs/PLANO-TELA-CADASTRO-EMPRESA.md) |
-| Padrões de código, scripts e cache | [docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md](docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md) · [docs/PADRAO-CACHE-INTEGRACOES.md](docs/PADRAO-CACHE-INTEGRACOES.md) |
-| Data warehouse | [src/Backend/Modules/DataWarehouse/docs](src/Backend/Modules/DataWarehouse/docs/00-ordem-de-leitura.md) |
+| Migrators e a tela | [.docs/MIGRATOR-CSX.md](.docs/MIGRATOR-CSX.md) |
+| Cadastro de empresas | [.docs/PLANO-TELA-CADASTRO-EMPRESA.md](.docs/PLANO-TELA-CADASTRO-EMPRESA.md) |
+| Padrões de código, scripts e cache | [.docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md](.docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md) · [.docs/PADRAO-CACHE-INTEGRACOES.md](.docs/PADRAO-CACHE-INTEGRACOES.md) |
+| Data warehouse | [src/Backend/Modules/DataWarehouse/.docs](src/Backend/Modules/DataWarehouse/.docs/00-ordem-de-leitura.md) |
 | Deploy dos projetos e a configuração de cada ambiente | [DEPLOY.md](DEPLOY.md) |
-| Hospedagem testada (Docker, nginx, serviço do Windows, Azure) e pontos em aberto | [docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md](docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md) |
+| Hospedagem testada (Docker, nginx, serviço do Windows, Azure) e pontos em aberto | [.docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md](.docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md) |
 
 ---
 
 <div align="center">
 
-![NEWBLOOMERS](docs/newbloomers.png)
+![NEWBLOOMERS](.docs/newbloomers.png)
 
 <sub>Sistema de integrações · feito com .NET 10</sub>
 

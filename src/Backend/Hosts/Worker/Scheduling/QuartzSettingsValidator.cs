@@ -4,7 +4,7 @@ using Microsoft.Extensions.Options;
 namespace Worker.Scheduling
 {
     /// <summary>
-    /// valida a seção Quartz só quando Enabled = true (src/Backend/Hosts/Worker/docs/PLANO-HOST-WORKER.md §3.1): com um parâmetro
+    /// valida a seção Quartz só quando Enabled = true (src/Backend/Hosts/Worker/.docs/PLANO-HOST-WORKER.md §3.1): com um parâmetro
     /// faltando, o host não sobe e a mensagem diz qual
     /// </summary>
     public class QuartzSettingsValidator : IValidateOptions<QuartzSettings>

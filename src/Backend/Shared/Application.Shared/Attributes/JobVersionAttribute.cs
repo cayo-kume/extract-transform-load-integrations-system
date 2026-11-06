@@ -6,7 +6,7 @@ namespace Application.Shared.Attributes
     /// versão do método de service chamado por um job recorrente (MAJOR.MINOR.PATCH). Vai no método da classe do service, não na
     /// interface: quem muda o código muda a versão no mesmo lugar. O agendador põe a versão no nome do job
     /// (ex.: "8006-LinxClientesFornec - V1.0.0" no Hangfire), para saber que versão roda em cada ambiente
-    /// (src/Backend/Hosts/WebApi/docs/PLANO-HOST-WEBAPI.md §4.10)
+    /// (src/Backend/Hosts/WebApi/.docs/PLANO-HOST-WEBAPI.md §4.10)
     /// </summary>
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
     public sealed partial class JobVersionAttribute : Attribute

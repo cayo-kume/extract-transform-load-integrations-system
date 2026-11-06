@@ -4,7 +4,7 @@ using System.Collections.Concurrent;
 namespace Worker.Scheduling
 {
     /// <summary>
-    /// pulos seguidos por job, para o aviso de Quartz:Concurrency:MaxConsecutiveSkips (src/Backend/Hosts/Worker/docs/PLANO-HOST-WORKER.md
+    /// pulos seguidos por job, para o aviso de Quartz:Concurrency:MaxConsecutiveSkips (src/Backend/Hosts/Worker/.docs/PLANO-HOST-WORKER.md
     /// §5.3, item 3). Conta os três tipos de pulo do mesmo jeito: o disparo que aconteceu com a execução anterior rodando, a trava
     /// ocupada e o descarte pelo misfire. É do processo, como nos outros hosts: com dois Workers, cada um conta os seus
     /// </summary>

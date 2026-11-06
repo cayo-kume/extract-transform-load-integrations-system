@@ -6,15 +6,15 @@ using Microsoft.Extensions.Logging;
 namespace Hosts.Scheduling
 {
     /// <summary>
-    /// executor dos jobs da agenda nos dois hosts (src/Backend/Hosts/WebJob/docs/PLANO-HOST-WEBJOB.md §2.2), no lugar do
+    /// executor dos jobs da agenda nos dois hosts (src/Backend/Hosts/WebJob/.docs/PLANO-HOST-WEBJOB.md §2.2), no lugar do
     /// WebJobExceptionHandlingMiddleware: chama o método do mapa e, se uma exceção escapa do service, grava a mensagem de erro no
     /// log da execução (com o comando SQL e a pilha), fecha e grava o log em auditing.Logs e auditing.Messages, sem HttpContext.
     /// É scoped: o host cria um escopo por execução (o Hangfire faz isso sozinho), e o service e o ILoggerService vêm do mesmo
     /// escopo, então o erro vai para o log que o service abriu. A exceção segue adiante, para o host marcar a falha. Cada execução
-    /// é de uma empresa (docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md): o executor informa a empresa e a holding dela ao ICompanyContext do escopo
+    /// é de uma empresa (.docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md): o executor informa a empresa e a holding dela ao ICompanyContext do escopo
     /// antes de chamar o service, e o log, os parâmetros e as procedures de sincronização usam essa empresa. Quem chama segura a
     /// trava da empresa; por isso, antes de executar, o executor fecha como interrompidas as execuções do job e da empresa que
-    /// ficaram abertas em auditing.Logs (queda, reinício ou deploy no meio), docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md, 3.1
+    /// ficaram abertas em auditing.Logs (queda, reinício ou deploy no meio), .docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md, 3.1
     /// </summary>
     public class ScheduledJobRunner
     {

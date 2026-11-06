@@ -6,7 +6,7 @@ using System.Text;
 namespace WebApi.Scheduling
 {
     /// <summary>
-    /// autenticação do dashboard do Hangfire por Basic Authentication (src/Backend/Hosts/WebApi/docs/PLANO-HOST-WEBAPI.md §3.2),
+    /// autenticação do dashboard do Hangfire por Basic Authentication (src/Backend/Hosts/WebApi/.docs/PLANO-HOST-WEBAPI.md §3.2),
     /// independente da autenticação da API. Sem credencial ou com credencial errada, o dashboard devolve 401 e o navegador pede
     /// usuário e senha. A senha vai em cada requisição: fora do localhost, só por HTTPS
     /// </summary>

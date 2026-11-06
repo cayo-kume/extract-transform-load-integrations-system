@@ -1,4 +1,4 @@
--- roda em toda migração: cada procedure só é criada com a tabela já criada e se ainda não existe (docs/MIGRATOR-CSX.md)
+-- roda em toda migração: cada procedure só é criada com a tabela já criada e se ainda não existe (.docs/MIGRATOR-CSX.md)
 if object_id(N'[aftersale].AfterSaleRefunds') is not null and object_id(N'[aftersale].[sp_AfterSaleRefunds_Sync]') is null
 exec dbo.sp_Create_Merge_Procedure @schema_name = 'aftersale', @table_name = 'AfterSaleRefunds', @execute = 1;
 if object_id(N'[aftersale].AfterSaleRefundsCouldChangeStatusFor') is not null and object_id(N'[aftersale].[sp_AfterSaleRefundsCouldChangeStatusFor_Sync]') is null

@@ -6,7 +6,7 @@ namespace Application.Totvs.Handlers.Commands
     {
         public string CreateGetCompanysQuery(string company)
         {
-            // só os parâmetros da empresa da execução (doc_company = empresa, docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md);
+            // só os parâmetros da empresa da execução (doc_company = empresa, .docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md);
             // company é só dígitos (ICompanyContext)
             // credencial e endereço do ambiente marcado na aba Parâmetros do WebApp (use_homolog_url = 1, homologação): os
             // services leem sempre as colunas de produção
@@ -23,7 +23,7 @@ namespace Application.Totvs.Handlers.Commands
 
         public string CreateGetBranchCodesQuery(string doc_company)
         {
-            // lojas da holding usadas no branchCodeList das buscas (src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md 4.2)
+            // lojas da holding usadas no branchCodeList das buscas (src/Backend/Modules/Totvs/.docs/PROPOSTA-PADRONIZACAO-TOTVS.md 4.2)
             return @$"SELECT CODE
                      FROM TOTVS.TOTVSBRANCHES
                      WHERE DOC_COMPANY = '{doc_company}'

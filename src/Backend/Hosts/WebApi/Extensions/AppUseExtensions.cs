@@ -34,7 +34,7 @@ namespace WebApi.Extensions
         }
 
         /// <summary>
-        /// dashboard com Basic Authentication (src/Backend/Hosts/WebApi/docs/PLANO-HOST-WEBAPI.md §3.2) e os jobs de manutenção do próprio
+        /// dashboard com Basic Authentication (src/Backend/Hosts/WebApi/.docs/PLANO-HOST-WEBAPI.md §3.2) e os jobs de manutenção do próprio
         /// host; só roda com Hangfire:Enabled = true
         /// </summary>
         private static IApplicationBuilder UseHangfire(this IApplicationBuilder app, HangfireSettings settings)

@@ -1,5 +1,5 @@
--- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; docs/MIGRATOR-CSX.md)
-/****** Produtos: tabelas untreated e totvs (src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.2.4) ******/
+-- roda em toda migração: cada tabela só é criada se ainda não existe e está entre as dos jobs escolhidos (dbo.fn_Migrator_Creates, Shared Script010; .docs/MIGRATOR-CSX.md)
+/****** Produtos: tabelas untreated e totvs (src/Backend/Modules/Totvs/.docs/PROPOSTA-PADRONIZACAO-TOTVS.md 5.2.4) ******/
 --branchInfoCode (empresa base da chamada: uma por marca) entra em todas as chaves; as filhas do produto usam o código
 --do produto, único no cadastro. Tamanhos do swagger da API Product onde ele informa; senão, os do código antigo,
 --conferidos numa amostra real das duas marcas (23/10/2026).
@@ -785,7 +785,7 @@ alter table [totvs].TotvsProductsConservationInstructionsItems add constraint [F
 
 go
 
-/****** Saldos: tabelas untreated e totvs (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.9, fase PR-2) ******/
+/****** Saldos: tabelas untreated e totvs (src/Backend/Modules/Totvs/.docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.9, fase PR-2) ******/
 --uma linha por loja + produto + código (todos os códigos de preço, custo e saldo do cadastro). branchCode vem antes do produto
 --na chave: a janela, a carga inicial e o cache de estado consultam por loja. Os dados do produto já estão em TotvsSkus.
 
@@ -863,7 +863,7 @@ constraint [PK_TotvsBalancesLocations] primary key (
 
 go
 
-/****** Similares e lotes: tabelas untreated e totvs (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.2, fase PR-2) ******/
+/****** Similares e lotes: tabelas untreated e totvs (src/Backend/Modules/Totvs/.docs/PLANO-TOTVS-METODOS-FALTANTES.md §5.2, fase PR-2) ******/
 --sem data de alteração útil nas respostas: comparados pelo json_hash (T9). Os similares guardam em changeWindowEnd o fim da
 --janela que os trouxe, de onde a próxima leitura começa; os lotes são lidos inteiros
 

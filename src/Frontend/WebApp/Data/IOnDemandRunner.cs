@@ -5,7 +5,7 @@ namespace WebApp.Data
     /// <summary>
     /// Integrações sob demanda do host WebApi, chamadas pela tela Sob Demanda. Até a fase 5, a única implementação é o
     /// MockOnDemandRunner (respostas simuladas); depois, o catálogo sai do swagger.json do host e a chamada é HTTP, do servidor
-    /// do WebApp para o WebApi (docs/PLANO-WEBAPP.md, passo 11.5).
+    /// do WebApp para o WebApi (.docs/PLANO-WEBAPP.md, passo 11.5).
     /// </summary>
     public interface IOnDemandRunner
     {

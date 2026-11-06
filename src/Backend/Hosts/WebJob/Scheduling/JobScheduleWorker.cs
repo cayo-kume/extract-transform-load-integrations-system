@@ -8,8 +8,8 @@ using Microsoft.Extensions.Options;
 namespace WebJob.Scheduling
 {
     /// <summary>
-    /// um job por processo (src/Backend/Hosts/WebJob/docs/PLANO-HOST-WEBJOB.md §4.1), para todas as empresas ativas, uma de cada vez
-    /// (docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.4): lê as linhas do job em auditing.Jobs, espera o
+    /// um job por processo (src/Backend/Hosts/WebJob/.docs/PLANO-HOST-WEBJOB.md §4.1), para todas as empresas ativas, uma de cada vez
+    /// (.docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.4): lê as linhas do job em auditing.Jobs, espera o
     /// próximo horário (intervalo ou RunningDailyAt, no fuso configurado), roda o método do mapa pelo ScheduledJobRunner e volta a
     /// ler a tabela. Mudar IntervalTimeInMinutes, RunningDailyAt ou IsActive vale no ciclo seguinte, sem republicar
     /// </summary>
@@ -57,7 +57,7 @@ namespace WebJob.Scheduling
 
             var recheck = TimeSpan.FromMinutes(Math.Max(1, _settings.RecheckIntervalInMinutes));
 
-            // por empresa (docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.4): o último horário rodado (ou desde quando ela está ativa) e o
+            // por empresa (.docs/PLANO-TELA-CADASTRO-EMPRESA.md, 4.4): o último horário rodado (ou desde quando ela está ativa) e o
             // último estado registrado no log. As empresas rodam uma de cada vez neste processo
             var lastRun = new Dictionary<string, DateTimeOffset>();
             var lastState = new Dictionary<string, string>();

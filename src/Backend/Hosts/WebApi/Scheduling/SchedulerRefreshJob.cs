@@ -8,10 +8,10 @@ using Hosts.Scheduling.RecurringJobs;
 namespace WebApi.Scheduling
 {
     /// <summary>
-    /// monta a agenda do Hangfire a partir de auditing.Jobs (src/Backend/Hosts/WebApi/docs/PLANO-HOST-WEBAPI.md §4.4): roda na subida e
+    /// monta a agenda do Hangfire a partir de auditing.Jobs (src/Backend/Hosts/WebApi/.docs/PLANO-HOST-WEBAPI.md §4.4): roda na subida e
     /// a cada Hangfire:Schedule:RefreshIntervalInMinutes, e um UPDATE na tabela vale, no máximo, no ciclo seguinte. Entra na agenda o
     /// job de integração ativo, com método no host e agenda que vira cron; sai o que ficou inativo, sem intervalo ou saiu do mapa.
-    /// Um recurring job por (job, empresa) de auditing.Jobs (docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)
+    /// Um recurring job por (job, empresa) de auditing.Jobs (.docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)
     /// </summary>
     public class SchedulerRefreshJob
     {

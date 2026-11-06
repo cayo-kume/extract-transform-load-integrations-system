@@ -1,7 +1,7 @@
 #Requires -Version 7
 <#
 .SYNOPSIS
-    Publica o host Worker (Quartz.NET) como serviço do Windows (src/Backend/Hosts/Worker/docs/PLANO-HOST-WORKER.md, passo 6).
+    Publica o host Worker (Quartz.NET) como serviço do Windows (src/Backend/Hosts/Worker/.docs/PLANO-HOST-WORKER.md, passo 6).
 
 .DESCRIPTION
     Lê o perfil em publish-profiles.psd1 (na mesma pasta), faz o "dotnet publish" e, na máquina do perfil (a local ou uma VM,

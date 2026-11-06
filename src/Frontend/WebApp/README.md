@@ -1,6 +1,6 @@
 <div align="center">
 
-![NEWBLOOMERS · Sistema de Integrações · ETL](../../../docs/images/banner.png)
+![NEWBLOOMERS · Sistema de Integrações · ETL](../../../.docs/images/banner.png)
 
 </div>
 
@@ -8,9 +8,9 @@
 
 <div align="center">
 
-![.NET 10](../../../docs/images/badges/net-10.svg) ![Blazor](../../../docs/images/badges/blazor-server-interativo.svg) ![MudBlazor 9](../../../docs/images/badges/mudblazor-9.svg)
+![.NET 10](../../../.docs/images/badges/net-10.svg) ![Blazor](../../../.docs/images/badges/blazor-server-interativo.svg) ![MudBlazor 9](../../../.docs/images/badges/mudblazor-9.svg)
 
-![Dados mockados](../../../docs/images/badges/dados-mockados-sq.svg) ![Assistente Claude](../../../docs/images/badges/assistente-claude-sq-2.svg) ![Porta 5067](../../../docs/images/badges/porta-5067-sq.svg)
+![Dados mockados](../../../.docs/images/badges/dados-mockados-sq.svg) ![Assistente Claude](../../../.docs/images/badges/assistente-claude-sq-2.svg) ![Porta 5067](../../../.docs/images/badges/porta-5067-sq.svg)
 
 </div>
 
@@ -34,7 +34,7 @@
 
 Painel **"Monitor de Integrações (ETL)"**: mostra as aplicações, os jobs, as execuções, as mensagens e os registros que o
 sistema de integrações grava nas tabelas `auditing.*`, e tem uma tela de consultas SQL de uso restrito. As decisões e o
-histórico de cada fase estão em [docs/PLANO-WEBAPP.md](docs/PLANO-WEBAPP.md).
+histórico de cada fase estão em [.docs/PLANO-WEBAPP.md](.docs/PLANO-WEBAPP.md).
 
 | | Item | Valor |
 |:---:|---|---|
@@ -100,7 +100,7 @@ Não precisa de **banco**, de **API** nem de **configuração**: o painel sobe c
 
 ### 🚢 Publicado (Production)
 
-Conferido nos [testes de hospedagem](../../../docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md) de 02 e 03/11/2026: o painel
+Conferido nos [testes de hospedagem](../../../.docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md) de 02 e 03/11/2026: o painel
 publicado atrás do nginx num container Linux (C2, C5) e num App Service Windows (C7), lendo SQL Server e Azure SQL com o
 `etl_monitor`.
 
@@ -111,7 +111,7 @@ publicado atrás do nginx num container Linux (C2, C5) e num App Service Windows
 | 🔌 | WebSocket | O Blazor Server precisa de WebSocket. No nginx: `proxy_http_version 1.1`, os cabeçalhos `Upgrade`/`Connection` e `proxy_read_timeout` longo (1 h no teste); no App Service, **Web sockets** ligado; no IIS, o recurso WebSocket Protocol |
 | 🔁 | Reinício | Depois de `docker restart`, o navegador recebe 502 e reconecta sozinho em ≈ 6 s, com circuito novo |
 | 🔑 | Data Protection | As chaves ficam dentro do container (aviso no log) e se perdem ao recriá-lo: as sessões abertas caem. Para manter, um volume para as chaves |
-| 🕒 | **Hora da tela** | As telas usam `DateTime.Now` (`Home`, `Integrations`, `Applications`, `Errors`, `HealthChip`, `DurationText`, `RecordsByDay`, `MessageCauses`): num servidor em UTC (container, App Service) o "Atualizado às" sai 3 h adiantado. Os horários das execuções, que vêm do banco, estão certos. Até a correção ([ponto 10](../../../docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md#83-pontos-em-aberto)), o contorno provável (não testado) é `TZ=America/Sao_Paulo` no container ou `WEBSITE_TIME_ZONE=E. South America Standard Time` no App Service Windows |
+| 🕒 | **Hora da tela** | As telas usam `DateTime.Now` (`Home`, `Integrations`, `Applications`, `Errors`, `HealthChip`, `DurationText`, `RecordsByDay`, `MessageCauses`): num servidor em UTC (container, App Service) o "Atualizado às" sai 3 h adiantado. Os horários das execuções, que vêm do banco, estão certos. Até a correção ([ponto 10](../../../.docs/PROPOSTA-TESTES-CENARIOS-HOSPEDAGEM.md#83-pontos-em-aberto)), o contorno provável (não testado) é `TZ=America/Sao_Paulo` no container ou `WEBSITE_TIME_ZONE=E. South America Standard Time` no App Service Windows |
 | ⏱️ | Desempenho | Visão geral em ≈ 100 ms durante a carga inicial de 3 meses, sem bloqueio no banco (`WITH (NOLOCK)`) |
 
 ---
@@ -120,7 +120,7 @@ publicado atrás do nginx num container Linux (C2, C5) e num App Service Windows
 
 <div align="center">
 
-![Visão geral do Monitor de Integrações](../../../docs/images/webapp/visao-geral.png)
+![Visão geral do Monitor de Integrações](../../../.docs/images/webapp/visao-geral.png)
 
 <sub><b>Visão Geral</b> — cards das aplicações com integrações, execuções, erros e avisos</sub>
 
@@ -132,7 +132,7 @@ publicado atrás do nginx num container Linux (C2, C5) e num App Service Windows
 | 🏢 | `/registration` | **Holdings e Empresas** (o Primeiro acesso), fora do painel (sem menu nem seletor). Mostra **só a holding cadastrada nesta visita**: não lista as que já existem no banco, e a tabela começa com uma linha só, a do **Nova holding**. **Nova holding** grava a holding, a empresa que é a própria holding, os jobs dos hosts dela (inativos) e o **primeiro usuário**, numa transação; CNPJ já cadastrado mostra "A holding e a empresa ... já estão cadastradas" e nada é gravado. Editar uma holding sem usuário pede o primeiro. **Nova empresa** acrescenta um CNPJ à holding; **Abrir painel** entra no painel (com login). Aberto a todos |
 | 🛡️ | `/admin/holdings` | **Todas as holdings**: **todas** as holdings e as empresas de cada uma, fora do painel; abre o painel de qualquer holding. Só do **dono**, pelo item do menu dele ([abaixo](#-perfis-de-acesso)) |
 | 🏠 | `/home` | **visão geral**: cards das aplicações que a empresa contratou, ativas e inativas (os com problema primeiro), com o **✕ Remover da Visão Geral** em cada card (esconde a aplicação da Visão Geral da empresa, para todos os usuários dela, em `monitor.HiddenApps`: a contratação, a credencial e a agenda ficam, e ela continua em Aplicações e Integrações; com jobs ativos, a confirmação oferece desativá-los junto) e o card **Adicionar aplicação** no fim da grade, que contrata as que faltam e devolve as removidas (**Mostrar**), métricas com a taxa de sucesso por aplicação e o delta contra a janela anterior, "Falhas Ativas" com os jobs, registros por dia nos 7 últimos dias dentro do card de registros, painel de saúde com um grupo recolhível por aplicação (as com erro ou atraso primeiro e já abertas, até 10 integrações cada e o link para o resto em Integrações), atualizados a cada minuto |
-| 🧩 | `/applications` | **todas as aplicações do catálogo**, com a imagem da empresa: as contratadas primeiro (o chip "Ativa" liga ou desliga o módulo; desligar pede confirmação) e depois as não contratadas, esmaecidas, com **Contratar**. A **engrenagem** abre Imagem, **Credenciais** (editável, segredos mascarados; **Testar conexão** existe, desabilitado, 4.6.1 do [plano](../../../docs/PLANO-TELA-CADASTRO-EMPRESA.md)), Parâmetros e **Contrato** (contratar ou remover o módulo, que só desativa os jobs) |
+| 🧩 | `/applications` | **todas as aplicações do catálogo**, com a imagem da empresa: as contratadas primeiro (o chip "Ativa" liga ou desliga o módulo; desligar pede confirmação) e depois as não contratadas, esmaecidas, com **Contratar**. A **engrenagem** abre Imagem, **Credenciais** (editável, segredos mascarados; **Testar conexão** existe, desabilitado, 4.6.1 do [plano](../../../.docs/PLANO-TELA-CADASTRO-EMPRESA.md)), Parâmetros e **Contrato** (contratar ou remover o módulo, que só desativa os jobs) |
 | 🔀 | `/integrations` | **Integrações** (era Jobs e Integrações): todos os jobs, num grupo recolhível por aplicação, com o filtro **Situação** (Ativos, Inativos e Todos; abre em Ativos), o de tipo (Todos, Integrações e Procedures), o de saúde (os contadores do topo são botões de filtro, com mais de um ao mesmo tempo; `?health=error,late`) e a busca. Na ordem do `IdJob`, cada integração com as procedures que chama dentro dela, o chip que liga ou desliga cada job (com "Desfazer"), duração e registros da última execução, e os botões Execuções, Executar agora e Reconhecer; cada job abre as execuções, mensagens e registros. O botão **Agenda** de cada aplicação põe a tabela em modo de edição da agenda. Os grupos começam fechados e abrem com uma aplicação só (`?app=70`), com o link de um job (`?job=3001&type=2`, em qualquer situação), com busca ou com filtro de saúde. As rotas `/jobs`, `/applications/jobs` e `/applications/{IdApp}/jobs` caem aqui; as `/applications/...` abrem em Todos |
 | ⚠️ | `/errors` | **Logs de Erros**: mensagens de erro (e, se marcado, de aviso) do período, por aplicação, integração, procedure e causa, com busca pelo job e pelo texto; `?app=30&job=3001` abre o grupo |
 | ▶️ | `/on-demand` | **Sob Demanda**: as integrações sem agenda, no estilo do Swagger (método, parâmetros, corpo JSON, Executar e resposta), com filtro por verbo nos contadores do topo. Gestor e Administrador ([abaixo](#-perfis-de-acesso)) |
@@ -141,10 +141,10 @@ publicado atrás do nginx num container Linux (C2, C5) e num App Service Windows
 | 👥 | `/users` | **Cadastros › Cadastrar Usuário**: os usuários do painel das empresas da holding logada, com a coluna **Perfil** (chip), **Novo usuário** (empresa, nome, usuário, e-mail, senha e perfil) e a edição (nome, e-mail, perfil e nova senha; o usuário não muda). Usuário e e-mail não se repetem; ninguém muda o próprio perfil. Gestor e Administrador |
 | 🖧 | `/scheduling-hosts` | **Hosts de Agenda** (item próprio do menu): os hosts de agenda no ar neste banco (`auditing.SchedulingHosts`) e qual agenda. Só mostra: ligar e desligar um host continua na configuração dele, na publicação. Só do **dono** |
 
-| ![Métricas e painel de saúde](../../../docs/images/webapp/visao-geral-saude.png)<br> <sub><b>🏠 Visão Geral</b> — métricas, registros por dia, falhas ativas e painel de saúde</sub> | ![Tela Aplicações](../../../docs/images/webapp/aplicacoes.png)<br> <sub><b>🧩 Aplicações</b> — imagem da empresa e o chip que liga ou desliga o módulo</sub> |
+| ![Métricas e painel de saúde](../../../.docs/images/webapp/visao-geral-saude.png)<br> <sub><b>🏠 Visão Geral</b> — métricas, registros por dia, falhas ativas e painel de saúde</sub> | ![Tela Aplicações](../../../.docs/images/webapp/aplicacoes.png)<br> <sub><b>🧩 Aplicações</b> — imagem da empresa e o chip que liga ou desliga o módulo</sub> |
 |:---:|:---:|
-| ![Tela Integrações](../../../docs/images/webapp/integracoes.png)<br> <sub><b>🔀 Integrações</b> — procedures dentro da integração, saúde, Executar agora e Agenda</sub> | ![Tela Logs de Erros](../../../docs/images/webapp/logs-de-erros.png)<br> <sub><b>⚠️ Logs de Erros</b> — mensagens por aplicação, integração e causa</sub> |
-| ![Tela Sob Demanda](../../../docs/images/webapp/sob-demanda.png)<br> <sub><b>▶️ Sob Demanda</b> — integrações sem agenda, no estilo do Swagger</sub> | ![Tela Executar Querys](../../../docs/images/webapp/executar-querys.png)<br> <sub><b>💻 Executar Querys</b> — SQL com favoritas e querys prontas</sub> |
+| ![Tela Integrações](../../../.docs/images/webapp/integracoes.png)<br> <sub><b>🔀 Integrações</b> — procedures dentro da integração, saúde, Executar agora e Agenda</sub> | ![Tela Logs de Erros](../../../.docs/images/webapp/logs-de-erros.png)<br> <sub><b>⚠️ Logs de Erros</b> — mensagens por aplicação, integração e causa</sub> |
+| ![Tela Sob Demanda](../../../.docs/images/webapp/sob-demanda.png)<br> <sub><b>▶️ Sob Demanda</b> — integrações sem agenda, no estilo do Swagger</sub> | ![Tela Executar Querys](../../../.docs/images/webapp/executar-querys.png)<br> <sub><b>💻 Executar Querys</b> — SQL com favoritas e querys prontas</sub> |
 
 O **menu lateral** tem Visão Geral, Aplicações, Integrações e Logs de Erros; Gestor e Administrador veem também Sob Demanda
 e o grupo **Cadastros** (Cadastrar Empresas, Cadastrar Usuário), e o dono, Executar Querys, Hosts de Agenda e Todas as
@@ -217,7 +217,7 @@ diálogos ocupam a tela toda. As regras ficam no fim do `wwwroot/css/app.css`.
 
 <div align="center">
 
-![Visão geral no tema claro](../../../docs/images/webapp/visao-geral-claro.png)
+![Visão geral no tema claro](../../../.docs/images/webapp/visao-geral-claro.png)
 
 <sub><b>Tema claro</b> — a escolha fica salva no navegador</sub>
 
@@ -225,7 +225,7 @@ diálogos ocupam a tela toda. As regras ficam no fim do `wwwroot/css/app.css`.
 
 <div align="center">
 
-![Visão geral no celular](../../../docs/images/webapp/celular-visao-geral.png) ![Integrações no celular](../../../docs/images/webapp/celular-integracoes.png)
+![Visão geral no celular](../../../.docs/images/webapp/celular-visao-geral.png) ![Integrações no celular](../../../.docs/images/webapp/celular-integracoes.png)
 
 <sub><b>Celular</b> — tabelas em blocos e diálogos em tela cheia</sub>
 
@@ -261,7 +261,7 @@ resumo "11 procedures · 1 com erro".
 > Ativar ou desativar um job ou um módulo, mudar a agenda, reconhecer uma falha, pedir uma execução e trocar a imagem de
 > uma aplicação **só mudam o mock** e somem ao reiniciar o app. Com o banco, viram `UPDATE` em `auditing.Jobs.IsActive`,
 > gravação em `monitor.JobAcknowledgement` e `monitor.AppImage` e o pedido lido pelo host, por empresa (a imagem, por holding)
-> ([PROPOSTA-DOC-COMPANY-AUDITING.md](../../Backend/Shared/docs/PROPOSTA-DOC-COMPANY-AUDITING.md) e o passo 11.5 do plano).
+> ([PROPOSTA-DOC-COMPANY-AUDITING.md](../../Backend/Shared/.docs/PROPOSTA-DOC-COMPANY-AUDITING.md) e o passo 11.5 do plano).
 
 🛟 **Erro do repositório** vira um aviso (Snackbar) e a tela continua com os dados que já tinha; uma exceção numa tela
 mostra o cartão "Algo deu errado nesta tela", com "Tentar de novo", sem derrubar o painel.
@@ -308,7 +308,7 @@ flowchart TB
 
 Nas procedures, o `IdParent` de `auditing.Jobs` é o job de integração que as chama, não a aplicação; o painel resolve a
 aplicação pelo job pai (`JobModel.IdApp`). O nível das mensagens (informação, aviso e erro) segue a proposta
-[PROPOSTA-NIVEL-MENSAGEM-AUDITING.md](../../Backend/Shared/docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md), implementada em
+[PROPOSTA-NIVEL-MENSAGEM-AUDITING.md](../../Backend/Shared/.docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md), implementada em
 03/11/2026: o painel lê `auditing.Messages.Level` (1 informação, 2 aviso, 3 erro). Só o erro põe o job em saúde de erro; o
 aviso conta em "Warnings" e aparece na linha do heartbeat. `IsError` continua no banco como coluna calculada.
 
@@ -341,7 +341,7 @@ As telas só conhecem as interfaces `IMonitorRepository` e `IQueryRunner`: a cha
 ## 🏢 Cadastro de holdings, empresas e módulos
 
 O cadastro substituiu a antiga tela Windows Forms `Invoke-HostsConfig.ps1`
-([proposta do schema auditing](../../../docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)). Grava direto, sem
+([proposta do schema auditing](../../../.docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)). Grava direto, sem
 procedures: `auditing.Holders`, `auditing.Companies`, `auditing.Jobs` e as tabelas `*Parameters` dos módulos.
 
 | | Peça | O que faz |
@@ -349,7 +349,7 @@ procedures: `auditing.Holders`, `auditing.Companies`, `auditing.Jobs` e as tabel
 | 🏢 | `ICompanyRepository` (`Data/ICompanyRepository.cs`) | lista e cria holdings (a holding, a empresa que é a própria holding e os jobs dos hosts, IdParent 140, inativos e com a agenda sugerida, numa transação) e empresas da holding; edita o nome fantasia. O CNPJ não muda (é a chave dos jobs e dos logs) e um CNPJ já cadastrado, nesta ou em outra holding, é recusado; aceita o CNPJ formatado e grava só os dígitos (11 ou 14). Lista os módulos do catálogo com os jobs da empresa, e contrata (jobs do `auditing.fn_CatalogTree`, inativos, com a agenda escolhida; rodar de novo não duplica) ou remove (desativa os jobs, que os logs referenciam) um módulo |
 | 🔑 | `IModuleParametersRepository` | lê e grava a linha de `*Parameters` do módulo da empresa (`doc_company` = a empresa, que precisa estar em `auditing.Companies`). **Segredos nunca voltam** (a leitura diz só se estão definidos) e segredo vazio mantém o gravado |
 | 📋 | `Data/ModuleDefinitions.cs` | os campos de cada módulo (Movidesk, AfterSale, LinxCommerce, LinxMicrovix e Totvs; DataWarehouse não tem parâmetros), com rótulo, obrigatório, segredo, tipo (texto, `https://` ou GUID) e tamanho. Tabela e colunas do SQL só vêm daqui |
-| 🗓️ | `Data/JobAgenda.cs` | a agenda sugerida de cada job: o [`docs/AGENDA-SUGERIDA-JOBS.csv`](../../../docs/AGENDA-SUGERIDA-JOBS.csv) embutido no assembly (o catálogo não tem agenda) |
+| 🗓️ | `Data/JobAgenda.cs` | a agenda sugerida de cada job: o [`.docs/AGENDA-SUGERIDA-JOBS.csv`](../../../.docs/AGENDA-SUGERIDA-JOBS.csv) embutido no assembly (o catálogo não tem agenda) |
 | 🏛️ | `Data/LoggedCompanyStorage.cs` | a holding e a empresa escolhidas, guardadas no navegador (`ProtectedLocalStorage`); o seletor do topo e o **Abrir painel** gravam. O usuário logado só vê a holding dele: uma escolha de outra holding vira a empresa do usuário. **Usuário da holding** (a empresa dele é a própria holding) escolhe qualquer empresa dela; **usuário de uma empresa** só tem a dele no seletor, não vê o nome da holding e, em Cadastrar Empresas e Cadastrar Usuário, vê só a empresa dele e os usuários dela (sem Nova empresa) |
 | 👥 | `IUserRepository` (`Data/IUserRepository.cs`) | confere o login (usuário ou e-mail), lista, cria e edita os usuários de `monitor.Users`; as regras (campos, senha de 8 caracteres ou mais, hash PBKDF2 do `PasswordHasher` do ASP.NET Core) ficam em `Data/UserAccounts.cs`, iguais no mock e no banco |
 | 🧪 | `Data/Mocks/MockCompanyRepository.cs`, `MockUserRepository.cs` | o mesmo contrato em memória, com as mesmas regras |
@@ -384,7 +384,7 @@ confirmação de que o host vai chamar a API de verdade.
 ## 🗄️ Banco de dados (fase 5)
 
 Com `Database:Enabled = true`, o WebApp lê e grava no banco principal com **Dapper**, sem API e sem projetos Shared
-([plano, fase 5](docs/PLANO-WEBAPP.md#fase-5--banco-de-dados)):
+([plano, fase 5](.docs/PLANO-WEBAPP.md#fase-5--banco-de-dados)):
 
 | | Peça | O que faz |
 |:---:|---|---|
@@ -467,7 +467,7 @@ sem acesso cai na página de não encontrado.
 
 <div align="center">
 
-![Assistente de IA aberto sobre a Visão geral](../../../docs/images/webapp/assistente.png)
+![Assistente de IA aberto sobre a Visão geral](../../../.docs/images/webapp/assistente.png)
 
 <sub><b>Assistente</b> — sem a chave, o chat avisa que não está configurado</sub>
 
@@ -613,7 +613,7 @@ uma mudança no CSS ou no JavaScript, o navegador baixa o arquivo novo **sem pre
 | Fase | O que entra |
 |---|---|
 | 🗄️ **5 — Banco de dados** | usuários de banco pelo DbUp, `MonitorRepository` com Dapper no banco principal e `QueryRunner` real |
-| 🏢 **4.6.1 do cadastro — Testar conexão** | o botão **Testar conexão** por módulo, hoje desabilitado na aba Credenciais da engrenagem, em Aplicações ([plano](../../../docs/PLANO-TELA-CADASTRO-EMPRESA.md)) |
+| 🏢 **4.6.1 do cadastro — Testar conexão** | o botão **Testar conexão** por módulo, hoje desabilitado na aba Credenciais da engrenagem, em Aplicações ([plano](../../../.docs/PLANO-TELA-CADASTRO-EMPRESA.md)) |
 | 🔐 **6 — Autenticação** | o login com `monitor.Users` e os perfis (Administrador, Gestor, Visualizador e o dono) já existem; falta, se for o caso, o Microsoft Entra ID |
 | 📱 **7 — App MAUI** | os mesmos dados no app, por uma API |
 
@@ -637,7 +637,7 @@ flowchart LR
 
 <div align="center">
 
-![NEWBLOOMERS](../../../docs/newbloomers.png)
+![NEWBLOOMERS](../../../.docs/newbloomers.png)
 
 <sub>Monitor de Integrações · Blazor + MudBlazor · .NET 10</sub>
 

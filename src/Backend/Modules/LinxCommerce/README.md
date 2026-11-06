@@ -1,6 +1,6 @@
 <div align="center">
 
-![NEWBLOOMERS · Sistema de Integrações · ETL](../../../../docs/images/banner.png)
+![NEWBLOOMERS · Sistema de Integrações · ETL](../../../../.docs/images/banner.png)
 
 </div>
 
@@ -8,9 +8,9 @@
 
 <div align="center">
 
-![App](../../../../docs/images/badges/app-70.svg) ![Schema](../../../../docs/images/badges/schema-linxcommerce.svg) ![Rotas](../../../../docs/images/badges/rotas-12.svg) ![Jobs](../../../../docs/images/badges/jobs-70007999.svg)
+![App](../../../../.docs/images/badges/app-70.svg) ![Schema](../../../../.docs/images/badges/schema-linxcommerce.svg) ![Rotas](../../../../.docs/images/badges/rotas-12.svg) ![Jobs](../../../../.docs/images/badges/jobs-70007999.svg)
 
-![.NET](../../../../docs/images/badges/net-10-sq.svg) ![API](../../../../docs/images/badges/api-endereo-por-cliente-sq.svg) ![Auth](../../../../docs/images/badges/auth-basic-sq.svg) ![Escritas](../../../../docs/images/badges/escritas-no-sq.svg) ![API real](../../../../docs/images/badges/api-real-no-conferida-sq.svg)
+![.NET](../../../../.docs/images/badges/net-10-sq.svg) ![API](../../../../.docs/images/badges/api-endereo-por-cliente-sq.svg) ![Auth](../../../../.docs/images/badges/auth-basic-sq.svg) ![Escritas](../../../../.docs/images/badges/escritas-no-sq.svg) ![API real](../../../../.docs/images/badges/api-real-no-conferida-sq.svg)
 
 </div>
 
@@ -68,7 +68,7 @@ Módulo do sistema de integrações (ETL) responsável por **ler** os dados do L
 > [!NOTE]
 > O módulo **não escreve** no Linx Commerce. As duas escritas do código antigo (rastreio do pedido e carteira de vendedores) não foram
 > migradas: a da carteira apagava a carteira de todos os vendedores a cada execução
-> ([`src/Backend/Modules/LinxCommerce/docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md`](docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md), §4.6).
+> ([`src/Backend/Modules/LinxCommerce/.docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md`](.docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md), §4.6).
 
 | Item | Valor |
 |---|---|
@@ -224,7 +224,7 @@ Toda chamada é `POST` em `{base_url}/v1/{rota}` com `Authorization: Basic <usu�
 
 ### Fluxo das leituras recorrentes
 
-Seguem o padrão de [`docs/PADRAO-CACHE-INTEGRACOES.md`](../../../../docs/PADRAO-CACHE-INTEGRACOES.md):
+Seguem o padrão de [`.docs/PADRAO-CACHE-INTEGRACOES.md`](../../../../.docs/PADRAO-CACHE-INTEGRACOES.md):
 
 1. abre um log em `auditing.Logs` com o job do método;
 2. para o cliente de `LinxCommerceParameters` da empresa da execução, calcula a janela **a partir do banco**, com 1 hora de folga:
@@ -326,7 +326,7 @@ O host chama o método em `Hosts/WebApi/Extensions/ServicesExtensions.cs`.
 > módulo, sem o problema do limite de 260 caracteres. Em linha de comando:
 > `./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -Apps LinxCommerce -SchedulingHost WebApi`.
 
-O DbUp executa cada script uma única vez, na ordem do número do arquivo. Uma correção de tabela, procedure ou view vai **no script de criação original**, não num `ALTER` novo ([padrão, §3.3](../../../../docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md)); num banco que já rodou o script, a correção é aplicada à parte. Os scripts gerais ficam em `Parameters/` e cada service tem a sua pasta, com o trio tabelas,
+O DbUp executa cada script uma única vez, na ordem do número do arquivo. Uma correção de tabela, procedure ou view vai **no script de criação original**, não num `ALTER` novo ([padrão, §3.3](../../../../.docs/PADRAO-CODIGO-E-SCRIPTS-INTEGRACOES.md)); num banco que já rodou o script, a correção é aplicada à parte. Os scripts gerais ficam em `Parameters/` e cada service tem a sua pasta, com o trio tabelas,
 procedures e jobs (os recorrentes e os sob demanda do service, inseridos no catálogo `auditing.Catalog`, sem agenda); o `migrator.csx` lê as
 subpastas.
 
@@ -363,7 +363,7 @@ Rota base: `LinxCommerceJobs/LinxCommerce`. `POST` nas leituras recorrentes, `GE
 
 <div align="center">
 
-![Swagger do Linx Commerce](../../../../docs/images/swagger/linxcommerce.png)
+![Swagger do Linx Commerce](../../../../.docs/images/swagger/linxcommerce.png)
 
 <sub><b>Swagger</b> do WebApi — tag <code>LinxCommerceOrders</code> aberta</sub>
 
@@ -417,7 +417,7 @@ O `{docCompany}` é a empresa da execução e precisa estar em `auditing.Compani
 
 <div align="center">
 
-![Tela Sob Demanda do painel](../../../../docs/images/webapp/sob-demanda.png)
+![Tela Sob Demanda do painel](../../../../.docs/images/webapp/sob-demanda.png)
 
 <sub><b>Sob Demanda</b> no Monitor de Integrações — as leituras por chave do Linx Commerce ficam no grupo do módulo</sub>
 
@@ -429,7 +429,7 @@ O `{docCompany}` é a empresa da execução e precisa estar em `auditing.Compani
 
 O catálogo fica em `auditing.Catalog` (sem agenda), com os mesmos ids em `EnumJob`. Cada empresa recebe a sua cópia em
 `auditing.Jobs` (`Holder` e `Company` na chave) ao contratar o módulo no WebApp (Cadastro › Módulos e Credenciais), com a
-agenda sugerida ([`AGENDA-SUGERIDA-JOBS.csv`](../../../../docs/AGENDA-SUGERIDA-JOBS.csv)) e os jobs **inativos** até
+agenda sugerida ([`AGENDA-SUGERIDA-JOBS.csv`](../../../../.docs/AGENDA-SUGERIDA-JOBS.csv)) e os jobs **inativos** até
 alguém ligar.
 
 ```mermaid
@@ -469,7 +469,7 @@ flowchart LR
 Os intervalos são ajustáveis por um `update` em `auditing.Jobs`, sem mudar o código. A ativação é por empresa (`IsActive` da linha da
 empresa em `auditing.Jobs`). Sem cliente da empresa em `LinxCommerceParameters`, cada job só registra "Nenhum cliente" e termina.
 
-Cada mensagem de `auditing.Messages` tem um nível ([`PROPOSTA-NIVEL-MENSAGEM-AUDITING.md`](../../Shared/docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md)):
+Cada mensagem de `auditing.Messages` tem um nível ([`PROPOSTA-NIVEL-MENSAGEM-AUDITING.md`](../../Shared/.docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md)):
 
 | Nível | Mensagens |
 |---|---|
@@ -509,24 +509,24 @@ Cada mensagem de `auditing.Messages` tem um nível ([`PROPOSTA-NIVEL-MENSAGEM-AU
 * **Escritas:** o rastreio do pedido e a carteira de vendedores não foram migrados; voltam só com a regra definida por quem usa
   (proposta, §4.6 e §10.2).
 * **Consumidores do legado:** o Oto e a Stone continuam lendo `linx_commerce`; a adaptação para `linxcommerce` é decidida à parte.
-* **Pasta `docs/Responsed Jsons`:** entra com as primeiras respostas reais, com os dados trocados por dados fictícios, como no Totvs.
+* **Pasta `.docs/Responsed Jsons`:** entra com as primeiras respostas reais, com os dados trocados por dados fictícios, como no Totvs.
 
 ---
 
 ## 📚 Documentação complementar
 
-Na pasta [`docs/`](docs) do módulo e no `docs/` da raiz do repositório:
+Na pasta [`.docs/`](.docs) do módulo e no `.docs/` da raiz do repositório:
 
 | Documento | Assunto |
 |---|---|
-| [`PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md`](docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md) | Proposta, decisões pendentes, erros do código antigo e plano em fases da padronização do módulo |
-| [`PADRAO-CACHE-INTEGRACOES.md`](../../../../docs/PADRAO-CACHE-INTEGRACOES.md) | Padrão de cache das leituras |
+| [`PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md`](.docs/PROPOSTA-PADRONIZACAO-LINXCOMMERCE.md) | Proposta, decisões pendentes, erros do código antigo e plano em fases da padronização do módulo |
+| [`PADRAO-CACHE-INTEGRACOES.md`](../../../../.docs/PADRAO-CACHE-INTEGRACOES.md) | Padrão de cache das leituras |
 
 ---
 
 <div align="center">
 
-![NEWBLOOMERS](../../../../docs/newbloomers.png)
+![NEWBLOOMERS](../../../../.docs/newbloomers.png)
 
 <sub>Sistema de integrações · feito com .NET 10</sub>
 

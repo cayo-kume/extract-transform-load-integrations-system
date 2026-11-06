@@ -1,7 +1,7 @@
 namespace Domain.Shared.Entities.Auditing
 {
     /// <summary>
-    /// agenda de um job de integração em auditing.Jobs (src/Backend/Hosts/WebApi/docs/PLANO-HOST-WEBAPI.md §4.1): se roda (IsActive),
+    /// agenda de um job de integração em auditing.Jobs (src/Backend/Hosts/WebApi/.docs/PLANO-HOST-WEBAPI.md §4.1): se roda (IsActive),
     /// quando (IntervalTimeInMinutes ou, nos diários, RunningDailyAt) e em que fila do agendador (Queue)
     /// </summary>
     public class JobSchedule

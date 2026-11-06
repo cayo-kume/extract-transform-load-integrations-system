@@ -4,7 +4,7 @@ namespace WebApp.Data
 {
     /// <summary>
     /// Cadastro das holdings (auditing.Holders), das empresas delas (auditing.Companies) e dos módulos contratados por empresa
-    /// (os jobs em auditing.Jobs, a partir do catálogo), com INSERT direto (docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md).
+    /// (os jobs em auditing.Jobs, a partir do catálogo), com INSERT direto (.docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md).
     /// Até o banco, o MockCompanyRepository; com a connection string, o SqlCompanyRepository (Dapper, sem API e sem Shared).
     /// Erros de regra (CNPJ já cadastrado, de outra holding, empresa inexistente) chegam como CompanyRegistrationException.
     /// </summary>

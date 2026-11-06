@@ -17,7 +17,7 @@ namespace Worker.Extensions
     public static class ServicesExtensions
     {
         /// <summary>
-        /// os mesmos módulos dos hosts WebApi e WebJob (src/Backend/Hosts/Worker/docs/PLANO-HOST-WORKER.md, passo 3) e o executor de
+        /// os mesmos módulos dos hosts WebApi e WebJob (src/Backend/Hosts/Worker/.docs/PLANO-HOST-WORKER.md, passo 3) e o executor de
         /// jobs. Um módulo novo entra aqui e nos outros dois hosts, junto com o mapa em Hosts.Scheduling
         /// </summary>
         public static HostApplicationBuilder AddServices(this HostApplicationBuilder builder)
@@ -100,7 +100,7 @@ namespace Worker.Extensions
                     .StartNow());
             });
 
-            // um tipo de host de agenda por banco (docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md, 4.2): o heartbeat em
+            // um tipo de host de agenda por banco (.docs/PROPOSTA-MELHORIAS-TESTES-HOSPEDAGEM.md, 4.2): o heartbeat em
             // auditing.SchedulingHosts sobe antes do Quartz e, sem banco, diz isso no log antes da mensagem de schema do Quartz
             builder.Services.AddSchedulingHostRegistration("Quartz");
 

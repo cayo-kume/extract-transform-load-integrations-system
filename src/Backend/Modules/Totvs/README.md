@@ -1,6 +1,6 @@
 <div align="center">
 
-![NEWBLOOMERS · Sistema de Integrações · ETL](../../../../docs/images/banner.png)
+![NEWBLOOMERS · Sistema de Integrações · ETL](../../../../.docs/images/banner.png)
 
 </div>
 
@@ -8,9 +8,9 @@
 
 <div align="center">
 
-![App 130](../../../../docs/images/badges/app-130.svg) ![Schema totvs](../../../../docs/images/badges/schema-totvs.svg) ![123 rotas](../../../../docs/images/badges/rotas-123.svg) ![122 jobs](../../../../docs/images/badges/jobs-122-151-procedures.svg)
+![App 130](../../../../.docs/images/badges/app-130.svg) ![Schema totvs](../../../../.docs/images/badges/schema-totvs.svg) ![123 rotas](../../../../.docs/images/badges/rotas-123.svg) ![122 jobs](../../../../.docs/images/badges/jobs-122-151-procedures.svg)
 
-![.NET 10](../../../../docs/images/badges/net-10-sq.svg) ![OAuth2](../../../../docs/images/badges/oauth2-password-sq.svg) ![JSON](../../../../docs/images/badges/api-rest-json-sq.svg) ![Escritas por grupo](../../../../docs/images/badges/escritas-totvs-writes-sq.svg)
+![.NET 10](../../../../.docs/images/badges/net-10-sq.svg) ![OAuth2](../../../../.docs/images/badges/oauth2-password-sq.svg) ![JSON](../../../../.docs/images/badges/api-rest-json-sq.svg) ![Escritas por grupo](../../../../.docs/images/badges/escritas-totvs-writes-sq.svg)
 
 </div>
 
@@ -52,7 +52,7 @@ Módulo do sistema de integrações (ETL) responsável por **ler** os dados da A
   leitura incremental por data de alteração;
 * **sob demanda**, a partir de um sistema externo, buscando um único registro por chave e registrando quem pediu cada chamada.
 
-O módulo também **escreve** na Totvs (**54 rotas** de escrita, plano em [`PLANO-TOTVS-METODOS-FALTANTES.md`](docs/PLANO-TOTVS-METODOS-FALTANTES.md)). Toda escrita é **validada antes** de chamar a API, fica registrada em `totvs.TotvsRequests` e só roda com a chave de configuração do seu grupo ligada.
+O módulo também **escreve** na Totvs (**54 rotas** de escrita, plano em [`PLANO-TOTVS-METODOS-FALTANTES.md`](.docs/PLANO-TOTVS-METODOS-FALTANTES.md)). Toda escrita é **validada antes** de chamar a API, fica registrada em `totvs.TotvsRequests` e só roda com a chave de configuração do seu grupo ligada.
 
 > [!IMPORTANT]
 > Cada grupo de escrita só roda com `Totvs:Writes:<grupo>:Enabled = true` (`AccountsPayable`, `Bonus`, `Invoices`,
@@ -90,10 +90,10 @@ flowchart LR
 
 `CreateGetCompanysQuery(company)` lê os parâmetros com `WHERE doc_company` = a empresa da execução: os services
 continuam percorrendo `GetCompanys()`, agora só com a linha dessa empresa
-([proposta do schema auditing](../../../../docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)).
+([proposta do schema auditing](../../../../.docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)).
 
 ### Comportamentos da API que a integração trata
-A documentação não descreve tudo; o que segue foi conferido com chamadas reais (detalhes em [`src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md`](docs/PROPOSTA-PADRONIZACAO-TOTVS.md), §5.2):
+A documentação não descreve tudo; o que segue foi conferido com chamadas reais (detalhes em [`src/Backend/Modules/Totvs/.docs/PROPOSTA-PADRONIZACAO-TOTVS.md`](.docs/PROPOSTA-PADRONIZACAO-TOTVS.md), §5.2):
 
 * **Datas no horário local, sem fuso.** Um `Z` no filtro é ignorado; os filtros vão no formato `yyyy-MM-ddTHH:mm:ss`.
 * **`maxChangeFilterDate` só vem quando o filtro `change` é enviado.** As leituras por chave também mandam um `change`, para a data vir preenchida e o job não regravar o registro.
@@ -114,7 +114,7 @@ Totvs/
 ├── Domain.Totvs          ← contratos, DTOs, entidades e enums (sem dependência de infraestrutura)
 ├── Application.Totvs     ← services (regras de integração), queries SQL e validações
 ├── Infrastructure.Totvs  ← repositórios, injeção de dependência e scripts de banco
-└── docs                  ← propostas, planos e implementações do módulo
+└── .docs                  ← propostas, planos e implementações do módulo
     └── Responsed Jsons  ← uma resposta de exemplo por rota (dados fictícios)
 ```
 
@@ -379,7 +379,7 @@ Os nomes dos métodos são os da **documentação oficial** (`PostSearch*`, `Get
 
 ### Fluxo das leituras recorrentes
 
-Seguem o padrão de [`docs/PADRAO-CACHE-INTEGRACOES.md`](../../../../docs/PADRAO-CACHE-INTEGRACOES.md):
+Seguem o padrão de [`.docs/PADRAO-CACHE-INTEGRACOES.md`](../../../../.docs/PADRAO-CACHE-INTEGRACOES.md):
 
 1. abre um log em `auditing.Logs` com o job do método;
 2. com as credenciais da empresa da execução (`TotvsParameters` com `doc_company` = a empresa), obtém o token e as lojas de `TotvsBranches`. Sem lojas, registra a mensagem e termina (por isso o `GetBranchesList` roda primeiro);
@@ -547,7 +547,7 @@ Rota base: `TotvsJobs/Totvs`. O verbo segue a documentação oficial: `POST` nas
 
 <div align="center">
 
-![Rotas da Totvs no Swagger do WebApi](../../../../docs/images/swagger/totvs.png)
+![Rotas da Totvs no Swagger do WebApi](../../../../.docs/images/swagger/totvs.png)
 
 <sub><b>Swagger do WebApi</b> — as rotas da Totvs agrupadas pela tag de cada service (<code>http://localhost:5252/swagger</code>)</sub>
 
@@ -806,7 +806,7 @@ escritas de pedido de venda, a **chave do pedido** é `branchCode` + `orderCode`
 
 Os jobs ficam no catálogo **`auditing.Catalog`** (scripts `..._Jobs_Into_Jobs_Table.sql`, no DbUp, sem agenda), com os
 mesmos ids em `EnumJob`. Cada empresa que contrata o módulo no WebApp recebe a sua cópia em **`auditing.Jobs`** (`Holder`
-e `Company` na chave), com a agenda sugerida ([`AGENDA-SUGERIDA-JOBS.csv`](../../../../docs/AGENDA-SUGERIDA-JOBS.csv)),
+e `Company` na chave), com a agenda sugerida ([`AGENDA-SUGERIDA-JOBS.csv`](../../../../.docs/AGENDA-SUGERIDA-JOBS.csv)),
 inativa até alguém ligar.
 
 | Faixa | Tipo (`IdType`) | Conteúdo |
@@ -898,7 +898,7 @@ Toda execução grava `auditing.Logs` (com a empresa) e, conforme o caso:
 * `auditing.Messages`, com mensagens e erros de validação;
 * `auditing.Records`, com os registros integrados e o JSON recebido.
 
-Cada mensagem tem um nível ([`PROPOSTA-NIVEL-MENSAGEM-AUDITING.md`](../../Shared/docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md)):
+Cada mensagem tem um nível ([`PROPOSTA-NIVEL-MENSAGEM-AUDITING.md`](../../Shared/.docs/PROPOSTA-NIVEL-MENSAGEM-AUDITING.md)):
 
 | Nível | Mensagens |
 |---|---|
@@ -908,7 +908,7 @@ Cada mensagem tem um nível ([`PROPOSTA-NIVEL-MENSAGEM-AUDITING.md`](../../Share
 
 <div align="center">
 
-![Tela Integrações do Monitor](../../../../docs/images/webapp/integracoes.png)
+![Tela Integrações do Monitor](../../../../.docs/images/webapp/integracoes.png)
 
 <sub><b>Onde ver no painel</b> — a tela Integrações do Monitor mostra os jobs, as procedures e a saúde de cada um (dados mockados)</sub>
 
@@ -937,7 +937,7 @@ As credenciais vão para o banco pela tela de cadastro do WebApp (em construçã
 
 ---
 
-## 📁 Pasta `docs/Responsed Jsons`
+## 📁 Pasta `.docs/Responsed Jsons`
 
 Uma resposta real de cada rota, com os dados trocados por **dados fictícios** para não expor informações no histórico do git:
 
@@ -996,7 +996,7 @@ corpo de verdade leva só um, como o validador da rota exige.
 
 ## 🚧 Pendências
 
-O plano de métodos faltantes (`src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md`) está implementado em todas as ondas; o que falta está no fim da §10 de
+O plano de métodos faltantes (`src/Backend/Modules/Totvs/.docs/PLANO-TOTVS-METODOS-FALTANTES.md`) está implementado em todas as ondas; o que falta está no fim da §10 de
 cada fase ("Não verificado"). Em resumo:
 
 * **Execução em banco e pelo host (plano, §10.44):** os scripts 001 a 079 rodaram num SQL Server local (DbUp, com a base compartilhada), as
@@ -1023,17 +1023,17 @@ cada fase ("Não verificado"). Em resumo:
 
 | Documento | Assunto |
 |---|---|
-| 🟣 [PROPOSTA-PADRONIZACAO-TOTVS.md](docs/PROPOSTA-PADRONIZACAO-TOTVS.md) | Proposta, decisões e plano em fases da padronização do módulo, com o que foi conferido em cada API |
-| 🟣 [PLANO-TOTVS-METODOS-FALTANTES.md](docs/PLANO-TOTVS-METODOS-FALTANTES.md) | Plano dos métodos faltantes (leituras, catálogos e escritas) |
-| 🏢 [PLANO-TELA-CADASTRO-EMPRESA.md](../../../../docs/PLANO-TELA-CADASTRO-EMPRESA.md) | Cadastro de empresas: parâmetros fora do DbUp e execução por empresa (histórico; o modelo atual está na [proposta do schema auditing](../../../../docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)) |
-| ⚡ [PADRAO-CACHE-INTEGRACOES.md](../../../../docs/PADRAO-CACHE-INTEGRACOES.md) | Padrão de cache das leituras |
-| 🔁 [ALTERACOES-MERGE-PROCEDURE-AUDITORIA.md](../../../../src/Backend/Shared/docs/ALTERACOES-MERGE-PROCEDURE-AUDITORIA.md) | Procedure de merge e auditoria |
+| 🟣 [PROPOSTA-PADRONIZACAO-TOTVS.md](.docs/PROPOSTA-PADRONIZACAO-TOTVS.md) | Proposta, decisões e plano em fases da padronização do módulo, com o que foi conferido em cada API |
+| 🟣 [PLANO-TOTVS-METODOS-FALTANTES.md](.docs/PLANO-TOTVS-METODOS-FALTANTES.md) | Plano dos métodos faltantes (leituras, catálogos e escritas) |
+| 🏢 [PLANO-TELA-CADASTRO-EMPRESA.md](../../../../.docs/PLANO-TELA-CADASTRO-EMPRESA.md) | Cadastro de empresas: parâmetros fora do DbUp e execução por empresa (histórico; o modelo atual está na [proposta do schema auditing](../../../../.docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md)) |
+| ⚡ [PADRAO-CACHE-INTEGRACOES.md](../../../../.docs/PADRAO-CACHE-INTEGRACOES.md) | Padrão de cache das leituras |
+| 🔁 [ALTERACOES-MERGE-PROCEDURE-AUDITORIA.md](../../../../src/Backend/Shared/.docs/ALTERACOES-MERGE-PROCEDURE-AUDITORIA.md) | Procedure de merge e auditoria |
 
 ---
 
 <div align="center">
 
-![NEWBLOOMERS](../../../../docs/newbloomers.png)
+![NEWBLOOMERS](../../../../.docs/newbloomers.png)
 
 <sub>Módulo Totvs · sistema de integrações · .NET 10</sub>
 

@@ -14,11 +14,11 @@ VALUES
 (13003, 13584, 'sp_TotvsInvoicesReferencedTaxes_Sync', 'Procedure de sincronização entre as tabelas TotvsInvoicesReferencedTaxes raw e trusted', 1, 0),
 
 /*Integrações*/
-/*Range 13000 - 13499 (ids reservados em src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md §7)*/
+/*Range 13000 - 13499 (ids reservados em src/Backend/Modules/Totvs/.docs/PROPOSTA-PADRONIZACAO-TOTVS.md §7)*/
 (130, 13003, 'TotvsPostSearchInvoices', 'Integração das notas fiscais de todas as lojas (TotvsInvoices e filhas), a cada 3 minutos', 2, 0),
 
 /*Integrações sob demanda - executadas pelo TotvsController, não são recorrentes (IsOnDemand = 1)*/
-/*Range 13000 - 13499 (ids reservados em src/Backend/Modules/Totvs/docs/PROPOSTA-PADRONIZACAO-TOTVS.md §7; sob demanda a partir de 13010)*/
+/*Range 13000 - 13499 (ids reservados em src/Backend/Modules/Totvs/.docs/PROPOSTA-PADRONIZACAO-TOTVS.md §7; sob demanda a partir de 13010)*/
 (130, 13013, 'TotvsGetInvoiceByKey', 'Integração de uma nota fiscal por loja e sequência (GET Invoices/{docCompany}/{branchCode}/{invoiceSequence})', 2, 1),
 
 /*Procedures de Sincronizações*/
@@ -28,25 +28,25 @@ VALUES
 (13251, 13650, 'sp_TotvsCostCentersClassifications_Sync', 'Procedure de sincronização entre as tabelas TotvsCostCentersClassifications raw e trusted', 1, 0),
 
 /*Integrações*/
-/*Range 13000 - 13499 (Fiscal: 13250 - 13299, src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md)*/
+/*Range 13000 - 13499 (Fiscal: 13250 - 13299, src/Backend/Modules/Totvs/.docs/PLANO-TOTVS-METODOS-FALTANTES.md)*/
 (130, 13250, 'TotvsGetInvoicesDisable', 'Integração das faixas de numeração inutilizadas de todas as lojas (TotvsInvoicesDisable), a cada 2 horas', 2, 0),
 (130, 13251, 'TotvsGetCostCenter', 'Integração dos centros de custo, com as classificações (TotvsCostCenters e filha), a cada 2 horas', 2, 0),
 
 /*Leituras sob demanda sem persistência - executadas pelo TotvsController, não são recorrentes (IsOnDemand = 1) e não gravam
-  tabela: devolvem o conteúdo e registram a chamada em totvs.TotvsRequests (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §8.1, T11)*/
+  tabela: devolvem o conteúdo e registram a chamada em totvs.TotvsRequests (src/Backend/Modules/Totvs/.docs/PLANO-TOTVS-METODOS-FALTANTES.md §8.1, T11)*/
 /*Range 13000 - 13499 (Fiscal: 13250 - 13299)*/
 (130, 13252, 'TotvsGetXmlContents', 'XML de uma NF-e/NFC-e pela chave de acesso (GET ElectronicInvoices/{docCompany}/{accessKey}/Xml)', 2, 1),
 (130, 13253, 'TotvsPostSearchDanfe', 'PDF do DANFE de uma NF-e pela chave de acesso (GET ElectronicInvoices/{docCompany}/{accessKey}/Danfe)', 2, 1),
 (130, 13254, 'TotvsPostTransactionPrint', 'PDF da impressão da transação de uma nota (GET Invoices/{docCompany}/{branchCode}/{invoiceSequence}/Print)', 2, 1),
 
 /*Leituras sob demanda sem persistência - executadas pelo TotvsController, não são recorrentes (IsOnDemand = 1) e não gravam
-  tabela: devolvem o JSON e registram a chamada em totvs.TotvsRequests (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §8.1, T11)*/
+  tabela: devolvem o JSON e registram a chamada em totvs.TotvsRequests (src/Backend/Modules/Totvs/.docs/PLANO-TOTVS-METODOS-FALTANTES.md §8.1, T11)*/
 /*Range 13000 - 13499 (Fiscal: 13250 - 13299)*/
 (130, 13255, 'TotvsGetSearchInvoicesItemDetail', 'Itens de uma nota com transações e notas referenciadas por produto (GET Invoices/.../Items e ElectronicInvoices/.../Items)', 2, 1),
 (130, 13256, 'TotvsGetInvoicesPendingConditionalProducts', 'Saldo de produtos em condicional de uma pessoa numa loja (GET ConditionalProducts/{docCompany}/{branchCode})', 2, 1),
 (130, 13257, 'TotvsPostSearchInvoiceProducts', 'Produtos das notas por filtro (POST InvoiceProducts/{docCompany}/Search)', 2, 1),
 
 /*Manifestação do destinatário (efeito fiscal a confirmar) - executada pelo TotvsController, não é recorrente (IsOnDemand = 1); só roda
-  com Totvs:Writes:Invoices:Enabled = true (src/Backend/Modules/Totvs/docs/PLANO-TOTVS-METODOS-FALTANTES.md §8.10, fase FI-3)*/
+  com Totvs:Writes:Invoices:Enabled = true (src/Backend/Modules/Totvs/.docs/PLANO-TOTVS-METODOS-FALTANTES.md §8.10, fase FI-3)*/
 /*Range 13000 - 13499 (Fiscal: 13250 - 13299)*/
 (130, 13258, 'TotvsPostInvoicesManifestations', 'Manifestação do destinatário (POST InvoicesManifestations/{docCompany})', 2, 1);
