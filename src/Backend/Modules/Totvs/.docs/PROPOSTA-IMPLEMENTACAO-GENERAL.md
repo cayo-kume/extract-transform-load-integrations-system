@@ -1,13 +1,14 @@
 # Proposta: implementação da API General (`general/v2`) no módulo Totvs
 
-Revisão 2 — 2026-11-06. **Decisões G1–G8 aprovadas (seção 12); nenhum código foi alterado.** Substitui o
+Revisão 3 — 2026-11-06. **Decisões G1–G8 aprovadas (seção 12); chamadas de confirmação feitas em produção, só leitura
+(seção 9); nenhum código foi alterado.** Substitui o
 [diff-totvs-operations-etl.md](diff-totvs-operations-etl.md), que tratava só de `operations`, e entra como a **8ª API** do
 [PLANO-TOTVS-METODOS-FALTANTES.md](PLANO-TOTVS-METODOS-FALTANTES.md), no mesmo formato das seções 2 a 8.
 
 Swagger oficial: `https://www30.bhan.com.br:9443/api/totvsmoda/general/v2/swagger/v1/swagger.json`, título "Api General",
-versão **2.8.20**, baixado em 06/11/2026. As outras 7 APIs usam o host `apitotvsmoda.bhan.com.br`. **A confirmar:** se o
-`general/v2` responde no mesmo host do `TotvsService`. O código antigo usa o mesmo `IApiClient` para `authorization/v2` e
-`general/v2`, então deve responder.
+versão **2.8.20**, baixado em 06/11/2026. O host é o mesmo `Totvs:BaseUrl` de produção dos hosts
+(`https://www30.bhan.com.br:9443/api/totvsmoda`), e o token de `authorization/v2` vale para o `general/v2` (confirmado em
+06/11/2026). O `apitotvsmoda.bhan.com.br` das outras 7 APIs é só a documentação pública.
 
 ## 1. Por que
 
@@ -26,14 +27,12 @@ versão **2.8.20**, baixado em 06/11/2026. As outras 7 APIs usam o host `apitotv
 | `TotvsOperations` | `GET general/v2/operations` | **3 min** (`0 */3 * * * *`) | Janela de hoje −5 meses até amanhã, `PageSize` 500, **sem `Expand`**. Corta `operationsType` em 1 caractere e `description` em 300 | `totvs.Operations` (96 linhas). As filhas `OperationsValues`, `OperationsBalances` e `OperationsClassifications` têm 0 linhas |
 | `TotvsTransactionsClassifications` | `POST general/v2/transactions/search` | **5 min** | Todas as lojas de `Branches`, só as operações `[10, 14, 510, 1002, 1004]` (`Totvs:Transactions`), janela das últimas **48 h**, `PageSize` 500. Corta `typeName` em 60, `code` em 60 e `name` em 250 | `totvs.TransactionsClassifications` (só as classificações, sem o cabeçalho da transação) |
 
-**Por que as filhas estão vazias:** o swagger mostra que `values`, `balances`, `classifications` e também `calculations`
-**só vêm com `Expand`** (`"calculations","values","balances","classifications"`). O código antigo não manda `Expand`. Então
-as filhas ficam vazias e as colunas `calculations*` de `totvs.Operations` devem estar nulas. **A conferir no banco atual**
-(seção 9, item 2).
+**Por que as filhas estão vazias (confirmado):** `values`, `balances`, `classifications` e também `calculations` **só vêm
+com `Expand`**. Sem `Expand`, a produção devolve `calculations` nulo e as listas vazias para as 95 operações. Com `Expand`,
+vêm 96 valores e 104 saldos. No banco antigo, as 96 linhas têm `calculations*` nulas.
 
-**O que a pergunta do diff anterior já responde:** o swagger declara `operationsType` como `string` com valores
-`E - Entrada` e `S - Saída`. O corte para 1 caractere não muda nada, e a view do `dw` não precisa de `LEFT` nem de
-`CASE`.
+**`operationsType` (confirmado):** só vem `S` (60) e `E` (35). O corte para 1 caractere não muda nada, e a view do `dw` não
+precisa de `LEFT` nem de `CASE`.
 
 ## 3. Rotas do swagger
 
@@ -65,9 +64,12 @@ Regras comuns, iguais às da Fiscal (§8 do PLANO):
 
 - Os parâmetros `ValidationResult.IsValid`, `ValidationResult.Errors` e `ValidationResult.RuleSetsExecuted` dos `GET` vazam
   do modelo interno da Totvs e **nunca são enviados**.
-- Os enums do swagger são `integer` mas só listam os nomes. Nas leituras, gravar **o texto que vier** (o antigo grava
-  `calculations*` como texto). Nas escritas, usar o número da descrição (regra do PLANO, §1.3).
-- Arrays na query no formato `X=1&X=2` (padrão do ASP.NET). Confirmar na primeira chamada real.
+- Os enums do swagger são `integer` mas só listam os nomes. **Na resposta, vêm os códigos da descrição, não os nomes**
+  (confirmado): `calculations` como número (`1`, `99`, `7`, `5`), `valueType` e `movementType` como letra (`P`/`C`,
+  `E`/`S`/`N`), `status` da transação como número (`4`, `6`). As leituras gravam o código. Nas escritas, usar o número da
+  descrição (regra do PLANO, §1.3).
+- Arrays na query no formato `X=1&X=2` (padrão do ASP.NET), confirmado com `OperationCodeList`.
+- Lista vazia responde **200 com `items: []`**, inclusive em `GET operations`, que declara 404 no swagger (confirmado).
 
 ## 4. Catálogos
 
@@ -81,7 +83,7 @@ Nada é apagado: um registro removido na Totvs fica no banco, como as filiais e 
 |---|---|
 | Parâmetros | `StartChangeDate`, `EndChangeDate`, `Order` = `maxChangeFilterDate`, `Page`, `PageSize` = **1000** (máximo do swagger; o antigo usa 500), **`Expand` = `calculations,values,balances,classifications`**. Não enviar `IsInactive` (traz ativas e inativas) nem `OperationTypeList` |
 | Janela | `MAX(maxChangeFilterDate)` do banco − 1 h. Banco vazio: `GetInitialLoad(2000-01-01)`, como os catálogos de pessoa. A janela de −5 meses do antigo não traz uma operação que não muda há mais tempo |
-| Resposta | `OperationResponseModel` (o `Page<T>` que o módulo já tem). 404 = lista vazia (**a confirmar**: o swagger declara 404 nesta rota) |
+| Resposta | `OperationResponseModel` (o `Page<T>` que o módulo já tem). Vazio = 200 com `items: []`. Hoje são **95 operações em 1 página** de 1000. `maxChangeFilterDate` só vem preenchido quando as datas são enviadas |
 | Frequência | **3 min**, como o antigo (G4). Sem mudança, a janela incremental devolve 0 itens em uma chamada. Com 120 min (o padrão dos catálogos), uma nota com operação nova sumiria do `dw` por até 2 h por causa do `INNER JOIN` |
 | Chave | `doc_company`, `operationCode` |
 | Cache | `Totvs:Operations:<cnpj>` |
@@ -95,25 +97,32 @@ Nada é apagado: um registro removido na Totvs fica no banco, como as filiais e 
 - `operationCode` inteiro > 0.
 - `operationsType` em `E`/`S`. Outro valor gera aviso, e o valor é gravado mesmo assim.
 - `documentType`, `documentModel`, `taxRuleCode`, `purposeNFE`, `presenceIndicator`, `danfeType` e `linkedOperationCode`
-  inteiros.
-- `operationMode` com 1 caractere (`1`…`9`, `A`…`H`).
-- Filhas: `values[].code` e `balances[].code` inteiros; `classifications[].typeCode` inteiro.
+  inteiros **ou nulos**. Em produção, `documentModel` e `purposeNFE` vêm nulos em 1 operação; `presenceIndicator`, `danfeType`
+  e `linkedOperationCode` vêm nulos na maioria.
+- `operationMode` com 1 caractere (`1`…`9`, `A`…`H`). Hoje vêm `1`–`5`, `7`, `D` e `F`.
+- `calculations.*` inteiros ou nulos.
+- Filhas: `values[].code` e `balances[].code` inteiros; `valueType` em `P`/`C`; `movementType` em `E`/`S`/`N`;
+  `classifications[].typeCode` inteiro.
 
 **Tabelas** (`untreated` e `totvs`). Os nomes das colunas da principal são os do banco atual, para a view do `dw` ser um
 `SELECT` direto:
 
 | Tabela | Chave | Colunas |
 |---|---|---|
-| `TotvsOperations` | `doc_company`, `operationCode` | `integrated_or_updated_at`, `description` nvarchar(300), `isFinancial`, `isInactive` bit, `maxChangeFilterDate` datetime, `invoiceDataOperationsType` nvarchar(20), `invoiceDataDocumentType`, `invoiceDataDocumentModel`, `invoiceDataTaxRuleCode` int, `invoiceDataOperationMode` nvarchar(60), `invoiceDataPurposeNFE`, `invoiceDataPresenceIndicator`, `invoiceDataDanfeType`, `invoiceDataLinkedOperationCode` int, `calculationsAccountingCostType`, `calculationsOrderBalanceType`, `calculationsNegativeBalanceType` nvarchar(60) |
-| `TotvsOperationsValues` | `doc_company`, `operationCode`, `valueType`, `code` | `description` nvarchar(300), `isDefault` bit |
-| `TotvsOperationsBalances` | `doc_company`, `operationCode`, `code` | `description`, `historicCode` int, `historicDescription`, `movementType` nvarchar(20), `isDefault`, `isKardex` bit |
-| `TotvsOperationsClassifications` | `doc_company`, `operationCode`, `typeCode`, `code` | `typeName`, `name` |
+| `TotvsOperations` | `doc_company`, `operationCode` | `integrated_or_updated_at`, `description` nvarchar(300), `isFinancial`, `isInactive` bit, `maxChangeFilterDate` datetime, `invoiceDataOperationsType` nvarchar(20), `invoiceDataDocumentType`, `invoiceDataDocumentModel`, `invoiceDataTaxRuleCode` int, `invoiceDataOperationMode` nvarchar(60), `invoiceDataPurposeNFE`, `invoiceDataPresenceIndicator`, `invoiceDataDanfeType`, `invoiceDataLinkedOperationCode` int (anuláveis), `calculationsAccountingCostType`, `calculationsOrderBalanceType`, `calculationsNegativeBalanceType` int (anuláveis; vêm como código) |
+| `TotvsOperationsValues` | `doc_company`, `operationCode`, `valueType`, `code` | `valueType` nvarchar(1), `description` nvarchar(100), `isDefault` bit |
+| `TotvsOperationsBalances` | `doc_company`, `operationCode`, `code` | `description` nvarchar(100), `historicCode` int, `historicDescription` nvarchar(100), `movementType` nvarchar(1), `isDefault`, `isKardex` bit |
+| `TotvsOperationsClassifications` | `doc_company`, `operationCode`, `typeCode`, `code` | `typeName`, `name` nvarchar(100) |
 
-O swagger não dá tamanho para os textos de operação. `nvarchar(300)` é o do banco atual. O resto fica para a primeira
-chamada real (tamanhos máximos observados com folga). As filhas são **substituídas inteiras** no sync de cada operação
-alterada, como as classificações de pessoa. Uma linha que sai da Totvs sai do banco junto com a substituição. **A confirmar:**
-se `balances[].code` é único por operação (pode repetir com `movementType` diferente; se repetir, `movementType` entra na
-chave).
+O swagger não dá tamanho para os textos. Os tamanhos saíram da produção com folga: `description` da operação até 69
+(`nvarchar(300)`, o do banco atual), descrições de valor e saldo até 17, `historicDescription` até 50. As filhas são
+**substituídas inteiras** no sync de cada operação alterada, como as classificações de pessoa. Uma linha que sai da Totvs sai
+do banco junto com a substituição. `balances[].code` é único por operação (104 saldos, nenhuma repetição), e `values` é único
+por `valueType` + `code`. `classifications` vem vazia nas 95 operações de produção: a tabela é criada mesmo assim (G2).
+
+**Operação removida na Totvs:** a 8000 ("SAIDA FISICO TRANSFERINDO PARA DEFEITO") está no banco antigo, mas não vem da API
+nem com `OperationCodeList=8000`. Nenhuma nota do banco antigo usa essa operação, então a tabela nova fica sem ela, e a
+validação do paralelo a exclui (seção 8).
 
 **Mudança em relação ao diff anterior (G2):** as filhas **entram agora**. Estavam vazias por falta de `Expand`, não por falta
 de dado. Isso segue a regra de ler os dados completos.
@@ -125,22 +134,21 @@ obrigatório do `POST transactions` (§7.4).
 
 | Item | Proposta |
 |---|---|
-| Parâmetros | `StartChangeDate`, `EndChangeDate`, `Page`, `PageSize` = **1000** (máximo). Sem `PaymentConditionCodeList` |
-| Janela | **Leitura inteira a cada execução** (`2000-01-01` até agora). O `PaymentConditionModel` **não traz `maxChangeFilterDate`**, como o centro de custo da Fiscal (§8.3 do PLANO) |
+| Parâmetros | `Page`, `PageSize` = **100**. O swagger diz que o máximo é 1000, mas a produção recusa: `"Value 1000 of the field pageSize greater than limit of 100."`. Sem datas e sem `PaymentConditionCodeList` |
+| Janela | **Leitura inteira a cada execução, sem datas.** A rota aceita a chamada sem `StartChangeDate`/`EndChangeDate`, e a resposta é idêntica à com datas desde 2000. O `PaymentConditionModel` **não traz `maxChangeFilterDate`**, como o centro de custo da Fiscal (§8.3 do PLANO). Hoje são **21 condições** em 1 página |
 | "Só regrava quando muda" | Hash SHA-256 do JSON de cada condição numa coluna `json_hash`, igual ao `GetCostCenter` |
 | Frequência | 120 min |
 | Chave | `doc_company`, `code` |
 | Rota do controller | `GET TotvsJobs/Totvs/PaymentConditions` |
 
-**Tabelas:** `TotvsPaymentConditions` (`code` int, `name`, `installment` int, `discountPercentage`, `interestPercentage`
-decimal(9,4), `isBlocked` bit, `json_hash`) e `TotvsPaymentConditionsInstallmentDays` (`doc_company`, `code`, `installmentNumber`
-(posição no array, começando em 1), `days` int). A filha é substituída inteira junto com a condição.
+**Tabelas:** `TotvsPaymentConditions` (`code` int, `name` nvarchar(100), `installment` int, `discountPercentage`,
+`interestPercentage` decimal(9,4), `isBlocked` bit, `json_hash`) e `TotvsPaymentConditionsInstallmentDays` (`doc_company`,
+`code`, `installmentNumber` (posição no array, começando em 1), `days` int). A filha é substituída inteira junto com a
+condição. Em produção, `name` tem até 28 caracteres, e `discountPercentage`, `interestPercentage` e `isBlocked` vêm nulos na
+maioria: as colunas são anuláveis e o dado é gravado como vem.
 
-**Validações:** `code` inteiro > 0. `installment` igual ao número de itens de `installmentDays` (aviso, sem bloquear). Os dias
-em ordem crescente (aviso).
-
-**A confirmar:** se a rota aceita ser chamada sem `StartChangeDate`/`EndChangeDate`. O swagger não marca os dois como
-obrigatórios. Se aceitar, não enviar.
+**Validações:** `code` inteiro > 0. `installment` igual ao número de itens de `installmentDays` (aviso, sem bloquear; nas 21 de
+hoje sempre bate). Os dias em ordem crescente (aviso).
 
 ### 4.3 `GetTransactionClassifications` — `GET general/v2/classifications` — job 13302
 
@@ -189,9 +197,20 @@ a que o antigo usa.
 | `TotvsTransactionsInstallments` | `installmentNumber` | `dueDate`, `installmentValue` |
 | `TotvsTransactionsDestinations` | `branchCodeDestination`, `transactionCodeDestination`, `transactionDateDestination` | — |
 
-**`itemSequence`:** o `TransactionItemsDataModel` **não tem número de item**. A proposta é usar a posição no array (1, 2, 3…).
-Isso só vale se a Totvs devolver os itens sempre na mesma ordem (**a confirmar**). Como as filhas são substituídas inteiras a
-cada mudança, uma troca de ordem não duplica nada, só renumera.
+**`itemSequence`:** o `TransactionItemsDataModel` **não tem número de item**, e o `productCode` não serve de chave: em 2 das 58
+transações de um dia da loja 1, o mesmo produto aparece em mais de um item. A chave é a posição no array (1, 2, 3…). Duas
+chamadas seguidas devolveram respostas idênticas byte a byte, então a ordem é estável. Como as filhas são substituídas
+inteiras a cada mudança, uma troca de ordem não duplicaria nada, só renumeraria.
+
+**O que veio em produção** (loja 1, alterações de 05/11/2026, 58 transações em 1 página):
+
+| Dado | Resultado |
+|---|---|
+| Volume | 58 transações e 653 itens no dia; até 154 itens numa transação. A loja 1049 não teve nada no dia |
+| Operações | 14 códigos, entre eles 14 e 510 (que o antigo lê) e 6, 42, 512, 2003, 2004 (que o antigo ignora) |
+| Códigos | `status` número (`4` atendida, `6` cancelada), `modality` `"1"`/`"2"`, `transactionType` `S`/`E`. `maxChangeFilterDate` sempre preenchido |
+| Expand | `installment` em 50, `relatedFiscalDocument` em 52 (datas `yyyy-MM-dd`), `originDestination` em todas (quase sempre vazio), `additionalInformation` em todas (campos nulos), `commissions` em 374 itens. `promotionalEngines` e `scannedBarcodes` vazios. `additionalItem.priceTable` nulo |
+| Classificações | **Nenhuma.** No banco antigo, `totvs.TransactionsClassifications` tem **1 linha** (loja 1, 28/10/2026): a classificação de frete é rara. A tabela nova cobre esse caso, mas o volume de teste vai ser pequeno |
 
 **Validações (`Validations/Reads/General/TransactionValidator.cs`):** `branchCode`, `transactionCode` inteiros > 0;
 `transactionDate` data válida; `operationCode` inteiro; `classifications[].typeCode` inteiro; valores numéricos. Aviso quando
@@ -267,7 +286,9 @@ mesmo sem caso de uso", F1/T14). As de risco alto (7.4, 7.7 e 7.8) criam venda o
 - `transactionDate` é `date` em `POST transactions`, `relationship-counts` e `transaction-receiving`, e `date-time` nas
   demais. Mandar `yyyy-MM-dd` nas três primeiras.
 - `GET payment-plans` não descreve `BranchCode` nem o marca como obrigatório.
-- `GET operations` declara 404. Nas outras listas, vazio vem 200 com `items: []`.
+- `GET operations` declara 404, mas a lista vazia vem 200 com `items: []`.
+- `GET payment-conditions` diz que o máximo de `PageSize` é 1000, mas a produção limita em 100.
+- Os enums são declarados com nomes, mas a resposta traz os códigos (seção 3).
 
 ## 8. Efeito no `dw` e validação no paralelo
 
@@ -275,12 +296,22 @@ mesmo sem caso de uso", F1/T14). As de risco alto (7.4, 7.7 e 7.8) criam venda o
 CREATE OR ALTER VIEW dw_src.Operations AS
 SELECT operationCode, CAST([description] AS varchar(300)) AS [description], isFinancial, isInactive, maxChangeFilterDate,
        CAST(invoiceDataOperationsType AS char(1)) AS invoiceDataOperationsType,
-       invoiceDataDocumentType, invoiceDataDocumentModel, invoiceDataTaxRuleCode,
+       ISNULL(invoiceDataDocumentType, 0) AS invoiceDataDocumentType,
+       ISNULL(invoiceDataDocumentModel, 0) AS invoiceDataDocumentModel,
+       ISNULL(invoiceDataTaxRuleCode, 0) AS invoiceDataTaxRuleCode,
        CAST(invoiceDataOperationMode AS varchar(60)) AS invoiceDataOperationMode,
-       invoiceDataPurposeNFE, invoiceDataPresenceIndicator, invoiceDataDanfeType, invoiceDataLinkedOperationCode,
-       calculationsAccountingCostType, calculationsOrderBalanceType, calculationsNegativeBalanceType
+       ISNULL(invoiceDataPurposeNFE, 0) AS invoiceDataPurposeNFE,
+       ISNULL(invoiceDataPresenceIndicator, 0) AS invoiceDataPresenceIndicator,
+       ISNULL(invoiceDataDanfeType, 0) AS invoiceDataDanfeType,
+       ISNULL(invoiceDataLinkedOperationCode, 0) AS invoiceDataLinkedOperationCode,
+       CAST(calculationsAccountingCostType AS nvarchar(60)) AS calculationsAccountingCostType,
+       CAST(calculationsOrderBalanceType AS nvarchar(60)) AS calculationsOrderBalanceType,
+       CAST(calculationsNegativeBalanceType AS nvarchar(60)) AS calculationsNegativeBalanceType
 FROM totvs.TotvsOperations;
 ```
+
+Os `ISNULL(..., 0)` reproduzem o antigo, que grava `0` quando a API manda nulo (no banco antigo, a operação com
+`documentModel` e `purposeNFE` nulos na API está com `0`). A tabela nova guarda o nulo, e só a view converte.
 
 Com mais de uma empresa, a view precisa de um `WHERE doc_company = '<cnpj>'` ou de `DISTINCT`, porque `totvs.Operations` não
 tem `doc_company`. Hoje só uma empresa usa a Totvs. **Confirmar antes de criar a view.**
@@ -292,6 +323,7 @@ Validações (devem voltar vazias):
 SELECT operationCode, description, isFinancial, invoiceDataOperationsType, invoiceDataDocumentModel,
        invoiceDataOperationMode, invoiceDataPurposeNFE
 FROM totvs.Operations
+WHERE operationCode <> 8000   -- removida na Totvs, sem notas (seção 4.1)
 EXCEPT
 SELECT operationCode, description, isFinancial, invoiceDataOperationsType, invoiceDataDocumentModel,
        invoiceDataOperationMode, invoiceDataPurposeNFE
@@ -312,19 +344,22 @@ A 2ª consulta pode mostrar diferença em `name` com mais de 250 caracteres (o a
 Os jobs antigos `TotvsOperations` e `TotvsTransactionsClassifications` continuam ligados até as duas validações ficarem vazias
 por alguns dias. Só depois o `dw` e o Frete Rápido passam a ler das views.
 
-## 9. A confirmar antes de implementar (só leitura em produção)
+## 9. Confirmações feitas (06/11/2026, produção, só leitura)
 
-1. Uma chamada a `GET operations` com `Expand` completo: o formato de `operationsType`, dos enums de `calculations` (texto ou
-   número), se `values`/`balances`/`classifications` vêm preenchidos, os tamanhos dos textos, se `balances[].code` repete e
-   se a resposta vazia é 404.
-2. No banco atual, se as colunas `calculations*` de `totvs.Operations` estão nulas (confirma que o `Expand` faltava).
-3. Uma chamada a `GET payment-conditions` sem datas, e outra com datas: se a rota aceita sem filtro e quantas condições existem.
-4. Uma chamada a `POST transactions/search` com uma loja e 1 dia de janela: a ordem dos itens em duas chamadas seguidas, se
-   `maxChangeFilterDate` vem preenchido e o volume por dia (dimensiona a carga inicial).
-5. Se o `general/v2` responde no host configurado no `TotvsService` (o swagger foi baixado de `www30.bhan.com.br:9443`).
+Script com lista fechada de rotas (`authorization/v2/token`, `GET operations`, `GET payment-conditions` e
+`POST transactions/search`), credenciais lidas do seed `Seeds/SQLServer/Script003` sem impressão, TLS ligado. O banco antigo
+foi lido em `sql-dev-webjobs` (NEWBLOOMERS), só com `SELECT`. `POST payment-plan-simulate` não foi chamado.
 
-`POST transactions/search` e `POST payment-plan-simulate` são consultas, mas usam `POST`. **Conferir com você** antes de
-chamar em produção.
+| # | Pergunta | Resposta |
+|---|---|---|
+| 1 | `GET operations` com `Expand` completo | 200. 95 operações em 1 página. `operationsType` só `S`/`E`. Enums como código. `values` (96) e `balances` (104) preenchidos, `classifications` vazia. Sem repetição de `balances[].code`. Textos curtos (até 69). Vazio = 200 com `items: []` (§4.1) |
+| 2 | `calculations*` nulas no banco antigo | Sim: 0 de 96 preenchidas. Sem `Expand`, a API devolve `calculations` nulo e as listas vazias |
+| 3 | `GET payment-conditions` com e sem datas | `PageSize` 1000 → 400 (limite real 100). Com 100: 200, 21 condições, mesma resposta com e sem datas (§4.2) |
+| 4 | `POST transactions/search`, 1 loja, 1 dia | 200. 58 transações e 653 itens (loja 1). Duas chamadas idênticas byte a byte. `maxChangeFilterDate` sempre preenchido. Nenhuma classificação (§5.1) |
+| 5 | Host do `general/v2` | O mesmo `Totvs:BaseUrl` de produção dos hosts, com o mesmo token |
+| — | Diferença com o banco antigo | O antigo tem 96 operações e a API 95: a 8000 foi removida na Totvs e nenhuma nota a usa (§4.1) |
+
+Respostas salvas no scratchpad da sessão, fora do repositório (têm dados de clientes).
 
 ## 10. Arquivos
 
@@ -355,7 +390,7 @@ chamar em produção.
 
 ## 11. Ordem de execução
 
-1. Chamadas de confirmação da seção 9 (só leitura).
+1. ~~Chamadas de confirmação da seção 9 (só leitura).~~ Feitas em 06/11/2026.
 2. §4.1 operações, com as filhas → view `dw_src.Operations` → validação no paralelo. **Desbloqueia o `dw`.**
 3. §4.3 classificações de transação e §5.1 transações → view `dw_src.TransactionsClassifications` → validação no paralelo.
    **Desbloqueia o Frete Rápido.**
