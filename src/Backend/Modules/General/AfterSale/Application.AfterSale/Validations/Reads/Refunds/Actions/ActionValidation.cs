@@ -10,9 +10,12 @@ namespace Application.AfterSale.Validations.Reads.Refunds.Actions
     {
         public ActionValidation()
         {
+            // o id é o código da ação ("refund", ...), texto
             RuleFor(x => x.id)
-                .MustBeValidInt32()
-                .When(x => !string.IsNullOrEmpty(x.id));
+                .NotEmpty()
+                .WithMessage("O campo 'id' é obrigatório.")
+                .MaximumLength(50)
+                .WithMessage("O campo 'id' deve ter no máximo 50 caracteres.");
 
             RuleFor(x => x.name)
                 .MaximumLength(50)

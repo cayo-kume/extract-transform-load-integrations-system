@@ -536,7 +536,7 @@ constraint [PK_AfterSaleStatusRefunds] primary key (
 if dbo.fn_Migrator_Creates(N'[untreated].AfterSaleActionsRefunds') = 1
 create table [untreated].AfterSaleActionsRefunds (
 	integrated_or_updated_at datetime,
-	id int,
+	id nvarchar(50),             --código da ação na Send4 ("refund", ...): texto
 	[doc_company] nvarchar(14),
 	[name] nvarchar(50),
 	[description] nvarchar(250)
@@ -545,7 +545,7 @@ create table [untreated].AfterSaleActionsRefunds (
 if dbo.fn_Migrator_Creates(N'[aftersale].AfterSaleActionsRefunds') = 1
 create table [aftersale].AfterSaleActionsRefunds (
 	integrated_or_updated_at datetime,
-	id int not null,
+	id nvarchar(50) not null,    --código da ação na Send4 ("refund", ...): texto
 	[doc_company] nvarchar(14) not null,
 	[name] nvarchar(50),
 	[description] nvarchar(250),

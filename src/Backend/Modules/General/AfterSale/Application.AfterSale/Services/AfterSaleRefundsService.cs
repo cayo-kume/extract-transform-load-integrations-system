@@ -277,7 +277,7 @@ namespace Application.AfterSale.Services
                     return list
                         .Where(x => x != null)
                         .GroupBy(x => x!.id)
-                        .ToDictionary(g => g.Key, g => g.First()!); // Dictionary<int, Entities...Refunds.Actions.Action>
+                        .ToDictionary(g => g.Key, g => g.First()!); // Dictionary<string, Entities...Refunds.Actions.Action>
                 });
 
                 var _listSomenteNovos = new List<Domain.AfterSale.Entities.Reads.Refunds.Actions.Action>();
@@ -315,10 +315,10 @@ namespace Application.AfterSale.Services
 
                     foreach (var record in _listSomenteNovos)
                     {
-                        var item = data?.FirstOrDefault(r => (int?)r["id"] == record.id);
+                        var item = data?.FirstOrDefault(r => (string?)r["id"] == record.id);
 
                         if (item != null)
-                            _logger.AddRecord(record.id.ToString(), item.ToString());
+                            _logger.AddRecord(record.id, item.ToString());
 
                         actionsRefundsCache[record.id] = record;
                     }
