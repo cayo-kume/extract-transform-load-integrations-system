@@ -227,7 +227,10 @@ no lugar, com os comentários. As mesmas chaves saem dos User Secrets dos quatro
 propósito: é a configuração de teste. No `appsettings.json` do WebApi, ele grava
 também o `Hangfire:Enabled` (ligado só com o WebApi como host de agenda) e, da seção **Dashboard do Hangfire (WebApi)**
 (ou `-HangfireUser` e `-HangfirePassword`), o usuário e a senha do dashboard; com o WebApi como host, a tela pede os
-dois. `-SkipAppSettings` (ou a caixa da tela desmarcada) não grava nada.
+dois. No WebApi, no WebJob e no Worker, grava ainda o `InitialLoad:MaxMonths`: o teto, em meses, da primeira execução de
+cada job com o banco vazio (campo **Carga inicial** ao lado da caixa dos appsettings, ou `-InitialLoadMonths`; 0 lê o
+histórico inteiro). Sem `-InitialLoadMonths`, o valor dos appsettings fica como está; a tela começa com o do WebApi.
+`-SkipAppSettings` (ou a caixa da tela desmarcada) não grava nada.
 
 ```powershell
 ./tools/migrators/Invoke-Migrators.ps1

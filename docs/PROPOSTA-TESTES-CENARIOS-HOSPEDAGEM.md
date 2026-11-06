@@ -45,6 +45,10 @@ configuração comum**, lida pelo Shared e respeitada por todos os pontos acima:
   a janela; nunca a alarga, e não mexe na leitura incremental (com dado no banco, nada muda).
 * Fica **desligado no `appsettings.json` do git**; nos testes entra por variável de ambiente
   (`InitialLoad__MaxMonths=3`) ou App Setting na Azure. Assim, o mesmo binário testado é o que vai para produção.
+  Atualização de 05/11/2026: o `appsettings.json` do WebApi, do WebJob e do Worker tem a seção `InitialLoad` (0 =
+  desligado), e o `tools/migrators/Invoke-Migrators.ps1` grava o valor nela (campo **Carga inicial** ou
+  `-InitialLoadMonths`; [MIGRATOR-CSX.md](MIGRATOR-CSX.md)). A variável de ambiente e o App Setting continuam valendo,
+  por cima do arquivo.
 * Os pontos que já estão dentro (Movidesk tickets, AfterSale) não precisam mudar.
 * Os recursos que **não têm filtro de data** na API (ex.: Totvs filiais, cadastros pequenos do Microvix como
   `LinxSetores`) continuam lendo tudo: são pequenos e não fazem diferença no volume.

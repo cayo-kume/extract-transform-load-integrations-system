@@ -32,6 +32,11 @@
     appsettings. A senha fica no arquivo e vai para o git, de propósito: é a configuração de teste. -SkipAppSettings (ou a
     caixa da tela desmarcada) não grava nada.
 
+    Carga inicial: no mesmo passo, o InitialLoad:MaxMonths do appsettings.json do WebApi, do WebJob e do Worker (o campo
+    "Carga inicial" da tela, ou -InitialLoadMonths). É o teto, em meses, da primeira execução de cada job com o banco vazio
+    (src/Backend/Shared/Application.Shared/Services/InitialLoad.cs); 0 lê o histórico inteiro. Depois da primeira carga,
+    cada job continua da última alteração gravada, com ou sem o teto.
+
     A senha não aparece no log: os migrators imprimem a connection string e o script troca a senha por ****. As senhas dos
     usuários do WebApp também são mascaradas.
 
@@ -79,6 +84,10 @@
 .PARAMETER HangfirePassword
     Com -NoGui, a senha do dashboard do Hangfire (Hangfire:Dashboard:Password), junto com -HangfireUser.
 
+.PARAMETER InitialLoadMonths
+    Com -NoGui, o teto da carga inicial em meses (InitialLoad:MaxMonths no appsettings.json do WebApi, do WebJob e do
+    Worker), de 0 a 240; 0 lê o histórico inteiro. Sem ele, o valor que está nos appsettings fica como está.
+
 .PARAMETER SkipAppSettings
     Não grava as connection strings nos appsettings.json do WebApp, do WebApi, do WebJob e do Worker (por exemplo, migrando
     um banco da Azure sem trocar o banco de teste da máquina).
@@ -97,6 +106,9 @@
 
 .EXAMPLE
     ./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -Apps Totvs,LinxMicrovix -Jobs 13007,8135 -SchedulingHost Worker
+
+.EXAMPLE
+    ./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -SchedulingHost Worker -InitialLoadMonths 6
 
 .EXAMPLE
     ./tools/migrators/Invoke-Migrators.ps1 -NoGui -Database EtlTeste -SchedulingHost Worker -MonitorPassword (Read-Host -AsSecureString) -QueryPassword (Read-Host -AsSecureString)
@@ -118,6 +130,8 @@ param(
     [securestring]$QueryPassword,
     [string]$HangfireUser,
     [securestring]$HangfirePassword,
+    [ValidateRange(0, 240)]
+    [Nullable[int]]$InitialLoadMonths,
     [switch]$SkipAppSettings,
     [switch]$NoGui
 )
@@ -280,7 +294,7 @@ $worker = {
 
     # o appsettings.json editado no texto do arquivo, para os comentários, a ordem, o BOM e as quebras de linha ficarem
     # como estão: a seção ConnectionStrings trocada inteira (sem ela, entra no começo do arquivo) e cada valor de Settings
-    # ("Hangfire:Dashboard:UserName") trocado no lugar
+    # ("Hangfire:Dashboard:UserName", "InitialLoad:MaxMonths") trocado no lugar
     function Update-AppSettings([string]$path, $connectionStrings, $settings) {
         $bytes = [IO.File]::ReadAllBytes($path)
         $bom = $bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF
@@ -306,7 +320,8 @@ $worker = {
     }
 
     # um valor simples (texto, número, true/false) pelo caminho com ":", achado em ordem no texto: cada nome é o primeiro
-    # depois do anterior, o que basta para o appsettings, em que cada caminho tem nomes únicos dentro da seção dele
+    # depois do anterior, o que basta para o appsettings, em que cada caminho tem nomes únicos dentro da seção dele. Número
+    # inteiro vai sem aspas
     function Set-JsonValue([string]$text, [string]$path, $value) {
         $position = 0
         foreach ($name in $path.Split(':')) {
@@ -318,7 +333,7 @@ $worker = {
         $literal = [regex]::new('"(?:[^"\\]|\\.)*"|true|false|null|-?\d+(?:\.\d+)?').Match($text, $position)
         if (-not $literal.Success -or $literal.Index -ne $position) { throw "$path não é um valor simples no appsettings.json." }
 
-        $json = $value -is [bool] ? ($value ? 'true' : 'false') : '"' + ([string]$value).Replace('\', '\\').Replace('"', '\"') + '"'
+        $json = $value -is [bool] ? ($value ? 'true' : 'false') : ($value -is [int] ? "$value" : '"' + ([string]$value).Replace('\', '\\').Replace('"', '\"') + '"')
         $text.Substring(0, $position) + $json + $text.Substring($literal.Index + $literal.Length)
     }
 
@@ -526,9 +541,9 @@ function Get-UserPasswordsText($userPasswords) {
 # cada projeto, de onde as mesmas chaves saem. WebApi, WebJob e Worker: o usuário da tela (auditing fica no mesmo banco).
 # WebApp: etl_monitor e etl_query com as senhas da seção Usuários de banco do WebApp; sem a senha, o usuário da tela.
 # WebApi, da seção Hangfire: Hangfire:Enabled ligado só com o WebApi como host de agenda e, com o usuário preenchido, o
-# usuário e a senha do dashboard
+# usuário e a senha do dashboard. WebApi, WebJob e Worker: InitialLoad:MaxMonths, quando informado (nulo fica como está)
 function New-AppSettingsTargets([string]$server, [int]$port, [string]$database, [string]$user, [string]$password, [bool]$trust, $userPasswords,
-    [string]$schedulingHostKey, [string]$hangfireUser, [string]$hangfirePassword) {
+    [string]$schedulingHostKey, [string]$hangfireUser, [string]$hangfirePassword, [Nullable[int]]$initialLoadMonths) {
     $root = Join-Path $PSScriptRoot '../..' | Resolve-Path | Select-Object -ExpandProperty Path
     $main = New-ConnectionString $server $port $database $user $password $trust
 
@@ -541,11 +556,15 @@ function New-AppSettingsTargets([string]$server, [int]$port, [string]$database, 
         $hangfire['Hangfire:Dashboard:Password'] = $hangfirePassword
     }
 
+    $initialLoad = [ordered]@{}
+    if ($null -ne $initialLoadMonths) { $initialLoad['InitialLoad:MaxMonths'] = [int]$initialLoadMonths }
+    foreach ($key in $initialLoad.Keys) { $hangfire[$key] = $initialLoad[$key] }
+
     $projects = [ordered]@{
         WebApp = @{ Folder = 'src/Frontend/WebApp'; Values = [ordered]@{ Connection = $monitor; QueryConnection = $query } }
         WebApi = @{ Folder = 'src/Backend/Hosts/WebApi'; Values = [ordered]@{ Connection = $main }; Settings = $hangfire }
-        WebJob = @{ Folder = 'src/Backend/Hosts/WebJob'; Values = [ordered]@{ Connection = $main } }
-        Worker = @{ Folder = 'src/Backend/Hosts/Worker'; Values = [ordered]@{ Connection = $main } }
+        WebJob = @{ Folder = 'src/Backend/Hosts/WebJob'; Values = [ordered]@{ Connection = $main }; Settings = $initialLoad }
+        Worker = @{ Folder = 'src/Backend/Hosts/Worker'; Values = [ordered]@{ Connection = $main }; Settings = $initialLoad }
     }
 
     foreach ($name in $projects.Keys) {
@@ -632,7 +651,7 @@ if ($NoGui) {
     Write-Host (Get-UserPasswordsText $userPasswords)
 
     $appSettings = $SkipAppSettings ? $null : @(New-AppSettingsTargets $Server $Port $Database $Credential.UserName $password $true $userPasswords `
-        $SchedulingHost $HangfireUser ($HangfirePassword ? [Net.NetworkCredential]::new('', $HangfirePassword).Password : ''))
+        $SchedulingHost $HangfireUser ($HangfirePassword ? [Net.NetworkCredential]::new('', $HangfirePassword).Password : '') $InitialLoadMonths)
     $secrets = @(Get-Secrets $password) + @($userPasswords.Values | ForEach-Object { Get-Secrets $_ }) +
         @(Get-Secrets ($HangfirePassword ? [Net.NetworkCredential]::new('', $HangfirePassword).Password : ''))
     $run = Start-Migration $selected $connectionString $secrets $schedulingHostInfo $userPasswords $appSettings
@@ -673,7 +692,9 @@ $font = [Drawing.Font]::new('Segoe UI', 9)
 $form = [Windows.Forms.Form]@{
     Text = 'Migrators: subir tabelas no SQL Server'
     ClientSize = [Drawing.Size]::new(860, 880)
-    MinimumSize = [Drawing.Size]::new(760, 852)
+    # largura mínima = a inicial: na linha de baixo, o campo da carga inicial fica entre a caixa dos appsettings e o botão
+    # Subir tabelas, que acompanha a borda direita
+    MinimumSize = [Drawing.Size]::new(876, 852)
     StartPosition = 'CenterScreen'
     Font = $font
 }
@@ -796,9 +817,28 @@ $hangfireGroup.Controls.AddRange(@($hangfireUserLabel, $hangfireUserBox, $hangfi
 
 # connection strings deste banco nos appsettings.json do WebApp, do WebApi, do WebJob e do Worker, no fim da migração
 $appSettingsBox = [Windows.Forms.CheckBox]@{
-    Text = 'Gravar as connection strings nos appsettings'; Checked = -not $SkipAppSettings
+    Text = 'Gravar nos appsettings'; Checked = -not $SkipAppSettings
     Location = [Drawing.Point]::new(262, 679); AutoSize = $true
 }
+
+# teto da carga inicial (InitialLoad:MaxMonths) no WebApi, no WebJob e no Worker, junto com os appsettings; começa com o
+# valor que está no do WebApi (sem ele, 0)
+$initialLoadLabel = [Windows.Forms.Label]@{ Text = 'Carga inicial'; Location = [Drawing.Point]::new(424, 680); AutoSize = $true }
+$initialLoadBox = [Windows.Forms.NumericUpDown]@{ Minimum = 0; Maximum = 240; Location = [Drawing.Point]::new(500, 677); Width = 52 }
+$initialLoadUnit = [Windows.Forms.Label]@{ Text = 'meses'; Location = [Drawing.Point]::new(556, 680); AutoSize = $true }
+
+$webApiSettings = Join-Path $backend 'Hosts/WebApi/appsettings.json'
+$currentMonths = (Test-Path -LiteralPath $webApiSettings) ? [regex]::Match((Get-Content -LiteralPath $webApiSettings -Raw), '"MaxMonths"\s*:\s*(\d+)') : $null
+$initialLoadBox.Value = [Math]::Min(240, $InitialLoadMonths ?? ($currentMonths -and $currentMonths.Success ? [int]$currentMonths.Groups[1].Value : 0))
+
+$appSettingsTips = [Windows.Forms.ToolTip]::new()
+$appSettingsTips.SetToolTip($appSettingsBox, 'Connection strings no WebApp, no WebApi, no WebJob e no Worker; Hangfire no WebApi; carga inicial nos três hosts')
+foreach ($control in $initialLoadLabel, $initialLoadBox, $initialLoadUnit) {
+    $appSettingsTips.SetToolTip($control, 'Teto da primeira execução de cada job com o banco vazio (InitialLoad:MaxMonths); 0 = histórico completo. Depois, cada job continua da última alteração gravada.')
+}
+
+$appSettingsBox.Add_CheckedChanged({ foreach ($control in $initialLoadLabel, $initialLoadBox, $initialLoadUnit) { $control.Enabled = $appSettingsBox.Checked } })
+foreach ($control in $initialLoadLabel, $initialLoadBox, $initialLoadUnit) { $control.Enabled = $appSettingsBox.Checked }
 
 # catálogo
 
@@ -981,7 +1021,7 @@ $status = [Windows.Forms.Label]@{
     Text = 'Pronto.'; Location = [Drawing.Point]::new(12, 854); AutoSize = $true; Anchor = 'Bottom, Left'
 }
 
-$form.Controls.AddRange(@($connection, $hostGroup, $usersGroup, $hangfireGroup, $appSettingsBox, $catalogLabel, $list, $checkAllButton, $checkNoneButton, $runButton, $cancelButton, $log, $status))
+$form.Controls.AddRange(@($connection, $hostGroup, $usersGroup, $hangfireGroup, $appSettingsBox, $initialLoadLabel, $initialLoadBox, $initialLoadUnit, $catalogLabel, $list, $checkAllButton, $checkNoneButton, $runButton, $cancelButton, $log, $status))
 
 $logColors = @{
     out = [Drawing.Color]::Gainsboro; step = [Drawing.Color]::DeepSkyBlue; ok = [Drawing.Color]::LightGreen
@@ -1016,6 +1056,7 @@ function Get-Fields {
 
 function Set-Running([bool]$running) {
     foreach ($control in $connection, $hostGroup, $usersGroup, $hangfireGroup, $appSettingsBox, $list, $checkAllButton, $checkNoneButton, $runButton) { $control.Enabled = -not $running }
+    foreach ($control in $initialLoadLabel, $initialLoadBox, $initialLoadUnit) { $control.Enabled = -not $running -and $appSettingsBox.Checked }
     $cancelButton.Enabled = $running
 }
 
@@ -1152,7 +1193,7 @@ $runButton.Add_Click({
     $answer = [Windows.Forms.MessageBox]::Show(
         ("Subir as tabelas no banco $($fields.Database) de $($fields.Server),$($fields.Port)?`n`n$names`n`n" +
             "Host de agenda: $($schedulingHost.Title)`n`n$usersText`n`n" +
-            ($appSettingsBox.Checked ? "As connection strings deste banco (e, no WebApi, a seção Hangfire) vão para os appsettings.json do WebApp, do WebApi, do WebJob e do Worker (e saem dos User Secrets deles).`n`n" : '') +
+            ($appSettingsBox.Checked ? "As connection strings deste banco (e, no WebApi, a seção Hangfire) vão para os appsettings.json do WebApp, do WebApi, do WebJob e do Worker (e saem dos User Secrets deles). Carga inicial (InitialLoad:MaxMonths) no WebApi, no WebJob e no Worker: $($initialLoadBox.Value -eq 0 ? 'histórico completo' : "$($initialLoadBox.Value) meses").`n`n" : '') +
             "O banco é criado se não existir."),
         $form.Text, 'YesNo', 'Question')
 
@@ -1176,7 +1217,7 @@ $runButton.Add_Click({
     Set-Running $true
 
     $appSettings = $appSettingsBox.Checked ? @(New-AppSettingsTargets $fields.Server $fields.Port $fields.Database $fields.User $fields.Password $fields.Trust $userPasswords `
-        $hostRadio.Tag $hangfireUserBox.Text.Trim() $hangfirePasswordBox.Text) : $null
+        $hostRadio.Tag $hangfireUserBox.Text.Trim() $hangfirePasswordBox.Text ([int]$initialLoadBox.Value)) : $null
     $secrets = @(Get-Secrets $fields.Password) + @($userPasswords.Values | ForEach-Object { Get-Secrets $_ }) + @(Get-Secrets $hangfirePasswordBox.Text)
     $script:runFields = $fields
     $script:run = Start-Migration $selected $connectionString $secrets $schedulingHost $userPasswords $appSettings
