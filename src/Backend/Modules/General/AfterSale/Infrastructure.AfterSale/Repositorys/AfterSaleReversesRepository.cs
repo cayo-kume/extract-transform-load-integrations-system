@@ -32,6 +32,13 @@ namespace Infrastructure.AfterSale.Repositorys
             return await _coreRepository.GetRecords<Domain.AfterSale.Entities.Reads.Reverses.SearchReverses.Reverse>(sql);
         }
 
+        public async Task<DateTime?> GetSummarizedReversesLastUpdate(string doc_company)
+        {
+            string sql = _afterSaleReversesCommandHandler.CreateGetSummarizedReversesLastUpdateQuery(doc_company);
+
+            return await _coreRepository.GetRecord<DateTime?>(sql);
+        }
+
         public async Task<List<Domain.AfterSale.Entities.Reads.Reverses.SearchReverses.Reverse?>> GetSummarizedReversesByIds(string doc_company, List<string> reversesIds)
         {
             var list = new List<Domain.AfterSale.Entities.Reads.Reverses.SearchReverses.Reverse?>();

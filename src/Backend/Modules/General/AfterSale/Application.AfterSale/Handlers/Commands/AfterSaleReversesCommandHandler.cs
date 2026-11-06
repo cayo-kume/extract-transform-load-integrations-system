@@ -45,6 +45,11 @@ namespace Application.AfterSale.Handlers.Commands
                         B.REVERSE_ID IS NULL";
         }
 
+        public string CreateGetSummarizedReversesLastUpdateQuery(string doc_company)
+        {
+            return $"SELECT MAX(UPDATED_AT) FROM [AFTERSALE].[AFTERSALESUMMARIZEDREVERSES] (NOLOCK) WHERE DOC_COMPANY = '{doc_company}'";
+        }
+
         public string CreateGetSummarizedReversesByIdsQuery(string doc_company, List<string> reversesIds)
         {
             string identificadores = String.Empty;

@@ -10,6 +10,7 @@ namespace Domain.AfterSale.Abstractions.Repositorys
 
         public Task<IEnumerable<Domain.AfterSale.Entities.Reads.Reverses.SearchReverses.Reverse?>> GetSummarizedReversesIdsForGetReverse();
         public Task<List<Entities.Reads.Reverses.SearchReverses.Reverse?>> GetSummarizedReversesByIds(string doc_company, List<string> reversesIds);
+        public Task<DateTime?> GetSummarizedReversesLastUpdate(string doc_company);
         public Task<bool> BulkInsertIntoAfterSaleSummarizedReverses(List<Entities.Reads.Reverses.SearchReverses.Reverse> data, Guid? parentExecutionGUID);
 
         public Task<List<Entities.Reads.Reverses.GetReverse.Reverse?>> GetReversesByIds(string doc_company, List<string> reversesIds);

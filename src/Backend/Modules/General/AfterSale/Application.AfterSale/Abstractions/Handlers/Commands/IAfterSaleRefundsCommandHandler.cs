@@ -3,6 +3,7 @@
     public interface IAfterSaleRefundsCommandHandler
     {
         string CreateGetSummarizedRefundsByIdsQuery(string doc_company, List<string> refundsIds);
+        string CreateGetSummarizedRefundsLastUpdateQuery(string doc_company);
         string CreateGetSummarizedRefundsIdsForGetRefundQuery();
         string CreateGetRefundsByIdsQuery(string doc_company, List<string> refundsIds);
         string CreateGetStatusRefundsQuery(string doc_company);

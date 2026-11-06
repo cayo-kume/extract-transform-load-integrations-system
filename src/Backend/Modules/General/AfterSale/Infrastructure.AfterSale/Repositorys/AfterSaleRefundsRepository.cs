@@ -179,6 +179,13 @@ namespace Infrastructure.AfterSale.Repositorys
             return true;
         }
 
+        public async Task<DateTime?> GetSummarizedRefundsLastUpdate(string doc_company)
+        {
+            string sql = _afterSaleRefundsCommandHandler.CreateGetSummarizedRefundsLastUpdateQuery(doc_company);
+
+            return await _coreRepository.GetRecord<DateTime?>(sql);
+        }
+
         public async Task<List<Domain.AfterSale.Entities.Reads.Refunds.SearchRefunds.Refund?>> GetSummarizedRefundsByIds(string doc_company, List<string> refundsIds)
         {
             var list = new List<Domain.AfterSale.Entities.Reads.Refunds.SearchRefunds.Refund?>();

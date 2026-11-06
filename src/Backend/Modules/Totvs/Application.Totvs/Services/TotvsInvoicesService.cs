@@ -654,12 +654,13 @@ namespace Application.Totvs.Services
 
                     var batchTime = _totvsService.GetBatchTime();
 
-                    // a rota exige StartChangeDate/EndChangeDate, mas a resposta não traz maxChangeFilterDate: a leitura é inteira (desde 2000)
+                    // a rota exige StartChangeDate/EndChangeDate, mas a resposta não traz maxChangeFilterDate: a leitura é inteira (desde 2000,
+                    // limitada por InitialLoad:MaxMonths)
                     // e o hash do JSON de cada centro, comparado com o json_hash gravado, diz o que mudou (F5, T9). IsInactive não é enviado:
                     // sem ele vêm os ativos e os inativos (testado)
                     var items = await GetFiscalPages<Domain.Totvs.Dtos.Reads.Invoices.CostCenter>(company, "fiscal/v2/cost-center", page => new Dictionary<string, string>
                     {
-                        { "StartChangeDate", "2000-01-01T00:00:00" },
+                        { "StartChangeDate", $"{_totvsService.GetInitialLoad(new DateTime(2000, 1, 1)):yyyy-MM-ddTHH:mm:ss}" },
                         { "EndChangeDate", $"{batchTime:yyyy-MM-ddTHH:mm:ss}" },
                         { "Page", page.ToString() },
                         { "PageSize", FiscalCatalogsPageSize.ToString() }

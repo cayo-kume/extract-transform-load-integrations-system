@@ -1,4 +1,5 @@
 ﻿using Application.AfterSale.Abstractions.Services;
+using Application.Shared.Abstractions.Services;
 using Domain.AfterSale.Abstractions.Repositorys;
 using Domain.AfterSale.Enums;
 using System;
@@ -13,9 +14,16 @@ namespace Application.AfterSale.Services
     public class AfterSaleService : IAfterSaleService
     {
         private readonly IAfterSaleRepository _afterSaleRepository;
+        private readonly IInitialLoad _initialLoad;
 
-        public AfterSaleService(IAfterSaleRepository afterSaleRepository) =>
-            _afterSaleRepository = afterSaleRepository;
+        // banco vazio: desde 01/01/2025 (como as notas e os pedidos da Totvs e da LinxCommerce), com o teto da carga inicial
+        private static readonly DateTime InitialLoad = new(2025, 1, 1);
+
+        public AfterSaleService(IAfterSaleRepository afterSaleRepository, IInitialLoad initialLoad) =>
+            (_afterSaleRepository, _initialLoad) = (afterSaleRepository, initialLoad);
+
+        public DateTime GetSearchStartDate(DateTime? lastUpdate) =>
+            lastUpdate.HasValue ? DateTime.Now.AddMonths(-1) : _initialLoad.Since(InitialLoad, DateTime.Now);
 
         /// <summary>
         /// logs a call made on demand to the AfterSale API (POST/PUT actions and GET by id) in aftersale.AfterSaleRequests

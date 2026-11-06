@@ -6,6 +6,7 @@
         string CreateGetCourierAttributesByReverseIdQuery(string doc_company, List<Int64> reversesIds);
 
         string CreateGetSummarizedReversesByIdsQuery(string doc_company, List<string> reversesIds);
+        string CreateGetSummarizedReversesLastUpdateQuery(string doc_company);
 
         string CreateGetSummarizedReversesIdsForGetReverseQuery();
         string CreateGetSummarizedReversesIdsForGetCourierAttributesQuery();

@@ -4,6 +4,11 @@ namespace Application.AfterSale.Handlers.Commands
 {
     public class AfterSaleRefundsCommandHandler : IAfterSaleRefundsCommandHandler
     {
+        public string CreateGetSummarizedRefundsLastUpdateQuery(string doc_company)
+        {
+            return $"SELECT MAX(UPDATED_AT) FROM [AFTERSALE].[AFTERSALESUMMARIZEDREFUNDS] (NOLOCK) WHERE DOC_COMPANY = '{doc_company}'";
+        }
+
         public string CreateGetSummarizedRefundsByIdsQuery(string doc_company, List<string> refundsIds)
         {
             string identificadores = String.Empty;

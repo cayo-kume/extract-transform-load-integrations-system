@@ -23,6 +23,7 @@ namespace Domain.AfterSale.Abstractions.Repositorys
         public Task<bool> BulkInsertIntoAfterSaleRefunds(List<Entities.Reads.Refunds.GetRefund.Refund> data, Guid? parentExecutionGUID);
 
         public Task<List<Entities.Reads.Refunds.SearchRefunds.Refund?>> GetSummarizedRefundsByIds(string doc_company, List<string> refundsIds);
+        public Task<DateTime?> GetSummarizedRefundsLastUpdate(string doc_company);
         public Task<bool> BulkInsertIntoAfterSaleSummarizedRefunds(List<Entities.Reads.Refunds.SearchRefunds.Refund> data, Guid? parentExecutionGUID);
         public Task<bool> BulkInsertIntoAfterSaleErrors(List<Entities.Errors.Error> data, Guid? parentExecutionGUID);
     }

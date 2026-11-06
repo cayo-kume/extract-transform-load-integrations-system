@@ -14,5 +14,12 @@ namespace Application.AfterSale.Abstractions.Services
         /// logs a call made on demand to the AfterSale API (POST/PUT actions and GET by id) in aftersale.AfterSaleRequests
         /// </summary>
         public bool SaveRequest(Guid? execution, EnumJob job, string user_name, string httpMethod, string route, string doc_company, long id, string? requestBody, string? responseBody, bool isSuccess);
+
+        /// <summary>
+        /// start_date das buscas de reversas e reembolsos: sem nada gravado da empresa (lastUpdate nulo), a carga inicial desde
+        /// 01/01/2025, limitada por InitialLoad:MaxMonths (IInitialLoad); depois, o último mês, relido para pegar as mudanças de
+        /// status
+        /// </summary>
+        public DateTime GetSearchStartDate(DateTime? lastUpdate);
     }
 }

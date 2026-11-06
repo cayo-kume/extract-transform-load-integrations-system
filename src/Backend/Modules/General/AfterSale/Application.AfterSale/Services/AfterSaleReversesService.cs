@@ -103,13 +103,14 @@ namespace Application.AfterSale.Services
                 var summarizedReverses = new List<Domain.AfterSale.Dtos.Reads.Reverses.SearchReverses.Reverse>();
                 var listResponses = new List<string>();
 
+                // banco vazio: carga inicial (InitialLoad:MaxMonths); depois, o último mês
+                var startDate = _afterSaleService.GetSearchStartDate(await _afterSaleReversesRepository.GetSummarizedReversesLastUpdate(company.doc_company));
+                JobProgress.Window(startDate, DateTime.Now, startDate, DateTime.Now);
+
                 var parameters = new Dictionary<string, string>
                 {
-                    //{ "start_date", $"{DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd")}" },
-                    //{ "end_date", $"{DateTime.Now.ToString("yyyy-MM-dd")}" }
-
-                    { "start_date", $"{DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd")}" },
-                    { "end_date", $"{DateTime.Now.ToString("yyyy-MM-dd")}" }
+                    { "start_date", $"{startDate:yyyy-MM-dd}" },
+                    { "end_date", $"{DateTime.Now:yyyy-MM-dd}" }
                 };
 
                 var encodedParameters = await new FormUrlEncodedContent(parameters).ReadAsStringAsync();
