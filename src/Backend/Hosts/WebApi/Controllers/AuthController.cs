@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Identity.Client;
 using System.Text;
+using WebApi.Extensions;
 
 namespace WebApi.Controllers
 {
@@ -9,6 +10,8 @@ namespace WebApi.Controllers
     [ApiExplorerSettings(IgnoreApi = true)]
 #endif
     [Route("Api/[controller]")]
+    // o token não roda job: sem X-Company
+    [AllowWithoutCompany]
     public class AuthController : Controller
     {
         private readonly IConfiguration _configuration;

@@ -2,16 +2,21 @@
 
 # Exemplos de rotas do host, uma leitura recorrente e uma sob demanda por módulo. Só leituras: as rotas de escrita
 # ficam no Swagger (/swagger). Cada chamada roda a integração de verdade contra a API e o banco configurados.
-# As rotas sob demanda pedem o CNPJ da empresa (14 dígitos, cadastrado nos parâmetros do módulo) e o cabeçalho
-# X-User-Name, gravado no log de requisições do módulo.
+# As leituras recorrentes pedem o cabeçalho X-Company (CNPJ da empresa em auditing.Companies; no DataWarehouse, o da
+# holding); sem ele, 400. As rotas sob demanda pedem o CNPJ da empresa na rota (14 dígitos, cadastrado nos parâmetros do
+# módulo) e o cabeçalho X-User-Name, gravado no log de requisições do módulo.
+@company = 00000000000000
+@holder = 00000000000000
 @docCompany = 00000000000000
 @userName = seu.usuario
 
 ### Totvs: empresas da holding (GET person/v2/branchesList)
 GET {{WebApi_HostAddress}}/TotvsJobs/Totvs/Branches
+X-Company: {{company}}
 
 ### Movidesk: tickets alterados desde a última leitura
 GET {{WebApi_HostAddress}}/MovideskJobs/Movidesk/Tickets
+X-Company: {{company}}
 
 ### Movidesk: um ticket pelo número
 GET {{WebApi_HostAddress}}/MovideskJobs/Movidesk/Tickets/{{docCompany}}/1
@@ -19,6 +24,7 @@ X-User-Name: {{userName}}
 
 ### AfterSale: reversas
 GET {{WebApi_HostAddress}}/AfterSaleJobs/AfterSale/Reverses
+X-Company: {{company}}
 
 ### AfterSale: uma reversa pelo id
 GET {{WebApi_HostAddress}}/AfterSaleJobs/AfterSale/Reverses/{{docCompany}}/1
@@ -26,6 +32,7 @@ X-User-Name: {{userName}}
 
 ### Linx Commerce: pedidos alterados desde a última leitura
 POST {{WebApi_HostAddress}}/LinxCommerceJobs/LinxCommerce/SearchOrders
+X-Company: {{company}}
 
 ### Linx Commerce: um pedido pelo número
 GET {{WebApi_HostAddress}}/LinxCommerceJobs/LinxCommerce/Orders/{{docCompany}}/Number/1
@@ -33,6 +40,8 @@ X-User-Name: {{userName}}
 
 ### Linx Microvix: lojas do grupo (roda antes dos outros métodos do Microvix)
 POST {{WebApi_HostAddress}}/LinxMicrovixJobs/LinxMicrovix/LinxGrupoLojas
+X-Company: {{company}}
 
 ### Data warehouse: carga horária (200 concluída, 500 falha ou checagem bloqueante, 409 outra carga em andamento)
 POST {{WebApi_HostAddress}}/DataWarehouseJobs/DataWarehouse/RunHourly
+X-Company: {{holder}}

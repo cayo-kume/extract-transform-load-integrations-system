@@ -150,7 +150,9 @@ WebApi/
 ├── Controllers/          rotas por módulo (DataWarehouse, General, LinxCommerce, LinxMicrovix, Shippment, Totvs)
 ├── Extensions/
 │   ├── BuilderExtensions.cs    controllers, Swagger, CORS e o filtro global de empresa
-│   ├── CompanyContextFilter.cs empresa da execução nas rotas ({docCompany} ou X-Company, em auditing.Companies)
+│   ├── CompanyContextFilter.cs empresa da execução nas rotas ({docCompany} ou X-Company, em auditing.Companies); sem ela, 400
+│   ├── CompanyHeaderOperationFilter.cs   o X-Company obrigatório no Swagger nas rotas sem {docCompany}
+│   ├── AllowWithoutCompanyAttribute.cs   rota sem job e sem empresa (o token)
 │   ├── ServicesExtensions.cs   registro dos módulos e, com Hangfire:Enabled, do Hangfire (AddHangfireService)
 │   └── AppUseExtensions.cs     pipeline e, com Hangfire:Enabled, dashboard e jobs de manutenção (UseHangfire)
 ├── Scheduling/
@@ -226,9 +228,10 @@ dotnet user-secrets set "Totvs:BaseUrl" "http://127.0.0.1:9/" --project src/Back
 
 ## 🛣️ Rotas por módulo
 
-Todas as rotas aparecem no Swagger (em `RELEASE`, os controllers ficam fora dele). As leituras recorrentes não têm
-parâmetro; as sob demanda e as escritas pedem o CNPJ da empresa (`{docCompany}`, 14 dígitos) e o cabeçalho
-**`X-User-Name`**, gravado no log de requisições do módulo.
+Todas as rotas aparecem no Swagger (em `RELEASE`, os controllers ficam fora dele). As leituras recorrentes (as cargas)
+pedem o cabeçalho **`X-Company`**, o CNPJ da empresa, que o Swagger mostra como campo obrigatório; as sob demanda e as
+escritas pedem o CNPJ na rota (`{docCompany}`, 14 dígitos) e o cabeçalho **`X-User-Name`**, gravado no log de requisições
+do módulo. `Swagger:DefaultCompany`, no `appsettings.json`, já preenche o campo `X-Company` com um CNPJ.
 
 | Módulo | Prefixo | Rotas | Detalhes |
 |---|---|:---:|---|
@@ -264,7 +267,12 @@ Toda execução grava a holding e a empresa em `auditing.Logs`, `Messages` e `Re
 * o **`{docCompany}`** da rota; ou
 * sem ele, o cabeçalho **`X-Company`** (CNPJ da empresa, só dígitos; não é o da holding);
 * com os dois, precisam ser a mesma empresa;
-* a empresa precisa estar em `auditing.Companies`, e a holding sai dela (`ICompanyRepository`).
+* a empresa precisa estar em `auditing.Companies`, e a holding sai dela (`ICompanyRepository`);
+* sem nenhum dos dois, **400** antes da action (o job não teria empresa para o log), salvo as rotas com
+  `[AllowWithoutCompany]`, que não rodam job (o token).
+
+No Swagger, o **`CompanyHeaderOperationFilter`** põe o `X-Company` como campo obrigatório em toda rota sem `{docCompany}`.
+No DataWarehouse e nos Hosts, o CNPJ é o da própria holding, onde esses jobs estão cadastrados.
 
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
@@ -272,24 +280,26 @@ flowchart LR
     REQ["Requisição"] --> H{"X-Company<br/>só dígitos?"}
     H -- não --> E1["400<br/>X-Company inválido"]
     H -- "sim ou ausente" --> D{"rota tem<br/>docCompany?"}
-    D -- não --> C1["empresa = X-Company<br/>(ou nenhuma)"]
+    D -- não --> NO{"tem<br/>X-Company?"}
+    NO -- não --> E4["400<br/>informe o X-Company"]
+    NO -- sim --> C1["empresa = X-Company"]
     D -- sim --> EQ{"X-Company igual<br/>ao docCompany?"}
     EQ -- diferente --> E3["400<br/>X-Company diferente da rota"]
     EQ -- "igual ou ausente" --> C2["empresa = docCompany"]
     C1 --> HC{"empresa em<br/>auditing.Companies?"}
     C2 --> HC
     HC -- não --> E2["400<br/>CNPJ não cadastrado"]
-    HC -- "sim (ou sem empresa)" --> RUN["▶️ action<br/>ICompanyContext"]
+    HC -- sim --> RUN["▶️ action<br/>ICompanyContext"]
 
     classDef accent fill:#7c5cff,stroke:#7c5cff,color:#ffffff
     classDef err fill:#dc2626,stroke:#dc2626,color:#ffffff
     class RUN accent
-    class E1,E2,E3 err
+    class E1,E2,E3,E4 err
 ```
 
 > [!NOTE]
-> Sem `X-Company` e sem `{docCompany}` (as leituras recorrentes), a rota segue sem empresa e o `LoggerService` recusa abrir
-> o log. Para disparar uma leitura recorrente pela rota, mande o `X-Company`.
+> Para disparar uma leitura recorrente pela rota, mande o `X-Company` (no Swagger, o campo da rota). Sem ele e sem
+> `{docCompany}`, a resposta é 400 "Informe o cabeçalho X-Company".
 
 ```http
 POST http://localhost:5252/MovideskJobs/Movidesk/Tickets

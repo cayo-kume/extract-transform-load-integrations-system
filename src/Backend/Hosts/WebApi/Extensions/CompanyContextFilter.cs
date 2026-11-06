@@ -8,8 +8,8 @@ namespace WebApi.Extensions
     /// <summary>
     /// empresa da execução numa rota (docs/PROPOSTA-SCHEMA-AUDITING-HOLDERS-CATALOG.md), informada ao ICompanyContext da
     /// requisição antes da action: o {docCompany} da rota ou, sem ele, o cabeçalho X-Company (CNPJ da empresa, auditing.Companies).
-    /// Com os dois, precisam ser a mesma empresa. A holding sai da empresa em auditing.Companies. Sem nenhum, a rota segue sem
-    /// empresa e o LoggerService recusa abrir o log
+    /// Com os dois, precisam ser a mesma empresa. A holding sai da empresa em auditing.Companies. Sem nenhum, 400 (o job não
+    /// teria empresa para o log), salvo as rotas com [AllowWithoutCompany]
     /// </summary>
     public class CompanyContextFilter : IAsyncActionFilter
     {
@@ -56,6 +56,12 @@ namespace WebApi.Extensions
                 }
 
                 _companyContext.SetCompany(holder, company);
+            }
+            // sem empresa, o job recusaria abrir o log (500 no meio da execução): 400 antes, salvo as rotas que não rodam job
+            else if (!context.ActionDescriptor.EndpointMetadata.OfType<AllowWithoutCompanyAttribute>().Any())
+            {
+                context.Result = new BadRequestObjectResult($"Informe o cabeçalho {CompanyHeader} (CNPJ da empresa, só dígitos) ou use a rota com {{docCompany}}.");
+                return;
             }
 
             await next();
