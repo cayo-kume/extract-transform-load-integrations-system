@@ -46,7 +46,7 @@ namespace Domain.AfterSale.Entities.Reads.Reverses.GetReverse
 
             this.reverse_id = reverse_id;
             id = reverse_id; // a API não devolve id para este bloco; 1:1 com a reversa
-            address_id = ConverterValidatorsExtensions.ConvertToInt64Validation(destinationDataDto.address.id);
+            address_id = ConverterValidatorsExtensions.ConvertToInt64Validation(destinationDataDto.address?.id);
 
             type_id = ConverterValidatorsExtensions.ConvertToInt32Validation(destinationDataDto.type_id);
 
@@ -54,8 +54,8 @@ namespace Domain.AfterSale.Entities.Reads.Reverses.GetReverse
             was_manually_changed = ConverterValidatorsExtensions.ConvertToBooleanValidation(destinationDataDto.was_manually_changed);
 
             integrated_or_updated_at = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time"));
-            address_deleted_at = NullableConverters.ToNullableDateTime(destinationDataDto.address.deleted_at);
-            address_updated_at = NullableConverters.ToNullableDateTime(destinationDataDto.address.updated_at);
+            address_deleted_at = NullableConverters.ToNullableDateTime(destinationDataDto.address?.deleted_at);
+            address_updated_at = NullableConverters.ToNullableDateTime(destinationDataDto.address?.updated_at);
 
             name = destinationDataDto.name?.Length > 250 ? destinationDataDto.name?.Substring(0, 250) : destinationDataDto.name;
             type = destinationDataDto.type?.Length > 50 ? destinationDataDto.type?.Substring(0, 50) : destinationDataDto.type;

@@ -44,8 +44,8 @@ namespace Domain.AfterSale.Entities.Reads.Reverses.GetReverse
             is_omnichannel = ConverterValidatorsExtensions.ConvertToBooleanValidation(reverseDestinationDto.is_omnichannel);
 
             integrated_or_updated_at = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time"));
-            address_updated_at = NullableConverters.ToNullableDateTime(reverseDestinationDto.address.updated_at);
-            address_deleted_at = NullableConverters.ToNullableDateTime(reverseDestinationDto.address.deleted_at);
+            address_updated_at = NullableConverters.ToNullableDateTime(reverseDestinationDto.address?.updated_at);
+            address_deleted_at = NullableConverters.ToNullableDateTime(reverseDestinationDto.address?.deleted_at);
 
             ie_number = reverseDestinationDto.ie_number?.Length > 50 ? reverseDestinationDto.ie_number?.Substring(0, 50) : reverseDestinationDto.ie_number;
             cnpj = reverseDestinationDto.cnpj?.Length > 14 ? reverseDestinationDto.cnpj?.Substring(0, 14) : reverseDestinationDto.cnpj;

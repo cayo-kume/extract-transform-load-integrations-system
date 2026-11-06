@@ -110,7 +110,7 @@ namespace Domain.AfterSale.Entities.Reads.Reverses.GetReverse
             id = ConverterValidatorsExtensions.ConvertToInt64Validation(reverseDto.id);
             ecommerce_order_id = ConverterValidatorsExtensions.ConvertToInt64Validation(reverseDto.ecommerce_order_id);
             billing_item_id = ConverterValidatorsExtensions.ConvertToInt64Validation(reverseDto.billing_item_id);
-            ecommerce_address_id = ConverterValidatorsExtensions.ConvertToInt64Validation(reverseDto.ecommerce.address_id);
+            ecommerce_address_id = ConverterValidatorsExtensions.ConvertToInt64Validation(reverseDto.ecommerce?.address_id);
 
             service_type_change = ConverterValidatorsExtensions.ConvertToInt32Validation(reverseDto.service_type_change);
             courier_contract_id = ConverterValidatorsExtensions.ConvertToInt32Validation(reverseDto.courier_contract_id);
@@ -123,24 +123,24 @@ namespace Domain.AfterSale.Entities.Reads.Reverses.GetReverse
             courier_collect = ConverterValidatorsExtensions.ConvertToBooleanValidation(reverseDto.courier_collect);
             is_awaiting_resend_webhook = ConverterValidatorsExtensions.ConvertToBooleanValidation(reverseDto.is_awaiting_resend_webhook);
             is_erased = ConverterValidatorsExtensions.ConvertToBooleanValidation(reverseDto.is_erased);
-            courier_data_is_store_seller_contract = ConverterValidatorsExtensions.ConvertToBooleanValidation(reverseDto.courier_data.is_store_seller_contract);
+            courier_data_is_store_seller_contract = ConverterValidatorsExtensions.ConvertToBooleanValidation(reverseDto.courier_data?.is_store_seller_contract);
             freight_by_customer = ConverterValidatorsExtensions.ConvertToBooleanValidation(reverseDto.freight_by_customer);
-            courier_data_encrypted_is_store_seller_contract = ConverterValidatorsExtensions.ConvertToBooleanValidation(reverseDto.courier_data_encrypted.is_store_seller_contract);
-            ecommerce_is_active = ConverterValidatorsExtensions.ConvertToBooleanValidation(reverseDto.ecommerce.is_active);
-            ecommerce_maintenance_mode_global = ConverterValidatorsExtensions.ConvertToBooleanValidation(reverseDto.ecommerce.maintenance_mode_global);
-            ecommerce_is_test = ConverterValidatorsExtensions.ConvertToBooleanValidation(reverseDto.ecommerce.is_test);
+            courier_data_encrypted_is_store_seller_contract = ConverterValidatorsExtensions.ConvertToBooleanValidation(reverseDto.courier_data_encrypted?.is_store_seller_contract);
+            ecommerce_is_active = ConverterValidatorsExtensions.ConvertToBooleanValidation(reverseDto.ecommerce?.is_active);
+            ecommerce_maintenance_mode_global = ConverterValidatorsExtensions.ConvertToBooleanValidation(reverseDto.ecommerce?.maintenance_mode_global);
+            ecommerce_is_test = ConverterValidatorsExtensions.ConvertToBooleanValidation(reverseDto.ecommerce?.is_test);
             must_treat_refund = ConverterValidatorsExtensions.ConvertToBooleanValidation(reverseDto.must_treat_refund);
             is_generic_courier = ConverterValidatorsExtensions.ConvertToBooleanValidation(reverseDto.is_generic_courier);
             can_generate_voucher = ConverterValidatorsExtensions.ConvertToBooleanValidation(reverseDto.can_generate_voucher);
             could_cancel = ConverterValidatorsExtensions.ConvertToBooleanValidation(reverseDto.could_cancel);
             can_send_correction_letter = ConverterValidatorsExtensions.ConvertToBooleanValidation(reverseDto.can_send_correction_letter);
-            retry_options_can_retry = ConverterValidatorsExtensions.ConvertToBooleanValidation(reverseDto.retry_options.can_retry);
+            retry_options_can_retry = ConverterValidatorsExtensions.ConvertToBooleanValidation(reverseDto.retry_options?.can_retry);
 
             integrated_or_updated_at = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time"));
             created_at = NullableConverters.ToNullableDateTime(reverseDto.created_at);
             updated_at = NullableConverters.ToNullableDateTime(reverseDto.updated_at);
             deleted_at = NullableConverters.ToNullableDateTime(reverseDto.deleted_at);
-            ecommerce_last_order_report_date = NullableConverters.ToNullableDateTime(reverseDto.ecommerce.last_order_report_date);
+            ecommerce_last_order_report_date = NullableConverters.ToNullableDateTime(reverseDto.ecommerce?.last_order_report_date);
 
             total_amount = ConverterValidatorsExtensions.ConvertToInt32Validation(reverseDto.total_amount);
 

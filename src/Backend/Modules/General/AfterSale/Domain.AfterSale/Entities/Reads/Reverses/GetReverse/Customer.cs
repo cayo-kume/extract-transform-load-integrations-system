@@ -79,10 +79,10 @@ namespace Domain.AfterSale.Entities.Reads.Reverses.GetReverse
 
             is_restrict = ConverterValidatorsExtensions.ConvertToBooleanValidation(customerDto.is_restrict);
             is_erased = ConverterValidatorsExtensions.ConvertToBooleanValidation(customerDto.is_erased);
-            address_is_restrict = ConverterValidatorsExtensions.ConvertToBooleanValidation(customerDto.address.is_restrict);
-            address_is_erased = ConverterValidatorsExtensions.ConvertToBooleanValidation(customerDto.address.is_erased);
-            shipping_address_is_restrict = ConverterValidatorsExtensions.ConvertToBooleanValidation(customerDto.shipping_address.is_restrict);
-            shipping_address_is_erased = ConverterValidatorsExtensions.ConvertToBooleanValidation(customerDto.shipping_address.is_erased);
+            address_is_restrict = ConverterValidatorsExtensions.ConvertToBooleanValidation(customerDto.address?.is_restrict);
+            address_is_erased = ConverterValidatorsExtensions.ConvertToBooleanValidation(customerDto.address?.is_erased);
+            shipping_address_is_restrict = ConverterValidatorsExtensions.ConvertToBooleanValidation(customerDto.shipping_address?.is_restrict);
+            shipping_address_is_erased = ConverterValidatorsExtensions.ConvertToBooleanValidation(customerDto.shipping_address?.is_erased);
 
             integrated_or_updated_at = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time"));
             address_updated_at = NullableConverters.ToNullableDateTime(customerDto.address?.updated_at);

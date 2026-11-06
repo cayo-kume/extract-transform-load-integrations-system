@@ -76,7 +76,7 @@ namespace Domain.AfterSale.Entities.Reads.Reverses.GetReverse
             id = ConverterValidatorsExtensions.ConvertToInt64Validation(productDto.id);
             reverse_id = ConverterValidatorsExtensions.ConvertToInt64Validation(productDto.reverse_id);
             motive_id = ConverterValidatorsExtensions.ConvertToInt64Validation(productDto.motive_id);
-            reason_id = ConverterValidatorsExtensions.ConvertToInt64Validation(productDto.reason.id);
+            reason_id = ConverterValidatorsExtensions.ConvertToInt64Validation(productDto.reason?.id);
             ecommerce_order_product_id = ConverterValidatorsExtensions.ConvertToInt64Validation(productDto.ecommerce_order_product_id);
             refund_id = ConverterValidatorsExtensions.ConvertToInt64Validation(productDto.refund_id);
             order_id = ConverterValidatorsExtensions.ConvertToInt64Validation(productDto.order_id);

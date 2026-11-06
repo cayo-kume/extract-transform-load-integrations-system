@@ -42,15 +42,15 @@ namespace Domain.AfterSale.Entities.Reads.Reverses.SearchReverses
             this.doc_company = doc_company;
             id = ConverterValidatorsExtensions.ConvertToInt64Validation(reverseDto.id);
             ecommerce_order_id = ConverterValidatorsExtensions.ConvertToInt64Validation(reverseDto.ecommerce_order_id);
-            customer_id = ConverterValidatorsExtensions.ConvertToInt64Validation(reverseDto.customer.id);
+            customer_id = ConverterValidatorsExtensions.ConvertToInt64Validation(reverseDto.customer?.id);
 
             created_at = NullableConverters.ToNullableDateTime(reverseDto.created_at);
             updated_at = NullableConverters.ToNullableDateTime(reverseDto.updated_at);
-            tracking_delivery_deadline = NullableConverters.ToNullableDateTime(reverseDto.tracking.delivery_deadline);
+            tracking_delivery_deadline = NullableConverters.ToNullableDateTime(reverseDto.tracking?.delivery_deadline);
 
             total_amount = ConverterValidatorsExtensions.ConvertToDecimalValidation(reverseDto.total_amount);
 
-            status_id = ConverterValidatorsExtensions.ConvertToInt32Validation(reverseDto.status.id);
+            status_id = ConverterValidatorsExtensions.ConvertToInt32Validation(reverseDto.status?.id);
             refunds_count = ConverterValidatorsExtensions.ConvertToInt32Validation(reverseDto.refunds_count);
 
             reverse_type = reverseDto.reverse_type?.Length > 50 ? reverseDto.reverse_type?.Substring(0, 50) : reverseDto.reverse_type;
