@@ -1,6 +1,7 @@
 using Application.LinxMicrovix.Outbound.Abstractions.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
+using WebApi.Extensions;
 
 namespace WebApi.Controllers.LinxMicrovix
 {
@@ -13,6 +14,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxSetores: os setores cadastrados
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxSetores")]
         [Tags("LinxMicrovixProductAttributes")]
         public async Task<ActionResult> LinxSetores([FromServices] ILinxMicrovixProductAttributesService linxMicrovixProductAttributesService)
@@ -25,6 +27,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxLinhas: todos os registros do cadastro auxiliar linha
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxLinhas")]
         [Tags("LinxMicrovixProductAttributes")]
         public async Task<ActionResult> LinxLinhas([FromServices] ILinxMicrovixProductAttributesService linxMicrovixProductAttributesService)
@@ -37,6 +40,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxMarcas: as marcas cadastradas.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxMarcas")]
         [Tags("LinxMicrovixProductAttributes")]
         public async Task<ActionResult> LinxMarcas([FromServices] ILinxMicrovixProductAttributesService linxMicrovixProductAttributesService)
@@ -49,6 +53,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxColecoes: as coleções cadastradas.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxColecoes")]
         [Tags("LinxMicrovixProductAttributes")]
         public async Task<ActionResult> LinxColecoes([FromServices] ILinxMicrovixProductAttributesService linxMicrovixProductAttributesService)
@@ -61,6 +66,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxTamanhos: os tamanhos cadastrados.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxTamanhos")]
         [Tags("LinxMicrovixProductAttributes")]
         public async Task<ActionResult> LinxTamanhos([FromServices] ILinxMicrovixProductAttributesService linxMicrovixProductAttributesService)
@@ -73,6 +79,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxCores: as cores cadastradas.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxCores")]
         [Tags("LinxMicrovixProductAttributes")]
         public async Task<ActionResult> LinxCores([FromServices] ILinxMicrovixProductAttributesService linxMicrovixProductAttributesService)
@@ -85,6 +92,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxEspessuras: as espessuras cadastradas.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxEspessuras")]
         [Tags("LinxMicrovixProductAttributes")]
         public async Task<ActionResult> LinxEspessuras([FromServices] ILinxMicrovixProductAttributesService linxMicrovixProductAttributesService)
@@ -97,6 +105,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxUnidades: as unidades cadastradas.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxUnidades")]
         [Tags("LinxMicrovixProductAttributes")]
         public async Task<ActionResult> LinxUnidades([FromServices] ILinxMicrovixProductAttributesService linxMicrovixProductAttributesService)
@@ -109,6 +118,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxClassificacoes: as classificacoes cadastradas.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxClassificacoes")]
         [Tags("LinxMicrovixProductAttributes")]
         public async Task<ActionResult> LinxClassificacoes([FromServices] ILinxMicrovixProductAttributesService linxMicrovixProductAttributesService)
@@ -121,6 +131,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxSubClasses: o cadastro das Sub Classes dos clientes e fornecedores.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxSubClasses")]
         [Tags("LinxMicrovixProductAttributes")]
         public async Task<ActionResult> LinxSubClasses([FromServices] ILinxMicrovixProductAttributesService linxMicrovixProductAttributesService)
@@ -133,6 +144,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sob demanda: busca LinxSetores por idSetor e grava; a chamada fica em linxmicrovix.LinxMicrovixRequests
         /// </summary>
+        [RequiresErpStores]
         [HttpGet("LinxSetores/{docCompany}/{idSetor}")]
         [Tags("LinxMicrovixProductAttributes")]
         public async Task<ActionResult> LinxSetoresByIdSetor(

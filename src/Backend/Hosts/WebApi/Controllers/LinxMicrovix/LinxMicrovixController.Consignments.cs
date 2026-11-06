@@ -1,5 +1,6 @@
 using Application.LinxMicrovix.Outbound.Abstractions.Services;
 using Microsoft.AspNetCore.Mvc;
+using WebApi.Extensions;
 
 namespace WebApi.Controllers.LinxMicrovix
 {
@@ -12,6 +13,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxMovimentoRemessas: os dados da tabela remessas no portal.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxMovimentoRemessas")]
         [Tags("LinxMicrovixConsignments")]
         public async Task<ActionResult> LinxMovimentoRemessas([FromServices] ILinxMicrovixConsignmentsService linxMicrovixConsignmentsService)
@@ -24,6 +26,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxMovimentoRemessasItens: os dados da tabela remessas_itens no portal.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxMovimentoRemessasItens")]
         [Tags("LinxMicrovixConsignments")]
         public async Task<ActionResult> LinxMovimentoRemessasItens([FromServices] ILinxMicrovixConsignmentsService linxMicrovixConsignmentsService)
@@ -36,6 +39,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxMovimentoRemessasAcertos: os dados da tabela remessas_acertos no portal.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxMovimentoRemessasAcertos")]
         [Tags("LinxMicrovixConsignments")]
         public async Task<ActionResult> LinxMovimentoRemessasAcertos([FromServices] ILinxMicrovixConsignmentsService linxMicrovixConsignmentsService)
@@ -48,6 +52,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxMovimentoRemessasAcertosItens: os dados da tabela remessas_acertos_itens no portal.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxMovimentoRemessasAcertosItens")]
         [Tags("LinxMicrovixConsignments")]
         public async Task<ActionResult> LinxMovimentoRemessasAcertosItens([FromServices] ILinxMicrovixConsignmentsService linxMicrovixConsignmentsService)
@@ -60,6 +65,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxRemessasIdentificadores: recebe o identificador da venda e retorna a relação com os identificadores das notas dos itens da remessa.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxRemessasIdentificadores")]
         [Tags("LinxMicrovixConsignments")]
         public async Task<ActionResult> LinxRemessasIdentificadores([FromServices] ILinxMicrovixConsignmentsService linxMicrovixConsignmentsService)
@@ -72,6 +78,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxRemessasOperacoes: os dados da tabela remessa_operacoes no portal.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxRemessasOperacoes")]
         [Tags("LinxMicrovixConsignments")]
         public async Task<ActionResult> LinxRemessasOperacoes([FromServices] ILinxMicrovixConsignmentsService linxMicrovixConsignmentsService)
@@ -84,6 +91,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxRemessasRetornoTipos: os dados da tabela remessa_retorno_tipos no portal.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxRemessasRetornoTipos")]
         [Tags("LinxMicrovixConsignments")]
         public async Task<ActionResult> LinxRemessasRetornoTipos([FromServices] ILinxMicrovixConsignmentsService linxMicrovixConsignmentsService)

@@ -1,6 +1,7 @@
 using Application.LinxMicrovix.Outbound.Abstractions.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
+using WebApi.Extensions;
 
 namespace WebApi.Controllers.LinxMicrovix
 {
@@ -13,6 +14,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxProdutosTabelas: o cadastro de Tabelas de Preços
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxProdutosTabelas")]
         [Tags("LinxMicrovixPrices")]
         public async Task<ActionResult> LinxProdutosTabelas([FromServices] ILinxMicrovixPricesService linxMicrovixPricesService)
@@ -25,6 +27,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxProdutosTabelasPrecos: a relação dos produtos por tabela de preço
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxProdutosTabelasPrecos")]
         [Tags("LinxMicrovixPrices")]
         public async Task<ActionResult> LinxProdutosTabelasPrecos([FromServices] ILinxMicrovixPricesService linxMicrovixPricesService)
@@ -37,6 +40,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxProdutosPromocoes: informações das promoções dos produtos de acordo com a loja pesquisada
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxProdutosPromocoes")]
         [Tags("LinxMicrovixPrices")]
         public async Task<ActionResult> LinxProdutosPromocoes([FromServices] ILinxMicrovixPricesService linxMicrovixPricesService)
@@ -49,6 +53,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxAcoesPromocionais: as Ações Promocionais cadastradas no Microvix
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxAcoesPromocionais")]
         [Tags("LinxMicrovixPrices")]
         public async Task<ActionResult> LinxAcoesPromocionais([FromServices] ILinxMicrovixPricesService linxMicrovixPricesService)
@@ -61,6 +66,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxAcoesPromocionaisCombinacaoProdutosItens: os itens da combinação de produtos de ações promocionais.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxAcoesPromocionaisCombinacaoProdutosItens")]
         [Tags("LinxMicrovixPrices")]
         public async Task<ActionResult> LinxAcoesPromocionaisCombinacaoProdutosItens([FromServices] ILinxMicrovixPricesService linxMicrovixPricesService)
@@ -73,6 +79,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxAcoesPromocionaisProdutosCortesia: os produtos de cortesia de ações promocionais.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxAcoesPromocionaisProdutosCortesia")]
         [Tags("LinxMicrovixPrices")]
         public async Task<ActionResult> LinxAcoesPromocionaisProdutosCortesia([FromServices] ILinxMicrovixPricesService linxMicrovixPricesService)
@@ -85,6 +92,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxMovimentoAcoesPromocionais: as Ações Promocionais realizadas nas movimentações
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxMovimentoAcoesPromocionais")]
         [Tags("LinxMicrovixPrices")]
         public async Task<ActionResult> LinxMovimentoAcoesPromocionais([FromServices] ILinxMicrovixPricesService linxMicrovixPricesService)
@@ -97,6 +105,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxCupomDesconto: os registros do cadastro de cupons de desconto.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxCupomDesconto")]
         [Tags("LinxMicrovixPrices")]
         public async Task<ActionResult> LinxCupomDesconto([FromServices] ILinxMicrovixPricesService linxMicrovixPricesService)
@@ -109,6 +118,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxCupomDescontoVendas: o id do cupom de desconto, o valor do cupom e identificador das vendas que utilizaram cupons de desconto.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxCupomDescontoVendas")]
         [Tags("LinxMicrovixPrices")]
         public async Task<ActionResult> LinxCupomDescontoVendas([FromServices] ILinxMicrovixPricesService linxMicrovixPricesService)
@@ -121,6 +131,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxMotivoDesconto: os motivos de desconto cadastrados no portal
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxMotivoDesconto")]
         [Tags("LinxMicrovixPrices")]
         public async Task<ActionResult> LinxMotivoDesconto([FromServices] ILinxMicrovixPricesService linxMicrovixPricesService)
@@ -133,6 +144,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sob demanda: busca LinxProdutosTabelas por idTabela e grava; a chamada fica em linxmicrovix.LinxMicrovixRequests
         /// </summary>
+        [RequiresErpStores]
         [HttpGet("LinxProdutosTabelas/{docCompany}/{cnpjEmp}/{idTabela}")]
         [Tags("LinxMicrovixPrices")]
         public async Task<ActionResult> LinxProdutosTabelasByIdTabela(
@@ -156,6 +168,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sob demanda: busca LinxProdutosTabelasPrecos por idTabela e codProduto e grava; a chamada fica em linxmicrovix.LinxMicrovixRequests
         /// </summary>
+        [RequiresErpStores]
         [HttpGet("LinxProdutosTabelasPrecos/{docCompany}/{cnpjEmp}/{idTabela}/{codProduto}")]
         [Tags("LinxMicrovixPrices")]
         public async Task<ActionResult> LinxProdutosTabelasPrecosByIdTabelaAndCodProduto(

@@ -1,6 +1,7 @@
 using Application.LinxMicrovix.Outbound.Abstractions.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
+using WebApi.Extensions;
 
 namespace WebApi.Controllers.LinxMicrovix
 {
@@ -13,6 +14,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxMovimentoCartoes: informações dos cartões de acordo com a loja pesquisada
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxMovimentoCartoes")]
         [Tags("LinxMicrovixPayments")]
         public async Task<ActionResult> LinxMovimentoCartoes([FromServices] ILinxMicrovixPaymentsService linxMicrovixPaymentsService)
@@ -25,6 +27,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxMovimentoPlanos: os Planos de Pagamentos realizados nas movimentações
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxMovimentoPlanos")]
         [Tags("LinxMicrovixPayments")]
         public async Task<ActionResult> LinxMovimentoPlanos([FromServices] ILinxMicrovixPaymentsService linxMicrovixPaymentsService)
@@ -37,6 +40,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxPlanos: o cadastro dos Planos de Pagamentos do portal
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxPlanos")]
         [Tags("LinxMicrovixPayments")]
         public async Task<ActionResult> LinxPlanos([FromServices] ILinxMicrovixPaymentsService linxMicrovixPaymentsService)
@@ -49,6 +53,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxPlanosParcelas
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxPlanosParcelas")]
         [Tags("LinxMicrovixPayments")]
         public async Task<ActionResult> LinxPlanosParcelas([FromServices] ILinxMicrovixPaymentsService linxMicrovixPaymentsService)
@@ -61,6 +66,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxPlanosBandeiras: o cadastro de bandeiras de cartões vinculadas aos Planos de Pagamento do Portal
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxPlanosBandeiras")]
         [Tags("LinxMicrovixPayments")]
         public async Task<ActionResult> LinxPlanosBandeiras([FromServices] ILinxMicrovixPaymentsService linxMicrovixPaymentsService)
@@ -73,6 +79,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxMovimentoGiftCard: os registro de giftcard
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxMovimentoGiftCard")]
         [Tags("LinxMicrovixPayments")]
         public async Task<ActionResult> LinxMovimentoGiftCard([FromServices] ILinxMicrovixPaymentsService linxMicrovixPaymentsService)
@@ -85,6 +92,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxValesComprasEnviadosAPI: vale Compras importado via API.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxValesComprasEnviadosAPI")]
         [Tags("LinxMicrovixPayments")]
         public async Task<ActionResult> LinxValesComprasEnviadosAPI([FromServices] ILinxMicrovixPaymentsService linxMicrovixPaymentsService)
@@ -97,6 +105,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxSangriaSuprimentos: as informações das Sangrias ou Suprimentos feitos no caixa
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxSangriaSuprimentos")]
         [Tags("LinxMicrovixPayments")]
         public async Task<ActionResult> LinxSangriaSuprimentos([FromServices] ILinxMicrovixPaymentsService linxMicrovixPaymentsService)
@@ -109,6 +118,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxFechamentoCaixa
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxFechamentoCaixa")]
         [Tags("LinxMicrovixPayments")]
         public async Task<ActionResult> LinxFechamentoCaixa([FromServices] ILinxMicrovixPaymentsService linxMicrovixPaymentsService)
@@ -121,6 +131,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sob demanda: busca LinxMovimentoCartoes por identificador e grava; a chamada fica em linxmicrovix.LinxMicrovixRequests
         /// </summary>
+        [RequiresErpStores]
         [HttpGet("LinxMovimentoCartoes/{docCompany}/{cnpjEmp}/{identificador}")]
         [Tags("LinxMicrovixPayments")]
         public async Task<ActionResult> LinxMovimentoCartoesByIdentificador(
@@ -144,6 +155,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sob demanda: busca LinxMovimentoPlanos por identificador e grava; a chamada fica em linxmicrovix.LinxMicrovixRequests
         /// </summary>
+        [RequiresErpStores]
         [HttpGet("LinxMovimentoPlanos/{docCompany}/{cnpjEmp}/{identificador}")]
         [Tags("LinxMicrovixPayments")]
         public async Task<ActionResult> LinxMovimentoPlanosByIdentificador(
@@ -167,6 +179,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sob demanda: busca LinxPlanos por plano e grava; a chamada fica em linxmicrovix.LinxMicrovixRequests
         /// </summary>
+        [RequiresErpStores]
         [HttpGet("LinxPlanos/{docCompany}/{plano}")]
         [Tags("LinxMicrovixPayments")]
         public async Task<ActionResult> LinxPlanosByPlano(

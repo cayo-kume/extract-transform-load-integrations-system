@@ -1,5 +1,6 @@
 using Application.LinxMicrovix.Outbound.Abstractions.Services;
 using Microsoft.AspNetCore.Mvc;
+using WebApi.Extensions;
 
 namespace WebApi.Controllers.LinxMicrovix
 {
@@ -12,6 +13,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxConfiguracoesTributarias: o cadastro de configurações tributárias da empresa
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxConfiguracoesTributarias")]
         [Tags("LinxMicrovixTaxSettings")]
         public async Task<ActionResult> LinxConfiguracoesTributarias([FromServices] ILinxMicrovixTaxSettingsService linxMicrovixTaxSettingsService)
@@ -24,6 +26,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxConfiguracoesTributariasDetalhes: o detalhamento das configurações tributárias da empresa
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxConfiguracoesTributariasDetalhes")]
         [Tags("LinxMicrovixTaxSettings")]
         public async Task<ActionResult> LinxConfiguracoesTributariasDetalhes([FromServices] ILinxMicrovixTaxSettingsService linxMicrovixTaxSettingsService)
@@ -36,6 +39,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxConfiguracoesTributariasDetalhesSimplificado: o detalhamento das configurações tributarias de forma simplificada.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxConfiguracoesTributariasDetalhesSimplificado")]
         [Tags("LinxMicrovixTaxSettings")]
         public async Task<ActionResult> LinxConfiguracoesTributariasDetalhesSimplificado([FromServices] ILinxMicrovixTaxSettingsService linxMicrovixTaxSettingsService)
@@ -48,6 +52,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxConfiguracoesTributariasEmpresas: o conteúdo da tabela config_tributaria_empresa.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxConfiguracoesTributariasEmpresas")]
         [Tags("LinxMicrovixTaxSettings")]
         public async Task<ActionResult> LinxConfiguracoesTributariasEmpresas([FromServices] ILinxMicrovixTaxSettingsService linxMicrovixTaxSettingsService)

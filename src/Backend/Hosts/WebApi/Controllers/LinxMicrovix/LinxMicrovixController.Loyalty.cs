@@ -1,5 +1,6 @@
 using Application.LinxMicrovix.Outbound.Abstractions.Services;
 using Microsoft.AspNetCore.Mvc;
+using WebApi.Extensions;
 
 namespace WebApi.Controllers.LinxMicrovix
 {
@@ -12,6 +13,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxFidelidade: os dados da tabela fidelidade_parceiro_log cadastrados no portal.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxFidelidade")]
         [Tags("LinxMicrovixLoyalty")]
         public async Task<ActionResult> LinxFidelidade([FromServices] ILinxMicrovixLoyaltyService linxMicrovixLoyaltyService)
@@ -24,6 +26,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxMovimentoReshop: movimento_campanha_reshop.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxMovimentoReshop")]
         [Tags("LinxMicrovixLoyalty")]
         public async Task<ActionResult> LinxMovimentoReshop([FromServices] ILinxMicrovixLoyaltyService linxMicrovixLoyaltyService)
@@ -36,6 +39,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxMovimentoReshopItens: movimento_campanha_reshop_item.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxMovimentoReshopItens")]
         [Tags("LinxMicrovixLoyalty")]
         public async Task<ActionResult> LinxMovimentoReshopItens([FromServices] ILinxMicrovixLoyaltyService linxMicrovixLoyaltyService)

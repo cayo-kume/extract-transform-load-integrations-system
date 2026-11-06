@@ -1,5 +1,6 @@
 using Application.LinxMicrovix.Outbound.Abstractions.Services;
 using Microsoft.AspNetCore.Mvc;
+using WebApi.Extensions;
 
 namespace WebApi.Controllers.LinxMicrovix
 {
@@ -12,6 +13,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxPedidosCompra: informações de pedidos de compra de acordo com a loja pesquisada
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxPedidosCompra")]
         [Tags("LinxMicrovixPurchaseOrders")]
         public async Task<ActionResult> LinxPedidosCompra([FromServices] ILinxMicrovixPurchaseOrdersService linxMicrovixPurchaseOrdersService)
@@ -24,6 +26,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxPedidosCompraStatus: os status de pedidos de compra.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxPedidosCompraStatus")]
         [Tags("LinxMicrovixPurchaseOrders")]
         public async Task<ActionResult> LinxPedidosCompraStatus([FromServices] ILinxMicrovixPurchaseOrdersService linxMicrovixPurchaseOrdersService)
@@ -36,6 +39,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxPedidosCompraNumeroFornecedor: o numero do fornecedor do pedido de compra.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxPedidosCompraNumeroFornecedor")]
         [Tags("LinxMicrovixPurchaseOrders")]
         public async Task<ActionResult> LinxPedidosCompraNumeroFornecedor([FromServices] ILinxMicrovixPurchaseOrdersService linxMicrovixPurchaseOrdersService)

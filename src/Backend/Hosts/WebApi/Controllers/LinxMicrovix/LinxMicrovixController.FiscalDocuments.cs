@@ -1,6 +1,7 @@
 using Application.LinxMicrovix.Outbound.Abstractions.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
+using WebApi.Extensions;
 
 namespace WebApi.Controllers.LinxMicrovix
 {
@@ -13,6 +14,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxXMLDocumentos: o XML dos documentos.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxXMLDocumentos")]
         [Tags("LinxMicrovixFiscalDocuments")]
         public async Task<ActionResult> LinxXMLDocumentos([FromServices] ILinxMicrovixFiscalDocumentsService linxMicrovixFiscalDocumentsService)
@@ -25,6 +27,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxNFeEvento: os dados eventos da NFe.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxNFeEvento")]
         [Tags("LinxMicrovixFiscalDocuments")]
         public async Task<ActionResult> LinxNFeEvento([FromServices] ILinxMicrovixFiscalDocumentsService linxMicrovixFiscalDocumentsService)
@@ -37,6 +40,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxNfse: nota Fiscal de Serviços Eletrônica
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxNfse")]
         [Tags("LinxMicrovixFiscalDocuments")]
         public async Task<ActionResult> LinxNfse([FromServices] ILinxMicrovixFiscalDocumentsService linxMicrovixFiscalDocumentsService)
@@ -49,6 +53,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxEntradaNFe: dados de NFes de entrada.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxEntradaNFe")]
         [Tags("LinxMicrovixFiscalDocuments")]
         public async Task<ActionResult> LinxEntradaNFe([FromServices] ILinxMicrovixFiscalDocumentsService linxMicrovixFiscalDocumentsService)
@@ -61,6 +66,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxEntradaNFeProdutos: dados de itens de NFes de entrada.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxEntradaNFeProdutos")]
         [Tags("LinxMicrovixFiscalDocuments")]
         public async Task<ActionResult> LinxEntradaNFeProdutos([FromServices] ILinxMicrovixFiscalDocumentsService linxMicrovixFiscalDocumentsService)
@@ -73,6 +79,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxConhecimentoFretes: dados de conhecimento de fretes.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxConhecimentoFretes")]
         [Tags("LinxMicrovixFiscalDocuments")]
         public async Task<ActionResult> LinxConhecimentoFretes([FromServices] ILinxMicrovixFiscalDocumentsService linxMicrovixFiscalDocumentsService)
@@ -85,6 +92,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxFreteTipos: tipos de frete.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxFreteTipos")]
         [Tags("LinxMicrovixFiscalDocuments")]
         public async Task<ActionResult> LinxFreteTipos([FromServices] ILinxMicrovixFiscalDocumentsService linxMicrovixFiscalDocumentsService)
@@ -97,6 +105,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxReducoesZ: as ReduçõesZ de acordo com a loja pesquisada, somente para clientes que ainda utilizam a impressora fiscal
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxReducoesZ")]
         [Tags("LinxMicrovixFiscalDocuments")]
         public async Task<ActionResult> LinxReducoesZ([FromServices] ILinxMicrovixFiscalDocumentsService linxMicrovixFiscalDocumentsService)
@@ -109,6 +118,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxECF: as ECFs cadastradas para a empresa.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxECF")]
         [Tags("LinxMicrovixFiscalDocuments")]
         public async Task<ActionResult> LinxECF([FromServices] ILinxMicrovixFiscalDocumentsService linxMicrovixFiscalDocumentsService)
@@ -121,6 +131,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxECFFormasPagamento: as formas de pagamento da ECF.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxECFFormasPagamento")]
         [Tags("LinxMicrovixFiscalDocuments")]
         public async Task<ActionResult> LinxECFFormasPagamento([FromServices] ILinxMicrovixFiscalDocumentsService linxMicrovixFiscalDocumentsService)
@@ -133,6 +144,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxNfceEstacao: cadastro de estações.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxNfceEstacao")]
         [Tags("LinxMicrovixFiscalDocuments")]
         public async Task<ActionResult> LinxNfceEstacao([FromServices] ILinxMicrovixFiscalDocumentsService linxMicrovixFiscalDocumentsService)
@@ -145,6 +157,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxSeries: as séries cadastradas no portal.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxSeries")]
         [Tags("LinxMicrovixFiscalDocuments")]
         public async Task<ActionResult> LinxSeries([FromServices] ILinxMicrovixFiscalDocumentsService linxMicrovixFiscalDocumentsService)
@@ -157,6 +170,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sob demanda: busca LinxXMLDocumentos por documento e grava; a chamada fica em linxmicrovix.LinxMicrovixRequests
         /// </summary>
+        [RequiresErpStores]
         [HttpGet("LinxXMLDocumentos/{docCompany}/{cnpjEmp}/{documento}")]
         [Tags("LinxMicrovixFiscalDocuments")]
         public async Task<ActionResult> LinxXMLDocumentosByDocumento(

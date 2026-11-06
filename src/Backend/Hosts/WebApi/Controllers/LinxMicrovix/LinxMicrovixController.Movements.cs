@@ -1,6 +1,7 @@
 using Application.LinxMicrovix.Outbound.Abstractions.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
+using WebApi.Extensions;
 
 namespace WebApi.Controllers.LinxMicrovix
 {
@@ -13,6 +14,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxMovimento: as movimentações de entradas e saídas de acordo com a loja e data pesquisada
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxMovimento")]
         [Tags("LinxMicrovixMovements")]
         public async Task<ActionResult> LinxMovimento([FromServices] ILinxMicrovixMovementsService linxMicrovixMovementsService)
@@ -25,6 +27,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxMovimentoPrincipal: dados da movimento principal.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxMovimentoPrincipal")]
         [Tags("LinxMicrovixMovements")]
         public async Task<ActionResult> LinxMovimentoPrincipal([FromServices] ILinxMicrovixMovementsService linxMicrovixMovementsService)
@@ -37,6 +40,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxMovimentoExtensao: as informações adicionais da venda
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxMovimentoExtensao")]
         [Tags("LinxMicrovixMovements")]
         public async Task<ActionResult> LinxMovimentoExtensao([FromServices] ILinxMicrovixMovementsService linxMicrovixMovementsService)
@@ -49,6 +53,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxMovimentoCamposAdicionais: os campos adicionais da movimentação
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxMovimentoCamposAdicionais")]
         [Tags("LinxMicrovixMovements")]
         public async Task<ActionResult> LinxMovimentoCamposAdicionais([FromServices] ILinxMicrovixMovementsService linxMicrovixMovementsService)
@@ -61,6 +66,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxMovimentoObservacoes: o conteúdo da tabela movimento_observacoes
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxMovimentoObservacoes")]
         [Tags("LinxMicrovixMovements")]
         public async Task<ActionResult> LinxMovimentoObservacoes([FromServices] ILinxMicrovixMovementsService linxMicrovixMovementsService)
@@ -73,6 +79,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxMovimentoObservacaoCF: as observações do cupom fiscal.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxMovimentoObservacaoCF")]
         [Tags("LinxMicrovixMovements")]
         public async Task<ActionResult> LinxMovimentoObservacaoCF([FromServices] ILinxMicrovixMovementsService linxMicrovixMovementsService)
@@ -85,6 +92,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxMovimentoIndicacoes: o cliente indicador da venda.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxMovimentoIndicacoes")]
         [Tags("LinxMicrovixMovements")]
         public async Task<ActionResult> LinxMovimentoIndicacoes([FromServices] ILinxMicrovixMovementsService linxMicrovixMovementsService)
@@ -97,6 +105,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxMovimentoSerial: os Código de Seriais realizadas nas movimentações
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxMovimentoSerial")]
         [Tags("LinxMicrovixMovements")]
         public async Task<ActionResult> LinxMovimentoSerial([FromServices] ILinxMicrovixMovementsService linxMicrovixMovementsService)
@@ -109,6 +118,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxSerialVenda: os registros da tabela serial_venda
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxSerialVenda")]
         [Tags("LinxMicrovixMovements")]
         public async Task<ActionResult> LinxSerialVenda([FromServices] ILinxMicrovixMovementsService linxMicrovixMovementsService)
@@ -121,6 +131,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxMovimentoVendaConjugada: movimento da venda conjugada
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxMovimentoVendaConjugada")]
         [Tags("LinxMicrovixMovements")]
         public async Task<ActionResult> LinxMovimentoVendaConjugada([FromServices] ILinxMicrovixMovementsService linxMicrovixMovementsService)
@@ -133,6 +144,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxPerguntaVenda: as perguntas realizadas no final da venda cadastradas no portal.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxPerguntaVenda")]
         [Tags("LinxMicrovixMovements")]
         public async Task<ActionResult> LinxPerguntaVenda([FromServices] ILinxMicrovixMovementsService linxMicrovixMovementsService)
@@ -145,6 +157,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxRespostaVenda: o cadastro das perguntas realizadas no final da venda no portal.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxRespostaVenda")]
         [Tags("LinxMicrovixMovements")]
         public async Task<ActionResult> LinxRespostaVenda([FromServices] ILinxMicrovixMovementsService linxMicrovixMovementsService)
@@ -157,6 +170,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sob demanda: busca LinxMovimento por documento e grava; a chamada fica em linxmicrovix.LinxMicrovixRequests
         /// </summary>
+        [RequiresErpStores]
         [HttpGet("LinxMovimento/{docCompany}/{cnpjEmp}/{documento}")]
         [Tags("LinxMicrovixMovements")]
         public async Task<ActionResult> LinxMovimentoByDocumento(

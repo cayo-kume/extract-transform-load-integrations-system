@@ -1,6 +1,7 @@
 using Application.LinxMicrovix.Outbound.Abstractions.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
+using WebApi.Extensions;
 
 namespace WebApi.Controllers.LinxMicrovix
 {
@@ -13,6 +14,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxNaturezaOperacao: as naturezas de operação.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxNaturezaOperacao")]
         [Tags("LinxMicrovixTaxes")]
         public async Task<ActionResult> LinxNaturezaOperacao([FromServices] ILinxMicrovixTaxesService linxMicrovixTaxesService)
@@ -25,6 +27,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxCfopFiscal: o cadastro da CFOP Fiscal
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxCfopFiscal")]
         [Tags("LinxMicrovixTaxes")]
         public async Task<ActionResult> LinxCfopFiscal([FromServices] ILinxMicrovixTaxesService linxMicrovixTaxesService)
@@ -37,6 +40,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxCstIcmsFiscal: o cadastro de cst icms fiscal
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxCstIcmsFiscal")]
         [Tags("LinxMicrovixTaxes")]
         public async Task<ActionResult> LinxCstIcmsFiscal([FromServices] ILinxMicrovixTaxesService linxMicrovixTaxesService)
@@ -49,6 +53,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxCstIpiFiscal: o conteúdo da tabela cst_ipi_fiscal
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxCstIpiFiscal")]
         [Tags("LinxMicrovixTaxes")]
         public async Task<ActionResult> LinxCstIpiFiscal([FromServices] ILinxMicrovixTaxesService linxMicrovixTaxesService)
@@ -61,6 +66,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxCstPisFiscal: o conteúdo da tabela cst_pis_fiscal
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxCstPisFiscal")]
         [Tags("LinxMicrovixTaxes")]
         public async Task<ActionResult> LinxCstPisFiscal([FromServices] ILinxMicrovixTaxesService linxMicrovixTaxesService)
@@ -73,6 +79,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxCstCofinsFiscal: o conteúdo da tabela cst_cofins_fiscal
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxCstCofinsFiscal")]
         [Tags("LinxMicrovixTaxes")]
         public async Task<ActionResult> LinxCstCofinsFiscal([FromServices] ILinxMicrovixTaxesService linxMicrovixTaxesService)
@@ -85,6 +92,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxCsosnFiscal: o cadastro de csosn fiscal
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxCsosnFiscal")]
         [Tags("LinxMicrovixTaxes")]
         public async Task<ActionResult> LinxCsosnFiscal([FromServices] ILinxMicrovixTaxesService linxMicrovixTaxesService)
@@ -97,6 +105,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxClasseFiscal: o cadastro da classe fiscal.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxClasseFiscal")]
         [Tags("LinxMicrovixTaxes")]
         public async Task<ActionResult> LinxClasseFiscal([FromServices] ILinxMicrovixTaxesService linxMicrovixTaxesService)
@@ -109,6 +118,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxCest: o conteúdo da tabela classificacao_cest_produto
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxCest")]
         [Tags("LinxMicrovixTaxes")]
         public async Task<ActionResult> LinxCest([FromServices] ILinxMicrovixTaxesService linxMicrovixTaxesService)
@@ -121,6 +131,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxNcm: o conteúdo da tabela classificacao_ncm_produto.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxNcm")]
         [Tags("LinxMicrovixTaxes")]
         public async Task<ActionResult> LinxNcm([FromServices] ILinxMicrovixTaxesService linxMicrovixTaxesService)
@@ -133,6 +144,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxEnquadramentoIpi: o conteúdo da tabela enquadramento_ipi
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxEnquadramentoIpi")]
         [Tags("LinxMicrovixTaxes")]
         public async Task<ActionResult> LinxEnquadramentoIpi([FromServices] ILinxMicrovixTaxesService linxMicrovixTaxesService)
@@ -145,6 +157,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxMotivosDesoneracaoIcms: o conteúdo da tabela motivos_desoneracao_icms
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxMotivosDesoneracaoIcms")]
         [Tags("LinxMicrovixTaxes")]
         public async Task<ActionResult> LinxMotivosDesoneracaoIcms([FromServices] ILinxMicrovixTaxesService linxMicrovixTaxesService)
@@ -157,6 +170,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxSpedTipoItem: dados do Sped tipo item.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxSpedTipoItem")]
         [Tags("LinxMicrovixTaxes")]
         public async Task<ActionResult> LinxSpedTipoItem([FromServices] ILinxMicrovixTaxesService linxMicrovixTaxesService)
@@ -169,6 +183,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxSpedTipoBaseCredito: o conteúdo da tabela sped_tipo_base_credito.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxSpedTipoBaseCredito")]
         [Tags("LinxMicrovixTaxes")]
         public async Task<ActionResult> LinxSpedTipoBaseCredito([FromServices] ILinxMicrovixTaxesService linxMicrovixTaxesService)
@@ -181,6 +196,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxRotinaOrigem: retornas as rotinas origem cadastradas.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxRotinaOrigem")]
         [Tags("LinxMicrovixTaxes")]
         public async Task<ActionResult> LinxRotinaOrigem([FromServices] ILinxMicrovixTaxesService linxMicrovixTaxesService)
@@ -193,6 +209,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxNfeIbgeMunicipio: dados do IBGE sobre municípios.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxNfeIbgeMunicipio")]
         [Tags("LinxMicrovixTaxes")]
         public async Task<ActionResult> LinxNfeIbgeMunicipio([FromServices] ILinxMicrovixTaxesService linxMicrovixTaxesService)
@@ -205,6 +222,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sob demanda: busca LinxNaturezaOperacao por codNaturezaOperacao e grava; a chamada fica em linxmicrovix.LinxMicrovixRequests
         /// </summary>
+        [RequiresErpStores]
         [HttpGet("LinxNaturezaOperacao/{docCompany}/{codNaturezaOperacao}")]
         [Tags("LinxMicrovixTaxes")]
         public async Task<ActionResult> LinxNaturezaOperacaoByCodNaturezaOperacao(

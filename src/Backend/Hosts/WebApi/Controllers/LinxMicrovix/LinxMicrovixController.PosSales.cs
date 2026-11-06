@@ -1,5 +1,6 @@
 using Application.LinxMicrovix.Outbound.Abstractions.Services;
 using Microsoft.AspNetCore.Mvc;
+using WebApi.Extensions;
 
 namespace WebApi.Controllers.LinxMicrovix
 {
@@ -12,6 +13,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxVendasPosTmp: os registros da tabela vendas_pos_tmp
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxVendasPosTmp")]
         [Tags("LinxMicrovixPosSales")]
         public async Task<ActionResult> LinxVendasPosTmp([FromServices] ILinxMicrovixPosSalesService linxMicrovixPosSalesService)
@@ -24,6 +26,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxVendasPosProdutosTmp: os registros da tabela vendas_pos_produtos_tmp.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxVendasPosProdutosTmp")]
         [Tags("LinxMicrovixPosSales")]
         public async Task<ActionResult> LinxVendasPosProdutosTmp([FromServices] ILinxMicrovixPosSalesService linxMicrovixPosSalesService)
@@ -36,6 +39,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxVendasPosAgrupamentoTmp: os registros da tabela vendas_pos_agrupamento_tmp
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxVendasPosAgrupamentoTmp")]
         [Tags("LinxMicrovixPosSales")]
         public async Task<ActionResult> LinxVendasPosAgrupamentoTmp([FromServices] ILinxMicrovixPosSalesService linxMicrovixPosSalesService)

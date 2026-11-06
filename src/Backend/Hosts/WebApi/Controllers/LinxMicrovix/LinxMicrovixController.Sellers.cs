@@ -1,6 +1,7 @@
 using Application.LinxMicrovix.Outbound.Abstractions.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
+using WebApi.Extensions;
 
 namespace WebApi.Controllers.LinxMicrovix
 {
@@ -13,6 +14,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxVendedores: os Vendedores cadastrados na loja
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxVendedores")]
         [Tags("LinxMicrovixSellers")]
         public async Task<ActionResult> LinxVendedores([FromServices] ILinxMicrovixSellersService linxMicrovixSellersService)
@@ -25,6 +27,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxVendedoresFerias: as férias cadatradas para os vendedores.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxVendedoresFerias")]
         [Tags("LinxMicrovixSellers")]
         public async Task<ActionResult> LinxVendedoresFerias([FromServices] ILinxMicrovixSellersService linxMicrovixSellersService)
@@ -37,6 +40,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxMetasVendedores: as Metas de Vendedores das lojas
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxMetasVendedores")]
         [Tags("LinxMicrovixSellers")]
         public async Task<ActionResult> LinxMetasVendedores([FromServices] ILinxMicrovixSellersService linxMicrovixSellersService)
@@ -49,6 +53,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxMetasVendedoresDia: as Metas de Vendedores das lojas por dia
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxMetasVendedoresDia")]
         [Tags("LinxMicrovixSellers")]
         public async Task<ActionResult> LinxMetasVendedoresDia([FromServices] ILinxMicrovixSellersService linxMicrovixSellersService)
@@ -61,6 +66,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxComissoesVendedores: as comissões do vendedores
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxComissoesVendedores")]
         [Tags("LinxMicrovixSellers")]
         public async Task<ActionResult> LinxComissoesVendedores([FromServices] ILinxMicrovixSellersService linxMicrovixSellersService)
@@ -73,6 +79,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxListaDaVez: os registros gerados na rotina de Lista da Vez
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxListaDaVez")]
         [Tags("LinxMicrovixSellers")]
         public async Task<ActionResult> LinxListaDaVez([FromServices] ILinxMicrovixSellersService linxMicrovixSellersService)
@@ -85,6 +92,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxFuncionariosFuncoes: o cadastro da funções de funcionários.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxFuncionariosFuncoes")]
         [Tags("LinxMicrovixSellers")]
         public async Task<ActionResult> LinxFuncionariosFuncoes([FromServices] ILinxMicrovixSellersService linxMicrovixSellersService)
@@ -97,6 +105,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxRegistroProfissional: os registros da tabela tipo_registro_profissional.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxRegistroProfissional")]
         [Tags("LinxMicrovixSellers")]
         public async Task<ActionResult> LinxRegistroProfissional([FromServices] ILinxMicrovixSellersService linxMicrovixSellersService)
@@ -109,6 +118,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sob demanda: busca LinxVendedores por codVendedor e grava; a chamada fica em linxmicrovix.LinxMicrovixRequests
         /// </summary>
+        [RequiresErpStores]
         [HttpGet("LinxVendedores/{docCompany}/{cnpjEmp}/{codVendedor}")]
         [Tags("LinxMicrovixSellers")]
         public async Task<ActionResult> LinxVendedoresByCodVendedor(

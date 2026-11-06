@@ -1,6 +1,7 @@
 using Application.LinxMicrovix.Outbound.Abstractions.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
+using WebApi.Extensions;
 
 namespace WebApi.Controllers.LinxMicrovix
 {
@@ -13,6 +14,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxClientesFornec: os Clientes/Fornecedores cadastrados na loja e data pesquisada
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxClientesFornec")]
         [Tags("LinxMicrovixCustomers")]
         public async Task<ActionResult> LinxClientesFornec([FromServices] ILinxMicrovixCustomersService linxMicrovixCustomersService)
@@ -25,6 +27,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxClientesFornecCamposAdicionais: os campos adicionais preenchidos dos Clientes/Fornecedores cadastrados no portal
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxClientesFornecCamposAdicionais")]
         [Tags("LinxMicrovixCustomers")]
         public async Task<ActionResult> LinxClientesFornecCamposAdicionais([FromServices] ILinxMicrovixCustomersService linxMicrovixCustomersService)
@@ -37,6 +40,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxClientesFornecClasses: todas as classes vinculadas a um cliente/fornecedor
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxClientesFornecClasses")]
         [Tags("LinxMicrovixCustomers")]
         public async Task<ActionResult> LinxClientesFornecClasses([FromServices] ILinxMicrovixCustomersService linxMicrovixCustomersService)
@@ -49,6 +53,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxClientesFornecContatos: os campos referentes ao contato do cadastro dos Clientes/Fornecedores cadastrados no portal
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxClientesFornecContatos")]
         [Tags("LinxMicrovixCustomers")]
         public async Task<ActionResult> LinxClientesFornecContatos([FromServices] ILinxMicrovixCustomersService linxMicrovixCustomersService)
@@ -61,6 +66,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxClientesFornecContatosParentesco: os parentescos cadastrados
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxClientesFornecContatosParentesco")]
         [Tags("LinxMicrovixCustomers")]
         public async Task<ActionResult> LinxClientesFornecContatosParentesco([FromServices] ILinxMicrovixCustomersService linxMicrovixCustomersService)
@@ -73,6 +79,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxClientesFornecCreditoAvulso: os dados de crédito avulso dos clientes e fornecedores.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxClientesFornecCreditoAvulso")]
         [Tags("LinxMicrovixCustomers")]
         public async Task<ActionResult> LinxClientesFornecCreditoAvulso([FromServices] ILinxMicrovixCustomersService linxMicrovixCustomersService)
@@ -85,6 +92,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxClientesFornecVendedores: o código do vendedor associado ao cadastro do cliente, conforme a tabela clientes_fornec_vendedores.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxClientesFornecVendedores")]
         [Tags("LinxMicrovixCustomers")]
         public async Task<ActionResult> LinxClientesFornecVendedores([FromServices] ILinxMicrovixCustomersService linxMicrovixCustomersService)
@@ -97,6 +105,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxClientesEnderecosEntrega: endereço de entrega do cliente.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxClientesEnderecosEntrega")]
         [Tags("LinxMicrovixCustomers")]
         public async Task<ActionResult> LinxClientesEnderecosEntrega([FromServices] ILinxMicrovixCustomersService linxMicrovixCustomersService)
@@ -109,6 +118,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxClientesRede: os registros da tabela clientes_rede no portal centralizador.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxClientesRede")]
         [Tags("LinxMicrovixCustomers")]
         public async Task<ActionResult> LinxClientesRede([FromServices] ILinxMicrovixCustomersService linxMicrovixCustomersService)
@@ -121,6 +131,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxRamosAtividade: os ramos de atividades cadastrados.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxRamosAtividade")]
         [Tags("LinxMicrovixCustomers")]
         public async Task<ActionResult> LinxRamosAtividade([FromServices] ILinxMicrovixCustomersService linxMicrovixCustomersService)
@@ -133,6 +144,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sob demanda: busca LinxClientesFornec por docCliente e grava; a chamada fica em linxmicrovix.LinxMicrovixRequests
         /// </summary>
+        [RequiresErpStores]
         [HttpGet("LinxClientesFornec/{docCompany}/{docCliente}")]
         [Tags("LinxMicrovixCustomers")]
         public async Task<ActionResult> LinxClientesFornecByDocCliente(

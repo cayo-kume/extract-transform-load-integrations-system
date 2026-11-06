@@ -1,5 +1,6 @@
 using Application.LinxMicrovix.Outbound.Abstractions.Services;
 using Microsoft.AspNetCore.Mvc;
+using WebApi.Extensions;
 
 namespace WebApi.Controllers.LinxMicrovix
 {
@@ -12,6 +13,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxOrdensServico: as ordens de serviço
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxOrdensServico")]
         [Tags("LinxMicrovixServiceOrders")]
         public async Task<ActionResult> LinxOrdensServico([FromServices] ILinxMicrovixServiceOrdersService linxMicrovixServiceOrdersService)
@@ -24,6 +26,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxOrdensServicoProdutos: os produtos das ordens de serviço
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxOrdensServicoProdutos")]
         [Tags("LinxMicrovixServiceOrders")]
         public async Task<ActionResult> LinxOrdensServicoProdutos([FromServices] ILinxMicrovixServiceOrdersService linxMicrovixServiceOrdersService)
@@ -36,6 +39,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxServicos: o cadastro de serviços de acordo com a loja pesquisada ou dados da estrutura mercadológica
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxServicos")]
         [Tags("LinxMicrovixServiceOrders")]
         public async Task<ActionResult> LinxServicos([FromServices] ILinxMicrovixServiceOrdersService linxMicrovixServiceOrdersService)
@@ -48,6 +52,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxServicosDetalhes: informações dos serviços de acordo com a loja pesquisada
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxServicosDetalhes")]
         [Tags("LinxMicrovixServiceOrders")]
         public async Task<ActionResult> LinxServicosDetalhes([FromServices] ILinxMicrovixServiceOrdersService linxMicrovixServiceOrdersService)
@@ -60,6 +65,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxServicoClientes: os dados dos clientes do serviço.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxServicoClientes")]
         [Tags("LinxMicrovixServiceOrders")]
         public async Task<ActionResult> LinxServicoClientes([FromServices] ILinxMicrovixServiceOrdersService linxMicrovixServiceOrdersService)
@@ -72,6 +78,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxServicoAgendaComandas: a agenda das comandas dos serviços.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxServicoAgendaComandas")]
         [Tags("LinxMicrovixServiceOrders")]
         public async Task<ActionResult> LinxServicoAgendaComandas([FromServices] ILinxMicrovixServiceOrdersService linxMicrovixServiceOrdersService)
@@ -84,6 +91,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxServicoAgendaEventos: a agenda dos eventos dos serviços.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxServicoAgendaEventos")]
         [Tags("LinxMicrovixServiceOrders")]
         public async Task<ActionResult> LinxServicoAgendaEventos([FromServices] ILinxMicrovixServiceOrdersService linxMicrovixServiceOrdersService)
@@ -96,6 +104,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxOrdemServicoExternaDav: as ordens de serviço externas das DAVs
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxOrdemServicoExternaDav")]
         [Tags("LinxMicrovixServiceOrders")]
         public async Task<ActionResult> LinxOrdemServicoExternaDav([FromServices] ILinxMicrovixServiceOrdersService linxMicrovixServiceOrdersService)
@@ -108,6 +117,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxMovimentoOrdemServicoExterna: a ordem de serviço externa da movimentação.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxMovimentoOrdemServicoExterna")]
         [Tags("LinxMicrovixServiceOrders")]
         public async Task<ActionResult> LinxMovimentoOrdemServicoExterna([FromServices] ILinxMicrovixServiceOrdersService linxMicrovixServiceOrdersService)
@@ -120,6 +130,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxValeOrdemServicoExterna: os dados de vale ordem de serviço externa.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxValeOrdemServicoExterna")]
         [Tags("LinxMicrovixServiceOrders")]
         public async Task<ActionResult> LinxValeOrdemServicoExterna([FromServices] ILinxMicrovixServiceOrdersService linxMicrovixServiceOrdersService)
@@ -132,6 +143,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxPagamentoParcialDav: os pagamentos parciais da DAVs
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxPagamentoParcialDav")]
         [Tags("LinxMicrovixServiceOrders")]
         public async Task<ActionResult> LinxPagamentoParcialDav([FromServices] ILinxMicrovixServiceOrdersService linxMicrovixServiceOrdersService)

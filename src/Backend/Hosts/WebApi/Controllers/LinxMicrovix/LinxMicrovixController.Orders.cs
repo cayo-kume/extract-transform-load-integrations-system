@@ -1,6 +1,7 @@
 using Application.LinxMicrovix.Outbound.Abstractions.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
+using WebApi.Extensions;
 
 namespace WebApi.Controllers.LinxMicrovix
 {
@@ -13,6 +14,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxPedidosVenda: informações de pedidos de venda de acordo com a loja pesquisada
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxPedidosVenda")]
         [Tags("LinxMicrovixOrders")]
         public async Task<ActionResult> LinxPedidosVenda([FromServices] ILinxMicrovixOrdersService linxMicrovixOrdersService)
@@ -25,6 +27,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxPlanosPedidoVenda: os Planos de Pagamentos realizados nos pedidos de vendas
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxPlanosPedidoVenda")]
         [Tags("LinxMicrovixOrders")]
         public async Task<ActionResult> LinxPlanosPedidoVenda([FromServices] ILinxMicrovixOrdersService linxMicrovixOrdersService)
@@ -37,6 +40,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxPedidosVendaChecklistEntregaLocal: os tipos de locais cadastrados no checklist de entrega do pedido de venda.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxPedidosVendaChecklistEntregaLocal")]
         [Tags("LinxMicrovixOrders")]
         public async Task<ActionResult> LinxPedidosVendaChecklistEntregaLocal([FromServices] ILinxMicrovixOrdersService linxMicrovixOrdersService)
@@ -49,6 +53,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxPedidosVendaChecklistEntregaArmazenamento: os tipos de armazenamentos cadastrados no checklist de entrega do pedido de venda.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxPedidosVendaChecklistEntregaArmazenamento")]
         [Tags("LinxMicrovixOrders")]
         public async Task<ActionResult> LinxPedidosVendaChecklistEntregaArmazenamento([FromServices] ILinxMicrovixOrdersService linxMicrovixOrdersService)
@@ -61,6 +66,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxPedidosVendaChecklistEntregaDificuldade: os tipos de dificuldades cadastradas no checklist de entrega do pedido de venda.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxPedidosVendaChecklistEntregaDificuldade")]
         [Tags("LinxMicrovixOrders")]
         public async Task<ActionResult> LinxPedidosVendaChecklistEntregaDificuldade([FromServices] ILinxMicrovixOrdersService linxMicrovixOrdersService)
@@ -73,6 +79,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxOrcamentoPosicao: os dados das posições cadastradas para os orçamentos.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxOrcamentoPosicao")]
         [Tags("LinxMicrovixOrders")]
         public async Task<ActionResult> LinxOrcamentoPosicao([FromServices] ILinxMicrovixOrdersService linxMicrovixOrdersService)
@@ -85,6 +92,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxB2CPedidos: os pedidos de B2C
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxB2CPedidos")]
         [Tags("LinxMicrovixOrders")]
         public async Task<ActionResult> LinxB2CPedidos([FromServices] ILinxMicrovixOrdersService linxMicrovixOrdersService)
@@ -97,6 +105,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxB2CPedidosItens: os itens dos pedidos de B2C
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxB2CPedidosItens")]
         [Tags("LinxMicrovixOrders")]
         public async Task<ActionResult> LinxB2CPedidosItens([FromServices] ILinxMicrovixOrdersService linxMicrovixOrdersService)
@@ -109,6 +118,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxB2CPedidosStatus: o status dos pedidos de B2C
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxB2CPedidosStatus")]
         [Tags("LinxMicrovixOrders")]
         public async Task<ActionResult> LinxB2CPedidosStatus([FromServices] ILinxMicrovixOrdersService linxMicrovixOrdersService)
@@ -121,6 +131,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxB2CStatus: o cadastro dos status de B2C
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxB2CStatus")]
         [Tags("LinxMicrovixOrders")]
         public async Task<ActionResult> LinxB2CStatus([FromServices] ILinxMicrovixOrdersService linxMicrovixOrdersService)
@@ -133,6 +144,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sob demanda: busca LinxPedidosVenda por codPedido e grava; a chamada fica em linxmicrovix.LinxMicrovixRequests
         /// </summary>
+        [RequiresErpStores]
         [HttpGet("LinxPedidosVenda/{docCompany}/{cnpjEmp}/{codPedido}")]
         [Tags("LinxMicrovixOrders")]
         public async Task<ActionResult> LinxPedidosVendaByCodPedido(

@@ -1,6 +1,7 @@
 using Application.LinxMicrovix.Outbound.Abstractions.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
+using WebApi.Extensions;
 
 namespace WebApi.Controllers.LinxMicrovix
 {
@@ -13,6 +14,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxMovimentoTrocas: os valores e números das trocas realizadas nas vendas
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxMovimentoTrocas")]
         [Tags("LinxMicrovixReturns")]
         public async Task<ActionResult> LinxMovimentoTrocas([FromServices] ILinxMicrovixReturnsService linxMicrovixReturnsService)
@@ -25,6 +27,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxMovimentoTrocafone: os valores e números dos vouchers Trocafone realizadas nas vendas
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxMovimentoTrocafone")]
         [Tags("LinxMicrovixReturns")]
         public async Task<ActionResult> LinxMovimentoTrocafone([FromServices] ILinxMicrovixReturnsService linxMicrovixReturnsService)
@@ -37,6 +40,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxMovimentoDevolucoesItens: os dados da tabela movimento_devolucoes_itens cadastrados no portal.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxMovimentoDevolucoesItens")]
         [Tags("LinxMicrovixReturns")]
         public async Task<ActionResult> LinxMovimentoDevolucoesItens([FromServices] ILinxMicrovixReturnsService linxMicrovixReturnsService)
@@ -49,6 +53,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxMovimentoOrigemDevolucoes: os documentos de origem relacionados as devoluções
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxMovimentoOrigemDevolucoes")]
         [Tags("LinxMicrovixReturns")]
         public async Task<ActionResult> LinxMovimentoOrigemDevolucoes([FromServices] ILinxMicrovixReturnsService linxMicrovixReturnsService)
@@ -61,6 +66,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxMotivoDevolucao: os motivos de devoluções cadastrados no ERP.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxMotivoDevolucao")]
         [Tags("LinxMicrovixReturns")]
         public async Task<ActionResult> LinxMotivoDevolucao([FromServices] ILinxMicrovixReturnsService linxMicrovixReturnsService)
@@ -73,6 +79,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxTrocaUnificadaResumoVendas: as vendas do troca unificada.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxTrocaUnificadaResumoVendas")]
         [Tags("LinxMicrovixReturns")]
         public async Task<ActionResult> LinxTrocaUnificadaResumoVendas([FromServices] ILinxMicrovixReturnsService linxMicrovixReturnsService)
@@ -85,6 +92,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxTrocaUnificadaResumoVendasItens
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxTrocaUnificadaResumoVendasItens")]
         [Tags("LinxMicrovixReturns")]
         public async Task<ActionResult> LinxTrocaUnificadaResumoVendasItens([FromServices] ILinxMicrovixReturnsService linxMicrovixReturnsService)
@@ -97,6 +105,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxTrocaUnificadaResumoBaixa: os dados do resumo baixa do troca unificada
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxTrocaUnificadaResumoBaixa")]
         [Tags("LinxMicrovixReturns")]
         public async Task<ActionResult> LinxTrocaUnificadaResumoBaixa([FromServices] ILinxMicrovixReturnsService linxMicrovixReturnsService)
@@ -109,6 +118,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxTradeinParceiro: os registros cadastrados na tabela tradein_parceiro do portal
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxTradeinParceiro")]
         [Tags("LinxMicrovixReturns")]
         public async Task<ActionResult> LinxTradeinParceiro([FromServices] ILinxMicrovixReturnsService linxMicrovixReturnsService)
@@ -121,6 +131,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxDevolucaoRemanejoFabrica: as devoluções e remanejos de fábrica.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxDevolucaoRemanejoFabrica")]
         [Tags("LinxMicrovixReturns")]
         public async Task<ActionResult> LinxDevolucaoRemanejoFabrica([FromServices] ILinxMicrovixReturnsService linxMicrovixReturnsService)
@@ -133,6 +144,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxDevolucaoRemanejoFabricaItem: os itens das devoluções e remanejos de fábrica.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxDevolucaoRemanejoFabricaItem")]
         [Tags("LinxMicrovixReturns")]
         public async Task<ActionResult> LinxDevolucaoRemanejoFabricaItem([FromServices] ILinxMicrovixReturnsService linxMicrovixReturnsService)
@@ -145,6 +157,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxDevolucaoRemanejoFabricaStatus: o cadastro de status da rotina devoluções e remanejos de fábrica.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxDevolucaoRemanejoFabricaStatus")]
         [Tags("LinxMicrovixReturns")]
         public async Task<ActionResult> LinxDevolucaoRemanejoFabricaStatus([FromServices] ILinxMicrovixReturnsService linxMicrovixReturnsService)
@@ -157,6 +170,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxDevolucaoRemanejoFabricaTipo: o cadastro de tipos da rotina devoluções e remanejos de fábrica.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxDevolucaoRemanejoFabricaTipo")]
         [Tags("LinxMicrovixReturns")]
         public async Task<ActionResult> LinxDevolucaoRemanejoFabricaTipo([FromServices] ILinxMicrovixReturnsService linxMicrovixReturnsService)
@@ -169,6 +183,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sob demanda: busca LinxMovimentoTrocas por docOrigem e grava; a chamada fica em linxmicrovix.LinxMicrovixRequests
         /// </summary>
+        [RequiresErpStores]
         [HttpGet("LinxMovimentoTrocas/{docCompany}/{cnpjEmp}/{docOrigem}")]
         [Tags("LinxMicrovixReturns")]
         public async Task<ActionResult> LinxMovimentoTrocasByDocOrigem(

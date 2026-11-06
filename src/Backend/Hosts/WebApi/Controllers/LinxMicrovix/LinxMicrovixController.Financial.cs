@@ -1,5 +1,6 @@
 using Application.LinxMicrovix.Outbound.Abstractions.Services;
 using Microsoft.AspNetCore.Mvc;
+using WebApi.Extensions;
 
 namespace WebApi.Controllers.LinxMicrovix
 {
@@ -12,6 +13,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxFaturas: as faturas a receber ou a pagar de uma loja
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxFaturas")]
         [Tags("LinxMicrovixFinancial")]
         public async Task<ActionResult> LinxFaturas([FromServices] ILinxMicrovixFinancialService linxMicrovixFinancialService)
@@ -24,6 +26,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxFaturasOrigem: as faturas de origem
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxFaturasOrigem")]
         [Tags("LinxMicrovixFinancial")]
         public async Task<ActionResult> LinxFaturasOrigem([FromServices] ILinxMicrovixFinancialService linxMicrovixFinancialService)
@@ -36,6 +39,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxPortadores: os dados dos portadores.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxPortadores")]
         [Tags("LinxMicrovixFinancial")]
         public async Task<ActionResult> LinxPortadores([FromServices] ILinxMicrovixFinancialService linxMicrovixFinancialService)
@@ -48,6 +52,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxAntecipacoesFinanceiras: informações das antecipações financeiras do portal
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxAntecipacoesFinanceiras")]
         [Tags("LinxMicrovixFinancial")]
         public async Task<ActionResult> LinxAntecipacoesFinanceiras([FromServices] ILinxMicrovixFinancialService linxMicrovixFinancialService)
@@ -60,6 +65,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxAntecipacoesFinanceirasPlanos: os dados da tabela antecipacoes_financeiras  e antecipacoes_financeiras_planos no portal.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxAntecipacoesFinanceirasPlanos")]
         [Tags("LinxMicrovixFinancial")]
         public async Task<ActionResult> LinxAntecipacoesFinanceirasPlanos([FromServices] ILinxMicrovixFinancialService linxMicrovixFinancialService)
@@ -72,6 +78,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxDesfazimentosAntecipacoes: os valores registrados na tabela desfazimentos_antecipacoes
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxDesfazimentosAntecipacoes")]
         [Tags("LinxMicrovixFinancial")]
         public async Task<ActionResult> LinxDesfazimentosAntecipacoes([FromServices] ILinxMicrovixFinancialService linxMicrovixFinancialService)
@@ -84,6 +91,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxDesfazimentosAntecipacoesDocumento: os valores registrados na tabela desfazimentos_antecipacoes_documento
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxDesfazimentosAntecipacoesDocumento")]
         [Tags("LinxMicrovixFinancial")]
         public async Task<ActionResult> LinxDesfazimentosAntecipacoesDocumento([FromServices] ILinxMicrovixFinancialService linxMicrovixFinancialService)
@@ -96,6 +104,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxDesfazimentosAntecipacoesItens: os valores registrados na tabela desfazimentos_antecipacoes_itens
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxDesfazimentosAntecipacoesItens")]
         [Tags("LinxMicrovixFinancial")]
         public async Task<ActionResult> LinxDesfazimentosAntecipacoesItens([FromServices] ILinxMicrovixFinancialService linxMicrovixFinancialService)
@@ -108,6 +117,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxCategoriasFinanceiras: categoria financeira
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxCategoriasFinanceiras")]
         [Tags("LinxMicrovixFinancial")]
         public async Task<ActionResult> LinxCategoriasFinanceiras([FromServices] ILinxMicrovixFinancialService linxMicrovixFinancialService)
@@ -120,6 +130,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxCentroCusto: as informações dos centros de custos cadastrados no portal
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxCentroCusto")]
         [Tags("LinxMicrovixFinancial")]
         public async Task<ActionResult> LinxCentroCusto([FromServices] ILinxMicrovixFinancialService linxMicrovixFinancialService)
@@ -132,6 +143,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxPlanoContas: as informações do plano de contas cadastrado no portal
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxPlanoContas")]
         [Tags("LinxMicrovixFinancial")]
         public async Task<ActionResult> LinxPlanoContas([FromServices] ILinxMicrovixFinancialService linxMicrovixFinancialService)
@@ -144,6 +156,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxLancContabil: informações dos Lançamentos Contábeis por conta e empresa
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxLancContabil")]
         [Tags("LinxMicrovixFinancial")]
         public async Task<ActionResult> LinxLancContabil([FromServices] ILinxMicrovixFinancialService linxMicrovixFinancialService)
@@ -156,6 +169,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxHistoricosContabeis: os dados dos históricos contábeis.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxHistoricosContabeis")]
         [Tags("LinxMicrovixFinancial")]
         public async Task<ActionResult> LinxHistoricosContabeis([FromServices] ILinxMicrovixFinancialService linxMicrovixFinancialService)
@@ -168,6 +182,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxExtratoBancarioLancamentos: os registros da tabela extrato_bancario_lancamentos.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxExtratoBancarioLancamentos")]
         [Tags("LinxMicrovixFinancial")]
         public async Task<ActionResult> LinxExtratoBancarioLancamentos([FromServices] ILinxMicrovixFinancialService linxMicrovixFinancialService)
@@ -180,6 +195,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxExtratoBancarioConciliacoes: os registros da tabela extrato_bancario_conciliacoes.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxExtratoBancarioConciliacoes")]
         [Tags("LinxMicrovixFinancial")]
         public async Task<ActionResult> LinxExtratoBancarioConciliacoes([FromServices] ILinxMicrovixFinancialService linxMicrovixFinancialService)

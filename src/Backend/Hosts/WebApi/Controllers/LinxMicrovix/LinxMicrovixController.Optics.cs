@@ -1,5 +1,6 @@
 using Application.LinxMicrovix.Outbound.Abstractions.Services;
 using Microsoft.AspNetCore.Mvc;
+using WebApi.Extensions;
 
 namespace WebApi.Controllers.LinxMicrovix
 {
@@ -12,6 +13,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxProdutosOpticosTipo: os tipos de produtos opticos.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxProdutosOpticosTipo")]
         [Tags("LinxMicrovixOptics")]
         public async Task<ActionResult> LinxProdutosOpticosTipo([FromServices] ILinxMicrovixOpticsService linxMicrovixOpticsService)
@@ -24,6 +26,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxProdutosOpticosTipoAro: os tipos de aros
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxProdutosOpticosTipoAro")]
         [Tags("LinxMicrovixOptics")]
         public async Task<ActionResult> LinxProdutosOpticosTipoAro([FromServices] ILinxMicrovixOpticsService linxMicrovixOpticsService)
@@ -36,6 +39,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxProdutosOpticosFormatoAro: os formatos de aros
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxProdutosOpticosFormatoAro")]
         [Tags("LinxMicrovixOptics")]
         public async Task<ActionResult> LinxProdutosOpticosFormatoAro([FromServices] ILinxMicrovixOpticsService linxMicrovixOpticsService)
@@ -48,6 +52,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxDadosOpticosDav: os dados ópticos dos produtos da DAV
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxDadosOpticosDav")]
         [Tags("LinxMicrovixOptics")]
         public async Task<ActionResult> LinxDadosOpticosDav([FromServices] ILinxMicrovixOpticsService linxMicrovixOpticsService)
@@ -60,6 +65,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxOticoPrismaDescricao: descrição de prismas óticos.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxOticoPrismaDescricao")]
         [Tags("LinxMicrovixOptics")]
         public async Task<ActionResult> LinxOticoPrismaDescricao([FromServices] ILinxMicrovixOpticsService linxMicrovixOpticsService)
@@ -72,6 +78,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxOticoReceitas: receitas óticas.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxOticoReceitas")]
         [Tags("LinxMicrovixOptics")]
         public async Task<ActionResult> LinxOticoReceitas([FromServices] ILinxMicrovixOpticsService linxMicrovixOpticsService)
@@ -84,6 +91,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxPosicaoOsRamoOptico: o cadastro da posição da OS do Ramo Optico
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxPosicaoOsRamoOptico")]
         [Tags("LinxMicrovixOptics")]
         public async Task<ActionResult> LinxPosicaoOsRamoOptico([FromServices] ILinxMicrovixOpticsService linxMicrovixOpticsService)
@@ -96,6 +104,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxOrdensServicoPosicaoOsRamoOpticoHistorico: o histórico das posições das ordens de serviço do ramo optico
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxOrdensServicoPosicaoOsRamoOpticoHistorico")]
         [Tags("LinxMicrovixOptics")]
         public async Task<ActionResult> LinxOrdensServicoPosicaoOsRamoOpticoHistorico([FromServices] ILinxMicrovixOpticsService linxMicrovixOpticsService)
@@ -108,6 +117,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxOrcamentoComponenteFormula: os componentes de fórmulas relacionados ao orçamento.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxOrcamentoComponenteFormula")]
         [Tags("LinxMicrovixOptics")]
         public async Task<ActionResult> LinxOrcamentoComponenteFormula([FromServices] ILinxMicrovixOpticsService linxMicrovixOpticsService)
@@ -120,6 +130,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxComponenteFormulaDav: os componentes de fórmulas relacionados ao Dav.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxComponenteFormulaDav")]
         [Tags("LinxMicrovixOptics")]
         public async Task<ActionResult> LinxComponenteFormulaDav([FromServices] ILinxMicrovixOpticsService linxMicrovixOpticsService)

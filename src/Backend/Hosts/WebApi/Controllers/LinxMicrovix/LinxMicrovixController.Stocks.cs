@@ -1,6 +1,7 @@
 using Application.LinxMicrovix.Outbound.Abstractions.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
+using WebApi.Extensions;
 
 namespace WebApi.Controllers.LinxMicrovix
 {
@@ -13,6 +14,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxProdutosDetalhes: informações dos produtos de acordo com a loja pesquisada
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxProdutosDetalhes")]
         [Tags("LinxMicrovixStocks")]
         public async Task<ActionResult> LinxProdutosDetalhes([FromServices] ILinxMicrovixStocksService linxMicrovixStocksService)
@@ -25,6 +27,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxProdutosDetalhesSimplificado: os dados adicionais de produtos de forma simplificada
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxProdutosDetalhesSimplificado")]
         [Tags("LinxMicrovixStocks")]
         public async Task<ActionResult> LinxProdutosDetalhesSimplificado([FromServices] ILinxMicrovixStocksService linxMicrovixStocksService)
@@ -37,6 +40,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxProdutosDetalhesDepositos: os saldos dos produtos por depósito.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxProdutosDetalhesDepositos")]
         [Tags("LinxMicrovixStocks")]
         public async Task<ActionResult> LinxProdutosDetalhesDepositos([FromServices] ILinxMicrovixStocksService linxMicrovixStocksService)
@@ -49,6 +53,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxProdutosDepositos: os depósitos cadastrados no ERP
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxProdutosDepositos")]
         [Tags("LinxMicrovixStocks")]
         public async Task<ActionResult> LinxProdutosDepositos([FromServices] ILinxMicrovixStocksService linxMicrovixStocksService)
@@ -61,6 +66,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxProdutosInventario: informações do saldo do produto na data pesquisada
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxProdutosInventario")]
         [Tags("LinxMicrovixStocks")]
         public async Task<ActionResult> LinxProdutosInventario([FromServices] ILinxMicrovixStocksService linxMicrovixStocksService)
@@ -73,6 +79,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxListagemBalanco: a listagem de balanços.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxListagemBalanco")]
         [Tags("LinxMicrovixStocks")]
         public async Task<ActionResult> LinxListagemBalanco([FromServices] ILinxMicrovixStocksService linxMicrovixStocksService)
@@ -85,6 +92,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxBalancos: os balanços.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxBalancos")]
         [Tags("LinxMicrovixStocks")]
         public async Task<ActionResult> LinxBalancos([FromServices] ILinxMicrovixStocksService linxMicrovixStocksService)
@@ -97,6 +105,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxBalancosArquivos: os dados dos arquivos de balanços.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxBalancosArquivos")]
         [Tags("LinxMicrovixStocks")]
         public async Task<ActionResult> LinxBalancosArquivos([FromServices] ILinxMicrovixStocksService linxMicrovixStocksService)
@@ -109,6 +118,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza LinxBalancosSecoes: as seções dos balanços.
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxBalancosSecoes")]
         [Tags("LinxMicrovixStocks")]
         public async Task<ActionResult> LinxBalancosSecoes([FromServices] ILinxMicrovixStocksService linxMicrovixStocksService)
@@ -121,6 +131,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sob demanda: busca LinxProdutosDetalhes por codProduto e grava; a chamada fica em linxmicrovix.LinxMicrovixRequests
         /// </summary>
+        [RequiresErpStores]
         [HttpGet("LinxProdutosDetalhes/{docCompany}/{cnpjEmp}/{codProduto}")]
         [Tags("LinxMicrovixStocks")]
         public async Task<ActionResult> LinxProdutosDetalhesByCodProduto(
@@ -144,6 +155,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sob demanda: busca LinxProdutosDepositos por codDeposito e grava; a chamada fica em linxmicrovix.LinxMicrovixRequests
         /// </summary>
+        [RequiresErpStores]
         [HttpGet("LinxProdutosDepositos/{docCompany}/{codDeposito}")]
         [Tags("LinxMicrovixStocks")]
         public async Task<ActionResult> LinxProdutosDepositosByCodDeposito(
@@ -166,6 +178,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sob demanda: busca LinxProdutosInventario por codProduto e grava; a chamada fica em linxmicrovix.LinxMicrovixRequests
         /// </summary>
+        [RequiresErpStores]
         [HttpGet("LinxProdutosInventario/{docCompany}/{cnpjEmp}/{codProduto}")]
         [Tags("LinxMicrovixStocks")]
         public async Task<ActionResult> LinxProdutosInventarioByCodProduto(

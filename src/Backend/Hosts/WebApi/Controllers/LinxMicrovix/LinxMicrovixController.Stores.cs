@@ -1,5 +1,6 @@
 using Application.LinxMicrovix.Outbound.Abstractions.Services;
 using Microsoft.AspNetCore.Mvc;
+using WebApi.Extensions;
 
 namespace WebApi.Controllers.LinxMicrovix
 {
@@ -24,6 +25,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza o cadastro de cada loja do grupo (LinxLojas)
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxLojas")]
         [Tags("LinxMicrovixStores")]
         public async Task<ActionResult> LinxLojas([FromServices] ILinxMicrovixStoresService linxMicrovixStoresService)
@@ -36,6 +38,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza os parâmetros do portal por loja (LinxLojasParametros)
         /// </summary>
+        [RequiresErpStores]
         [HttpPost("LinxLojasParametros")]
         [Tags("LinxMicrovixStores")]
         public async Task<ActionResult> LinxLojasParametros([FromServices] ILinxMicrovixStoresService linxMicrovixStoresService)

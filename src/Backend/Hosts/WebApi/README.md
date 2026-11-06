@@ -236,7 +236,7 @@ do módulo. `Swagger:DefaultCompany`, no `appsettings.json`, já preenche o camp
 | Módulo | Prefixo | Rotas | Detalhes |
 |---|---|:---:|---|
 | 🟣 **Totvs** | `TotvsJobs/Totvs` | **123** | [README](../../Modules/Totvs/README.md); escritas só com `Totvs:Writes:<grupo>:Enabled` |
-| 🟣 **Linx Microvix** (ERP e B2C) | `LinxMicrovixJobs/LinxMicrovix` | **284** | [README](../../Modules/LinxMicrovix/LinxMicrovix%20-%20Outbound%20Web%20Service/README.md) |
+| 🟣 **Linx Microvix** (ERP e B2C) | `LinxMicrovixJobs/LinxMicrovix` | **284** | [README](../../Modules/LinxMicrovix/LinxMicrovix%20-%20Outbound%20Web%20Service/README.md); 409 sem lojas cadastradas (`LinxGrupoLojas` no ERP, `B2CConsultaEmpresas` no B2C), 403 método recusado pela Linx |
 | 🟣 **Linx Commerce** | `LinxCommerceJobs/LinxCommerce` | **12** | [README](../../Modules/LinxCommerce/README.md); obsoletas e fora do Swagger: sem credenciais para testar |
 | 🟣 **Movidesk** | `MovideskJobs/Movidesk` | **16** | [README](../../Modules/General/Movidesk/README.md) |
 | 🟣 **AfterSale** | `AfterSaleJobs/AfterSale` | **24** | [README](../../Modules/General/AfterSale/README.md) |
