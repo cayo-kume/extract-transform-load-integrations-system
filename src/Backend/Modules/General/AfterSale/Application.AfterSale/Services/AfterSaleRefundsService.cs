@@ -447,7 +447,10 @@ namespace Application.AfterSale.Services
 
             var totalInseridos = 0;
             var companys = await _afterSaleRepository.GetCompanys();
-            var summarizedRefunds = await _afterSaleRefundsRepository.GetSummarizedRefundsIdsForGetRefund();
+            // os 30 da vez de cada empresa da execução (GetCompanys já traz só a empresa do contexto)
+            var summarizedRefunds = new List<Domain.AfterSale.Entities.Reads.Refunds.SearchRefunds.Refund?>();
+            foreach (var company in companys.Where(x => x?.doc_company is not null))
+                summarizedRefunds.AddRange(await _afterSaleRefundsRepository.GetSummarizedRefundsIdsForGetRefund(company!.doc_company!));
             var _listErrors = new List<Domain.AfterSale.Entities.Errors.Error>();
 
             foreach (var refundsByCompany in summarizedRefunds.Where(x => x != null).GroupBy(x => x!.doc_company).ToList().WithProgress("empresa"))

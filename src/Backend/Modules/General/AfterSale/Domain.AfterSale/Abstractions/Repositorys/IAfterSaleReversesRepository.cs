@@ -8,7 +8,7 @@ namespace Domain.AfterSale.Abstractions.Repositorys
     {
         public Task<bool> BulkInsertIntoAfterSaleErrors(List<Entities.Errors.Error> data, Guid? parentExecutionGUID);
 
-        public Task<IEnumerable<Domain.AfterSale.Entities.Reads.Reverses.SearchReverses.Reverse?>> GetSummarizedReversesIdsForGetReverse();
+        public Task<IEnumerable<Domain.AfterSale.Entities.Reads.Reverses.SearchReverses.Reverse?>> GetSummarizedReversesIdsForGetReverse(string doc_company);
         public Task<List<Entities.Reads.Reverses.SearchReverses.Reverse?>> GetSummarizedReversesByIds(string doc_company, List<string> reversesIds);
         public Task<DateTime?> GetSummarizedReversesLastUpdate(string doc_company);
         public Task<bool> BulkInsertIntoAfterSaleSummarizedReverses(List<Entities.Reads.Reverses.SearchReverses.Reverse> data, Guid? parentExecutionGUID);
@@ -22,7 +22,7 @@ namespace Domain.AfterSale.Abstractions.Repositorys
         public Task<List<Entities.Reads.Reverses.Transportations.Transportation?>> GetTransportations(string doc_company);
         public Task<bool> BulkInsertIntoAfterSaleTransportationsReverses(List<Entities.Reads.Reverses.Transportations.Transportation> data, Guid? parentExecutionGUID);
 
-        public Task<IEnumerable<Entities.Reads.Reverses.SearchReverses.Reverse?>> GetSummarizedReversesIdsForGetCourierAttributes();
+        public Task<IEnumerable<Entities.Reads.Reverses.SearchReverses.Reverse?>> GetSummarizedReversesIdsForGetCourierAttributes(string doc_company);
         public Task<List<Entities.Reads.Reverses.CourierAttributes.CourierAttributes?>> GetCourierAttributesByReverseId(string doc_company, List<Int64> reversesIds);
         public Task<bool> BulkInsertIntoAfterSaleCourierAttributes(List<Entities.Reads.Reverses.CourierAttributes.CourierAttributes> data, Guid? parentExecutionGUID);
     }

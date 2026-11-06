@@ -24,8 +24,10 @@ namespace Application.AfterSale.Handlers.Commands
             return $"SELECT ID, DOC_COMPANY, UPDATED_AT FROM [AFTERSALE].[AFTERSALESUMMARIZEDREFUNDS] (NOLOCK) WHERE DOC_COMPANY = '{doc_company}' AND ID IN ({identificadores})";
         }
 
-        public string CreateGetSummarizedRefundsIdsForGetRefundQuery()
+        public string CreateGetSummarizedRefundsIdsForGetRefundQuery(string doc_company)
         {
+            // 30 por execução, da empresa da execução, em ordem de id: o limite de consultas da Send4 (cerca de 30) é respeitado pelo
+            // intervalo da agenda entre uma execução e outra
             return @$"SELECT TOP 30
                         A.DOC_COMPANY,
                         A.ID
@@ -34,7 +36,10 @@ namespace Application.AfterSale.Handlers.Commands
                       LEFT JOIN
                         [AFTERSALE].[AFTERSALEREFUNDS] B (NOLOCK) ON A.DOC_COMPANY = B.DOC_COMPANY AND A.ID = B.ID
                       WHERE
-                        B.ID IS NULL";
+                        A.DOC_COMPANY = '{doc_company}'
+                        AND B.ID IS NULL
+                      ORDER BY
+                        A.ID";
         }
 
         public string CreateGetRefundsByIdsQuery(string doc_company, List<string> refundsIds)

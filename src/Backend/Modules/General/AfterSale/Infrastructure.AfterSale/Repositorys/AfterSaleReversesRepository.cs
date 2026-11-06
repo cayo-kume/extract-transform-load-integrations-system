@@ -18,16 +18,16 @@ namespace Infrastructure.AfterSale.Repositorys
         public AfterSaleReversesRepository(IAfterSaleReversesCommandHandler afterSaleReversesCommandHandler, ISharedRepository coreRepository) =>
             (_afterSaleReversesCommandHandler, _coreRepository) = (afterSaleReversesCommandHandler, coreRepository);
 
-        public async Task<IEnumerable<Domain.AfterSale.Entities.Reads.Reverses.SearchReverses.Reverse?>> GetSummarizedReversesIdsForGetReverse()
+        public async Task<IEnumerable<Domain.AfterSale.Entities.Reads.Reverses.SearchReverses.Reverse?>> GetSummarizedReversesIdsForGetReverse(string doc_company)
         {
-            string sql = _afterSaleReversesCommandHandler.CreateGetSummarizedReversesIdsForGetReverseQuery();
+            string sql = _afterSaleReversesCommandHandler.CreateGetSummarizedReversesIdsForGetReverseQuery(doc_company);
 
             return await _coreRepository.GetRecords<Domain.AfterSale.Entities.Reads.Reverses.SearchReverses.Reverse>(sql);
         }
 
-        public async Task<IEnumerable<Domain.AfterSale.Entities.Reads.Reverses.SearchReverses.Reverse?>> GetSummarizedReversesIdsForGetCourierAttributes()
+        public async Task<IEnumerable<Domain.AfterSale.Entities.Reads.Reverses.SearchReverses.Reverse?>> GetSummarizedReversesIdsForGetCourierAttributes(string doc_company)
         {
-            string sql = _afterSaleReversesCommandHandler.CreateGetSummarizedReversesIdsForGetCourierAttributesQuery();
+            string sql = _afterSaleReversesCommandHandler.CreateGetSummarizedReversesIdsForGetCourierAttributesQuery(doc_company);
 
             return await _coreRepository.GetRecords<Domain.AfterSale.Entities.Reads.Reverses.SearchReverses.Reverse>(sql);
         }

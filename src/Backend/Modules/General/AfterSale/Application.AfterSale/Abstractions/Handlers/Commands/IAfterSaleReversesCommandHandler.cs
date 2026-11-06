@@ -8,8 +8,8 @@
         string CreateGetSummarizedReversesByIdsQuery(string doc_company, List<string> reversesIds);
         string CreateGetSummarizedReversesLastUpdateQuery(string doc_company);
 
-        string CreateGetSummarizedReversesIdsForGetReverseQuery();
-        string CreateGetSummarizedReversesIdsForGetCourierAttributesQuery();
+        string CreateGetSummarizedReversesIdsForGetReverseQuery(string doc_company);
+        string CreateGetSummarizedReversesIdsForGetCourierAttributesQuery(string doc_company);
 
         string CreateGetStatusQuery(string doc_company);
 

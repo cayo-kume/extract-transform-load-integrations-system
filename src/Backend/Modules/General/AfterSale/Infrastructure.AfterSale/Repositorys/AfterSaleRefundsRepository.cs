@@ -15,9 +15,9 @@ namespace Infrastructure.AfterSale.Repositorys
         public AfterSaleRefundsRepository(IAfterSaleRefundsCommandHandler afterSaleRefundsCommandHandler, ISharedRepository coreRepository) =>
             (_afterSaleRefundsCommandHandler, _coreRepository) = (afterSaleRefundsCommandHandler, coreRepository);
 
-        public async Task<IEnumerable<Domain.AfterSale.Entities.Reads.Refunds.SearchRefunds.Refund?>> GetSummarizedRefundsIdsForGetRefund()
+        public async Task<IEnumerable<Domain.AfterSale.Entities.Reads.Refunds.SearchRefunds.Refund?>> GetSummarizedRefundsIdsForGetRefund(string doc_company)
         {
-            string sql = _afterSaleRefundsCommandHandler.CreateGetSummarizedRefundsIdsForGetRefundQuery();
+            string sql = _afterSaleRefundsCommandHandler.CreateGetSummarizedRefundsIdsForGetRefundQuery(doc_company);
 
             return await _coreRepository.GetRecords<Domain.AfterSale.Entities.Reads.Refunds.SearchRefunds.Refund>(sql);
         }

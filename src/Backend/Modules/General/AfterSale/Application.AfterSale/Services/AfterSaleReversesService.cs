@@ -278,7 +278,10 @@ namespace Application.AfterSale.Services
 
             var totalInseridos = 0;
             var companys = await _afterSaleRepository.GetCompanys();
-            var summarizedReverses = await _afterSaleReversesRepository.GetSummarizedReversesIdsForGetReverse();
+            // os 30 da vez de cada empresa da execução (GetCompanys já traz só a empresa do contexto)
+            var summarizedReverses = new List<Domain.AfterSale.Entities.Reads.Reverses.SearchReverses.Reverse?>();
+            foreach (var company in companys.Where(x => x?.doc_company is not null))
+                summarizedReverses.AddRange(await _afterSaleReversesRepository.GetSummarizedReversesIdsForGetReverse(company!.doc_company!));
             var _listErrors = new List<Domain.AfterSale.Entities.Errors.Error>();
 
             foreach (var reversesByCompany in summarizedReverses.Where(x => x != null).GroupBy(x => x!.doc_company).ToList().WithProgress("empresa"))
@@ -536,7 +539,10 @@ namespace Application.AfterSale.Services
 
             var totalInseridos = 0;
             var companys = await _afterSaleRepository.GetCompanys();
-            var summarizedReverses = await _afterSaleReversesRepository.GetSummarizedReversesIdsForGetCourierAttributes();
+            // os 30 da vez de cada empresa da execução (GetCompanys já traz só a empresa do contexto)
+            var summarizedReverses = new List<Domain.AfterSale.Entities.Reads.Reverses.SearchReverses.Reverse?>();
+            foreach (var company in companys.Where(x => x?.doc_company is not null))
+                summarizedReverses.AddRange(await _afterSaleReversesRepository.GetSummarizedReversesIdsForGetCourierAttributes(company!.doc_company!));
 
             foreach (var reversesByCompany in summarizedReverses.Where(x => x != null).GroupBy(x => x!.doc_company).ToList().WithProgress("empresa"))
             {
