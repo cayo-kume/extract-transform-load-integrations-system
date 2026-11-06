@@ -63,13 +63,12 @@ constraint [PK_B2CConsultaProdutosImagensURL] primary key (
 	[url_imagem_blob] asc
 ));
 
-/*B2CConsultaImagens:  Chave a confirmar com uma resposta real com dados.*/
+/*B2CConsultaImagens: dado do portal, lido pela primeira loja, uma chamada por id_imagem de B2CConsultaProdutosImagens (a resposta traz o portal e a mesma imagem em todas as lojas).*/
 
 if dbo.fn_Migrator_Creates(N'[untreated].B2CConsultaImagens') = 1
 create table [untreated].B2CConsultaImagens (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14),
-	[cnpj_emp]                 nvarchar(14), --loja consultada
 	[id_imagem]                int,
 	[imagem]                   nvarchar(1000), --fora da documentação
 	[md5]                      nvarchar(max),
@@ -82,16 +81,15 @@ if dbo.fn_Migrator_Creates(N'[linxmicrovix].B2CConsultaImagens') = 1
 create table [linxmicrovix].B2CConsultaImagens (
 	[integrated_or_updated_at] datetime,
 	[doc_company]              nvarchar(14) not null,
-	[cnpj_emp]                 nvarchar(14) not null, --loja consultada
 	[id_imagem]                int not null,
 	[imagem]                   nvarchar(1000), --fora da documentação
 	[md5]                      nvarchar(max),
 	[timestamp]                bigint,
-	[portal]                   int,
+	[portal]                   int not null,
 	[url_imagem_blob]          nvarchar(1000), --fora da documentação
 constraint [PK_B2CConsultaImagens] primary key (
 	[doc_company] asc,
-	[cnpj_emp] asc,
+	[portal] asc,
 	[id_imagem] asc
 ));
 

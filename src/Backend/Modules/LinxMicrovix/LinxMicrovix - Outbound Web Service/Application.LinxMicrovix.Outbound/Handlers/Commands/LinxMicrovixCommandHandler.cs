@@ -35,6 +35,22 @@ namespace Application.LinxMicrovix.Outbound.Handlers.Commands
                      ORDER BY CNPJ";
         }
 
+        public string CreateGetB2CPendingImageIdsQuery(string doc_company)
+        {
+            // id_imagem do B2CConsultaProdutosImagens que o B2CConsultaImagens ainda não leu, ou cuja linha mudou depois da
+            // leitura: a merge regrava integrated_or_updated_at a cada leitura, então uma execução interrompida ou um id
+            // que deu erro volta na próxima, sem depender da hora da última gravação
+            return @$"SELECT DISTINCT CONVERT(NVARCHAR(400), S.ID_IMAGEM)
+                     FROM LINXMICROVIX.B2CCONSULTAPRODUTOSIMAGENS S
+                     WHERE S.DOC_COMPANY = '{doc_company}'
+                     AND S.ID_IMAGEM IS NOT NULL
+                     AND NOT EXISTS (SELECT 1 FROM LINXMICROVIX.B2CCONSULTAIMAGENS T
+                                     WHERE T.DOC_COMPANY = S.DOC_COMPANY
+                                     AND T.PORTAL = S.PORTAL
+                                     AND T.ID_IMAGEM = S.ID_IMAGEM
+                                     AND T.INTEGRATED_OR_UPDATED_AT >= S.INTEGRATED_OR_UPDATED_AT)";
+        }
+
         public string CreateGetStoresQuery(string doc_company, EnumApi api)
         {
             // lojas consultadas pelos outros métodos (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/.docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 4.2, item 3).

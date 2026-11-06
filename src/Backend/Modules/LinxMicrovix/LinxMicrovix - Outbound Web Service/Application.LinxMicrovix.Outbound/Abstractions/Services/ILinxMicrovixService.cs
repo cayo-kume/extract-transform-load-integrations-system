@@ -52,6 +52,12 @@ namespace Application.LinxMicrovix.Outbound.Abstractions.Services
         public Task<List<string>> GetB2CKeyStores(Company company);
 
         /// <summary>
+        /// id_imagem de linxmicrovix.B2CConsultaProdutosImagens que o B2CConsultaImagens ainda não leu ou que mudaram depois
+        /// da leitura (o B2CConsultaImagens faz uma chamada por id_imagem)
+        /// </summary>
+        public Task<List<string>> GetB2CPendingImageIds(Company company);
+
+        /// <summary>
         /// maior timestamp gravado do método para o cliente e a loja (cnpj_emp nulo: método de portal); 0 com o banco vazio
         /// </summary>
         public Task<long> GetLastTimestamp(Company company, EnumJob method, string? cnpj_emp);

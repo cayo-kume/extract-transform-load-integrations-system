@@ -1,6 +1,7 @@
 using Application.LinxMicrovix.Outbound.Abstractions.Services;
 using Application.Shared.Abstractions.Services;
 using Domain.LinxMicrovix.Outbound.Abstractions.Repositorys;
+using Domain.LinxMicrovix.Outbound.Entities.Parameters;
 using Domain.LinxMicrovix.Outbound.Enums;
 using Domain.LinxMicrovix.Outbound.Extensions;
 using Domain.Shared.Abstractions.Api;
@@ -32,6 +33,9 @@ namespace Application.LinxMicrovix.Outbound.Services
         // a API devolve no máximo N registros por chamada, e N muda por método (5000 no LinxMovimento, 100 no LinxUsuarios,
         // testado): a leitura repete pelo maior timestamp até a resposta vir vazia. O teto só protege de um laço sem fim
         private const int MaxPages = 10000;
+
+        // B2CConsultaImagens: imagens lidas (com o conteúdo) antes de cada gravação
+        private const int ImagesBatchSize = 50;
 
         public LinxMicrovixB2CProductImagesService(
             [FromKeyedServices("LinxMicrovixAPI")] IApiClient apiClient,
@@ -448,7 +452,7 @@ namespace Application.LinxMicrovix.Outbound.Services
             }
         }
 
-        [JobVersion("1.0.0")]
+        [JobVersion("1.1.0")]
         public async Task<bool?> B2CConsultaImagens()
         {
             _logger
@@ -474,17 +478,27 @@ namespace Application.LinxMicrovix.Outbound.Services
                         continue;
                     }
 
-                    foreach (var cnpj_emp in stores.WithProgress("loja"))
+                    // a resposta traz o conteúdo das imagens e o B2C não limita as linhas: pelo timestamp, a carga inicial vinha
+                    // numa resposta só e estourava a memória ao ler o corpo. Uma chamada por id_imagem, lido do
+                    // B2CConsultaProdutosImagens já gravado: os que ainda não foram lidos ou mudaram depois da leitura, então
+                    // uma execução interrompida (a gravação é por lote) ou um id com erro voltam na próxima
+                    var imageIds = await _linxMicrovixService.GetB2CPendingImageIds(company);
+
+                    if (imageIds.Count == 0)
+                        continue;
+
+                    // a imagem é do portal (a resposta traz o portal, e é a mesma em todas as lojas): lida pela primeira loja
+                    foreach (var cnpj_emp in stores.Take(1).WithProgress("loja"))
                     {
-                        // timestamp exclusivo: a API devolve só os maiores que o informado; banco vazio (0) traz o histórico inteiro
-                        var timestamp = await _linxMicrovixService.GetLastTimestamp(company, EnumJob.B2CConsultaImagens, cnpj_emp);
+                        // grava a cada ImagesBatchSize imagens: as linhas lidas não se acumulam na memória até o fim da loja
                         var rows = new List<(Domain.LinxMicrovix.Outbound.Dtos.Reads.B2C.ProductImages.B2CConsultaImagens dto, string xml)>();
-                        var failed = false;
+                        var index = 0;
 
-                        for (var page = 1; page <= MaxPages; page++)
+                        foreach (var id_imagem in imageIds)
                         {
-                            JobProgress.Step("página", page);
+                            JobProgress.Step("imagem", ++index, imageIds.Count);
 
+                            // timestamp 0: o id_imagem veio porque a imagem é nova ou mudou, e a resposta é só a versão atual dela
                             var requestBody = new XDocument(
                                 new XDeclaration("1.0", "utf-8", null),
                                 new XElement("LinxMicrovix",
@@ -495,7 +509,8 @@ namespace Application.LinxMicrovix.Outbound.Services
                                         new XElement("Parameters",
                                             new XElement("Parameter", new XAttribute("id", "chave"), company.b2c_chave),
                                             new XElement("Parameter", new XAttribute("id", "cnpjEmp"), cnpj_emp),
-                                            new XElement("Parameter", new XAttribute("id", "timestamp"), timestamp)
+                                            new XElement("Parameter", new XAttribute("id", "timestamp"), 0),
+                                            new XElement("Parameter", new XAttribute("id", "id_imagem"), id_imagem)
                                         )
                                     )
                                 )
@@ -522,17 +537,15 @@ namespace Application.LinxMicrovix.Outbound.Services
                             if (response is null || !response.IsSuccess)
                             {
                                 var body = response?.Content?.Length > 800 ? response.Content[..800] : response?.Content;
-                                _logger.AddError($"Erro da API Linx Microvix em B2CConsultaImagens (empresa {company.doc_company}, loja {cnpj_emp}, timestamp {timestamp}): {response?.StatusCode} {body}");
-
-                                failed = true;
-                                break;
+                                _logger.AddError($"Erro da API Linx Microvix em B2CConsultaImagens (empresa {company.doc_company}, loja {cnpj_emp}, id_imagem {id_imagem}): {response?.StatusCode} {body}");
+                                continue;
                             }
 
                             XElement? root = null;
 
                             try
                             {
-                                root = XDocument.Parse(response.Content?.TrimStart('\uFEFF') ?? String.Empty).Root;
+                                root = XDocument.Parse(response.Content?.TrimStart('﻿') ?? String.Empty).Root;
                             }
                             catch (XmlException)
                             {
@@ -542,10 +555,8 @@ namespace Application.LinxMicrovix.Outbound.Services
                             if (root is null || !String.Equals(root.Element("ResponseResult")?.Element("ResponseSuccess")?.Value, "true", StringComparison.OrdinalIgnoreCase))
                             {
                                 var message = root?.Descendants("Message").FirstOrDefault()?.Value ?? (response.Content?.Length > 800 ? response.Content[..800] : response.Content);
-                                _logger.AddError($"Resposta de erro da API Linx Microvix em B2CConsultaImagens (empresa {company.doc_company}, loja {cnpj_emp}, timestamp {timestamp}): {message}");
-
-                                failed = true;
-                                break;
+                                _logger.AddError($"Resposta de erro da API Linx Microvix em B2CConsultaImagens (empresa {company.doc_company}, loja {cnpj_emp}, id_imagem {id_imagem}): {message}");
+                                continue;
                             }
 
                             var columns = root.Element("ResponseData")?.Element("C")?.Elements("D").Select(d => d.Value).ToList() ?? [];
@@ -554,19 +565,14 @@ namespace Application.LinxMicrovix.Outbound.Services
                             // erro de parâmetro também vem com ResponseSuccess = True: <C /> vazio e a mensagem numa linha (testado no LinxFaturas)
                             if (columns.Count == 0 && pageRows.Count > 0)
                             {
-                                _logger.AddError($"Resposta de erro da API Linx Microvix em B2CConsultaImagens (empresa {company.doc_company}, loja {cnpj_emp}, timestamp {timestamp}): {pageRows[0].Value}");
-
-                                failed = true;
-                                break;
+                                _logger.AddError($"Resposta de erro da API Linx Microvix em B2CConsultaImagens (empresa {company.doc_company}, loja {cnpj_emp}, id_imagem {id_imagem}): {pageRows[0].Value}");
+                                continue;
                             }
-
-                            // resposta vazia: não há mais registros com timestamp maior que o informado
-                            if (pageRows.Count == 0)
-                                break;
 
                             foreach (var r in pageRows)
                             {
-                                // <D /> é nulo; a linha é registrada em auditing.Records com o nome de cada coluna
+                                // <D /> é nulo; a linha é registrada em auditing.Records com o nome de cada coluna, menos o conteúdo da
+                                // imagem (fica o md5): com ele, auditing.Records guardaria cada imagem de novo
                                 var values = r.Elements("D").Select(d => d.IsEmpty ? null : d.Value).ToList();
                                 var row = columns.Select((c, i) => (c, v: i < values.Count ? values[i] : null)).GroupBy(x => x.c).ToDictionary(g => g.Key, g => g.First().v);
 
@@ -580,59 +586,18 @@ namespace Application.LinxMicrovix.Outbound.Services
                                     portal = row.GetValueOrDefault("portal"),
                                     url_imagem_blob = row.GetValueOrDefault("url_imagem_blob")
                                     },
-                                    new XElement("R", row.Select(x => new XElement(x.Key, x.Value))).ToString(SaveOptions.DisableFormatting)
+                                    new XElement("R", row.Where(x => x.Key != "imagem").Select(x => new XElement(x.Key, x.Value))).ToString(SaveOptions.DisableFormatting)
                                 ));
                             }
 
-                            // a resposta vem em ordem crescente de timestamp (testado): a próxima página começa no maior desta
-                            var lastTimestamp = rows.Max(x => MicrovixConverters.ToInt64(x.dto.timestamp));
-
-                            if (lastTimestamp <= timestamp)
-                                break;
-
-                            timestamp = lastTimestamp;
-                        }
-
-                        // leitura incompleta não é gravada: a próxima execução sai do MAX(timestamp) e pularia o que faltou
-                        if (failed || rows.Count == 0)
-                            continue;
-
-                        // valida, monta as entidades (com o mesmo horário de lote) e grava. Chave: cnpj_emp + id_imagem; fica a linha de maior timestamp
-                        var batchTime = _linxMicrovixService.GetBatchTime();
-
-                        var _listSomenteNovos = new List<Domain.LinxMicrovix.Outbound.Entities.Reads.B2C.ProductImages.B2CConsultaImagens>();
-                        var records = new Dictionary<string, string>();
-
-                        foreach (var (dto, xml) in rows.GroupBy(x => x.dto.id_imagem).Select(g => g.OrderBy(x => MicrovixConverters.ToInt64(x.dto.timestamp)).Last()))
-                        {
-                            var validations = _b2CConsultaImagensValidator.Validate(dto);
-
-                            if (validations.Errors.Count > 0)
+                            if (rows.Count >= ImagesBatchSize)
                             {
-                                var message = String.Empty;
-                                validations.Errors.ForEach(s => message += $"B2CConsultaImagens {dto.id_imagem} (loja {cnpj_emp}): {s.ErrorMessage}\n");
-                                _logger.AddWarning(message);
+                                totalInseridos += await SaveB2CConsultaImagens(company, rows);
+                                rows.Clear();
                             }
-
-                            // sem nenhuma parte da chave o registro não é gravado; parte vazia vira o valor padrão (0, texto vazio ou 1900-01-01)
-                            if (String.IsNullOrEmpty(dto.id_imagem))
-                                continue;
-
-                            var entity = new Domain.LinxMicrovix.Outbound.Entities.Reads.B2C.ProductImages.B2CConsultaImagens(company.doc_company!, cnpj_emp, batchTime, dto);
-
-                            _listSomenteNovos.Add(entity);
-                            records[$"{entity.cnpj_emp}|{entity.id_imagem}"] = xml;
                         }
 
-                        if (_listSomenteNovos.Count == 0)
-                            continue;
-
-                        await _linxMicrovixB2CProductImagesRepository.BulkInsertIntoB2CConsultaImagens(_listSomenteNovos, _logger.GetExecutionGuid());
-
-                        foreach (var record in records)
-                            _logger.AddRecord(record.Key, record.Value);
-
-                        totalInseridos += _listSomenteNovos.Count;
+                        totalInseridos += await SaveB2CConsultaImagens(company, rows);
                     }
                 }
 
@@ -647,6 +612,54 @@ namespace Application.LinxMicrovix.Outbound.Services
                 _logger.SetLogEndDate();
                 await _logger.CommitAllChanges();
             }
+        }
+
+        /// <summary>
+        /// valida, monta as entidades (com o mesmo horário de lote) e grava um lote do B2CConsultaImagens. Chave: portal +
+        /// id_imagem; fica a linha de maior timestamp. Devolve quantas linhas gravou
+        /// </summary>
+        private async Task<int> SaveB2CConsultaImagens(
+            Company company,
+            List<(Domain.LinxMicrovix.Outbound.Dtos.Reads.B2C.ProductImages.B2CConsultaImagens dto, string xml)> rows)
+        {
+            if (rows.Count == 0)
+                return 0;
+
+            var batchTime = _linxMicrovixService.GetBatchTime();
+
+            var _listSomenteNovos = new List<Domain.LinxMicrovix.Outbound.Entities.Reads.B2C.ProductImages.B2CConsultaImagens>();
+            var records = new Dictionary<string, string>();
+
+            foreach (var (dto, xml) in rows.GroupBy(x => (x.dto.portal, x.dto.id_imagem)).Select(g => g.OrderBy(x => MicrovixConverters.ToInt64(x.dto.timestamp)).Last()))
+            {
+                var validations = _b2CConsultaImagensValidator.Validate(dto);
+
+                if (validations.Errors.Count > 0)
+                {
+                    var message = String.Empty;
+                    validations.Errors.ForEach(s => message += $"B2CConsultaImagens {dto.portal} {dto.id_imagem}: {s.ErrorMessage}\n");
+                    _logger.AddWarning(message);
+                }
+
+                // sem nenhuma parte da chave o registro não é gravado; parte vazia vira o valor padrão (0, texto vazio ou 1900-01-01)
+                if (String.IsNullOrEmpty(dto.portal) && String.IsNullOrEmpty(dto.id_imagem))
+                    continue;
+
+                var entity = new Domain.LinxMicrovix.Outbound.Entities.Reads.B2C.ProductImages.B2CConsultaImagens(company.doc_company!, batchTime, dto);
+
+                _listSomenteNovos.Add(entity);
+                records[$"{entity.portal}|{entity.id_imagem}"] = xml;
+            }
+
+            if (_listSomenteNovos.Count == 0)
+                return 0;
+
+            await _linxMicrovixB2CProductImagesRepository.BulkInsertIntoB2CConsultaImagens(_listSomenteNovos, _logger.GetExecutionGuid());
+
+            foreach (var record in records)
+                _logger.AddRecord(record.Key, record.Value);
+
+            return _listSomenteNovos.Count;
         }
 
         [JobVersion("1.0.0")]

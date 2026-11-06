@@ -34,6 +34,16 @@ namespace Infrastructure.LinxMicrovix.Outbound.Repositorys
                 .ToList();
         }
 
+        public async Task<IEnumerable<string>> GetB2CPendingImageIds(string doc_company)
+        {
+            string sql = _linxMicrovixCommandHandler.CreateGetB2CPendingImageIdsQuery(doc_company);
+
+            return (await _coreRepository.GetRecords<string>(sql))
+                .Where(x => !String.IsNullOrWhiteSpace(x))
+                .Select(x => x!)
+                .ToList();
+        }
+
         public async Task<IEnumerable<string>> GetStores(string doc_company, EnumApi api)
         {
             string sql = _linxMicrovixCommandHandler.CreateGetStoresQuery(doc_company, api);

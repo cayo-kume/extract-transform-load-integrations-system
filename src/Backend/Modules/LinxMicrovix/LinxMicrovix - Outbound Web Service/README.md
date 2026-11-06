@@ -757,7 +757,7 @@ sem `doc_company`.
 |---|---|---|---|---|---|
 | `B2CConsultaProdutosImagens` | portal (1ª loja) | — | `portal`, `id_imagem_produto` | 8276 | 8717 |
 | `B2CConsultaProdutosImagensURL` | loja | — | `cnpj_emp`, `codigoproduto`, `url_imagem_blob` | 8277 | 8718 |
-| `B2CConsultaImagens` | loja | — | `cnpj_emp`, `id_imagem` | 8278 | 8719 |
+| `B2CConsultaImagens` | portal (1ª loja) | `id_imagem` de `B2CConsultaProdutosImagens` (os não lidos ou alterados) | `portal`, `id_imagem` | 8278 | 8719 |
 | `B2CConsultaImagensHD` | loja | `codigoproduto` de `B2CConsultaProdutos` (só os novos) | `cnpj_emp`, `codigoproduto`, `identificador_imagem` | 8279 | 8720 |
 
 </details>
@@ -830,6 +830,7 @@ sem `doc_company`.
   * `LinxRemessasIdentificadores` ← `identificador_remessa` de `LinxMovimentoRemessas` (incremental: só os valores gravados depois da última leitura; na primeira execução, uma chamada por valor)
   * `LinxPlanosPedidoVenda` ← `cod_pedido` de `LinxPedidosVenda` (incremental: só os valores gravados depois da última leitura; na primeira execução, uma chamada por valor)
   * `B2CConsultaImagensHD` ← `codigoproduto` de `B2CConsultaProdutos` (incremental: só os valores gravados depois da última leitura; na primeira execução, uma chamada por valor)
+  * `B2CConsultaImagens` ← `id_imagem` de `B2CConsultaProdutosImagens` (os ainda não lidos ou alterados depois da leitura, então uma execução interrompida ou um id com erro voltam na próxima; grava a cada 50 imagens, e o `auditing.Records` guarda a linha sem o conteúdo da imagem)
 
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b2e','primaryTextColor':'#ffffff','primaryBorderColor':'#7c5cff','lineColor':'#f5a524','textColor':'#1e1b2e','clusterBkg':'#f5f3ff','clusterBorder':'#7c5cff','titleColor':'#1e1b2e','edgeLabelBackground':'#1e1b2e'}}}%%
@@ -842,6 +843,7 @@ flowchart LR
     MR["LinxMovimentoRemessas"] -- "identificador_remessa" --> RI["LinxRemessasIdentificadores"]
     PV["LinxPedidosVenda"] -- "cod_pedido" --> PPV["LinxPlanosPedidoVenda"]
     BP["B2CConsultaProdutos"] -- "codigoproduto" --> BI["B2CConsultaImagensHD"]
+    BPI["B2CConsultaProdutosImagens"] -- "id_imagem" --> BIM["B2CConsultaImagens"]
 
     classDef accent fill:#7c5cff,stroke:#7c5cff,color:#ffffff
     classDef warm fill:#f5a524,stroke:#f5a524,color:#1e1b2e
@@ -1206,8 +1208,9 @@ As leituras sob demanda usam os mesmos comandos, com o parâmetro da busca; a re
 * **8 métodos sem resposta real:** 7 do B2C que a chave de teste não tem liberados (`B2CConsultaClientesContatos`,
   `B2CConsultaProdutosImagensURL` e os 5 `B2CConsultaB2CProdutosCamposAdicionais*`) e o `LinxClientesRede`, que
   recusa os parâmetros da v274. As colunas vieram da documentação.
-* **Memória na carga inicial** de `B2CConsultaNFe` e `B2CConsultaImagens` (respostas de centenas de MB, porque o B2C
-  não tem limite de linhas): acompanhar a primeira execução pelo host.
+* **Memória na carga inicial** do `B2CConsultaNFe` (respostas de centenas de MB, porque o B2C não tem limite de
+  linhas): acompanhar a primeira execução pelo host. O `B2CConsultaImagens` estourava a memória pelo timestamp e passou
+  a ler uma imagem por chamada (`id_imagem`).
 * **13 métodos do `LinxMetodos` que a v274 não descreve** ficam fora até a Linx documentá-los.
 
 ---
