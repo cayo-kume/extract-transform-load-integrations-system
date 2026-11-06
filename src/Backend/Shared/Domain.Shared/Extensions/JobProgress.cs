@@ -121,7 +121,8 @@ namespace Domain.Shared.Extensions
 
             private int _apiCalls;
             private string? _lastCall;
-            private TimeSpan _lastRender = TimeSpan.MinValue;
+            // nulo até o primeiro desenho (com TimeSpan.MinValue, o "now - _lastRender" estourava no primeiro Step sem laço antes)
+            private TimeSpan? _lastRender;
             private int _lastLength;
             private bool _started;
 
@@ -196,7 +197,7 @@ namespace Domain.Shared.Extensions
             {
                 var now = _stopwatch.Elapsed;
 
-                if (!force && now - _lastRender < (Console.IsOutputRedirected ? RedirectedInterval : RedrawInterval))
+                if (!force && _lastRender is { } last && now - last < (Console.IsOutputRedirected ? RedirectedInterval : RedrawInterval))
                     return;
 
                 _lastRender = now;
