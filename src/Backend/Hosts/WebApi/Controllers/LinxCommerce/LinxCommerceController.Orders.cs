@@ -15,6 +15,7 @@ namespace WebApi.Controllers.LinxCommerce
         /// </summary>
         [HttpPost("SearchOrders")]
         [Tags("LinxCommerceOrders")]
+        [Obsolete("Sem credenciais do Linx Commerce para testar: rota fora do Swagger até haver credenciais")]
         public async Task<ActionResult> SearchOrders([FromServices] ILinxCommerceOrdersService linxCommerceOrdersService)
         {
             var result = await linxCommerceOrdersService.SearchOrders();
@@ -27,6 +28,7 @@ namespace WebApi.Controllers.LinxCommerce
         /// </summary>
         [HttpPost("SearchOrderStatus")]
         [Tags("LinxCommerceOrders")]
+        [Obsolete("Sem credenciais do Linx Commerce para testar: rota fora do Swagger até haver credenciais")]
         public async Task<ActionResult> SearchOrderStatus([FromServices] ILinxCommerceOrdersService linxCommerceOrdersService)
         {
             var result = await linxCommerceOrdersService.SearchOrderStatus();
@@ -39,6 +41,7 @@ namespace WebApi.Controllers.LinxCommerce
         /// </summary>
         [HttpGet("Orders/{docCompany}/{orderId:guid}")]
         [Tags("LinxCommerceOrders")]
+        [Obsolete("Sem credenciais do Linx Commerce para testar: rota fora do Swagger até haver credenciais")]
         public async Task<ActionResult> Order(
             [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
             [RegularExpression(@"^\d{14}$")] string docCompany,
@@ -52,6 +55,7 @@ namespace WebApi.Controllers.LinxCommerce
         /// </summary>
         [HttpGet("Orders/{docCompany}/Number/{orderNumber}")]
         [Tags("LinxCommerceOrders")]
+        [Obsolete("Sem credenciais do Linx Commerce para testar: rota fora do Swagger até haver credenciais")]
         public async Task<ActionResult> OrderByNumber(
             [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
             [RegularExpression(@"^\d{14}$")] string docCompany,

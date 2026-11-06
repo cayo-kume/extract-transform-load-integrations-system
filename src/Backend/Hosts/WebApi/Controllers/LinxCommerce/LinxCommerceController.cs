@@ -12,9 +12,8 @@ namespace WebApi.Controllers.LinxCommerce
     /// </summary>
     [ApiController]
     //[Authorize]
-#if RELEASE
+    // sem credenciais do Linx Commerce para testar: as rotas continuam respondendo, mas ficam fora do Swagger em qualquer build, e as actions estão [Obsolete]
     [ApiExplorerSettings(IgnoreApi = true)]
-#endif
     [Route("LinxCommerceJobs/LinxCommerce")]
     public partial class LinxCommerceController : Controller
     {

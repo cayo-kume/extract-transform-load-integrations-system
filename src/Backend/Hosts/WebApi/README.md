@@ -228,7 +228,7 @@ dotnet user-secrets set "Totvs:BaseUrl" "http://127.0.0.1:9/" --project src/Back
 
 ## 🛣️ Rotas por módulo
 
-Todas as rotas aparecem no Swagger (em `RELEASE`, os controllers ficam fora dele). As leituras recorrentes (as cargas)
+Todas as rotas aparecem no Swagger, menos as do Linx Commerce (em `RELEASE`, os controllers ficam fora dele). As leituras recorrentes (as cargas)
 pedem o cabeçalho **`X-Company`**, o CNPJ da empresa, que o Swagger mostra como campo obrigatório; as sob demanda e as
 escritas pedem o CNPJ na rota (`{docCompany}`, 14 dígitos) e o cabeçalho **`X-User-Name`**, gravado no log de requisições
 do módulo. `Swagger:DefaultCompany`, no `appsettings.json`, já preenche o campo `X-Company` com um CNPJ.
@@ -237,7 +237,7 @@ do módulo. `Swagger:DefaultCompany`, no `appsettings.json`, já preenche o camp
 |---|---|:---:|---|
 | 🟣 **Totvs** | `TotvsJobs/Totvs` | **123** | [README](../../Modules/Totvs/README.md); escritas só com `Totvs:Writes:<grupo>:Enabled` |
 | 🟣 **Linx Microvix** (ERP e B2C) | `LinxMicrovixJobs/LinxMicrovix` | **284** | [README](../../Modules/LinxMicrovix/LinxMicrovix%20-%20Outbound%20Web%20Service/README.md) |
-| 🟣 **Linx Commerce** | `LinxCommerceJobs/LinxCommerce` | **12** | [README](../../Modules/LinxCommerce/README.md) |
+| 🟣 **Linx Commerce** | `LinxCommerceJobs/LinxCommerce` | **12** | [README](../../Modules/LinxCommerce/README.md); obsoletas e fora do Swagger: sem credenciais para testar |
 | 🟣 **Movidesk** | `MovideskJobs/Movidesk` | **16** | [README](../../Modules/General/Movidesk/README.md) |
 | 🟣 **AfterSale** | `AfterSaleJobs/AfterSale` | **24** | [README](../../Modules/General/AfterSale/README.md) |
 | 🟠 **Data warehouse** | `DataWarehouseJobs/DataWarehouse` | **5** | [funcionamento e fluxo](../../Modules/DataWarehouse/.docs/DATAWAREHOUSE-FUNCIONAMENTO-E-FLUXO.md); 200 concluída, 500 falha, 409 outra carga rodando |

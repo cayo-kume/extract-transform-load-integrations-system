@@ -15,6 +15,7 @@ namespace WebApi.Controllers.LinxCommerce
         /// </summary>
         [HttpPost("SearchCustomer")]
         [Tags("LinxCommerceCustomers")]
+        [Obsolete("Sem credenciais do Linx Commerce para testar: rota fora do Swagger até haver credenciais")]
         public async Task<ActionResult> SearchCustomer([FromServices] ILinxCommerceCustomersService linxCommerceCustomersService)
         {
             var result = await linxCommerceCustomersService.SearchCustomer();
@@ -28,6 +29,7 @@ namespace WebApi.Controllers.LinxCommerce
         /// </summary>
         [HttpGet("Customers/{docCompany}/{customerId:int:min(1)}")]
         [Tags("LinxCommerceCustomers")]
+        [Obsolete("Sem credenciais do Linx Commerce para testar: rota fora do Swagger até haver credenciais")]
         public async Task<ActionResult> Customer(
             [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
             [RegularExpression(@"^\d{14}$")] string docCompany,

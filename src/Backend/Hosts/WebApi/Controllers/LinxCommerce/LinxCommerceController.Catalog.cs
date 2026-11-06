@@ -15,6 +15,7 @@ namespace WebApi.Controllers.LinxCommerce
         /// </summary>
         [HttpPost("SearchProduct")]
         [Tags("LinxCommerceCatalog")]
+        [Obsolete("Sem credenciais do Linx Commerce para testar: rota fora do Swagger até haver credenciais")]
         public async Task<ActionResult> SearchProduct([FromServices] ILinxCommerceCatalogService linxCommerceCatalogService)
         {
             var result = await linxCommerceCatalogService.SearchProduct();
@@ -27,6 +28,7 @@ namespace WebApi.Controllers.LinxCommerce
         /// </summary>
         [HttpPost("SearchSKU")]
         [Tags("LinxCommerceCatalog")]
+        [Obsolete("Sem credenciais do Linx Commerce para testar: rota fora do Swagger até haver credenciais")]
         public async Task<ActionResult> SearchSKU([FromServices] ILinxCommerceCatalogService linxCommerceCatalogService)
         {
             var result = await linxCommerceCatalogService.SearchSKU();
@@ -39,6 +41,7 @@ namespace WebApi.Controllers.LinxCommerce
         /// </summary>
         [HttpGet("Products/{docCompany}/{productId:int:min(1)}")]
         [Tags("LinxCommerceCatalog")]
+        [Obsolete("Sem credenciais do Linx Commerce para testar: rota fora do Swagger até haver credenciais")]
         public async Task<ActionResult> Product(
             [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
             [RegularExpression(@"^\d{14}$")] string docCompany,
@@ -52,6 +55,7 @@ namespace WebApi.Controllers.LinxCommerce
         /// </summary>
         [HttpGet("Skus/{docCompany}/{productId:int:min(1)}")]
         [Tags("LinxCommerceCatalog")]
+        [Obsolete("Sem credenciais do Linx Commerce para testar: rota fora do Swagger até haver credenciais")]
         public async Task<ActionResult> Sku(
             [FromHeader(Name = "X-User-Name"), Required, StringLength(100)] string userName,
             [RegularExpression(@"^\d{14}$")] string docCompany,
