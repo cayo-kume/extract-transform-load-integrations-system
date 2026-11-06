@@ -112,6 +112,12 @@ namespace Application.Shared.Services
         public bool HasErrors =>
             Log?.Messages.Any(x => x.Level == MessageLevel.Error) == true;
 
+        public IReadOnlyList<string> ErrorMessages =>
+            Log?.Messages.Where(x => x.Level == MessageLevel.Error).Select(x => x.Msg ?? string.Empty).ToList() ?? [];
+
+        public int RecordsCount =>
+            Log?.Records.Count ?? 0;
+
         public ILoggerService AddRecord(string key, string xml)
         {
             if (Log is null) return this;

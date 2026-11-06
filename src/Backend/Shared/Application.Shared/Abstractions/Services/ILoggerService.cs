@@ -65,6 +65,17 @@ namespace Application.Shared.Abstractions.Services
         public bool HasErrors { get; }
 
         /// <summary>
+        /// os textos das mensagens de erro (nível 3) da execução, para quem chamou o job decidir a resposta (ex.: a rota do
+        /// Microvix com o método recusado pela Linx)
+        /// </summary>
+        public IReadOnlyList<string> ErrorMessages { get; }
+
+        /// <summary>
+        /// quantos registros a execução gravou (auditing.Records)
+        /// </summary>
+        public int RecordsCount { get; }
+
+        /// <summary>
         /// Add to list a new record obtained from API
         /// </summary>
         /// <param name="key"></param>

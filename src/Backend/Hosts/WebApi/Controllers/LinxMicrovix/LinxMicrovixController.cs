@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using WebApi.Extensions;
 
 namespace WebApi.Controllers.LinxMicrovix
 {
@@ -14,6 +15,8 @@ namespace WebApi.Controllers.LinxMicrovix
     [ApiExplorerSettings(IgnoreApi = true)]
 #endif
     [Route("LinxMicrovixJobs/LinxMicrovix")]
+    // método que a chave não tem liberado na Linx, recusado em todas as chamadas e sem nada gravado: 403 com o motivo
+    [LinxMicrovixAccessFilter]
     public partial class LinxMicrovixController : Controller
     {
     }
