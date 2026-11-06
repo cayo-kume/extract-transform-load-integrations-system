@@ -1,5 +1,6 @@
 using Application.LinxMicrovix.Outbound.Abstractions.Services;
 using Microsoft.AspNetCore.Mvc;
+using WebApi.Extensions;
 
 namespace WebApi.Controllers.LinxMicrovix
 {
@@ -12,6 +13,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaProdutosCustos
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaProdutosCustos")]
         [Tags("LinxMicrovixB2CStocksAndPrices")]
         public async Task<ActionResult> B2CConsultaProdutosCustos([FromServices] ILinxMicrovixB2CStocksAndPricesService linxMicrovixB2CStocksAndPricesService)
@@ -24,6 +26,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaProdutosDepositos
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaProdutosDepositos")]
         [Tags("LinxMicrovixB2CStocksAndPrices")]
         public async Task<ActionResult> B2CConsultaProdutosDepositos([FromServices] ILinxMicrovixB2CStocksAndPricesService linxMicrovixB2CStocksAndPricesService)
@@ -36,6 +39,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaProdutosDetalhes
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaProdutosDetalhes")]
         [Tags("LinxMicrovixB2CStocksAndPrices")]
         public async Task<ActionResult> B2CConsultaProdutosDetalhes([FromServices] ILinxMicrovixB2CStocksAndPricesService linxMicrovixB2CStocksAndPricesService)
@@ -48,6 +52,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaProdutosDetalhesDepositos
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaProdutosDetalhesDepositos")]
         [Tags("LinxMicrovixB2CStocksAndPrices")]
         public async Task<ActionResult> B2CConsultaProdutosDetalhesDepositos([FromServices] ILinxMicrovixB2CStocksAndPricesService linxMicrovixB2CStocksAndPricesService)
@@ -60,6 +65,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaProdutosPromocao
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaProdutosPromocao")]
         [Tags("LinxMicrovixB2CStocksAndPrices")]
         public async Task<ActionResult> B2CConsultaProdutosPromocao([FromServices] ILinxMicrovixB2CStocksAndPricesService linxMicrovixB2CStocksAndPricesService)
@@ -72,6 +78,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaProdutosTabelas
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaProdutosTabelas")]
         [Tags("LinxMicrovixB2CStocksAndPrices")]
         public async Task<ActionResult> B2CConsultaProdutosTabelas([FromServices] ILinxMicrovixB2CStocksAndPricesService linxMicrovixB2CStocksAndPricesService)
@@ -84,6 +91,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaProdutosTabelasPrecos
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaProdutosTabelasPrecos")]
         [Tags("LinxMicrovixB2CStocksAndPrices")]
         public async Task<ActionResult> B2CConsultaProdutosTabelasPrecos([FromServices] ILinxMicrovixB2CStocksAndPricesService linxMicrovixB2CStocksAndPricesService)

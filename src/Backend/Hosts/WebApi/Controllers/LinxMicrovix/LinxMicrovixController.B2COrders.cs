@@ -1,5 +1,6 @@
 using Application.LinxMicrovix.Outbound.Abstractions.Services;
 using Microsoft.AspNetCore.Mvc;
+using WebApi.Extensions;
 using System.ComponentModel.DataAnnotations;
 
 namespace WebApi.Controllers.LinxMicrovix
@@ -13,6 +14,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaPedidos
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaPedidos")]
         [Tags("LinxMicrovixB2COrders")]
         public async Task<ActionResult> B2CConsultaPedidos([FromServices] ILinxMicrovixB2COrdersService linxMicrovixB2COrdersService)
@@ -25,6 +27,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaPedidosItens
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaPedidosItens")]
         [Tags("LinxMicrovixB2COrders")]
         public async Task<ActionResult> B2CConsultaPedidosItens([FromServices] ILinxMicrovixB2COrdersService linxMicrovixB2COrdersService)
@@ -37,6 +40,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaPedidosPlanos
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaPedidosPlanos")]
         [Tags("LinxMicrovixB2COrders")]
         public async Task<ActionResult> B2CConsultaPedidosPlanos([FromServices] ILinxMicrovixB2COrdersService linxMicrovixB2COrdersService)
@@ -49,6 +53,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaPedidosStatus
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaPedidosStatus")]
         [Tags("LinxMicrovixB2COrders")]
         public async Task<ActionResult> B2CConsultaPedidosStatus([FromServices] ILinxMicrovixB2COrdersService linxMicrovixB2COrdersService)
@@ -61,6 +66,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaPedidosIdentificador: os registro da tabela B2C_vendas
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaPedidosIdentificador")]
         [Tags("LinxMicrovixB2COrders")]
         public async Task<ActionResult> B2CConsultaPedidosIdentificador([FromServices] ILinxMicrovixB2COrdersService linxMicrovixB2COrdersService)
@@ -73,6 +79,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaPedidosTipos
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaPedidosTipos")]
         [Tags("LinxMicrovixB2COrders")]
         public async Task<ActionResult> B2CConsultaPedidosTipos([FromServices] ILinxMicrovixB2COrdersService linxMicrovixB2COrdersService)
@@ -85,6 +92,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaStatus
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaStatus")]
         [Tags("LinxMicrovixB2COrders")]
         public async Task<ActionResult> B2CConsultaStatus([FromServices] ILinxMicrovixB2COrdersService linxMicrovixB2COrdersService)
@@ -97,6 +105,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaCodigoRastreio
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaCodigoRastreio")]
         [Tags("LinxMicrovixB2COrders")]
         public async Task<ActionResult> B2CConsultaCodigoRastreio([FromServices] ILinxMicrovixB2COrdersService linxMicrovixB2COrdersService)
@@ -109,6 +118,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaNFe
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaNFe")]
         [Tags("LinxMicrovixB2COrders")]
         public async Task<ActionResult> B2CConsultaNFe([FromServices] ILinxMicrovixB2COrdersService linxMicrovixB2COrdersService)
@@ -121,6 +131,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaNFeSituacao
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaNFeSituacao")]
         [Tags("LinxMicrovixB2COrders")]
         public async Task<ActionResult> B2CConsultaNFeSituacao([FromServices] ILinxMicrovixB2COrdersService linxMicrovixB2COrdersService)

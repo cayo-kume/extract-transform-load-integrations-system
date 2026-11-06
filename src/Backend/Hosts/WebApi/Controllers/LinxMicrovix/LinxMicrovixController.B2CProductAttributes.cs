@@ -1,5 +1,6 @@
 using Application.LinxMicrovix.Outbound.Abstractions.Services;
 using Microsoft.AspNetCore.Mvc;
+using WebApi.Extensions;
 
 namespace WebApi.Controllers.LinxMicrovix
 {
@@ -12,6 +13,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaClassificacao
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaClassificacao")]
         [Tags("LinxMicrovixB2CProductAttributes")]
         public async Task<ActionResult> B2CConsultaClassificacao([FromServices] ILinxMicrovixB2CProductAttributesService linxMicrovixB2CProductAttributesService)
@@ -24,6 +26,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaColecoes
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaColecoes")]
         [Tags("LinxMicrovixB2CProductAttributes")]
         public async Task<ActionResult> B2CConsultaColecoes([FromServices] ILinxMicrovixB2CProductAttributesService linxMicrovixB2CProductAttributesService)
@@ -36,6 +39,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaEspessuras
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaEspessuras")]
         [Tags("LinxMicrovixB2CProductAttributes")]
         public async Task<ActionResult> B2CConsultaEspessuras([FromServices] ILinxMicrovixB2CProductAttributesService linxMicrovixB2CProductAttributesService)
@@ -48,6 +52,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaGrade1
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaGrade1")]
         [Tags("LinxMicrovixB2CProductAttributes")]
         public async Task<ActionResult> B2CConsultaGrade1([FromServices] ILinxMicrovixB2CProductAttributesService linxMicrovixB2CProductAttributesService)
@@ -60,6 +65,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaGrade2
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaGrade2")]
         [Tags("LinxMicrovixB2CProductAttributes")]
         public async Task<ActionResult> B2CConsultaGrade2([FromServices] ILinxMicrovixB2CProductAttributesService linxMicrovixB2CProductAttributesService)
@@ -72,6 +78,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaLinhas
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaLinhas")]
         [Tags("LinxMicrovixB2CProductAttributes")]
         public async Task<ActionResult> B2CConsultaLinhas([FromServices] ILinxMicrovixB2CProductAttributesService linxMicrovixB2CProductAttributesService)
@@ -84,6 +91,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaMarcas
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaMarcas")]
         [Tags("LinxMicrovixB2CProductAttributes")]
         public async Task<ActionResult> B2CConsultaMarcas([FromServices] ILinxMicrovixB2CProductAttributesService linxMicrovixB2CProductAttributesService)
@@ -96,6 +104,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaSetores
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaSetores")]
         [Tags("LinxMicrovixB2CProductAttributes")]
         public async Task<ActionResult> B2CConsultaSetores([FromServices] ILinxMicrovixB2CProductAttributesService linxMicrovixB2CProductAttributesService)
@@ -108,6 +117,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaUnidade
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaUnidade")]
         [Tags("LinxMicrovixB2CProductAttributes")]
         public async Task<ActionResult> B2CConsultaUnidade([FromServices] ILinxMicrovixB2CProductAttributesService linxMicrovixB2CProductAttributesService)
@@ -120,6 +130,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaFornecedores
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaFornecedores")]
         [Tags("LinxMicrovixB2CProductAttributes")]
         public async Task<ActionResult> B2CConsultaFornecedores([FromServices] ILinxMicrovixB2CProductAttributesService linxMicrovixB2CProductAttributesService)
@@ -132,6 +143,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaFlags
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaFlags")]
         [Tags("LinxMicrovixB2CProductAttributes")]
         public async Task<ActionResult> B2CConsultaFlags([FromServices] ILinxMicrovixB2CProductAttributesService linxMicrovixB2CProductAttributesService)
@@ -144,6 +156,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaTags
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaTags")]
         [Tags("LinxMicrovixB2CProductAttributes")]
         public async Task<ActionResult> B2CConsultaTags([FromServices] ILinxMicrovixB2CProductAttributesService linxMicrovixB2CProductAttributesService)
@@ -156,6 +169,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaPalavrasChavePesquisa
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaPalavrasChavePesquisa")]
         [Tags("LinxMicrovixB2CProductAttributes")]
         public async Task<ActionResult> B2CConsultaPalavrasChavePesquisa([FromServices] ILinxMicrovixB2CProductAttributesService linxMicrovixB2CProductAttributesService)
@@ -168,6 +182,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaLegendasCadastrosAuxiliares
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaLegendasCadastrosAuxiliares")]
         [Tags("LinxMicrovixB2CProductAttributes")]
         public async Task<ActionResult> B2CConsultaLegendasCadastrosAuxiliares([FromServices] ILinxMicrovixB2CProductAttributesService linxMicrovixB2CProductAttributesService)

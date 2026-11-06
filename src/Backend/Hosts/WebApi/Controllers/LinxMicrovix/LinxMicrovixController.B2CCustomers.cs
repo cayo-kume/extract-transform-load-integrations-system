@@ -1,5 +1,6 @@
 using Application.LinxMicrovix.Outbound.Abstractions.Services;
 using Microsoft.AspNetCore.Mvc;
+using WebApi.Extensions;
 using System.ComponentModel.DataAnnotations;
 
 namespace WebApi.Controllers.LinxMicrovix
@@ -13,6 +14,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaClientes
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaClientes")]
         [Tags("LinxMicrovixB2CCustomers")]
         public async Task<ActionResult> B2CConsultaClientes([FromServices] ILinxMicrovixB2CCustomersService linxMicrovixB2CCustomersService)
@@ -25,6 +27,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaClientesContatos
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaClientesContatos")]
         [Tags("LinxMicrovixB2CCustomers")]
         public async Task<ActionResult> B2CConsultaClientesContatos([FromServices] ILinxMicrovixB2CCustomersService linxMicrovixB2CCustomersService)
@@ -37,6 +40,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaClientesContatosParentesco
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaClientesContatosParentesco")]
         [Tags("LinxMicrovixB2CCustomers")]
         public async Task<ActionResult> B2CConsultaClientesContatosParentesco([FromServices] ILinxMicrovixB2CCustomersService linxMicrovixB2CCustomersService)
@@ -49,6 +53,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaClientesEnderecosEntrega
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaClientesEnderecosEntrega")]
         [Tags("LinxMicrovixB2CCustomers")]
         public async Task<ActionResult> B2CConsultaClientesEnderecosEntrega([FromServices] ILinxMicrovixB2CCustomersService linxMicrovixB2CCustomersService)
@@ -61,6 +66,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaClientesEstadoCivil
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaClientesEstadoCivil")]
         [Tags("LinxMicrovixB2CCustomers")]
         public async Task<ActionResult> B2CConsultaClientesEstadoCivil([FromServices] ILinxMicrovixB2CCustomersService linxMicrovixB2CCustomersService)
@@ -73,6 +79,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaClientesSaldo
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaClientesSaldo")]
         [Tags("LinxMicrovixB2CCustomers")]
         public async Task<ActionResult> B2CConsultaClientesSaldo([FromServices] ILinxMicrovixB2CCustomersService linxMicrovixB2CCustomersService)
@@ -85,6 +92,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaClientesSaldoLinx
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaClientesSaldoLinx")]
         [Tags("LinxMicrovixB2CCustomers")]
         public async Task<ActionResult> B2CConsultaClientesSaldoLinx([FromServices] ILinxMicrovixB2CCustomersService linxMicrovixB2CCustomersService)

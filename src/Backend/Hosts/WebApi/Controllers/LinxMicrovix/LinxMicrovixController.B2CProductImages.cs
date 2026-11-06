@@ -1,5 +1,6 @@
 using Application.LinxMicrovix.Outbound.Abstractions.Services;
 using Microsoft.AspNetCore.Mvc;
+using WebApi.Extensions;
 
 namespace WebApi.Controllers.LinxMicrovix
 {
@@ -12,6 +13,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaProdutosImagens
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaProdutosImagens")]
         [Tags("LinxMicrovixB2CProductImages")]
         public async Task<ActionResult> B2CConsultaProdutosImagens([FromServices] ILinxMicrovixB2CProductImagesService linxMicrovixB2CProductImagesService)
@@ -24,6 +26,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaProdutosImagensURL
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaProdutosImagensURL")]
         [Tags("LinxMicrovixB2CProductImages")]
         public async Task<ActionResult> B2CConsultaProdutosImagensURL([FromServices] ILinxMicrovixB2CProductImagesService linxMicrovixB2CProductImagesService)
@@ -36,6 +39,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaImagens
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaImagens")]
         [Tags("LinxMicrovixB2CProductImages")]
         public async Task<ActionResult> B2CConsultaImagens([FromServices] ILinxMicrovixB2CProductImagesService linxMicrovixB2CProductImagesService)
@@ -48,6 +52,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaImagensHD
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaImagensHD")]
         [Tags("LinxMicrovixB2CProductImages")]
         public async Task<ActionResult> B2CConsultaImagensHD([FromServices] ILinxMicrovixB2CProductImagesService linxMicrovixB2CProductImagesService)

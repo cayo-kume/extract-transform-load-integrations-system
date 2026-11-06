@@ -1,5 +1,6 @@
 using Application.LinxMicrovix.Outbound.Abstractions.Services;
 using Microsoft.AspNetCore.Mvc;
+using WebApi.Extensions;
 
 namespace WebApi.Controllers.LinxMicrovix
 {
@@ -12,6 +13,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaProdutosCamposAdicionaisDetalhes
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaProdutosCamposAdicionaisDetalhes")]
         [Tags("LinxMicrovixB2CProductFields")]
         public async Task<ActionResult> B2CConsultaProdutosCamposAdicionaisDetalhes([FromServices] ILinxMicrovixB2CProductFieldsService linxMicrovixB2CProductFieldsService)
@@ -24,6 +26,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaProdutosCamposAdicionaisNomes
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaProdutosCamposAdicionaisNomes")]
         [Tags("LinxMicrovixB2CProductFields")]
         public async Task<ActionResult> B2CConsultaProdutosCamposAdicionaisNomes([FromServices] ILinxMicrovixB2CProductFieldsService linxMicrovixB2CProductFieldsService)
@@ -36,6 +39,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaProdutosCamposAdicionaisValores
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaProdutosCamposAdicionaisValores")]
         [Tags("LinxMicrovixB2CProductFields")]
         public async Task<ActionResult> B2CConsultaProdutosCamposAdicionaisValores([FromServices] ILinxMicrovixB2CProductFieldsService linxMicrovixB2CProductFieldsService)
@@ -48,6 +52,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaB2CProdutosCamposAdicionais
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaB2CProdutosCamposAdicionais")]
         [Tags("LinxMicrovixB2CProductFields")]
         public async Task<ActionResult> B2CConsultaB2CProdutosCamposAdicionais([FromServices] ILinxMicrovixB2CProductFieldsService linxMicrovixB2CProductFieldsService)
@@ -60,6 +65,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaB2CProdutosCamposAdicionaisDados
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaB2CProdutosCamposAdicionaisDados")]
         [Tags("LinxMicrovixB2CProductFields")]
         public async Task<ActionResult> B2CConsultaB2CProdutosCamposAdicionaisDados([FromServices] ILinxMicrovixB2CProductFieldsService linxMicrovixB2CProductFieldsService)
@@ -72,6 +78,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaB2CProdutosCamposAdicionaisMedia
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaB2CProdutosCamposAdicionaisMedia")]
         [Tags("LinxMicrovixB2CProductFields")]
         public async Task<ActionResult> B2CConsultaB2CProdutosCamposAdicionaisMedia([FromServices] ILinxMicrovixB2CProductFieldsService linxMicrovixB2CProductFieldsService)
@@ -84,6 +91,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaB2CProdutosCamposAdicionaisMediaDados
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaB2CProdutosCamposAdicionaisMediaDados")]
         [Tags("LinxMicrovixB2CProductFields")]
         public async Task<ActionResult> B2CConsultaB2CProdutosCamposAdicionaisMediaDados([FromServices] ILinxMicrovixB2CProductFieldsService linxMicrovixB2CProductFieldsService)
@@ -96,6 +104,7 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaB2CProdutosCamposAdicionaisOpcoes
         /// </summary>
+        [RequiresB2CStores]
         [HttpPost("B2CConsultaB2CProdutosCamposAdicionaisOpcoes")]
         [Tags("LinxMicrovixB2CProductFields")]
         public async Task<ActionResult> B2CConsultaB2CProdutosCamposAdicionaisOpcoes([FromServices] ILinxMicrovixB2CProductFieldsService linxMicrovixB2CProductFieldsService)
