@@ -91,6 +91,11 @@ namespace Application.LinxMicrovix.Outbound.Services
                 .Where(x => CnpjPattern.IsMatch(x))
                 .ToList();
 
+        public async Task<List<string>> GetB2CKeyStores(Company company) =>
+            (await _linxMicrovixRepository.GetB2CKeyStores(company.doc_company!))
+                .Where(x => CnpjPattern.IsMatch(x))
+                .ToList();
+
         public async Task<long> GetLastTimestamp(Company company, EnumJob method, string? cnpj_emp)
         {
             // a tabela tem o nome do método da API, que é o nome do job (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/.docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 2.3)

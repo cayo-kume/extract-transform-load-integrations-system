@@ -47,6 +47,11 @@ namespace Application.LinxMicrovix.Outbound.Abstractions.Services
         public Task<List<string>> GetStores(Company company, EnumApi api);
 
         /// <summary>
+        /// CNPJs da chave B2C (linxmicrovix.B2CConsultaCNPJsChave): as lojas que o B2CConsultaEmpresas consulta
+        /// </summary>
+        public Task<List<string>> GetB2CKeyStores(Company company);
+
+        /// <summary>
         /// maior timestamp gravado do método para o cliente e a loja (cnpj_emp nulo: método de portal); 0 com o banco vazio
         /// </summary>
         public Task<long> GetLastTimestamp(Company company, EnumJob method, string? cnpj_emp);

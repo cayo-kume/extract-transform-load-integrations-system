@@ -25,6 +25,16 @@ namespace Application.LinxMicrovix.Outbound.Handlers.Commands
                      WHERE P.DOC_COMPANY = '{company}'";
         }
 
+        public string CreateGetB2CKeyStoresQuery(string doc_company)
+        {
+            // CNPJs da chave B2C (B2CConsultaCNPJsChave): as lojas do B2CConsultaEmpresas, que exige o cnpjEmp
+            return @$"SELECT DISTINCT CNPJ
+                     FROM LINXMICROVIX.B2CCONSULTACNPJSCHAVE
+                     WHERE DOC_COMPANY = '{doc_company}'
+                     AND ISNULL(CNPJ, '') <> ''
+                     ORDER BY CNPJ";
+        }
+
         public string CreateGetStoresQuery(string doc_company, EnumApi api)
         {
             // lojas consultadas pelos outros métodos (src/Backend/Modules/LinxMicrovix/LinxMicrovix - Outbound Web Service/.docs/PROPOSTA-PADRONIZACAO-LINXMICROVIX-OUTBOUND.md 4.2, item 3).

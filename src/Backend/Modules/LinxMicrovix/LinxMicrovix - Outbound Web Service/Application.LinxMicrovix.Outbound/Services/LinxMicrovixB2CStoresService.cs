@@ -74,11 +74,13 @@ namespace Application.LinxMicrovix.Outbound.Services
                     if (company.b2c_chave is null)
                         continue;   // cliente sem o WS B2C
 
-                    var stores = await _linxMicrovixService.GetStores(company, EnumApi.B2C);
+                    // as lojas do B2C saem dos CNPJs da chave (B2CConsultaCNPJsChave, chamado só com a chave): a API exige o cnpjEmp
+                    // (sem ele, "Ocorreu um erro inesperado", testado), e as lojas desta tabela é que alimentam os outros métodos do B2C
+                    var stores = await _linxMicrovixService.GetB2CKeyStores(company);
 
                     if (stores.Count == 0)
                     {
-                        _logger.AddWarning($"Empresa {company.doc_company} sem lojas em linxmicrovix.B2CConsultaEmpresas: rode o B2CConsultaEmpresas antes.");
+                        _logger.AddWarning($"Empresa {company.doc_company} sem CNPJs em linxmicrovix.B2CConsultaCNPJsChave: rode o B2CConsultaCNPJsChave antes.");
                         continue;
                     }
 

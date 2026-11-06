@@ -13,7 +13,8 @@ namespace WebApi.Controllers.LinxMicrovix
         /// <summary>
         /// sincroniza B2CConsultaEmpresas
         /// </summary>
-        [RequiresB2CStores]
+        // a rota que grava as lojas do B2C: depende dos CNPJs da chave (B2CConsultaCNPJsChave), não das próprias lojas
+        [RequiresB2CStores(FromKey = true)]
         [HttpPost("B2CConsultaEmpresas")]
         [Tags("LinxMicrovixB2CStores")]
         public async Task<ActionResult> B2CConsultaEmpresas([FromServices] ILinxMicrovixB2CStoresService linxMicrovixB2CStoresService)

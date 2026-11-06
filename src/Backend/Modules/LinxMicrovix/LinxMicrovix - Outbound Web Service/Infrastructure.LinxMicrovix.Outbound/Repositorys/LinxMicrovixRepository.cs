@@ -24,6 +24,16 @@ namespace Infrastructure.LinxMicrovix.Outbound.Repositorys
             return await _coreRepository.GetRecords<Company>(sql);
         }
 
+        public async Task<IEnumerable<string>> GetB2CKeyStores(string doc_company)
+        {
+            string sql = _linxMicrovixCommandHandler.CreateGetB2CKeyStoresQuery(doc_company);
+
+            return (await _coreRepository.GetRecords<string>(sql))
+                .Where(x => !String.IsNullOrWhiteSpace(x))
+                .Select(x => x!)
+                .ToList();
+        }
+
         public async Task<IEnumerable<string>> GetStores(string doc_company, EnumApi api)
         {
             string sql = _linxMicrovixCommandHandler.CreateGetStoresQuery(doc_company, api);
