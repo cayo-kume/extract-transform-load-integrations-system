@@ -21,6 +21,7 @@ namespace Application.LinxMicrovix.Outbound.Services
 
         // mais a empresa da execução: a consulta só traz os parâmetros dela (doc_company = empresa), e o processo atende várias
         private const string ParametersKey = "LinxMicrovix:Parameters";
+        private static readonly TimeSpan ParametersCacheDuration = TimeSpan.FromMinutes(5);
 
         // CNPJ entra interpolado nas queries: só passa com 14 dígitos
         private static readonly Regex CnpjPattern = new(@"^\d{14}$", RegexOptions.Compiled);
@@ -56,12 +57,13 @@ namespace Application.LinxMicrovix.Outbound.Services
                 .Select(x => x!)
                 .ToList();
 
-            // tabela vazia não entra no cache: um insert em LinxMicrovixParameters vale já na próxima execução
+            // tabela vazia não entra no cache: um insert em LinxMicrovixParameters vale já na próxima execução. 5 min, não as 2 h do
+            // padrão (.docs/PADRAO-CACHE-INTEGRACOES.md 2.2): o que muda na aba Parâmetros do WebApp (credencial, URL, ambiente,
+            // grupo) tem de chegar aos jobs sem reiniciar o host, e com 2 h o job seguia com o valor antigo
             if (companys.Count > 0)
                 _cache.Set(key, companys, new MemoryCacheEntryOptions
                 {
-                    AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(2),
-                    SlidingExpiration = TimeSpan.FromMinutes(30)
+                    AbsoluteExpirationRelativeToNow = ParametersCacheDuration
                 });
 
             return companys;

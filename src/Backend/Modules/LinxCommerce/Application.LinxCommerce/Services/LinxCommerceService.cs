@@ -33,6 +33,7 @@ namespace Application.LinxCommerce.Services
 
         // mais a empresa da execução: a consulta só traz os parâmetros dela (doc_company = empresa), e o processo atende várias
         private const string ParametersKey = "LinxCommerce:Parameters";
+        private static readonly TimeSpan ParametersCacheDuration = TimeSpan.FromMinutes(5);
 
         // o código antigo usava 500 no SearchOrders; as outras buscas liam uma página de 1000 ou 10000 sem paginar
         private const int SearchPageSize = 500;
@@ -93,12 +94,13 @@ namespace Application.LinxCommerce.Services
             if (companys.Count == 0)
                 _logger.AddMessage("Nenhum cliente em linxcommerce.LinxCommerceParameters: nada a ler.");
 
-            // tabela vazia não entra no cache: um insert em LinxCommerceParameters vale já na próxima execução
+            // tabela vazia não entra no cache: um insert em LinxCommerceParameters vale já na próxima execução. 5 min, não as 2 h do
+            // padrão (.docs/PADRAO-CACHE-INTEGRACOES.md 2.2): o que muda na aba Parâmetros do WebApp (credencial, URL, ambiente,
+            // grupo) tem de chegar aos jobs sem reiniciar o host, e com 2 h o job seguia com o valor antigo
             if (companys.Count > 0)
                 _cache.Set(key, companys, new MemoryCacheEntryOptions
                 {
-                    AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(2),
-                    SlidingExpiration = TimeSpan.FromMinutes(30)
+                    AbsoluteExpirationRelativeToNow = ParametersCacheDuration
                 });
 
             return companys;

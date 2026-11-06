@@ -49,6 +49,11 @@ entry.SlidingExpiration               = TimeSpan.FromMinutes(30); // morre se fi
 Vale **o que ocorrer primeiro**: 30 min de inatividade **ou** 2h totais.
 Mantenha esses valores como padrão, salvo justificativa específica da integração.
 
+**Exceção: parâmetros das empresas** (`<Modulo>:Parameters`, no `GetCompanys` do Totvs, LinxMicrovix e LinxCommerce):
+**5 min absolutos**, sem expiração deslizante. Credencial, URL, ambiente (homologação) e grupo mudam pela aba Parâmetros
+do WebApp e têm de chegar aos jobs sem reiniciar o host; com 2h, o job seguia com o valor antigo (visto com o `grupo`
+do `LinxGrupoLojas`). Uma consulta a mais a cada 5 min por empresa não pesa.
+
 ---
 
 ## 3. Estratégias de cache
