@@ -188,7 +188,8 @@ namespace Application.LinxMicrovix.Outbound.Services
 
                             foreach (var r in pageRows)
                             {
-                                // <D /> é nulo; a linha é registrada em auditing.Records com o nome de cada coluna
+                                // <D /> é nulo; a linha é registrada em auditing.Records com o nome de cada coluna, menos o xml e xmlDistribuicao: o
+                                // documento já fica na tabela, e a cópia no log (GBs na carga inicial) estourava o tempo da gravação
                                 var values = r.Elements("D").Select(d => d.IsEmpty ? null : d.Value).ToList();
                                 var row = columns.Select((c, i) => (c, v: i < values.Count ? values[i] : null)).GroupBy(x => x.c).ToDictionary(g => g.Key, g => g.First().v);
 
@@ -216,7 +217,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                                     justificativa = row.GetValueOrDefault("justificativa"),
                                     cod_cliente = row.GetValueOrDefault("cod_cliente")
                                     },
-                                    new XElement("R", row.Select(x => new XElement(x.Key, x.Value))).ToString(SaveOptions.DisableFormatting)
+                                    new XElement("R", row.Where(x => x.Key != "xml" && x.Key != "xmlDistribuicao").Select(x => new XElement(x.Key, x.Value))).ToString(SaveOptions.DisableFormatting)
                                 ));
                             }
 
@@ -368,7 +369,8 @@ namespace Application.LinxMicrovix.Outbound.Services
 
                             foreach (var r in pageRows)
                             {
-                                // <D /> é nulo; a linha é registrada em auditing.Records com o nome de cada coluna
+                                // <D /> é nulo; a linha é registrada em auditing.Records com o nome de cada coluna, menos o xml: o
+                                // documento já fica na tabela, e a cópia no log (GBs na carga inicial) estourava o tempo da gravação
                                 var values = r.Elements("D").Select(d => d.IsEmpty ? null : d.Value).ToList();
                                 var row = columns.Select((c, i) => (c, v: i < values.Count ? values[i] : null)).GroupBy(x => x.c).ToDictionary(g => g.Key, g => g.First().v);
 
@@ -385,7 +387,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                                     data_emissao = row.GetValueOrDefault("data_emissao"),
                                     hora_emissao = row.GetValueOrDefault("hora_emissao")
                                     },
-                                    new XElement("R", row.Select(x => new XElement(x.Key, x.Value))).ToString(SaveOptions.DisableFormatting)
+                                    new XElement("R", row.Where(x => x.Key != "xml").Select(x => new XElement(x.Key, x.Value))).ToString(SaveOptions.DisableFormatting)
                                 ));
                             }
 
@@ -2697,7 +2699,7 @@ namespace Application.LinxMicrovix.Outbound.Services
                                 justificativa = row.GetValueOrDefault("justificativa"),
                                 cod_cliente = row.GetValueOrDefault("cod_cliente")
                                 },
-                                new XElement("R", row.Select(x => new XElement(x.Key, x.Value))).ToString(SaveOptions.DisableFormatting)
+                                new XElement("R", row.Where(x => x.Key != "xml" && x.Key != "xmlDistribuicao").Select(x => new XElement(x.Key, x.Value))).ToString(SaveOptions.DisableFormatting)
                             ));
                         }
 
